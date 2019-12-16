@@ -230,14 +230,15 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel launch";
-#endif
+  // #ifndef LITE_SHUTDOWN_LOG
+  //   // VLOG(4) << "kernel launch";
+  // #endif
   op_->InferShape();
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
-          << TargetToStr(kernel_->target());
-#endif
+  // #ifndef LITE_SHUTDOWN_LOG
+  //   // VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on
+  //   Target "
+  //   //         << TargetToStr(kernel_->target());
+  // #endif
   kernel_->Launch();
   has_run_ = true;
 }
