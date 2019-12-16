@@ -90,7 +90,7 @@ void depth_conv(const T* input_data,
   }
 }
 
-TEST(depthwise_conv2d, compute_buffer) {
+TEST(depthwise_conv2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
                                                  TARGET(kOpenCL),
@@ -177,12 +177,12 @@ TEST(depthwise_conv2d, compute_buffer) {
   TargetWrapperCL::Unmap(input_data, mapped_input);
 }
 
-TEST(depthwise_conv2d, compute_image2d) {
+TEST(depthwise_conv2d_image2d_fp16, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
                                                  TARGET(kOpenCL),
-                                                 PRECISION(kFloat),
-                                                 DATALAYOUT(kNHWC));
+                                                 PRECISION(kFP16),
+                                                 DATALAYOUT(kImageDefault));
   ASSERT_FALSE(kernels.empty());
 
   auto kernel = std::move(kernels.front());
@@ -231,7 +231,7 @@ TEST(depthwise_conv2d, compute_image2d) {
                                       4);  // 4 : RGBA
   default_converter->NCHWToImage(
       input_v.data(), input_image_data.data(), input.dims());
-  auto* input_image = input.mutable_data<float, cl::Image2D>(
+  auto* input_image = input.mutable_data<int16_t, cl::Image2D>(
       input_image_shape[0], input_image_shape[1], input_image_data.data());
 
   LOG(INFO) << "prepare kernel";
@@ -244,7 +244,7 @@ TEST(depthwise_conv2d, compute_image2d) {
                                        4);  // 4 : RGBA
   nw_converter->NCHWToImage(
       filter_v.data(), filter_image_data.data(), filter.dims());
-  auto* filter_image = filter.mutable_data<float, cl::Image2D>(
+  auto* filter_image = filter.mutable_data<int16_t, cl::Image2D>(
       filter_image_shape[0], filter_image_shape[1], filter_image_data.data());
 
   LOG(INFO) << "launch";
@@ -253,13 +253,13 @@ TEST(depthwise_conv2d, compute_image2d) {
       default_converter->InitImageDimInfoWith(output.dims());
   LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
             << output_image_shape[1];
-  auto* output_image = output.mutable_data<float, cl::Image2D>(
+  auto* output_image = output.mutable_data<int16_t, cl::Image2D>(
       output_image_shape[0], output_image_shape[1]);
 
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<float, cl::Image2D>();
+  auto* out_ptr = param.output->data<int16_t, cl::Image2D>();
   auto it = wait_list->find(out_ptr);
   if (it != wait_list->end()) {
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
@@ -308,4 +308,4 @@ TEST(depthwise_conv2d, compute_image2d) {
 }  // namespace paddle
 
 USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
-USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNHWC, image2d);
+USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFP16, kImageDefault, image2d);
