@@ -223,7 +223,7 @@ python compress.py \
 
 下面以MobileNetV1为例，介绍使用训练后量化方法产出量化模型。关于训练后量化的原理和详细使用方法，请参考[文档](https://github.com/PaddlePaddle/models/tree/develop/PaddleSlim/quant_low_level_api)。
 
-> 该示例的代码放在[models/PaddleSlim/quant_low_level_api/](https://github.com/PaddlePaddle/models/tree/develop/PaddleSlim/quant_low_level_api)目录下。如果需要执行该示例，首先clone下来[models](https://github.com/PaddlePaddle/models.git)，安装具有训练后量化功能的PaddlePaddle，然后执行[run_post_training_quanzation.sh](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/quant_low_level_api/run_post_training_quanzation.sh) 脚本，最后量化模型保存在`mobilenetv1_int8_model`目录下。
+> 该示例的代码放在[models/PaddleSlim/quant_low_level_api/](https://github.com/PaddlePaddle/models/tree/develop/PaddleSlim/quant_low_level_api)目录下。如果需要执行该示例，首先clone下来[models](https://github.com/PaddlePaddle/models.git)，安装具有训练后量化功能的PaddlePaddle。因为目前Lite支持支持对conv2d、depthwise_conv2d和mul量化，所以修改[run_post_training_quanzation.sh](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/quant_low_level_api/run_post_training_quanzation.sh) 脚本，设置is_full_quantize=False，然后执行该脚本；执行结束后，量化模型保存在`mobilenetv1_int8_model`目录下。下面介绍详细步骤。
 
 1）**准备模型和校准数据**
 
