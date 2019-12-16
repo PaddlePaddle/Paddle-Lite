@@ -57,12 +57,34 @@ void FetchCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    fetch, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FetchCompute, def)
+REGISTER_LITE_KERNEL(fetch,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::FetchCompute,
+                     fpga_host)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fetch,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::FetchCompute,
+                     host_host)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();

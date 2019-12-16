@@ -411,3 +411,20 @@ REGISTER_LITE_KERNEL(multiclass_nms,
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(multiclass_nms,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::MulticlassNmsCompute,
+                     def2)
+    .BindInput("BBoxes",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Scores",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();

@@ -70,29 +70,25 @@ TEST(ResNet50, test) {
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  predictor.Build(FLAGS_model_dir, "", "", valid_places);
-
-  // predictor.Build(FLAGS_model_dir,
-  //                 FLAGS_model_dir + "/model",
-  //                 FLAGS_model_dir + "/params",
-  //                 Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-  //                 valid_places);
+  // predictor.Build(FLAGS_model_dir, "", "", valid_places);
+  predictor.Build("",
+                  FLAGS_model_dir + "/model",
+                  FLAGS_model_dir + "/params",
+                  valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
+  int width = 300;
+  int height = 300;
 
-  int width = 416;
-  int height = 416;
+  // std::ifstream file_stream(FLAGS_input_file);
+  // if (!file_stream.good()) {
+  //   std::cout << "file: " << FLAGS_input_file << " dones not exist!\n";
+  //   exit(-1);
+  //   return;
+  // }
 
-  std::ifstream file_stream(FLAGS_input_file);
-  // file_stream.open(path);
-  if (!file_stream.good()) {
-    std::cout << "file: " << FLAGS_input_file << " dones not exist!\n";
-    exit(-1);
-    return;
-  }
-
-  file_stream >> height;
-  file_stream >> width;
+  // file_stream >> height;
+  // file_stream >> width;
 
   input_tensor->Resize(
       DDim(std::vector<DDim::value_type>({1, 3, height, width})));
@@ -107,12 +103,12 @@ TEST(ResNet50, test) {
 
   int num = 3 * width * height;
 
-  for (int i = 0; i < num; ++i) {
-    float value = 0;
-    file_stream >> value;
-    data[i] = value;
-  }
-  file_stream.close();
+  // for (int i = 0; i < num; ++i) {
+  //   float value = 0;
+  //   file_stream >> value;
+  //   data[i] = value;
+  // }
+  // file_stream.close();
 
   for (int i = 0; i < 2; ++i) {
     predictor.Run();
@@ -122,12 +118,6 @@ TEST(ResNet50, test) {
   for (int i = 0; i < out->dims().production(); i++) {
     std::cout << ":" << out->data<float>()[i] << std::endl;
   }
-
-  // std::cout << "-------\n";
-  // auto* out1 = predictor.GetOutput(1);
-  // for (int i = 0;i < out1->dims().production();i++) {
-  //   std::cout << ":" << out1->data<float>()[i] << std::endl;
-  // }
 
   std::string file = "output/" + FLAGS_input_file.substr(6);
   std::cout << "file:::" << file << std::endl;

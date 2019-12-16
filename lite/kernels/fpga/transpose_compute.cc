@@ -30,14 +30,14 @@ using float16 = zynqmp::float16;
 // Transpose
 void TransposeCompute::Run() {
   auto& param = this->Param<param_t>();
-  param.output->mutable_data<float16>();
+  // param.output->mutable_data<float16>();
 }
 
 // Transpose2
 void Transpose2Compute::Run() {
   auto& param = this->Param<param_t>();
   param.output->mutable_data<float>();
-
+  param.x->ZynqTensor()->invalidate();
   param.x->ZynqTensor()->unalignImage();
   if (param.x->dims().size() != 4) {
     // TransposeCompute<float>(param);
@@ -54,9 +54,10 @@ void Transpose2Compute::Run() {
     //     index++;
     //   }
     // }
-
   } else {
+    param.x->ZynqTensor()->saveToFile("tx", true);
     param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+    param.output->ZynqTensor()->saveToFile("to", true);
   }
 }
 

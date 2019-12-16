@@ -199,6 +199,11 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels})
 
+    lite_cc_test(test_inceptionv3_fpga SRCS inceptionv3_test_fpga.cc
+       DEPS ${lite_model_test_DEPS}
+       CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels})
+
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}

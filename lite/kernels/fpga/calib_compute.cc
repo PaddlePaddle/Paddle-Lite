@@ -24,10 +24,6 @@ namespace kernels {
 namespace fpga {
 using float16 = zynqmp::float16;
 
-// void CalibComputeFp32ToFP16::PrepareForRun() {
-
-// }
-
 void CalibComputeFp32ToFP16::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float>();
@@ -37,10 +33,6 @@ void CalibComputeFp32ToFP16::Run() {
   *out_lod = param.input->lod();
   return;
 }
-
-// void CalibComputeFP16ToFp32::PrepareForRun() {
-
-// }
 
 void CalibComputeFP16ToFp32::Run() {
   auto& param = this->Param<operators::CalibParam>();

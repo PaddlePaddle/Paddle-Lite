@@ -28,10 +28,20 @@ namespace lite {
 #ifdef LITE_WITH_FPGA
 TEST(ResNet50, test) {
   lite::Predictor predictor;
-  std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
 
-  predictor.Build(FLAGS_model_dir, "", "", valid_places);
+  std::vector<Place> valid_places({
+      Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
+      Place{TARGET(kHost), PRECISION(kFloat)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
+  });
+
+  // std::vector<Place> valid_places(
+  //     {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
+
+  predictor.Build("",
+                  FLAGS_model_dir + "/model",
+                  FLAGS_model_dir + "/params",
+                  valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -46,7 +56,7 @@ TEST(ResNet50, test) {
   }
 
   auto start = GetCurrentUS();
-  for (int i = 0; i < FLAGS_repeats; ++i) {
+  for (int i = 0; i < 2; ++i) {
     predictor.Run();
   }
 

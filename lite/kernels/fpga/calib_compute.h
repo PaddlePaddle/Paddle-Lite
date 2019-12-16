@@ -26,8 +26,6 @@ class CalibComputeFp32ToFP16
  public:
   using param_t = operators::CalibParam;
 
-  // void PrepareForRun() override;
-
   void Run() override;
 
   ~CalibComputeFp32ToFP16() override{};
@@ -39,8 +37,6 @@ class CalibComputeFP16ToFp32
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::CalibParam;
-
-  // void PrepareForRun() override;
 
   void Run() override;
 

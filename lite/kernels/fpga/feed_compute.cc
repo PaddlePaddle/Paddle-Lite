@@ -59,7 +59,7 @@ void FeedCompute::Run() {
 REGISTER_LITE_KERNEL(
     feed, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",

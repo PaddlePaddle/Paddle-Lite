@@ -34,8 +34,11 @@ class Debugger {
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
     // tensor->printScale();
-    if (op_type != "conv") {
-      // tensor->saveToFile(op_type, true);
+    // if (op_type != "conv") {
+    //   // tensor->saveToFile(op_type, true);
+    // }
+    if (op_config[op_type]) {
+      tensor->saveToFile(op_type, true);
     }
   }
 
@@ -45,6 +48,9 @@ class Debugger {
     op_config["concat"] = true;
     op_config["conv"] = true;
     op_config["crop"] = true;
+    op_config["fetch"] = true;
+    op_config["fc"] = true;
+    op_config["softmax"] = true;
   }
 };
 

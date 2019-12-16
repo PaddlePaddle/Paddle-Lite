@@ -27,7 +27,8 @@ void ReshapeCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
   param.output->mutable_data<float16>();
   auto x = param.x;
-  auto actual_shape = param.actual_shape;
+  // auto actual_shape = param.actual_shape;
+  Tensor* actual_shape = nullptr;  // TODO(chonwhite) change it.
   auto output = param.output;
   bool inplace = param.inplace;
   auto x_dims = x->dims();
