@@ -17,7 +17,6 @@
 #include <string>
 #include <unordered_map>
 
-// #include "lite/backends/fpga/lite_tensor.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -33,9 +32,7 @@ class Debugger {
   }
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
-    // tensor->printScale();
-    if (op_type != "conv") {
-      // tensor->saveToFile(op_type, true);
+    if (op_type != "conv") {  // NOLINT
     }
   }
 
@@ -60,7 +57,6 @@ inline void chw_to_hwc(Tensor* t, float* dst) {
   if (t->dims().size() > 3) {
     width = t->dims()[3];
   }
-  // int width = t->dims()[3];
   const float* chw_data = t->data<float>();
   float* hwc_data = dst;
 
@@ -92,11 +88,9 @@ inline void read_from_file(lite::Tensor* t, const std::string& path) {
     file_stream >> value;
     data[i] = value;
   }
-  // flush();
 }
 
 inline void save_float(float* data, const std::string& name, int len) {
-  // return;
   static int counter = 0;
   std::string old_string = std::to_string(counter);
   std::string new_string =
@@ -105,12 +99,8 @@ inline void save_float(float* data, const std::string& name, int len) {
   std::string file = "arm_" + new_string + name;
   counter++;
 
-  std::cout
-      << "-------------------------- saving file: --------------------------"
-      << file << std::endl;
   std::ofstream ofs;
   ofs.open(file);
-  // float* data = dst;
   for (int i = 0; i < len; i++) {
     float value = data[i];
     ofs << value << std::endl;
@@ -135,7 +125,6 @@ inline void save_tensor(lite::Tensor* t,
 inline void save_tensor(const lite::Tensor* t,
                         const std::string& name,
                         bool convert = true) {
-  // return;
   float* data = const_cast<float*>(t->data<float>());
   float* dst = new float[t->numel()];
   if (convert) {

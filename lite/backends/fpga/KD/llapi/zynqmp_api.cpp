@@ -62,7 +62,6 @@ void reset_device() {
 // memory management;
 void *fpga_malloc(size_t size) {
 #ifdef ENABLE_DEBUG
-// std::cout << "fpga_malloc:" << size << std::endl;
 #endif
 #ifdef PADDLE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
@@ -249,10 +248,6 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
 int config_activation(const struct ActiveParamterArgs &args) {
   return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
 }
-
-// int config_power(const struct PowerArgs& args) {
-//     return do_ioctl(IOCTL_CONFIG_POWER, &args);
-// }
 
 int config_inplace(const struct InplaceArgs &args) {
   return do_ioctl(IOCTL_CONFIG_INPLACE, &args);

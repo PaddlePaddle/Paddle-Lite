@@ -33,7 +33,6 @@ class ElementwiseMulPE : public PE {
     Tensor* output = param_.output;
 
     int wc_aligned = align_to_x(param_.inputs[0]->shape().numel(), 32);
-    // int wc_aligned =  / 32 * 32;
 
     Shape s(N, {wc_aligned});
     float16* bias_data = bias_tensor.mutableData<float16>(FP16, s);
