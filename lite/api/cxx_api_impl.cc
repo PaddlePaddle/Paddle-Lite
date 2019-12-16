@@ -20,7 +20,8 @@
 #include "lite/core/device_info.h"
 #include "lite/core/version.h"
 
-#ifdef PADDLE_WITH_MKLML
+#if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
 #include <omp.h>
 #include "lite/backends/x86/mklml.h"
 #endif
@@ -45,6 +46,9 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   int real_num_threads = num_threads > 1 ? num_threads : 1;
   paddle::lite::x86::MKL_Set_Num_Threads(real_num_threads);
   omp_set_num_threads(real_num_threads);
+  VLOG(3) << "set_cpu_math_library_math_threads() is set successfully and the "
+             "number of threads is:"
+          << num_threads;
 #endif
 }
 
