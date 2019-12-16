@@ -37,7 +37,10 @@ class FullyConnectedPE : public PE {
     ConvParam& convParam_ = convPE_.param();
     Tensor* input = param_.input;
     convParam_.input = param_.input;
+    num_ = param_.input->shape().num();
+
     convParam_.output = param_.output;
+
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
     convParam_.paddings = {0, 0};
@@ -63,7 +66,6 @@ class FullyConnectedPE : public PE {
         new_filter_data[i * chw + j] = scale;
       }
     }
-
     conv_filter->flush();
     convParam_.filter = conv_filter;
 
@@ -89,6 +91,8 @@ class FullyConnectedPE : public PE {
  private:
   FullyConnectedParam param_;
   ConvPE convPE_;
+  Tensor tempOut_;
+  int num_ = 1;
 };
 }  // namespace zynqmp
 }  // namespace paddle
