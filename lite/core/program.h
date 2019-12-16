@@ -141,6 +141,11 @@ class LITE_API RuntimeProgram {
     set_profiler();
 #endif
   }
+  ~RuntimeProgram() {
+#ifdef LITE_WITH_PROFILE
+    LOG(INFO) << "\n" << profiler_.Summary();
+#endif  // LITE_WITH_PROFILE
+  }
 
   void Run();
 
