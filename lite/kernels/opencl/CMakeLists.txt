@@ -23,7 +23,7 @@ lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_pool_opencl SRCS pool_compute_test.cc
-        DEPS pool_opencl op_registry program context
+        DEPS pool_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_fc_opencl SRCS fc_compute_test.cc
