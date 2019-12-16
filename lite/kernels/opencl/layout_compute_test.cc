@@ -24,7 +24,7 @@ namespace lite {
 
 // #define LOOP_TEST
 // #define PRINT_RESULT
-TEST(layout, compute) {
+TEST(layout_ImageDefault, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> layout(img2buf) "
                "-> device";
 
@@ -43,8 +43,11 @@ TEST(layout, compute) {
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
                     << h << " " << w << " ========";
           // set layout kernels
-          auto buf_to_img_kernels = KernelRegistry::Global().Create(
-              "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNHWC));
+          auto buf_to_img_kernels =
+              KernelRegistry::Global().Create("layout",
+                                              TARGET(kOpenCL),
+                                              PRECISION(kAny),
+                                              DATALAYOUT(kImageDefault));
           auto img_to_buf_kernels = KernelRegistry::Global().Create(
               "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
           ASSERT_FALSE(buf_to_img_kernels.empty());
@@ -144,7 +147,8 @@ TEST(layout, compute) {
 // nothing to do.
 #endif
 }
-TEST(layout, compute_buffer2image2dnw) {
+
+TEST(layout_ImageNW, compute) {
 #ifdef LOOP_TEST
   for (int n = 1; n <= 100; n += 21) {
     for (auto c : {1, 3}) {
@@ -282,12 +286,6 @@ TEST(layout, compute_buffer2image2dnw) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(
-    layout, kOpenCL, kAny, kNHWC, buffer_chw_to_image2d_hwc_opencl_fp32);
-USE_LITE_KERNEL(
-    layout, kOpenCL, kAny, kNCHW, image2d_hwc_to_buffer_chw_opencl_fp32);
-USE_LITE_KERNEL(layout_once,
-                kOpenCL,
-                kFloat,
-                kImageNW,
-                buffer_chw_to_image2d_nw_opencl_fp32);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
+USE_LITE_KERNEL(layout_once, kOpenCL, kFloat, kImageNW, NCHW_to_ImageNW);

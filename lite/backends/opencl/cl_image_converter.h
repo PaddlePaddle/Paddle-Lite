@@ -114,6 +114,7 @@ class CLImageConverterNWBlock : public CLImageConverterBase {
                    const DDim &tensor_dim) override;
 };
 class CLImageConverterDWBlock : public CLImageConverterBase {
+ public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
   void NCHWToImage(float *tensor,
                    float *image,

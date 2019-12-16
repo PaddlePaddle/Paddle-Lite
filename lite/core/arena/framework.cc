@@ -14,13 +14,38 @@
 
 #include "lite/core/arena/framework.h"
 #include "lite/core/context.h"
+#include "lite/operators/subgraph_op.h"
 
 namespace paddle {
 namespace lite {
 namespace arena {
 
 void TestCase::CreateInstruction() {
-  auto op = LiteOpRegistry::Global().Create(op_desc().Type());
+  std::shared_ptr<lite::OpLite> op = nullptr;
+  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU)) {
+    // Create a new block desc to wrap the original op desc
+    int sub_block_idx = 0;
+    auto sub_block_desc = new cpp::BlockDesc();
+    sub_block_desc->ClearOps();
+    sub_block_desc->ClearVars();
+    auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
+    *sub_block_op_desc = *op_desc_;
+    // Add the block desc into the subgraph op which used to replace the
+    // original op
+    op_desc_.reset(new cpp::OpDesc());
+    op_desc_->SetType("subgraph");
+    op_desc_->SetAttr<int32_t>("sub_block", sub_block_idx);
+    op_desc_->SetInput("Inputs", op_desc_->input_vars());
+    op_desc_->SetOutput("Outputs", op_desc_->output_vars());
+    op_desc_->SetAttr<std::vector<std::string>>(
+        "input_data_names", sub_block_op_desc->input_vars());
+    op_desc_->SetAttr<std::vector<std::string>>(
+        "output_data_names", sub_block_op_desc->output_vars());
+    op = LiteOpRegistry::Global().Create(op_desc().Type());
+    static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(sub_block_desc);
+  } else {
+    op = LiteOpRegistry::Global().Create(op_desc().Type());
+  }
   CHECK(op) << "no op for " << op_desc().Type();
   op->Attach(*op_desc_, inst_scope_);
   auto kernels = op->CreateKernels({place_});
@@ -64,6 +89,19 @@ void TestCase::PrepareInputsForInstruction() {
                    shared_tensor->raw_data(),
                    shared_tensor->memory_size());
       }
+    }
+  }
+}
+
+TestCase::~TestCase() {
+  if (op_desc_->Type() == "subgraph") {
+    // Release the subblock desc of Subgraph op
+    auto subgraph_op = const_cast<operators::SubgraphOp*>(
+        static_cast<const operators::SubgraphOp*>(instruction_->op()));
+    CHECK(subgraph_op);
+    auto sub_block_desc = subgraph_op->GetSubBlock();
+    if (sub_block_desc) {
+      delete sub_block_desc;
     }
   }
 }

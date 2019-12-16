@@ -12,58 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ConcatConverter(const std::shared_ptr<lite::OpLite> concat_op,
-                              const node_map_type& inputs_map) {
-  lite::Scope* scope = concat_op->scope();
-  const lite::OpInfo* op_info = concat_op->op_info();
+int ConcatConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " << op_type << " ... ";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " << op_type << " ... ";
 
   auto x_var_names = op_info->Input("X");
+  auto out_var_name = op_info->Output("Out").front();
   auto axis = op_info->GetAttr<int>("axis");
-  int num = x_var_names.size();
-  int index = 0;
-
-  std::shared_ptr<ge::op::Concat> output_node =
-      std::make_shared<ge::op::Concat>(unique_op_type);
-  output_node->set_attr_axis(axis);
-  output_node->set_attr_N(num);
-  output_node->create_dynamic_input_x(num);
-  for (auto x_var_name : x_var_names) {
-    if (inputs_map.find(x_var_name) != inputs_map.end()) {
-      output_node->set_dynamic_input_x(index + 1, *inputs_map.at(x_var_name));
-      lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  auto num = x_var_names.size();
+  auto concat_node = graph->AddNode<ge::op::Concat>(out_var_name);
+  concat_node->set_attr_axis(axis);
+  concat_node->set_attr_N(num);
+  concat_node->create_dynamic_input_x(num);
+  int idx = 1;
+  for (auto& x_var_name : x_var_names) {
+    if (graph->HasNode(x_var_name)) {
+      concat_node->set_dynamic_input_x(idx, *graph->GetNode(x_var_name));
     } else {
-      auto consty = std::make_shared<ge::op::Const>(x_var_name);
-      auto* x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
-      consty->set_attr_value(lite::npu::CvtTensor(x));
-      output_node->set_dynamic_input_x(index + 1, *consty);
-      lite::npu::OpList::Global().add(consty);
+      auto x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
+      auto x_const_node = graph->AddNode(x_var_name, *x);
+      concat_node->set_dynamic_input_x(idx, *x_const_node);
     }
-    index++;
+    idx++;
   }
-  lite::npu::OpList::Global().add(output_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
-  return outputs_map;
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(concat,
-                    paddle::lite::kernels::npu::bridges::ConcatConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         concat,
+                         paddle::lite::subgraph::npu::ConcatConverter);

@@ -29,7 +29,7 @@ class TransposeCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~TransposeCompute() = default;
 
  private:
-  lite::Tensor axes_, dims_;
+  lite::cuda::math::Transpose<float> trans;
 };
 
 }  // namespace cuda

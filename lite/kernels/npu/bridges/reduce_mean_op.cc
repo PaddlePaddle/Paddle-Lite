@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ReduceMeanConverter(
-    const std::shared_ptr<lite::OpLite> reduce_mean_op,
-    const node_map_type& inputs_map) {
-  auto scope = reduce_mean_op->scope();
-  auto op_info = reduce_mean_op->op_info();
+int ReduceMeanConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // get input, and op attributes
+  // Get input and op attributes
   auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Input("Out").front();
   auto x_dims = scope->FindTensor(x_var_name)->dims();
   auto keep_dim = op_info->GetAttr<bool>("keep_dim");
   auto dim = op_info->GetAttr<std::vector<int>>("dim");
-  CHECK(!dim.empty()) << "\"dim\" of reduce_mean should not be empty.";
+  CHECK(!dim.empty()) << "[NPU] \"dim\" of reduce_mean should not be empty.";
   for (size_t i = 0; i < dim.size(); i++) {
     if (dim[i] < 0) {
       dim[i] += x_dims.size();
@@ -43,29 +44,15 @@ node_map_type ReduceMeanConverter(
   }
   std::sort(dim.begin(), dim.end());
 
-  // create reduce_mean(reduce_sum + scale) node and set input node from
-  // inputs_map
-  // creat reduce_sum node
-  auto unique_reduce_sum = lite::npu::UniqueName("reduce_sum");
-  auto reduce_sum_node = std::make_shared<ge::op::ReduceSum>(unique_reduce_sum);
-  CHECK(inputs_map.count(x_var_name));
-  reduce_sum_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(reduce_sum_node);
+  // Create reduce_mean(using reduce_sum + scale) node and set input node from
+  // node map
+  auto reduce_sum_node =
+      graph->AddNode<ge::op::ReduceSum>(out_var_name + "/reducesum");
+  reduce_sum_node->set_input_x(*graph->GetNode(x_var_name));
 
-  auto dim_const_node =
-      std::make_shared<ge::op::Const>(unique_reduce_sum + "/dim");
-  dim_const_node->set_attr_value(lite::npu::CreateTensorAndFillData<int>(dim));
+  auto dim_const_node = graph->AddNode(out_var_name + "/dim", dim);
   reduce_sum_node->set_input_w(*dim_const_node);
-  lite::npu::OpList::Global().add(dim_const_node);
-
   reduce_sum_node->set_attr_keep_dims(keep_dim);
-
-  // create scale node
-  auto unique_scale = lite::npu::UniqueName("scale");
-  auto scale_node = std::make_shared<ge::op::Scale>(unique_scale);
-  scale_node->set_input_x(*reduce_sum_node);
-  lite::npu::OpList::Global().add(scale_node);
 
   float scale = 1;
   for (size_t i = 0; i < dim.size(); i++) {
@@ -88,24 +75,19 @@ node_map_type ReduceMeanConverter(
   }
 
   auto filter_const_node =
-      std::make_shared<ge::op::Const>(unique_scale + "/filter");
-  filter_const_node->set_attr_value(
-      lite::npu::CreateTensorAndFillData(scale, scale_bias_shape));
+      graph->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
+  auto scale_node = graph->AddNode<ge::op::Scale>(out_var_name);
+  scale_node->set_input_x(*reduce_sum_node);
   scale_node->set_input_filter(*filter_const_node);
-  lite::npu::OpList::Global().add(filter_const_node);
-
   scale_node->set_attr_axis(1);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = scale_node;
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(reduce_mean,
-                    paddle::lite::kernels::npu::bridges::ReduceMeanConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         reduce_mean,
+                         paddle::lite::subgraph::npu::ReduceMeanConverter);
