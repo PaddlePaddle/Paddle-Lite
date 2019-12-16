@@ -37,18 +37,37 @@ class DepthwiseConvPE : public PE {
     Tensor* output = param.output;
     int channel = output->shape().channel();
 
-    float* new_scale_data = param_.scale()->data<float>();
-    float* new_bias_data = param_.bias()->data<float>();
-
     float16* b_data = bias_.mutableData<float16>(FP16, param_.bias()->shape());
-    for (int i = 0; i < channel; i++) {
-      b_data[i] = float_to_half(new_bias_data[i]);
+    if (param_.bias()->dataType() == FP32) {
+      float* new_bias_data = param_.bias()->data<float>();
+      // bias从float转换成float16
+      for (int i = 0; i < channel; i++) {
+        b_data[i] = float_to_half(new_bias_data[i]);
+      }
+      bias_.flush();
+    } else {
+      float16* new_bias_data = param_.bias()->data<float16>();
+      memcpy(b_data, new_bias_data, channel * sizeof(float16));
+      bias_.flush();
     }
-    bias_.flush();
 
-    Tensor* quantized_filter = param.quantizedFilter();
-    quantized_filter->mutableData<float16>(FP16, param.filter->shape());
-    format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
+    if (param_.scale()->dataType() == FP32) {
+      float* new_scale_data = param_.scale()->data<float>();
+      Tensor* quantized_filter = param.quantizedFilter();
+      quantized_filter->mutableData<float16>(FP16, param.filter->shape());
+      format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
+
+    } else {
+      // filter 全为1时，且channal为对齐时
+      float16* scale_data = param_.scale()->data<float16>();
+      float16* filter_data = param.quantizedFilter()->mutableData<float16>(
+          FP16, param.filter->shape());
+      // memcpy(filter_data, scale_data, channel * sizeof(float16));
+      memcpy(filter_data,
+             scale_data,
+             param.filter->shape().numel() * sizeof(float16));
+      param.quantizedFilter()->flush();
+    }
 
     DWconvArgs args = {0};
     args.bias_address = b_data;
@@ -61,21 +80,14 @@ class DepthwiseConvPE : public PE {
     args.image.channels = input->shape().channel();
     args.image.height = input->shape().height();
     args.image.width = input->shape().width();
-    auto paddings = *param.paddings;
-    args.image.pad_width = param.paddings[2];
-    args.image.pad_height = param.paddings[0];
+    args.image.pad_width = param.paddings[0];
+    args.image.pad_height = param.paddings[1];
     args.image.scale_address = input->scale();
     args.output.address = output->data<void>();
     args.output.scale_address = output->scale();
     args.out_width = param.output->shape().width();
     args.out_height = param.output->shape().height();
     args.sub_conv_num = 1;
-    bool pad_equal =
-        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-    if (!pad_equal) {
-      LOG(FATA) << "This pad not support ! " << paddings[0] << ", "
-                << paddings[1] << ", " << paddings[2] << ", " << paddings[3];
-    }
     param.args = args;
 
     inplace_.relu_enable = param_.relu.enabled;
