@@ -15,6 +15,7 @@
 #include "lite/kernels/bm/bridges/registry.h"
 #include "bmcompiler_if.h"
 #include "bmcompiler_if_lite.h"
+#include "bmcompiler_defs.h"
 
 namespace paddle {
 namespace lite {
@@ -50,7 +51,6 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
     shape[0] = i_x_shape_data;
     
     auto y_var_name = op_info->Input("Y").front();
-    
     auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
     auto y_dims = y->dims();
     name[1] = static_cast<const char*>(y_var_name.c_str());
@@ -61,7 +61,6 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
         i_y_shape_data[i] = static_cast<int>(y_shape_data[i]);
     }
     shape[1] = i_y_shape_data;
-    
     bool y_is_const = input_nodes.find(y_var_name) == input_nodes.end();
    
     // output
@@ -105,25 +104,25 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
                       coeff);
     } else {
         const float* y_data = const_cast<const float*>(y->mutable_data<float>());
+        const float* x_data = const_cast<const float*>(x->mutable_data<float>());
         bm_add_const_tensor(graph_ctx->bm_compiler_handle,
-                            name[0],
+                            name[1],
                             shape[0],
                             dim[0],
-                            static_cast<bm_data_type_t>(0),
+                            static_cast<bm_data_type_t>(DTYPE_FP32),
                             static_cast<const void*>(y_data));
-                            
-        
+
         add_binary_layer_v2(graph_ctx->bm_compiler_handle,
                           name[0],
                           shape[0],
                           dim[0],
                           0,
-                          nullptr,
-                          name[0],
+                          static_cast<const float*>(x_data),
+                          name[1],
                           shape[0],
                           dim[0],
                           0,
-                          nullptr,
+                          static_cast<const float*>(y_data),
                           static_cast<const char*>(output_var_name.c_str()),
                           0);
     }

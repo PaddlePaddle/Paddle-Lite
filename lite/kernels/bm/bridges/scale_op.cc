@@ -15,6 +15,7 @@
 #include "lite/kernels/bm/bridges/registry.h"
 #include "lite/backends/bm/builder.h"
 #include "bmcompiler_if.h"
+#include "bmcompiler_op_code.h"
 
 namespace paddle {
 namespace lite {
@@ -34,59 +35,48 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
     auto unique_op_name = lite::bm::UniqueName(op_type);
     
     // input
-    const int input_num = 1;
-    int **shape = new int *[input_num];
-    int *dim = new int[input_num];
-    const char **name = new const char *[input_num];
-    
     auto x_var_name = op_info->Input("X").front();
     auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
     auto x_dims = x->dims();
-    name[0] = static_cast<const char*>(x_var_name.c_str());
-    dim[0] = x_dims.size();
     const long int* x_shape_data = const_cast<const long int*>(&x_dims.data()[0]);
     
     int i_x_shape_data[x_dims.size()];
     for (size_t i = 0; i < x_dims.size(); i++) {
         i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
     }
-    shape[0] = i_x_shape_data;
     
     // output
     auto output_var_name = op_info->Output("Out").front();
-    auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
-    auto output_dims = output->dims();
-    const long int* output_shape_data = const_cast<const long int*>(&output_dims.data()[0]);
-    int i_output_shape_data[output_dims.size()];
-    for (size_t i = 0; i < output_dims.size(); i++) {
-        i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
-    }
     
     auto scale = op_info->GetAttr<float>("scale");
     auto bias = op_info->GetAttr<float>("bias");
     auto bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
-    if (bias_after_scale) {
+
+    if (!bias_after_scale) {
         bias *= scale;
     }
-    
-    add_scale_layer(graph_ctx->bm_compiler_handle,
-                    input_num,
-                    shape,
-                    dim,
-                    name,
-                    const_cast<const int*>(i_output_shape_data),
-                    output_dims.size(),
+
+  
+    auto unique_op_scale_name = lite::bm::UniqueName(op_type); 
+    add_const_binary_layer(graph_ctx->bm_compiler_handle,
+                           static_cast<const char*>(x_var_name.c_str()),
+                           const_cast<const int*>(i_x_shape_data),
+                           x_dims.size(),
+                           scale,
+                           static_cast<const char*>(unique_op_scale_name.c_str()),
+                           BINARY_MUL,
+                           0);
+
+
+    add_const_binary_layer(graph_ctx->bm_compiler_handle,
+                    static_cast<const char*>(unique_op_scale_name.c_str()),
+                    const_cast<const int*>(i_x_shape_data),
+                    x_dims.size(),
+                    bias,
                     static_cast<const char*>(output_var_name.c_str()),
-                    static_cast<const char*>(unique_op_name.c_str()),
-                    &scale,
-                    &bias,
-                    1,
-                    1,
+                    BINARY_ADD,
                     0);
 
-    delete [] shape;
-    delete [] dim;
-    delete [] name;
     output_nodes[output_var_name] = output_var_name;
     return output_nodes;
 }

@@ -43,6 +43,8 @@ node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
         i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
     }
     
+    int channel_size = x_dims[1];
+
     auto scale_var_name = op_info->Input("Scale").front();
     auto scale = scope->FindVar(scale_var_name)->GetMutable<lite::Tensor>();
     
@@ -67,32 +69,27 @@ node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
     
     auto epsilon = op_info->GetAttr<float>("epsilon");
     auto unique_bn_out_name = lite::bm::UniqueName("batch_norm_out");
-    
-    add_batchnorm_layer(graph_ctx->bm_compiler_handle,
-                    const_cast<const int*>(i_x_shape_data),
-                    x_dims.size(),
-                    static_cast<const char*>(x_var_name.c_str()),
-                    const_cast<const int*>(i_output_shape_data),
-                    output_dims.size(),
-                    static_cast<const char*>(unique_bn_out_name.c_str()),
-                    static_cast<const char*>(unique_op_name.c_str()),
-                    static_cast<const float*>(mean->mutable_data<float>()),
-                    static_cast<const float*>(variance->mutable_data<float>()),
-                    1.f,
-                    epsilon,
-                    0,
-                    1);
-    
+
+    auto* scale_data = scale->mutable_data<float>();
+    auto* bias_data = bias->mutable_data<float>();
+    auto* mean_data = mean->mutable_data<float>();
+    auto* variance_data = variance->mutable_data<float>();
+ 
+    for (int c = 0; c < channel_size; c++) {
+        float inv_scale = 1.f / (std::sqrt(variance_data[c] + epsilon));
+        bias_data[c] = bias_data[c] - inv_scale * scale_data[c] * mean_data[c];
+        scale_data[c] = inv_scale * scale_data[c];
+    }
+
     const int input_num = 1;
     int **shape = new int *[input_num];
     int *dim = new int[input_num];
     const char **name = new const char *[input_num];
     
-    name[0] = static_cast<const char*>(unique_bn_out_name.c_str());
-    dim[0] = output_dims.size();
-    shape[0] = i_output_shape_data;
+    name[0] = static_cast<const char*>(x_var_name.c_str());
+    dim[0] = x_dims.size();
+    shape[0] = i_x_shape_data;
                         
-    auto unique_scale_name = lite::bm::UniqueName("scale");
     add_scale_layer(graph_ctx->bm_compiler_handle,
         input_num,
         shape,
@@ -101,12 +98,12 @@ node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
         const_cast<const int*>(i_output_shape_data),
         output_dims.size(),
         static_cast<const char*>(output_var_name.c_str()),
-        static_cast<const char*>(unique_scale_name.c_str()),
+        static_cast<const char*>(unique_op_name.c_str()),
         static_cast<const float*>(scale->mutable_data<float>()),
         static_cast<const float*>(bias->mutable_data<float>()),
         1,
         1,
-        0);
+        1);
    
     delete [] shape;
     delete [] name;
