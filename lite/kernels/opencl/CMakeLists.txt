@@ -23,7 +23,7 @@ lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_pool_opencl SRCS pool_compute_test.cc
-        DEPS pool_opencl op_registry program context
+        DEPS pool_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_fc_opencl SRCS fc_compute_test.cc
@@ -45,7 +45,7 @@ lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
 #        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
-        DEPS depthwise_conv2d_opencl op_registry program context
+        DEPS depthwise_conv2d_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_conv2d_1x1_opencl SRCS conv2d_1x1_compute_test.cc
