@@ -48,8 +48,8 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     const std::map<std::string, size_t>& input_image_shape =
         InitImageDimInfoWith(x_dims);
 
-    const unsigned long& input_image_width = input_image_shape.at("width");
-    const unsigned long& input_image_height = input_image_shape.at("height");
+    const int64_t& input_image_width = input_image_shape.at("width");
+    const int64_t& input_image_height = input_image_shape.at("height");
 
     const cl::Image2D* const x_image = x->data<float, cl::Image2D>();
 
