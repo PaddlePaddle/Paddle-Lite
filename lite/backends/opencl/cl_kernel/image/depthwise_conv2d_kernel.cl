@@ -15,7 +15,7 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void depth_conv_3x3(__private const int global_size_dim0,
+__kernel void depth_conv2d_3x3(__private const int global_size_dim0,
                                               __private const int global_size_dim1,
                                               __private const int global_size_dim2,
                                               __read_only image2d_t input,
@@ -172,7 +172,7 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 
 
 
-__kernel void depth_conv_3x3s1(__private const int ou_ch_blk,
+__kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
                                               __private const int ou_w_blk,
                                               __private const int ou_nh,
                                               __read_only image2d_t input,
