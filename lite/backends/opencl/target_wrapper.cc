@@ -24,6 +24,8 @@ static cl_channel_type GetCLChannelType(const PrecisionType type) {
   switch (type) {
     case PRECISION(kFloat):
       return CL_FLOAT;
+    case PRECISION(kFP16):
+      return CL_HALF_FLOAT;
     case PRECISION(kInt32):
       return CL_SIGNED_INT32;
     case PRECISION(kInt8):
@@ -79,11 +81,11 @@ void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
   return cl_image;
 }
 
-template <>
-void *TargetWrapperCL::MallocImage<int8_t>(const size_t cl_image2d_width,
-                                           const size_t cl_image2d_height,
-                                           void *host_ptr) {
-  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt8)));
+template <>  // use int16_t represents half float
+void *TargetWrapperCL::MallocImage<int16_t>(const size_t cl_image2d_width,
+                                            const size_t cl_image2d_height,
+                                            void *host_ptr) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFP16)));
   cl_int status;
   cl::Image2D *cl_image =
       new cl::Image2D(CLRuntime::Global()->context(),

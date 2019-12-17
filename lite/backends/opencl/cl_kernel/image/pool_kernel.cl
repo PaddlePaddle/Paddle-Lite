@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cl_common.h>
-#define MIN_VALUE -FLT_MAX
 
 __kernel void pool_max(__read_only image2d_t input,
     __write_only image2d_t output,

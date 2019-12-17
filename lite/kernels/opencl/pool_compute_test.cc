@@ -73,15 +73,14 @@ void pool_avg(const int padding_height,
   }
 }
 
-TEST(pool2d, compute_buffer) {
+TEST(pool2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
       "pool2d", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
 
   auto kernel = std::move(kernels.front());
-
-  LOG(INFO) << "get kernel";
+  LOG(INFO) << "get kernel:" << kernel->doc();
 
   lite::Tensor x, out;
   operators::PoolParam param;
@@ -143,15 +142,15 @@ TEST(pool2d, compute_buffer) {
   TargetWrapperCL::Unmap(out_data, mapped_out);
 }
 
-TEST(pool2d, compute_image2d) {
+TEST(pool2d_image2d_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
-      "pool2d", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC));
+      "pool2d", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault));
   ASSERT_FALSE(kernels.empty());
 
   auto kernel = std::move(kernels.front());
 
-  LOG(INFO) << "get kernel";
+  LOG(INFO) << "get kernel:" << kernel->doc();
 
   lite::Tensor x, out;
   operators::PoolParam param;
@@ -194,14 +193,14 @@ TEST(pool2d, compute_image2d) {
   default_converter->NCHWToImage(input_v.data(), x_image_data.data(), in_dim);
   auto* x_image = x.mutable_data<float, cl::Image2D>(
       x_image_shape[0], x_image_shape[1], x_image_data.data());
-  LOG(INFO) << "x_image" << x_image;
+  LOG(INFO) << "x_image:" << x_image;
 
   DDim out_image_shape = default_converter->InitImageDimInfoWith(out_dim);
   LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
             << out_image_shape[1];
   auto* out_image = out.mutable_data<float, cl::Image2D>(out_image_shape[0],
                                                          out_image_shape[1]);
-  LOG(INFO) << "out_image" << out_image;
+  LOG(INFO) << "out_image:" << out_image;
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
@@ -241,4 +240,4 @@ TEST(pool2d, compute_image2d) {
 }  // namespace paddle
 
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
-USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNHWC, image2d);
+USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kImageDefault, image2d);
