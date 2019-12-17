@@ -20,6 +20,7 @@ lite_cc_library(mir_passes
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
+      elimination/elementwise_mul_constant_eliminate_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
