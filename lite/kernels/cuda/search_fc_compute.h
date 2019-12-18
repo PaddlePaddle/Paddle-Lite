@@ -14,7 +14,9 @@
 
 #pragma once
 #include <cudnn.h>
+#include <memory>
 #include "lite/backends/cuda/cuda_utils.h"
+#include "lite/backends/cuda/math/gemm.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -34,16 +36,15 @@ template <typename T>
 class SearchFcCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
   using param_t = operators::SearchFcParam;
+  void PrepareForRun() override;
   void Run() override;
   virtual ~SearchFcCompute() = default;
 
  private:
-  bool _flag_trans_weights{false};
+  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};
   int _M;
   int _K;
   int _N;
-  cublasHandle_t _handle;
-  bool _is_continue_buf{true};
 };
 
 }  // namespace cuda
