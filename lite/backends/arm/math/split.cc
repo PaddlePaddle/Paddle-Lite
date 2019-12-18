@@ -70,10 +70,10 @@ void split<float>(const float* din,
     int in_after = in_strides[axis];
     int out_after = out_strides[axis];
 
-    float* din_ptr = reinterpret_cast<float*>(din + input_offset);
+    const float* din_ptr = din + input_offset;
 
     for (int i = 0; i < before; ++i) {
-      std::memcpy(din_ptr, out_data, sizeof(float) * out_after);
+      std::memcpy(out_data, din_ptr, sizeof(float) * out_after);
       din_ptr += in_after;
       out_data += out_after;
     }
