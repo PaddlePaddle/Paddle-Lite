@@ -40,7 +40,7 @@ void concat_func(const std::vector<lite::Tensor *> &input,
   const int out_concat_axis = output->dims()[axis];
   int64_t offset_concat_axis = 0;
   int64_t out_sum = out_concat_axis * concat_input_size;
-  for (int n = 0; n < num; n++) {  // input.size()
+  for (int n = 0; n < num; n++) {
     auto dims = input[n]->dims();
     const float *src_ptr = input[n]->data<float>();
     int64_t in_concat_axis = dims[axis];
