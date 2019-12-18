@@ -13,30 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/types.h"
+
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/fully_connected_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class ScaleCompute
+class MulCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ScaleParam;
+  using param_t = operators::MulParam;
 
   void PrepareForRun() override;
+
   void Run() override;
 
-  virtual ~ScaleCompute() = default;
+  virtual ~MulCompute() = default;
 
  private:
-  zynqmp::ScalePE pe_;
+  zynqmp::FullyConnectedPE pe_;
+  zynqmp::Tensor bias_;
 };
 
 }  // namespace fpga
