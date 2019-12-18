@@ -557,8 +557,7 @@ void conv_3x3s2_depthwise_fp32(const float* i_data,
   const int win_round = ROUNDUP(win_ext, 4);
   const int hin_round = oh * 2 + 1;
   const int prein_size = win_round * hin_round * out_c_block;
-  auto workspace_size =
-      threads * prein_size + win_round /*tmp zero*/ + ow_round /*tmp writer*/;
+  auto workspace_size = threads * prein_size + win_round + ow_round;
   ctx->ExtendWorkspace(sizeof(float) * workspace_size);
 
   bool flag_relu = param.fuse_relu;
