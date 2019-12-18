@@ -525,7 +525,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                               \
   "bne  2b                                    \n"
 
-
 #define MID_RESULT_S2_RELU6                                   \
   "fmax v16.4s, v16.4s, %[vzero].4s            \n" /* relu */ \
                                                               \
@@ -1219,7 +1218,7 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
     cnt_col++;
     size_right_remain -= 8;
   }
-  int cnt_remain = (size_right_remain == 8) ? 4 : (w_out % 4);  //
+  int cnt_remain = (size_right_remain == 8) ? 4 : (w_out % 4);
 
   int size_right_pad = w_out * 2 - w_in;
 

@@ -1546,7 +1546,6 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                  :
                  : "q0", "q1", "q2", "q3", "q15");
 #endif
-
   }
 }
 /*wirte result in outputs
@@ -2228,7 +2227,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
   "bne  1b                                    \n"
 #endif
 /*
-* output result do activation process
+* Data do activation process
 * Now support relu relu6 leakyrelu act
 */
 inline void act_switch_process(float* src,
