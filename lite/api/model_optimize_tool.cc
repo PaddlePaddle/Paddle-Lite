@@ -16,8 +16,8 @@
 #ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest.h>
 #endif
-// "all_kernel_faked.cc" and "kernel_src_map.h" are created automatically during
-// model_optimize_tool's compiling period
+// "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
+// are created automatically during model_optimize_tool's compiling period
 #include "all_kernel_faked.cc"  // NOLINT
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
@@ -27,6 +27,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+#include "supported_kernel_op_info.h"  // NOLINT
 
 DEFINE_string(model_dir,
               "",

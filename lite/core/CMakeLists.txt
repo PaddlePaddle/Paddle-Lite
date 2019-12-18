@@ -95,7 +95,15 @@ add_custom_command(
 add_custom_target(op_list_h DEPENDS ops.h)
 add_custom_target(kernel_list_h DEPENDS kernels.h)
 add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
-
+# create headfile to restore ops info sorted by suppported platforms
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
+  ${kernels_src_list}
+  ${ops_src_list}
+  ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
+  OUTPUT supported_kernel_op_info.h # not a real path to the output to force it execute every time.
+  )
+  add_custom_target(supported_kernel_op_info_h DEPENDS supported_kernel_op_info.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 lite_cc_library(kernel SRCS kernel.cc
         DEPS context type_system target_wrapper any op_params tensor
