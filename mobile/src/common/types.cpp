@@ -134,6 +134,8 @@ const char *G_OP_TYPE_FILL_CONSTAN_BATCH_SIZE_LIKE =
     "fill_constant_batch_size_like";
 const char *G_OP_TYPE_FUSION_INSTANCENORM_RELU = "fusion_instancenorm_relu";
 const char *G_OP_TYPE_PIXEL_SHUFFLE = "pixel_shuffle";
+const char *G_OP_TYPE_EXPAND = "expand";
+const char *G_OP_TYPE_GRID_SAMPLER = "grid_sampler";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -156,7 +158,7 @@ std::unordered_map<
         {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
         {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
-        {G_OP_TYPE_INSTANCENORM, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_INSTANCENORM, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_INSTANCENORM_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
         {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
@@ -258,5 +260,7 @@ std::unordered_map<
          {{"Ids", "Scores"}, {"SentenceIds", "SentenceScores"}}},
         {G_OP_TYPE_FILL_CONSTAN_BATCH_SIZE_LIKE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PAD2D, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_PIXEL_SHUFFLE, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_PIXEL_SHUFFLE, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_EXPAND, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_GRID_SAMPLER, {{"X", "Grid"}, {"Output"}}}};
 }  // namespace paddle_mobile

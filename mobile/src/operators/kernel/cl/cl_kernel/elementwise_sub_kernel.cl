@@ -12,17 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#if defined(INSTANCENORM_OP) || defined(FUSION_INSTANCENORM_RELU_OP)
-
-#pragma once
-
-#include "framework/cl/cl_helper.h"
-#include "operators/op_param.h"
-namespace paddle_mobile {
-namespace operators {
-void InstanceNorm(framework::CLHelper *cl_helper,
-                  const framework::CLImage *input, framework::CLImage *output,
-                  float epsilon);
-}
-}  // namespace paddle_mobile
-#endif
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+__kernel void elementwise_sub(__global image2d_t inputImage, __global image2d_t bias, __write_only image2d_t outputImage) {
+     int x = get_global_id(0);
+     int y = get_global_id(1);
+     const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+     int2 coords;
+     coords.x = x;
+     coords.y = y;
+     half4 input = read_imageh(inputImage, sampler, coords);
+     half4 biase = read_imageh(bias, sampler, coords);
+     half4 output = input - biase;
+     write_imageh(outputImage, coords, output);
+ }

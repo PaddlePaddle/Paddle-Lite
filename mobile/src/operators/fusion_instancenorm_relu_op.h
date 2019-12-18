@@ -45,7 +45,7 @@ class FusionInstanceNormReluMatcher : public framework::FusionOpMatcher {
 template <typename DeviceType, typename T>
 class FusionInstanceNormReluOp
     : public framework::OperatorWithKernel<
-          DeviceType, InstanceNormParam<DeviceType>,
+          DeviceType, FusionInstanceNormReluParam<DeviceType>,
           operators::InstanceNormReluKernel<DeviceType, T>> {
  public:
   FusionInstanceNormReluOp(const string &type, const VariableNameMap &inputs,
@@ -53,7 +53,7 @@ class FusionInstanceNormReluOp
                            const framework::AttributeMap &attrs,
                            framework::Scope *scope)
       : framework::OperatorWithKernel<
-            DeviceType, InstanceNormParam<DeviceType>,
+            DeviceType, FusionInstanceNormReluParam<DeviceType>,
             operators::InstanceNormReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
