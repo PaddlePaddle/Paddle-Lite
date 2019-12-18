@@ -46,7 +46,6 @@ class GRUCompute
   zynqmp::ElementwiseAddPE bias_ew_pe_;
   zynqmp::FullyConnectedPE pre_out_pe_;
   zynqmp::FullyConnectedPE reset_out_pe_;
-  // zynqmp::Tensor input_;
 
   zynqmp::GRUPE pe_;
 };
