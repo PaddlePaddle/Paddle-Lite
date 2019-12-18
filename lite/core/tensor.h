@@ -253,6 +253,9 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
 #ifdef LITE_WITH_OPENCL
 template <>
 const cl::Image2D *TensorLite::data<float, cl::Image2D>() const;
+
+template <>  // use int16_t represent half float
+const cl::Image2D *TensorLite::data<int16_t, cl::Image2D>() const;
 #endif
 
 }  // namespace lite

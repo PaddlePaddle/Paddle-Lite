@@ -141,7 +141,7 @@ REGISTER_LITE_KERNEL(collect_fpn_proposals,
                      kNCHW,
                      paddle::lite::kernels::arm::CollectFpnProposalsCompute,
                      def)
-    .BindInput("MultiLevelRois", {LiteType::GetTensorListTy(TARGET(kARM))})
-    .BindInput("MultiLevelScores", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindInput("MultiLevelRois", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("MultiLevelScores", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("FpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

@@ -526,9 +526,9 @@ void interpolate(lite::Tensor* X,
     }
     auto out_size = OutSize;
     if (out_size != nullptr) {
-      auto out_size_data = get_new_data_from_tensor<float>(out_size);
-      out_height = static_cast<int>(out_size_data[0]);
-      out_width = static_cast<int>(out_size_data[1]);
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_height = out_size_data[0];
+      out_width = out_size_data[1];
     }
   }
   float height_scale = scale;
