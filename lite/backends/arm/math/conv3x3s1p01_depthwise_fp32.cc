@@ -4213,14 +4213,6 @@ void conv_depthwise_3x3s1p0_bias_s(float *dout,
       float32x4_t wr1 = vld1q_f32(weight_ptr + 3);
       float32x4_t wr2 = vld1q_f32(weight_ptr + 6);
 
-      // #ifdef __aarch64__
-      //       float32x4_t wbias;
-      //       if (flag_bias) {
-      //         wbias = vdupq_n_f32(bias[i]);
-      //       } else {
-      //         wbias = vdupq_n_f32(0.f);
-      //       }
-      // #endif  // __aarch64__
       float32x4_t wbias;
       float bias_val = 0.f;
       if (flag_bias) {
