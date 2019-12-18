@@ -59,6 +59,8 @@ namespace arm {
 template <>
 void NCHWToNHWCCompute<PRECISION(kFloat)>::Run() {
   NCHWTONHWC(float);
+  // auto& param = this->template Param<param_t>();
+  // param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
 }
 
 template <>
@@ -69,6 +71,9 @@ void NCHWToNHWCCompute<PRECISION(kInt8)>::Run() {
 template <>
 void NHWCToNCHWCompute<PRECISION(kFloat)>::Run() {
   NHWCTONCHW(float);
+  // auto& param = this->template Param<param_t>();
+  // param.y->mutable_data<float>();
+  // param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
 }
 
 template <>

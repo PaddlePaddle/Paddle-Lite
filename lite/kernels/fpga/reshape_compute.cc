@@ -46,8 +46,39 @@ void ReshapeCompute::Run() {
   } else {
     output->CopyDataFrom(*x);
   }
+
+  param.x->ZynqTensor()->saveToFile("reshape_in", true);
+  output->ZynqTensor()->saveToFile("reshape_out", true);
+
   output->Resize(output_dims);
 }
+
+// void ReshapeComputeFpgaToHost::Run() {
+//   auto& param = Param<operators::ReshapeParam>();
+//   param.output->mutable_data<float>();
+//   auto x = param.x;
+//   // auto actual_shape = param.actual_shape;
+//   Tensor* actual_shape = nullptr;  // TODO(chonwhite) change it.
+//   auto output = param.output;
+//   bool inplace = param.inplace;
+//   auto x_dims = x->dims();
+//   auto output_dims = output->dims();
+//   if (actual_shape) {
+//     auto actual_shape_dims = actual_shape->dims();
+//     auto* actual_shape_data = actual_shape->data<int>();
+//     auto shape = std::vector<int>(
+//         actual_shape_data, actual_shape_data +
+//         actual_shape_dims.production());
+//     output_dims = lite::operators::ValidateShape(shape, x_dims);
+//     output->Resize(output_dims);
+//   }
+//   if (inplace) {
+//     output->ShareDataWith(*x);
+//   } else {
+//     output->CopyDataFrom(*x);
+//   }
+//   output->Resize(output_dims);
+// }
 
 }  // namespace fpga
 }  // namespace kernels

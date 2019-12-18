@@ -118,6 +118,9 @@ class IoCopyFpgaToHostCompute
     param.y->ZynqTensor()->flush();
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
+
+    // param.x->ZynqTensor()->saveToFile("io_x", true);
+    // param.y->ZynqTensor()->saveToFile("io_y", true);
   }
 
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
@@ -142,6 +145,21 @@ REGISTER_LITE_KERNEL(io_copy,
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
+                     host_to_device_any_any)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,

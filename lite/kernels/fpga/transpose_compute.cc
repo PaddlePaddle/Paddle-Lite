@@ -27,6 +27,62 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
+void transposeCompute(operators::TransposeParam param) {
+  // copy from;
+  const auto* input_x = param.x;
+  const auto input_x_dims = input_x->dims();
+  input_x->ZynqTensor()->invalidate();
+  input_x->ZynqTensor()->unalignImage();
+
+  Tensor float_input;
+  float_input.Resize(input_x_dims);
+  float_input.mutable_data<float>();
+  float_input.ZynqTensor()->copyFrom(input_x->ZynqTensor());
+
+  // const auto* input_x_data = input_x->data<float>();
+  const auto* input_x_data = float_input.data<float>();
+
+  // auto& param = this->Param<param_t>();
+
+  auto* out = param.output;
+  const auto axis = param.axis;
+
+  auto* out_data = out->mutable_data<float>();
+
+  size_t ndim = axis.size();
+  std::vector<int> xdim(ndim);
+  std::vector<int> xstride(ndim);
+  std::vector<int> xout(ndim);
+  for (int i = 0; i < ndim; i++) {
+    int j = ndim - 1 - i;
+    xdim[j] = input_x_dims[axis[i]];
+    xstride[j] = 1;
+    for (int k = axis[i] + 1; k < ndim; k++) {
+      xstride[j] *= input_x_dims[k];
+    }
+    xout[j] = xstride[j] * xdim[j];
+  }
+
+  auto numel = input_x->numel();
+  size_t pind = 0;
+  std::vector<int> ind(ndim);
+  for (int i = 0; i < numel; i++) {
+    out_data[i] = input_x_data[pind];
+    ind[0]++;
+    pind += xstride[0];
+    for (int j = 0; j < ndim - 1; j++) {
+      if (ind[j] == xdim[j]) {
+        ind[j + 1]++;
+        ind[j] = 0;
+        pind += xstride[j + 1];
+        pind -= xout[j];
+      } else {
+        break;
+      }
+    }
+  }
+}
+
 // Transpose
 void TransposeCompute::Run() {
   auto& param = this->Param<param_t>();
@@ -40,7 +96,7 @@ void Transpose2Compute::Run() {
   param.x->ZynqTensor()->invalidate();
   param.x->ZynqTensor()->unalignImage();
   if (param.x->dims().size() != 4) {
-    // TransposeCompute<float>(param);
+    transposeCompute(param);
     // auto out = param.Out();
     // auto out_data = out->data<half>();
 
@@ -54,6 +110,8 @@ void Transpose2Compute::Run() {
     //     index++;
     //   }
     // }
+
+    // param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
   } else {
     param.x->ZynqTensor()->saveToFile("tx", true);
     param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
