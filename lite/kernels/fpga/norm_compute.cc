@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/fc_compute.h"
+#include "lite/kernels/fpga/norm_compute.h"
 #include "lite/backends/fpga/KD/debugger.hpp"
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
@@ -24,27 +22,24 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void FcCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+void NormCompute::PrepareForRun() {
+  auto& param = this->Param<operators::NormParam>();
+  param.Out->mutable_data<float16>();
 
-  // ====================================================
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-
-  param.output->mutable_data<float16>();
-  fc_param.input = param.input->ZynqTensor();
-  fc_param.output = param.output->ZynqTensor();
-  fc_param.filter = param.w->ZynqTensor();
-  fc_param.bias = param.bias->ZynqTensor();
+  zynqmp::NormParam& norm_param = pe_.param();
+  norm_param.input = param.X->ZynqTensor();
+  norm_param.output = param.Out->ZynqTensor();
+  norm_param.epsilon = param.epsilon;
 
   pe_.init();
   pe_.apply();
 }
 
-void FcCompute::Run() {
+void NormCompute::Run() {
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  Debugger::get_instance().registerOutput("fc", fc_param.output);
+  zynqmp::NormParam& norm_param = pe_.param();
+  Debugger::get_instance().registerOutput("norm", norm_param.output);
 #endif
 }
 
@@ -54,13 +49,15 @@ void FcCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
-    .BindInput("Input",
+    norm, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::NormCompute, def)
+    .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Norm",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

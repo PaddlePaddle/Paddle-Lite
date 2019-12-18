@@ -37,10 +37,6 @@ class FcCompute
 
  private:
   zynqmp::FullyConnectedPE pe_;
-  zynqmp::Tensor input_;
-  zynqmp::Tensor output_;
-  zynqmp::Tensor filter_;
-  zynqmp::Tensor bias_;
 };
 
 }  // namespace fpga

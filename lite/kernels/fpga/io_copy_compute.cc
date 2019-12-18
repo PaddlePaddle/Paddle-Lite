@@ -45,7 +45,23 @@ class IoCopyHostToFpgaCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    param.y->CopyDataFrom(*param.x);
+    param.y->mutable_data<float16>();
+    if (param.x->ZynqTensor()->aligned() &&
+        param.x->ZynqTensor()->shape().shouldAlign()) {
+      zynqmp::Tensor tempTensor;
+      tempTensor.mutableData<float16>(zynqmp::FP16,
+                                      param.x->ZynqTensor()->shape());
+      tempTensor.copyFrom(param.x->ZynqTensor());
+      tempTensor.setAligned(true);
+      tempTensor.unalignImage();
+      param.y->ZynqTensor()->copyFrom(&tempTensor);
+    } else {
+      param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+    }
+    param.y->ZynqTensor()->invalidate();
+    param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+    auto out_lod = param.y->mutable_lod();
+    *out_lod = param.x->lod();
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -81,7 +97,30 @@ class IoCopyFpgaToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    param.y->CopyDataFrom(*param.x);
+
+    param.y->mutable_data<float>();
+    param.y->ZynqTensor()->setDataType(zynqmp::FP32);
+    param.x->ZynqTensor()->syncToDevice();
+
+    if (param.x->ZynqTensor()->aligned() &&
+        param.x->ZynqTensor()->shape().shouldAlign()) {
+      zynqmp::Tensor tempTensor;
+      tempTensor.mutableData<float16>(zynqmp::FP16,
+                                      param.x->ZynqTensor()->shape());
+      tempTensor.copyFrom(param.x->ZynqTensor());
+      tempTensor.setAligned(true);
+      tempTensor.unalignImage();
+      param.y->ZynqTensor()->copyFrom(&tempTensor);
+    } else {
+      param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+    }
+    param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+    param.y->ZynqTensor()->flush();
+    auto out_lod = param.y->mutable_lod();
+    *out_lod = param.x->lod();
+
+    // param.x->ZynqTensor()->saveToFile("io_x", true);
+    // param.y->ZynqTensor()->saveToFile("io_y", true);
   }
 
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
@@ -100,12 +139,27 @@ REGISTER_LITE_KERNEL(io_copy,
                      host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
+                     host_to_device_any_any)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -119,9 +173,25 @@ REGISTER_LITE_KERNEL(io_copy,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
+                     device_to_host_22)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -132,12 +202,12 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      host_to_device_once)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -148,8 +218,8 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      device_to_host_once)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kAny),
