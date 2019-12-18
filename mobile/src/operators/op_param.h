@@ -927,6 +927,35 @@ class InstanceNormParam : public OpParam {
                     Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
+    output_y_ = OutputYFrom<GType>(outputs, *scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *OutputY() const { return output_y_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+ private:
+  GType *input_x_;
+  GType *output_y_;
+  float epsilon_;
+};
+#endif
+
+#ifdef FUSION_INSTANCENORM_RELU_OP
+template <typename Dtype>
+class FusionInstanceNormReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionInstanceNormReluParam(const VariableNameMap &inputs,
+                              const VariableNameMap &outputs,
+                              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
   }
@@ -3655,6 +3684,57 @@ class PixelShuffleParam : public OpParam {
   GType *input_x_;
   GType *out_;
   int upscale_factor_;
+};
+#endif
+
+#ifdef EXPAND_OP
+template <typename Dtype>
+class ExpandParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ExpandParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    expand_times_ = GetAttr<std::vector<int>>("expand_times", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+  std::vector<int> expand_times_;
+};
+#endif
+
+#ifdef GRID_SAMPLER_OP
+template <typename Dtype>
+class GridSamplerParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  GridSamplerParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    output_ = OutputFrom<GType>(outputs, *scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Output() const { return output_; }
+
+ private:
+  GType *input_x_;
+  GType *output_;
 };
 #endif
 
