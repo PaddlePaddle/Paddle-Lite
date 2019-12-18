@@ -128,6 +128,34 @@ class ConvOpLite : public OpLite {
     return true;
   }
 
+  // update padding dilation
+  void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                                std::vector<int>* dilations,
+                                const std::vector<int>& strides,
+                                const std::string padding_algorithm,
+                                const lite::DDim data_dims,
+                                const lite::DDim& ksize) {
+    // when padding_desc is "VALID" or "SAME"
+    if (padding_algorithm == "SAME") {
+      for (size_t i = 0; i < strides.size(); ++i) {
+        int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
+        int pad_sum = std::max(
+            (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
+            (int64_t)0);
+        int pad_0 = pad_sum / 2;
+        int pad_1 = pad_sum - pad_0;
+        // pad
+        *(paddings->begin() + i * 2) = pad_0;
+        *(paddings->begin() + i * 2 + 1) = pad_1;
+        // dilation
+        *(dilations->begin() + i) = 1;
+      }
+    } else if (padding_algorithm == "VALID") {
+      for (auto& it : *paddings) {
+        it = 0;
+      }
+    }
+  }
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "conv2d"; }
