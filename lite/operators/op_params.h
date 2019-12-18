@@ -1094,6 +1094,16 @@ struct CollectFpnProposalsParam {
   int post_nms_topN{};
 };
 
+struct DistributeFpnProposalsParam {
+  const lite::Tensor* fpn_rois{};
+  std::vector<lite::Tensor*> multi_fpn_rois{};
+  lite::Tensor* restore_index{};
+  int min_level{};
+  int max_level{};
+  int refer_level{};
+  int refer_scale{};
+};
+
 /// --------------------- instance_norm operators --------------------
 struct InstanceNormParam {
   lite::Tensor* x{};
