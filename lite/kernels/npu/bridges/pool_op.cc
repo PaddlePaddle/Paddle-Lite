@@ -13,30 +13,29 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
-                            const node_map_type& inputs_map) {
-  auto scope = pool_op->scope();
-  auto op_info = pool_op->op_info();
+int PoolConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Pooling> pool_node =
-      std::make_shared<ge::op::Pooling>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindTensor(x_var_name);
-  pool_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(pool_node);
+  auto out_var_name = op_info->Output("Out").front();
+  auto pool_node = graph->AddNode<ge::op::Pooling>(out_var_name);
+  pool_node->set_input_x(*graph->GetNode(x_var_name));
 
   int mode = 0;
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
@@ -47,7 +46,8 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
     CHECK(op_info->GetAttr<bool>("exclusive"))
         << "[NPU] exclusive must be true in HiAI DDK";
   } else {
-    LOG(FATAL) << "[NPU] Unsupported pooling type: " << pooling_type;
+    LOG(WARNING) << "[NPU] Unsupported pooling type: " << pooling_type;
+    return FAILED;
   }
   pool_node->set_attr_mode(mode);
 
@@ -67,8 +67,8 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
   pool_node->set_attr_global_pooling(global_pooling);
 
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
-  auto window = ge::AttrValue::LIST_INT(ksize.begin(), ksize.end());
-  pool_node->set_attr_window(window);
+  pool_node->set_attr_window(
+      ge::AttrValue::LIST_INT(ksize.begin(), ksize.end()));
 
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   if (paddings.size() == 2L) {
@@ -78,42 +78,38 @@ node_map_type PoolConverter(const std::shared_ptr<lite::OpLite> pool_op,
     }
   }
   CHECK_EQ(paddings.size(), 4L)
-      << "Paddings size should be the same or twice as the inputs size.";
+      << "[NPU] Paddings size should be the same or twice as the inputs size.";
   bool adaptive = false;
   if (op_info->HasAttr("adaptive")) {
     adaptive = op_info->GetAttr<bool>("adaptive");
   }
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
-  operators::UpdatePadding(&paddings,
-                           global_pooling,
-                           adaptive,
-                           padding_algorithm,
-                           x->dims(),
-                           strides,
-                           ksize);
-  auto npu_pad = ge::AttrValue::LIST_INT{
-      paddings[0], paddings[1], paddings[2], paddings[3]};
-  pool_node->set_attr_pad(npu_pad);
-
-  auto npu_stride = ge::AttrValue::LIST_INT(strides.begin(), strides.end());
-  pool_node->set_attr_stride(npu_stride);
+  lite::operators::UpdatePadding(&paddings,
+                                 global_pooling,
+                                 adaptive,
+                                 padding_algorithm,
+                                 x->dims(),
+                                 strides,
+                                 ksize);
+  pool_node->set_attr_pad(ge::AttrValue::LIST_INT{
+      paddings[0], paddings[1], paddings[2], paddings[3]});
+  pool_node->set_attr_stride(
+      ge::AttrValue::LIST_INT(strides.begin(), strides.end()));
 
   int ceil_mode = 0;
   if (op_info->HasAttr("ceil_mode")) {
     ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
   }
   pool_node->set_attr_ceil_mode(ceil_mode);
-  // output_node->set_attr_data_mode(npu_data_mode);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = pool_node;
-  return outputs_map;
+  // pool_node->set_attr_data_mode(data_mode);
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(pool2d, paddle::lite::kernels::npu::bridges::PoolConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         pool2d,
+                         paddle::lite::subgraph::npu::PoolConverter);

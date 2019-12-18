@@ -48,7 +48,7 @@ add_operator(io_copy_once_op basic SRCS io_copy_once_op.cc DEPS io_copy_op ${op_
 add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
 add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
-add_operator(graph_op basic SRCS graph_op.cc DEPS ${op_DEPS})
+add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
@@ -106,7 +106,6 @@ add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_v2_op extra SRCS lookup_table_v2_op.cc DEPS ${op_DEPS})
 add_operator(beam_search_decode_op extra SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
-add_operator(graph_op_lite extra SRCS graph_op.cc DEPS ${op_DEPS})
 add_operator(logical_xor  extra SRCS logical_op.cc DEPS ${op_DEPS})
 add_operator(logical_and  extra SRCS logical_op.cc DEPS ${op_DEPS})
 add_operator(logical_or  extra SRCS logical_op.cc DEPS ${op_DEPS})

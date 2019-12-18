@@ -17,25 +17,38 @@
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace npu {
-namespace bridges {
+namespace subgraph {
 
-Factory& Factory::Instance() {
-  static Factory g_npu_bridge;
-  return g_npu_bridge;
+Registry& Registry::Instance() {
+  static Registry x;
+  return x;
 }
 
-bool Factory::HasType(const std::string& op_type) const {
-  return map_.count(op_type);
+void Registry::Insert(const std::string& dev_type,
+                      const std::string& op_type,
+                      const cvt_func_type& cvt_func_name) {
+  auto it = map_.find(dev_type);
+  if (it == map_.end()) {
+    map_.insert(std::make_pair(
+        dev_type, std::unordered_map<std::string, cvt_func_type>()));
+  }
+  map_.at(dev_type).insert(std::make_pair(op_type, cvt_func_name));
 }
 
-void Factory::Insert(const std::string& op_type, const func_type& func_name) {
-  map_.insert(std::make_pair(op_type, func_name));
+const cvt_func_type& Registry::Select(const std::string& dev_type,
+                                      const std::string& op_type) const {
+  return map_.at(dev_type).at(op_type);
 }
 
-}  // namespace bridges
-}  // namespace npu
-}  // namespace kernels
+bool Registry::Exists(const std::string& dev_type,
+                      const std::string& op_type) const {
+  bool found = map_.find(dev_type) != map_.end();
+  if (found) {
+    found = map_.at(dev_type).find(op_type) != map_.at(dev_type).end();
+  }
+  return found;
+}
+
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

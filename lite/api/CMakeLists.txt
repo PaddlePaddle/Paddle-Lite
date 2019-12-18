@@ -21,24 +21,24 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
     endif()
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
-    endif(LITE_WITH_CUDA) 
-    
+    endif(LITE_WITH_CUDA)
+
     #light api dynamic library
     if (LITE_WITH_CV)
         lite_cc_library(paddle_light_api_shared MODULE
         SRCS light_api_shared.cc
         DEPS ${light_lib_DEPS}
-        ARM_DEPS ${arm_kernels} 
+        ARM_DEPS ${arm_kernels}
         ARM_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels})
     else()
         lite_cc_library(paddle_light_api_shared MODULE
         SRCS light_api_shared.cc
         DEPS ${light_lib_DEPS}
-        ARM_DEPS ${arm_kernels} 
+        ARM_DEPS ${arm_kernels}
         NPU_DEPS ${npu_kernels})
     endif(LITE_WITH_CV)
-    
+
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
     if (LITE_WITH_NPU)
         # Strips the symbols of our protobuf functions to fix the conflicts during
@@ -54,7 +54,7 @@ else()
        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
-            target_link_libraries(paddle_light_api_shared ${npu_runtime_libs})
+            target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
         endif()
     endif()
 endif()
@@ -303,7 +303,7 @@ if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
 endif()
 
-if (LITE_WITH_PYTHON) 
+if (LITE_WITH_PYTHON)
     add_subdirectory(python)
 endif()
 
