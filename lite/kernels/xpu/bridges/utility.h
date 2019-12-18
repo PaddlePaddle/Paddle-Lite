@@ -47,6 +47,9 @@ std::shared_ptr<xtcl::xNDArray> CvtTensor(
     PrecisionType in_ptype = PRECISION(kFloat),
     DataLayoutType in_ltype = DATALAYOUT(kNCHW));
 
+xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const std::vector<int64_t>& input);
+xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const DDim& input);
+
 }  // namespace xpu
 }  // namespace subgraph
 }  // namespace lite

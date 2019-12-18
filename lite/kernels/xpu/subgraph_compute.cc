@@ -61,8 +61,12 @@ int SubgraphEngine::BuildDeviceProgram() {
   // runtime
   std::vector<xtcl::xExpr*> output_nodes;
   for (auto& output_name : output_names_) {
-    output_nodes.push_back(graph.GetNode(output_name).get());
+    if (graph.HasNode(output_name)) {
+      output_nodes.push_back(graph.GetNode(output_name).get());
+      valid_output_names_.push_back(output_name);
+    }
   }
+  CHECK(!valid_output_names_.empty()) << "[XPU] no valid output names";
   device_program_ = lite::xpu::Device::Global().Build(
       &graph.builder_, &graph.params_, &output_nodes);
   if (device_program_ == nullptr) {
@@ -113,7 +117,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
   device_program_->Run();
   VLOG(3) << "[XPU] Process cost " << GetCurrentUS() - start_time << " us";
   // Copy the data of output XPU tensor to the buffer of origin output tensors
-  for (size_t i = 0; i < output_names_.size(); i++) {
+  for (size_t i = 0; i < valid_output_names_.size(); i++) {
     auto output_ndarray = device_program_->GetOutput(i);
     std::memcpy(origin_otensors_[i]->mutable_data<float>(),
                 static_cast<float*>(output_ndarray.ToDLPack()->dl_tensor.data),
