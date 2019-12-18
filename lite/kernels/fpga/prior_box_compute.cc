@@ -78,7 +78,6 @@ void PriorBoxCompute::PrepareForRun() {
 
   param.boxes->mutable_data<float>();
   param.variances->mutable_data<float>();
-  // ====================================================
   zynqmp::PriorBoxParam& priobox_param = pe_.param();
   priobox_param.input = param.input->ZynqTensor();
   priobox_param.image = param.image->ZynqTensor();
@@ -132,19 +131,3 @@ REGISTER_LITE_KERNEL(prior_box,
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-
-// REGISTER_LITE_KERNEL(prior_box,
-//                      kFPGA,
-//                      kFP16,
-//                      kNHWC,
-//                      paddle::lite::kernels::fpga::PriorBoxCompute,
-//                      def)
-//     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kFPGA),
-//                                       PRECISION(kFP16),
-//                                       DATALAYOUT(kNHWC))})
-//     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kFPGA),
-//                                       PRECISION(kFP16),
-//                                       DATALAYOUT(kNHWC))})
-//     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
-//     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
-//     .Finalize();

@@ -118,9 +118,6 @@ class IoCopyFpgaToHostCompute
     param.y->ZynqTensor()->flush();
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
-
-    // param.x->ZynqTensor()->saveToFile("io_x", true);
-    // param.y->ZynqTensor()->saveToFile("io_y", true);
   }
 
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }

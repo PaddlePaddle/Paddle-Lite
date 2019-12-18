@@ -39,10 +39,7 @@ void transposeCompute(operators::TransposeParam param) {
   float_input.mutable_data<float>();
   float_input.ZynqTensor()->copyFrom(input_x->ZynqTensor());
 
-  // const auto* input_x_data = input_x->data<float>();
   const auto* input_x_data = float_input.data<float>();
-
-  // auto& param = this->Param<param_t>();
 
   auto* out = param.output;
   const auto axis = param.axis;
@@ -84,10 +81,7 @@ void transposeCompute(operators::TransposeParam param) {
 }
 
 // Transpose
-void TransposeCompute::Run() {
-  auto& param = this->Param<param_t>();
-  // param.output->mutable_data<float16>();
-}
+void TransposeCompute::Run() { auto& param = this->Param<param_t>(); }
 
 // Transpose2
 void Transpose2Compute::Run() {
@@ -97,25 +91,8 @@ void Transpose2Compute::Run() {
   param.x->ZynqTensor()->unalignImage();
   if (param.x->dims().size() != 4) {
     transposeCompute(param);
-    // auto out = param.Out();
-    // auto out_data = out->data<half>();
-
-    //   int num = input_x_dims[1];
-    // int channel = input_x_dims[2];
-
-    // int index = 0;
-    // for (int n = 0; n < num; n++) {
-    //   for (int c = 0; c < channel; c++) {
-    //     out_data[c * num + n] = input_x_data[n * channel + c];
-    //     index++;
-    //   }
-    // }
-
-    // param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
   } else {
-    param.x->ZynqTensor()->saveToFile("tx", true);
     param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
-    param.output->ZynqTensor()->saveToFile("to", true);
   }
 }
 

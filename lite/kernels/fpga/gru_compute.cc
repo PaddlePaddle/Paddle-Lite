@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <unistd.h>
-// #include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -84,7 +83,6 @@ void GRUCompute::PrepareForRun() {
 void GRUCompute::Run() {
   auto& param = this->Param<param_t>();
   param.hidden->mutable_data<float>();
-  // auto& ctx = this->ctx_->template As<ARMContext>();
   // inputs
   auto input = param.input;
   auto h0 = param.h0;
@@ -106,8 +104,6 @@ void GRUCompute::Run() {
   lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);  // 1.
 
-  save_tensor(batch_gate, "_batch_gate.txt");
-
   if (bias) {
     auto bias_data = bias->data<float>();  // 2.
     lite::arm::math::gru_add_with_bias(batch_gate_data,
@@ -115,9 +111,6 @@ void GRUCompute::Run() {
                                        batch_gate_data,
                                        batch_size,
                                        frame_size * 3);
-    // save_tensor(const_cast<Tensor*>(bias), "_bias.txt");
-    save_tensor(batch_gate, "_after_bias.txt");
-    std::cout << "================= bias =================\n";
   }
 
   zynqmp::GRUTensors gru_tensors;
@@ -137,7 +130,6 @@ void GRUCompute::Run() {
     // //3.
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
     gru_tensors.pre_output = ordered_h0.ZynqTensor();
-    std::cout << "================= h0 =================\n";
   } else {
     gru_value.prev_out_value = nullptr;
     gru_tensors.pre_output = nullptr;
@@ -152,9 +144,6 @@ void GRUCompute::Run() {
 
   zynqmp::Tensor float_input;
   zynqmp::Tensor hidden_out;
-
-  std::cout << "seq_len::" << seq_len << std::endl;
-  // exit(-1);
 
   for (size_t n = 0; n < seq_len; n++) {
     int bstart = static_cast<int>(batch_starts[n]);
@@ -180,9 +169,6 @@ void GRUCompute::Run() {
 
     float* hidden_data =
         hidden_out.mutableData<float>(zynqmp::FP32, float_input_shape);
-    // memcpy(hidden_prev_data, )
-
-    // zynqmp::Tensor* gate = pe_.gate();
     gru_tensors.gate = &float_input;
     gru_tensors.output = &hidden_out;
 
@@ -196,7 +182,6 @@ void GRUCompute::Run() {
     // TODO(chonwhite): copy data back to original tensor;
 
     gru_tensors.pre_output = gru_tensors.output;
-    // gru_value.prev_out_value = gru_value.output_value;
   }
   lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;  // 5.
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
