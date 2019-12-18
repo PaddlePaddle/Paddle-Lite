@@ -12,59 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ArgmaxConverter(const std::shared_ptr<lite::OpLite> argmax_op,
-                              const node_map_type& inputs_map) {
-  auto scope = argmax_op->scope();
-  auto op_info = argmax_op->op_info();
+int ArgmaxConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
-
-  int axis = op_info->GetAttr<int64_t>("axis");
-
-  std::shared_ptr<ge::op::ArgMax> argmax_node =
-      std::make_shared<ge::op::ArgMax>(unique_op_type);
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Output("Out").front();
+  int axis = op_info->GetAttr<int64_t>("axis");
 
-  CHECK(inputs_map.count(x_var_name));
-  argmax_node->set_input_x1(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(argmax_node);
+  auto argmax_node = graph->AddNode<ge::op::ArgMax>(out_var_name);
+  argmax_node->set_input_x1(*graph->GetNode(x_var_name));
 
-  Tensor x2_t;
-  x2_t.Resize(std::vector<int64_t>{1});
-  auto x2_t_data = x2_t.mutable_data<int>();
-  x2_t_data[0] = axis;
-
-  auto x2 = std::make_shared<ge::op::Const>(unique_op_type + "/axis");
-  x2->set_attr_value(lite::npu::CvtTensor(&x2_t));
+  auto x2 = graph->AddNode(out_var_name + "/axis", axis);
   argmax_node->set_input_x2(*x2);
-  lite::npu::OpList::Global().add(x2);
-
-  //  argmax_node->set_attr_axis(axis);
-  // argmax only support output_type==int32
-  // argmax_node->set_attr_output_type(3);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = argmax_node;
-  return outputs_map;
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(arg_max,
-                    paddle::lite::kernels::npu::bridges::ArgmaxConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         arg_max,
+                         paddle::lite::subgraph::npu::ArgmaxConverter);

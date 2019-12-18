@@ -1546,6 +1546,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                  :
                  : "q0", "q1", "q2", "q3", "q15");
 #endif
+
   }
 }
 /*wirte result in outputs

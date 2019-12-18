@@ -30,7 +30,7 @@ else()
     add_dependencies(paddle_lite_jni op_list_h kernel_list_h)
     if (LITE_WITH_NPU)
         # Need to add HIAI runtime libs (libhiai.so) dependency
-        target_link_libraries(paddle_lite_jni ${npu_runtime_libs})
+        target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
     endif()
 endif()
 

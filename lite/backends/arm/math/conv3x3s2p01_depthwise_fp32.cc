@@ -525,6 +525,7 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                               \
   "bne  2b                                    \n"
 
+
 #define MID_RESULT_S2_RELU6                                   \
   "fmax v16.4s, v16.4s, %[vzero].4s            \n" /* relu */ \
                                                               \

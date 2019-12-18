@@ -12,53 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type UnsqueezeConverter(
-    const std::shared_ptr<lite::OpLite> unsqueeze_op,
-    const node_map_type& inputs_map) {
-  auto scope = unsqueeze_op->scope();
-  auto op_info = unsqueeze_op->op_info();
+int UnsqueezeConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
-
-  std::shared_ptr<ge::op::Reshape> unsqueeze_node =
-      std::make_shared<ge::op::Reshape>(unique_op_type);
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " << op_type << "... ";
 
   auto x_var_name = op_info->Input("X").front();
-  CHECK(inputs_map.count(x_var_name));
-  unsqueeze_node->set_input_tensor(*inputs_map.at(x_var_name));
-
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(unsqueeze_node);
-
-  CHECK(op_info->HasAttr("axes"))
-      << "[NPU] unsqueeze not support axes from tensor now";
   auto out_var_name = op_info->Output("Out").front();
   auto out_shape = scope->FindTensor(out_var_name)->dims().Vectorize();
+  CHECK(op_info->HasAttr("axes"))
+      << "[NPU] unsqueeze not support axes from tensor now";
+
+  auto unsqueeze_node = graph->AddNode<ge::op::Reshape>(out_var_name);
+  unsqueeze_node->set_input_tensor(*graph->GetNode(x_var_name));
   unsqueeze_node->set_attr_shape(
       ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = unsqueeze_node;
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(unsqueeze,
-                    paddle::lite::kernels::npu::bridges::UnsqueezeConverter);
-REGISTER_NPU_BRIDGE(unsqueeze2,
-                    paddle::lite::kernels::npu::bridges::UnsqueezeConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         unsqueeze,
+                         paddle::lite::subgraph::npu::UnsqueezeConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         unsqueeze2,
+                         paddle::lite::subgraph::npu::UnsqueezeConverter);
