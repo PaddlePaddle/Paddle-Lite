@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
-#include <math.h>
 #include "operators/kernel/elementwise_add_relu_kernel.h"
+#include <math.h>
 
 namespace paddle_mobile {
 namespace operators {
@@ -63,14 +63,14 @@ void ComputeCPUEWAddRelu(fpga::EWAddArgs ewaddArgs) {
   int inputh = ewaddArgs.image0.height;
   int inputw = ewaddArgs.image0.width;
   float inScale0 =
-          (reinterpret_cast<float*>(ewaddArgs.image0.scale_address))[0];
+      (reinterpret_cast<float *>(ewaddArgs.image0.scale_address))[0];
   float inScale1 =
-          (reinterpret_cast<float*>(ewaddArgs.image1.scale_address))[0];
+      (reinterpret_cast<float *>(ewaddArgs.image1.scale_address))[0];
   float outScale =
-          (reinterpret_cast<float*>(ewaddArgs.output.scale_address))[0];
-  int8_t* inPtr0 = reinterpret_cast<int8_t*>(ewaddArgs.image0.address);
-  int8_t* inPtr1 = reinterpret_cast<int8_t*>(ewaddArgs.image1.address);
-  int8_t* outPtr = reinterpret_cast<int8_t*>(ewaddArgs.output.address);
+      (reinterpret_cast<float *>(ewaddArgs.output.scale_address))[0];
+  int8_t *inPtr0 = reinterpret_cast<int8_t *>(ewaddArgs.image0.address);
+  int8_t *inPtr1 = reinterpret_cast<int8_t *>(ewaddArgs.image1.address);
+  int8_t *outPtr = reinterpret_cast<int8_t *>(ewaddArgs.output.address);
   int datasize = inputc * inputh * inputw;
   float const0 = inScale0 / outScale;
   float const1 = inScale1 / outScale;
