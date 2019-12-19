@@ -59,7 +59,6 @@ class Engine {
   cpp::BlockDesc *block_desc_;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
-  std::vector<std::string> valid_output_names_;
   Scope *scope_{nullptr};
   // SUCCESS: device program build successed. FAILED: device program build
   // failed. REBUILD_WHEN_SHAPE_CHANGED: device program build successed but need
