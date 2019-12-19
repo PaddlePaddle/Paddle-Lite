@@ -25,7 +25,7 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
   PADDLE_MOBILE_ENFORCE(this->param_.Out() != nullptr,
                         "Output(Out) of BilinearInterOp should not be null.");
   auto dim_x = this->param_.InputX()->dims();  // NCHW format
-  DLOG << "dim_x :" <<dim_x;
+  DLOG << "dim_x :" << dim_x;
 
   int out_h = this->param_.OutH();
   int out_w = this->param_.OutW();
@@ -39,10 +39,10 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
     PADDLE_MOBILE_ENFORCE(out_size_dim[0] == 2, "OutSize's dim[0] must be 2");
   }
 
-  DLOG << "this->param_.HasScale(): "<<this->param_.HasScale();
+  DLOG << "this->param_.HasScale(): " << this->param_.HasScale();
   if (this->param_.HasScale()) {
     const float scale = this->param_.Scale();
-    DLOG << "scale_:  " <<scale;
+    DLOG << "scale_:  " << scale;
     std::vector<int64_t> dim_out(
         {dim_x[0], dim_x[1], int(dim_x[2] * scale), int(dim_x[3] * scale)});
     this->param_.Out()->Resize(framework::make_ddim(dim_out));
@@ -52,9 +52,7 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
     std::vector<int64_t> dim_out({dim_x[0], dim_x[1], out_h, out_w});
     this->param_.Out()->Resize(framework::make_ddim(dim_out));
     DLOG << "interp -- dim_out: " << dim_out;
-
   }
-
 }
 
 }  // namespace operators

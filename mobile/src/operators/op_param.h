@@ -3107,9 +3107,8 @@ class NearestInterpolationParam : public OpParam {
       has_scale_ = true;
       scale_ = GetAttr<float>("scale", attrs);
     }
-    DLOG <<"has_scale_:  "<<has_scale_;
-    DLOG <<"scale_:  "<<scale_;
-
+    DLOG << "has_scale_:  " << has_scale_;
+    DLOG << "scale_:  " << scale_;
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
