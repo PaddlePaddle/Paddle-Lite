@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/fc_compute.h"
-#include "lite/backends/fpga/KD/debugger.hpp"
+#include "lite/kernels/fpga/concat_compute.h"
+#include <string>
+#include <vector>
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -24,27 +28,26 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void FcCompute::PrepareForRun() {
+void ConcatCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
+  param.output->mutable_data<float16>();
 
   // ====================================================
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-
-  param.output->mutable_data<float16>();
-  fc_param.input = param.input->ZynqTensor();
-  fc_param.output = param.output->ZynqTensor();
-  fc_param.filter = param.w->ZynqTensor();
-  fc_param.bias = param.bias->ZynqTensor();
-
+  zynqmp::ConcatParam& concat_param = pe_.param();
+  for (auto t : param.x) {
+    concat_param.inputs.push_back(t->ZynqTensor());
+  }
+  concat_param.output = param.output->ZynqTensor();
+  concat_param.axis = param.axis;
   pe_.init();
   pe_.apply();
 }
 
-void FcCompute::Run() {
+void ConcatCompute::Run() {
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  Debugger::get_instance().registerOutput("fc", fc_param.output);
+  zynqmp::ConcatParam& concat_param = pe_.param();
+  Debugger::get_instance().registerOutput("concat", concat_param.output);
 #endif
 }
 
@@ -53,14 +56,16 @@ void FcCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
-    .BindInput("Input",
+REGISTER_LITE_KERNEL(concat,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::ConcatCompute,
+                     def)
+    .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

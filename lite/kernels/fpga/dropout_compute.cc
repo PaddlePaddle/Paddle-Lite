@@ -12,46 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/pooling_compute.h"
+#include "lite/kernels/fpga/dropout_compute.h"
 #include <string>
-#include <vector>
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 
 #include "lite/backends/fpga/KD/debugger.hpp"
+#include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-void PoolCompute::PrepareForRun() {
-  auto& param = Param<operators::PoolParam>();
+void DropoutCompute::PrepareForRun() {
+  auto& param = Param<operators::DropoutParam>();
   param.output->mutable_data<float16>();
 
-  zynqmp::PoolingParam& pool_param = pe_.param();
-  pool_param.input = param.x->ZynqTensor();
-  pool_param.output = param.output->ZynqTensor();
-  pool_param.relu.enabled = false;
-  pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
-                                                : zynqmp::PoolingType::AVERAGE;
-  pool_param.globalPooling = param.global_pooling;
-  pool_param.kernelSize = param.ksize;
-  pool_param.strides = param.strides;
-  int pad_h = (*param.paddings)[0];
-  int pad_w = (*param.paddings)[2];
-  pool_param.paddings = std::vector<int>({pad_h, pad_w});
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  scale_param.input = param.x->ZynqTensor();
+  scale_param.output = param.output->ZynqTensor();
+
+  int channel = scale_param.input->shape().channel();
+  zynqmp::Tensor* scale = new zynqmp::Tensor();
+  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  zynqmp::Shape shape(zynqmp::N, {channel});
+  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
+  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+
+  float scale_value = 1 - param.dropout_prob;
+  for (int i = 0; i < channel; ++i) {
+    scale_data[i] = scale_value;
+    bias_data[i] = 0.0f;
+  }
+  scale->flush();
+  bias->flush();
+
+  scale_param.bias = bias;
+  scale_param.scale = scale;
+
   pe_.init();
   pe_.apply();
 }
 
-void PoolCompute::Run() {
+void DropoutCompute::Run() {
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::PoolingParam& pool_param = pe_.param();
-  Debugger::get_instance().registerOutput("pooling", pool_param.output);
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  Debugger::get_instance().registerOutput("dropout", scale_param.output);
 #endif
 }
 
@@ -60,8 +66,12 @@ void PoolCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    pool2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::PoolCompute, def)
+REGISTER_LITE_KERNEL(dropout,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::DropoutCompute,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
@@ -70,4 +80,5 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
+    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

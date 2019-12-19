@@ -13,30 +13,28 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
+#include <stdint.h>
+// #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/operators/im2sequence_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class ScaleCompute
+class Im2SequenceCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ScaleParam;
+  using param_t = operators::Im2SequenceParam;
 
   void PrepareForRun() override;
+
   void Run() override;
 
-  virtual ~ScaleCompute() = default;
+  ~Im2SequenceCompute() {}
 
  private:
-  zynqmp::ScalePE pe_;
 };
 
 }  // namespace fpga

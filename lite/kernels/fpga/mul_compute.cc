@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/fc_compute.h"
-#include "lite/backends/fpga/KD/debugger.hpp"
+#include "lite/kernels/fpga/mul_compute.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -24,27 +26,64 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void FcCompute::PrepareForRun() {
+void MulCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   // ====================================================
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
 
   param.output->mutable_data<float16>();
-  fc_param.input = param.input->ZynqTensor();
+
+  fc_param.input = param.x->ZynqTensor();
   fc_param.output = param.output->ZynqTensor();
-  fc_param.filter = param.w->ZynqTensor();
-  fc_param.bias = param.bias->ZynqTensor();
+  fc_param.filter = param.y->ZynqTensor();
+
+  fc_param.bias = &bias_;
+
+  int channel = fc_param.filter->shape().channel();
+
+  zynqmp::Shape bias_shape(zynqmp::N, {channel});
+
+  float* bias_data =
+      fc_param.bias->mutableData<float>(zynqmp::FP32, bias_shape);
+  memset(bias_data, 0, channel * sizeof(float));
+  bias_.flush();
 
   pe_.init();
   pe_.apply();
 }
 
-void FcCompute::Run() {
+void mul(MulCompute* k) {
+  auto& param = k->Param<operators::MulParam>();
+  int num = param.x->dims()[0];
+  int channel = param.x->dims()[1];
+
+  int fn = param.y->dims()[1];
+
+  float16* out_data = param.output->mutable_data<float16>();
+  int g_index = 0;
+  for (int n = 0; n < 1; n++) {
+    for (int on = 0; on < fn; on++) {
+      float sum = 0;
+      int si = 0;
+      for (int c = 0; c < channel; c++) {
+        float value = zynqmp::half_to_float(param.x->data<float16>()[si]);
+        int index = c * fn + on;
+        float weight = param.y->data<float>()[index];
+        sum += value * weight;
+        si++;
+      }
+      out_data[g_index] = zynqmp::float_to_half(sum);
+      g_index++;
+    }
+  }
+}
+
+void MulCompute::Run() {
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  Debugger::get_instance().registerOutput("fc", fc_param.output);
+  Debugger::get_instance().registerOutput("mul", fc_param.output);
 #endif
 }
 
@@ -54,13 +93,12 @@ void FcCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
-    .BindInput("Input",
+    mul, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::MulCompute, def)
+    .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

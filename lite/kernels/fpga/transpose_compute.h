@@ -13,30 +13,36 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/operators/transpose_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class ScaleCompute
+// Transpose
+class TransposeCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ScaleParam;
+  using param_t = operators::TransposeParam;
 
-  void PrepareForRun() override;
   void Run() override;
 
-  virtual ~ScaleCompute() = default;
+  virtual ~TransposeCompute() = default;
+};
 
- private:
-  zynqmp::ScalePE pe_;
+// Transpose2
+class Transpose2Compute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::TransposeParam;
+
+  void Run() override;
+
+  virtual ~Transpose2Compute() = default;
 };
 
 }  // namespace fpga
