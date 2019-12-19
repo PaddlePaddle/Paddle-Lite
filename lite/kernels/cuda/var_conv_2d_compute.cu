@@ -96,8 +96,7 @@ void VarConv2DCompute::Run() {
                        conv_param_.strides[i]));
   }
   conv_param_.output->Resize({output_shape});
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>);
-  conv_impl_->init(conv_param_, &context);
+  conv_impl_->create(conv_param_, &context);
   conv_impl_->run(conv_param_);
 }
 
