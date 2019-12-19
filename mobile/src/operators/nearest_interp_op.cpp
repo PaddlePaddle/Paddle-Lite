@@ -43,8 +43,9 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
   if (this->param_.HasScale()) {
     const float scale = this->param_.Scale();
     DLOG << "scale_:  " << scale;
-    std::vector<int64_t> dim_out(
-        {dim_x[0], dim_x[1], int(dim_x[2] * scale), int(dim_x[3] * scale)});
+    std::vector<int64_t> dim_out({dim_x[0], dim_x[1],
+                                  static_cast<int>(dim_x[2] * scale),
+                                  static_cast<int>(dim_x[3] * scale)});
     this->param_.Out()->Resize(framework::make_ddim(dim_out));
     DLOG << "interp -- dim_out: " << dim_out;
 
