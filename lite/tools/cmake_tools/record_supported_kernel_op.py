@@ -75,12 +75,12 @@ with open(kernels_list_path) as f:
             for k in kernel_parser.kernels:
                   if hasattr(TargetType, k.target):
                       index=getattr(TargetType, k.target)
-                      op_type_str = '"%s"' % k.op_type                    
                       valid_ops[index].append(k.op_type)
 
 # clear the repeated ops
-for ops_on_target in valid_ops
-    ops_on_target = list(set(ops_on_target))
+for target in valid_targets:
+    index = getattr(TargetType, target)
+    valid_ops[index] = list(set(valid_ops[index]))
 
 paths = set()
 for line in open(ops_list_path):
