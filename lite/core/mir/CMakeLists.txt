@@ -16,6 +16,7 @@ lite_cc_library(mir_passes
       fusion/interpolate_fuse_pass.cc
       fusion/conv_elementwise_fuse_pass.cc
       fusion/conv_activation_fuse_pass.cc
+      fusion/var_conv_2d_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
