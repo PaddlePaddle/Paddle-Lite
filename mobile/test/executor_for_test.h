@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
-
+#include <memory>
 #include "common/log.h"
 #include "framework/executor.h"
 #include "framework/op_registry.h"
@@ -74,8 +74,11 @@ class Executor4Test : public Executor<DeviceType> {
         break;
       }
     }
-
-    this->InitMemory();
+    if (this->program_.combined) {
+      this->InitCombineMemory();
+    } else {
+      this->InitMemory();
+    }
     for (const auto &op : this->ops_of_block0_) {
       op->Init();
     }

@@ -3687,31 +3687,6 @@ class PixelShuffleParam : public OpParam {
 };
 #endif
 
-#ifdef EXPAND_OP
-template <typename Dtype>
-class ExpandParam : public OpParam {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  ExpandParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const AttributeMap &attrs, Scope *scope)
-      : OpParam(inputs, outputs, attrs, scope) {
-    input_x_ = InputXFrom<GType>(inputs, *scope);
-    out_ = OutFrom<GType>(outputs, *scope);
-    expand_times_ = GetAttr<std::vector<int>>("expand_times", attrs);
-  }
-
-  const GType *InputX() const { return input_x_; }
-
-  GType *Out() const { return out_; }
-
- private:
-  GType *input_x_;
-  GType *out_;
-  std::vector<int> expand_times_;
-};
-#endif
 
 #ifdef GRID_SAMPLER_OP
 template <typename Dtype>
@@ -3738,5 +3713,32 @@ class GridSamplerParam : public OpParam {
 };
 #endif
 
+#ifdef EXPAND_OP
+template <typename Dtype>
+class ExpandParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ExpandParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    expand_times = OpParam::GetAttr<std::vector<int>>("expand_times", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  std::vector<int> expand_times;
+
+ private:
+  GType *input_x_;
+  GType *out_;
+};
+
+#endif
 }  // namespace operators
 }  // namespace paddle_mobile
