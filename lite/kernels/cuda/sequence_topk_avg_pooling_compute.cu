@@ -130,8 +130,8 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
                   cudaMemcpyHostToDevice,
                   cuda_stream);
 
-  const auto *in_data = param.X->data<T>();
-  auto *out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
+  const T *in_data = param.X->data<T>();
+  T *out_data = param.Out->mutable_data<T>(TARGET(kCUDA));
   TargetWrapperCuda::MemsetAsync(
       out_data, 0, sizeof(T) * param.Out->numel(), cuda_stream);
 

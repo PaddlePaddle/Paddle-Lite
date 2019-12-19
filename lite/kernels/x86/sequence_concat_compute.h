@@ -56,7 +56,7 @@ class SequenceConcatCompute
     int64_t batch_size = 0;
     int64_t feature_size = 0;
     std::vector<int64_t> out_dims;
-    for (const auto& tensor : param_.X) {
+    for (const auto& tensor : param.X) {
       const auto x_dims = tensor->dims();
       if (out_dims.empty()) {
         out_dims = x_dims.Vectorize();
@@ -73,7 +73,7 @@ class SequenceConcatCompute
       batch_size = -1;  // Normalize batch size for compile time.
     }
     out_dims[0] = batch_size;
-    param_.Out->Resize(out_dims);
+    param.Out->Resize(out_dims);
 
     T* dout = param.Out->mutable_data<T>();
 
