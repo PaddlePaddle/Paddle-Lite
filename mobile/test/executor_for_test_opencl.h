@@ -17,6 +17,7 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "common/log.h"
 #include "framework/cl/cl_helper.h"
