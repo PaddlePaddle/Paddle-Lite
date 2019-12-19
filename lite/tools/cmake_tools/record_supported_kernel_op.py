@@ -64,7 +64,7 @@ class TargetType:
     kXPU = 9
     kAny = 6  # any target
 
-
+# record op_info of valid kernels into `valid_ops` according to different target type
 with open(kernels_list_path) as f:
     paths = set([path for path in f])
     for path in paths:
@@ -77,6 +77,10 @@ with open(kernels_list_path) as f:
                       index=getattr(TargetType, k.target)
                       op_type_str = '"%s"' % k.op_type                    
                       valid_ops[index].append(k.op_type)
+
+# clear the repeated ops
+for ops_on_target in valid_ops
+    ops_on_target = list(set(ops_on_target))
 
 paths = set()
 for line in open(ops_list_path):
