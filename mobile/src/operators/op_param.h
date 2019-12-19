@@ -3042,7 +3042,7 @@ class SplitParam : public OpParam {
   int axis;
   int num;
   std::vector<int> sections;
-  //  std::vector<GType> out_ts_;
+//  std::vector<GType> out_ts_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -3103,12 +3103,21 @@ class NearestInterpolationParam : public OpParam {
     out_ = OutFrom<GType>(outputs, *scope);
     out_h_ = GetAttr<int>("out_h", attrs);
     out_w_ = GetAttr<int>("out_w", attrs);
+    if (HasAttr("scale", attrs)) {
+      has_scale_ = true;
+      scale_ = GetAttr<float>("scale", attrs);
+    }
+    DLOG <<"has_scale_:  "<<has_scale_;
+    DLOG <<"scale_:  "<<scale_;
+
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
   GType *Out() const { return out_; }
   int OutH() const { return out_h_; }
   int OutW() const { return out_w_; }
+  float Scale() const { return scale_; }
+  bool HasScale() const { return has_scale_; }
 
  private:
   GType *input_x_;
@@ -3116,6 +3125,8 @@ class NearestInterpolationParam : public OpParam {
   GType *out_;
   int out_h_;
   int out_w_;
+  float scale_;
+  bool has_scale_;
 };
 #endif
 
