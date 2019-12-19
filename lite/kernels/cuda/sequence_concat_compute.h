@@ -27,11 +27,6 @@ class SequenceConcatCompute
 
   void Run() override;
   virtual ~SequenceConcatCompute() = default;
-
- private:
-  lite::Tensor out2in_map_tensor;
-  lite::Tensor out2in_word_map_tensor;
-  lite::Tensor in_locate_tensor;
 };
 
 }  // namespace cuda

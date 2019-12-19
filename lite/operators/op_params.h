@@ -286,6 +286,8 @@ struct ConvParam {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
   // for int8
   WITH_INT8_CONFIG
 };
