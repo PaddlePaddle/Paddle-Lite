@@ -338,6 +338,11 @@ class OpParam {
   }
 
   template <typename T>
+  static T *GridFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Grid", inputs, scope);
+  }
+
+  template <typename T>
   static const T GetAttr(const string &key, const AttributeMap &map) {
     return ((Attribute)map.at(key)).Get<T>();
   }
@@ -3687,7 +3692,6 @@ class PixelShuffleParam : public OpParam {
 };
 #endif
 
-
 #ifdef GRID_SAMPLER_OP
 template <typename Dtype>
 class GridSamplerParam : public OpParam {
@@ -3700,15 +3704,18 @@ class GridSamplerParam : public OpParam {
                    Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
+    grid_ = GridFrom<GType>(inputs, *scope);
     output_ = OutputFrom<GType>(outputs, *scope);
   }
 
   const GType *InputX() const { return input_x_; }
+  const GType *Grid() const { return grid_; }
 
   GType *Output() const { return output_; }
 
  private:
   GType *input_x_;
+  GType *grid_;
   GType *output_;
 };
 #endif
