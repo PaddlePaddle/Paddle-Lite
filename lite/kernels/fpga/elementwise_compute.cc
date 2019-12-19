@@ -15,6 +15,7 @@
 #include "lite/kernels/fpga/elementwise_compute.h"
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -37,7 +38,13 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddCompute::Run() { pe_.dispatch(); }
+void ElementwiseAddCompute::Run() {
+  pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::ElementwiseAddParam& ew_param = pe_.param();
+  Debugger::get_instance().registerOutput("ew_add", ew_param.output);
+#endif
+}
 
 void ElementwiseAddActivationCompute::PrepareForRun() {
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
@@ -53,7 +60,54 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.init();
   pe_.apply();
 }
-void ElementwiseAddActivationCompute::Run() { pe_.dispatch(); }
+void ElementwiseAddActivationCompute::Run() {
+  pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::ElementwiseAddParam& ew_param = pe_.param();
+  Debugger::get_instance().registerOutput("ew_add", ew_param.output);
+#endif
+}
+
+void ElementwiseMulCompute::PrepareForRun() {
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  auto& param = Param<operators::ElementwiseParam>();
+  param.Out->mutable_data<float16>();
+
+  scale_param.input = param.X->ZynqTensor();
+  scale_param.output = param.Out->ZynqTensor();
+
+  scale_param.relu.enabled = false;
+
+  int channel = scale_param.input->shape().channel();
+  zynqmp::Tensor* scale = new zynqmp::Tensor();
+  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  scale_param.scale = scale;
+  scale_param.bias = bias;
+  zynqmp::Shape shape(zynqmp::N, {channel});
+  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
+  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+  float scale_value = param.Y->data<float>()[0];
+
+  for (int i = 0; i < channel; ++i) {
+    if (param.Y->dims().production() != 1) {
+      scale_value = param.Y->ZynqTensor()->data<float>()[i];
+    }
+    scale_data[i] = scale_value;
+    bias_data[i] = 0;
+  }
+
+  pe_.init();
+  pe_.apply();
+}
+
+void ElementwiseMulCompute::Run() {
+  pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::ScaleParam& scale_param = pe_.param();
+  Debugger::get_instance().registerOutput("ew_mul_in", scale_param.input);
+  Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
+#endif
+}
 
 }  // namespace fpga
 }  // namespace kernels
@@ -70,10 +124,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
@@ -95,6 +146,23 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::ElementwiseMulCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

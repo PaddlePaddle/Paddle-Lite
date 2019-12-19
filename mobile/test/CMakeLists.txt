@@ -236,7 +236,11 @@ if (ENABLE_ALL_TEST)
         # gen test
         ADD_EXECUTABLE(test-conv-op operators/test_conv_op.cpp test_helper.h test_include.h executor_for_test.h)
         target_link_libraries(test-conv-op paddle-mobile)
-    
+
+        # gen test
+        ADD_EXECUTABLE(test-expend-op operators/test_expend_op.cpp test_helper.h test_include.h executor_for_test_opencl.h )
+        target_link_libraries(test-expend-op paddle-mobile)
+
         # gen test
         ADD_EXECUTABLE(test-mul-op operators/test_mul_op.cpp test_helper.h test_include.h)
         target_link_libraries(test-mul-op paddle-mobile)
