@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef PADDLE_MOBILE_CL
 #include "../executor_for_test_opencl.h"
 #include "operators/expand_op.h"
 #include "operators/feed_op.h"
@@ -47,4 +48,5 @@ int main() {
   OpenClOpTester<operators::ExpandOp<GPU_CL, float>> tester;
   tester.Predict("expend", in_dims, out_dims, inputs, outputs, attrs);
 }
+#endif
 #endif
