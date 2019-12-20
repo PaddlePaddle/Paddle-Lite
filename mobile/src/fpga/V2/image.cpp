@@ -94,11 +94,10 @@ void concat_images(int8_t **images_in, float **scales_in, void *image_out,
       for (i = 0; i < image_num; i++) {
         align_each_in_area_cw =
             align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
-        memcpy(
-            (int8_t *)image_out + tmp_channel +  // NOLINT
-                k * align_each_out_area_cw_differ,
-            images_in[i] + j * channel_num[i] + k * align_each_in_area_cw,
-            channel_num[i] * sizeof(int8_t));
+        memcpy((int8_t *)image_out + tmp_channel +  // NOLINT
+                   k * align_each_out_area_cw_differ,
+               images_in[i] + j * channel_num[i] + k * align_each_in_area_cw,
+               channel_num[i] * sizeof(int8_t));
 
         tmp_channel += channel_num[i];
       }
