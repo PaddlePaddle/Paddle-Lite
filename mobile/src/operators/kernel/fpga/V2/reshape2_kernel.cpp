@@ -118,11 +118,10 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
     auto inputdimsize = input->dims().size();
     auto outputdimsize = output->dims().size();
     int smallersize =
-            inputdimsize > outputdimsize ? outputdimsize : inputdimsize;
+        inputdimsize > outputdimsize ? outputdimsize : inputdimsize;
     int i = 0;
     for (i = 0; i < smallersize; i++) {
-      if ((input->dims())[i] != (output->dims())[i])
-        break;
+      if ((input->dims())[i] != (output->dims())[i]) break;
     }
     if (i == smallersize) {
       reshapeNeedFlg = 0;
