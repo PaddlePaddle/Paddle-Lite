@@ -125,6 +125,18 @@ std::shared_ptr<xtcl::xNDArray> CvtTensor(const Tensor& in_tensor,
   return out_tensor;
 }
 
+xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const std::vector<int64_t>& input) {
+  xtcl::Array<xtcl::Integer> output;
+  for (auto i : input) {
+    output.push_back(i);
+  }
+  return output;
+}
+
+xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const DDim& input) {
+  return Cvt2ArrayInt(input.Vectorize());
+}
+
 }  // namespace xpu
 }  // namespace subgraph
 }  // namespace lite

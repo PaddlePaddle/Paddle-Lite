@@ -135,6 +135,15 @@ bool Transpose2Op::InferShape() const {
     out_dims[i] = x_dims[axis[i]];
   }
   param_.output->Resize(out_dims);
+
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
+  for (size_t i = 0; i < x_dims.size(); i++) {
+    xshape_dims[i + 1] = x_dims[i];
+  }
+  param_.xshape->Resize(xshape_dims);
+  auto xshape_lod = param_.xshape->mutable_lod();
+  *xshape_lod = param_.x->lod();
+
   return true;
 }
 
