@@ -24,11 +24,10 @@ PaddleMobileConfig GetConfig() {
   config.device = PaddleMobileConfig::kGPU_CL;
   config.pre_post_type = PaddleMobileConfig::NONE_PRE_POST;
 
-  config.prog_file = "../models/superv2/model";
-  config.param_file = "../models/superv2/params";
+  config.prog_file = "../models/ercy/model";
+  config.param_file = "../models/ercy/params";
   config.lod_mode = false;
-  config.load_when_predict = true;
-  config.cl_path = "/data/local/tmp/bin";
+  config.load_when_predict = false;
   return config;
 }
 
@@ -38,45 +37,91 @@ int main() {
       CreatePaddlePredictor<PaddleMobileConfig,
                             PaddleEngineKind::kPaddleMobile>(config);
 
-  int input_length = 1 * 1 * 300 * 300;
-  int output_length = input_length;
+  // reliable
+  int re_len = 1 * 1 * 64 * 72;
+  std::vector<float> re_v;
+  std::vector<int64_t> re_dims{1, 1, 64, 72};
+  GetInput<float>(g_test_image_1x3x224x224, &re_v, re_dims);
 
-  std::vector<float> inputv;
-  std::vector<int64_t> dims{1, 1, 300, 300};
-  GetInput<float>(g_test_image_1x3x224x224, &inputv, dims);
+  PaddleTensor re;
+  re.shape = std::vector<int>({1, 1, 64, 72});
+  re.data = PaddleBuf(re_v.data(), re_len * sizeof(float));
+  re.dtype = PaddleDType::FLOAT32;
+  re.layout = LayoutType::LAYOUT_CHW;
 
-  PaddleTensor input;
-  input.shape = std::vector<int>({1, 1, 300, 300});
-  input.data = PaddleBuf(inputv.data(), input_length * sizeof(float));
-  input.dtype = PaddleDType::FLOAT32;
-  input.layout = LayoutType::LAYOUT_CHW;
+  // grid
+  int grid_len = 1 * 64 * 72 * 2;
+  std::vector<float> grid_v;
+  std::vector<int64_t> grid_dims{1, 64, 72, 2};
+  GetInput<float>(g_test_image_1x3x224x224, &grid_v, grid_dims);
 
-  PaddleTensor output;
-  output.shape = std::vector<int>({});
-  output.data = PaddleBuf();
-  output.dtype = PaddleDType::FLOAT32;
-  output.layout = LayoutType::LAYOUT_CHW;
+  PaddleTensor grid;
+  grid.shape = std::vector<int>({1, 64, 72, 2});
+  grid.data = PaddleBuf(grid_v.data(), grid_len * sizeof(float));
+  grid.dtype = PaddleDType::FLOAT32;
+  grid.layout = LayoutType::LAYOUT_CHW;
 
-  float* in_data = inputv.data();
-  std::cout << " print input : " << std::endl;
-  int stride = input_length / 20;
+  // last_input
+  int last_len = 1 * 128 * 64 * 72;
+  std::vector<float> last_v;
+  std::vector<int64_t> last_dims{1, 128, 64, 72};
+  GetInput<float>(g_test_image_1x3x224x224, &last_v, last_dims);
+
+  PaddleTensor last;
+  last.shape = std::vector<int>({1, 128, 64, 72});
+  last.data = PaddleBuf(last_v.data(), last_len * sizeof(float));
+  last.dtype = PaddleDType::FLOAT32;
+  last.layout = LayoutType::LAYOUT_CHW;
+
+  // input_rgb
+  int input_rgb_len = 1 * 4 * 256 * 288;
+  std::vector<float> input_rgb_v;
+  std::vector<int64_t> input_rgb_dims{1, 4, 256, 288};
+  GetInput<float>(g_test_image_1x3x224x224, &input_rgb_v, input_rgb_dims);
+
+  PaddleTensor input_rgb;
+  input_rgb.shape = std::vector<int>({1, 4, 256, 288});
+  input_rgb.data = PaddleBuf(input_rgb_v.data(), input_rgb_len * sizeof(float));
+  input_rgb.dtype = PaddleDType::FLOAT32;
+  input_rgb.layout = LayoutType::LAYOUT_CHW;
+
+  PaddleTensor output0;
+  output0.shape = std::vector<int>({});
+  output0.data = PaddleBuf();
+  output0.dtype = PaddleDType::FLOAT32;
+  output0.layout = LayoutType::LAYOUT_CHW;
+
+  PaddleTensor output1;
+  output1.shape = std::vector<int>({});
+  output1.data = PaddleBuf();
+  output1.dtype = PaddleDType::FLOAT32;
+  output1.layout = LayoutType::LAYOUT_CHW;
+
+  predictor->Feed("reliable", re);
+  predictor->Feed("grid", grid);
+  predictor->Feed("last_input", last);
+  predictor->Feed("input_rgb", input_rgb);
+  predictor->Run();
+  predictor->Fetch("save_infer_model/scale_0", &output0);
+  predictor->Fetch("save_infer_model/scale_1", &output1);
+
+  float* out_ptr0 = reinterpret_cast<float*>(output0.data.data());
+  float* out_ptr1 = reinterpret_cast<float*>(output1.data.data());
+  std::cout << " print output0 : " << std::endl;
+  int numel = output0.data.length() / sizeof(float);
+  int stride = numel / 20;
   stride = stride > 0 ? stride : 1;
-  for (size_t j = 0; j < input_length; j += stride) {
-    std::cout << in_data[j] << " ";
+  for (size_t j = 0; j < numel; j += stride) {
+    std::cout << out_ptr0[j] << " ";
   }
   std::cout << std::endl;
 
-  predictor->Feed("input_rgb", input);
-  predictor->Run();
-  predictor->Fetch("save_infer_model/scale_0", &output);
-
-  float* out_data = reinterpret_cast<float*>(output.data.data());
-  std::cout << " print output : " << std::endl;
-  int numel = output.data.length() / sizeof(float);
+  std::cout << " print output1 : " << std::endl;
+  numel = output1.data.length() / sizeof(float);
   stride = numel / 20;
   stride = stride > 0 ? stride : 1;
   for (size_t j = 0; j < numel; j += stride) {
-    std::cout << out_data[j] << " ";
+    std::cout << out_ptr1[j] << " ";
   }
   std::cout << std::endl;
 
