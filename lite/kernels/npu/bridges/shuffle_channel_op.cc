@@ -12,45 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ShuffleChannelConverter(
-    const std::shared_ptr<lite::OpLite> shuffle_channel_op,
-    const node_map_type& inputs_map) {
-  auto scope = shuffle_channel_op->scope();
-  auto op_info = shuffle_channel_op->op_info();
+int ShuffleChannelConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::ShuffleChannel> shuffle_channel_node =
-      std::make_shared<ge::op::ShuffleChannel>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
+  auto out_var_name = op_info->Output("Out").front();
+  auto shuffle_channel_node =
+      graph->AddNode<ge::op::ShuffleChannel>(out_var_name);
 
-  shuffle_channel_node->set_input_x(*inputs_map.at(x_var_name));
+  shuffle_channel_node->set_input_x(*graph->GetNode(x_var_name));
   shuffle_channel_node->set_attr_group(op_info->GetAttr<int>("group"));
-
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(shuffle_channel_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = shuffle_channel_node;
-  return outputs_map;
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(
-    shuffle_channel,
-    paddle::lite::kernels::npu::bridges::ShuffleChannelConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         shuffle_channel,
+                         paddle::lite::subgraph::npu::ShuffleChannelConverter);

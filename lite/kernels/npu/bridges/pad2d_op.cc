@@ -12,38 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type Pad2dConverter(const std::shared_ptr<lite::OpLite> pad2d_op,
-                             const node_map_type& inputs_map) {
-  auto scope = pad2d_op->scope();
-  auto op_info = pad2d_op->op_info();
+int Pad2dConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Pad> pad2d_node =
-      std::make_shared<ge::op::Pad>(unique_op_type);
   auto x_var_name = op_info->Input("X").front();
-  pad2d_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(pad2d_node);
+  auto out_var_name = op_info->Output("Out").front();
+  auto pad2d_node = graph->AddNode<ge::op::Pad>(out_var_name);
+  pad2d_node->set_input_x(*graph->GetNode(x_var_name));
 
   auto mode = op_info->GetAttr<std::string>("mode");
   if (mode == "constant") {
     pad2d_node->set_attr_mode(0);
   } else if (mode == "reflect") {
-    LOG(FATAL) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
+    LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
     pad2d_node->set_attr_mode(1);
+    return FAILED;
   } else {
-    LOG(FATAL) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
+    LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
+    return FAILED;
   }
 
   auto x_dims = scope->FindTensor(x_var_name)->dims();
@@ -51,34 +52,25 @@ node_map_type Pad2dConverter(const std::shared_ptr<lite::OpLite> pad2d_op,
   CHECK_EQ(padding.size(), 4);
   int xds = x_dims.size();
   padding.insert(padding.begin(), xds * 2 - 4, 0);
-  auto npu_padding =
-      std::make_shared<ge::op::Const>(unique_op_type + "/padding");
-  npu_padding->set_attr_value(
-      lite::npu::CreateTensorAndFillData<int>(padding, {xds, 2}));
-  pad2d_node->set_input_padding(*npu_padding);
-  lite::npu::OpList::Global().add(npu_padding);
+  auto padding_const_node =
+      graph->AddNode(out_var_name + "/padding", padding, {xds, 2});
+  pad2d_node->set_input_padding(*padding_const_node);
 
   if (mode == "constant") {
     auto pad_value = op_info->GetAttr<float>("pad_value");
-    auto npu_pad_value =
-        std::make_shared<ge::op::Const>(unique_op_type + "/pad_value");
-    npu_pad_value->set_attr_value(
-        lite::npu::CreateTensorAndFillData<float>({pad_value}));
-    pad2d_node->set_input_constant_values(*npu_pad_value);
-    lite::npu::OpList::Global().add(npu_pad_value);
-
+    auto pad_value_const_node =
+        graph->AddNode(out_var_name + "/pad_value", pad_value);
+    pad2d_node->set_input_constant_values(*pad_value_const_node);
     pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
   }
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = pad2d_node;
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(pad2d, paddle::lite::kernels::npu::bridges::Pad2dConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         pad2d,
+                         paddle::lite::subgraph::npu::Pad2dConverter);

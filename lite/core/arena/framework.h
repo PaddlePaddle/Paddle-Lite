@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
@@ -42,7 +43,7 @@ class TestCase {
       : place_(place), scope_(new Scope), alias_(alias) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
   }
-  virtual ~TestCase() {}
+  virtual ~TestCase();
 
   void Prepare() {
     PrepareScopes();
@@ -77,6 +78,20 @@ class TestCase {
   // kernel registry.
   void CheckKernelConsistWithDefinition() {}
 
+  // Get the real precision of the output for check precision. When the declare
+  // precision obtained from the kernel is any, we should set the precision of
+  // the output in test case.
+  bool GetPrecisonType(const std::string& var_name,
+                       PrecisionType* precision_type) {
+    auto res = precision_type_map_.find(var_name);
+    if (res == precision_type_map_.end()) {
+      return false;
+    } else {
+      *precision_type = precision_type_map_.at(var_name);
+      return true;
+    }
+  }
+
   Scope& scope() { return *scope_; }
 
   Scope* baseline_scope() { return base_scope_; }
@@ -104,6 +119,19 @@ class TestCase {
 
   // Prepare for the operator.
   virtual void PrepareOpDesc(cpp::OpDesc* op_desc) = 0;
+
+  // Set the real precision of the output for check precision. When the declare
+  // precision obtained from the kernel is any, we should set the precision of
+  // the output in test case.
+  void SetPrecisionType(const std::string& var_name,
+                        const PrecisionType& precision_type) {
+    auto res = precision_type_map_.find(var_name);
+    if (res == precision_type_map_.end()) {
+      precision_type_map_.insert({var_name, precision_type});
+    } else {
+      precision_type_map_.at(var_name) = precision_type;
+    }
+  }
 
  public:
   const Instruction& instruction() { return *instruction_; }
@@ -148,6 +176,7 @@ class TestCase {
   Scope* base_scope_{};
   std::unique_ptr<cpp::OpDesc> op_desc_;
   std::unique_ptr<Instruction> instruction_;
+  std::unordered_map<std::string, PrecisionType> precision_type_map_;
 };
 
 class Arena {
@@ -159,13 +188,17 @@ class Arena {
     tester_->Prepare();
   }
 
-  bool TestPrecision() {
+  bool TestPrecision(const std::vector<std::string>& exclude_outs = {}) {
     tester_->RunBaseline(tester_->baseline_scope());
     tester_->RunInstruction();
 
     bool success = true;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
+        if (std::find(exclude_outs.begin(), exclude_outs.end(), var) !=
+            exclude_outs.end()) {
+          continue;
+        }
         success = success && CompareTensor(out, var);
       }
     }
@@ -189,8 +222,11 @@ class Arena {
     // get tensor type.
     const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
-
-    switch (type->precision()) {
+    auto precision_type = type->precision();
+    if (precision_type == PRECISION(kAny)) {
+      CHECK(tester_->GetPrecisonType(var_name, &precision_type));
+    }
+    switch (precision_type) {
       case PRECISION(kFloat):
         return tester_->CheckPrecision<float>(var_name, abs_error_);
       case PRECISION(kInt8):
@@ -199,7 +235,6 @@ class Arena {
         return tester_->CheckPrecision<int32_t>(var_name, abs_error_);
       case PRECISION(kBool):
         return tester_->CheckPrecision<bool>(var_name, abs_error_);
-
       default:
         LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());
         return false;

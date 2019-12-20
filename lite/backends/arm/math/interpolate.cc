@@ -477,17 +477,23 @@ void nearest_interp(const float* src,
   float scale_h_new = (with_align)
                           ? (static_cast<float>(h_in - 1) / (h_out - 1))
                           : (static_cast<float>(h_in) / (h_out));
-
-#pragma omp parallel for collapse(2) schedule(static)
-  for (int h = 0; h < h_out; ++h) {
-    for (int w = 0; w < w_out; ++w) {
-      int near_x = (with_align) ? static_cast<int>(scale_w_new * w + 0.5)
-                                : static_cast<int>(scale_w_new * w);
-      int near_y = (with_align) ? static_cast<int>(scale_h_new * h + 0.5)
-                                : static_cast<int>(scale_h_new * h);
-      near_x = near_x < 0 ? 0 : near_x;
-      near_y = near_y < 0 ? 0 : near_y;
-      dst[h * w_out + w] = src[near_y * w_in + near_x];
+  if (with_align) {
+    for (int h = 0; h < h_out; ++h) {
+      float* dst_p = dst + h * w_out;
+      int near_y = static_cast<int>(scale_h_new * h + 0.5);
+      for (int w = 0; w < w_out; ++w) {
+        int near_x = static_cast<int>(scale_w_new * w + 0.5);
+        *dst_p++ = src[near_y * w_in + near_x];
+      }
+    }
+  } else {
+    for (int h = 0; h < h_out; ++h) {
+      float* dst_p = dst + h * w_out;
+      int near_y = static_cast<int>(scale_h_new * h);
+      for (int w = 0; w < w_out; ++w) {
+        int near_x = static_cast<int>(scale_w_new * w);
+        *dst_p++ = src[near_y * w_in + near_x];
+      }
     }
   }
 }
@@ -520,9 +526,9 @@ void interpolate(lite::Tensor* X,
     }
     auto out_size = OutSize;
     if (out_size != nullptr) {
-      auto out_size_data = get_new_data_from_tensor<float>(out_size);
-      out_height = static_cast<int>(out_size_data[0]);
-      out_width = static_cast<int>(out_size_data[1]);
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_height = out_size_data[0];
+      out_width = out_size_data[1];
     }
   }
   float height_scale = scale;
@@ -544,8 +550,10 @@ void interpolate(lite::Tensor* X,
   int out_w = Out->dims()[3];
   int spatial_in = in_h * in_w;
   int spatial_out = out_h * out_w;
-  for (int i = 0; i < count; ++i) {
-    if ("Bilinear" == interpolate_type) {
+
+  if ("Bilinear" == interpolate_type) {
+#pragma omp parallel for
+    for (int i = 0; i < count; ++i) {
       bilinear_interp(din + spatial_in * i,
                       in_w,
                       in_h,
@@ -555,7 +563,10 @@ void interpolate(lite::Tensor* X,
                       1.f / width_scale,
                       1.f / height_scale,
                       with_align);
-    } else if ("Nearest" == interpolate_type) {
+    }
+  } else if ("Nearest" == interpolate_type) {
+#pragma omp parallel for
+    for (int i = 0; i < count; ++i) {
       nearest_interp(din + spatial_in * i,
                      in_w,
                      in_h,

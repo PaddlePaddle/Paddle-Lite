@@ -47,7 +47,7 @@ class Profiler final {
   int NewTimer(const OpCharacter& ch);
   void StartTiming(const int index, KernelContext* ctx);
   float StopTiming(const int index, KernelContext* ctx);
-  std::string Summary(bool concise = true);
+  std::string Summary(bool concise = true, size_t warm_up = 10);
 
  private:
   std::string name_{std::string("N/A")};

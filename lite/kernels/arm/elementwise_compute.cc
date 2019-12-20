@@ -161,20 +161,21 @@ void ElementwiseSubActivationCompute::Run() {
   }
 }
 
-void ElementwiseMulCompute::Run() {
-  auto& param = Param<operators::ElementwiseParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
+template <typename T, PrecisionType PType>
+void ElementwiseMulCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ElementwiseParam>();
+  auto* x_data = param.X->template data<T>();
+  auto* y_data = param.Y->template data<T>();
+  auto* out_data = param.Out->template mutable_data<T>();
   int axis = param.axis;
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_mul_broadcast(
+    lite::arm::math::elementwise_mul_broadcast<T>(
         x_data, y_data, out_data, pre, n, post);
   } else {
-    lite::arm::math::elementwise_mul(
+    lite::arm::math::elementwise_mul<T>(
         x_data, y_data, out_data, x_dims.production());
   }
 }
@@ -347,15 +348,22 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(elementwise_mul,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseMulCompute,
-                     def)
+using elementwise_mul_float =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_mul_int32 =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kInt32, kNCHW, elementwise_mul_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

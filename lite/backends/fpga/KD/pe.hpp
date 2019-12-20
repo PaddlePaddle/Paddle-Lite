@@ -32,6 +32,5 @@ class PE {
 
   virtual ~PE() {}
 };
-
 }  // namespace zynqmp
 }  // namespace paddle

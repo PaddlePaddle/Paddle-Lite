@@ -48,6 +48,10 @@ class VariablePlaceInferencePass : public DebugPass {
   void CheckAllArgumentTypeDetermined(SSAGraph* graph) {
     for (auto& node : graph->mutable_nodes()) {
       if (node.IsArg()) {
+        if (node.inlinks.size() == 0 && node.outlinks.size() == 0) {
+          // empty node
+          continue;
+        }
         CHECK(node.AsArg().type) << "node " << node.AsArg().name
                                  << " type not determined, " << &node;
       }
@@ -129,6 +133,17 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             x_in->AsArg().type = type;
           }
+        } else if (x_in->AsArg().type->target() == TARGET(kUnk) &&
+                   x_in->AsArg().type->precision() != PRECISION(kUnk) &&
+                   x_in->AsArg().type->layout() == DATALAYOUT(kUnk)) {
+          // If is quantization, infer the Int8 type.
+          if (type->precision() == PRECISION(kInt8)) {
+            x_in->AsArg().type = type;
+          } else {
+            PrecisionType tmp_ptype = x_in->AsArg().type->precision();
+            x_in->AsArg().type = LiteType::GetTensorTy(
+                type->target(), tmp_ptype, type->layout());
+          }
         }
       }
 
@@ -148,6 +163,17 @@ class VariablePlaceInferencePass : public DebugPass {
             SetWeightType(x_out, *type, lite_with_targets);
           } else {
             x_out->AsArg().type = type;
+          }
+        } else if (x_out->AsArg().type->target() == TARGET(kUnk) &&
+                   x_out->AsArg().type->precision() != PRECISION(kUnk) &&
+                   x_out->AsArg().type->layout() == DATALAYOUT(kUnk)) {
+          // If is quantization, infer the Int8 type.
+          if (type->precision() == PRECISION(kInt8)) {
+            x_out->AsArg().type = type;
+          } else {
+            PrecisionType tmp_ptype = x_out->AsArg().type->precision();
+            x_out->AsArg().type = LiteType::GetTensorTy(
+                type->target(), tmp_ptype, type->layout());
           }
         }
       }

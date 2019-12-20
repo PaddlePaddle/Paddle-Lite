@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
 std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
   auto x_dims = x.dims();
-  CHECK_EQ(x_dims.size(), 4UL) << "[NPU] only support 4-dimension x";
+  CHECK_EQ(x_dims.size(), 4UL) << "[NPU] Only support 4-dimension x";
   auto y_dims = y->dims();
   CHECK_GE(x_dims.size(), y_dims.size());
 
@@ -45,93 +45,86 @@ std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
   return y_new_shape;
 }
 
-node_map_type ElementwiseConverter(
-    const std::shared_ptr<lite::OpLite> elementwise_op,
-    const node_map_type& inputs_map) {
-  auto scope = elementwise_op->scope();
-  auto op_info = elementwise_op->op_info();
+int ElementwiseConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto x_var_name = op_info->Input("X").front();
   auto y_var_name = op_info->Input("Y").front();
-  CHECK(inputs_map.find(x_var_name) != inputs_map.end());
+  auto out_var_name = op_info->Output("Out").front();
   auto axis = op_info->GetAttr<int>("axis");
 
   std::shared_ptr<ge::Operator> elementwise_node = nullptr;
-  std::shared_ptr<ge::Operator> x_node = inputs_map.at(x_var_name);
+  std::shared_ptr<ge::Operator> x_node = graph->GetNode(x_var_name);
   std::shared_ptr<ge::Operator> y_node = nullptr;
-  if (inputs_map.find(y_var_name) != inputs_map.end()) {
-    y_node = inputs_map.at(y_var_name);
+  if (graph->HasNode(y_var_name)) {
+    y_node = graph->GetNode(y_var_name);
   } else {
-    auto y_const_node = std::make_shared<ge::op::Const>(y_var_name);
     auto x = scope->FindTensor(x_var_name);
     auto y = scope->FindMutableTensor(y_var_name);
     auto y_new_shape = CvtYShape(*x, y, axis);
-    y_const_node->set_attr_value(lite::npu::CvtTensor(y, y_new_shape));
-    y_node = y_const_node;
+    y_node = graph->AddNode(y_var_name, y, y_new_shape);
   }
-  lite::npu::OpList::Global().add(x_node);
-  lite::npu::OpList::Global().add(y_node);
 
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    auto elt_node = std::make_shared<ge::op::Add>(unique_op_type);
+    auto elt_node = graph->AddNode<ge::op::Add>(out_var_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_sub") {
-    auto elt_node = std::make_shared<ge::op::Sub>(unique_op_type);
+    auto elt_node = graph->AddNode<ge::op::Sub>(out_var_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_mul") {
-    auto elt_node = std::make_shared<ge::op::Mul>(unique_op_type);
+    auto elt_node = graph->AddNode<ge::op::Mul>(out_var_name);
     elt_node->set_input_x(*x_node);
     elt_node->set_input_y(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_div") {
-    auto elt_node = std::make_shared<ge::op::RealDiv>(unique_op_type);
+    auto elt_node = graph->AddNode<ge::op::RealDiv>(out_var_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else {
-    LOG(FATAL) << "unsupported op type: " << op_type;
+    LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
+    return FAILED;
   }
 
-  lite::npu::OpList::Global().add(elementwise_node);
-
-  node_map_type outputs_map;
   if (op_type == "fusion_elementwise_add_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    auto act_node =
-        std::make_shared<ge::op::Activation>(unique_op_type + "/act");
+    auto act_node = graph->AddNode<ge::op::Activation>(out_var_name);
     act_node->set_input_x(*elementwise_node);
     // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
     // clipped_relu etc.
-    act_node->set_attr_mode(lite::npu::CvtActMode(act_type));
-    lite::npu::OpList::Global().add(act_node);
-    outputs_map[op_info->Output("Out").front()] = act_node;
-  } else {
-    outputs_map[op_info->Output("Out").front()] = elementwise_node;
+    act_node->set_attr_mode(CvtActMode(act_type));
   }
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(elementwise_add,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
-REGISTER_NPU_BRIDGE(fusion_elementwise_add_activation,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
-REGISTER_NPU_BRIDGE(elementwise_sub,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
-REGISTER_NPU_BRIDGE(elementwise_mul,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
-REGISTER_NPU_BRIDGE(elementwise_div,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_add,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         fusion_elementwise_add_activation,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_sub,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_mul,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_div,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);

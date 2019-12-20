@@ -25,11 +25,12 @@ if (NOT LITE_ON_TINY_PUBLISH)
     endif()
 else()
     add_library(paddle_lite_jni SHARED "")
+    set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
     target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
     add_dependencies(paddle_lite_jni op_list_h kernel_list_h)
     if (LITE_WITH_NPU)
         # Need to add HIAI runtime libs (libhiai.so) dependency
-        target_link_libraries(paddle_lite_jni ${npu_runtime_libs})
+        target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
     endif()
 endif()
 

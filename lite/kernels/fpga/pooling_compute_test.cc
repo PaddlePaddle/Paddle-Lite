@@ -46,7 +46,7 @@ std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
   if (param_->global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param_->paddings[i] = 0;
+      (*param_->paddings)[i] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
@@ -59,7 +59,7 @@ std::vector<int64_t> compute_output_shape(operators::PoolParam* param_) {
     for (size_t i = 0; i < param_->ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_->ksize[i],
-                                            param_->paddings[i],
+                                            (*param_->paddings)[i],
                                             param_->strides[i],
                                             param_->ceil_mode));
     }
@@ -76,7 +76,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
 
   std::vector<int> ksize = param.ksize;
   std::vector<int> strides = param.strides;
-  std::vector<int> paddings = param.paddings;
+  std::vector<int> paddings = *param.paddings;
 
   std::string pooling_type = param.pooling_type;
   bool global_pooling = param.global_pooling;
@@ -103,7 +103,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
 
   if (global_pooling == true) {
     for (int n = 0; n < in_n; ++n) {
@@ -230,7 +230,7 @@ TEST(pool_fpga, compute) {
                         }
                         param.global_pooling = global_pooling;
                         param.strides = {stride, stride};
-                        param.paddings = {pad, pad};
+                        *param.paddings = {pad, pad, pad, pad};
                         param.exclusive = exclusive;
                         param.ceil_mode = ceil_mode;
                         param.adaptive = false;

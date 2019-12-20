@@ -13,14 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/fpga/KD/dl_engine.hpp"
+
 namespace paddle {
 namespace zynqmp {
 
 DLEngine::DLEngine() {
   open_device();
-  struct DeviceInfo info;
-  int ret = get_device_info(info);
-  filter::set_filter_capacity(info.filter_cap);
+  int ret = get_device_info(info_);
+  filter::set_filter_capacity(info_.filter_cap);
+  filter::set_colunm(info_.colunm);
 }
 
 }  // namespace zynqmp

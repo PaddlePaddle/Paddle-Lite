@@ -21,6 +21,8 @@ namespace kernels {
 namespace cuda {
 using Tensor = lite::Tensor;
 
+const int CUDA_NUM_THREADS = 512;
+
 extern __shared__ char tile[];
 template <typename dtype>
 __global__ void sharemem_softmax_kernel(int total_size,
@@ -149,6 +151,15 @@ __global__ void softmax_divid_output_kernel(int total_size,
   }
 }
 
+void SoftmaxCompute::PrepareForRun() {
+  int device_id;
+  cudaGetDevice(&device_id);
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, device_id);
+  sharedmem_size = deviceProp.sharedMemPerBlock;
+  max_dimsize = sharedmem_size / sizeof(float) / CUDA_NUM_THREADS;
+}
+
 void SoftmaxCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
@@ -165,18 +176,10 @@ void SoftmaxCompute::Run() {
   int total_threads = inner_num * outer_num;
   int axis_size = x_dims[axis];
 
-  int device_id;
-  const int threads = 512;
+  const int threads = CUDA_NUM_THREADS;
   const int blocks = (total_threads + threads - 1) / threads;
-  cudaGetDevice(&device_id);
-  cudaDeviceProp deviceProp;
-  cudaGetDeviceProperties(&deviceProp, device_id);
-  size_t sharedmem_size = deviceProp.sharedMemPerBlock;
-  int max_dimsize = sharedmem_size / sizeof(float) / threads;
   auto input_data = param.x->data<float>();
   auto output_data = param.output->mutable_data<float>(TARGET(kCUDA));
-  TargetWrapperCuda::MemsetSync(
-      output_data, 0, param.output->numel() * sizeof(float));
   if (axis_size <= max_dimsize) {
     int use_sharemem_size = axis_size * threads * sizeof(float);
     sharemem_softmax_kernel<<<blocks, threads, use_sharemem_size, stream>>>(

@@ -165,6 +165,9 @@ void BindLitePlace(py::module *m) {
   py::enum_<DataLayoutType>(*m, "DataLayoutType")
       .value("NCHW", DataLayoutType::kNCHW)
       .value("NHWC", DataLayoutType::kNHWC)
+      .value("ImageDefault", DataLayoutType::kImageDefault)
+      .value("ImageFolder", DataLayoutType::kImageFolder)
+      .value("ImageNW", DataLayoutType::kImageNW)
       .value("Any", DataLayoutType::kAny);
 
   // Place
