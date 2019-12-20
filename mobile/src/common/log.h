@@ -172,6 +172,7 @@ struct ToLog {
 
 #define LOG(level)                                                           \
   if (level > paddle_mobile::log_level) {                                    \
+    /*do nothing*/                                                           \
   } else                                                                     \
     paddle_mobile::ToLog(                                                    \
         level, static_cast<const std::stringstream &>(                       \
@@ -184,6 +185,7 @@ struct ToLog {
 
 #define DLOG                                                          \
   if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {         \
+    /*do nothing*/                                                    \
   } else                                                              \
     paddle_mobile::ToLog(                                             \
         paddle_mobile::kLOG_DEBUG,                                    \
@@ -197,11 +199,13 @@ struct ToLog {
 
 #define LOGF(level, format, ...)          \
   if (level > paddle_mobile::log_level) { \
+    /*do nothing*/                        \
   } else                                  \
     printf(format, ##__VA_ARGS__)
 
 #define DLOGF(format, ...)                                    \
   if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) { \
+    /*do nothing*/                                            \
   } else                                                      \
     printf(format, ##__VA_ARGS__)
 
@@ -236,7 +240,7 @@ struct Print {
 };
 
 struct ToLog {
-  ToLog(LogLevel level) {}
+  explicit ToLog(LogLevel level) {}
 
   template <typename T>
   ToLog &operator<<(T const &value) {
@@ -246,12 +250,14 @@ struct ToLog {
 
 #define LOG(level) \
   if (true) {      \
+    /*do nothing*/ \
   } else           \
     paddle_mobile::ToLog(level)
 
-#define DLOG  \
-  if (true) { \
-  } else      \
+#define DLOG       \
+  if (true) {      \
+    /*do nothing*/ \
+  } else           \
     paddle_mobile::ToLog(paddle_mobile::kLOG_DEBUG)
 
 #define LOGF(level, format, ...)
