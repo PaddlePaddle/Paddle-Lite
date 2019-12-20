@@ -49,4 +49,7 @@ int main() {
   tester.Predict("expend", in_dims, out_dims, inputs, outputs, attrs);
 }
 #endif
+
+#else
+int main() {}
 #endif
