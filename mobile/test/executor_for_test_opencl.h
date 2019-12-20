@@ -15,10 +15,11 @@ limitations under the License. */
 #pragma once
 #ifdef PADDLE_MOBILE_CL
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
+#include "./test_helper.h"
 #include "common/log.h"
 #include "framework/cl/cl_helper.h"
 #include "framework/cl/cl_tensor.h"
@@ -26,18 +27,17 @@ limitations under the License. */
 #include "framework/op_registry.h"
 #include "operators/feed_op.h"
 #include "operators/fetch_op.h"
-#include "./test_helper.h"
 
+using paddle_mobile::framework::AttributeMap;
 using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Executor;
 using paddle_mobile::framework::LoDTensor;
 using paddle_mobile::framework::OpDesc;
+using paddle_mobile::framework::OperatorBase;
 using paddle_mobile::framework::Program;
 using paddle_mobile::framework::Tensor;
 using paddle_mobile::framework::Variable;
-using paddle_mobile::framework::OperatorBase;
-using paddle_mobile::framework::AttributeMap;
 using std::string;
 using std::vector;
 namespace paddle_mobile {
