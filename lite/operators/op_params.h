@@ -864,6 +864,8 @@ struct VarConv2DParam {
   int stride_w;
   int kernel_h;
   int kernel_w;
+
+  bool fuse_relu{false};
 };
 
 /// ----------------------- shape operators ----------------------
