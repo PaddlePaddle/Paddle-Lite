@@ -33,36 +33,59 @@ namespace paddle_mobile {
 
 static const char *ANDROID_LOG_TAG =
     "paddle_mobile LOG built on " __DATE__ " " __TIME__;
-
+#ifdef PADDLE_ENABLE_COLORABLE_LOG
+#define PADDLE_RED "\033[1;31;40m"
+#define PADDLE_GREEN "\033[1;32;40m"
+#define PADDLE_YELLOW "\033[1;33;40m"
+#define PADDLE_LIGHT_RED "\033[1;35;40m"
+#define PADDLE_BLUE "\033[1;34;40m"
+#define PADDLE_WHITE "\033[1;37;40m"
+#define PADDLE_CONON "\033[0m"
+#else
+#define PADDLE_RED ""
+#define PADDLE_GREEN ""
+#define PADDLE_YELLOW ""
+#define PADDLE_LIGHT_RED ""
+#define PADDLE_BLUE ""
+#define PADDLE_WHITE ""
+#define PADDLE_CONON ""
+#endif
 #define ANDROIDLOGI(...)                                               \
   __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \
-  fprintf(stderr, "%s\n", __VA_ARGS__);                                \
+  fprintf(stderr, PADDLE_YELLOW "%s\n" PADDLE_CONON, __VA_ARGS__);     \
   fflush(stderr)
-#define ANDROIDLOGW(...)                                                  \
-  __android_log_print(ANDROID_LOG_WARNING, ANDROID_LOG_TAG, __VA_ARGS__); \
-  fprintf(stderr, "%s\n", __VA_ARGS__);                                   \
+#define ANDROIDLOGW(...)                                               \
+  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, __VA_ARGS__); \
+  fprintf(stderr, PADDLE_LIGHT_RED "%s\n" PADDLE_CONON, __VA_ARGS__);  \
   fflush(stderr)
 #define ANDROIDLOGD(...)                                                \
   __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__); \
-  fprintf(stderr, "%s\n", __VA_ARGS__);                                 \
+  fprintf(stderr, PADDLE_WHITE "%s\n" PADDLE_CONON, __VA_ARGS__);       \
   fflush(stderr)
 #define ANDROIDLOGE(...)                                                \
   __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__); \
-  fprintf(stderr, "%s\n", __VA_ARGS__);                                 \
+  fprintf(stderr, PADDLE_RED "%s\n" PADDLE_CONON, __VA_ARGS__);         \
+  fflush(stderr)
+#define ANDROIDLOGV(...)                                                  \
+  __android_log_print(ANDROID_LOG_VERBOSE, ANDROID_LOG_TAG, __VA_ARGS__); \
+  fprintf(stderr, PADDLE_GREEN "%s\n" PADDLE_CONON, __VA_ARGS__);         \
   fflush(stderr)
 #else
 #define ANDROIDLOGI(...)
 #define ANDROIDLOGW(...)
 #define ANDROIDLOGD(...)
 #define ANDROIDLOGE(...)
+#define ANDROIDLOGV(...)
 
 #endif
+//  fprintf(stderr, "\033[1;32;40m%s\n \033[0m", __VA_ARGS__);            \
 
 enum LogLevel {
   kNO_LOG,
   kLOG_ERROR,
   kLOG_WARNING,
   kLOG_INFO,
+  kLOG_VERBOSE,
   kLOG_DEBUG,
   kLOG_DEBUG1,
   kLOG_DEBUG2,
@@ -73,9 +96,9 @@ enum LogLevel {
 // log level
 static LogLevel log_level = kLOG_DEBUG4;
 
-static std::vector<std::string> logs{"NO",      "ERROR ",  "WARNING",
-                                     "INFO   ", "DEBUG  ", "DEBUG1 ",
-                                     "DEBUG2 ", "DEBUG3 ", "DEBUG4 "};
+static std::vector<std::string> logs{"NO     ", "ERROR  ", "WARNING", "INFO   ",
+                                     "VERBOSE", "DEBUG  ", "DEBUG1 ", "DEBUG2 ",
+                                     "DEBUG3 ", "DEBUG4 "};
 struct ToLog;
 struct Print;
 
@@ -97,9 +120,27 @@ struct Print {
 #else
       std::cerr << buffer_.str() << std::endl;
 #endif
-    } else {
+    } else if (level == kLOG_INFO) {
 #ifdef ANDROID
       ANDROIDLOGI(buffer_.str().c_str());
+#else
+      std::cerr << buffer_.str() << std::endl;
+#endif
+    } else if (level == kLOG_VERBOSE) {
+#ifdef ANDROID
+      ANDROIDLOGV(buffer_.str().c_str());
+#else
+      std::cerr << buffer_.str() << std::endl;
+#endif
+    } else if (level == kLOG_WARNING) {
+#ifdef ANDROID
+      ANDROIDLOGW(buffer_.str().c_str());
+#else
+      std::cerr << buffer_.str() << std::endl;
+#endif
+    } else {
+#ifdef ANDROID
+      ANDROIDLOGD(buffer_.str().c_str());
 #else
       std::cout << buffer_.str() << std::endl;
 #endif
@@ -170,12 +211,14 @@ struct ToLog {
 #define ANDROIDLOGW(...)
 #define ANDROIDLOGD(...)
 #define ANDROIDLOGE(...)
+#define ANDROIDLOGV(...)
 
 enum LogLevel {
   kNO_LOG,
   kLOG_ERROR,
   kLOG_WARNING,
   kLOG_INFO,
+  kLOG_VERBOSE,
   kLOG_DEBUG,
   kLOG_DEBUG1,
   kLOG_DEBUG2,
