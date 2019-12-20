@@ -836,7 +836,6 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
       threads * prein_size + win_round /*tmp zero*/ + ow_round /*tmp writer*/;
   ctx->ExtendWorkspace(sizeof(float) * workspace_size);
 
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
 
   /// get workspace

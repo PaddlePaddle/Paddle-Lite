@@ -25,7 +25,6 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
                                  const float* weights,
                                  const float* bias,
                                  bool flag_bias,
-                                 bool flag_relu,
                                  const int num,
                                  const int ch_in,
                                  const int h_in,
@@ -40,7 +39,6 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                                    const float* weights,
                                    const float* bias,
                                    bool flag_bias,
-                                   bool flag_relu,
                                    const int num,
                                    const int ch_in,
                                    const int h_in,
@@ -55,7 +53,6 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
                                  const float* weights,
                                  const float* bias,
                                  bool flag_bias,
-                                 bool flag_relu,
                                  const int num,
                                  const int ch_in,
                                  const int h_in,
@@ -70,7 +67,6 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                                    const float* weights,
                                    const float* bias,
                                    bool flag_bias,
-                                   bool flag_relu,
                                    const int num,
                                    const int ch_in,
                                    const int h_in,
@@ -93,7 +89,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                const float* bias,
                                int pad,
                                bool flag_bias,
-                               bool flag_relu,
                                const operators::ActivationParam act_param,
                                ARMContext* ctx) {
   if (pad == 0) {
@@ -103,7 +98,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                   weights,
                                   bias,
                                   flag_bias,
-                                  flag_relu,
                                   num,
                                   ch_in,
                                   h_in,
@@ -118,7 +112,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                     weights,
                                     bias,
                                     flag_bias,
-                                    flag_relu,
                                     num,
                                     ch_in,
                                     h_in,
@@ -136,7 +129,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                   weights,
                                   bias,
                                   flag_bias,
-                                  flag_relu,
                                   num,
                                   ch_in,
                                   h_in,
@@ -151,7 +143,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                     weights,
                                     bias,
                                     flag_bias,
-                                    flag_relu,
                                     num,
                                     ch_in,
                                     h_in,
@@ -1199,7 +1190,6 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
                                  const float* weights,
                                  const float* bias,
                                  bool flag_bias,
-                                 bool flag_relu,
                                  const int num,
                                  const int ch_in,
                                  const int h_in,
@@ -1415,7 +1405,7 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
                        "q14",
                        "q15");
         // do act
-        if (flag_relu) {
+        if (act_param.has_active) {
           act_switch_process(doutr0, doutr0, w_out, &act_param);
         }
         doutr0 = doutr0 + w_out;
@@ -1433,7 +1423,6 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                                    const float* weights,
                                    const float* bias,
                                    bool flag_bias,
-                                   bool flag_relu,
                                    const int num,
                                    const int ch_in,
                                    const int h_in,
@@ -1546,7 +1535,7 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                        "q15");
 #endif
         // do act
-        if (flag_relu) {
+        if (act_param.has_active) {
           act_switch_process(out_buf, out_buf, w_out, &act_param);
         }
         for (int w = 0; w < w_out; ++w) {
@@ -1831,7 +1820,6 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
                                  const float* weights,
                                  const float* bias,
                                  bool flag_bias,
-                                 bool flag_relu,
                                  const int num,
                                  const int ch_in,
                                  const int h_in,
@@ -2024,7 +2012,7 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
                        "q13",
                        "q14",
                        "q15");
-        if (flag_relu) {
+        if (act_param.has_active) {
           act_switch_process(doutr0, doutr0, w_out, &act_param);
         }
         doutr0 = doutr0 + w_out;
@@ -2042,7 +2030,6 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                                    const float* weights,
                                    const float* bias,
                                    bool flag_bias,
-                                   bool flag_relu,
                                    const int num,
                                    const int ch_in,
                                    const int h_in,
@@ -2164,7 +2151,7 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                        "q14",
                        "q15");
 #endif
-        if (flag_relu) {
+        if (act_param.has_active) {
           act_switch_process(out_buf, out_buf, w_out, &act_param);
         }
         for (int w = 0; w < w_out; ++w) {

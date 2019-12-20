@@ -584,7 +584,6 @@ void conv_depthwise_3x3_fp32(const void* din,
   const int pad_w = paddings[2];
   int stride = param.strides[1];
   int pad = pad_w;
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
   bool pads_equal =
       ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
@@ -603,7 +602,6 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 bias,
                                 pad,
                                 flag_bias,
-                                flag_relu,
                                 act_param,
                                 ctx);
     } else {
@@ -638,7 +636,6 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 bias,
                                 pad,
                                 flag_bias,
-                                flag_relu,
                                 act_param,
                                 ctx);
     } else {
