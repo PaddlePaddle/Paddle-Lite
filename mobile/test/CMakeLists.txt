@@ -1,7 +1,7 @@
 set(dir ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${dir}/build")
 set(FOUND_MATCH OFF)
-set(ENABLE_ALL_TEST OFF)
+set(ENABLE_ALL_TEST ON)
 
 if (ANDROID_ABI STREQUAL "arm64-v8a")
     message("using google's linker to link armv8 binary")
