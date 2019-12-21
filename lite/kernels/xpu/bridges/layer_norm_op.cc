@@ -35,7 +35,7 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-  auto x = scope->FindMutableTensor(input_name);
+  auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto scale_name = op_info->Input("Scale").front();
   auto scale_type = kernel->GetInputDeclType("Scale");

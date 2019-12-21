@@ -63,7 +63,7 @@ int SubgraphEngine::BuildDeviceProgram() {
         device_inames_.push_back(input_name);
       } else {
         LOG(WARNING) << "[NPU] Input node " << input_name
-                     << " is skipped because it is a persisable node.";
+                     << " is skipped because it is a persistable node.";
       }
     } else {
       LOG(WARNING) << "[NPU] Input node " << input_name

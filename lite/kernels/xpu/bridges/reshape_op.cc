@@ -44,7 +44,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
+  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
   if (graph->HasNode(x_name)) {
     x_node = graph->GetNode(x_name);
   } else {
@@ -83,7 +83,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "[XPU] No new shape for reshape op";
     return FAILED;
   }
-  auto out_dims = operators::ValidateShape(shape, x_dims());
+  auto out_dims = operators::ValidateShape(shape, x_dims);
 
   // Reshape node
   graph->AddNode(out_name,

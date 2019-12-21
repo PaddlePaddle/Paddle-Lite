@@ -35,6 +35,8 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
@@ -42,7 +44,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
+  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
   if (graph->HasNode(x_name)) {
     x_node = graph->GetNode(x_name);
   } else {
