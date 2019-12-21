@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -31,35 +31,34 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
   // Get input and output vars and op attributes
-  auto x_name = op_info->Input("X").front();
+  auto x_names = op_info->Input("X");
   auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-  auto x = scope->FindMutableTensor(x_name);
-  auto x_dims = x->dims();
-  auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto y_name = op_info->Output("Y").front();
+  auto y_type = kernel->GetOutputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  int axis = op_info->GetAttr<int>("axis");
 
-  // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
-  } else {
-    x_node = graph->AddNode(x_name, x_dims);
+  // X nodes
+  xtcl::Array<xtcl::xExpr> x_nodes;
+  for (auto& x_name : x_names) {
+    auto x = scope->FindMutableTensor(x_name);
+    auto x_dims = x->dims();
+    std::shared_ptr<xtcl::xExpr> x_node = nullptr;
+    if (graph->HasNode(x_name)) {
+      x_node = graph->GetNode(x_name);
+    } else {
+      x_node = graph->AddNode(x_name, x_dims);
+    }
+    x_nodes.push_back(*x_node);
   }
 
-  // Act node
-  if (op_type == "relu") {
-    graph->AddNode(out_name, graph->builder_.CreateRelu(*x_node));
-  } else if (op_type == "tanh") {
-    graph->AddNode(out_name, graph->builder_.CreateUnaryOp("tanh", *x_node));
-  } else {
-    // TODO(hong19860320) supports more activation ops
-    LOG(WARNING) << "[XPU] Unsupported activation type " << op_type;
-    return FAILED;
-  }
+  // Stack node
+  graph->AddNode(y_name,
+                 graph->builder_.CreateStack(
+                     xtcl::network::TupleNode::make(x_nodes), axis));
   return SUCCESS;
 }
 
@@ -68,5 +67,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU, relu, paddle::lite::subgraph::xpu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(XPU, tanh, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU,
+                         stack,
+                         paddle::lite::subgraph::xpu::StackConverter);

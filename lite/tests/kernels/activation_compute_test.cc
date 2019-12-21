@@ -243,8 +243,8 @@ class ActivationComputeTester : public arena::TestCase {
 
 TEST(Activation_relu, precision) {
   LOG(INFO) << "test relu op";
-  float abs_error = 2e-5;
   Place place;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
@@ -280,8 +280,8 @@ TEST(Activation_relu, precision) {
 
 TEST(Activation_leaky_relu, precision) {
   LOG(INFO) << "test leaky_relu op";
-  float abs_error = 2e-5;
   Place place;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
@@ -317,8 +317,8 @@ TEST(Activation_leaky_relu, precision) {
 
 TEST(Activation_relu_clipped, precision) {
   LOG(INFO) << "test relu clipped op";
-  float abs_error = 2e-5;
   Place place;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
@@ -384,8 +384,8 @@ TEST(Activation_prelu, precision) {
 
 TEST(Activation_sigmoid, precision) {
   LOG(INFO) << "test sigmoid op";
-  float abs_error = 2e-5;
   Place place;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
@@ -419,13 +419,15 @@ TEST(Activation_sigmoid, precision) {
 
 TEST(Activation_tanh, precision) {
   LOG(INFO) << "test tanh op";
-  float abs_error = 2e-5;
   Place place;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #else
   return;
 #endif

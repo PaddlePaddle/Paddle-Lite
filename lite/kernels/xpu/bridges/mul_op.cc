@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int MulConverter(void* ctx, OpLite* op) {
+int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,25 +30,41 @@ int MulConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // Get input, and attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto y_var_name = op_info->Input("Y").front();
-  auto out_var_name = op_info->Output("Out").front();
-  auto y = scope->FindMutableTensor(y_var_name);
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto y_name = op_info->Input("Y").front();
+  auto y_type = kernel->GetInputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
-  CHECK_EQ(y_dims.size(), 2) << "xpu now only support y_dims.size() == 2";
-
+  CHECK_EQ(y_dims.size(), 2) << "[XPU] Now only support y_dims.size() == 2";
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto x_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
   CHECK_EQ(x_num_col_dims, 1) << "xpu now only support x_num_col_dims == 1";
   auto y_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
   CHECK_EQ(y_num_col_dims, 1) << "xpu now only support y_num_col_dims == 1";
 
+  // X node
+  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
   // Flatten x node
-  auto x_node = graph->AddNode(
-      x_var_name + "/flatten",
-      graph->builder_.CreateBatchFlatten(*graph->GetNode(x_var_name)));
+  x_node = graph->AddNode(x_name + "/flatten",
+                          graph->builder_.CreateBatchFlatten(*x_node));
 
-  // Transpose y data and create y node
+  // Transpose y data and create Y node
   Tensor transpose_y;
   DDim transpose_y_dims(std::vector<int64_t>{y_dims[1], y_dims[0]});
   transpose_y.Resize(transpose_y_dims);
@@ -60,11 +76,11 @@ int MulConverter(void* ctx, OpLite* op) {
           y_data[j * transpose_y_dims[0] + i];
     }
   }
-  auto y_const_node = graph->AddNode(y_var_name + "/transpose", transpose_y);
+  auto y_const_node = graph->AddNode(y_name + "/transpose", transpose_y);
 
-  // Create mul node and set params from op
+  // Dense node
   graph->AddNode(
-      out_var_name,
+      out_name,
       graph->builder_.CreateDense(*x_node,
                                   static_cast<int>(y_dims[1]),
                                   ::xtcl::NullValue<::xtcl::DataType>(),

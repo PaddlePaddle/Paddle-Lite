@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -37,10 +37,21 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  auto index_name = op_info->Input("Index").front();
+  auto index_type = kernel->GetInputDeclType("Index");
+  CHECK(index_type->precision() == PRECISION(kInt32) ||
+        index_type->precision() == PRECISION(kInt64));
+  CHECK(index_type->layout() == DATALAYOUT(kNCHW));
+  auto index = scope->FindMutableTensor(index_name);
+  auto index_dims = index->dims();
+  CHECK(index_dims.size() == 1 ||
+        (index_dims.size() == 2 && index_dims[1] == 1));
   auto out_name = op_info->Output("Out").front();
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto out = scope->FindMutableTensor(out_name);
+  auto out_dims = out->dims();
 
   // X node
   std::shared_ptr<xtcl::xExpr> x_node = nullptr;
@@ -50,15 +61,31 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->AddNode(x_name, x_dims);
   }
 
-  // Act node
-  if (op_type == "relu") {
-    graph->AddNode(out_name, graph->builder_.CreateRelu(*x_node));
-  } else if (op_type == "tanh") {
-    graph->AddNode(out_name, graph->builder_.CreateUnaryOp("tanh", *x_node));
+  // Index node
+  std::shared_ptr<xtcl::xExpr> index_node = nullptr;
+  if (graph->HasNode(index_name)) {
+    index_node = graph->GetNode(index_name);
   } else {
-    // TODO(hong19860320) supports more activation ops
-    LOG(WARNING) << "[XPU] Unsupported activation type " << op_type;
-    return FAILED;
+    index_node = graph->AddNode(
+        index_name, index_dims, index_type->precision(), index_type->layout());
+  }
+  // Flatten index node
+  if (index_dims.size() != 1) {
+    index_node =
+        graph->AddNode(index_name + "/reshape",
+                       graph->builder_.CreateReshape(*index_node, {-1}),
+                       index_type->precision(),
+                       index_type->layout());
+  }
+
+  // Reshape the gather node with the inferred shape as the output node
+  auto gather_node = graph->AddNode(
+      out_name,
+      graph->builder_.CreateGather(*x_node, *index_node, /* axis= */ 0));
+  if (out_dims.size() != 2) {
+    graph->AddNode(out_name,
+                   graph->builder_.CreateReshape(
+                       *gather_node, CvtShape<xtcl::Integer>(out_dims)));
   }
   return SUCCESS;
 }
@@ -68,5 +95,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU, relu, paddle::lite::subgraph::xpu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(XPU, tanh, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU,
+                         gather,
+                         paddle::lite::subgraph::xpu::GatherConverter);

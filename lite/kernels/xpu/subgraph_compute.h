@@ -41,6 +41,10 @@ class SubgraphEngine : public subgraph::Engine {
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
 
+  std::vector<std::string> device_inames_;
+  std::vector<std::string> device_onames_;
+  std::vector<DLTensor> device_itensors_;
+  std::vector<DLTensor> device_otensors_;
   std::unique_ptr<xtcl::network::xRuntimeInstance> device_program_{nullptr};
 };
 

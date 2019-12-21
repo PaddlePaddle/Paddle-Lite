@@ -82,11 +82,15 @@ class ScaleComputeTester : public arena::TestCase {
 };
 
 TEST(Scale, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
 
   for (float scale : {0.123, 2., -1.2}) {
@@ -102,11 +106,15 @@ TEST(Scale, precision) {
 }
 
 TEST(Scale, performance) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
 
   std::unique_ptr<arena::TestCase> tester(

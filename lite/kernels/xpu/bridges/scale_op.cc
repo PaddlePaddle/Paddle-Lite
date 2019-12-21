@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utility.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace npu {
+namespace xpu {
 
-int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph = static_cast<Graph*>(ctx);
+  // auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto scope = op->scope();
-  VLOG(3) << "[NPU] Converting " + op_type + "...";
-
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
+#if 0
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_type = kernel->GetInputDeclType("X");
@@ -41,33 +40,31 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
-  auto axis = op_info->GetAttr<int>("axis");
-  if (x_dims.size() > 3) {
-    CHECK(!(axis == 2 && x_dims[3] > 1))
-        << "[NPU] Unsupported softmax params: axis = " << axis
-        << "  :x_w = " << x_dims[3];
-  }
+  float scale = op_info->GetAttr<float>("scale");
+  bool bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
+  float bias = op_info->GetAttr<float>("bias");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
+  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
   if (graph->HasNode(x_name)) {
     x_node = graph->GetNode(x_name);
   } else {
     x_node = graph->AddNode(x_name, x_dims);
   }
 
-  // Softmax node
-  auto softmax_node = graph->AddNode<ge::op::Softmax>(out_name);
-  softmax_node->set_input_x(*x_node);
-  softmax_node->set_attr_axis(axis);
-  return REBUILD_WHEN_SHAPE_CHANGED;
+  // Scale node
+  graph->AddNode(
+      out_name,
+      graph->builder_.CreateScale(*x_node, scale, bias, bias_after_scale));
+#endif
+  return SUCCESS;
 }
 
-}  // namespace npu
+}  // namespace xpu
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         softmax,
-                         paddle::lite::subgraph::npu::SoftmaxConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU,
+                         scale,
+                         paddle::lite::subgraph::xpu::ScaleConverter);

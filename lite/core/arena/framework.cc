@@ -35,8 +35,8 @@ void TestCase::CreateInstruction() {
     op_desc_.reset(new cpp::OpDesc());
     op_desc_->SetType("subgraph");
     op_desc_->SetAttr<int32_t>("sub_block", sub_block_idx);
-    op_desc_->SetInput("Inputs", op_desc_->input_vars());
-    op_desc_->SetOutput("Outputs", op_desc_->output_vars());
+    op_desc_->SetInput("Inputs", sub_block_op_desc->input_vars());
+    op_desc_->SetOutput("Outputs", sub_block_op_desc->output_vars());
     op_desc_->SetAttr<std::vector<std::string>>(
         "input_data_names", sub_block_op_desc->input_vars());
     op_desc_->SetAttr<std::vector<std::string>>(

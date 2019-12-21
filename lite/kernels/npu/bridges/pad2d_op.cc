@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int Pad2dConverter(void* ctx, OpLite* op) {
+int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,13 +30,46 @@ int Pad2dConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-  auto pad2d_node = graph->AddNode<ge::op::Pad>(out_var_name);
-  pad2d_node->set_input_x(*graph->GetNode(x_var_name));
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("Input");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto padding = op_info->GetAttr<std::vector<int>>("paddings");
+  CHECK_EQ(padding.size(), 4);
 
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Padding node
+  int xds = x_dims.size();
+  padding.insert(padding.begin(), xds * 2 - 4, 0);
+  auto padding_const_node =
+      graph->AddNode(out_name + "/padding", padding, {xds, 2});
+
+  // Pad node
+  auto pad2d_node = graph->AddNode<ge::op::Pad>(out_name);
+  pad2d_node->set_input_x(*x_node);
+  pad2d_node->set_input_padding(*padding_const_node);
   auto mode = op_info->GetAttr<std::string>("mode");
   if (mode == "constant") {
+    // Pad value node
+    auto pad_value = op_info->GetAttr<float>("pad_value");
+    auto pad_value_const_node =
+        graph->AddNode(out_name + "/pad_value", pad_value);
+    pad2d_node->set_input_constant_values(*pad_value_const_node);
+    pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
     pad2d_node->set_attr_mode(0);
   } else if (mode == "reflect") {
     LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
@@ -45,23 +78,6 @@ int Pad2dConverter(void* ctx, OpLite* op) {
   } else {
     LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
     return FAILED;
-  }
-
-  auto x_dims = scope->FindTensor(x_var_name)->dims();
-  auto padding = op_info->GetAttr<std::vector<int>>("paddings");
-  CHECK_EQ(padding.size(), 4);
-  int xds = x_dims.size();
-  padding.insert(padding.begin(), xds * 2 - 4, 0);
-  auto padding_const_node =
-      graph->AddNode(out_var_name + "/padding", padding, {xds, 2});
-  pad2d_node->set_input_padding(*padding_const_node);
-
-  if (mode == "constant") {
-    auto pad_value = op_info->GetAttr<float>("pad_value");
-    auto pad_value_const_node =
-        graph->AddNode(out_var_name + "/pad_value", pad_value);
-    pad2d_node->set_input_constant_values(*pad_value_const_node);
-    pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
