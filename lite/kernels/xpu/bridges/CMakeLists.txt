@@ -19,6 +19,9 @@ lite_cc_library(subgraph_bridge_gather_op_xpu SRCS gather_op.cc DEPS ${xpu_subgr
 lite_cc_library(subgraph_bridge_scale_op_xpu SRCS scale_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_lookup_table_op_xpu SRCS lookup_table_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_slice_op_xpu SRCS slice_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_transpose_op_xpu SRCS transpose_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reshape_op_xpu SRCS reshape_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_layer_norm_op_xpu SRCS layer_norm_op.cc DEPS ${xpu_subgraph_bridge_deps})
 
 set(xpu_subgraph_bridges
         subgraph_bridge_registry
@@ -36,6 +39,9 @@ set(xpu_subgraph_bridges
         subgraph_bridge_scale_op_xpu
         subgraph_bridge_lookup_table_op_xpu
         subgraph_bridge_slice_op_xpu
+        subgraph_bridge_transpose_op_xpu
+        subgraph_bridge_reshape_op_xpu
+        subgraph_bridge_layer_norm_op_xpu
         CACHE INTERNAL "xpu_subgraph_bridges")
 
 message(STATUS "+++++ xpu_subgraph_bridges: ${xpu_subgraph_bridges}")

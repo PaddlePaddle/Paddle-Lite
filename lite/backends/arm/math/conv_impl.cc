@@ -579,6 +579,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                              ARMContext* ctx,
                              const float* scale) {
   auto paddings = *param.paddings;
+  auto act_param = param.activation_param;
   const int pad_h = paddings[0];
   const int pad_w = paddings[2];
   int stride = param.strides[1];
@@ -603,6 +604,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 pad,
                                 flag_bias,
                                 flag_relu,
+                                act_param,
                                 ctx);
     } else {
       conv_3x3s1_depthwise_fp32(reinterpret_cast<const float*>(din),
@@ -617,6 +619,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 reinterpret_cast<const float*>(weights),
                                 bias,
                                 param,
+                                act_param,
                                 ctx);
     }
 

@@ -79,6 +79,10 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << " is skipped because it does not exist.";
     }
   }
+  CHECK(!device_inames_.empty())
+      << "[XPU] No input nodes found for building XPU model";
+  CHECK(!device_onames_.empty())
+      << "[XPU] No output nodes found for building XPU model";
   device_program_ = lite::xpu::Device::Global().Build(
       &graph.builder_, &graph.params_, &device_onodes);
   if (device_program_ == nullptr) {

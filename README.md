@@ -44,7 +44,7 @@ Framework compatibility: In addition to models trained on PaddlePaddle, those tr
 
 Paddle Lite is designed to support a wide range of hardwares and devices, and it enables mixed execution of a single model on multiple devices, optimization on various phases, and leight-weighted applications on devices.
 
-![img](https://github.com/Superjomn/_tmp_images/raw/master/images/paddle-lite-architecture.png)
+![img](https://user-images.githubusercontent.com/45189361/70908123-6ce4fd00-2045-11ea-97e1-ad08446c5c86.png)
 
 As is shown in the figure above, analysis phase includes Machine IR module, and it enables optimizations like Op fusion and redundant computation pruning. Besides, excecution phase only involves Kernal exevution, so it can be deployed on its own to ensure maximized light-weighted deployment.
 

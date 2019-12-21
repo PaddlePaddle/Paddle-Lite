@@ -205,14 +205,12 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                                           \
   "ext  v10.16b, %[vzero].16b, v9.16b, #12     \n"                        \
   "fadd v16.4s, v16.4s, v11.4s                  \n"                       \
-  "fadd v16.4s, v16.4s, v12.4s                  \n"
+  "fadd v16.4s, v16.4s, v12.4s                  \n" /* r4 */              \
+  "fmla v13.4s, v8.4s, %[w2].s[1]            \n"                          \
+  "fmla v14.4s, v9.4s, %[w2].s[2]            \n"                          \
+  "fmla v17.4s, v10.4s, %[w2].s[0]            \n"
 
 #define LEFT_RESULT_S2                              \
-  /* r4 */                                          \
-  "fmla v13.4s, v8.4s, %[w2].s[1]            \n"    \
-  "fmla v14.4s, v9.4s, %[w2].s[2]            \n"    \
-  "fmla v17.4s, v10.4s, %[w2].s[0]            \n"   \
-                                                    \
   "st1 {v16.4s}, [%[outptr0]], #16              \n" \
                                                     \
   "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32    \n"     \
@@ -244,53 +242,52 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                     \
   "blt 1f                                     \n"
 
-#define MID_COMPUTE_S2                                      \
-  "2:                                          \n" /* r0 */ \
-  "fmul v11.4s, v0.4s, %[w0].s[0]            \n"            \
-  "fmul v12.4s, v1.4s, %[w0].s[1]            \n"            \
-  "fmla v16.4s, v10.4s, %[w0].s[2]            \n"           \
-                                                            \
-  "ext  v10.16b, v2.16b, v18.16b, #4     \n"                \
-  "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32    \n" /* r1 */    \
-  "fmla v11.4s, v2.4s, %[w1].s[0]            \n"            \
-  "fmla v12.4s, v3.4s, %[w1].s[1]            \n"            \
-  "fmla v16.4s, v10.4s, %[w1].s[2]            \n"           \
-                                                            \
-  "ext  v10.16b, v4.16b, v19.16b, #4     \n"                \
-                                                            \
-  "ld2  {v2.4s, v3.4s}, [%[inptr1]], #32    \n" /* r2 */    \
-  "fmul v13.4s, v4.4s, %[w0].s[0]            \n"            \
-  "fmla v11.4s, v4.4s, %[w2].s[0]            \n"            \
-                                                            \
-  "fmul v14.4s, v5.4s, %[w0].s[1]            \n"            \
-  "fmla v12.4s, v5.4s, %[w2].s[1]            \n"            \
-                                                            \
-  "fmla v17.4s, v10.4s, %[w0].s[2]            \n"           \
-  "fmla v16.4s, v10.4s, %[w2].s[2]            \n"           \
-                                                            \
-  "ext  v10.16b, v6.16b, v20.16b, #4     \n"                \
-                                                            \
-  "ld2  {v4.4s, v5.4s}, [%[inptr2]], #32    \n" /* r3 */    \
-  "fmla v13.4s, v6.4s, %[w1].s[0]            \n"            \
-  "fmla v14.4s, v7.4s, %[w1].s[1]            \n"            \
-  "fmla v17.4s, v10.4s, %[w1].s[2]            \n"           \
-                                                            \
-  "ext  v10.16b, v8.16b, v21.16b, #4     \n"                \
-                                                            \
-  "ld2  {v6.4s, v7.4s}, [%[inptr3]], #32    \n"             \
-                                                            \
-  "fadd v16.4s, v16.4s, v11.4s                  \n"         \
-  "fadd v16.4s, v16.4s, v12.4s                  \n"
+#define MID_COMPUTE_S2                                       \
+  "2:                                          \n" /* r0 */  \
+  "fmul v11.4s, v0.4s, %[w0].s[0]            \n"             \
+  "fmul v12.4s, v1.4s, %[w0].s[1]            \n"             \
+  "fmla v16.4s, v10.4s, %[w0].s[2]            \n"            \
+                                                             \
+  "ext  v10.16b, v2.16b, v18.16b, #4     \n"                 \
+  "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32    \n" /* r1 */     \
+  "fmla v11.4s, v2.4s, %[w1].s[0]            \n"             \
+  "fmla v12.4s, v3.4s, %[w1].s[1]            \n"             \
+  "fmla v16.4s, v10.4s, %[w1].s[2]            \n"            \
+                                                             \
+  "ext  v10.16b, v4.16b, v19.16b, #4     \n"                 \
+                                                             \
+  "ld2  {v2.4s, v3.4s}, [%[inptr1]], #32    \n" /* r2 */     \
+  "fmul v13.4s, v4.4s, %[w0].s[0]            \n"             \
+  "fmla v11.4s, v4.4s, %[w2].s[0]            \n"             \
+                                                             \
+  "fmul v14.4s, v5.4s, %[w0].s[1]            \n"             \
+  "fmla v12.4s, v5.4s, %[w2].s[1]            \n"             \
+                                                             \
+  "fmla v17.4s, v10.4s, %[w0].s[2]            \n"            \
+  "fmla v16.4s, v10.4s, %[w2].s[2]            \n"            \
+                                                             \
+  "ext  v10.16b, v6.16b, v20.16b, #4     \n"                 \
+                                                             \
+  "ld2  {v4.4s, v5.4s}, [%[inptr2]], #32    \n" /* r3 */     \
+  "fmla v13.4s, v6.4s, %[w1].s[0]            \n"             \
+  "fmla v14.4s, v7.4s, %[w1].s[1]            \n"             \
+  "fmla v17.4s, v10.4s, %[w1].s[2]            \n"            \
+                                                             \
+  "ext  v10.16b, v8.16b, v21.16b, #4     \n"                 \
+                                                             \
+  "ld2  {v6.4s, v7.4s}, [%[inptr3]], #32    \n"              \
+                                                             \
+  "fadd v16.4s, v16.4s, v11.4s                  \n"          \
+  "fadd v16.4s, v16.4s, v12.4s                  \n" /* r4 */ \
+  "fmla v13.4s, v8.4s, %[w2].s[0]            \n"             \
+  "fmla v14.4s, v9.4s, %[w2].s[1]            \n"             \
+  "fmla v17.4s, v10.4s, %[w2].s[2]            \n"            \
+                                                             \
+  "ld2  {v8.4s, v9.4s}, [%[inptr4]], #32    \n"              \
+  "ld1 {v15.4s}, [%[inptr0]]                 \n"             \
+  "ld1 {v18.4s}, [%[inptr1]]                 \n"
 
 #define MID_RESULT_S2                               \
-  /* r4 */                                          \
-  "fmla v13.4s, v8.4s, %[w2].s[0]            \n"    \
-  "fmla v14.4s, v9.4s, %[w2].s[1]            \n"    \
-  "fmla v17.4s, v10.4s, %[w2].s[2]            \n"   \
-                                                    \
-  "ld2  {v8.4s, v9.4s}, [%[inptr4]], #32    \n"     \
-  "ld1 {v15.4s}, [%[inptr0]]                 \n"    \
-  "ld1 {v18.4s}, [%[inptr1]]                 \n"    \
   "st1 {v16.4s}, [%[outptr0]], #16              \n" \
                                                     \
   "fadd v17.4s, v17.4s, v13.4s                  \n" \
@@ -360,14 +357,12 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                            \
   "fadd v16.4s, v16.4s, v11.4s                  \n"        \
   "fadd v16.4s, v16.4s, v12.4s                  \n"        \
-  "ld1 {v1.4s}, [%[outptr1]]                  \n"
+  "ld1 {v1.4s}, [%[outptr1]]                  \n" /* r4 */ \
+  "fmla v13.4s, v8.4s, %[w2].s[0]            \n"           \
+  "fmla v14.4s, v9.4s, %[w2].s[1]            \n"           \
+  "fmla v17.4s, v10.4s, %[w2].s[2]            \n"
 
 #define RIGHT_RESULT_S2                             \
-  /* r4 */                                          \
-  "fmla v13.4s, v8.4s, %[w2].s[0]            \n"    \
-  "fmla v14.4s, v9.4s, %[w2].s[1]            \n"    \
-  "fmla v17.4s, v10.4s, %[w2].s[2]            \n"   \
-                                                    \
   "bif  v16.16b, v0.16b, %[wmask].16b    \n"        \
                                                     \
   "fadd v17.4s, v17.4s, v13.4s                  \n" \
@@ -382,11 +377,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "4:                                          \n"
 
 #define LEFT_RESULT_S2_RELU                         \
-  /* r4 */                                          \
-  "fmla v13.4s, v8.4s, %[w2].s[1]            \n"    \
-  "fmla v14.4s, v9.4s, %[w2].s[2]            \n"    \
-  "fmla v17.4s, v10.4s, %[w2].s[0]            \n"   \
-                                                    \
   "fmax v16.4s, v16.4s, %[vzero].4s            \n"  \
                                                     \
   "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32    \n"     \
@@ -424,14 +414,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "blt 1f                                     \n"
 
 #define MID_RESULT_S2_RELU                                    \
-  /* r4 */                                                    \
-  "fmla v13.4s, v8.4s, %[w2].s[0]            \n"              \
-  "fmla v14.4s, v9.4s, %[w2].s[1]            \n"              \
-  "fmla v17.4s, v10.4s, %[w2].s[2]            \n"             \
-                                                              \
-  "ld2  {v8.4s, v9.4s}, [%[inptr4]], #32    \n"               \
-  "ld1 {v15.4s}, [%[inptr0]]                 \n"              \
-  "ld1 {v18.4s}, [%[inptr1]]                 \n"              \
   "fmax v16.4s, v16.4s, %[vzero].4s            \n" /* relu */ \
                                                               \
   "fadd v17.4s, v17.4s, v13.4s                  \n"           \
@@ -457,11 +439,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "bne  2b                                    \n"
 
 #define RIGHT_RESULT_S2_RELU                                  \
-  /* r4 */                                                    \
-  "fmla v13.4s, v8.4s, %[w2].s[0]            \n"              \
-  "fmla v14.4s, v9.4s, %[w2].s[1]            \n"              \
-  "fmla v17.4s, v10.4s, %[w2].s[2]            \n"             \
-                                                              \
   "fmax v16.4s, v16.4s, %[vzero].4s            \n" /* relu */ \
                                                               \
   "fadd v17.4s, v17.4s, v13.4s                  \n"           \

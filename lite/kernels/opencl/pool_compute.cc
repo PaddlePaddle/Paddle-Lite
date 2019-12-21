@@ -31,6 +31,8 @@ class PoolCompute
  public:
   using param_t = operators::PoolParam;
 
+  std::string doc() const override { return "Pool using cl::Buffer, kFloat"; }
+
   void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
     kernel_func_name_ += param.pooling_type;
@@ -114,14 +116,17 @@ class PoolCompute
 
  private:
   std::string kernel_func_name_{"pool_"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
-class PoolComputeImage2D
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
+                                             PRECISION(kFloat),
+                                             DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::PoolParam;
+
+  std::string doc() const override { return "Pool using cl::Image2D, kFloat"; }
 
   void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
@@ -237,15 +242,15 @@ REGISTER_LITE_KERNEL(pool2d,
 REGISTER_LITE_KERNEL(pool2d,
                      kOpenCL,
                      kFloat,
-                     kNHWC,
+                     kImageDefault,
                      paddle::lite::kernels::opencl::PoolComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNHWC))})
+                                      DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFloat),
-                                       DATALAYOUT(kNHWC))})
+                                       DATALAYOUT(kImageDefault))})
     .Finalize();

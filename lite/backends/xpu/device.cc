@@ -28,9 +28,14 @@ std::unique_ptr<xtcl::network::xRuntimeInstance> Device::Build(
   CHECK(outputs != nullptr);
   CHECK_GT(outputs->size(), 0);
 
-  // The XPU compiler build the graph and fill all of the constant params, only
-  // one output is supported now.
-  xtcl::xNetwork network = builder->FinalizeNetwork(*((*outputs)[0]));
+  // The XPU compiler build the graph and fill all of the constant params, and
+  // use TupleNode to support multiple outputs
+  xtcl::Array<xtcl::xExpr> all_outs;
+  for (size_t i = 0; i < outputs->size(); i++) {
+    all_outs.push_back(*outputs->at(i));
+  }
+  xtcl::xNetwork network =
+      builder->FinalizeNetwork(xtcl::relay::TupleNode::make(all_outs));
   auto target = xtcl::Target::Create(device_name_);
   auto compiler = xtcl::network::xTensorCompiler(network, target);
   compiler.SetParams(*params);  // Set the data of constant tensors

@@ -79,6 +79,10 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << " is skipped because it does not exist.";
     }
   }
+  CHECK(!device_inames_.empty())
+      << "[NPU] No input nodes found for building NPU model";
+  CHECK(!device_onames_.empty())
+      << "[NPU] No output nodes found for building NPU model";
   // Build the HiAI IR graph to HiAI om model as the device program
   device_program_ = lite::npu::Device::Global().Build(
       model_name_, device_inodes, device_onodes);
