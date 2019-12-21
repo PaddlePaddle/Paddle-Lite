@@ -554,8 +554,8 @@ PMStatus Executor<Device, T>::Predict() {
       clock_gettime(CLOCK_MONOTONIC, &ts);
       profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-      DLOG << i << "th, "
-           << "run op: " << op_handler->Type();
+      LOG(paddle_mobile::kLOG_INFO) << i << "th, "
+                                    << "run op: " << op_handler->Type();
       if (lod_mode_ && input_dim_has_changed_) {
         op_handler->InferShape();
       }
