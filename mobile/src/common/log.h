@@ -78,7 +78,6 @@ static const char *ANDROID_LOG_TAG =
 #define ANDROIDLOGV(...)
 
 #endif
-//  fprintf(stderr, "\033[1;32;40m%s\n \033[0m", __VA_ARGS__);            \
 
 enum LogLevel {
   kNO_LOG,
@@ -172,8 +171,8 @@ struct ToLog {
 
 #define LOG(level)                                                           \
   if (level > paddle_mobile::log_level) {                                    \
-    /*do nothing*/                                                           \
-  } else {                                                                   \
+    /* NOLINTNEXTLINE */                                                     \
+  } else                                                                     \
     paddle_mobile::ToLog(                                                    \
         level, static_cast<const std::stringstream &>(                       \
                    std::stringstream()                                       \
@@ -181,13 +180,12 @@ struct ToLog {
                    << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
                                               : __FILE__)                    \
                    << "] [line: " << __LINE__ << "] ")                       \
-                   .str())                                                   \
-  }
+                   .str())
 
 #define DLOG                                                          \
   if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {         \
-    /*do nothing*/                                                    \
-  } else {                                                            \
+    /* NOLINTNEXTLINE */                                              \
+  } else                                                              \
     paddle_mobile::ToLog(                                             \
         paddle_mobile::kLOG_DEBUG,                                    \
         static_cast<const std::stringstream &>(                       \
@@ -196,22 +194,19 @@ struct ToLog {
             << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
                                        : __FILE__)                    \
             << "] [line: " << __LINE__ << "] ")                       \
-            .str())                                                   \
-  }
+            .str())
 
 #define LOGF(level, format, ...)          \
   if (level > paddle_mobile::log_level) { \
-    /*do nothing*/                        \
-  } else {                                \
-    printf(format, ##__VA_ARGS__)         \
-  }
+    /* NOLINTNEXTLINE */                  \
+  } else                                  \
+    printf(format, ##__VA_ARGS__)
 
 #define DLOGF(format, ...)                                    \
   if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) { \
-    /*do nothing*/                                            \
-  } else {                                                    \
-    printf(format, ##__VA_ARGS__)                             \
-  }
+    /* NOLINTNEXTLINE */                                      \
+  } else                                                      \
+    printf(format, ##__VA_ARGS__)
 
 #else
 
@@ -252,19 +247,17 @@ struct ToLog {
   }
 };
 
-#define LOG(level)              \
-  if (true) {                   \
-    /*do nothing*/              \
-  } else {                      \
-    paddle_mobile::ToLog(level) \
-  }
+#define LOG(level)       \
+  if (true) {            \
+    /* NOLINTNEXTLINE */ \
+  } else                 \
+    paddle_mobile::ToLog(level)
 
-#define DLOG                                        \
-  if (true) {                                       \
-    /*do nothing*/                                  \
-  } else {                                          \
-    paddle_mobile::ToLog(paddle_mobile::kLOG_DEBUG) \
-  }
+#define DLOG             \
+  if (true) {            \
+    /* NOLINTNEXTLINE */ \
+  } else                 \
+    paddle_mobile::ToLog(paddle_mobile::kLOG_DEBUG)
 
 #define LOGF(level, format, ...)
 
