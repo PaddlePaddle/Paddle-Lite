@@ -769,6 +769,12 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SequencePoolConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  std::vector<std::string> pool_type{};
+};
+
 struct SearchGroupPaddingParam {
   lite::Tensor* x{};
   lite::Tensor* out_emb_padding{};
