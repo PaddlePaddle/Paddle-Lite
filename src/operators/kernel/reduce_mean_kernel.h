@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,25 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef REDUCE_MEAN_OP
 
+#pragma once
 
 #include <vector>
 
-#ifndef PREPROCESS_CONF_HPP
-#define PREPROCESS_CONF_HPP
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
-extern bool use_preprocess;
+namespace paddle_mobile {
+namespace operators {
 
-extern std::vector<float> preprocess_mean;
+template <typename DeviceType, typename T>
+class ReduceMeanKernel
+    : public framework::OpKernelBase<DeviceType, ReduceMeanParam<DeviceType>> {
+ public:
+  void Compute(const ReduceMeanParam<DeviceType>& param);
+  bool Init(ReduceMeanParam<DeviceType>* param);
+};
+}  // namespace operators
+}  // namespace paddle_mobile
 
-extern std::vector<float> preprocess_scale; 
-
-extern bool use_yolov3_416;
-
-extern float img_shape_height;
-
-extern float img_shape_width;
-
-
-#endif /* PREPROCESS_CONF_HPP */
+#endif

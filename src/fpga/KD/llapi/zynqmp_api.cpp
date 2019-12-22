@@ -74,8 +74,20 @@ void *fpga_malloc(size_t size) {
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == MAP_FAILED) {
     std::cout << "not enough memory !";
-    // exit(-1);
-    throw -1;
+    exit(-1);
+  }
+  if (errno == ENOMEM) {
+      std::cout << "mmap failed with not enough memory !";
+      exit(-1);
+  }
+  if (errno == EINVAL) {
+      std::cout << "mmap failed with invalid arguments ! (size=" << size << ")" << std::endl;
+      exit(-1);
+  }
+  if (ptr == NULL) {
+    std::cout << "NULL returned, errno=" << errno << ", mmap failed with other errors other than memory usage !"    \
+              << std::endl;
+    exit(-1);
   }
 
   memory_map.insert(std::make_pair(ptr, size));

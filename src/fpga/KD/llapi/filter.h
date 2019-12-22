@@ -31,6 +31,7 @@ int calc_division_capacity(int chw);
 int calc_split_num(int num, int division_capacity);
 int calc_division_number(int num, int group_num, int division_capacity);
 int calc_num_per_div(int num, int group_num, int division_capacity);
+int calc_pack_num (int num_per_group, int group, int division_capacity);
 
 float find_max(float* data_in, int data_size);
 int8_t* format_filter(float* data_in, int& mem_size, int num, int channel,

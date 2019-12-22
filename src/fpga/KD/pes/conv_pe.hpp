@@ -24,6 +24,7 @@ limitations under the License. */
 #include "conv_process.hpp"
 #include "elementwise_add_pe.hpp"
 #include "scale_pe.hpp"
+#include "split_pe.hpp"
 
 namespace paddle_mobile {
 namespace zynqmp {
@@ -40,6 +41,8 @@ class ConvPE : public PE {
   void apply() {
     split_axis = fill_split_arg(param_);
 
+    split_channel = param_.groups != 1 && param_.splitParams().size() > 1;
+
     if (split_axis == 0 && param_.splitParams().size() > 1) {
       ConcatParam& concat_param = concatPE_.param();
       for (auto conv_param : param_.splitParams()) {
@@ -49,6 +52,17 @@ class ConvPE : public PE {
       concatPE_.init();
       concatPE_.apply();
     }
+
+    if (split_channel) {
+      SplitParam& split_param = splitPE_.param();
+      split_param.input = param_.input;
+      for (auto conv_param : param_.splitParams()) {
+        split_param.outputs.push_back(&conv_param->input);
+      }
+      splitPE_.init();
+      splitPE_.apply();
+    }
+
 
     if (DLEngine::get_instance().isZU3() &&
         param_.input->shape().dimSize() == 4 &&
@@ -137,9 +151,18 @@ class ConvPE : public PE {
     }
 
     std::vector<BasicConvParam*>& params = param_.splitParams();
+
+    if (split_channel) {
+      //splitPE_.param().input->saveToFile("input_image",true);
+      splitPE_.dispatch();
+    }
+
     int ret = 0;
     for (auto conv_param : params) {
       // conv_param->input.printScale();
+      // if (split_channel) {
+      //   conv_param->input.saveToFile("pack_image",true);
+      // }
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
@@ -190,8 +213,10 @@ class ConvPE : public PE {
 
  private:
   bool use_cpu_ = false;
+  bool split_channel = false;
   ConvParam param_;
   ConcatPE concatPE_;
+  SplitPE splitPE_;
   ElementwiseAddPE addPE_;
   int split_axis = 0;
   InplaceArgs inplace_ = {0};
