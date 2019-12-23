@@ -49,6 +49,7 @@ add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
 add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
+add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
