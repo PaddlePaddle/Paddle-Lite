@@ -51,6 +51,7 @@ enum ActiveType {
   TYPE_SIGMOID = 4,
 };
 
+
 struct DeviceInfo {
   uint32_t filter_cap;
   uint32_t version;

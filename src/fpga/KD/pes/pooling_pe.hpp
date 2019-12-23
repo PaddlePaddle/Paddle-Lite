@@ -35,8 +35,8 @@ class PoolingPE : public PE {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
 
-    uint32_t k_height = param_.kernelSize[0];
-    uint32_t k_width = param_.kernelSize[1];
+    uint32_t k_height = 1;
+    uint32_t k_width = 1;
 
 
     if (param_.globalPooling) {
@@ -44,6 +44,9 @@ class PoolingPE : public PE {
       k_height = input->shape().height();
       param_.kernelSize[0] = k_height;
       param_.kernelSize[1] = k_width;
+    } else {
+      k_height = param_.kernelSize[0];
+      k_width = param_.kernelSize[1];
     }
 
     PoolingArgs args = {0};

@@ -37,8 +37,9 @@ void BilinearInterpCompute(const BilinearInterpParam<FPGA>& param) {
   }
 
   zynqmp::Tensor input_float;
-  // input_float.setDataLocation(CPU);
+  input_float.setDataLocation(zynqmp::CPU);
   // input_x.setAligned(true);
+  input_x->invalidate();
   input_x->unalignImage();
   float* input = input_float.mutableData<float>(zynqmp::FP32, input_x->shape());
   input_float.copyFrom(input_x);
@@ -63,6 +64,7 @@ void BilinearInterpCompute(const BilinearInterpParam<FPGA>& param) {
   if (in_h == out_h && in_w == out_w) {
     memcpy(output, input, param.InputX()->numel() * sizeof(float));
   } else {
+// #pragma omp parallel for
     for (int k = 0; k < batch_size; ++k) {  // loop for batches
       for (int i = 0; i < out_h; ++i) {     // loop for images
         int h = ratio_h * i;
@@ -78,15 +80,12 @@ void BilinearInterpCompute(const BilinearInterpParam<FPGA>& param) {
           // calculate four position for bilinear interpolation
           const float* in_pos = &input[(k * in_h * in_w + h * in_w + w) * channels];
           float* out_pos = &output[(k * out_w * out_h + i * out_w + j) * channels];
-
           for (int c = 0; c < channels; ++c) {  // loop for channels
             // bilinear interpolation
             out_pos[c] = static_cast<float>(
                 h2lambda * (w2lambda * in_pos[0 + c] + w1lambda * in_pos[wid + c]) +
                 h1lambda * (w2lambda * in_pos[hid + c] +
                             w1lambda * in_pos[hid + wid + c]));
-            // in_pos++;
-            // out_pos++;
           }
         }
       }
@@ -108,6 +107,9 @@ void BilinearInterpKernel<FPGA, float>::Compute(
 
   
   BilinearInterpCompute<float>(param);
+  param.Out()->zynqmpTensor()->flush();
+
+  // param.Out()->zynqmpTensor()->saveToFile("bilinear_interp_",true);
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput(
       "bilinear_interp", param.Out()->zynqmpTensor());

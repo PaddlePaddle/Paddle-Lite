@@ -32,7 +32,7 @@ void FusionConvAddBNOp<Dtype, T>::InferShape() const {
   // PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
   //                        dilations.size() == paddings.size() &&
   //                        paddings.size() == strides.size()),
-                        // "ConvParam is not suitable");
+  //                       "ConvParam is not suitable");
 
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   for (size_t i = 0; i < strides.size(); ++i) {

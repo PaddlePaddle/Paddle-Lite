@@ -6,6 +6,7 @@ option(WITH_LOGGING  "print logging for debug" OFF)
 option(WITH_SYMBOL   "build with all symbols" ON) # turn off if use jni or ios io
 option(WITH_PROFILE  "print op profile for debug" OFF)
 option(WITH_TEST     "build with unit tests" OFF)
+option(WITH_SECU     "build with model security" OFF)
 option(DEBUG_MODE "debug mode" OFF)
 
 # select the platform to build
@@ -95,6 +96,14 @@ else()
     endforeach()
 endif()
 
+if (WITH_SECU)
+    add_definitions(-DMODEL_SECU)
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/libseco/libseco.a)
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/libseco/libbaiduprotect_sec_full.a)
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/libseco/libcrypto.a)
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/libseco/libssl.a) 
+    
+endif()  
 if (GPU_CL)
     add_definitions(-DPADDLE_MOBILE_CL)
 

@@ -1649,6 +1649,45 @@ class Reshape2Param : public OpParam {
 };
 #endif
 
+#ifdef SQUEEZE2_OP
+template <typename Dtype>
+class Squeeze2Param : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  Squeeze2Param(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    input_shape_ = InputShapeFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    output_xshape_ = OutputXShapeFrom<GType>(outputs, *scope);
+    axes_ = GetAttr<vector<int>>("axes", attrs);
+   
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  const GType *InputShape() const { return input_shape_; }
+
+  GType *Out() const { return out_; }
+
+  GType *OutputXShape() const { return output_xshape_; }
+
+  const vector<int> &Axis() const { return axes_; }
+
+
+ private:
+  GType *input_x_;
+  GType *input_shape_;
+  GType *out_;
+  GType *output_xshape_;
+  vector<int> axes_;
+
+};
+#endif
+
 #ifdef SCALE_OP
 template <typename Dtype>
 class ScaleParam : public OpParam {
@@ -3536,6 +3575,36 @@ class IncrementParam : public OpParam {
   float step_;
 };
 #endif  // INCREMENT_OP
+
+#ifdef REDUCE_MEAN_OP
+template <typename Dtype>
+class ReduceMeanParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ReduceMeanParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    output_ = OutFrom<GType>(outputs, *scope);
+    keep_dim = OpParam::GetAttr<bool>("keep_dim", attrs);
+    dims = OpParam::GetAttr<std::vector<int>>("dim", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  GType *Output() const { return output_; }
+  bool KeepDim() const { return keep_dim; }
+  std::vector<int> Dims() const {return dims; }
+
+ public:
+  GType *input_x_;
+  GType *output_;
+  bool keep_dim;
+  std::vector<int> dims;
+};
+#endif  // REDUCE_MEAN_OP
+
 #ifdef PAD2D_OP
 template <typename Dtype>
 class Pad2dParam : public OpParam {

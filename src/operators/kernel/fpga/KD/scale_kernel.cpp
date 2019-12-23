@@ -23,7 +23,12 @@ namespace operators {
 
 template <>
 bool ScaleKernel<FPGA, float>::Init(ScaleParam<FPGA>* param) {
-  param->Out()->mutable_data<half>();
+  if (param->Scale() == 1 && param->Bias() == 0) {
+     param->Out()->mutable_data<float>();
+  } else {
+     param->Out()->mutable_data<half>();
+  }
+ 
 
   zynqmp::ScalePE& pe = param->context().pe<zynqmp::ScalePE>();
   zynqmp::ScaleParam& scale_param = pe.param();

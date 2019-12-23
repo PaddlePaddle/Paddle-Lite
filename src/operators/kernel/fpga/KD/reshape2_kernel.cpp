@@ -62,7 +62,6 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
   out->zynqmpTensor()->setAligned(input_x->zynqmpTensor()->aligned());
   out->zynqmpTensor()->copyScaleFrom(input_x->zynqmpTensor());
 
-  out->zynqmpTensor()->printScale();
 
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("reshape2",

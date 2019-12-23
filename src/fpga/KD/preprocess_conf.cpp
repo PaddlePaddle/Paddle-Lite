@@ -25,8 +25,7 @@ extern std::vector<float> preprocess_scale = {0, 0, 0};
 
 extern bool use_yolov3_416 = false;
 
-extern float img_shape_width = 0;
+extern float img_shape_width = 0.0f;
 
-extern float img_shape_height = 0;
-
+extern float img_shape_height = 0.0f;
 

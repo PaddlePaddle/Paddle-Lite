@@ -53,6 +53,7 @@ const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_RESHAPE2 = "reshape2";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
 const char *G_OP_TYPE_SOFTMAX = "softmax";
+const char *G_OP_TYPE_SQUEEZE2 = "squeeze2";
 const char *G_OP_TYPE_TRANSPOSE = "transpose";
 const char *G_OP_TYPE_TRANSPOSE2 = "transpose2";
 const char *G_OP_TYPE_SPLIT = "split";
@@ -119,6 +120,7 @@ const char *G_OP_TYPE_GENERATE_PROPOSALS = "generate_proposals";
 const char *G_OP_TYPE_PSROI_POOL = "psroi_pool";
 const char *G_OP_TYPE_ROIALIGN_POOL = "roialign_pool";
 const char *G_OP_TYPE_ROI_PERSPECTIVE = "roi_perspective_transform";
+const char *G_OP_TYPE_REDUCE_MEAN = "reduce_mean";
 const char *G_OP_TYPE_PAD2D = "pad2d";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU = "fusion_deconv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_BN = "fusion_deconv_add_bn";
@@ -140,6 +142,7 @@ std::unordered_map<
         {G_OP_TYPE_LEAKYRELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_SQUEEZE2, {{"X"}, {"Out", "XShape"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
         {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_ELEMENTWISE_SUB, {{"X", "Y"}, {"Out"}}},
@@ -232,6 +235,7 @@ std::unordered_map<
         {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}},
         {G_OP_TYPE_ROIALIGN_POOL, {{"X", "ROIs"}, {"Out"}}},
         {G_OP_TYPE_ROI_PERSPECTIVE, {{"X", "ROIs"}, {"Out"}}},
+        {G_OP_TYPE_REDUCE_MEAN, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD_BN, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_BN_RELU, {{"Input"}, {"Out"}}},

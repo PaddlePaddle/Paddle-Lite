@@ -110,12 +110,13 @@ class InputPE : public PE {
 
     Tensor* src = input;
     input->flush();
-
+    // input->saveToFile("input_0_", true);
     Tensor half_tensor;
     if (input->dataType() == DataType::FP32) {
       half_tensor.mutableData<void*>(DataType::FP16, input->shape());
       half_tensor.copyFrom(input);
       src = &half_tensor;
+      // half_tensor.saveToFile("input_1_", true);
     }
 
     if (use_preprocess && param_.output->shape().channel() == 3) {
@@ -152,6 +153,7 @@ class InputPE : public PE {
     } else {
       output->mutableData<void>();
       src->alignImage(output, true);
+      // output->saveToFile("input_2_", true);
     }
     
     return true;
