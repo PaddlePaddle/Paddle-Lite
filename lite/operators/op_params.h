@@ -592,6 +592,7 @@ struct MulticlassNmsParam {
   const lite::Tensor* bboxes{};
   const lite::Tensor* scores{};
   lite::Tensor* out{};
+  lite::Tensor* index{};
   int background_label{0};
   float score_threshold{};
   int nms_top_k{};
