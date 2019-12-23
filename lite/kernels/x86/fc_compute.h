@@ -19,6 +19,7 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernels.h"
 #include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/parallel.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -60,41 +61,23 @@ class FCFunctor {
     if (B == NULL) {
       return;
     }
-    if (relu) {
-      auto compute =
-          paddle::lite::jit::KernelFuncs<paddle::lite::jit::VAddReluTuple<T>,
-                                         lite::fluid::CPUPlace>::Cache()
-              .At(N);
-      // #ifdef PADDLE_WITH_MKLML
-      // #pragma omp parallel for
-      // #endif
-      for (int i = 0; i < M; i++) {
+
+    auto compute =
+        relu
+            ? jit::KernelFuncs<jit::VAddReluTuple<T>, fluid::CPUPlace>::Cache()
+                  .At(N)
+            : jit::KernelFuncs<jit::VAddTuple<T>, fluid::CPUPlace>::Cache().At(
+                  N);
+
+    auto parallel_section = [&](int64_t begin, int64_t end) {
+      for (int64_t i = begin; i < end; i++) {
         T* dst = Y + i * N;
         T* src = dst;
         compute(B, src, dst, N);
       }
-    } else {
-      auto compute =
-          paddle::lite::jit::KernelFuncs<paddle::lite::jit::VAddTuple<T>,
-                                         lite::fluid::CPUPlace>::Cache()
-              .At(N);
-      if (lite::x86::math::GetNumThreads() > 1) {
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
-        for (int i = 0; i < M; i++) {
-          T* dst = Y + i * N;
-          T* src = dst;
-          compute(B, src, dst, N);
-        }
-      } else {
-        for (int i = 0; i < M; i++) {
-          T* dst = Y + i * N;
-          T* src = dst;
-          compute(B, src, dst, N);
-        }
-      }
-    }
+    };
+
+    lite::x86::RunParallelFor(0, M, parallel_section);
   }
 };
 

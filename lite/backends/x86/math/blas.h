@@ -18,7 +18,6 @@
 #include "lite/core/tensor.h"
 
 #ifdef PADDLE_WITH_MKLML
-#include <omp.h>
 #include "lite/backends/x86/mklml.h"
 #endif
 
@@ -34,14 +33,6 @@ namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
-
-static int GetNumThreads() {
-  int num_threads = 1;
-#ifdef PADDLE_WITH_MKLML
-  num_threads = omp_get_num_threads();
-#endif
-  return num_threads;
-}
 
 /**
  * Matrix Descriptor of a memory buffer.
