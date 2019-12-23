@@ -11,6 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#ifdef CONV_OP
 
 #include "operators/kernel/cl/cl-kernel-func/conv_func.h"
 #include <vector>
@@ -1123,3 +1124,4 @@ void ConvTranspose3x3s2AddBnRelu(framework::CLHelper *cl_helper,
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+#endif
