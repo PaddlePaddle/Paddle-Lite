@@ -69,6 +69,7 @@ tar zxvf mobilenet_v1.tar.gz
 make
 adb -s emulator-5554 push mobile_classify /data/local/tmp/
 adb -s emulator-5554 push test.jpg /data/local/tmp/
+adb -s emulator-5554 push labels.txt /data/local/tmp/
 adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
 adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
