@@ -59,8 +59,22 @@ class FCFunctor {
                   bool relu = false,
                   bool padding_weights = false) {
     auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
-    lite::Tensor Y1;
     T* Y1_data = nullptr;
+
+    auto compute =
+        relu
+            ? jit::KernelFuncs<jit::VAddReluTuple<T>, fluid::CPUPlace>::Cache()
+                  .At(N)
+            : jit::KernelFuncs<jit::VAddTuple<T>, fluid::CPUPlace>::Cache().At(
+                  N);
+    auto parallel_compute = [&](int64_t begin, int64_t end) {
+      for (int64_t i = begin; i < end; i++) {
+        T* dst = Y + i * N;
+        T* src = Y1_data ? Y1_data + i * (N + 4) : dst;
+        compute(B, src, dst, N);
+      }
+    };
+
     // Because of the overhead of memcpy, we only do padding for GEMM
     //  when weights is already padded in fc_fuse_pass.
     if (padding_weights) {
@@ -73,6 +87,7 @@ class FCFunctor {
       X1.Resize({M * KK});
       T* X1_data = X1.mutable_data<T>();
 
+      lite::Tensor Y1;
       Y1.Resize({M * (N + 4)});
       Y1_data = Y1.mutable_data<T>();
 
@@ -96,37 +111,26 @@ class FCFunctor {
                 static_cast<T>(0.0),
                 Y1_data,
                 NN);
-    } else {
-      blas.MatMul(M, N, K, X, W, Y);
-    }
 
-    if (B == NULL) {
-      if (padding_weights) {
+      if (B) {
         auto parallel_memcpy_y = [&](int64_t begin, int64_t end) {
           for (int64_t i = begin; i < end; i++) {
             memcpy(Y + i * N, Y1_data + i * (N + 4), N * sizeof(T));
           }
         };
         lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
+        return;
       }
-      return;
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
+    } else {
+      blas.MatMul(M, N, K, X, W, Y);
+      if (B) {
+        return;
+      }
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
     }
-
-    auto compute =
-        relu
-            ? jit::KernelFuncs<jit::VAddReluTuple<T>, fluid::CPUPlace>::Cache()
-                  .At(N)
-            : jit::KernelFuncs<jit::VAddTuple<T>, fluid::CPUPlace>::Cache().At(
-                  N);
-
-    auto parallel_compute = [&](int64_t begin, int64_t end) {
-      for (int64_t i = begin; i < end; i++) {
-        T* dst = Y + i * N;
-        T* src = padding_weights ? Y1_data + i * (N + 4) : dst;
-        compute(B, src, dst, N);
-      }
-    };
-    lite::x86::RunParallelFor(0, M, parallel_compute);
   }
 };
 
