@@ -258,7 +258,6 @@ predictor = create_paddle_predictor(config)
 
 返回类型：`int`
 
-
 # MobileConfig
 
 ```c++
