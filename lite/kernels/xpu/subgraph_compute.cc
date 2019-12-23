@@ -60,9 +60,14 @@ int SubgraphEngine::BuildDeviceProgram() {
   // Obtain the output nodes of the XPU IR graph and build the graph to XPU
   // runtime
   std::vector<xtcl::xExpr*> output_nodes;
+  std::vector<std::string> valid_output_names;
   for (auto& output_name : output_names_) {
-    output_nodes.push_back(graph.GetNode(output_name).get());
+    if (graph.HasNode(output_name)) {
+      output_nodes.push_back(graph.GetNode(output_name).get());
+      valid_output_names.push_back(output_name);
+    }
   }
+  CHECK(!valid_output_names.empty()) << "[XPU] no valid output names";
   device_program_ = lite::xpu::Device::Global().Build(
       &graph.builder_, &graph.params_, &output_nodes);
   if (device_program_ == nullptr) {
@@ -73,16 +78,16 @@ int SubgraphEngine::BuildDeviceProgram() {
   // Query and check the dimensions of input and output tensors
   origin_idims_.resize(input_names_.size());
   origin_itensors_.resize(input_names_.size());
-  origin_odims_.resize(output_names_.size());
-  origin_otensors_.resize(output_names_.size());
+  origin_odims_.resize(valid_output_names.size());
+  origin_otensors_.resize(valid_output_names.size());
   for (int i = 0; i < input_names_.size(); i++) {
     origin_itensors_[i] = scope_->FindMutableTensor(input_names_[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     VLOG(3) << "[XPU] Input dims[" << i << "]: " << origin_idims_[i];
   }
-  for (int i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = scope_->FindMutableTensor(output_names_[i]);
+  for (int i = 0; i < valid_output_names.size(); i++) {
+    origin_otensors_[i] = scope_->FindMutableTensor(valid_output_names[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
     VLOG(3) << "[XPU] Output dims[" << i << "]: " << origin_odims_[i];
@@ -113,7 +118,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
   device_program_->Run();
   VLOG(3) << "[XPU] Process cost " << GetCurrentUS() - start_time << " us";
   // Copy the data of output XPU tensor to the buffer of origin output tensors
-  for (size_t i = 0; i < output_names_.size(); i++) {
+  for (size_t i = 0; i < origin_otensors_.size(); i++) {
     auto output_ndarray = device_program_->GetOutput(i);
     std::memcpy(origin_otensors_[i]->mutable_data<float>(),
                 static_cast<float*>(output_ndarray.ToDLPack()->dl_tensor.data),

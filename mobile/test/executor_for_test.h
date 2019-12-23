@@ -14,9 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 #include "common/log.h"
 #include "framework/executor.h"
 #include "framework/op_registry.h"
