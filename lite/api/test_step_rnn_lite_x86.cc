@@ -30,7 +30,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
   std::string model_dir = FLAGS_model_dir;
   lite_api::CxxConfig config;
   config.set_model_dir(model_dir);
-  config.set_cpu_math_library_math_threads(10);
+  config.set_cpu_math_library_num_threads(1);
   config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kInt64)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});

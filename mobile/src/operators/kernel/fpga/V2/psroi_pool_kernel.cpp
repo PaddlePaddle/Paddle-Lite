@@ -143,7 +143,6 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
       "the channels of input X should equal the product of "
       "output_channels x pooled_height x pooled_width");
 
-
   auto output_data = out->mutable_data<float>();
   auto input_rois = rois->data<float>();
 
@@ -173,11 +172,11 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
 
     for (int ph = 0; ph < pooled_height; ph++) {
       for (int pw = 0; pw < pooled_width; pw++) {
-        PSROIPoolingForward<float>(
-            input_data, height, width, input_channels, offset_output_data,
-            pooled_height, pooled_width, output_channels, input_rois,
-            bin_size_h, bin_size_w, roi_start_h, roi_start_w, pw, ph,
-            scale, roi_batch_ind);
+        PSROIPoolingForward<float>(input_data, height, width, input_channels,
+                                   offset_output_data, pooled_height,
+                                   pooled_width, output_channels, input_rois,
+                                   bin_size_h, bin_size_w, roi_start_h,
+                                   roi_start_w, pw, ph, scale, roi_batch_ind);
       }
     }
   }

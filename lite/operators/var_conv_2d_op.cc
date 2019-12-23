@@ -48,6 +48,10 @@ bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.kernel_w = opdesc.GetAttr<int>("KernelW");
   param_.stride_h = opdesc.GetAttr<int>("StrideH");
   param_.stride_w = opdesc.GetAttr<int>("StrideW");
+
+  if (opdesc.HasAttr("fuse_relu")) {
+    param_.fuse_relu = opdesc.GetAttr<bool>("fuse_relu");
+  }
   return true;
 }
 

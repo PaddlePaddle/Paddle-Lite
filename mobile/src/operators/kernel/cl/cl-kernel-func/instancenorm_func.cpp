@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
+#ifdef INSTANCENORM_OP
 #include "operators/kernel/cl/cl-kernel-func/instancenorm_func.h"
 #include <algorithm>
 namespace paddle_mobile {
@@ -75,3 +75,4 @@ void InstanceNorm(framework::CLHelper *cl_helper,
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+#endif
