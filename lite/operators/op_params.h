@@ -286,6 +286,8 @@ struct ConvParam {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -1092,6 +1094,16 @@ struct CollectFpnProposalsParam {
   std::vector<lite::Tensor*> multi_level_scores{};
   lite::Tensor* fpn_rois{};
   int post_nms_topN{};
+};
+
+struct DistributeFpnProposalsParam {
+  const lite::Tensor* fpn_rois{};
+  std::vector<lite::Tensor*> multi_fpn_rois{};
+  lite::Tensor* restore_index{};
+  int min_level{};
+  int max_level{};
+  int refer_level{};
+  int refer_scale{};
 };
 
 /// --------------------- instance_norm operators --------------------

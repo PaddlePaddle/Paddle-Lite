@@ -24,7 +24,7 @@ __kernel void relu(__read_only image2d_t input,
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
 
-  CL_DTYPE4 in = read_imagef(input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
   in = max((CL_DTYPE4)(0.0f), in);
-  write_imagef(output, (int2)(x, y), in);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }

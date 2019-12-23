@@ -19,28 +19,7 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool VarConv2dOp::CheckShape() const {
-  auto x_dims = param_.X->dims();
-  CHECK_EQ(x_dims.size(), 2) << "The rank of X(Input) can't be less than 2.";
-  auto w_dims = param_.W->dims();
-  CHECK_EQ(w_dims.size(), 2) << "W should be 2-D tensor";
-  CHECK_EQ(w_dims[0], param_.output_channel)
-      << "W dim[0] should be equal to OutputChannel";
-  CHECK_EQ(w_dims[1], param_.input_channel * param_.kernel_h * param_.kernel_w)
-      << "W dim[1] should be equal to InputChannel * KernelH * KernelW";
-  LoD x_lod = param_.X->lod();
-  CHECK_EQ(x_lod.empty(), false) << "The Input(X) must hold lod info.";
-  // CHECK_GE(x_lod.size(), 1) << "The Input(X)'s lod info is corrupted.";
-  CHECK_GE(x_lod.size(), 3) << "The Input(X)'s lod info is corrupted.";
-  CHECK_EQ(x_dims[0], static_cast<int64_t>(x_lod[0].back()))
-      << "The Input(X)'s lod info mismatches the actual tensor shape.";
-  // LoD row_lod = param_.ROW->lod();
-  // CHECK_EQ(row_lod.empty(), false) << "The Input(ROW) must hold lod info.";
-  // LoD col_lod = param_.COLUMN->lod();
-  // CHECK_EQ(col_lod.empty(), false) << "The Input(COLUMN) must hold lod
-  // info.";
-  return true;
-}
+bool VarConv2dOp::CheckShape() const { return true; }
 
 bool VarConv2dOp::InferShape() const { return true; }
 

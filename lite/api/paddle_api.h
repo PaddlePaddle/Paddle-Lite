@@ -133,6 +133,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string model_file_;
   std::string param_file_;
   bool model_from_memory_{false};
+  int cpu_math_library_math_threads_ = 1;
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -151,6 +152,13 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
   bool model_from_memory() const { return model_from_memory_; }
+
+  void set_cpu_math_library_math_threads(int threads) {
+    cpu_math_library_math_threads_ = threads;
+  }
+  int cpu_math_library_num_threads() const {
+    return cpu_math_library_math_threads_;
+  }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

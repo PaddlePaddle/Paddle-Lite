@@ -67,7 +67,8 @@ class Optimizer {
            "lite_transpose_softmax_transpose_fuse_pass",  //
            "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
-//  "elementwise_mul_constant_eliminate_pass",     //
+           "elementwise_mul_constant_eliminate_pass",     //
+
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //

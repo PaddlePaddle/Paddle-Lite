@@ -253,9 +253,8 @@ bool PriorBoxPE::dispatch() {
   if (cachedBoxes_ == nullptr) {
     cachedBoxes_ = new Tensor();
     cachedVariances_ = new Tensor();
-    cachedBoxes_->mutableData<float16>(FP16, param_.outputBoxes->shape());
-    cachedVariances_->mutableData<float16>(FP16,
-                                           param_.outputVariances->shape());
+    cachedBoxes_->mutableData<float>(FP32, param_.outputBoxes->shape());
+    cachedVariances_->mutableData<float>(FP32, param_.outputVariances->shape());
     cachedBoxes_->setDataLocation(CPU);
     cachedVariances_->setDataLocation(CPU);
     compute_prior_box();
