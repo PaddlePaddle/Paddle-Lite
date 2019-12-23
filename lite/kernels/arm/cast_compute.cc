@@ -56,6 +56,10 @@ void CastCompute::Run() {
     float* out_data = param.Out->mutable_data<float>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<unsigned char, float>);
+  } else if (param.in_dtype == 3 && param.out_dtype == 5) {
+    const auto* x_data = param.X->data<float>();
+    auto* o_data = param.Out->mutable_data<float>();
+    memcpy(o_data, x_data, sizeof(float) * param.X->numel());
   } else {
     LOG(FATAL) << "other has not been implemented";
   }

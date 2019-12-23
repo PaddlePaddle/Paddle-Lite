@@ -379,11 +379,13 @@ void MulticlassNmsCompute::Run() {
 
       if (e > s) {
         Tensor out;
+        std::cout << "Slice:" << s << " -- " << e << std::endl;
         outs->Slice<float>(out, s, e);
         MultiClassOutput<float>(
             scores_slice, boxes_slice, all_indices[i], score_dims.size(), &out);
         outs->ZynqTensor()->copyFrom(out.ZynqTensor());
       }
+      outs->Resize({static_cast<int64_t>(e - s), out_dim});
     }
   }
   LoD lod;
@@ -412,19 +414,19 @@ REGISTER_LITE_KERNEL(multiclass_nms,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(multiclass_nms,
-                     kFPGA,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::fpga::MulticlassNmsCompute,
-                     def2)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(multiclass_nms,
+//                      kFPGA,
+//                      kFP16,
+//                      kNHWC,
+//                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
+//                      def2)
+//     .BindInput("BBoxes",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindInput("Scores",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+//     .Finalize();
