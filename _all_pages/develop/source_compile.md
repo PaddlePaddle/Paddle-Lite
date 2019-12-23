@@ -255,7 +255,7 @@ git checkout <release-version-tag>
 | --arm_abi  |必选，选择编译的arm版本，其中`armv7hf`为ARMLinux编译时选用| `armv8`、`armv7`、`armv7hf`|
 | --arm_lang |arm_os=android时必选，选择编译器 | `gcc`、`clang`|
 | --android_stl |arm_os=android时必选，选择静态链接STL或动态链接STL | `c++_static`、`c++_shared`|
-| --build_extra | 可选，是否编译控制流相关op、kernel。（**编译demo时必须选择为ON**）      | `ON`、`OFF` |
+| --build_extra | 可选，是否编译全量预测库（默认为OFF）。详情可参考[预测库说明](../library)。 | `ON`、`OFF` |
 | target |必选，选择编译模式，`tiny_publish`为编译移动端部署库、`full_publish`为带依赖的移动端部署库、`test`为移动端单元测试、`ios`为编译ios端`tiny_publish` | `tiny_publish`、`full_publish`、`test`、 `ios` |
 
 ### 编译代码
