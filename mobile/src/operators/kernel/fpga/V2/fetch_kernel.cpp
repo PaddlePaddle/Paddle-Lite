@@ -85,12 +85,13 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   }
   auto input_address = input->data<int8_t>();
   float Si = input->scale[0];
+  float scale = Si / 127.0f;
 
   const int num_th = 32;
   fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(int8_t));
   if (input->fpga_data_num < num_th) {
     for (int idx = 0; idx < product(input->dims()); ++idx) {
-      outdata_ptr[idx] = input_address[idx] / 127.0 * Si;
+      outdata_ptr[idx] = input_address[idx] * scale;
     }
     fpga::fpga_flush(outdata_ptr, product(input->dims()) * sizeof(float));
     return;
@@ -101,14 +102,14 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     auto aligned_ptr = aligned_out->data<float>();
     fpga::fpga_invalidate(aligned_ptr, (input->fpga_data_num) * sizeof(float));
     for (int idx = 0; idx < input->fpga_data_num; ++idx) {
-      aligned_ptr[idx] = input_address[idx] / 127.0 * Si;
+      aligned_ptr[idx] = input_address[idx] * scale;
     }
     dealign(aligned_ptr, outdata_ptr, outC, outH, outW);
     fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
     return;
   }
   for (int idx = 0; idx < input->fpga_data_num; ++idx) {
-    outdata_ptr[idx] = input_address[idx] / 127.0 * Si;
+    outdata_ptr[idx] = input_address[idx] * scale;
   }
   fpga::fpga_flush(outdata_ptr, outC * outH * outW * sizeof(float));
 }
