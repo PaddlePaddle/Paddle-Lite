@@ -481,7 +481,7 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     // exit(-1);
 
     args.group_num = new_group;
-    args.relu_enabled = param.relu.enabled;
+    // args.relu_enabled = param.relu.enabled;
     args.sb_address = conv_param->scaleBias.data<float16>();
     // args.sb_address = bs_data;
     args.kernel.stride_h = param.strides[1];
