@@ -262,6 +262,7 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
+
   // VLOG(4) << "kernel launch";
   op_->InferShape();
   // VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
