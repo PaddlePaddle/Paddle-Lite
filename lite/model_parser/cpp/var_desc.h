@@ -42,9 +42,14 @@ class VarDesc : public VarDescAPI {
 
   void SetPersistable(bool persistable) override { persistable_ = persistable; }
 
+  Type GetDataType() const { return data_type_; }
+
+  void SetDataType(Type data_type) { data_type_ = data_type; }
+
  private:
   std::string name_;
   Type type_;
+  Type data_type_;
   bool persistable_;
 };
 

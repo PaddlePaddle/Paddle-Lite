@@ -70,10 +70,14 @@ struct CalibParam {
   float scale;
 };
 
-struct GraphParam {
-  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
-  lite::Tensor* weight{};
-  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
+struct SubgraphParam {
+  std::vector<std::string> input_names{};
+  std::vector<std::string> output_names{};
+  std::vector<std::string> input_data_names{};
+  std::vector<std::string> output_data_names{};
+  int sub_block_idx{-1};
+  cpp::BlockDesc* sub_block_desc{nullptr};
+  Scope* scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -282,6 +286,8 @@ struct ConvParam {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -858,6 +864,8 @@ struct VarConv2DParam {
   int stride_w;
   int kernel_h;
   int kernel_w;
+
+  bool fuse_relu{false};
 };
 
 /// ----------------------- shape operators ----------------------
@@ -1088,6 +1096,27 @@ struct CollectFpnProposalsParam {
   std::vector<lite::Tensor*> multi_level_scores{};
   lite::Tensor* fpn_rois{};
   int post_nms_topN{};
+};
+
+struct DistributeFpnProposalsParam {
+  const lite::Tensor* fpn_rois{};
+  std::vector<lite::Tensor*> multi_fpn_rois{};
+  lite::Tensor* restore_index{};
+  int min_level{};
+  int max_level{};
+  int refer_level{};
+  int refer_scale{};
+};
+
+/// --------------------- instance_norm operators --------------------
+struct InstanceNormParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
 };
 
 }  // namespace operators

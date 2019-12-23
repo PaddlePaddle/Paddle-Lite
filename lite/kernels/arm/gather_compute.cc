@@ -29,7 +29,7 @@ void GatherCompute::Run() {
   auto index_size = param.Index->dims()[0];
   auto src_dims = param.X->dims();
   const float* p_src = param.X->data<float>();
-  const float* p_index = param.Index->data<float>();
+  const int* p_index = param.Index->data<int>();
 
   int slice_size = 1;
   for (int i = 1; i < src_dims.size(); ++i) {
@@ -50,6 +50,8 @@ void GatherCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     gather, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

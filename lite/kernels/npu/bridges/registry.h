@@ -15,44 +15,46 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <unordered_map>
-#include <vector>
-#include "ai_ddk_lib/include/graph/operator_reg.h"
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace npu {
-namespace bridges {
+namespace subgraph {
 
-// var_name, npu node point
-using node_map_type =
-    std::unordered_map<std::string, std::shared_ptr<ge::Operator>>;
+const int FAILED = 1;
+const int SUCCESS = 0;
+const int REBUILD_WHEN_SHAPE_CHANGED = 2;
+inline bool CHECK_FAILED(int status) { return status & FAILED; }
+inline bool CHECK_SUCCESS(int status) { return !CHECK_FAILED(status); }
+inline bool CHECK_REBUILD_WHEN_SHAPE_CHANGED(int status) {
+  return status & REBUILD_WHEN_SHAPE_CHANGED;
+}
 
-using func_type = std::function<node_map_type(const std::shared_ptr<OpLite>,
-                                              const node_map_type&)>;
-using cvt_map_type = std::unordered_map<std::string, func_type>;
-class Factory {
+using cvt_func_type = std::function<int(void* ctx, OpLite* op)>;
+using cvt_map_type =
+    std::unordered_map<std::string,
+                       std::unordered_map<std::string, cvt_func_type>>;
+class Registry {
  public:
-  static Factory& Instance();
+  static Registry& Instance();
 
-  const cvt_map_type& AllFunctions() const { return map_; }
-  bool HasType(const std::string& op_type) const;
-  void Insert(const std::string& op_type, const func_type& func_name);
-  Factory() = default;
+  void Insert(const std::string& dev_type,
+              const std::string& op_type,
+              const cvt_func_type& cvt_func_name);
+  const cvt_func_type& Select(const std::string& dev_type,
+                              const std::string& op_type) const;
+  bool Exists(const std::string& dev_type, const std::string& op_type) const;
+  Registry() = default;
 
  private:
   cvt_map_type map_;
-  DISALLOW_COPY_AND_ASSIGN(Factory);
+  DISALLOW_COPY_AND_ASSIGN(Registry);
 };
 
-}  // namespace bridges
-}  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
@@ -70,17 +72,18 @@ class Factory {
                              __test_global_namespace_##uniq_name##__>::value, \
                 msg)
 
-#define REGISTER_NPU_BRIDGE(op_type, cvt_func_name)                         \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                                 \
-      __reg_npu_bridge_##op_type##__,                                       \
-      "REGISTER_NPU_BRIDGE must be called in global namespace only once!"); \
-  int __reg_npu_bridge_##op_type##_Insert() {                               \
-    paddle::lite::kernels::npu::bridges::Factory::Instance().Insert(        \
-        #op_type, cvt_func_name);                                           \
-    return 0;                                                               \
+#define REGISTER_SUBGRAPH_BRIDGE(dev_type, op_type, cvt_func_name)        \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                               \
+      __reg_subgraph_bridge_##dev_type##_##op_type##__,                   \
+      "REGISTER_SUBGRAPH_BRIDGE must be called in global namespace only " \
+      "once!");                                                           \
+  int __reg_subgraph_bridge_##dev_type##_##op_type##_Insert() {           \
+    paddle::lite::subgraph::Registry::Instance().Insert(                  \
+        #dev_type, #op_type, cvt_func_name);                              \
+    return 0;                                                             \
   }
 
-#define USE_NPU_BRIDGE(op_type)                                  \
-  extern int __reg_npu_bridge_##op_type##_Insert();              \
-  static int __reg_npu_bridge_##op_type##_Insert_return UNUSED = \
-      __reg_npu_bridge_##op_type##_Insert();
+#define USE_SUBGRAPH_BRIDGE(dev_type, op_type)                            \
+  extern int __reg_subgraph_bridge_##dev_type##_##op_type##_Insert();     \
+  static int __reg_subgraph_bridge_##dev_type##_##op_type##_Insert_return \
+      UNUSED = __reg_subgraph_bridge_##dev_type##_##op_type##_Insert();

@@ -377,6 +377,19 @@ PMNode *PMNode::assert_is_op(const std::string &op_type) {
   return this;
 }
 
+PMNode *PMNode::assert_is_not_op_type(const std::string &op_type) {
+  asserts_.emplace_back([op_type](const Node *x) {
+    if (x && x->IsStmt()) {
+      auto *op_info = x->stmt()->op_info();
+      if (op_info->Type() == op_type) {
+        return false;
+      }
+    }
+    return true;
+  });
+  return this;
+}
+
 PMNode *PMNode::assert_is_var() {
   asserts_.emplace_back([](const Node *x) { return x && x->IsArg(); });
   return this;

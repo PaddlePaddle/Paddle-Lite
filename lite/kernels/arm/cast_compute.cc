@@ -74,6 +74,6 @@ void CastCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     cast, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -80,6 +80,7 @@ class CastComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
+    SetPrecisionType(output_, PRECISION(kFloat));
     if (in_dtype_ == 20) {
       std::vector<unsigned char> x_data(x_dims_.production());
       for (int i = 0; i < x_dims_.production(); i++) {

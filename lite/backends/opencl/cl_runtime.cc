@@ -103,6 +103,7 @@ std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   std::string build_option = options + " -cl-fast-relaxed-math -I " +
                              CLRuntime::Global()->cl_path() + "/cl_kernel";
+  VLOG(4) << "OpenCL build_option: " << build_option;
   status_ = program->build({*device_}, build_option.c_str());
   CL_CHECK_ERROR(status_);
 

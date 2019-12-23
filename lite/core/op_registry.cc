@@ -40,6 +40,18 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
       return Create<TARGET(target__),                                        \
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kNHWC)>(op_type);                             \
+    case DATALAYOUT(kImageDefault):                                          \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kImageDefault)>(op_type);                     \
+    case DATALAYOUT(kImageFolder):                                           \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kImageFolder)>(op_type);                      \
+    case DATALAYOUT(kImageNW):                                               \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kImageNW)>(op_type);                          \
     default:                                                                 \
       LOG(FATAL) << "unsupported kernel layout " << DataLayoutToStr(layout); \
   }
@@ -147,6 +159,17 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kFloat, kAny);
   INIT_FOR(kOpenCL, kInt8, kNCHW);
   INIT_FOR(kOpenCL, kAny, kAny);
+  INIT_FOR(kOpenCL, kFP16, kNCHW);
+  INIT_FOR(kOpenCL, kFP16, kNHWC);
+  INIT_FOR(kOpenCL, kFP16, kImageDefault);
+  INIT_FOR(kOpenCL, kFP16, kImageFolder);
+  INIT_FOR(kOpenCL, kFP16, kImageNW);
+  INIT_FOR(kOpenCL, kFloat, kImageDefault);
+  INIT_FOR(kOpenCL, kFloat, kImageFolder);
+  INIT_FOR(kOpenCL, kFloat, kImageNW);
+  INIT_FOR(kOpenCL, kAny, kImageDefault);
+  INIT_FOR(kOpenCL, kAny, kImageFolder);
+  INIT_FOR(kOpenCL, kAny, kImageNW);
 
   INIT_FOR(kNPU, kFloat, kNCHW);
   INIT_FOR(kNPU, kInt8, kNCHW);

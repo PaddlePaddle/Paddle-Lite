@@ -89,7 +89,7 @@ else()
 endif()
 
 find_library(XPU_SDK_LLVM_FILE NAMES LLVM-8
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib)
+  PATHS ${XPU_SDK_ROOT}/XTDK/shlib/gcc482)
 
 if(NOT XPU_SDK_LLVM_FILE)
   message(FATAL_ERROR "Can not find LLVM Library in ${XPU_SDK_ROOT}")

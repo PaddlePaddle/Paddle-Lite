@@ -12,37 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
-                           const node_map_type& inputs_map) {
-  auto scope = act_op->scope();
-  auto op_info = act_op->op_info();
+int ActConverter(void* ctx, OpLite* op) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // create act node and set input node from inputs_map
+  // Create act node and set input node which is obtained from the node map
   auto x_var_name = op_info->Input("X").front();
-  auto act_node = std::make_shared<ge::op::Activation>(unique_op_type);
-  CHECK(inputs_map.count(x_var_name));
-  act_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(act_node);
+  auto out_var_name = op_info->Output("Out").front();
+  auto act_node = graph->AddNode<ge::op::Activation>(out_var_name);
+  act_node->set_input_x(*graph->GetNode(x_var_name));
 
   // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
   // clipped_relu etc.
-  act_node->set_attr_mode(lite::npu::CvtActMode(op_type));
+  act_node->set_attr_mode(CvtActMode(op_type));
 
   if (op_type == "relu_clipped") {
     auto Relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
+    act_node->set_attr_coef(Relu_clipped_coef);
+  } else if (op_type == "relu6") {
+    float Relu_clipped_coef = 6.f;
     act_node->set_attr_coef(Relu_clipped_coef);
   } else if (op_type == "leaky_relu") {
     auto alpha = op_info->GetAttr<float>("alpha");
@@ -53,30 +54,33 @@ node_map_type ActConverter(const std::shared_ptr<lite::OpLite> act_op,
     act_node->set_attr_negative_slope(slope);
     act_node->set_attr_coef(offset);
   }
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = act_node;
-  return outputs_map;
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(sigmoid, paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(relu, paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(tanh, paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(relu_clipped,
-                    paddle::lite::kernels::npu::bridges::ActConverter);
-// REGISTER_NPU_BRIDGE(elu, paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(leaky_relu,
-                    paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(abs, paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(softsign,
-                    paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(softplus,
-                    paddle::lite::kernels::npu::bridges::ActConverter);
-REGISTER_NPU_BRIDGE(hard_sigmoid,
-                    paddle::lite::kernels::npu::bridges::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         sigmoid,
+                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, relu, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, tanh, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         relu_clipped,
+                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, relu6, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         leaky_relu,
+                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, abs, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         softsign,
+                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         softplus,
+                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         hard_sigmoid,
+                         paddle::lite::subgraph::npu::ActConverter);

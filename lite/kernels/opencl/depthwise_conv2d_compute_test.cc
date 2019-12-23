@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 #include <random>
+#include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -89,7 +90,7 @@ void depth_conv(const T* input_data,
   }
 }
 
-TEST(depthwise_conv2d, compute) {
+TEST(depthwise_conv2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
                                                  TARGET(kOpenCL),
@@ -176,7 +177,135 @@ TEST(depthwise_conv2d, compute) {
   TargetWrapperCL::Unmap(input_data, mapped_input);
 }
 
+TEST(depthwise_conv2d_image2d_fp16, compute) {
+  LOG(INFO) << "to get kernel ...";
+  auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
+                                                 TARGET(kOpenCL),
+                                                 PRECISION(kFP16),
+                                                 DATALAYOUT(kImageDefault));
+  ASSERT_FALSE(kernels.empty());
+
+  auto kernel = std::move(kernels.front());
+
+  LOG(INFO) << "get kernel";
+  lite::Tensor input, filter, output;
+  operators::ConvParam param;
+  param.x = &input;
+  param.filter = &filter;
+  param.output = &output;
+  std::vector<int> paddings = {0, 0};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
+  param.strides = std::vector<int>{1, 1};
+  std::vector<int> dilations = {1, 1};
+  param.dilations = std::make_shared<std::vector<int>>(dilations);
+
+  std::unique_ptr<KernelContext> context(new KernelContext);
+  context->As<OpenCLContext>().InitOnce();
+
+  kernel->SetParam(param);
+  std::unique_ptr<KernelContext> dep_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(dep_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(dep_context));
+
+  LOG(INFO) << "kernel ready";
+  std::default_random_engine engine;
+  std::uniform_real_distribution<float> gen(-5, 5);
+  std::vector<float> input_v(1 * 32 * 112 * 112);
+  std::vector<float> filter_v(32 * 1 * 3 * 3);
+  for (auto& i : input_v) {
+    i = gen(engine);
+  }
+  for (auto& f : filter_v) {
+    f = gen(engine);
+  }
+
+  LOG(INFO) << "prepare input";
+  input.Resize({1, 32, 112, 112});
+  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
+  DDim input_image_shape =
+      default_converter->InitImageDimInfoWith(input.dims());
+  LOG(INFO) << "input_image_shape = " << input_image_shape[0] << " "
+            << input_image_shape[1];
+  std::vector<float> input_image_data(input_image_shape.production() *
+                                      4);  // 4 : RGBA
+  default_converter->NCHWToImage(
+      input_v.data(), input_image_data.data(), input.dims());
+  auto* input_image = input.mutable_data<int16_t, cl::Image2D>(
+      input_image_shape[0], input_image_shape[1], input_image_data.data());
+
+  LOG(INFO) << "prepare kernel";
+  filter.Resize({32, 1, 3, 3});
+  CLImageConverterNWBlock* nw_converter = new CLImageConverterNWBlock();
+  DDim filter_image_shape = nw_converter->InitImageDimInfoWith(filter.dims());
+  LOG(INFO) << "filter_image_shape = " << filter_image_shape[0] << " "
+            << filter_image_shape[1];
+  std::vector<float> filter_image_data(filter_image_shape.production() *
+                                       4);  // 4 : RGBA
+  nw_converter->NCHWToImage(
+      filter_v.data(), filter_image_data.data(), filter.dims());
+  auto* filter_image = filter.mutable_data<int16_t, cl::Image2D>(
+      filter_image_shape[0], filter_image_shape[1], filter_image_data.data());
+
+  LOG(INFO) << "launch";
+  output.Resize({1, 32, 110, 110});
+  DDim output_image_shape =
+      default_converter->InitImageDimInfoWith(output.dims());
+  LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
+            << output_image_shape[1];
+  auto* output_image = output.mutable_data<int16_t, cl::Image2D>(
+      output_image_shape[0], output_image_shape[1]);
+
+  kernel->Launch();
+
+  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto* out_ptr = param.output->data<int16_t, cl::Image2D>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    LOG(INFO) << "--- Find the sync event for the target cl tensor. ---";
+    auto& event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+    LOG(INFO) << "Could not find the sync event for the target cl tensor.";
+  }
+
+  lite::Tensor output_ref;
+  output_ref.Resize({1, 32, 110, 110});
+  auto* output_ref_data = output_ref.mutable_data<float>(TARGET(kARM));
+  depth_conv<float, 1, 1>(input_v.data(),
+                          input.dims(),
+                          filter_v.data(),
+                          filter.dims(),
+                          output_ref_data,
+                          output_ref.dims());
+
+  const size_t cl_image2d_row_pitch{0};
+  const size_t cl_image2d_slice_pitch{0};
+
+  float* output_image_data = new float[output_image_shape.production() * 4];
+  TargetWrapperCL::ImgcpySync(output_image_data,
+                              output_image,
+                              output_image_shape[0],
+                              output_image_shape[1],
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::DtoH);
+
+  float* output_data = new float[output_image_shape.production() * 4];
+  default_converter->ImageToNCHW(
+      output_image_data, output_data, output_image_shape, output.dims());
+
+  LOG(INFO) << "output_data vs output_ref_data";
+  for (int i = 0; i < output.dims().production(); i++) {
+    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-4);
+    LOG(INFO) << output_data[i] << " " << output_ref_data[i];
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle
 
 USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFP16, kImageDefault, image2d);

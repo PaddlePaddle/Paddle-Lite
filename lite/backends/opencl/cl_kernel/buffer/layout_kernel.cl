@@ -61,6 +61,57 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *in,
   write_imagef(output_image, output_pos, output);
 }
 
+// buffer -> image2d_nw
+__kernel void buffer_to_image2d_nw(__global CL_DTYPE* in,
+                                __write_only image2d_t output_image,
+                                __private const int out_H,
+                                __private const int out_W,
+                                __private const int out_N,
+                                __private const int Stride0,
+                                __private const int Stride1,
+                                __private const int Stride2) {
+  const int out_n = get_global_id(0);
+  const int out_w = get_global_id(1);
+  const int out_ch = get_global_id(2);
+
+  const int out_c = out_ch / out_H;
+  const int out_h = out_ch % out_H;
+
+  const int in_c = out_c; //  index of c in h direction
+
+  const int in_n0 = out_n * 4 + 0;
+  const int in_n1 = out_n * 4 + 1;
+  const int in_n2 = out_n * 4 + 2;
+  const int in_n3 = out_n * 4 + 3;
+
+  const int in_h = out_h;
+  const int in_w = out_w;
+
+  int input_pos0 = in_n0 * Stride2 + in_c * Stride1 + in_h * Stride0 + in_w;
+  int input_pos1 = in_n1 * Stride2 + in_c * Stride1 + in_h * Stride0 + in_w;
+  int input_pos2 = in_n2 * Stride2 + in_c * Stride1 + in_h * Stride0 + in_w;
+  int input_pos3 = in_n3 * Stride2 + in_c * Stride1 + in_h * Stride0 + in_w;
+
+  int2 output_pos;
+  output_pos.x = out_n * out_W + out_w;
+  output_pos.y = out_ch;
+
+  CL_DTYPE4 output = (CL_DTYPE4)0.0f;
+  output.x = convert_float(in[input_pos0]);
+  if (out_N - 4 * out_n >= 2) {
+    output.y = convert_float(in[input_pos1]);
+  }
+  if (out_N - 4 * out_n >= 3) {
+    output.z = convert_float(in[input_pos2]);
+  }
+  if (out_N - 4 * out_n >= 4) {
+    output.w = convert_float(in[input_pos3]);
+  }
+  write_imagef(output_image, output_pos, output);
+}
+
+
+
 // image2d -> buffer
 __kernel void image2d_to_buffer(__read_only image2d_t input,
                                 __private const int in_width,
