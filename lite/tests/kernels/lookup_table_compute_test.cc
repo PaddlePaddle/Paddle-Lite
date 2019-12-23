@@ -122,9 +122,10 @@ TEST(LookupTable, precision) {
     for (auto w_dims :
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
 #if defined(LITE_WITH_XPU)
-      for (auto padding_idx : {-1}) {  // Only -1 is supported by XPU
+      for (auto padding_idx :
+           std::vector<int64_t>{-1}) {  // Only -1 is supported by XPU
 #else
-      for (auto padding_idx : {-1, 0, w_dims[0] - 1}) {
+      for (auto padding_idx : std::vector<int64_t>{-1, 0, w_dims[0] - 1}) {
 #endif
         std::unique_ptr<arena::TestCase> tester(new LookupTableComputeTest(
             place, "def", DDim(ids_dims), DDim(w_dims), padding_idx));
