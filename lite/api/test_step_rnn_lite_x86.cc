@@ -49,7 +49,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
                                            "micro_video_id",
                                            "vertical_type_id"};
 
-  for (int i = 0; i < target_names.size(); ++i) {
+  for (size_t i = 0; i < target_names.size(); ++i) {
     auto input_tensor = predictor->GetInput(i);
     int size = 0;
     if (i == 6 || i == 8) {
@@ -85,8 +85,8 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
 
   std::vector<int64_t> out_shape = out->shape();
 
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(
           out->data<float>()[j + (out_shape[1] * i)], results[i][j], 1e-6);
     }

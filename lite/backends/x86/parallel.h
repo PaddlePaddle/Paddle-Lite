@@ -48,7 +48,7 @@ static inline void RunParallelFor(const int64_t begin,
 #pragma omp parallel num_threads(num_threads)
     {
       int64_t tid = omp_get_thread_num();
-      int64_t chunk_size = (end - begin) / num_threads;
+      int64_t chunk_size = (end - begin + num_threads - 1) / num_threads;
       int64_t begin_tid = begin + tid * chunk_size;
       f(begin_tid, std::min(end, chunk_size + begin_tid));
     }

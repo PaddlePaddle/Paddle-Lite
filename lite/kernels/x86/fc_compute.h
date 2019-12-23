@@ -112,7 +112,7 @@ class FCFunctor {
                 Y1_data,
                 NN);
 
-      if (B) {
+      if (!B) {
         auto parallel_memcpy_y = [&](int64_t begin, int64_t end) {
           for (int64_t i = begin; i < end; i++) {
             memcpy(Y + i * N, Y1_data + i * (N + 4), N * sizeof(T));
@@ -125,7 +125,7 @@ class FCFunctor {
       lite::x86::RunParallelFor(0, M, parallel_compute);
     } else {
       blas.MatMul(M, N, K, X, W, Y);
-      if (B) {
+      if (!B) {
         return;
       }
 
