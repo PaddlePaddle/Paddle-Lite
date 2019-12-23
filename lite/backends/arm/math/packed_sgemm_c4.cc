@@ -1404,8 +1404,8 @@ void sgemm_prepack_c4_small(int M,
          /* load a0, a1 */
         "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
         "bne  1b                      \n"
-        "fadd v8.4s,  v8.4s,  v9.4s   \n"
         "2:\n"
+        "fadd v8.4s,  v8.4s,  v9.4s   \n"
         "st1  {v8.4s}, [%[c]], #16    \n"
         : [a] "+r" (a_ptr),
           [b] "+r" (b_ptr),
@@ -1660,8 +1660,8 @@ void sgemm_prepack_c4_small(int M,
          /* load a0, a1 */
         "vld1.32  {d2-d5}, [%[a]]!  \n"
         "bne  1b                    \n"
-        "vadd.f32   q5, q5,   q6    \n"
         "2:\n"
+        "vadd.f32   q5, q5,   q6    \n"
         "vst1.32  {d10-d11}, [%[c]]!\n"
         : [a] "+r" (a_ptr),
           [b] "+r" (b_ptr),

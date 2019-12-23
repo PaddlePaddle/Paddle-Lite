@@ -188,13 +188,17 @@ class Arena {
     tester_->Prepare();
   }
 
-  bool TestPrecision() {
+  bool TestPrecision(const std::vector<std::string>& exclude_outs = {}) {
     tester_->RunBaseline(tester_->baseline_scope());
     tester_->RunInstruction();
 
     bool success = true;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
+        if (std::find(exclude_outs.begin(), exclude_outs.end(), var) !=
+            exclude_outs.end()) {
+          continue;
+        }
         success = success && CompareTensor(out, var);
       }
     }
@@ -209,7 +213,17 @@ class Arena {
     }
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now() - timer);
-    LOG(INFO) << "average duration: " << duration.count() << " ms";
+
+    timer = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < times; i++) {
+      tester_->RunBaseline(tester_->baseline_scope());
+    }
+    auto duration_basic = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now() - timer);
+    LOG(INFO) << "average lite duration: " << duration.count() << " ms";
+    LOG(INFO) << "average basic duration: " << duration_basic.count() << " ms";
+    LOG(INFO) << "speed up ratio: lite_speed / basic_speed: "
+              << static_cast<float>(duration_basic.count()) / duration.count();
   }
 
  private:

@@ -22,43 +22,44 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-const int CUDA_NUM_THREADS = 512;
-
-template <typename T>
-inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs) {
-  std::vector<size_t> result;
-  result.resize(xs[0]->lod()[0].size());
-
-  for (size_t i = 1; i < result.size(); ++i) {
-    size_t sum = 0;
-    for (size_t j = 0; j < xs.size(); ++j) {
-      auto& x_lod = xs[j]->lod()[0];
-      sum += x_lod[i];
-    }
-    result[i] = sum;
+template <typename dtype>
+__global__ void concat_impl_cuda(const int nthreads,
+                                 const dtype* in_data,
+                                 const int num_concats,
+                                 const int concat_size,
+                                 const int top_concat_axis,
+                                 const int bottom_concat_axis,
+                                 const int offset_concat_axis,
+                                 dtype* out_data) {
+  for (int index = blockIdx.x * blockDim.x + threadIdx.x; index < nthreads;
+       index += blockDim.x * gridDim.x) {
+    const int total_concat_size = concat_size * bottom_concat_axis;
+    const int concat_num = index / total_concat_size;
+    const int concat_index = index % total_concat_size;
+    const int top_index =
+        concat_index +
+        (concat_num * top_concat_axis + offset_concat_axis) * concat_size;
+    out_data[top_index] = in_data[index];
   }
-  LoD lod;
-  lod.emplace_back(result);
-  return lod;
 }
 
-template <typename Dtype>
-__global__ void ker_sequence_concat(Dtype* out_data,
-                                    const uint64_t* in_locate_data,
-                                    const int* o2i_map,
-                                    const int* o2i_w_map,
-                                    const int seq_num,
-                                    const int emb_size,
-                                    const int count) {
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  for (int tid = idx; tid < count; tid += blockDim.x * gridDim.x) {
-    int emb_id = tid % emb_size;
-    int word_id = tid / emb_size;
-    int input_id = o2i_map[word_id];
-    int cur_work_id = o2i_w_map[word_id];
-    const Dtype* in_data = reinterpret_cast<const Dtype*>(
-        reinterpret_cast<uintptr_t>(in_locate_data[input_id]));
-    out_data[tid] = in_data[cur_work_id * emb_size + emb_id];
+template <typename dtype>
+__global__ void concat_impl_2d_impl(const int inner_size,
+                                    const int num_concats,
+                                    const dtype* in_data,
+                                    const int concat_size,
+                                    const int out_concat_axis,
+                                    const int offset_concat_axis,
+                                    dtype* out_data) {
+  int idx_inner = threadIdx.x + blockIdx.x * blockDim.x;
+  int idx_outer = threadIdx.y + blockIdx.y * blockDim.y;
+
+  if (idx_inner < inner_size && idx_outer < num_concats) {
+    int idx_input = idx_outer * inner_size + idx_inner;
+    int idx_output =
+        (idx_outer * out_concat_axis + offset_concat_axis) * concat_size +
+        idx_inner;
+    out_data[idx_output] = in_data[idx_input];
   }
 }
 
@@ -66,73 +67,75 @@ void SequenceConcatCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
-  float* out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
 
-  int seq_num = param.X[0]->lod()[0].size() - 1;
-  const int emb_size = param.X[0]->numel() / param.X[0]->dims()[0];
-  std::vector<uint64_t> in_locate_vec;
-  for (size_t i = 0; i < param.X.size(); ++i) {
-    in_locate_vec.push_back(
-        reinterpret_cast<uintptr_t>(param.X[i]->data<float>()));
+  const int BLOCK_SIZE = 32;
+  const int axis = 1;
+  int num_concats = param.X[0]->dims().count(0, axis);
+  int concat_input_size =
+      param.X[0]->dims().count(axis + 1, param.X[0]->dims().size());
+
+  int input_size = param.X.size();
+  std::vector<std::vector<int64_t>> shapes_in(input_size);
+  for (int i = 0; i < input_size; ++i) {
+    shapes_in[i] = param.X[i]->dims().Vectorize();
   }
-  in_locate_tensor.Resize({static_cast<int64_t>(in_locate_vec.size())});
+  std::vector<int64_t> shape_out = shapes_in[0];
 
-  std::vector<int> out2in_map;
-  std::vector<int> out2in_word_map;
-  for (int i = 0; i < seq_num; ++i) {
-    for (int j = 0; j < param.X.size(); ++j) {
-      auto offset = param.X[j]->lod()[0];
-      int cur_len = offset[i + 1] - offset[i];
-      for (int k = 0; k < cur_len; ++k) {
-        out2in_map.push_back(j);
-        out2in_word_map.push_back(offset[i] + k);
+  // compute output shape
+  for (int i = 1; i < input_size; ++i) {
+    for (int j = 0; j < shapes_in[i].size(); ++j) {
+      if (j == axis) {
+        continue;
+      } else if (shapes_in[i][j] != -1) {
+        CHECK_EQ(shape_out[j], shapes_in[i][j])
+            << "All inputs must have the same shape, except at concat_axis.";
       }
     }
-  }
-  int word_num = out2in_map.size();
-  out2in_map_tensor.Resize({word_num});
-  out2in_word_map_tensor.Resize({word_num});
-  int* gpu_o2i_map_data = out2in_map_tensor.mutable_data<int>(TARGET(kCUDA));
-  int* gpu_o2i_w_map_data =
-      out2in_word_map_tensor.mutable_data<int>(TARGET(kCUDA));
-  uint64_t* gpu_in_locate_data =
-      in_locate_tensor.mutable_data<uint64_t>(TARGET(kCUDA));
-
-  TargetWrapperCuda::MemcpyAsync(gpu_o2i_map_data,
-                                 out2in_map.data(),
-                                 sizeof(int) * out2in_map.size(),
-                                 IoDirection::HtoD,
-                                 stream);
-  TargetWrapperCuda::MemcpyAsync(gpu_o2i_w_map_data,
-                                 out2in_word_map.data(),
-                                 sizeof(int) * out2in_word_map.size(),
-                                 IoDirection::HtoD,
-                                 stream);
-  TargetWrapperCuda::MemcpyAsync(gpu_in_locate_data,
-                                 in_locate_vec.data(),
-                                 sizeof(uint64_t) * in_locate_vec.size(),
-                                 IoDirection::HtoD,
-                                 stream);
-
-  param.Out->set_lod(ConcatLoD<float>(param.X));
-
-  int count = param.X[0]->numel();
-  for (int i = 1; i < param.X.size(); ++i) {
-    count += param.X[i]->numel();
+    shape_out[axis] += shapes_in[i][axis];
   }
 
-  int blocks = (count + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
-  ker_sequence_concat<float><<<blocks, CUDA_NUM_THREADS, 0, stream>>>(
-      out_data,
-      gpu_in_locate_data,
-      gpu_o2i_map_data,
-      gpu_o2i_w_map_data,
-      seq_num,
-      emb_size,
-      count);
+  param.Out->Resize(shape_out);
+  float* out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
+  int offset_concat_axis = 0;
+  const int out_concat_axis = shape_out[axis];
 
-  cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+  for (int i = 0; i < input_size; ++i) {
+    std::vector<int64_t> in_shape = param.X[i]->dims().Vectorize();
+    const auto* in_data = param.X[i]->data<float>();
+    const int in_concat_axis = in_shape[axis];
+    const int in_concat_size = in_concat_axis * concat_input_size;
+    const int nthreads = in_concat_size * num_concats;
+    float ratio = static_cast<float>(in_concat_size) / num_concats;
+    bool is_balance = (ratio > 0.1 && ratio < 10);
+    if (is_balance) {
+      int block_x = BLOCK_SIZE;
+      int block_y = BLOCK_SIZE;
+      int grid_x = (in_concat_size + block_x - 1) / block_x;
+      int grid_y = (num_concats + block_y - 1) / block_y;
+      dim3 block(block_x, block_y);
+      dim3 grid(grid_x, grid_y);
+      concat_impl_2d_impl<float><<<grid, block, 0, stream>>>(in_concat_size,
+                                                             num_concats,
+                                                             in_data,
+                                                             concat_input_size,
+                                                             out_concat_axis,
+                                                             offset_concat_axis,
+                                                             out_data);
+    } else {
+      int grid = (nthreads + BLOCK_SIZE - 1) / BLOCK_SIZE;
+      concat_impl_cuda<float><<<grid, BLOCK_SIZE, 0, stream>>>(
+          nthreads,
+          in_data,
+          num_concats,
+          concat_input_size,
+          out_concat_axis,
+          in_concat_axis,
+          offset_concat_axis,
+          out_data);
+    }
+    offset_concat_axis += in_concat_axis;
+  }
+  param.Out->set_lod(param.X[0]->lod());
 }
 
 }  // namespace cuda

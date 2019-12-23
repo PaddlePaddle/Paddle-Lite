@@ -286,6 +286,8 @@ struct ConvParam {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -767,6 +769,12 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SequencePoolConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  std::vector<std::string> pool_type{};
+};
+
 struct SearchGroupPaddingParam {
   lite::Tensor* x{};
   lite::Tensor* out_emb_padding{};
@@ -862,6 +870,8 @@ struct VarConv2DParam {
   int stride_w;
   int kernel_h;
   int kernel_w;
+
+  bool fuse_relu{false};
 };
 
 /// ----------------------- shape operators ----------------------
@@ -1113,6 +1123,12 @@ struct InstanceNormParam {
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
   float epsilon;
+};
+/// --------------------- grid sampler operators --------------------
+struct GridSamplerParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* grid{};
 };
 
 }  // namespace operators
