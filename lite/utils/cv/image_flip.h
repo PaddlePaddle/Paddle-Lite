@@ -21,6 +21,15 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+class ImageFlip {
+ public:
+  void choose(const uint8_t* src,
+              uint8_t* dst,
+              ImageFormat srcFormat,
+              int srcw,
+              int srch,
+              FlipParam flip_param);
+};
 void flip_hwc1(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, FlipParam flip_param);
 void flip_hwc3(

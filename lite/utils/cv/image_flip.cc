@@ -19,6 +19,23 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void ImageFlip::choose(const uint8_t* src,
+                       uint8_t* dst,
+                       ImageFormat srcFormat,
+                       int srcw,
+                       int srch,
+                       FlipParam flip_param) {
+  if (srcFormat == GRAY) {
+    flip_hwc1(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    flip_hwc3(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    flip_hwc4(src, dst, srcw, srch, flip_param);
+  } else {
+    printf("this srcFormat: %d does not support! \n", srcFormat);
+    return;
+  }
+}
 // gray
 void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in);

@@ -28,8 +28,8 @@ DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
-DEFINE_int32(srcFormat, 0, "input image format");
-DEFINE_int32(dstFormat, 1, "output image format");
+DEFINE_int32(srcFormat, 0, "input image format RGBA");
+DEFINE_int32(dstFormat, 2, "output image format RGB");
 DEFINE_int32(srch, 1920, "input height");
 DEFINE_int32(srcw, 1080, "input width");
 DEFINE_int32(dsth, 960, "output height");

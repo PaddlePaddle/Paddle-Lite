@@ -19,6 +19,26 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void ImageRotate::choose(const uint8_t* src,
+                         uint8_t* dst,
+                         ImageFormat srcFormat,
+                         int srcw,
+                         int srch,
+                         float degree) {
+  if (degree != 90 && degree != 180 && degree != 270) {
+    printf("this degree: %f not support \n", degree);
+  }
+  if (srcFormat == GRAY) {
+    rotate_hwc1(src, dst, srcw, srch, degree);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    rotate_hwc3(src, dst, srcw, srch, degree);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    rotate_hwc4(src, dst, srcw, srch, degree);
+  } else {
+    printf("this srcFormat: %d does not support! \n", srcFormat);
+    return;
+  }
+}
 // gray
 void rotate_hwc1_90(
     const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out);
