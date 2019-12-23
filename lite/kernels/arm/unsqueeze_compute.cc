@@ -54,12 +54,12 @@ REGISTER_LITE_KERNEL(unsqueeze,
                      kNCHW,
                      paddle::lite::kernels::host::UnsqueezeCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("AxesTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("AxesTensorList",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(unsqueeze2,
@@ -68,11 +68,11 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                      kNCHW,
                      paddle::lite::kernels::host::Unsqueeze2Compute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("AxesTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("AxesTensorList",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
