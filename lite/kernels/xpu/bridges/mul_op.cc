@@ -43,15 +43,17 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
-  CHECK_EQ(y_dims.size(), 2) << "[XPU] Now only support y_dims.size() == 2";
   auto out_name = op_info->Output("Out").front();
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto out = scope->FindMutableTensor(out_name);
+  auto out_dims = out->dims();
   auto x_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
-  CHECK_EQ(x_num_col_dims, 1) << "xpu now only support x_num_col_dims == 1";
-  auto y_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
-  CHECK_EQ(y_num_col_dims, 1) << "xpu now only support y_num_col_dims == 1";
+  auto x_matrix_dims = x_dims.Flatten2D(x_num_col_dims);
+  auto y_num_col_dims = op_info->GetAttr<int>("y_num_col_dims");
+  auto y_matrix_dims = y_dims.Flatten2D(y_num_col_dims);
+  CHECK_EQ(x_matrix_dims[1], y_matrix_dims[0]);
 
   // X node
   std::shared_ptr<xtcl::xExpr> x_node = nullptr;
@@ -60,31 +62,25 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     x_node = graph->AddNode(x_name, x_dims);
   }
-  // Flatten x node
-  x_node = graph->AddNode(x_name + "/flatten",
-                          graph->builder_.CreateBatchFlatten(*x_node));
-
-  // Transpose y data and create Y node
-  Tensor transpose_y;
-  DDim transpose_y_dims(std::vector<int64_t>{y_dims[1], y_dims[0]});
-  transpose_y.Resize(transpose_y_dims);
-  auto transpose_y_data = transpose_y.mutable_data<float>();
-  auto y_data = y->mutable_data<float>();
-  for (int i = 0; i < transpose_y_dims[0]; i++) {
-    for (int j = 0; j < transpose_y_dims[1]; j++) {
-      transpose_y_data[i * transpose_y_dims[1] + j] =
-          y_data[j * transpose_y_dims[0] + i];
-    }
+  // Flatten X node
+  if (x_dims.size() != 2) {
+    x_node =
+        graph->AddNode(x_name + "/reshape",
+                       graph->builder_.CreateReshape(
+                           *x_node, {-1, static_cast<int>(y_matrix_dims[0])}));
   }
-  auto y_const_node = graph->AddNode(y_name + "/transpose", transpose_y);
 
-  // Dense node
-  graph->AddNode(
-      out_name,
-      graph->builder_.CreateDense(*x_node,
-                                  static_cast<int>(y_dims[1]),
-                                  ::xtcl::NullValue<::xtcl::DataType>(),
-                                  *y_const_node));
+  // Y node
+  auto y_const_node = graph->AddNode(y_name, *y, y_matrix_dims);
+
+  // Reshape the matmul node with the inferred shape as the output node
+  auto matmul_node = graph->AddNode(
+      out_name, graph->builder_.CreateMatmul2D(*x_node, *y_const_node, false));
+  if (out_dims.size() != 2) {
+    graph->AddNode(out_name,
+                   graph->builder_.CreateReshape(
+                       *matmul_node, CvtShape<xtcl::Integer>(out_dims)));
+  }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
