@@ -28,6 +28,9 @@ lite_cc_library(fuse_transpose_softmax_transpose
 lite_cc_library(fuse_interpolate
         SRCS interpolate_fuser.cc
         DEPS pattern_matcher_high_api)       
+lite_cc_library(fuse_sequence_pool_concat
+        SRCS sequence_pool_concat_fuser.cc
+        DEPS pattern_matcher_high_api)       
 
 set(mir_fusers
     fuse_fc
@@ -40,6 +43,7 @@ set(mir_fusers
     fuse_elementwise_add_activation
     fuse_transpose_softmax_transpose
     fuse_interpolate
+    fuse_sequence_pool_concat
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
