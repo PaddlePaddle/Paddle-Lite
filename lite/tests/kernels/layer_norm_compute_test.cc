@@ -121,11 +121,7 @@ class LayerNormComputeTest : public arena::TestCase {
     std::vector<float> din(dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
 
-    std::vector<int64_t> scale_v;
-    for (size_t i = begin_norm_axis_; i < dims_.size(); i++) {
-      scale_v.push_back(dims_[i]);
-    }
-    DDim scale_dim(scale_v);
+    DDim scale_dim({dims_.Slice(begin_norm_axis_, dims_.size()).production()});
     std::vector<float> scale(scale_dim.production());
     fill_data_rand(scale.data(), -1.f, 1.f, scale_dim.production());
 
@@ -154,7 +150,7 @@ TEST(LayerNorm, precision) {
   std::vector<std::vector<int64_t>> dims{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}};
   for (auto dim_in : dims) {
     for (auto epsilon : {1e-5f}) {
-      for (auto axis : {0, 1, 2, 3}) {
+      for (auto axis : {1, 2, 3}) {
         for (bool has_bias : {true, false}) {
           for (bool has_scale : {true, false}) {
             if (axis >= dim_in.size()) continue;
@@ -166,10 +162,6 @@ TEST(LayerNorm, precision) {
                                          axis,
                                          has_bias,
                                          has_scale));
-#ifdef LITE_WITH_ARM
-            auto& ctx = tester->context()->As<ARMContext>();
-            ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
-#endif
             arena::Arena arena(std::move(tester), place, abs_error);
             arena.TestPrecision({"mean", "variance"});
           }

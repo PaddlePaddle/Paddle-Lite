@@ -24,11 +24,12 @@ namespace xpu {
 int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  // auto graph = static_cast<Graph*>(ctx);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto scope = op->scope();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
-#if 0
+
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_type = kernel->GetInputDeclType("X");
@@ -56,7 +57,6 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   graph->AddNode(
       out_name,
       graph->builder_.CreateScale(*x_node, scale, bias, bias_after_scale));
-#endif
   return SUCCESS;
 }
 

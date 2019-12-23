@@ -40,7 +40,7 @@ std::unique_ptr<xtcl::network::xRuntimeInstance> Device::Build(
   auto compiler = xtcl::network::xTensorCompiler(network, target);
   compiler.SetParams(*params);  // Set the data of constant tensors
   compiler.Build();
-  VLOG(3) << "[NPU] Build done";
+  VLOG(3) << "[XPU] Build done";
   return std::unique_ptr<xtcl::network::xRuntimeInstance>(
       new xtcl::network::xRuntimeInstance(compiler.CreateRuntimeInstance()));
 }

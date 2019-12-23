@@ -169,6 +169,10 @@ endif()
 
 ########################################################################################
 
+if(LITE_WITH_XPU)
+    include(xpu)
+endif()
+
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 include(external/libxsmm)   # download, build, install libxsmm
@@ -186,10 +190,6 @@ include(configure)          # add paddle env configuration
 
 if(LITE_WITH_CUDA)
   include(cuda)
-endif()
-
-if(LITE_WITH_XPU)
-  include(xpu)
 endif()
 
 include(generic)            # simplify cmake module
