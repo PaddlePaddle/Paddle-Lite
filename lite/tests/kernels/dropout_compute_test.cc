@@ -18,6 +18,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -26,8 +27,8 @@ class DropoutComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string type_ = "dropout";
-  std::string input_ = "x";
-  std::string output_ = "out";
+  std::string x_ = "x";
+  std::string out_ = "out";
   std::string mask_ = "mask";
   DDim dims_{{1}};
   float dropout_prob_ = 0.5;
@@ -51,12 +52,12 @@ class DropoutComputeTester : public arena::TestCase {
         dropout_implementation_(dropout_implementation) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
+    auto* out = scope->NewTensor(out_);
     CHECK(out);
     out->Resize(dims_);
     auto* output_data = out->mutable_data<float>();
 
-    auto* x = scope->FindTensor(input_);
+    auto* x = scope->FindTensor(x_);
     const auto* x_data = x->data<float>();
 
     if (dropout_implementation_ == "downgrade_in_infer") {
@@ -74,8 +75,8 @@ class DropoutComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType(type_);
-    op_desc->SetInput("X", {input_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetOutput("Out", {out_});
     op_desc->SetOutput("Mask", {mask_});
     op_desc->SetAttr("dropout_prob", dropout_prob_);
     op_desc->SetAttr("fix_seed", fix_seed_);
@@ -84,16 +85,9 @@ class DropoutComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> input_data(dims_.production());
-    for (int i = 0; i < dims_.production(); i++) {
-#if 0
-      float sign = i % 3 == 0 ? -1.0f : 1.0f;
-      input_data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
-#else
-      input_data[i] = 1;
-#endif
-    }
-    SetCommonTensor(input_, dims_, input_data.data());
+    std::vector<float> x(dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(x_, dims_, x.data());
   }
 };
 
@@ -107,16 +101,15 @@ TEST(Dropout, precision) {
   return;
 #endif
 
-  std::vector<std::vector<int64_t>> dims{
-      /*{3} ,*/ {3, 4} /*, {3, 4, 5}, {1, 2, 3, 4}, {2, 3, 4, 5}*/};
-  for (auto dim : dims) {
-    for (auto dropout_prob : {/*0.,*/ 0.5 /*, 1.*/}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {3}, {3, 4}, {3, 4, 5}, {1, 2, 3, 4}, {2, 3, 4, 5}}) {
+    for (auto dropout_prob : {0., 0.5, 1.}) {
       for (auto dropout_implementation :
            {"downgrade_in_infer", "upscale_in_train"}) {
         std::unique_ptr<arena::TestCase> tester(
             new DropoutComputeTester(place,
                                      "def",
-                                     DDim(dim),
+                                     DDim(dims),
                                      dropout_prob,
                                      true,
                                      1,
