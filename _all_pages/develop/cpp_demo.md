@@ -31,10 +31,12 @@ title: C++ Demo
 		- libpaddle_api_light_bundled.a
 		- libpaddle_light_api_shared.so
 		- libpaddle_full_api_shared.so
-- demo 
+- demo
 	- cxx  （C++ demo）
 		- mobile_light  (light api demo)
 		- mobile_full    (full api demo)
+    - mobile_detection    (detection model api demo)
+    - mobile_classify    (classify model api demo)
 		- Makefile.def
 		- include
 - third_party  （第三方库文件夹）
@@ -95,6 +97,56 @@ adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
 adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
 {% endhighlight %}
 
+另外，我们也提供模型分类demo和模型检测demo，支持图像输入。
+
+### 模型分类 Demo
+
+{% highlight bash %}
+cd ../mobile_classify
+wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
+tar zxvf mobilenet_v1.tar.gz
+make
+adb -s emulator-5554 push mobile_classify /data/local/tmp/
+adb -s emulator-5554 push test.jpg /data/local/tmp/
+adb -s emulator-5554 push labels.txt /data/local/tmp/
+adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
+adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1.opt /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
+{% endhighlight %}
+
+Demo 运行结果:
+{% highlight bash %}
+parameter:  model_dir, image_path and label_file are necessary
+parameter:  topk, input_width,  input_height, are optional
+i: 0, index: 285, name:  Egyptian cat, score: 0.482870
+i: 1, index: 281, name:  tabby, tabby cat, score: 0.471593
+i: 2, index: 282, name:  tiger cat, score: 0.039779
+i: 3, index: 287, name:  lynx, catamount, score: 0.002430
+i: 4, index: 722, name:  ping-pong ball, score: 0.000508
+{% endhighlight %}
+
+### 模型检测 Demo
+
+{% highlight bash %}
+cd ../mobile_detection
+wget https://paddle-inference-dist.bj.bcebos.com/mobilenetv1-ssd.tar.gz
+tar zxvf mobilenetv1-ssd.tar.gz
+make
+adb -s emulator-5554 push mobile_detection /data/local/tmp/
+adb -s emulator-5554 push test.jpg /data/local/tmp/
+adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_detection
+adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_detection /data/local/tmp/mobilenetv1-ssd /data/local/tmp/test.jpg"
+adb -s emulator-5554 pull /data/local/tmp/test_detection_result.jpg ./
+{% endhighlight %}
+
+Demo 运行结果:
+{% highlight bash %}
+running result:
+detection image size: 935, 1241, detect object: person, score: 0.996098, location: x=187, y=43, width=540, height=592
+detection image size: 935, 1241, detect object: person, score: 0.935293, location: x=123, y=639, width=579, height=597
+{% endhighlight %}
+
 ## Demo 程序运行结果
 
 Demo 运行成功后 ，将在控制台输出预测结果的前10个类别的预测概率：
@@ -121,11 +173,11 @@ Output[900]: 0.000586
 
 {% highlight cpp %}
   #include <iostream>
-  #include <vector>        
-  #include "paddle_api.h"          
-  #include "paddle_use_kernels.h"  
-  #include "paddle_use_ops.h"      
-  #include "paddle_use_passes.h"   
+  #include <vector>
+  #include "paddle_api.h"
+  #include "paddle_use_kernels.h"
+  #include "paddle_use_ops.h"
+  #include "paddle_use_passes.h"
 {% endhighlight %}
 
 - 通过MobileConfig设置：模型文件位置（model_dir）、线程数（thread）和能耗模式( power mode )。输入数据（input），从 MobileConfig 创建 PaddlePredictor 并执行预测。  （注：Lite还支持从memory直接加载模型，可以通过MobileConfig::set_model_buffer方法实现）
