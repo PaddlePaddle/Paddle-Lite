@@ -302,17 +302,19 @@ int main(int argc, char** argv) {
   // at least one argument should be inputed
   const std::string help_info =
       "At least one argument should be inputed. Valid arguments are listed "
-      "below:\n`PrintAllOPs` Display all the valid operators of Paddle-Lite "
-      "\n`--print_supported_ops=true  --valid_targets=*yourtarget*` Display "
-      "the supported operator of Paddle-Lite on the input target. \n Arguments "
-      "of model optimization:\n        `--model_dir=*path_to_input_model*`\n   "
-      "     `--model_file=*path_to_model_file*`\n        "
-      "`--param_file=*path_to_param_file*`\n        "
-      "`--optimize_out_type=*protobuf/naive_buffer*`\n        "
-      "`--optimize_out=*path_to_ouput_optimized_model*`\n        "
-      "`--valid_targets=*x86/arm/opencl*`\n        "
-      "`--prefer_int8_kernel=*true/false*`\n        "
-      "`--record_tailoring_info=*true/false*`";
+      "below:\n` "
+      "        PrintAllOPs`   Display all the valid operators of Paddle-Lite\n"
+      "        `--print_supported_ops=true  --valid_targets=*yourtarget*`  "
+      "Display valid operators of input targets. \n "
+      "Arguments of model optimization:\n"
+      "        `--model_dir=*path_to_input_model*`\n"
+      "        `--model_file=*path_to_model_file*`\n"
+      "        `--param_file=*path_to_param_file*`\n"
+      "        `--optimize_out_type=*protobuf/naive_buffer*`\n"
+      "        `--optimize_out=*path_to_ouput_optimized_model*`\n"
+      "        `--valid_targets=*x86/arm/opencl*`\n"
+      "        `--prefer_int8_kernel=*true/false*`\n"
+      "        `--record_tailoring_info=*true/false*`";
   if (argc < 2) {
     std::cerr << help_info << std::endl;
     exit(1);
