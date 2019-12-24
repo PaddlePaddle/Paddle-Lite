@@ -311,8 +311,8 @@ int main(int argc, char** argv) {
       "`--optimize_out_type=*protobuf/naive_buffer*`\n        "
       "`--optimize_out=*path_to_ouput_optimized_model*`\n        "
       "`--valid_targets=*x86/arm/opencl*`\n        "
-      "`--prefer_int8_kernel=true/false`\n        "
-      "`--record_tailoring_info=true/false`";
+      "`--prefer_int8_kernel=*true/false*`\n        "
+      "`--record_tailoring_info=*true/false*`";
   if (argc < 2) {
     std::cerr << help_info << std::endl;
     exit(1);
