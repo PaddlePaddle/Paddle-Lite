@@ -138,6 +138,9 @@ void RunOptimize(const std::string& model_dir,
 
   // set valid_ops
   auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
+  auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
+  valid_ops.insert(
+      valid_ops.end(), valid_unktype_ops.begin(), valid_unktype_ops.end());
   for (int i = 0; i < valid_places.size(); i++) {
     auto target = valid_places[i].target;
     auto ops = supported_ops_target[static_cast<int>(target)];
