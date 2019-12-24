@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
       "below:\n"
       "        `PrintAllOPs`   Display all the valid operators of Paddle-Lite\n"
       "        `--print_supported_ops=true  --valid_targets=*yourtarget*`  "
-      "Display valid operators of input targets. \n "
+      "Display valid operators of input targets \n "
       "Arguments of model optimization:\n"
       "        `--model_dir=*path_to_input_model*`\n"
       "        `--model_file=*path_to_model_file*`\n"
