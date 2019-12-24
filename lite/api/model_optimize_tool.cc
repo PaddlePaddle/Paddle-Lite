@@ -302,8 +302,8 @@ int main(int argc, char** argv) {
   // at least one argument should be inputed
   const std::string help_info =
       "At least one argument should be inputed. Valid arguments are listed "
-      "below:\n` "
-      "        PrintAllOPs`   Display all the valid operators of Paddle-Lite\n"
+      "below:\n"
+      "        `PrintAllOPs`   Display all the valid operators of Paddle-Lite\n"
       "        `--print_supported_ops=true  --valid_targets=*yourtarget*`  "
       "Display valid operators of input targets. \n "
       "Arguments of model optimization:\n"
