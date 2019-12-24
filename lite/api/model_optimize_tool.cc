@@ -192,7 +192,7 @@ void ParseInputCommand(char** argv) {
       std::cout << it->first << " : ";
       auto ops_valid_places = it->second;
       for (int i = 0; i < ops_valid_places.size(); i++) {
-        std::cout << ops_valid_places[i] << " ";
+        std::cout << ops_valid_places[i].substr(1) << " ";
       }
       std::cout << std::endl;
     }
