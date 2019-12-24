@@ -248,7 +248,7 @@ TEST(FcOP, precision) {
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  double eps = 1E-5;
+  double eps = 6E-5;
 #endif
   TestFCMain(place, eps);
 }
