@@ -197,10 +197,16 @@ sudo make install
 
 ```bash
 # 1. Install basic software
-brew install -y curl gcc git make unzip
+brew install curl gcc git make unzip wget
 
-# 2. Install cmake 3.10 or above
-brew install -y cmake
+# 2. Install cmake: mac上实现IOS编译和Android编译要求的cmake版本不一致,可以根据需求选择安装。
+# （1）在mac环境编译 Paddle-Lite 的Android版本，需要安装cmake 3.10
+#     可以手动下载安装包`https://cmake.org/files/v3.10/cmake-3.10.3-Darwin-x86_64.dmg`
+#     手动安装cmake3.10后,设置环境变量：
+#      echo "PATH=/Applications/CMake.app/Contents/bin:$PATH" >> ~/.bash_profile
+#      source ~/.bash_profile
+# （2）在mac环境编译 Paddle-Lite 的IOS版本，需要安装cmake 3.15
+#     可以直接使用 `brew install cmake` 安装3.15版本 
 
 # 3. Download Android NDK for Mac
 #     recommand android-ndk-r17c-darwin-x86_64
@@ -219,12 +225,7 @@ brew cask install java
 
 至此，完成 Mac 交叉编译环境的准备。
 
-#### Mac下Full Publish编译时需要**注意**
-1. Mac下只支持Android的Full_publish编译
-2. cmake版本需要为cmake 3.10
-3. Paddle-Lite项目路径中不可以含有中文字符
-4. 编译时如果报错: `Too many open files`
-   解决方法：修改mac电脑的 “程序可打开的最大文件数“，例如：`ulimit -n 1024`。
+**注意**: Mac上编译Paddle-Lite的full_publish版本时，Paddle-Lite所在路径中不可以含有中文字符
 
 ## 二、编译PaddleLite
 
@@ -254,7 +255,7 @@ git checkout <release-version-tag>
 | --arm_abi  |必选，选择编译的arm版本，其中`armv7hf`为ARMLinux编译时选用| `armv8`、`armv7`、`armv7hf`|
 | --arm_lang |arm_os=android时必选，选择编译器 | `gcc`、`clang`|
 | --android_stl |arm_os=android时必选，选择静态链接STL或动态链接STL | `c++_static`、`c++_shared`|
-| --build_extra | 可选，是否编译控制流相关op、kernel。（**编译demo时必须选择为ON**）      | `ON`、`OFF` |
+| --build_extra | 可选，是否编译全量预测库（默认为OFF）。详情可参考[预测库说明](../library)。 | `ON`、`OFF` |
 | target |必选，选择编译模式，`tiny_publish`为编译移动端部署库、`full_publish`为带依赖的移动端部署库、`test`为移动端单元测试、`ios`为编译ios端`tiny_publish` | `tiny_publish`、`full_publish`、`test`、 `ios` |
 
 ### 编译代码

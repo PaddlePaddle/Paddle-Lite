@@ -9,7 +9,7 @@ title: 裁剪预测库方法
 
 Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编译会将所有已注册的operator打包到预测库中，造成库文件体积膨胀；**裁剪预测库**能针对具体的模型，只打包优化后该模型需要的operator，有效降低预测库文件大小。
 
-## 效果展示
+## 效果展示(Tiny_publish Android动态预测库体积)
 
 | 测试模型 | 裁剪开关  | **libpaddle_lite_jni.so** |转化后模型中的OP|
 | ------------------ | ---------------------------- | -------- |------------------|
@@ -21,6 +21,11 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 | inceptionv4（armv7） | 裁剪后--build_tailor=ON  | 512K       |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
 | yolov3（armv7） | 裁剪前--build_tailor=OFF     | 938K |feed,fetch,concat,conv2d,depthwise_conv2d,multiclass_nms,nearest_interp,transpose2,yolo_box|
 | yolov3（armv7） | 裁剪后--build_tailor=ON  |516K          |feed,fetch,concat,conv2d,depthwise_conv2d,multiclass_nms,nearest_interp,transpose2,yolo_box|
+
+
+
+
+
 
 ## 实现过程：
 
@@ -152,4 +157,37 @@ int main(int argc, char** argv) {
 
 注意：`mobilenetV1_PB`是用`mobilenetV1`模型转化的protobuf格式模型(不需要设置` --record_tailoring_info =true`，转化流程参考：[使用model_optimize_tool转化模型](../model_optimize_tool))。
 
+## 按模型集合裁剪预测库
 
+为了方便用户使用，我们同时提供了按模型集合进行预测库裁剪的功能。用户可以提供一个模型集合，Model Optimize Tool会根据用户所指定的模型集合分析其**优化后的**模型所需要的算子信息对预测库进行裁剪。使用此功能用户根据自己的需要使用模型集合来对预测库中的算子进行任意裁剪。
+
+使用方法如下所示：
+
+```shell
+# 非combined模型集合
+./model_optimize_tool                     \
+    --model_set_dir=<your_model_set_dir>  \
+    --optimize_out_type=naive_buffer      \
+    --optimize_out=<output_model_set_dir> \
+    --record_tailoring_info=true          \
+    --valid_targets=arm
+   
+# combined模型集合
+./model_optimize_tool                       \
+    --model_set_dir=<your_model_set_dir>    \
+    --optimize_out_type=naive_buffer        \
+    --model_filename=<model_topo_filename>  \
+    --param_filename=<model_param_filename> \
+    --optimize_out=<output_model_set_dir>   \
+    --record_tailoring_info=true            \
+    --valid_targets=arm
+```
+
+经过以上步骤后会在`<output_model_set_dir>`中生成模型集合中各模型对应的NaiveBuffer格式的优化模型。此步会对模型集合中所需算子信息进行搜集并存储到`<output_model_set_dir>`中。下一步编译预测库的流程与使用单模型进行预测库裁剪步骤相同。
+
+**注意：**
+
+1. 模型集合**必须**均为combined参数模型或均为非combined参数模型。
+2. 使用非combined参数模型时，模型拓扑文件名应为`__model__`，使用非combined参数模型时，集合中各模型的拓扑与参数名应相同，分别由`--model_filename`和`--param_filename`指定。
+3. 模型集合**必须**均为INT8量化模型或均为非INT8量化模型。
+4. 需要使用Paddle-Lite 最新版本（release/v2.1.0之后）代码编译出的model_optimize_tool。
