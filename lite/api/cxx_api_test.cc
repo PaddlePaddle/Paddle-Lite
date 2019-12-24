@@ -106,6 +106,7 @@ TEST(CXXApi, load_model_naive) {
                   "",
                   valid_places,
                   {},
+                  {},
                   lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
