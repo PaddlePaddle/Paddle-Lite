@@ -19,7 +19,7 @@ from ast import RegisterLiteOpParser
 
 kernels_list_path = sys.argv[1]
 ops_list_path = sys.argv[2]
-kernel_op_map_dest_path = sys.argv[3] #"./supported_kernel_op_info.h"
+kernel_op_map_dest_path = sys.argv[3]
 
 
 out_lines = [
@@ -97,7 +97,12 @@ for path in paths:
         for target in valid_targets:
            if(op in valid_ops[getattr(TargetType, target)]):
               op_targets.append(target)
-        out = out +'", "'.join(op_targets)+ '" }}'
+        if len(op_targets) > 0:
+           out = out +'", "'.join(op_targets)+ '" }}'
+        else:
+           # unknow type op:  kUnk = 0
+           valid_ops[0].append(op)
+           out = out +'kUnk" }}'
         ops_lines.append(out)
 
 with open(kernel_op_map_dest_path, 'w') as f:

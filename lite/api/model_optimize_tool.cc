@@ -212,6 +212,7 @@ void ParseInputCommand(char** argv) {
     }
     std::cout << "supported ops on '" << targets_str << "': " << std::endl;
     targets.push_back(TARGET(kHost));
+    targets.push_back(TARGET(kUnk));
     for (int i = 0; i < targets.size(); i++) {
       auto ops = supported_ops_target[static_cast<int>(targets[i])];
       for (int i = 0; i < ops.size(); i++) {
