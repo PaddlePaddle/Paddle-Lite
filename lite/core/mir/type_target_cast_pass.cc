@@ -101,7 +101,6 @@ void TypeTargetTransformPass::AddIoCopyInst(
   auto io_copy_output_name =
       string_format("%s/target_trans", in->AsArg().name.c_str());
   // string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
-
   if (copied_nodes->count(in->AsArg().name)) {
     // Remove the old link
     RemoveDirectedLink(in, inst_node);

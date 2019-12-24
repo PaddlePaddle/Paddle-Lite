@@ -13,39 +13,35 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/operators/calib_op.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace fpga {
+namespace operators {
 
-class CalibComputeFp32ToFP16
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class OneHotOp : public OpLite {
  public:
-  using param_t = operators::CalibParam;
+  OneHotOp() {}
+  explicit OneHotOp(const std::string &op_type) : OpLite(op_type) {}
 
-  void Run() override;
+  bool CheckShape() const override;
 
-  ~CalibComputeFp32ToFP16() override{};
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "one_hot"; }
 
  private:
+  mutable OneHotParam param_;
 };
 
-class CalibComputeFP16ToFp32
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeFP16ToFp32() override{};
-
- private:
-};
-
-}  // namespace fpga
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

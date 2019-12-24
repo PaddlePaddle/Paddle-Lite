@@ -138,11 +138,16 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
     std::string op_type = inst.op()->op_info()->Type();
+
+#ifndef LITE_WITH_FPGA
     if (op_type == "feed" || op_type == "fetch") continue;
+#endif
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
-    LITE_PRECISION_PROFILE(inst)
+#ifndef LITE_WITH_FPGA
+// LITE_PRECISION_PROFILE(inst)
+#endif
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
   }

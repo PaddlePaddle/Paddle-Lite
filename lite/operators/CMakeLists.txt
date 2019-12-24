@@ -136,6 +136,8 @@ add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
 add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_op.cc DEPS ${op_DEPS})
 add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
 
+add_operator(one_hot basic SRCS one_hot_op.cc DEPS ${op_DEPS})
+
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
                 DEPS fc_op memory

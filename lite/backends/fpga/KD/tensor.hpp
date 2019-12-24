@@ -348,9 +348,19 @@ class Tensor {
     if (placeHolder_ == nullptr) {
       return;
     }
+    std::cout << scale()[0] << " , " << scale()[1] << std::endl;
   }
 
-  void printScale(std::string type) { printScale(); }
+  void printScale(std::string type) {
+    std::cout << type << " : "
+              << std::to_string(shape_->num()) + "_" +
+                     std::to_string(shape_->channel()) + "_" +
+                     std::to_string(shape_->height()) + "_" +
+                     std::to_string(shape_->width())
+              << std::endl;
+    std::cout << type << " \n";
+    printScale();
+  }
 
   std::string dimsFileName() {
     return std::to_string(shape_->num()) + "_" +
@@ -378,6 +388,7 @@ class Tensor {
     static int counter = 0;
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
+    std::cout << "======== saving file:" << npath << " ============\n";
     save_file_with_name(npath);
   }
 

@@ -32,7 +32,8 @@ class Debugger {
   }
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
-    if (op_type != "conv") {  // NOLINT
+    if (op_config[op_type]) {
+      tensor->saveToFile(op_type, true);
     }
   }
 
@@ -40,8 +41,19 @@ class Debugger {
   std::unordered_map<std::string, bool> op_config;
   Debugger() {
     op_config["concat"] = true;
+    op_config["pooling"] = true;
     op_config["conv"] = true;
     op_config["crop"] = true;
+    op_config["feed"] = true;
+    op_config["mul"] = true;
+    op_config["fetch"] = true;
+    op_config["boxes"] = true;
+    op_config["scores"] = true;
+    op_config["nms"] = true;
+    op_config["pb_boxes"] = true;
+    op_config["pb_variances"] = true;
+    // op_config["fc"] = true;
+    op_config["softmax"] = true;
   }
 };
 
@@ -131,9 +143,7 @@ inline void save_tensor(const lite::Tensor* t,
     chw_to_hwc(const_cast<lite::Tensor*>(t), dst);
     data = dst;
   }
-
   save_float(data, name, t->numel());
-
   delete[] dst;
 }
 }  // namespace lite

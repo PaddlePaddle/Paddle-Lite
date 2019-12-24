@@ -1130,7 +1130,15 @@ struct GridSamplerParam {
   lite::Tensor* out{};
   lite::Tensor* grid{};
 };
-
-}  // namespace operators
-}  // namespace lite
-}  // namespace paddle
+/// --------------------- attentions operators --------------
+struct OneHotParam {
+  lite::Tensor* X{};
+  lite::Tensor* depth_tensor{nullptr};
+  lite::Tensor* Out{};
+  int depth{-1};
+  int dtype{};
+  bool allow_out_of_range{false};
+};
+};  // namespace operators
+};  // namespace lite
+};  // namespace paddle

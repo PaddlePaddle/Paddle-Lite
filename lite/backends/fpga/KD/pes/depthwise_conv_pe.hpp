@@ -62,6 +62,7 @@ class DepthwiseConvPE : public PE {
       float16* scale_data = param_.scale()->data<float16>();
       float16* filter_data = param.quantizedFilter()->mutableData<float16>(
           FP16, param.filter->shape());
+
       memcpy(filter_data,
              scale_data,
              param.filter->shape().numel() * sizeof(float16));

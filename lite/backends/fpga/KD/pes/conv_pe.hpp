@@ -62,6 +62,7 @@ class ConvPE : public PE {
         param_.filter->shape().height() == 1) {  // NOLINT
     }
     if (!use_cpu_) {  // NOLINT
+      // param_.filter->releaseData();
     }
   }
 
@@ -92,6 +93,7 @@ class ConvPE : public PE {
     int kernel_width = param_.filter->shape().width();
     int kernel_step_h = param_.strides[0];
     int kernel_step_w = param_.strides[1];
+
     int pooled_height_ = output->shape().height();
     int pooled_width_ = out_width;
     int filter_chw = image_channels * kernel_height * kernel_width;

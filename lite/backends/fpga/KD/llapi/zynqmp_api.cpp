@@ -62,6 +62,7 @@ void reset_device() {
 // memory management;
 void *fpga_malloc(size_t size) {
 #ifdef ENABLE_DEBUG
+  std::cout << "fpga_malloc:" << size << std::endl;
 #endif
 #ifdef PADDLE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(

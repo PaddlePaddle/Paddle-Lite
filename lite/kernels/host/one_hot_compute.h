@@ -13,39 +13,24 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/calib_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace fpga {
+namespace host {
 
-class CalibComputeFp32ToFP16
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class OneHotCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::CalibParam;
-
   void Run() override;
 
-  ~CalibComputeFp32ToFP16() override{};
-
- private:
+  virtual ~OneHotCompute() = default;
 };
 
-class CalibComputeFP16ToFp32
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeFP16ToFp32() override{};
-
- private:
-};
-
-}  // namespace fpga
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
