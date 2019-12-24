@@ -248,7 +248,9 @@ void Predictor::Build(const std::string &model_path,
   }
 
   // check if this model is supported by current ops.
-  CheckIfModelSupported(valid_places, valid_ops, &program_desc_);
+  if (!valid_ops.empty()) {
+    CheckIfModelSupported(valid_places, valid_ops, &program_desc_);
+  }
   Build(program_desc_, valid_places, passes);
 }
 
