@@ -30,9 +30,11 @@ class SoftmaxCompute
   virtual ~SoftmaxCompute() = default;
 
  private:
-  size_t sharedmem_size;
-  int num_threads;
-  int max_dimsize;
+  lite::Tensor tmax_data_;
+  lite::Tensor tsum_data_;
+  size_t sharedmem_size_;
+  int max_dimsize_;
+  int axis_size_;
 };
 
 }  // namespace cuda
