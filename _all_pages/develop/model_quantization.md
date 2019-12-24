@@ -185,7 +185,7 @@ compressor:
 - **weight_bits:** 量化weight的bit数，注意偏置(bias)参数不会被量化。
 - **activation_bits:** 量化activation的bit数。
 -  **weight_quantize_type:** weight量化方式，目前量化训练支持`abs_max`、 `channel_wise_abs_max`。
-- **activation_quantize_type:** activation量化方式，目前量化训练支持`abs_max`、 `range_abs_max`和`moving_average_abs_max`。
+- **activation_quantize_type:** activation量化方式，目前量化训练支持`range_abs_max`、`moving_average_abs_max`。PaddlePaddle中还支持 `abs_max` 方法对激活进行量化，但是该方法动态计算输入的量化scale，这会增加计算量、减慢模型推理速度，所以lite不支持 `abs_max`激活量化方式。
 - **save_in_nodes:** variable名称列表。在保存量化后模型的时候，需要根据save_in_nodes对eval programg 网络进行前向遍历剪枝。默认为eval_feed_list内指定的variable的名称列表。
 - **save_out_nodes:** varibale名称列表。在保存量化后模型的时候，需要根据save_out_nodes对eval programg 网络进行回溯剪枝。默认为eval_fetch_list内指定的variable的名称列表。
 
