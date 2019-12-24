@@ -74,7 +74,7 @@ void sgemm_prepack(bool is_transB,
                    int ldc,
                    const float* bias,
                    bool has_bias,
-                   bool has_relu,
+                   const operators::ActivationParam act_param,
                    ARMContext* ctx);
 
 }  // namespace math
