@@ -189,7 +189,7 @@ void CollectModelMetaInfo(const std::string& output_dir,
 void ParseInputCommand(char** argv) {
   std::string method = argv[1];
   if (method == "PrintAllOPs") {
-    std::cout << "All OPS supported by Paddle-Lite: " << supported_ops.size()
+    std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
               << " ops in total." << std::endl;
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
       std::cout << it->first << " : ";
@@ -213,7 +213,7 @@ void ParseInputCommand(char** argv) {
     for (int i = 1; i < targets.size(); i++) {
       targets_str = targets_str + TargetToStr(targets[i]);
     }
-    std::cout << "supported ops on '" << targets_str << "': " << std::endl;
+    std::cout << "Supported OPs on '" << targets_str << "': " << std::endl;
     targets.push_back(TARGET(kHost));
     targets.push_back(TARGET(kUnk));
     for (int i = 0; i < targets.size(); i++) {
