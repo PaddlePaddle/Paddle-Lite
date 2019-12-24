@@ -21,34 +21,51 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int DropoutConverter(void* ctx, OpLite* op) {
+int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto scope = op->scope();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // Create node and set params from op
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto dropout_prob = op_info->GetAttr<float>("dropout_prob");
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");
-  double rate;
-  if (dropout_implementation == "downgrade_in_infer") {
-    rate = 1. - dropout_prob;
-  } else if (dropout_implementation == "upscale_in_train") {
-    rate = 1.;
-  } else {
-    LOG(FATAL) << "unsupported dropout_implementation == "
-               << dropout_implementation << " for dropout";
-  }
-  CHECK(graph->HasNode(x_var_name));
-  graph->AddNode(
-      out_var_name,
-      graph->builder_.CreateDropout(*graph->GetNode(x_var_name), rate));
 
+  // X node
+  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Dropout node
+  if (dropout_implementation == "downgrade_in_infer") {
+    graph->AddNode(
+        out_name,
+        graph->builder_.CreateScale(*x_node, 1.f - dropout_prob, 0.0f, false));
+  } else if (dropout_implementation == "upscale_in_train") {
+    graph->AddNode(out_name,
+                   graph->builder_.CreateScale(*x_node, 1.0f, 0.0f, false));
+  } else {
+    LOG(WARNING) << "[XPU] Unsupported dropout_implementation == "
+                 << dropout_implementation << " for dropout";
+    return FAILED;
+  }
   return SUCCESS;
 }
 
