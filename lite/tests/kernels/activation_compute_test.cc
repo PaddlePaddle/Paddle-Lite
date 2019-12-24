@@ -34,7 +34,8 @@ enum activation_type_test {
   LOG,
   EXP,
   FLOOR,
-  RSQRT
+  RSQRT,
+  GELU
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -181,6 +182,13 @@ class ActivationComputeTester : public arena::TestCase {
       case RSQRT: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] = 1.0 / std::sqrt(x_data[i]);
+        }
+        break;
+      }
+      case GELU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] * 0.5 *
+                           (1.0 + std::erf(x_data[i] * 0.70710678118654752440));
         }
         break;
       }
@@ -623,5 +631,25 @@ TEST(Activation_rsqrt, precision) {
   }
 #endif
 }
+
+TEST(Activation_gelu, precision) {
+  LOG(INFO) << "test gelu op";
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+        place, "def", 0.01, 6., "all", 0., DDim(dims), "gelu", GELU));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle

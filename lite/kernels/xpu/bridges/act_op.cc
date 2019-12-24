@@ -55,6 +55,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     graph->AddNode(out_name, graph->builder_.CreateRelu(*x_node));
   } else if (op_type == "tanh") {
     graph->AddNode(out_name, graph->builder_.CreateUnaryOp("tanh", *x_node));
+  } else if (op_type == "gelu") {
+    graph->AddNode(out_name, graph->builder_.CreateGelu(*x_node));
   } else {
     // TODO(hong19860320) supports more activation ops
     LOG(WARNING) << "[XPU] Unsupported activation type " << op_type;
@@ -70,3 +72,4 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(XPU, relu, paddle::lite::subgraph::xpu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(XPU, tanh, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU, gelu, paddle::lite::subgraph::xpu::ActConverter);

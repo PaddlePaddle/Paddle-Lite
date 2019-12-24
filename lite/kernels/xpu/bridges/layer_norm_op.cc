@@ -37,22 +37,18 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-  auto scale_name = op_info->Input("Scale").front();
-  auto scale_type = kernel->GetInputDeclType("Scale");
-  CHECK(scale_type->precision() == PRECISION(kFloat));
-  CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
-  auto scale = scope->FindMutableTensor(scale_name);
-  auto bias_name = op_info->Input("Bias").front();
-  auto bias_type = kernel->GetInputDeclType("Bias");
-  CHECK(bias_type->precision() == PRECISION(kFloat));
-  CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
-  auto bias = scope->FindMutableTensor(bias_name);
   auto y_name = op_info->Output("Y").front();
   auto y_type = kernel->GetOutputDeclType("Y");
   CHECK(y_type->precision() == PRECISION(kFloat));
   CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  auto y = scope->FindMutableTensor(y_name);
+  auto y_dims = y->dims();
   auto epsilon = op_info->GetAttr<float>("epsilon");
   auto axis = op_info->GetAttr<int>("begin_norm_axis");
+  auto x_rank = static_cast<int>(x_dims.size());
+  axis = axis < 0 ? (x_rank + axis) : axis;
+  bool reshape = axis != (x_rank - 1);  // XPU only support the last dimension
+  auto x_inner_size = x_dims.Slice(axis, x_rank).production();
 
   // X node
   std::shared_ptr<xtcl::xExpr> x_node = nullptr;
@@ -61,16 +57,65 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     x_node = graph->AddNode(x_name, x_dims);
   }
+  if (reshape) {
+    auto reshaped_x_dims = x_dims.Slice(0, axis).Vectorize();
+    reshaped_x_dims.push_back(x_inner_size);
+    x_node =
+        graph->AddNode(x_name + "/reshape",
+                       graph->builder_.CreateReshape(
+                           *x_node, CvtShape<xtcl::Integer>(reshaped_x_dims)));
+  }
 
-  // Scale and Bias node
-  auto scale_const_node = graph->AddNode(scale_name, *scale);
-  auto bias_const_node = graph->AddNode(bias_name, *bias);
+  // Scale node
+  std::shared_ptr<xtcl::xExpr> scale_const_node = nullptr;
+  if (HasInputArg(op_info, scope, "Scale")) {
+    auto scale_name = op_info->Input("Scale").front();
+    auto scale_type = kernel->GetInputDeclType("Scale");
+    CHECK(scale_type->precision() == PRECISION(kFloat));
+    CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
+    auto scale = scope->FindMutableTensor(scale_name);
+    auto scale_dims = scale->dims();
+    CHECK_EQ(scale_dims.size(), 1);
+    CHECK_EQ(scale_dims.production(), x_inner_size);
+    scale_const_node = graph->AddNode(scale_name, *scale);
+  } else {
+    scale_const_node =
+        graph->AddNode(y_name + "/scale_one", 1.0f, {x_inner_size});
+  }
+
+  // Bias node
+  std::shared_ptr<xtcl::xExpr> bias_const_node = nullptr;
+  if (HasInputArg(op_info, scope, "Bias")) {
+    auto bias_name = op_info->Input("Bias").front();
+    auto bias_type = kernel->GetInputDeclType("Bias");
+    CHECK(bias_type->precision() == PRECISION(kFloat));
+    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+    auto bias = scope->FindMutableTensor(bias_name);
+    auto bias_dims = bias->dims();
+    CHECK_EQ(bias_dims.size(), 1);
+    CHECK_EQ(bias_dims.production(), x_inner_size);
+    bias_const_node = graph->AddNode(bias_name, *bias);
+  } else {
+    bias_const_node =
+        graph->AddNode(y_name + "/bias_zero", 0.0f, {x_inner_size});
+  }
 
   // Layer Norm node
-  auto layer_norm_node = graph->builder_.CreateLayerNorm(
-      *x_node, *scale_const_node, *bias_const_node, axis, epsilon, true, true);
-  graph->AddNode(y_name, graph->builder_.GetField(layer_norm_node, 0));
-  return SUCCESS;
+  auto layer_norm_node =
+      graph->AddNode(y_name,
+                     graph->builder_.CreateLayerNorm(*x_node,
+                                                     *scale_const_node,
+                                                     *bias_const_node,
+                                                     axis,
+                                                     epsilon,
+                                                     true,
+                                                     true));
+  if (reshape) {
+    graph->AddNode(y_name,
+                   graph->builder_.CreateReshape(
+                       *layer_norm_node, CvtShape<xtcl::Integer>(y_dims)));
+  }
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace xpu
