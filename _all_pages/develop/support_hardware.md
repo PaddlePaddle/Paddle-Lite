@@ -4,7 +4,9 @@ title: 支持硬件列表
 ---
 
 ## ARM CPU
+
 Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM_Cortex-A)，支持列表如下:
+
 ### 32bit(ARMv7a)
 - Cortex-A5
 - Cortex-A7
@@ -14,6 +16,7 @@ Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM
 - Cortex-A15
 - Cortex-A17(RK3288)
 - Cortex-A32
+
 ### 64bit(ARMv7a, ARMv8a)
 - Cortex-A35
 - Cortex-A53(树莓派3)
@@ -30,4 +33,4 @@ Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM
 Paddle Lite支持移动端GPU和Nvidia端上GPU设备，支持列表如下：
 - ARM Mali G 系列
 - Qualcomm Adreno 系列
-- Nvida tegra系列: tx1, tx2, nano, xavier
+- Nvidia tegra系列: tx1, tx2, nano, xavier
