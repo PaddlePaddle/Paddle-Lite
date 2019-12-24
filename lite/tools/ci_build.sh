@@ -773,7 +773,7 @@ function build_test_arm_subtask_armlinux {
     echo "Done"
 }
 
-# sub-task-model, this function will not operate cmake part, you should run `build_test_arm_subtask_android` before operate this function
+# this method need to invoke `build_test_arm_subtask_android` first.
 function build_test_arm_subtask_model {
     # We just test following single one environment to limit the CI time.
     local os=android
