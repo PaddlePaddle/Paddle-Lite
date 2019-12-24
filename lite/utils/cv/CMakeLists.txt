@@ -7,5 +7,5 @@ if(LITE_WITH_CV AND (NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA) AND LITE_WITH_
             image_flip.cc
             image_rotate.cc
             image_resize.cc
-            DEPS ${lite_cv_deps} paddle_api_light)
+            DEPS ${lite_cv_deps} paddle_api place)
 endif()
