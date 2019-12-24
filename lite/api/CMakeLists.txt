@@ -86,8 +86,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         X86_DEPS ${x86_kernels}
                         ARM_DEPS ${arm_kernels}
                         CV_DEPS paddle_cv_arm
-                        NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-                        XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
+                        NPU_DEPS ${npu_kernels}
+                        XPU_DEPS ${xpu_kernels}
                         CL_DEPS ${opencl_kernels}
                         FPGA_DEPS ${fpga_kernels})
 endif()
