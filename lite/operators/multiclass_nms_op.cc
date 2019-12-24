@@ -58,6 +58,12 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   auto bboxes_name = opdesc.Input("BBoxes").front();
   auto scores_name = opdesc.Input("Scores").front();
   auto out_name = opdesc.Output("Out").front();
+  std::vector<std::string> output_arg_names = opdesc.OutputArgumentNames();
+  if (std::find(output_arg_names.begin(), output_arg_names.end(), "Index") !=
+      output_arg_names.end()) {
+    auto index_name = opdesc.Output("Index").front();
+    param_.index = GetMutableVar<lite::Tensor>(scope, index_name);
+  }
   param_.bboxes = GetVar<lite::Tensor>(scope, bboxes_name);
   param_.scores = GetVar<lite::Tensor>(scope, scores_name);
   param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
