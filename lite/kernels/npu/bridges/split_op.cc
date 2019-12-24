@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int SplitConverter(void* ctx, OpLite* op) {
+int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,15 +30,33 @@ int SplitConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " << op_type << " ... ";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_names = op_info->Output("Out");
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_names = op_info->Output("Out");
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
   auto num = op_info->GetAttr<int>("num");
   auto sections = op_info->GetAttr<std::vector<int>>("sections");
   int64_t sections_num = static_cast<int64_t>(sections.size());
 
-  auto split_node = graph->AddNode<ge::op::Split>(op_type + "/" + x_var_name);
-  split_node->set_input_x(*graph->GetNode(x_var_name));
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Split node
+  auto split_node = graph->AddNode<ge::op::Split>(op_type + "/" + x_name);
+  split_node->set_input_x(*x_node);
   split_node->set_attr_axis(static_cast<int64_t>(axis));
   if (num > 0) {
     split_node->set_attr_output_num(static_cast<int64_t>(num));
@@ -48,12 +66,12 @@ int SplitConverter(void* ctx, OpLite* op) {
     split_node->set_attr_size_split(size_split);
   }
 
-  split_node->create_dynamic_output_y(out_var_names.size());
+  split_node->create_dynamic_output_y(out_names.size());
   int idx = 1;
-  for (auto& out_var_name : out_var_names) {
+  for (auto& out_name : out_names) {
     auto zero_const_node =
-        graph->AddNode(out_var_name + "/zero" + std::to_string(idx), 0);
-    auto add_node = graph->AddNode<ge::op::Add>(out_var_name);
+        graph->AddNode(out_name + "/zero" + std::to_string(idx), 0);
+    auto add_node = graph->AddNode<ge::op::Add>(out_name);
     add_node->set_input_x1(*split_node, "y" + std::to_string(idx));
     add_node->set_input_x2(*zero_const_node);
     idx++;

@@ -12,53 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/npu/bridges/utility.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace npu {
+namespace xpu {
 
-int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NPU] Converting " + op_type + "...";
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
 
   // Get input and output vars and op attributes
-  auto x_name = op_info->Input("X").front();
+  auto x_names = op_info->Input("X");
   auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-  auto x = scope->FindMutableTensor(x_name);
-  auto x_dims = x->dims();
-  auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto y_name = op_info->Output("Y").front();
+  auto y_type = kernel->GetOutputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  int axis = op_info->GetAttr<int>("axis");
 
-  // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
-  } else {
-    x_node = graph->AddNode(x_name, x_dims);
+  // X nodes
+  xtcl::Array<xtcl::xExpr> x_nodes;
+  for (auto& x_name : x_names) {
+    auto x = scope->FindMutableTensor(x_name);
+    auto x_dims = x->dims();
+    std::shared_ptr<xtcl::xExpr> x_node = nullptr;
+    if (graph->HasNode(x_name)) {
+      x_node = graph->GetNode(x_name);
+    } else {
+      x_node = graph->AddNode(x_name, x_dims);
+    }
+    x_nodes.push_back(*x_node);
   }
 
-  // Sqrt node
-  auto sqrt_node = graph->AddNode<ge::op::Sqrt>(out_name);
-  sqrt_node->set_input_x(*x_node);
+  // Stack node
+  graph->AddNode(y_name,
+                 graph->builder_.CreateStack(
+                     xtcl::network::TupleNode::make(x_nodes), axis));
   return SUCCESS;
 }
 
-}  // namespace npu
+}  // namespace xpu
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU, sqrt, paddle::lite::subgraph::npu::SqrtConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU,
+                         stack,
+                         paddle::lite::subgraph::xpu::StackConverter);

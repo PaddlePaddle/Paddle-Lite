@@ -25,10 +25,10 @@ class LayerNormComputeTest : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string op_type_ = "layer_norm";
-  std::string input_ = "x";
+  std::string x_ = "x";
   std::string scale_ = "scale";
   std::string bias_ = "bias";
-  std::string output_ = "y";
+  std::string y_ = "y";
   std::string mean_ = "mean";
   std::string variance_ = "variance";
   DDim dims_{{4, 5, 19, 19}};
@@ -53,11 +53,11 @@ class LayerNormComputeTest : public arena::TestCase {
         has_scale_(has_scale) {}
 
   void RunBaseline(Scope* scope) override {
-    auto x = scope->FindTensor(input_);
+    auto x = scope->FindTensor(x_);
     auto scale = scope->FindTensor(scale_);
     auto bias = scope->FindTensor(bias_);
 
-    auto y = scope->NewTensor(output_);
+    auto y = scope->NewTensor(y_);
     auto mean = scope->NewTensor(mean_);
     auto variance = scope->NewTensor(variance_);
     CHECK(y);
@@ -74,7 +74,7 @@ class LayerNormComputeTest : public arena::TestCase {
     auto* x_data = x->data<float>();
     auto* scale_data = (scale == nullptr ? nullptr : scale->data<float>());
     auto* bias_data = (bias == nullptr ? nullptr : bias->data<float>());
-    auto* out_data = y->mutable_data<float>();
+    auto* y_data = y->mutable_data<float>();
     auto* mean_data = mean->mutable_data<float>();
     auto* variance_data = variance->mutable_data<float>();
 
@@ -94,12 +94,12 @@ class LayerNormComputeTest : public arena::TestCase {
       variance_data[i] = variance_t;
       variance_t = sqrt(variance_t + epsilon_);
       for (int j = start; j < end; ++j) {
-        out_data[j] = (x_data[j] - mean_t) / variance_t;
+        y_data[j] = (x_data[j] - mean_t) / variance_t;
         if (scale_data) {
-          out_data[j] *= scale_data[j - start];
+          y_data[j] *= scale_data[j - start];
         }
         if (bias_data) {
-          out_data[j] += bias_data[j - start];
+          y_data[j] += bias_data[j - start];
         }
       }
     }
@@ -107,10 +107,14 @@ class LayerNormComputeTest : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType(op_type_);
-    op_desc->SetInput("X", {input_});
-    op_desc->SetInput("Bias", {bias_});
-    op_desc->SetInput("Scale", {scale_});
-    op_desc->SetOutput("Y", {output_});
+    op_desc->SetInput("X", {x_});
+    if (has_scale_) {
+      op_desc->SetInput("Scale", {scale_});
+    }
+    if (has_bias_) {
+      op_desc->SetInput("Bias", {bias_});
+    }
+    op_desc->SetOutput("Y", {y_});
     op_desc->SetOutput("Mean", {mean_});
     op_desc->SetOutput("Variance", {variance_});
     op_desc->SetAttr("epsilon", epsilon_);
@@ -118,23 +122,24 @@ class LayerNormComputeTest : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> din(dims_.production());
-    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    std::vector<float> x(dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(x_, dims_, x.data());
 
-    std::vector<int64_t> scale_v;
-    for (size_t i = begin_norm_axis_; i < dims_.size(); i++) {
-      scale_v.push_back(dims_[i]);
+    auto scale_bias_size =
+        dims_.Slice(begin_norm_axis_, dims_.size()).production();
+    if (has_scale_) {
+      DDim scale_dims({scale_bias_size});
+      std::vector<float> scale(scale_bias_size);
+      fill_data_rand(scale.data(), -1.f, 1.f, scale_bias_size);
+      SetCommonTensor(scale_, scale_dims, scale.data());
     }
-    DDim scale_dim(scale_v);
-    std::vector<float> scale(scale_dim.production());
-    fill_data_rand(scale.data(), -1.f, 1.f, scale_dim.production());
-
-    std::vector<float> bias(scale_dim.production());
-    fill_data_rand(bias.data(), -1.f, 1.f, scale_dim.production());
-
-    SetCommonTensor(input_, dims_, din.data());
-    SetCommonTensor(scale_, scale_dim, scale.data());
-    SetCommonTensor(bias_, scale_dim, bias.data());
+    if (has_bias_) {
+      DDim bias_dims({scale_bias_size});
+      std::vector<float> bias(scale_bias_size);
+      fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_size);
+      SetCommonTensor(bias_, bias_dims, bias.data());
+    }
   }
 };
 
@@ -151,25 +156,15 @@ TEST(LayerNorm, precision) {
   return;
 #endif
 
-  std::vector<std::vector<int64_t>> dims{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}};
-  for (auto dim_in : dims) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}}) {
     for (auto epsilon : {1e-5f}) {
-      for (auto axis : {0, 1, 2, 3}) {
+      for (auto axis : {1, 2, 3}) {
         for (bool has_bias : {true, false}) {
           for (bool has_scale : {true, false}) {
-            if (axis >= dim_in.size()) continue;
-            std::unique_ptr<arena::TestCase> tester(
-                new LayerNormComputeTest(place,
-                                         "def",
-                                         DDim(dim_in),
-                                         epsilon,
-                                         axis,
-                                         has_bias,
-                                         has_scale));
-#ifdef LITE_WITH_ARM
-            auto& ctx = tester->context()->As<ARMContext>();
-            ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
-#endif
+            if (axis >= dims.size()) continue;
+            std::unique_ptr<arena::TestCase> tester(new LayerNormComputeTest(
+                place, "def", DDim(dims), epsilon, axis, has_bias, has_scale));
             arena::Arena arena(std::move(tester), place, abs_error);
             arena.TestPrecision({"mean", "variance"});
           }

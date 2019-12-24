@@ -161,7 +161,7 @@ class FcOPTest : public arena::TestCase {
   }
 };
 
-void test_fc(Place place) {
+void test_fc(Place place, float abs_error) {
   for (auto& m : {1, 3, 16}) {
     for (auto& n : {1, 4, 16, 128, 256, 1024}) {
       for (auto& k : {1, 16, 128, 1024}) {
@@ -172,10 +172,12 @@ void test_fc(Place place) {
           std::unique_ptr<arena::TestCase> tester(
               new FcOPTest(place, "def", dim_in, wdim, bdim, 1));
 #ifdef LITE_WITH_ARM
-          auto& ctx = tester->context()->As<ARMContext>();
-          ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
+          if (place == TARGET(kARM)) {
+            auto& ctx = tester->context()->As<ARMContext>();
+            ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
+          }
 #endif
-          arena::Arena arena(std::move(tester), place, 6e-5);
+          arena::Arena arena(std::move(tester), place, abs_error);
           if (!arena.TestPrecision()) {
             LOG(ERROR) << "run m: " << m << ", n: " << n << ", k: " << k
                        << ", bias: " << (bflag ? "true" : "false") << " failed";
@@ -188,13 +190,17 @@ void test_fc(Place place) {
 }
 
 TEST(FcOP, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 6e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 2e-1;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_fc(place);
-#endif
+  test_fc(place, abs_error);
 }
 
 }  // namespace lite

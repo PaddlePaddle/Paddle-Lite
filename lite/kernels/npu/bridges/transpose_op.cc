@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int TransposeConverter(void* ctx, OpLite* op) {
+int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,13 +30,28 @@ int TransposeConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Input("Out").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Input("Out").front();
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
-  auto transpose_node = graph->AddNode<ge::op::Permute>(out_var_name);
-  transpose_node->set_input_x(*graph->GetNode(x_var_name));
-  auto w_const_node = graph->AddNode(out_var_name + "/w", 1.0f);
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Transpose node
+  auto transpose_node = graph->AddNode<ge::op::Permute>(out_name);
+  transpose_node->set_input_x(*x_node);
+  auto w_const_node = graph->AddNode(out_name + "/w", 1.0f);
   transpose_node->set_input_w(*w_const_node);
   transpose_node->set_attr_order(
       ge::AttrValue::LIST_INT(axis.begin(), axis.end()));
