@@ -154,9 +154,11 @@ class FcOPTest : public arena::TestCase {
         AddBias(out_data, b_data, m, n);
       }
     }
+#ifdef LITE_WITH_X86
     if (flag_bias && with_relu_) {
       Relu(out_data, m, n);
     }
+#endif
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
