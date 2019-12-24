@@ -22,7 +22,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int ReshapeConverter(void* ctx, OpLite* op) {
+int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -31,40 +31,65 @@ int ReshapeConverter(void* ctx, OpLite* op) {
   auto op_type = op_info->Type();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // Create node and set params from op
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+
+  // X node
+  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
 
   std::vector<int> shape;
-  if (op_info->HasInput("ShapeTensor") &&
-      !op_info->Input("ShapeTensor").empty()) {
-    for (auto var_name : op_info->Input("ShapeTensor")) {
-      shape.emplace_back(scope->FindMutableTensor(var_name)->data<int>()[0]);
+  if (HasInputArg(op_info, scope, "ShapeTensor")) {
+    auto shape_tensor_names = op_info->Input("ShapeTensor");
+    // auto shape_tensor_type = kernel->GetInputDeclType("ShapeTensor");
+    // CHECK(shape_tensor_type->precision() == PRECISION(kInt32));
+    // CHECK(shape_tensor_type->layout() == DATALAYOUT(kNCHW));
+    for (auto shape_tensor_name : shape_tensor_names) {
+      auto shape_tensor = scope->FindMutableTensor(shape_tensor_name);
+      auto shape_tensor_data = shape_tensor->mutable_data<int>();
+      shape.emplace_back(shape_tensor_data[0]);
     }
     CHECK_GT(shape.size(), 0)
-        << "ShapeError: When `shape` in ReshapeOp is a list or tuple "
+        << "[XPU] ShapeError: When `shape` in ReshapeOp is a list or tuple "
            "which contains Tensor, the shape's size can't be zero. "
            "But received shape's size is "
         << shape.size();
-  } else if (op_info->HasInput("Shape") && !op_info->Input("Shape").empty()) {
-    auto shape_tensor =
-        scope->FindMutableTensor(op_info->Input("Shape").front());
-    auto shape_data = shape_tensor->data<int>();
-    shape = std::vector<int>(shape_data, shape_data + shape_tensor->numel());
+  } else if (HasInputArg(op_info, scope, "Shape")) {
+    auto actual_shape_name = op_info->Input("Shape").front();
+    // auto actual_shape_type = kernel->GetInputDeclType("Shape");
+    // CHECK(actual_shape_type->precision() == PRECISION(kInt32));
+    // CHECK(actual_shape_type->layout() == DATALAYOUT(kNCHW));
+    auto actual_shape = scope->FindMutableTensor(actual_shape_name);
+    auto actual_shape_dims = actual_shape->dims();
+    auto actual_shape_data = actual_shape->mutable_data<int>();
+    auto shape = std::vector<int>(
+        actual_shape_data, actual_shape_data + actual_shape_dims.production());
   } else if (op_info->HasAttr("shape")) {
     shape = op_info->GetAttr<std::vector<int>>("shape");
   } else {
-    LOG(FATAL) << "no new shape for reshape op";
+    LOG(WARNING) << "[XPU] No new shape for reshape op";
+    return FAILED;
   }
-  auto out_dims =
-      operators::ValidateShape(shape, scope->FindTensor(x_var_name)->dims());
+  auto out_dims = operators::ValidateShape(shape, x_dims);
 
-  CHECK(graph->HasNode(x_var_name));
-  graph->AddNode(out_var_name,
-                 graph->builder_.CreateReshape(*graph->GetNode(x_var_name),
-                                               Cvt2ArrayInt(out_dims)));
-
-  return SUCCESS;
+  // Reshape node
+  graph->AddNode(out_name,
+                 graph->builder_.CreateReshape(
+                     *x_node, CvtShape<xtcl::Integer>(out_dims)));
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace xpu

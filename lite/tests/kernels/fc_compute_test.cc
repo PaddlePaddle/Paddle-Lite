@@ -210,7 +210,7 @@ class FcOPTest : public arena::TestCase {
 };
 
 void TestFCMain(Place place,
-                double eps,
+                float abs_error,
                 bool with_relu = false,
                 bool padding = false) {
   for (auto& m : {1, 3, 16}) {
@@ -226,10 +226,12 @@ void TestFCMain(Place place,
           std::unique_ptr<arena::TestCase> tester(new FcOPTest(
               place, "def", dim_in, wdim, bdim, 1, with_relu, padding));
 #ifdef LITE_WITH_ARM
-          auto& ctx = tester->context()->As<ARMContext>();
-          ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
+          if (place == TARGET(kARM)) {
+            auto& ctx = tester->context()->As<ARMContext>();
+            ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
+          }
 #endif
-          arena::Arena arena(std::move(tester), place, eps);
+          arena::Arena arena(std::move(tester), place, abs_error);
           if (!arena.TestPrecision()) {
             LOG(ERROR) << "run m: " << m << ", n: " << n << ", k: " << k
                        << ", bias: " << (bflag ? "true" : "false") << " failed";
@@ -242,23 +244,28 @@ void TestFCMain(Place place,
 }
 
 TEST(FcOP, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-  double eps = 1E-4;
+  Place place;
+  float abs_error = 6e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 2e-1;  // Using fp16 in NPU
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+  abs_error = 1e-4;
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  double eps = 6E-5;
-#endif
-  TestFCMain(place, eps);
+  TestFCMain(place, abs_error);
 }
 
 #ifdef LITE_WITH_X86
 TEST(FcOP, padding_and_parallel) {
   Place place(TARGET(kX86));
-  double eps = 1E-4;
+  float abs_error = 1e-4;
   x86::SetNumThreads(4);
-  TestFCMain(place, eps, true, true);
+  TestFCMain(place, abs_error, true, true);
 }
 #endif
 
