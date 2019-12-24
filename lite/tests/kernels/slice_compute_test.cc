@@ -267,14 +267,14 @@ void test_slice_tensor_list(Place place) {
 }
 
 TEST(Slice, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
+#elif defined(LITE_WITH_XPU)
+  Place place(TARGET(kXPU));
+  test_slice(place);
 #endif
 }
 
