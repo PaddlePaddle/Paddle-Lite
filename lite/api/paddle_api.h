@@ -20,6 +20,7 @@
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "paddle_place.h"  // NOLINT
@@ -132,12 +133,19 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<Place> valid_places_;
   std::string model_file_;
   std::string param_file_;
+  std::set<std::string> valid_ops_{};
   bool model_from_memory_{false};
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
   void set_model_file(const std::string& path) { model_file_ = path; }
   void set_param_file(const std::string& path) { param_file_ = path; }
+  // set valid ops to check whether this model can be supported before
+  // create_ops, if valid_ops is not set or set to be empty, we will not use
+  // valid_ops to check if input model is supported.
+  void set_valid_ops(const std::set<std::string>& valid_ops) {
+    valid_ops_ = valid_ops;
+  }
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
@@ -150,6 +158,7 @@ class LITE_API CxxConfig : public ConfigBase {
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
+  const std::set<std::string>& valid_ops() const { return valid_ops_; }
   bool model_from_memory() const { return model_from_memory_; }
 };
 

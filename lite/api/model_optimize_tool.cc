@@ -63,6 +63,9 @@ DEFINE_string(valid_targets,
               "The targets this model optimized for, should be one of (arm, "
               "opencl, x86), splitted by space");
 DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
+DEFINE_bool(print_supported_ops,
+            false,
+            "Print supported operators on the inputed target");
 
 namespace paddle {
 namespace lite_api {
@@ -131,8 +134,17 @@ void RunOptimize(const std::string& model_dir,
   config.set_model_dir(model_dir);
   config.set_model_file(model_file);
   config.set_param_file(param_file);
-
   config.set_valid_places(valid_places);
+
+  // set valid_ops
+  auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
+  for (int i = 0; i < valid_places.size(); i++) {
+    auto target = valid_places[i].target;
+    auto ops = supported_ops_target[static_cast<int>(target)];
+    valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
+  }
+  std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
+  config.set_valid_ops(valid_ops_set);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -168,6 +180,47 @@ void CollectModelMetaInfo(const std::string& output_dir,
       lite::Join<std::string>({output_dir, filename}, "/");
   lite::WriteLines(std::vector<std::string>(total.begin(), total.end()),
                    output_path);
+}
+
+// Parse Input command
+void ParseInputCommand(char** argv) {
+  std::string method = argv[1];
+  if (method == "PrintAllOPs") {
+    std::cout << "All OPS supported by Paddle-Lite: " << supported_ops.size()
+              << " ops in total." << std::endl;
+    for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
+      std::cout << it->first << " : ";
+      auto ops_valid_places = it->second;
+      for (int i = 0; i < ops_valid_places.size(); i++) {
+        std::cout << ops_valid_places[i] << " ";
+      }
+      std::cout << std::endl;
+    }
+    exit(1);
+  } else if (FLAGS_print_supported_ops) {
+    auto valid_places = paddle::lite_api::ParserValidPlaces();
+    // get valid_targets string
+    std::vector<TargetType> targets = {};
+    for (int i = 0; i < valid_places.size(); i++) {
+      targets.push_back(valid_places[i].target);
+    }
+    std::sort(targets.begin(), targets.end());
+    targets.erase(unique(targets.begin(), targets.end()), targets.end());
+    std::string targets_str = TargetToStr(targets[0]);
+    for (int i = 1; i < targets.size(); i++) {
+      targets_str = targets_str + TargetToStr(targets[i]);
+    }
+    std::cout << "supported ops on '" << targets_str << "': " << std::endl;
+    targets.push_back(TARGET(kHost));
+    for (int i = 0; i < targets.size(); i++) {
+      auto ops = supported_ops_target[static_cast<int>(targets[i])];
+      for (int i = 0; i < ops.size(); i++) {
+        std::cout << ops[i] << ", ";
+      }
+    }
+    std::cout << std::endl;
+    exit(1);
+  }
 }
 
 void Main() {
@@ -242,7 +295,14 @@ void Main() {
 }  // namespace paddle
 
 int main(int argc, char** argv) {
+  // at least one argument should be inputed
+  if (argc < 2) {
+    std::cerr << "At least one argument should be inputed" << std::endl;
+    exit(1);
+  }
+  // check if "PrintSupportedOPs" argument is inputed
   google::ParseCommandLineFlags(&argc, &argv, false);
+  paddle::lite_api::ParseInputCommand(argv);
   paddle::lite_api::Main();
   return 0;
 }

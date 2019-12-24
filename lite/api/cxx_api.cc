@@ -15,7 +15,6 @@
 #include "lite/api/cxx_api.h"
 #include <algorithm>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -200,6 +199,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_path = config.model_dir();
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
+  const std::set<std::string> &valid_ops = config.valid_ops();
   const bool model_from_memory = config.model_from_memory();
   if (model_from_memory) {
     LOG(INFO) << "Load model from memory.";
@@ -212,6 +212,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
         param_file,
         valid_places,
         passes,
+        valid_ops,
         model_type,
         model_from_memory);
 }
@@ -220,6 +221,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::string &param_file,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
+                      const std::set<std::string> &valid_ops,
                       lite_api::LiteModelType model_type,
                       bool model_from_memory) {
   switch (model_type) {
@@ -244,6 +246,9 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
+
+  // check if this model is supported by current ops.
+  CheckIfModelSupported(valid_places, valid_ops, &program_desc_);
   Build(program_desc_, valid_places, passes);
 }
 
@@ -292,6 +297,46 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   } else {
     int position = std::distance(input_names_.begin(), element);
     return GetInput(position);
+  }
+}
+
+void Predictor::CheckIfModelSupported(const std::vector<Place> &valid_places,
+                                      const std::set<std::string> &valid_ops,
+                                      cpp::ProgramDesc *prog) {
+  std::vector<std::string> unsupported_ops;
+  auto main_block = prog->GetBlock<cpp::BlockDesc>(0);
+  for (size_t i = 0; i < main_block->OpsSize(); ++i) {
+    auto &op_desc = *main_block->GetOp<cpp::OpDesc>(i);
+    auto op_type = op_desc.Type();
+    if (valid_ops.count(op_type) == 0) {
+      unsupported_ops.push_back(op_type);
+    }
+  }
+  if (!unsupported_ops.empty()) {
+    std::sort(unsupported_ops.begin(), unsupported_ops.end());
+    unsupported_ops.erase(
+        unique(unsupported_ops.begin(), unsupported_ops.end()),
+        unsupported_ops.end());
+    std::string unsupported_ops_str = unsupported_ops[0];
+    for (int i = 1; i < unsupported_ops.size(); i++) {
+      unsupported_ops_str = unsupported_ops_str + ", " + unsupported_ops[i];
+    }
+    std::vector<TargetType> targets = {};
+    for (int i = 0; i < valid_places.size(); i++) {
+      targets.push_back(valid_places[i].target);
+    }
+    std::sort(targets.begin(), targets.end());
+    targets.erase(unique(targets.begin(), targets.end()), targets.end());
+    std::string targets_str = TargetToStr(targets[0]);
+    for (int i = 1; i < targets.size(); i++) {
+      targets_str = targets_str + "," + TargetToStr(targets[i]);
+    }
+
+    LOG(ERROR) << "Error: This model is not supported, because "
+               << unsupported_ops.size() << " ops are not supported on '"
+               << targets_str << "'. These unsupported ops are: '"
+               << unsupported_ops_str << "'.";
+    exit(1);
   }
 }
 
