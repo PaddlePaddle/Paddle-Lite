@@ -79,6 +79,7 @@ class Node {
 
     // Description.
     std::string desc;
+    bool need_sync_{false};
   };
 
   struct Arg {
@@ -92,6 +93,7 @@ class Node {
     // if the need more than one tool operator(eg. io_copy layout calib), the
     // argument between them should be persist to make sure it's only run once
     bool is_persist{false};
+    uint32_t lane{0};
   };
 
   Arg& AsArg(const std::string& name, int id);
