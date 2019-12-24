@@ -24,6 +24,18 @@ namespace zynqmp {
 
 class DepthwiseConvPE : public PE {
  public:
+
+  inline int gcd_(int a, int b) {
+      while (b) {
+        int temp = a;
+        a = b;
+        b = temp % b;
+      }
+      return a;
+    }
+
+  inline int lcm_(int a, int b) { return a * b / gcd_(a, b); }
+
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
@@ -36,18 +48,41 @@ class DepthwiseConvPE : public PE {
     Tensor* input = param.input;
     Tensor* output = param.output;
     int channel = output->shape().channel();
+
+    int repeat = 1;
+    int alignment = 16;
+    int length = channel;
+
+    if (channel % alignment != 0 || channel < alignment) {
+      int c_lcm = lcm_(channel, alignment);
+      repeat = c_lcm / (channel);
+    }
+    Shape shape(N, {channel * repeat});
     
-    float16* b_data = bias_.mutableData<float16>(FP16, param_.bias()->shape());
+    float16* b_data = bias_.mutableData<float16>(FP16, shape);
     if (param_.bias()->dataType() == FP32) {
       float* new_bias_data = param_.bias()->data<float>();
       // bias从float转换成float16   
-      for (int i = 0; i < channel; i++) {
-        b_data[i] = float_to_half(new_bias_data[i]);
+      // for (int i = 0; i < channel; i++) {
+      //   b_data[i] = float_to_half(new_bias_data[i]);
+      // }
+      // bias 按16对齐填充hw
+      for (int i = 0; i < repeat; i++) {
+        for (int j = 0; j < length; j++) {
+          float16 value = float_to_half(new_bias_data[j]);
+          b_data[i * length + j] = value;
+        }
       }
       bias_.flush();
     } else {
       float16* new_bias_data = param_.bias()->data<float16>();
-      memcpy(b_data, new_bias_data, channel * sizeof(float16));
+      // memcpy(b_data, new_bias_data, channel * sizeof(float16));
+      for (int i = 0; i < repeat; i++) {
+        for (int j = 0; j < length; j++) {
+          // float16 value = float_to_half(bias_data_float[j]);
+          b_data[i * length + j] = new_bias_data[j];
+        }
+      }
       bias_.flush();
     }
 

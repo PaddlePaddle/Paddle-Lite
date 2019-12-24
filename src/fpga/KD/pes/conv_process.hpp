@@ -125,6 +125,49 @@ inline void combine_add_bn_params(BatchnormParam* bn, Tensor* bias,
   param_->bias()->setDataLocation(CPU);
 }
 
+inline int gcd_(int a, int b) {
+    while (b) {
+      int temp = a;
+      a = b;
+      b = temp % b;
+    }
+    return a;
+}
+
+inline int lcm_(int a, int b) { return a * b / gcd_(a, b); }
+
+inline void format_bias_scale_new(Tensor* bias, Tensor* scale, Tensor* scale_bias) {
+    Shape& bias_shape = bias->shape();
+    int channel = bias_shape.channel();
+    int repeat = 1;
+    int alignment = 16;
+    int length = channel;
+
+    if (channel % alignment != 0 || channel < alignment) {
+      int c_lcm = lcm_(channel, alignment);
+      repeat = c_lcm / (channel);
+    }
+    Shape shape(N, {2 * channel * repeat});
+    float16* scale_bias_data = scale_bias->mutableData<float16>(FP16, shape);
+
+    float* bias_data_float = bias->data<float>();
+    float* scale_data_float = scale->data<float>();
+
+    for (int i = 0; i < repeat; i++) {
+      for (int j = 0; j < length; j++) {
+        float16 value_bias = float_to_half(bias_data_float[j]);
+        scale_bias_data[i * length + j] = value_bias;
+      }
+    }
+    for (int i = 0; i < repeat; i++) {
+      for (int j = 0; j < length; j++) {
+        float16 value_scale = float_to_half(scale_data_float[j]);
+        scale_bias_data[i * length + j + length * repeat] = value_scale;
+      }
+    }
+
+}
+
 inline void format_scale_bias(Tensor* scale, Tensor* bias, Tensor* filter,
                               Tensor* scale_bias, int group) {
   float* scale_data = nullptr;
@@ -313,28 +356,31 @@ inline void split_filter_num(const ConvParam& c_param) {
     format_filter(&new_filter, &(conv_param->filter), param.groups, v, max);
     conv_param->filter.setDataType(INT8);
 
-    int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
+    //int sb_num = 2 * align_to_x(filter_num, BS_NUM_ALIGNMENT);
     Tensor scale;
     Tensor bias;
 
     int chnnnel_start = i * filter_num_per_div;
 
-    Shape s_shape(N, {filter_num});
+    Shape s_shape(NC, {1, filter_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
+    // float16* bias_data = bias.mutableData<float16>(FP16, s_shape);
     for (int n = 0; n < filter_num; n++) {
         // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
       scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_num; n++) {
-        bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+      bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+      // bias_data[n] = float_to_half(param.bias()->data<float>()[n + chnnnel_start]);
     }
-    Shape sb_shape(N, {sb_num});
-    format_scale_bias(&scale, &bias, &conv_param->filter,
-                      &conv_param->scaleBias, param.groups);
+    // Shape sb_shape(N, {sb_num});
+    // format_scale_bias(&scale, &bias, &conv_param->filter,
+    //                   &conv_param->scaleBias, param.groups);
+    format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     // conv_param->scaleBias.saveToFile("sb.txt");
     conv_param->scaleBias.flush();
-    float* bs_data = conv_param->scaleBias.data<float>();
+    // float* bs_data = conv_param->scaleBias.data<float>();
     // conv_param->scaleBias.saveToFile("sb.txt");
     // param.scale()->saveToFile("scale.txt");
     // param.bias()->saveToFile("bias.txt");
@@ -344,8 +390,8 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.group_num = param.groups;
     // TODO relu by inplace
     // args.relu_enabled = param.relu.enabled;
-    args.sb_address = conv_param->scaleBias.data<float>();
-    args.sb_address = bs_data;
+    args.sb_address = conv_param->scaleBias.data<float16>();
+    // args.sb_address = bs_data;
     args.kernel.stride_h = param.strides[1];
     args.kernel.stride_w = param.strides[0];
     args.kernel.height = new_filter.shape().height();
@@ -452,28 +498,31 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     format_filter(&new_filter, &(conv_param->filter), new_group, v, max);
     conv_param->filter.setDataType(INT8);
 
-    int sb_num = 2 * align_to_x(filter_current_pack, BS_NUM_ALIGNMENT);
+    //int sb_num = 2 * align_to_x(filter_current_pack, BS_NUM_ALIGNMENT);
     Tensor scale;
     Tensor bias;
 
     int chnnnel_start = i * filter_per_pack;
 
-    Shape s_shape(N, {filter_current_pack});
+    Shape s_shape(NC, {1, filter_current_pack});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
+    // float16* bias_data = bias.mutableData<float16>(FP16, s_shape);
     for (int n = 0; n < filter_current_pack; n++) {
         // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
       scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_current_pack; n++) {
-        bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+      bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+      // bias_data[n] = float_to_half(param.bias()->data<float>()[n + chnnnel_start]);
     }
-    Shape sb_shape(N, {sb_num});
-    format_scale_bias(&scale, &bias, &conv_param->filter,
-                      &conv_param->scaleBias, new_group);
+    // Shape sb_shape(N, {sb_num});
+    // format_scale_bias(&scale, &bias, &conv_param->filter,
+    //                   &conv_param->scaleBias, param.groups);
+    format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     // conv_param->scaleBias.saveToFile("sb.txt");
     conv_param->scaleBias.flush();
-    float* bs_data = conv_param->scaleBias.data<float>();
+    // float* bs_data = conv_param->scaleBias.data<float>();
     // conv_param->scaleBias.saveToFile("sb.txt");
     // param.scale()->saveToFile("scale.txt");
     // param.bias()->saveToFile("bias.txt");
@@ -596,12 +645,13 @@ inline int fill_split_arg(const ConvParam& c_param) {
   ConvParam& param = const_cast<ConvParam&>(c_param);
   Tensor* input = param.input;
   Tensor* output = param.output;
+
   if (output->shape().dimSize() == 4 && input->shape().channel() > 2047 &&
       input->shape().width() == 1) {
     split_channel(c_param);
     return 1;
-  }  
-  else if (param.groups == 1) {
+  } 
+  else if (param.groups == 1){
     split_filter_num(c_param);
     return 0;
   }
