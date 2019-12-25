@@ -2837,33 +2837,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fmla	v28.4s,  v4.4s,  v1.s[2]\n"   /* out22 = b2 * a10[0], b2 =q7*/
             "fmla	v31.4s,  v4.4s,  v1.s[3]\n"   /* out23 = b2 * a10[0], b2 =q7*/
             "11: \n"                            /* check if relu */
-            // "cbz    %w[relu],   12f\n"          /* skip relu */
-            // "movi   v2.4s, #0\n"                /* for relu*/
-            // "fmax   v8.4s, v8.4s, v2.4s\n"      /* relu*/
-            // "fmax   v9.4s, v9.4s, v2.4s\n"      /* relu*/
-            // "fmax   v10.4s, v10.4s, v2.4s\n"    /* relu*/
-            // "fmax   v11.4s, v11.4s, v2.4s\n"    /* relu*/
-            // "fmax   v12.4s, v12.4s, v2.4s\n"    /* relu*/
-            // "fmax   v13.4s, v13.4s, v2.4s\n"    /* relu*/
-            // "fmax   v14.4s, v14.4s, v2.4s\n"    /* relu*/
-            // "fmax   v15.4s, v15.4s, v2.4s\n"    /* relu*/
-            // "fmax   v16.4s,v16.4s,v2.4s\n"      /* relu*/
-            // "fmax   v17.4s,v17.4s,v2.4s\n"      /* relu*/
-            // "fmax   v18.4s, v18.4s, v2.4s\n"    /* relu*/
-            // "fmax   v19.4s, v19.4s, v2.4s\n"    /* relu*/
-            // "fmax   v20.4s, v20.4s, v2.4s\n"    /* relu*/
-            // "fmax   v21.4s, v21.4s, v2.4s\n"    /* relu*/
-            // "fmax   v22.4s, v22.4s, v2.4s\n"    /* relu*/
-            // "fmax   v23.4s, v23.4s, v2.4s\n"    /* relu*/
-            // "fmax   v24.4s,v24.4s,v2.4s\n"      /* relu*/
-            // "fmax   v25.4s,v25.4s,v2.4s\n"      /* relu*/
-            // "fmax   v26.4s, v26.4s, v2.4s\n"    /* relu*/
-            // "fmax   v27.4s, v27.4s, v2.4s\n"    /* relu*/
-            // "fmax   v28.4s, v28.4s, v2.4s\n"    /* relu*/
-            // "fmax   v29.4s, v29.4s, v2.4s\n"    /* relu*/
-            // "fmax   v30.4s, v30.4s, v2.4s\n"    /* relu*/
-            // "fmax   v31.4s, v31.4s, v2.4s\n"    /* relu*/
-            // "12: \n"
             "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */
             "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */
             "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */
@@ -3165,13 +3138,6 @@ void sgemm_prepacked_4x4(bool is_transB,
             "fmla	v11.4s,  v6.4s,  v2.s[3]\n"   /* out3 = b2 * a20[3], b1 =q6*/
 
             "11: \n"                            /* check if relu */
-            // "cbz    %w[relu],   12f\n"          /* skip relu */
-            // "movi   v2.4s, #0\n"                /* for relu*/
-            // "fmax   v8.4s, v8.4s, v2.4s\n"      /* relu*/
-            // "fmax   v9.4s, v9.4s, v2.4s\n"      /* relu*/
-            // "fmax   v10.4s, v10.4s, v2.4s\n"    /* relu*/
-            // "fmax   v11.4s, v11.4s, v2.4s\n"    /* relu*/
-            // "12: \n"
             "st1 {v8.4s}, [%[c_ptr0]], #16\n"   /* store r0 */
             "st1 {v9.4s}, [%[c_ptr1]], #16\n" /* store r1 */
             "st1 {v10.4s}, [%[c_ptr2]], #16\n" /* store r2 */
@@ -3615,22 +3581,6 @@ void sgemm_prepacked_6x8(bool is_transB,
             "vmla.f32	q13, q3, d0[0]              @ out10 += b2 * a4\n"
             "vmla.f32	q15, q3, d0[1]              @ out11 += b2 * a5\n"
             "2:                                     @ check relu\n"
-            // "cmp    %[relu], #0                     @ check if has relu\n"
-            // "ble    6f                              @ skip relu if relu <= 0\n"
-            // "vmov.u32    q0, #0                     @ for relu\n"
-            // "vmax.f32   q4, q4, q0                  @ for relu\n"
-            // "vmax.f32   q5, q5, q0                  @ for relu\n"
-            // "vmax.f32   q6, q6, q0                  @ for relu\n"
-            // "vmax.f32   q7, q7, q0                  @ for relu\n"
-            // "vmax.f32   q8, q8, q0                  @ for relu\n"
-            // "vmax.f32   q9, q9, q0                  @ for relu\n"
-            // "vmax.f32   q10, q10, q0                @ for relu\n"
-            // "vmax.f32   q11, q11, q0                @ for relu\n"
-            // "vmax.f32   q12, q12, q0                @ for relu\n"
-            // "vmax.f32   q13, q13, q0                @ for relu\n"
-            // "vmax.f32   q14, q14, q0                @ for relu\n"
-            // "vmax.f32   q15, q15, q0                @ for relu\n"
-            // "6:                                     @ store result\n"
             "vst1.32    {d8-d11},   [%[c_ptr0]]!    @ store r0\n"
             "vst1.32    {d12-d15},  [%[c_ptr1]]!    @ store r1\n"
             "vst1.32    {d16-d19},  [%[c_ptr2]]!    @ store r2\n"
@@ -3974,18 +3924,6 @@ void sgemm_prepacked_4x8(bool is_transB,
             /*aptr - 16*/
             "sub		%[a_ptr], %[a_ptr], #16     @ tail--\n"
             "2:                                     @ check relu\n"
-            // "cmp    %[relu], #0                     @ check if has relu\n"
-            // "ble    6f                              @ skip relu if relu <= 0\n"
-            // "vmov.u32    q0, #0                     @ for relu\n"
-            // "vmax.f32   q8, q8, q0                  @ for relu\n"
-            // "vmax.f32   q9, q9, q0                  @ for relu\n"
-            // "vmax.f32   q10, q10, q0                @ for relu\n"
-            // "vmax.f32   q11, q11, q0                @ for relu\n"
-            // "vmax.f32   q12, q12, q0                @ for relu\n"
-            // "vmax.f32   q13, q13, q0                @ for relu\n"
-            // "vmax.f32   q14, q14, q0                @ for relu\n"
-            // "vmax.f32   q15, q15, q0                @ for relu\n"
-            // "6:                                     @ store result\n"
             "vst1.32    {d16-d19},  [%[c_ptr0]]!    @ store r0\n"
             "vst1.32    {d20-d23},  [%[c_ptr1]]!    @ store r1\n"
             "vst1.32    {d24-d27},  [%[c_ptr2]]!    @ store r2\n"
