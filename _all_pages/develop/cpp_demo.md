@@ -97,9 +97,9 @@ adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
 adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
 {% endhighlight %}
 
-另外，我们也提供模型分类demo和模型检测demo，支持图像输入。
+另外，我们也提供图像分类demo和目标检测demo，支持图像输入。
 
-### 模型分类 Demo
+### 图像分类 Demo
 
 {% highlight bash %}
 cd ../mobile_classify
@@ -125,7 +125,7 @@ i: 3, index: 287, name:  lynx, catamount, score: 0.002430
 i: 4, index: 722, name:  ping-pong ball, score: 0.000508
 {% endhighlight %}
 
-### 模型检测 Demo
+### 目标检测 Demo
 
 {% highlight bash %}
 cd ../mobile_detection
