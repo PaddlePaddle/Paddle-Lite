@@ -17,6 +17,7 @@
 #include <cmath>
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
