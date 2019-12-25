@@ -3,125 +3,115 @@ layout: post
 title: Lite支持NPU在线编译
 ---
 
-Paddle Lite可以在线分析模型特点，在线编译并生成NPU所需要的IR并实时运行。
-是首个支持NPU在线模型的预测框架。
+Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
+原理是在线分析Paddle模型，将Paddle算子转成HiAI IR后，调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。
 
-也可以离线分析并调优模型后，保存离线模型，直接线上部署使用。
+# 已支持的设备
+- 华为nova5、nova5i pro、mate30、mate30 pro、mate30 5G、荣耀v30，以及即将推出的mate40、p40。据华为透露，今后上市的大部分手机都会搭载其自研达芬奇架构NPU。
 
-# 编译
+# 已支持的模型
+- MobileNetV1
+- MobileNetV2
+- ResNet-18/50
+- ShuffleNetV2
+- 百度内部业务模型（由于涉密，不方便透露具体细节）
 
-只需要提前准备华为DKK库和Lite 代码。
+# 已支持（或部分支持）的Paddle算子
+- sigmoid
+- relu
+- tanh
+- relu_clipped
+- leaky_relu
+- softsign
+- hard_sigmoid
+- batch_norm
+- concat
+- conv2d
+- depthwise_conv2d
+- conv2d_transpose
+- elementwise_add
+- elementwise_sub
+- elementwise_mul
+- elementwise_div
+- fc
+- bilinear_interp
+- nearest_interp
+- mul
+- pad2d
+- pool2d
+- reduce_mean
+- reshape
+- reshape2
+- scale
+- shuffle_channel
+- softmax
+- split
+- sqrt
+- square
+- transpose
+- transpose2
 
-我们也提供了编译NPU的[脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_npu.sh)可以直接使用。
+# 编译支持NPU的Paddle Lite库
 
-例如：
+- 从https://developer.huawei.com/consumer/cn/hiai/下载华为HiAI DDK后解压到任意路径（注意：华为提供了多个版本的DDK，我们需要下载针对麒麟810/990芯片HiAI Foundation开发套件，例如最新的[DDK V310版本](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)）。
+- 在Paddle Lite源码目录下使用[NPU编译脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_npu.sh)编译full_publish和tiny_publish。
+
+注意：必须将--ddk_root参数设置为HiAI DDK根目录，以下是HiAI DDK V310版解压后的目录结构，--ddk_root应当设置为ai_ddk_lib目录。
 ```shell
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --ddk_root=/to/your/ddk_path build
+- app_sample
+- ddk
+  - ai_ddk_lib
+    - include
+    - lib # for armv7
+    - lib64 # for armv8
+- document
+- tools
 ```
 
-## 细节说明
-
-CMAKE编译选项：
-
-- 设置`LITE_WITH_NPU=ON`和`LITE_WITH_ARM=ON`
-- 设置DDK根目录路径 `NPU_DDK_ROOT`
-
-其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../source_compile)。
-
-示例如下：
+- full_publish and tiny_publish for armv8，由于HiAI DDK的armv7和armv8的so库均基于c++_shared构建，因此，建议使用c++_shared编译Paddle Lite。
 ```shell
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_WITH_NPU=ON \
-        -DANDROID_API_LEVEL=24 \
-        -DNPU_DDK_ROOT="/path/to/ai_ddk_lib/" \
-        -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=armv8 -DARM_TARGET_LANG=gcc
-    make test_mobilenetv1 -j
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib full_publish
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib tiny_publish
 ```
 
-Note： 当前仅支持armv8和gcc编译。
-
-# 运行示例
-
-把MobilenetV1的模型和参数push到指定的`working_dir`.
-
+- full_publish and tiny_publish for armv7
 ```shell
-
-working_dir=/data/local/tmp
-
-test_bin=test_npu_pass
-model_dir=mobilenet_v1 # as example
-repeats=10
-batch_size=1
-im_channel=3
-im_height=224
-im_width=224
-optimized_model="${model_dir}_opt"
-
-adb shell "mkdir -p ${working_dir}"
-adb push $test_bin $working_dir/
-adb push $model_dir $working_dir
-adb push ai_ddk_lib/lib64/* $working_dir
-adb shell chmod +x "${working_dir}/${test_bin}"
-adb shell "rm -rf ${working_dir}/${optimized_model}"
-
-adb shell "cd ${working_dir} ; export LD_LIBRARY_PATH=./; ./${test_bin} --model_dir=${model_dir} --optimized_model=${optimized_model} --repeats=${repeats} --batch_size=${batch_size} --im_channel=${im_channel} --im_height=${im_height} --im_width=${im_width}"
-
-```
-在华为810的机器上，由运行结果可知单侧通过并且预测速度为6ms左右。
-一般第一次的运行时间略长，可以重复多次得到稳定结果。
-
-# 如何在Code中使用
-
-在Lite中使用NPU非常简单，不需要添加太多额外代码。
-
-- 只需要在添加有效place的时候包括`Place{TARGET(kNPU), PRECISION(kFloat)}`即可。
-后续的运行和使用没有任何变化。
-
-Note：
-唯一需要注意的是，因为构建NPU子图需要提前知晓各个op输入的具体大小，所以生成NPU的`RuntimeProgram`时需要提前初始化输入的大小，主要包括batchsize大小。
-如果不提前设置好大小，生成NPU模型时会报错退出。
-
-代码示例：
-```cpp
-// if want to use NPU
-std::vector<Place> valid_places({Place{TARGET(kNPU), PRECISION(kFloat)},
-                                 Place{TARGET(kARM), PRECISION(kFloat)}});
-
-DeviceInfo::Init();
-DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
-lite::Predictor predictor;
-predictor.Build(model_dir, "", "", valid_places);
-
-auto* input_tensor = predictor.GetInput(0);
-input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
-auto* data = input_tensor->mutable_data<float>();
-auto item_size = input_tensor->dims().production();
-for (int i = 0; i < item_size; i++) {
-  data[i] = 1;
-}
-
-predictor.Run();
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib full_publish
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib tiny_publish
 ```
 
-# FAQ
+注意：为了保证编译环境一致，建议参考[源码编译指南](../source_compile)中的Docker开发环境进行配置，然后再执行上述命令。
 
-## 关于开发板
+# 优化生成NPU模型
 
-由于该框架针对的是华为HiAI最新的NPU架构，应该还没有现成的开发板集成了该架构的NPU，所以通常看到的比如海思2359A上的NPU不一样的。
+- model_optimize_tool工具已经支持生成NPU模型，仅需要将valid_targets设置为npu,arm即可，具体参考[模型转化方法](../model_optimize_tool)。
+```shell
+./model_optimize_tool --model_dir=<model_param_dir> \
+    --model_file=<model_path> \
+    --param_file=<param_path> \
+    --optimize_out_type=(protobuf|naive_buffer) \
+    --optimize_out=<output_optimize_model_dir> \
+    --valid_targets=npu,arm \
+    --prefer_int8_kernel=(true|false) \
+    --record_tailoring_info =(true|false)
+```
+- model_optimize_tool生成的模型只是标记了NPU支持的Paddle算子，并没有真正生成了NPU HiAI模型，只有在执行时才会将标记的Paddle算子转成HiAI IR，最终生成并执行HiAI模型，具体实现参考PR[2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)。
+- 不同模型，不同型号（ROM版本）的华为手机，在执行阶段，由于某些Paddle算子无法完全转成HiAI IR，或目标手机的HiAI版本过低等原因，可能导致HiAI模型无法成功生成，在这种情况下，Paddle Lite会调用CPU版算子进行运算完成整个预测任务。
 
-## 关于手机
+# 通过JAVA接口加载并执行NPU模型
 
-支持目前最新的是华为810，以及未来要发布的NPU系列手机。
+- 使用方法和[Java实例](../java_demo)一致，无需额外设置任何参数，只需将模型换成NPU模型即可。[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中的Image Classification Demo for Android是同时支持CPU和NPU两种模型的图像分类Demo。
+
+注意：在拷贝libpaddle_lite_jni.so的时候，由于依赖HiAI DDK so和libc++_shared.so库，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，拷到libpaddle_lite_jni.so同级目录下。
+
+# 通过C++接口加载并执行NPU模型
+- 使用方法和[C++实例](../cpp_demo)一致，同样无需额外设置任何参数，只需将模型换成NPU模型即可。
+
+注意：1）不能使用安卓模拟器，需要使用真实设备，且必须是支持NPU的华为手机。2）在使用adb push命令向手机推送目标程序时，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，推送到目标程序同级目录下。
+
 
 # Note
 
-注意：由于我们的开发是基于华为内部的最新DDK版本编译，如果您的DDK不是最新的，有可能会遇到编译时某个op找不到定义的情况，此时您可以联系我们尝试一起解决。
+- 华为达芬奇架构的NPU内部大量采用float16进行运算，因此，预测结果会存在偏差，但大部分情况下精度不会有较大损失，可参考[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中Image Classification Demo for Android对同一张图片CPU与NPU的预测结果。
+- 华为Kirin 810/990 Soc搭载的自研达芬奇架构的NPU，与Kirin 970/980 Soc搭载的寒武纪NPU不一样，同样的，与Hi3559A、Hi3519A使用的NNIE也不一样，Paddle Lite只支持华为自研达芬奇架构NPU。
+- 我们正在持续增加能够适配HiAI IR的Paddle算子bridge/converter，以便适配更多Paddle模型，同时华为研发同学也在持续对HiAI IR性能进行优化。
