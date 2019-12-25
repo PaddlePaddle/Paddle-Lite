@@ -25,6 +25,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
+#include "lite/model_parser/model_parser.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 #include "supported_kernel_op_info.h"  // NOLINT
@@ -66,6 +67,9 @@ DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 DEFINE_bool(print_supported_ops,
             false,
             "Print supported operators on the inputed target");
+DEFINE_bool(print_all_ops,
+            false,
+            "Print all the valid operators of Paddle-Lite");
 
 namespace paddle {
 namespace lite_api {
@@ -187,8 +191,7 @@ void CollectModelMetaInfo(const std::string& output_dir,
 
 // Parse Input command
 void ParseInputCommand(char** argv) {
-  std::string method = argv[1];
-  if (method == "PrintAllOPs") {
+  if (FLAGS_print_all_ops) {
     std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
               << " ops in total." << std::endl;
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
@@ -304,17 +307,17 @@ int main(int argc, char** argv) {
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"
       "        `PrintAllOPs`   Display all the valid operators of Paddle-Lite\n"
-      "        `--print_supported_ops=true  --valid_targets=*yourtarget*`  "
-      "Display valid operators of input targets \n "
+      "        `--print_supported_ops=true  --valid_targets=(arm|opencl|x86)`"
+      "  Display valid operators of input targets\n "
       "Arguments of model optimization:\n"
-      "        `--model_dir=*path_to_input_model*`\n"
-      "        `--model_file=*path_to_model_file*`\n"
-      "        `--param_file=*path_to_param_file*`\n"
-      "        `--optimize_out_type=*protobuf/naive_buffer*`\n"
-      "        `--optimize_out=*path_to_ouput_optimized_model*`\n"
-      "        `--valid_targets=*x86/arm/opencl*`\n"
-      "        `--prefer_int8_kernel=*true/false*`\n"
-      "        `--record_tailoring_info=*true/false*`";
+      "        `--model_dir=<model_param_dir>`\n"
+      "        `--model_file=<model_path>`\n"
+      "        `--param_file=<param_path>`\n"
+      "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
+      "        `--optimize_out=<output_optimize_model_dir>`\n"
+      "        `--valid_targets=(arm|opencl|x86)`\n"
+      "        `--prefer_int8_kernel=(true|false)`\n"
+      "        `--record_tailoring_info=(true|false)`";
   if (argc < 2) {
     std::cerr << help_info << std::endl;
     exit(1);
