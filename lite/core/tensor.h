@@ -73,10 +73,7 @@ class DDimLite {
   DDimLite() = default;
 
   explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
-  explicit DDimLite(const value_type *arr, size_t size) {
-    data_.resize(size);
-    memcpy(data_.data(), arr, data_.size() * sizeof(value_type));
-  }
+  explicit DDimLite(size_t size) { data_.resize(size); }
 
   void ConstructFrom(const std::vector<value_type> &x) {
     data_.resize(x.size());

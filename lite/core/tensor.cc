@@ -47,9 +47,11 @@ value_type DDimLite::count(int start, int end) const {
 DDimLite DDimLite::Slice(int start, int end) const {
   start = std::max(start, 0);
   end = std::min(end, static_cast<int>(data_.size()));
-  value_type arr[kMaxDimLength];
-  memcpy(arr, data_.data() + start, (end - start) * sizeof(value_type));
-  return DDimLite(arr, end - start);
+  DDimLite new_dim(end - start);
+  for (int i = start; i < end; ++i) {
+    new_dim[i - start] = data_[i];
+  }
+  return new_dim;
 }
 
 std::string DDimLite::repr() const {

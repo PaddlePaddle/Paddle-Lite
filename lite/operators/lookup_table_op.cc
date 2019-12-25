@@ -37,17 +37,14 @@ bool LookupTableOpLite::CheckShape() const {
 }
 
 bool LookupTableOpLite::InferShape() const {
-  auto table_dims = param_.W->dims();
-  auto ids_dims = param_.Ids->dims();
+  auto &table_dims = param_.W->dims();
+  auto &ids_dims = param_.Ids->dims();
 
+  auto out_dims = ids_dims;
   int ids_rank = ids_dims.size();
+  out_dims[ids_rank - 1] = table_dims[1];
 
-  std::vector<int64_t> out_dims;
-  for (int i = 0; i < ids_rank - 1; ++i) {
-    out_dims.push_back(ids_dims[i]);
-  }
-  out_dims.push_back(table_dims[1]);
-  param_.Out->Resize(lite::DDim{out_dims});
+  param_.Out->Resize(out_dims);
   param_.Out->set_lod(param_.Ids->lod());
   return true;
 }

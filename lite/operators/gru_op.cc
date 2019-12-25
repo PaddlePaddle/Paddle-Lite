@@ -52,15 +52,17 @@ bool GRUOpLite::CheckShape() const {
 }
 
 bool GRUOpLite::InferShape() const {
-  auto input_dims = param_.input->dims();
-  auto weight_dims = param_.weight->dims();
+  auto &input_dims = param_.input->dims();
+  auto &weight_dims = param_.weight->dims();
   int frame_size = weight_dims[0];
   auto batch_size = input_dims[0];
 
   param_.batch_gate->Resize(input_dims);
-  param_.batch_reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
-  param_.batch_hidden->Resize(lite::DDim({batch_size, frame_size}));
-  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
+
+  auto out_dims = DDim({batch_size, frame_size});
+  param_.batch_reset_hidden_prev->Resize(out_dims);
+  param_.batch_hidden->Resize(out_dims);
+  param_.hidden->Resize(out_dims);
 
   *(param_.hidden->mutable_lod()) = param_.input->lod();
   return true;
