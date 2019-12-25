@@ -252,8 +252,8 @@ git checkout <release-version-tag>
 |   参数     |     介绍     |     值     |
 |-----------|-------------|-------------|
 | --arm_os   |必选，选择安装平台     | `android`、`ios`、`ios64`、`armlinux` |
-| --arm_abi  |必选，选择编译的arm版本，其中`armv7hf`为ARMLinux编译时选用| `armv8`、`armv7`、`armv7hf`|
-| --arm_lang |arm_os=android时必选，选择编译器 | `gcc`、`clang`|
+| --arm_abi  |必选，选择编译的arm版本，其中`armv7hf`为ARMLinux编译时选用| `armv8`、`armv7`、`armv7hf`(仅`armlinux`支持) |
+| --arm_lang |arm_os=android时必选，选择编译器 | `gcc`、`clang`(`clang`当前暂不支持) |
 | --android_stl |arm_os=android时必选，选择静态链接STL或动态链接STL | `c++_static`、`c++_shared`|
 | --build_extra | 可选，是否编译全量预测库（默认为OFF）。详情可参考[预测库说明](../library)。 | `ON`、`OFF` |
 | target |必选，选择编译模式，`tiny_publish`为编译移动端部署库、`full_publish`为带依赖的移动端部署库、`test`为移动端单元测试、`ios`为编译ios端`tiny_publish` | `tiny_publish`、`full_publish`、`test`、 `ios` |
@@ -269,8 +269,10 @@ git checkout <release-version-tag>
 ./lite/tools/build.sh \
   --arm_os=android \
   --arm_abi=armv8 \
+  --build_extra=OFF \
   --arm_lang=gcc \
   --android_stl=c++_static \
+  --build_extra=OFF \
   tiny_publish
 ```
 ##### IOS
@@ -278,6 +280,7 @@ git checkout <release-version-tag>
 ./lite/tools/build.sh \
   --arm_os=ios64 \
   --arm_abi=armv8 \
+  --build_extra=OFF \
   ios
 ```
 **注意：mac环境编译IOS 时，cmake版本需要高于cmake 3.15；mac环境上编译Android时，cmake版本需要设置为cmake 3.10。**
@@ -293,9 +296,11 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ##### ARMLinux
 ```shell
 ./lite/tools/build.sh \
+  --build_extra=OFF \
   --arm_os=armlinux \
   --arm_abi=armv7hf \
   --arm_lang=gcc \
+  --build_extra=OFF \
   tiny_publish
 ```
 - `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
@@ -307,8 +312,10 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ./lite/tools/build.sh \
   --arm_os=android \
   --arm_abi=armv8 \
+  --build_extra=OFF \
   --arm_lang=gcc \
   --android_stl=c++_static \
+  --build_extra=OFF \
   full_publish
 ```
 ##### ARMLinux
@@ -317,6 +324,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_os=armlinux \
   --arm_abi=armv7hf \
   --arm_lang=gcc \
+  --build_extra=OFF \
   full_publish
 ```
 - `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
