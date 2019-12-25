@@ -42,8 +42,6 @@ bool LookupTableOpLite::InferShape() const {
 
   int ids_rank = ids_dims.size();
 
-  auto output_dims = ids_dims.Slice(0, ids_rank - 1);
-
   std::vector<int64_t> out_dims;
   for (int i = 0; i < ids_rank - 1; ++i) {
     out_dims.push_back(ids_dims[i]);

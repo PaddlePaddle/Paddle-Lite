@@ -29,7 +29,6 @@ namespace x86 {
 template <typename T>
 void Compute(const lite::Tensor* in, lite::Tensor* out) {
   auto out_dims = out->dims();
-  auto in_dims = in->dims();
   out->CopyDataFrom(*in);
   out->Resize(out_dims);
 }

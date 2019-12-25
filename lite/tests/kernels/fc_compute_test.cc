@@ -47,7 +47,6 @@ void Relu(float* out, int num, int channel) {
 DDim ComputeOutDim(const DDim& dim_in, const DDim& wdim, int in_num_col_dim) {
   std::vector<int64_t> out_dim;
   out_dim.resize(in_num_col_dim + 1);
-  auto in_mat_dims = dim_in.Flatten2D(in_num_col_dim);
   for (int i = 0; i < in_num_col_dim; ++i) {
     out_dim[i] = dim_in[i];
   }

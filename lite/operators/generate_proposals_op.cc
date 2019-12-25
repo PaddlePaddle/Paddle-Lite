@@ -32,7 +32,6 @@ bool GenerateProposalsOpLite::CheckShape() const {
 
   auto scores_dims = param_.Scores->dims();
   auto bbox_dims = param_.BboxDeltas->dims();
-  auto im_info_dims = param_.ImInfo->dims();
   auto anchors_dims = param_.Anchors->dims();
   auto vars_dims = param_.Variances->dims();
 

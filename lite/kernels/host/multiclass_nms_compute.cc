@@ -359,8 +359,8 @@ void MulticlassNmsCompute::Run() {
   uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
     if (return_index) {
-      outs->Resize({0, out_dim});
-      index->Resize({0, 1});
+      outs->Resize(std::vector<int64_t>{0, out_dim});
+      index->Resize(std::vector<int64_t>{0, 1});
     } else {
       outs->Resize({1, 1});
       float* od = outs->mutable_data<float>();
@@ -375,8 +375,8 @@ void MulticlassNmsCompute::Run() {
       if (score_size == 3) {
         scores_slice = scores->Slice<float>(i, i + 1);
         boxes_slice = boxes->Slice<float>(i, i + 1);
-        scores_slice.Resize({score_dims[1], score_dims[2]});
-        boxes_slice.Resize({score_dims[2], box_dim});
+        scores_slice.Resize(std::vector<int64_t>{score_dims[1], score_dims[2]});
+        boxes_slice.Resize(std::vector<int64_t>{score_dims[2], box_dim});
         if (return_index) {
           offset = i * score_dims[2];
         }

@@ -153,7 +153,8 @@ class SliceComputeTester : public arena::TestCase {
     }
     out->Resize(out_dims);
     auto* out_data = out->mutable_data<float>();
-    slice_ref(input_data, in_dims.data(), axes_, starts_, ends_, out_data);
+    std::vector<int64_t> in_dims_vec = in_dims.Vectorize();
+    slice_ref(input_data, in_dims_vec, axes_, starts_, ends_, out_data);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {

@@ -38,28 +38,69 @@ class TensorLite;
 using DDim = lite::DDimLite;
 using Tensor = lite::TensorLite;
 
+template <typename ValueType, int DimLength>
+class DimVector {
+ public:
+  DimVector() {
+    memset(arr_, 0, DimLength * sizeof(ValueType));
+    size_ = 0;
+  }
+
+  size_t size() const { return size_; }
+  void resize(size_t new_size) {
+    CHECK_LE(new_size, DimLength);
+    size_ = new_size;
+  }
+
+  ValueType *data() { return arr_; }
+  const ValueType *data() const { return arr_; }
+
+  ValueType operator[](int offset) const { return arr_[offset]; }
+  ValueType &operator[](int offset) { return arr_[offset]; }
+
+ private:
+  ValueType arr_[DimLength];
+  size_t size_{0};
+};
+
+constexpr int kMaxDimLength = 10;
+
 class DDimLite {
  public:
   using value_type = int64_t;
+  using DDimVector = DimVector<value_type, kMaxDimLength>;
 
   DDimLite() = default;
 
   explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
-  // DDimLite(std::initializer_list<value_type> init_list) :
-  // DDimLite(std::vector<value_type>(init_list)) {}
+  explicit DDimLite(const value_type *arr, size_t size) {
+    data_.resize(size);
+    memcpy(data_.data(), arr, data_.size() * sizeof(value_type));
+  }
 
-  void ConstructFrom(const std::vector<value_type> &x) { data_ = x; }
+  void ConstructFrom(const std::vector<value_type> &x) {
+    data_.resize(x.size());
+    memcpy(data_.data(), x.data(), x.size() * sizeof(value_type));
+  }
 
   value_type operator[](int offset) const { return data_[offset]; }
   value_type &operator[](int offset) { return data_[offset]; }
-  std::vector<int64_t> Vectorize() const { return data_; }
+
+  std::vector<value_type> Vectorize() const {
+    std::vector<value_type> vec;
+    if (data_.size() > 0U) {
+      vec.resize(data_.size());
+      memcpy(vec.data(), data_.data(), data_.size() * sizeof(value_type));
+    }
+    return vec;
+  }
 
   size_t size() const { return data_.size(); }
-  bool empty() const { return data_.empty(); }
+  bool empty() const { return data_.size() == 0U; }
+
+  const DDimVector &data() const { return data_; }
 
   value_type production() const;
-
-  const std::vector<value_type> &data() const { return data_; }
   value_type count(int start, int end) const;
 
   DDimLite Slice(int start, int end) const;
@@ -76,6 +117,12 @@ class DDimLite {
     return os;
   }
 
+  DDimLite &operator=(const DDimLite &a) {
+    this->data_.resize(a.size());
+    memcpy(this->data_.data(), a.data_.data(), a.size() * sizeof(value_type));
+    return *this;
+  }
+
   friend bool operator==(const DDimLite &a, const DDimLite &b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); i++) {
@@ -85,11 +132,15 @@ class DDimLite {
   }
 
   friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    return !(a == b);
+    if (a.size() != b.size()) return true;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != b[i]) return true;
+    }
+    return false;
   }
 
  private:
-  std::vector<value_type> data_;
+  DDimVector data_;
 };
 
 using LoD = std::vector<std::vector<uint64_t>>;
