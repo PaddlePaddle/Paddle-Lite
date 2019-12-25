@@ -176,6 +176,10 @@ class TensorLite {
         (static_cast<char *>(buffer_->data()) + offset_));
   }
 
+  void clear() {
+    buffer_->Free();
+    offset_ = 0;
+  }
   size_t data_size() const { return this->dims().production(); }
 
   size_t memory_size() const { return memory_size_; }
