@@ -33,7 +33,7 @@ class Debugger {
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
     if (op_config[op_type]) {
-      tensor->saveToFile(op_type, true);
+      // tensor->saveToFile(op_type, true);
     }
   }
 

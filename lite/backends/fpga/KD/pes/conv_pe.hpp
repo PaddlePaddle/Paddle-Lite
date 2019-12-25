@@ -60,6 +60,7 @@ class ConvPE : public PE {
 
     if (param_.filter->shape().width() == 1 &&
         param_.filter->shape().height() == 1) {  // NOLINT
+      // use_cpu_ = true;
     }
     if (!use_cpu_) {  // NOLINT
       // param_.filter->releaseData();

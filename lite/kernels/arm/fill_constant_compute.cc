@@ -133,7 +133,7 @@ REGISTER_LITE_KERNEL(fill_constant,
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(fill_constant_batch_size_like,

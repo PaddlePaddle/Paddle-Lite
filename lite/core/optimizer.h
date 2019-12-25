@@ -107,7 +107,9 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+#ifndef LITE_WITH_FPGA
            "memory_optimize_pass",
+#endif
            "npu_subgraph_pass",
            "xpu_subgraph_pass"}};
       RunPasses(passes_local);
