@@ -2327,6 +2327,7 @@ inline void act_switch_process(float* src,
           src++;
           dst++;
         }
+        break;
       case lite_api::ActivationType::kRelu6:
         for (int i = 0; i < remain; i++) {
           float tmp = *src >= 0.f ? *src : 0.f;
@@ -2336,6 +2337,7 @@ inline void act_switch_process(float* src,
           src++;
           dst++;
         }
+        break;
       case lite_api::ActivationType::kLeakyRelu:
         for (int i = 0; i < remain; i++) {
           if (*src >= 0.f) {
