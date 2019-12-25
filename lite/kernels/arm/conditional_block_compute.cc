@@ -34,6 +34,9 @@ void ConditionalBlockCompute::PrepareForRun() {
 }
 void ConditionalBlockCompute::Run() {
   auto& param = Param<operators::ConditionalBlockParam>();
+  for (auto& out : param.outs) {
+    out->clear();
+  }
   bool need_run = true;
   if (param.is_scalar_condition) {
     auto* cond = param.cond;
