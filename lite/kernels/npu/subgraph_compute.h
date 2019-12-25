@@ -43,8 +43,8 @@ class SubgraphEngine : public subgraph::Engine {
 
   std::string model_name_;
   hiai::AiContext model_context_;
-  std::vector<int64_t> device_idatasizes_;
-  std::vector<int64_t> device_odatasizes_;
+  std::vector<std::string> device_inames_;
+  std::vector<std::string> device_onames_;
   std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_;
   std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_;
   std::unique_ptr<hiai::AiModelMngerClient> device_program_{nullptr};

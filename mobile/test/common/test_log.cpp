@@ -15,10 +15,8 @@ limitations under the License. */
 #include "common/log.h"
 
 int main() {
-  DLOGF("DASJFDAFJ%d -- %f", 12345, 344.234);
-
-  LOGF(paddle_mobile::kLOG_DEBUG, "DASJFDAFJ%d -- %f", 12345, 344.234);
-
+  LOG(paddle_mobile::kLOG_DEBUG3) << "test debug"
+                                  << " next log";
   LOG(paddle_mobile::kLOG_DEBUG) << "test debug"
                                  << " next log";
 
@@ -26,9 +24,12 @@ int main() {
                                   << " next log";
   LOG(paddle_mobile::kLOG_DEBUG2) << "test debug2"
                                   << " next log";
+  LOG(paddle_mobile::kLOG_INFO) << "INFO!!!";
+  LOG(paddle_mobile::kLOG_WARNING) << "WARNING!!!";
+  LOG(paddle_mobile::kLOG_VERBOSE) << "VERBOSE!!!";
   DLOG << "test DLOG";
 
-  LOG(paddle_mobile::kLOG_ERROR) << " error occur !";
+  LOG(paddle_mobile::kLOG_ERROR) << "ERROR !";
 
   return 0;
 }

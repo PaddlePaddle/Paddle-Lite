@@ -502,13 +502,16 @@ void test_matmulnxn_transpose(Place place) {
 }
 
 TEST(Matmul2x2, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+
   test_matmul2x2_no_transform(place);
-#endif
 }
 
 TEST(Matmul2x2_x_transpose, precision) {
@@ -520,14 +523,18 @@ TEST(Matmul2x2_x_transpose, precision) {
   test_matmul2x2_x_transpose(place);
 #endif
 }
+
 TEST(Matmul2x2_y_transpose, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+
   test_matmul2x2_y_transpose(place);
-#endif
 }
 
 TEST(Matmul2x2_transpose, precision) {

@@ -2238,6 +2238,7 @@ inline void act_switch_process(float* src,
   int remain = size % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
   if (act_param != nullptr) {
+
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     if (cnt > 0) {

@@ -21,5 +21,5 @@ REGISTER_LITE_KERNEL(stack,
                      paddle::lite::kernels::x86::StackCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

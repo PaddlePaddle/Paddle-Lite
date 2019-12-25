@@ -153,7 +153,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string param_file() const { return param_file_; }
   bool model_from_memory() const { return model_from_memory_; }
 
-  void set_cpu_math_library_math_threads(int threads) {
+  void set_cpu_math_library_num_threads(int threads) {
     cpu_math_library_math_threads_ = threads;
   }
   int cpu_math_library_num_threads() const {
