@@ -89,9 +89,15 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
         this->act_desc_, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0.0));
   }
 
+#if CUDNN_VERSION_MIN(7, 0, 0)
+  cudnnMathType_t math_type =
+      use_tensor_core_ ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
+  CUDNN_CHECK(cudnnSetConvolutionMathType(this->conv_desc_, math_type));
+#endif
+
   if (ic == param.groups && ic == oc && ic != 1) {
     this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-  } else if (1) {
+  } else if (!param.var_length) {
     const auto* i_data = param.x->data<float>();
     const auto* w_data = param.filter->data<float>();
     auto* o_data = param.output->mutable_data<float>(TARGET(kCUDA));

@@ -33,7 +33,13 @@ void SoftmaxCompute::PrepareForRun() {
   pe_.apply();
 }
 
-void SoftmaxCompute::Run() { pe_.dispatch(); }
+void SoftmaxCompute::Run() {
+  pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::SoftmaxParam& softmax_param = pe_.param();
+  Debugger::get_instance().registerOutput("softmax", softmax_param.output);
+#endif
+}
 
 }  // namespace fpga
 }  // namespace kernels

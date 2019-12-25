@@ -23,7 +23,7 @@ namespace operators {
 
 template <>
 bool InstanceNormReluKernel<GPU_CL, float>::Init(
-    InstanceNormParam<GPU_CL> *param) {
+    FusionInstanceNormReluParam<GPU_CL> *param) {
   auto &dims = param->Out()->dims();
   const int h = dims[2];
   std::string build_options = "-DRELU";
@@ -41,8 +41,8 @@ bool InstanceNormReluKernel<GPU_CL, float>::Init(
 
 template <>
 void InstanceNormReluKernel<GPU_CL, float>::Compute(
-    const InstanceNormParam<GPU_CL> &param) {
-  InstanceNorm(&this->cl_helper_, param);
+    const FusionInstanceNormReluParam<GPU_CL> &param) {
+  InstanceNorm(&this->cl_helper_, param.InputX(), param.Out(), param.Epsilon());
 }
 
 template class InstanceNormReluKernel<GPU_CL, float>;

@@ -49,6 +49,7 @@ add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
 add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
+add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
@@ -89,6 +90,8 @@ add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc DEPS ${o
 add_operator(reduce_prod_op_lite extra SRCS reduce_prod_op.cc DEPS ${op_DEPS})
 add_operator(sequence_reshape_op_lite extra SRCS sequence_reshape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_reverse_op_lite extra SRCS sequence_reverse_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pool extra SRCS sequence_pool_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pool_concat extra SRCS sequence_pool_concat_op.cc DEPS ${op_DEPS})
 add_operator(reduce_sum_op_lite extra SRCS reduce_ops.cc DEPS ${op_DEPS})
 add_operator(match_matrix_tensor_op_lite extra SRCS match_matrix_tensor_op.cc DEPS ${op_DEPS})
 add_operator(search_seq_depadding_op_lite extra SRCS search_seq_depadding_op.cc DEPS ${op_DEPS})
@@ -100,6 +103,7 @@ add_operator(attention_padding_mask_op_lite extra SRCS attention_padding_mask_op
 add_operator(sequence_arithmetic_op_lite extra SRCS sequence_arithmetic_op.cc DEPS ${op_DEPS})
 add_operator(conditional_block_op_lite extra SRCS conditional_block_op.cc DEPS ${op_DEPS})
 add_operator(collect_fpn_proposals_op_lite extra SRCS collect_fpn_proposals_op.cc DEPS ${op_DEPS})
+add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposals_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -118,7 +122,6 @@ add_operator(greater_than  extra SRCS compare_op.cc DEPS ${op_DEPS})
 add_operator(greater_equal  extra SRCS compare_op.cc DEPS ${op_DEPS})
 add_operator(read_from_array_op extra SRCS read_from_array_op.cc DEPS ${op_DEPS})
 add_operator(beam_search_op extra SRCS beam_search_op.cc DEPS ${op_DEPS})
-add_operator(sequence_pool extra SRCS sequence_pool_op.cc DEPS ${op_DEPS})
 add_operator(lod_reset_op extra SRCS lod_reset_op.cc DEPS ${op_DEPS})
 add_operator(is_empty extra SRCS is_empty_op.cc DEPS ${op_DEPS})
 add_operator(slice_op_lite basic SRCS slice_op.cc DEPS ${op_DEPS})

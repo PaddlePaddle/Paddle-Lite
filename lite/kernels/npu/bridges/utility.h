@@ -72,8 +72,8 @@ ge::Format CvtDataLayoutType(DataLayoutType itype);
 
 ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape = {},
-                        PrecisionType in_ptype = PRECISION(kFloat),
-                        DataLayoutType in_ltype = DATALAYOUT(kNCHW));
+                        PrecisionType in_precision = PRECISION(kFloat),
+                        DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
 template <typename T>
 ge::TensorPtr CreateTensorAndFillData(const std::vector<T>& data,
@@ -85,8 +85,12 @@ ge::TensorPtr CreateTensorAndFillData(const std::vector<T>& data,
     type = ge::DT_FLOAT;
   } else if (info == typeid(int8_t)) {
     type = ge::DT_INT8;
+  } else if (info == typeid(int16_t)) {
+    type = ge::DT_INT16;
   } else if (info == typeid(int32_t)) {
     type = ge::DT_INT32;
+  } else if (info == typeid(int64_t)) {
+    type = ge::DT_INT64;
   } else {
     LOG(FATAL) << "[NPU] Unknow value type " << info.name();
   }

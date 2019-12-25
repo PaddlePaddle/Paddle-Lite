@@ -21,24 +21,41 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int ActConverter(void* ctx, OpLite* op) {
+int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // Create act node and set input node which is obtained from the node map
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-  auto act_node = graph->AddNode<ge::op::Activation>(out_var_name);
-  act_node->set_input_x(*graph->GetNode(x_var_name));
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Act node
+  auto act_node = graph->AddNode<ge::op::Activation>(out_name);
+  act_node->set_input_x(*x_node);
   // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
   // clipped_relu etc.
   act_node->set_attr_mode(CvtActMode(op_type));
-
   if (op_type == "relu_clipped") {
     auto Relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
     act_node->set_attr_coef(Relu_clipped_coef);
