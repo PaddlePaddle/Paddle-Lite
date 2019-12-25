@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/packed_sgemm.h"
 #include <arm_neon.h>
+#include "lite/backends/arm/math/conv_block_utils.h"
 
 namespace paddle {
 namespace lite {
@@ -83,7 +84,7 @@ void sgemm_prepacked_4x4(bool is_transB,
                          int ldc,
                          const float *bias,
                          bool has_bias,
-                         bool has_relu,
+                         const operators::ActivationParam act_param,
                          ARMContext *ctx);
 #else
 // for kA72
@@ -2859,7 +2860,6 @@ void sgemm_prepacked_8x12(bool is_transB,
               [c_ptr6] "+r"(c_ptr6),
               [c_ptr7] "+r"(c_ptr7)
             : [bias_ptr] "r"(bias_local),
-              // [relu] "r"(has_relu),
               [has_beta] "r"(has_beta),
               [beta] "r"(beta)
             : "cc","memory",
@@ -2884,7 +2884,7 @@ void sgemm_prepacked_8x12(bool is_transB,
       }
     }
   }
-  if (act.has_active) {
+  if (act_param.has_active) {
 #pragma omp parallel for num_threads(threads)
     for (unsigned int x = 0; x < M; x++) {
       float *dst = C + x * N;
@@ -3152,7 +3152,6 @@ void sgemm_prepacked_4x4(bool is_transB,
               [c_ptr2] "+r"(c_ptr2),
               [c_ptr3] "+r"(c_ptr3)
             : [bias_ptr] "r"(bias_local),
-              [relu] "r"(has_relu),
               [has_beta] "r"(has_beta),
               [beta] "r"(beta)
             : "cc","memory",
@@ -3170,7 +3169,7 @@ void sgemm_prepacked_4x4(bool is_transB,
       }
     }
   }
-  if (act.has_active) {
+  if (act_param.has_active) {
 #pragma omp parallel for num_threads(threads)
     for (unsigned int x = 0; x < M; x++) {
       float *dst = C + x * N;
@@ -3598,7 +3597,6 @@ void sgemm_prepacked_6x8(bool is_transB,
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
-              [relu] "r"(has_relu),
               [beta] "r"(beta)
             : "q0","q1","q2","q3","q4",
               "q5","q6","q7","q8","q9","q10","q11",
@@ -3618,7 +3616,7 @@ void sgemm_prepacked_6x8(bool is_transB,
       }
     }
   }
-  if (act.has_active) {
+  if (act_param.has_active) {
 #pragma omp parallel for num_threads(threads)
     for (unsigned int x = 0; x < M; x++) {
       float* dst = C + x * N;
@@ -3937,7 +3935,6 @@ void sgemm_prepacked_4x8(bool is_transB,
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
-              [relu] "r"(has_relu),
               [beta] "r"(beta)
             : "q0","q1","q2","q3",
               "q4","q5","q6","q7","q8","q9","q10",
@@ -3954,7 +3951,7 @@ void sgemm_prepacked_4x8(bool is_transB,
       }
     }
   }
-  if (act.has_active) {
+  if (act_param.has_active) {
 #pragma omp parallel for num_threads(threads)
     for (unsigned int x = 0; x < M; x++) {
       float* dst = C + x * N;
