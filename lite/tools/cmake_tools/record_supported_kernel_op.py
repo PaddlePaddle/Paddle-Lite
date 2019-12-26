@@ -18,7 +18,7 @@ from ast import RegisterLiteKernelParser
 from ast import RegisterLiteOpParser
 
 if len(sys.argv)!=4:
-    print " Error: record_supported_kernel_op.py requires three inputs!"
+    print("Error: record_supported_kernel_op.py requires three inputs!")
     exit()
 kernels_list_path = sys.argv[1]
 ops_list_path = sys.argv[2]

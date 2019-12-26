@@ -19,7 +19,7 @@ from ast import RegisterLiteKernelParser
 from utils import *
 
 if len(sys.argv)!=4:
-    print " Error: create_fake_kernel_registry.py requires three inputs!"
+    print("Error: create_fake_kernel_registry.py requires three inputs!")
     exit()
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
