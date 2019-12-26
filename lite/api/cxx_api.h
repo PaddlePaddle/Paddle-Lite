@@ -16,7 +16,6 @@
 #include <map>
 #include <memory>
 #include <mutex>  //NOLINT
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -61,7 +60,6 @@ class LITE_API Predictor {
       const std::string& param_file_path,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
-      const std::set<std::string>& valid_ops = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
@@ -95,10 +93,6 @@ class LITE_API Predictor {
   const cpp::ProgramDesc& program_desc() const;
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
-  // check if this model is supported by current ops
-  void CheckIfModelSupported(const std::vector<Place>& valid_places,
-                             const std::set<std::string>& valid_ops,
-                             cpp::ProgramDesc* prog);
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
       const std::string& dir,

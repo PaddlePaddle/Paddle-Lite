@@ -16,6 +16,9 @@ import sys
 import logging
 from ast import RegisterLiteKernelParser
 
+if len(sys.argv)!=5:
+    print " Error: parse_kernel_registry.py requires four inputs!"
+    exit()
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
 minkernels_list_path = sys.argv[3]

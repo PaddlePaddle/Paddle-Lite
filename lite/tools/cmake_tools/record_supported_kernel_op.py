@@ -17,6 +17,9 @@ import logging
 from ast import RegisterLiteKernelParser
 from ast import RegisterLiteOpParser
 
+if len(sys.argv)!=4:
+    print " Error: record_supported_kernel_op.py requires three inputs!"
+    exit()
 kernels_list_path = sys.argv[1]
 ops_list_path = sys.argv[2]
 kernel_op_map_dest_path = sys.argv[3]
@@ -41,7 +44,6 @@ out_lines = [
 #pragma once
 #include<vector>
 #include<map>
-// ATTENTION This can only include in a .cc file.
 
 const std::vector<std::vector<std::string>> supported_ops_target = {
 '''
