@@ -18,6 +18,7 @@
 #endif
 // "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
 // are created automatically during model_optimize_tool's compiling period
+#include <iomanip>
 #include "all_kernel_faked.cc"  // NOLINT
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
@@ -176,52 +177,90 @@ void CollectModelMetaInfo(const std::string& output_dir,
   lite::WriteLines(std::vector<std::string>(total.begin(), total.end()),
                    output_path);
 }
-
-// Parse Input command
-void ParseInputCommand(char** argv) {
-  if (FLAGS_print_all_ops) {
-    std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
-              << " ops in total." << std::endl;
+void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
+  std::vector<std::string> targets = {"kHost",
+                                      "kX86",
+                                      "kCUDA",
+                                      "kARM",
+                                      "kOpenCL",
+                                      "kFPGA",
+                                      "kNPU",
+                                      "kXPU",
+                                      "kAny",
+                                      "kUnk"};
+  std::cout << std::setiosflags(std::ios::internal);
+  std::cout << std::setw(40) << "OP_name";
+  for (int i = 0; i < targets.size(); i++) {
+    std::cout << std::setw(10) << targets[i];
+  }
+  std::cout << std::endl;
+  if (valid_ops.empty()) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
-      std::cout << it->first << " : ";
+      std::cout << std::setw(40) << it->first;
       auto ops_valid_places = it->second;
-      for (int i = 0; i < ops_valid_places.size(); i++) {
-        std::cout << ops_valid_places[i].substr(1) << " ";
+      for (int i = 0; i < targets.size(); i++) {
+        if (std::find(ops_valid_places.begin(),
+                      ops_valid_places.end(),
+                      targets[i]) != ops_valid_places.end()) {
+          std::cout << std::setw(10) << "Y";
+        } else {
+          std::cout << std::setw(10) << " ";
+        }
       }
       std::cout << std::endl;
     }
+  } else {
+    for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
+      std::cout << std::setw(40) << *op;
+      auto ops_valid_places = supported_ops.at(*op);
+      for (int i = 0; i < targets.size(); i++) {
+        if (std::find(ops_valid_places.begin(),
+                      ops_valid_places.end(),
+                      targets[i]) != ops_valid_places.end()) {
+          std::cout << std::setw(10) << "Y";
+        } else {
+          std::cout << std::setw(10) << " ";
+        }
+      }
+      std::cout << std::endl;
+    }
+  }
+}
+// Parse Input command
+void ParseInputCommand() {
+  if (FLAGS_print_all_ops) {
+    std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
+              << " ops in total." << std::endl;
+    PrintOpsInfo();
     exit(1);
   } else if (FLAGS_print_supported_ops) {
     auto valid_places = paddle::lite_api::ParserValidPlaces();
     // get valid_targets string
-    std::vector<TargetType> targets = {};
+    std::vector<TargetType> target_types = {};
     for (int i = 0; i < valid_places.size(); i++) {
-      targets.push_back(valid_places[i].target);
+      target_types.push_back(valid_places[i].target);
     }
-    std::sort(targets.begin(), targets.end());
-    targets.erase(unique(targets.begin(), targets.end()), targets.end());
-    std::string targets_str = TargetToStr(targets[0]);
-    for (int i = 1; i < targets.size(); i++) {
-      targets_str = targets_str + TargetToStr(targets[i]);
+    std::string targets_str = TargetToStr(target_types[0]);
+    for (int i = 1; i < target_types.size(); i++) {
+      targets_str = targets_str + TargetToStr(target_types[i]);
     }
+
     std::cout << "Supported OPs on '" << targets_str << "': " << std::endl;
-    targets.push_back(TARGET(kHost));
-    targets.push_back(TARGET(kUnk));
-    std::string supported_ops_str = "{";
-    for (int i = 0; i < targets.size(); i++) {
-      auto ops = supported_ops_target[static_cast<int>(targets[i])];
-      for (int i = 0; i < ops.size(); i++) {
-        supported_ops_str = supported_ops_str + ops[i] + ", ";
-      }
+    target_types.push_back(TARGET(kHost));
+    target_types.push_back(TARGET(kUnk));
+
+    std::set<std::string> valid_ops;
+    for (int i = 0; i < target_types.size(); i++) {
+      auto ops = supported_ops_target[static_cast<int>(target_types[i])];
+      valid_ops.insert(ops.begin(), ops.end());
     }
-    supported_ops_str =
-        supported_ops_str.substr(0, supported_ops_str.length() - 2) + "}";
-    std::cout << supported_ops_str << std::endl;
+    PrintOpsInfo(valid_ops);
     exit(1);
   }
 }
 // test whether this model is supported
 void CheckIfModelSupported() {
+  // 1. parse valid places and valid targets
   auto valid_places = paddle::lite_api::ParserValidPlaces();
   // set valid_ops
   auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
@@ -233,8 +272,10 @@ void CheckIfModelSupported() {
     auto ops = supported_ops_target[static_cast<int>(target)];
     valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
   }
+  // get valid ops
   std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
-  // Load model
+
+  // 2.Load model into program to get ops in model
   std::string prog_path = FLAGS_model_dir + "/__model__";
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
     prog_path = FLAGS_model_file;
@@ -245,38 +286,30 @@ void CheckIfModelSupported() {
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
-  std::vector<std::string> unsupported_ops;
-  std::vector<std::string> input_model_ops;
+
+  std::set<std::string> unsupported_ops;
+  std::set<std::string> input_model_ops;
   auto main_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block->OpsSize(); ++i) {
     auto& op_desc = *main_block->GetOp<lite::cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
-    input_model_ops.push_back(op_type);
+    input_model_ops.insert(op_type);
     if (valid_ops_set.count(op_type) == 0) {
-      unsupported_ops.push_back(op_type);
+      unsupported_ops.insert(op_type);
     }
   }
-  std::sort(input_model_ops.begin(), input_model_ops.end());
-  input_model_ops.erase(unique(input_model_ops.begin(), input_model_ops.end()),
-                        input_model_ops.end());
-  std::sort(unsupported_ops.begin(), unsupported_ops.end());
-  unsupported_ops.erase(unique(unsupported_ops.begin(), unsupported_ops.end()),
-                        unsupported_ops.end());
 
+  // 3. Print ops_info of input model and check if this model is supported
   if (FLAGS_print_model_ops) {
-    std::string input_model_ops_str = "OPs in the input model include:\n{";
-    for (int i = 0; i < input_model_ops.size(); i++) {
-      input_model_ops_str = input_model_ops_str + input_model_ops[i] + ", ";
-    }
-    input_model_ops_str.erase(input_model_ops_str.end() - 1);
-    input_model_ops_str =
-        input_model_ops_str.substr(0, input_model_ops_str.length() - 2) + "}\n";
-    std::cout << input_model_ops_str;
+    std::cout << "OPs in the input model include:\n";
+    PrintOpsInfo(input_model_ops);
   }
   if (!unsupported_ops.empty()) {
-    std::string unsupported_ops_str = unsupported_ops[0];
-    for (int i = 1; i < unsupported_ops.size(); i++) {
-      unsupported_ops_str = unsupported_ops_str + ", " + unsupported_ops[i];
+    std::string unsupported_ops_str = *unsupported_ops.begin();
+    for (auto op_str = ++unsupported_ops.begin();
+         op_str != unsupported_ops.end();
+         op_str++) {
+      unsupported_ops_str = unsupported_ops_str + ", " + *op_str;
     }
     std::vector<TargetType> targets = {};
     for (int i = 0; i < valid_places.size(); i++) {
@@ -300,6 +333,7 @@ void CheckIfModelSupported() {
     exit(1);
   }
 }
+
 void Main() {
   if (FLAGS_display_kernels) {
     DisplayKernels();
@@ -371,19 +405,11 @@ void Main() {
 }  // namespace lite_api
 }  // namespace paddle
 
-int main(int argc, char** argv) {
   // at least one argument should be inputed
   const std::string help_info =
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"
-      "        `--print_all_ops`   Display all the valid operators of "
-      "Paddle-Lite\n"
-      "        `--print_supported_ops=true  --valid_targets=(arm|opencl|x86)`"
-      "  Display valid operators of input targets\n"
-      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86)`"
-      "  Display operators in the input model\n"
-      "Arguments of model optimization:\n"
+      "  Arguments of model optimization:\n"
       "        `--model_dir=<model_param_dir>`\n"
       "        `--model_file=<model_path>`\n"
       "        `--param_file=<param_path>`\n"
@@ -391,13 +417,24 @@ int main(int argc, char** argv) {
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        `--valid_targets=(arm|opencl|x86)`\n"
       "        `--prefer_int8_kernel=(true|false)`\n"
-      "        `--record_tailoring_info=(true|false)`";
+      "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of model checking and ops information:\n"
+      "        `--print_all_ops=true`   Display all the valid operators of "
+      "Paddle-Lite\n"
+      "        `--print_supported_ops=true  --valid_targets=(arm|opencl|x86)`"
+      "  Display valid operators of input targets\n"
+      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
+      "--valid_targets=(arm|opencl|x86)`"
+      "  Display operators in the input model\n";
+
+int main(int argc, char** argv) {
+
   if (argc < 2) {
     std::cerr << help_info << std::endl;
     exit(1);
   }
   google::ParseCommandLineFlags(&argc, &argv, false);
-  paddle::lite_api::ParseInputCommand(argv);
+  paddle::lite_api::ParseInputCommand();
   paddle::lite_api::CheckIfModelSupported();
   paddle::lite_api::Main();
   return 0;
