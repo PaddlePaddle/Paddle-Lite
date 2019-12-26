@@ -61,6 +61,7 @@ std::unique_ptr<hiai::AiModelMngerClient> Device::Build(
     return nullptr;
   }
   ir_build.ReleaseModelBuff(om_model_buf);
+  VLOG(3) << "[NPU] Build done";
   return model_client;
 }
 

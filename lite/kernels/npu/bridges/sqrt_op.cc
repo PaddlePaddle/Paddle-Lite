@@ -21,18 +21,38 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int SqrtConverter(void* ctx, OpLite* op) {
+int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-  auto sqrt_node = graph->AddNode<ge::op::Sqrt>(out_var_name);
-  sqrt_node->set_input_x(*graph->GetNode(x_var_name));
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Sqrt node
+  auto sqrt_node = graph->AddNode<ge::op::Sqrt>(out_name);
+  sqrt_node->set_input_x(*x_node);
   return SUCCESS;
 }
 

@@ -261,13 +261,16 @@ void Instruction::Run() {
 #endif
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
-  if (op_->run_once() && has_run_) {
-    return;
-  }
+
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
   }
+
+  if (op_->run_once() && has_run_) {
+    return;
+  }
+
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
