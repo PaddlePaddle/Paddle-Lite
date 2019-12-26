@@ -102,6 +102,15 @@ class DDimLite {
 
   DDimLite Slice(int start, int end) const;
 
+  bool CheckPositive() const {
+    for (size_t i = 0; i < size(); ++i) {
+      if (data_[i] <= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   DDimLite Flatten2D(int col) const {
     return DDimLite(std::vector<value_type>(
         {Slice(0, col).production(), Slice(col, size()).production()}));
