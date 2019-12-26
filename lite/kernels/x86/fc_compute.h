@@ -31,20 +31,6 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-inline void FCOutputSize(const lite::DDim& in_dims,
-                         const lite::DDim& w_dims,
-                         std::vector<int64_t>& out_dims,  // NOLINT
-                         int in_num_col_dims,
-                         bool padding_weights) {
-  auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
-
-  out_dims.reserve(static_cast<size_t>(in_num_col_dims + 1));
-  for (int i = 0; i < in_num_col_dims; ++i) {
-    out_dims.push_back(in_dims[i]);
-  }
-  out_dims.push_back(w_dims1);
-}
-
 template <lite::TargetType Target, typename T>
 class FCFunctor {
  public:
@@ -148,18 +134,20 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int in_num_col_dims = param.in_num_col_dims;
     bool with_relu = (param.activation_type == "relu") ? true : false;
 
-    auto w_dims = w->dims();
     bool padding_weights = param.padding_weights;
-
-    std::vector<int64_t> output_dims;
-    FCOutputSize(
-        input->dims(), w_dims, output_dims, in_num_col_dims, padding_weights);
-    output->Resize(output_dims);
-    output->set_lod(input->lod());
-
-    auto out_dims = output->dims();
+    auto& w_dims = w->dims();
     auto w_dims0 = padding_weights ? w_dims[0] - 4 : w_dims[0];
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
+
+    auto& in_dims = input->dims();
+    DDim out_dims(static_cast<size_t>(in_num_col_dims + 1));
+    for (int i = 0; i < in_num_col_dims; ++i) {
+      out_dims[i] = in_dims[i];
+    }
+    out_dims[in_num_col_dims] = w_dims1;
+    output->Resize(out_dims);
+    output->set_lod(input->lod());
+
     int M = out_dims.production() / w_dims1;
 
     const T* input_data = input->data<T>();
