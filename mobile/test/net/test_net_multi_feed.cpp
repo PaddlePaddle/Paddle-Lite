@@ -216,4 +216,6 @@ void test(int argc, char *argv[]) {
     std::cout << std::endl;
   }
 }
+#else
+int main() {}
 #endif
