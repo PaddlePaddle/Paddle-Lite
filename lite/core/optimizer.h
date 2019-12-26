@@ -76,6 +76,7 @@ class Optimizer {
 #endif
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
+           "kernel_place_correct_pass",
            // info(target/precision/layout/device)
            // using kernel info
            "argument_type_display_pass",  // debug pass: show arg-type-node's
