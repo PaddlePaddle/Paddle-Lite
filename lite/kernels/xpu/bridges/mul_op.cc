@@ -67,15 +67,27 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node =
         graph->AddNode(x_name + "/reshape",
                        graph->builder_.CreateReshape(
-                           *x_node, {-1, static_cast<int>(y_matrix_dims[0])}));
+                           *x_node, {-1, static_cast<int>(x_matrix_dims[1])}));
   }
 
   // Y node
-  auto y_const_node = graph->AddNode(y_name, *y, y_matrix_dims);
+  std::shared_ptr<xtcl::xExpr> y_node = nullptr;
+  if (graph->HasNode(y_name)) {
+    y_node = graph->GetNode(y_name);
+  } else {
+    y_node = graph->AddNode(y_name, y_dims);
+  }
+  // Flatten Y node
+  if (y_dims.size() != 2) {
+    y_node =
+        graph->AddNode(y_name + "/reshape",
+                       graph->builder_.CreateReshape(
+                           *y_node, {static_cast<int>(y_matrix_dims[0]), -1}));
+  }
 
   // Reshape the matmul node with the inferred shape as the output node
   auto matmul_node = graph->AddNode(
-      out_name, graph->builder_.CreateMatmul2D(*x_node, *y_const_node, false));
+      out_name, graph->builder_.CreateMatmul2D(*x_node, *y_node, false));
   if (out_dims.size() != 2) {
     graph->AddNode(out_name,
                    graph->builder_.CreateReshape(
