@@ -364,7 +364,6 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.image.height = input->shape().height();
     args.image.pad_width = param.paddings[1];
     args.image.pad_height = param.paddings[0];
-
     args.dilation = param.dilations[0];
 
     args.output.address = out_address;
@@ -420,7 +419,6 @@ inline void split_channel(const ConvParam& c_param) {
     }
     scale.flush();
     bias.flush();
-    // Shape sb_shape(N, {2 * channel});
     format_scale_bias(&scale,
                       &bias,
                       &conv_param->filter,
@@ -448,7 +446,6 @@ inline void split_channel(const ConvParam& c_param) {
     args.image.height = conv_param->input.shape().height();
     args.image.pad_width = param.paddings[1];
     args.image.pad_height = param.paddings[0];
-
     args.dilation = param.dilations[0];
     args.output.address = conv_param->output.mutableData<void>();
     args.output.scale_address = conv_param->output.scale();
@@ -479,7 +476,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
   }
   size_t size = params.size();
   if (ret == 0 && size > 1) {
-    // Tensor* output = conv_params.output;
     Tensor& img = params[0]->output;
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {

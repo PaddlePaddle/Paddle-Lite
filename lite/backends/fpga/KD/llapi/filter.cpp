@@ -221,7 +221,6 @@ int8_t* format_filter(float* data_in,
       align_to_x(num_per_div_before_alignment, filter_num_alignment);
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
-  // int num_after_alignment = num_per_div_after_alignment * div_num;
   int residual = num % num_per_div_before_alignment;
   int num_after_alignment = num_per_div_after_alignment *
                                 ((residual == 0) ? div_num : (div_num - 1)) +

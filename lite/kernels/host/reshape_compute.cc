@@ -63,26 +63,6 @@ REGISTER_LITE_KERNEL(reshape,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-// REGISTER_LITE_KERNEL(reshape,
-//                      kFPGA,
-//                      kFP16,
-//                      kNHWC,
-//                      paddle::lite::kernels::host::ReshapeCompute,
-//                      def)
-//     .BindInput("X",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC))})
-//     .BindInput("ShapeTensor",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
-//     .BindInput("Shape",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(
-//                     TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
-//     .Finalize();
-
 REGISTER_LITE_KERNEL(reshape2,
                      kHost,
                      kAny,

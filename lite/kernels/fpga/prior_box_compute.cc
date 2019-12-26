@@ -78,7 +78,6 @@ void PriorBoxCompute::PrepareForRun() {
 
   param.boxes->mutable_data<float>();
   param.variances->mutable_data<float>();
-
   zynqmp::PriorBoxParam& priobox_param = pe_.param();
   priobox_param.input = param.input->ZynqTensor();
   priobox_param.image = param.image->ZynqTensor();
