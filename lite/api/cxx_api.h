@@ -93,6 +93,7 @@ class LITE_API Predictor {
   const cpp::ProgramDesc& program_desc() const;
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
+
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
       const std::string& dir,
