@@ -22,36 +22,46 @@ limitations under the License. */
 #include "lite/backends/x86/cupti_lib_path.h"
 #include "lite/backends/x86/port.h"
 #include "lite/backends/x86/warpctc_lib_path.h"
+#include "lite/utils/env.h"
 #include "lite/utils/paddle_enforce.h"
 
-DEFINE_string(cudnn_dir,
-              "",
-              "Specify path for loading libcudnn.so. For instance, "
-              "/usr/local/cudnn/lib. If empty [default], dlopen "
-              "will search cudnn from LD_LIBRARY_PATH");
+// DEFINE_string(cudnn_dir,
+//               "",
+//               "Specify path for loading libcudnn.so. For instance, "
+//               "/usr/local/cudnn/lib. If empty [default], dlopen "
+//               "will search cudnn from LD_LIBRARY_PATH");
+std::string cudnn_dir = paddle::lite::GetStringFromEnv("cudnn_dir");  // NOLINT
 
-DEFINE_string(cuda_dir,
-              "",
-              "Specify path for loading cuda library, such as libcublas, "
-              "libcurand. For instance, /usr/local/cuda/lib64. If default, "
-              "dlopen will search cuda from LD_LIBRARY_PATH");
+// DEFINE_string(cuda_dir,
+//               "",
+//               "Specify path for loading cuda library, such as libcublas, "
+//               "libcurand. For instance, /usr/local/cuda/lib64. If default, "
+//               "dlopen will search cuda from LD_LIBRARY_PATH");
+std::string cuda_dir = paddle::lite::GetStringFromEnv("cuda_dir");  // NOLINT
 
-DEFINE_string(warpctc_dir, "", "Specify path for loading libwarpctc.so.");
+// DEFINE_string(warpctc_dir, "", "Specify path for loading libwarpctc.so.");
+std::string f_warpctc_dir =                         // NOLINT
+    paddle::lite::GetStringFromEnv("warpctc_dir");  // NOLINT
 
-DEFINE_string(nccl_dir,
-              "",
-              "Specify path for loading nccl library, such as libcublas, "
-              "libcurand. For instance, /usr/local/cuda/lib64. If default, "
-              "dlopen will search cuda from LD_LIBRARY_PATH");
+// DEFINE_string(nccl_dir,
+//               "",
+//               "Specify path for loading nccl library, such as libcublas, "
+//               "libcurand. For instance, /usr/local/cuda/lib64. If default, "
+//               "dlopen will search cuda from LD_LIBRARY_PATH");
+std::string nccl_dir = paddle::lite::GetStringFromEnv("nccl_dir");  // NOLINT
 
-DEFINE_string(cupti_dir, "", "Specify path for loading cupti.so.");
+// DEFINE_string(cupti_dir, "", "Specify path for loading cupti.so.");
+std::string cupti_dir = paddle::lite::GetStringFromEnv("cupti_dir");  // NOLINT
 
-DEFINE_string(
-    tensorrt_dir,
-    "",
-    "Specify path for loading tensorrt library, such as libnvinfer.so.");
+// DEFINE_string(
+//     tensorrt_dir,
+//     "",
+//     "Specify path for loading tensorrt library, such as libnvinfer.so.");
+std::string tensorrt_dir =                           // NOLINT
+    paddle::lite::GetStringFromEnv("tensorrt_dir");  // NOLINT
 
-DEFINE_string(mklml_dir, "", "Specify path for loading libmklml_intel.so.");
+// DEFINE_string(mklml_dir, "", "Specify path for loading libmklml_intel.so.");
+std::string mklml_dir = paddle::lite::GetStringFromEnv("mklml_dir");  // NOLINT
 
 namespace paddle {
 namespace lite {
@@ -180,28 +190,28 @@ auto error_msg =
 
 void* GetCublasDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(FLAGS_cuda_dir, "libcublas.dylib");
+  return GetDsoHandleFromSearchPath(cuda_dir, "libcublas.dylib");
 #elif defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-  return GetDsoHandleFromSearchPath(FLAGS_cuda_dir, win_cublas_lib);
+  return GetDsoHandleFromSearchPath(cuda_dir, win_cublas_lib);
 #else
-  return GetDsoHandleFromSearchPath(FLAGS_cuda_dir, "libcublas.so");
+  return GetDsoHandleFromSearchPath(cuda_dir, "libcublas.so");
 #endif
 }
 
 void* GetCUDNNDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(FLAGS_cudnn_dir, "libcudnn.dylib", false);
+  return GetDsoHandleFromSearchPath(cudnn_dir, "libcudnn.dylib", false);
 #elif defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-  return GetDsoHandleFromSearchPath(FLAGS_cudnn_dir, win_cudnn_lib);
+  return GetDsoHandleFromSearchPath(cudnn_dir, win_cudnn_lib);
 #else
-  return GetDsoHandleFromSearchPath(FLAGS_cudnn_dir, "libcudnn.so", false);
+  return GetDsoHandleFromSearchPath(cudnn_dir, "libcudnn.so", false);
 #endif
 }
 
 void* GetCUPTIDsoHandle() {
   std::string cupti_path = cupti_lib_path;
-  if (!FLAGS_cupti_dir.empty()) {
-    cupti_path = FLAGS_cupti_dir;
+  if (!cupti_dir.empty()) {
+    cupti_path = cupti_dir;
   }
 #if defined(__APPLE__) || defined(__OSX__)
   return GetDsoHandleFromSearchPath(cupti_path, "libcupti.dylib", false);
@@ -212,18 +222,18 @@ void* GetCUPTIDsoHandle() {
 
 void* GetCurandDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(FLAGS_cuda_dir, "libcurand.dylib");
+  return GetDsoHandleFromSearchPath(cuda_dir, "libcurand.dylib");
 #elif defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-  return GetDsoHandleFromSearchPath(FLAGS_cuda_dir, win_curand_lib);
+  return GetDsoHandleFromSearchPath(cuda_dir, win_curand_lib);
 #else
-  return GetDsoHandleFromSearchPath(FLAGS_cuda_dir, "libcurand.so");
+  return GetDsoHandleFromSearchPath(cuda_dir, "libcurand.so");
 #endif
 }
 
 void* GetWarpCTCDsoHandle() {
   std::string warpctc_dir = warpctc_lib_path;
-  if (!FLAGS_warpctc_dir.empty()) {
-    warpctc_dir = FLAGS_warpctc_dir;
+  if (!f_warpctc_dir.empty()) {
+    warpctc_dir = f_warpctc_dir;
   }
 #if defined(__APPLE__) || defined(__OSX__)
   return GetDsoHandleFromSearchPath(warpctc_dir, "libwarpctc.dylib");
@@ -236,27 +246,27 @@ void* GetWarpCTCDsoHandle() {
 
 void* GetNCCLDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(FLAGS_nccl_dir, "libnccl.dylib");
+  return GetDsoHandleFromSearchPath(nccl_dir, "libnccl.dylib");
 #else
-  return GetDsoHandleFromSearchPath(FLAGS_nccl_dir, "libnccl.so");
+  return GetDsoHandleFromSearchPath(nccl_dir, "libnccl.so");
 #endif
 }
 
 void* GetTensorRtDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(FLAGS_tensorrt_dir, "libnvinfer.dylib");
+  return GetDsoHandleFromSearchPath(tensorrt_dir, "libnvinfer.dylib");
 #else
-  return GetDsoHandleFromSearchPath(FLAGS_tensorrt_dir, "libnvinfer.so");
+  return GetDsoHandleFromSearchPath(tensorrt_dir, "libnvinfer.so");
 #endif
 }
 
 void* GetMKLMLDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(FLAGS_mklml_dir, "libmklml_intel.dylib");
+  return GetDsoHandleFromSearchPath(mklml_dir, "libmklml_intel.dylib");
 #elif defined(_WIN32)
-  return GetDsoHandleFromSearchPath(FLAGS_mklml_dir, "mklml.dll");
+  return GetDsoHandleFromSearchPath(mklml_dir, "mklml.dll");
 #else
-  return GetDsoHandleFromSearchPath(FLAGS_mklml_dir, "libmklml_intel.so");
+  return GetDsoHandleFromSearchPath(mklml_dir, "libmklml_intel.so");
 #endif
 }
 

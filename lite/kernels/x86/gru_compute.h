@@ -26,7 +26,8 @@
 #include "lite/core/types.h"
 #include "lite/fluid/eigen.h"
 
-DECLARE_int32(paddle_num_threads);
+// DECLARE_int32(paddle_num_threads);
+extern int32_t paddle_num_threads;
 
 namespace paddle {
 namespace lite {
@@ -109,7 +110,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
 #ifdef PADDLE_WITH_MKLML
     // use MKL packed to speedup GEMM
-    if (FLAGS_paddle_num_threads >= 4) {
+    if (paddle_num_threads >= 4) {
       auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
       T* packed_gate = blas.GEMM_ALLOC(CblasBMatrix,
                                        1 /*height of C*/,
