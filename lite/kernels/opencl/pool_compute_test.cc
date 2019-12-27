@@ -73,15 +73,14 @@ void pool_avg(const int padding_height,
   }
 }
 
-TEST(pool2d, compute) {
+TEST(pool2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
       "pool2d", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
 
   auto kernel = std::move(kernels.front());
-
-  LOG(INFO) << "get kernel";
+  LOG(INFO) << "get kernel:" << kernel->doc();
 
   lite::Tensor x, out;
   operators::PoolParam param;
@@ -143,7 +142,102 @@ TEST(pool2d, compute) {
   TargetWrapperCL::Unmap(out_data, mapped_out);
 }
 
+TEST(pool2d_image2d_fp32, compute) {
+  LOG(INFO) << "to get kernel ...";
+  auto kernels = KernelRegistry::Global().Create(
+      "pool2d", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault));
+  ASSERT_FALSE(kernels.empty());
+
+  auto kernel = std::move(kernels.front());
+
+  LOG(INFO) << "get kernel:" << kernel->doc();
+
+  lite::Tensor x, out;
+  operators::PoolParam param;
+  param.x = &x;
+  param.output = &out;
+  param.global_pooling = false;
+  param.pooling_type = "avg";
+  std::vector<int> paddings = {0, 0, 0, 0};
+  param.strides = std::vector<int>{1, 1};
+  param.ksize = std::vector<int>{7, 7};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
+
+  std::unique_ptr<KernelContext> context(new KernelContext);
+  context->As<OpenCLContext>().InitOnce();
+
+  kernel->SetParam(param);
+  std::unique_ptr<KernelContext> pool_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(pool_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(pool_context));
+
+  const DDim in_dim = DDim(std::vector<DDim::value_type>{4, 11, 107, 107});
+  const DDim out_dim = DDim(std::vector<DDim::value_type>{4, 11, 101, 101});
+  x.Resize(in_dim);
+  out.Resize(out_dim);
+
+  std::default_random_engine engine;
+  std::uniform_real_distribution<float> dist(-5, 5);
+  std::vector<float> input_v(4 * 11 * 107 * 107);
+  for (auto& i : input_v) {
+    i = dist(engine);
+  }
+
+  LOG(INFO) << "prepare input";
+  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
+  DDim x_image_shape = default_converter->InitImageDimInfoWith(in_dim);
+  LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
+            << x_image_shape[1];
+  std::vector<float> x_image_data(x_image_shape.production() * 4);  // 4 : RGBA
+  default_converter->NCHWToImage(input_v.data(), x_image_data.data(), in_dim);
+  auto* x_image = x.mutable_data<float, cl::Image2D>(
+      x_image_shape[0], x_image_shape[1], x_image_data.data());
+  LOG(INFO) << "x_image:" << x_image;
+
+  DDim out_image_shape = default_converter->InitImageDimInfoWith(out_dim);
+  LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
+            << out_image_shape[1];
+  auto* out_image = out.mutable_data<float, cl::Image2D>(out_image_shape[0],
+                                                         out_image_shape[1]);
+  LOG(INFO) << "out_image:" << out_image;
+  kernel->Launch();
+
+  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+  auto* out_ptr = param.output->data<float, cl::Image2D>();
+  auto it = wait_list->find(out_ptr);
+  if (it != wait_list->end()) {
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+    auto& event = *(it->second);
+    event.wait();
+  } else {
+    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
+  }
+
+  std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
+  pool_avg(0, 0, 1, 1, 7, 7, input_v.data(), in_dim, out_ref.get(), out_dim);
+
+  const size_t cl_image2d_row_pitch{0};
+  const size_t cl_image2d_slice_pitch{0};
+  float* out_image_data = new float[out_image_shape.production() * 4];
+  TargetWrapperCL::ImgcpySync(out_image_data,
+                              out_image,
+                              out_image_shape[0],
+                              out_image_shape[1],
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::DtoH);
+  float* out_data = new float[out_image_shape.production() * 4];
+  default_converter->ImageToNCHW(
+      out_image_data, out_data, out_image_shape, out_dim);
+
+  for (int i = 0; i < out_dim.production(); i++) {
+    EXPECT_NEAR(out_data[i], out_ref[i], 1e-6);
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle
 
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kImageDefault, image2d);

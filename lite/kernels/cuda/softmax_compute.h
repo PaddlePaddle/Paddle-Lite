@@ -25,8 +25,16 @@ class SoftmaxCompute
  public:
   using param_t = operators::SoftmaxParam;
 
+  void PrepareForRun() override;
   void Run() override;
   virtual ~SoftmaxCompute() = default;
+
+ private:
+  lite::Tensor tmax_data_;
+  lite::Tensor tsum_data_;
+  size_t sharedmem_size_;
+  int max_dimsize_;
+  int axis_size_;
 };
 
 }  // namespace cuda

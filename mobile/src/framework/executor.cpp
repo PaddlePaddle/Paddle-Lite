@@ -363,7 +363,10 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
         DLOG << "InitNoPersistableMemory var " << var_desc->Name();
         auto tensor = var->template GetMutable<LoDTensor>();
         if (tensor->IsInitialized() && tensor->dims().size() == 4) {
-          DLOG << "var's tensor is Initialized or dims size != 4";
+          // don't change user's input and avoid memory leaks
+          if (feed_indices_.find(var_desc->Name()) != feed_indices_.end()) {
+            break;
+          }
           DDim tensor_dim = tensor->dims();
           DDim new_dim =
               make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
@@ -554,8 +557,8 @@ PMStatus Executor<Device, T>::Predict() {
       clock_gettime(CLOCK_MONOTONIC, &ts);
       profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-      DLOG << i << "th, "
-           << "run op: " << op_handler->Type();
+      LOG(paddle_mobile::kLOG_INFO) << i << "th, "
+                                    << "run op: " << op_handler->Type();
       if (lod_mode_ && input_dim_has_changed_) {
         op_handler->InferShape();
       }

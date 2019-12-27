@@ -286,6 +286,8 @@ struct ConvParam {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -590,6 +592,7 @@ struct MulticlassNmsParam {
   const lite::Tensor* bboxes{};
   const lite::Tensor* scores{};
   lite::Tensor* out{};
+  lite::Tensor* index{};
   int background_label{0};
   float score_threshold{};
   int nms_top_k{};
@@ -767,6 +770,12 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SequencePoolConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  std::vector<std::string> pool_type{};
+};
+
 struct SearchGroupPaddingParam {
   lite::Tensor* x{};
   lite::Tensor* out_emb_padding{};
@@ -862,6 +871,8 @@ struct VarConv2DParam {
   int stride_w;
   int kernel_h;
   int kernel_w;
+
+  bool fuse_relu{false};
 };
 
 /// ----------------------- shape operators ----------------------
@@ -1094,6 +1105,16 @@ struct CollectFpnProposalsParam {
   int post_nms_topN{};
 };
 
+struct DistributeFpnProposalsParam {
+  const lite::Tensor* fpn_rois{};
+  std::vector<lite::Tensor*> multi_fpn_rois{};
+  lite::Tensor* restore_index{};
+  int min_level{};
+  int max_level{};
+  int refer_level{};
+  int refer_scale{};
+};
+
 /// --------------------- instance_norm operators --------------------
 struct InstanceNormParam {
   lite::Tensor* x{};
@@ -1103,6 +1124,12 @@ struct InstanceNormParam {
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
   float epsilon;
+};
+/// --------------------- grid sampler operators --------------------
+struct GridSamplerParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* grid{};
 };
 
 }  // namespace operators

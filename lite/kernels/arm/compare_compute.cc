@@ -219,6 +219,19 @@ REGISTER_LITE_KERNEL(greater_equal,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(less_than,
+                     kARM,
+                     kInt32,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CompareCompute_int32<
+                         paddle::lite::kernels::arm::_LessThanFunctor>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(equal,
                      kARM,
                      kInt32,

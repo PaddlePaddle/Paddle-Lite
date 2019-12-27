@@ -52,7 +52,29 @@ class SequenceConcatCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    // auto& param = Param<param_t>();
+
+    int64_t batch_size = 0;
+    int64_t feature_size = 0;
+    std::vector<int64_t> out_dims;
+    for (const auto& tensor : param.X) {
+      const auto x_dims = tensor->dims();
+      if (out_dims.empty()) {
+        out_dims = x_dims.Vectorize();
+      }
+      batch_size += x_dims[0];
+      if (feature_size == 0) {
+        feature_size = x_dims.production() / x_dims[0];
+      } else {
+        CHECK_EQ(feature_size, x_dims.production() / x_dims[0])
+            << "Inputs of sequence concat must have same feature size";
+      }
+    }
+    if (batch_size < 0) {
+      batch_size = -1;  // Normalize batch size for compile time.
+    }
+    out_dims[0] = batch_size;
+    param.Out->Resize(out_dims);
+
     T* dout = param.Out->mutable_data<T>();
 
     std::vector<lite::Tensor> x_in_order;

@@ -23,7 +23,7 @@ namespace operators {
 
 template <>
 bool InstanceNormKernel<GPU_CL, float>::Init(InstanceNormParam<GPU_CL> *param) {
-  auto &dims = param->Out()->dims();
+  auto &dims = param->OutputY()->dims();
   const int h = dims[2];
   std::string build_options = "";
   if (h == 128) {
@@ -41,7 +41,8 @@ bool InstanceNormKernel<GPU_CL, float>::Init(InstanceNormParam<GPU_CL> *param) {
 template <>
 void InstanceNormKernel<GPU_CL, float>::Compute(
     const InstanceNormParam<GPU_CL> &param) {
-  InstanceNorm(&this->cl_helper_, param);
+  InstanceNorm(&this->cl_helper_, param.InputX(), param.OutputY(),
+               param.Epsilon());
 }
 
 template class InstanceNormKernel<GPU_CL, float>;

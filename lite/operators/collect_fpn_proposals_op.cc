@@ -31,7 +31,7 @@ bool CollectFpnProposalsOpLite::CheckShape() const {
   }
   for (auto item : param_.multi_level_scores) {
     auto dims = item->dims();
-    CHECK_OR_FALSE(dims[1] == 2);
+    CHECK_OR_FALSE(dims[1] == 1);
   }
   for (int i = 0; i < param_.multi_level_rois.size(); i++) {
     auto roi = param_.multi_level_rois[i];
@@ -45,6 +45,7 @@ bool CollectFpnProposalsOpLite::CheckShape() const {
 
 bool CollectFpnProposalsOpLite::InferShape() const {
   param_.fpn_rois->Resize({param_.post_nms_topN, 4});
+
   return true;
 }
 

@@ -30,6 +30,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
   std::string model_dir = FLAGS_model_dir;
   lite_api::CxxConfig config;
   config.set_model_dir(model_dir);
+  config.set_cpu_math_library_num_threads(1);
   config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kInt64)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
@@ -48,7 +49,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
                                            "micro_video_id",
                                            "vertical_type_id"};
 
-  for (int i = 0; i < target_names.size(); ++i) {
+  for (size_t i = 0; i < target_names.size(); ++i) {
     auto input_tensor = predictor->GetInput(i);
     int size = 0;
     if (i == 6 || i == 8) {
@@ -73,8 +74,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
     predictor->Run();
   }
 
-  //  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
+  LOG(INFO) << "warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
@@ -85,8 +85,8 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
 
   std::vector<int64_t> out_shape = out->shape();
 
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(
           out->data<float>()[j + (out_shape[1] * i)], results[i][j], 1e-6);
     }

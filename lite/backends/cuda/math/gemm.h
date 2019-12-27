@@ -55,6 +55,8 @@ class Gemm {
            PtypeOut* c,
            Context<TARGET(kCUDA)>* ctx);
 
+  cublasHandle_t get_handle() const { return cu_handle_; }
+
  private:
   cudaStream_t exe_stream_;
   cublasHandle_t cu_handle_;

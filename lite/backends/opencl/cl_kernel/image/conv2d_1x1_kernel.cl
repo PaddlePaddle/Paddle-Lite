@@ -1,28 +1,28 @@
 #include <cl_common.h>
 
-__kernel void conv_1x1(
-    __private const int global_size_dim0,
-    __private const int global_size_dim1,
-    __private const int global_size_dim2,
-    __read_only image2d_t input_image,
-    __read_only image2d_t filter,
+__kernel void conv2d_1x1(__private const int global_size_dim0,
+                         __private const int global_size_dim1,
+                         __private const int global_size_dim2,
+                         __read_only image2d_t input_image,
+                         __read_only image2d_t filter,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
-    __read_only image2d_t bias,
+                         __read_only image2d_t bias,
 #endif
-    #ifdef BATCH_NORM
-        __read_only image2d_t new_scale, __read_only image2d_t new_biase,
-    #endif
-    __write_only image2d_t output_image,
-    __private const int stride,
-    __private const int offset,
-    __private const int input_c,
-    __private const int input_c_origin,
-    __private const int dilation,
-    __private const int input_width,  /* of one block */
-    __private const int input_height, /* of one block */
-    __private const int output_width,
-    __private const int output_height,
-    __private const int old_w) {
+#ifdef BATCH_NORM
+                         __read_only image2d_t new_scale,
+                         __read_only image2d_t new_biase,
+#endif
+                         __write_only image2d_t output_image,
+                         __private const int stride,
+                         __private const int offset,
+                         __private const int input_c,
+                         __private const int input_c_origin,
+                         __private const int dilation,
+                         __private const int input_width,  /* of one block */
+                         __private const int input_height, /* of one block */
+                         __private const int output_width,
+                         __private const int output_height,
+                         __private const int old_w) {
   CL_DTYPE zero = 0.0f;
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
@@ -61,12 +61,13 @@ __kernel void conv_1x1(
       ouput_pos_in_one_block3 * stride_xy + (int2)(offset, offset);
 
 #ifdef BIASE_CH
-  CL_DTYPE4 output0 = read_imagef(bias, sampler, (int2)(out_c, 0));
+  CL_DTYPE4 output0 =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output0 = read_imagef(bias, sampler, output_pos0);
+  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos0);
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
@@ -89,12 +90,17 @@ __kernel void conv_1x1(
     // ------------0---------------
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
                          in_pos_in_one_block0.y);
-    CL_DTYPE4 input0 = read_imagef(input_image, sampler, pos_in);
+    CL_DTYPE4 input0 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
-    CL_DTYPE4 weight0 = read_imagef(filter, sampler, (int2)(out_c, i * 4 + 0));
-    CL_DTYPE4 weight1 = read_imagef(filter, sampler, (int2)(out_c, i * 4 + 1));
-    CL_DTYPE4 weight2 = read_imagef(filter, sampler, (int2)(out_c, i * 4 + 2));
-    CL_DTYPE4 weight3 = read_imagef(filter, sampler, (int2)(out_c, i * 4 + 3));
+    CL_DTYPE4 weight0 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 0));
+    CL_DTYPE4 weight1 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 1));
+    CL_DTYPE4 weight2 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 2));
+    CL_DTYPE4 weight3 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 3));
     int bound_gap = max_w_bound - pos_in.x - 1;
 
     bool outof_bound = bound_gap < input_width && bound_gap >= 0;
@@ -109,7 +115,8 @@ __kernel void conv_1x1(
     // -------------1--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
-    CL_DTYPE4 input1 = read_imagef(input_image, sampler, pos_in);
+    CL_DTYPE4 input1 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
     bound_gap = max_w_bound - pos_in.x - 1;
 
@@ -126,7 +133,8 @@ __kernel void conv_1x1(
     // -------------2--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x,
                     in_pos_in_one_block2.y);
-    CL_DTYPE4 input2 = read_imagef(input_image, sampler, pos_in);
+    CL_DTYPE4 input2 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
     bound_gap = max_w_bound - pos_in.x - 1;
 
@@ -143,7 +151,8 @@ __kernel void conv_1x1(
     // -------------3--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x,
                     in_pos_in_one_block3.y);
-    CL_DTYPE4 input3 = read_imagef(input_image, sampler, pos_in);
+    CL_DTYPE4 input3 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
     bound_gap = max_w_bound - pos_in.x - 1;
 
     outof_bound = bound_gap < input_width && bound_gap >= 0;
@@ -165,17 +174,21 @@ __kernel void conv_1x1(
   }
 
 #ifdef BATCH_NORM
-  output0 = output0 * read_imagef(new_scale, sampler, (int2)(out_c, 0)) +
-          read_imagef(new_biase, sampler, (int2)(out_c, 0));
+  output0 = output0 * READ_IMG_TYPE(
+                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 
-    output1 = output1 * read_imagef(new_scale, sampler, (int2)(out_c, 0)) +
-          read_imagef(new_biase, sampler, (int2)(out_c, 0));
+  output1 = output1 * READ_IMG_TYPE(
+                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 
-    output2 = output2 * read_imagef(new_scale, sampler, (int2)(out_c, 0)) +
-          read_imagef(new_biase, sampler, (int2)(out_c, 0));
+  output2 = output2 * READ_IMG_TYPE(
+                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 
-    output3 = output3 * read_imagef(new_scale, sampler, (int2)(out_c, 0)) +
-          read_imagef(new_biase, sampler, (int2)(out_c, 0));
+  output3 = output3 * READ_IMG_TYPE(
+                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 #endif
 
 #ifdef RELU
@@ -186,18 +199,18 @@ __kernel void conv_1x1(
 #endif
 
   if (out_w0 < old_w) {
-    write_imagef(output_image, output_pos0, output0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
 
   if (out_w1 < old_w) {
-    write_imagef(output_image, output_pos1, output1);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos1, output1);
   }
 
   if (out_w2 < old_w) {
-    write_imagef(output_image, output_pos2, output2);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos2, output2);
   }
 
   if (out_w3 < old_w) {
-    write_imagef(output_image, output_pos3, output3);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos3, output3);
   }
 }

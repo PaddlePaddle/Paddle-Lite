@@ -147,7 +147,7 @@ void RuntimeProgram::Run() {
 #endif  // LITE_WITH_PROFILE
   }
 #ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary();
+  LOG(INFO) << "\n" << profiler_.Summary(false, 0);
 #endif  // LITE_WITH_PROFILE
 }
 
@@ -262,14 +262,11 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel launch";
-#endif
+
+  // VLOG(4) << "kernel launch";
   op_->InferShape();
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
-          << TargetToStr(kernel_->target());
-#endif
+  // VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
+  //        << TargetToStr(kernel_->target());
   kernel_->Launch();
   has_run_ = true;
 }

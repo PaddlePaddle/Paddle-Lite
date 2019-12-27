@@ -29,18 +29,23 @@ namespace xpu {
 
 class SubgraphEngine : public subgraph::Engine {
  public:
-  SubgraphEngine(int block_idx,
+  SubgraphEngine(KernelContext *ctx,
+                 int block_idx,
                  cpp::BlockDesc *block_desc,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
                  Scope *scope)
       : subgraph::Engine(
-            block_idx, block_desc, input_names, output_names, scope) {}
+            ctx, block_idx, block_desc, input_names, output_names, scope) {}
 
  protected:
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
 
+  std::vector<std::string> device_inames_;
+  std::vector<std::string> device_onames_;
+  std::vector<DLTensor> device_itensors_;
+  std::vector<DLTensor> device_otensors_;
   std::unique_ptr<xtcl::network::xRuntimeInstance> device_program_{nullptr};
 };
 
