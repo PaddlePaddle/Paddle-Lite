@@ -87,27 +87,27 @@ for target in valid_targets:
     valid_ops[index] = list(set(valid_ops[index]))
 
 paths = set()
-for line in open(ops_list_path):
-    paths.add(line.strip())
-for path in paths:
-    str_info = open(path.strip()).read()
-    op_parser = RegisterLiteOpParser(str_info)
-    ops = op_parser.parse()
-    for op in ops:
-        if "_grad" in op: 
-            continue
-        out = '    {"%s", { "' % op
-        op_targets = []
-        for target in valid_targets:
-            if op in valid_ops[getattr(TargetType, target)]:
-                op_targets.append(target)
-        if len(op_targets) > 0:
-            out = out +'", "'.join(op_targets)+ '" }}'
-        else:
-            # unknow type op:  kUnk = 0
-            valid_ops[0].append(op)
-            out = out +'kUnk" }}'
-        ops_lines.append(out)
+with open(ops_list_path) as f:
+    paths = set([path for path in f])
+    for path in paths:
+        str_info = open(path.strip()).read()
+        op_parser = RegisterLiteOpParser(str_info)
+        ops = op_parser.parse()
+        for op in ops:
+            if "_grad" in op:
+                continue
+            out = '    {"%s", { "' % op
+            op_targets = []
+            for target in valid_targets:
+                if op in valid_ops[getattr(TargetType, target)]:
+                    op_targets.append(target)
+            if len(op_targets) > 0:
+                out = out +'", "'.join(op_targets)+ '" }}'
+            else:
+                # unknow type op:  kUnk = 0
+                valid_ops[0].append(op)
+                out = out +'kUnk" }}'
+            ops_lines.append(out)
 
 with open(kernel_op_map_dest_path, 'w') as f:
     logging.info("write kernel list to %s" % kernel_op_map_dest_path)
