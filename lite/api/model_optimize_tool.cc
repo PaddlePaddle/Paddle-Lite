@@ -197,7 +197,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   std::cout << std::setiosflags(std::ios::internal);
   std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (int i = 0; i < targets.size(); i++) {
-    std::cout << std::setw(10) << targets[i];
+    std::cout << std::setw(10) << targets[i].substr(1);
   }
   std::cout << std::endl;
   if (valid_ops.empty()) {
