@@ -290,7 +290,7 @@ void test_img(const std::vector<int>& cluster_id,
 
         LOG(INFO) << "image convert saber compute";
         // 方法一: image_preprocess.imageCovert(src, lite_dst);
-        image_preprocess.imageCovert(
+        image_preprocess.imageConvert(
             src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
 
         LOG(INFO) << "image resize saber compute";

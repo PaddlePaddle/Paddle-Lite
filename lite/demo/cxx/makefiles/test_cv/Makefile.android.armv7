@@ -28,7 +28,7 @@ OPENCV_INCLUDE = -I../../../third_party/${OPENCV_VERSION}/armeabi-v7a/include
 
 CXX_INCLUDES = $(INCLUDES) ${OPENCV_INCLUDE} -I$(LITE_ROOT)/cxx/include
 
-CXX_LIBS = ${OPENCV_LIBS} -L$(LITE_ROOT)/cxx/lib/ -lpaddle_light_api_shared $(SYSTEM_LIBS)
+CXX_LIBS = ${OPENCV_LIBS} -L$(LITE_ROOT)/cxx/lib/ -lpaddle_full_api_shared $(SYSTEM_LIBS)
 
 ###############################################################
 # How to use one of static libaray:                           #
@@ -48,11 +48,11 @@ test_model: fetch_opencv test_model.o
 test_model.o: test_model.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model.o -c test_model.cc
 
-test_img_propress: fetch_opencv test_img_propress.o
-	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_img_propress.o -o test_img_propress  $(CXX_LIBS) $(LDFLAGS)
+test_img_prepross: fetch_opencv test_img_prepross.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_img_prepross.o -o test_img_prepross  $(CXX_LIBS) $(LDFLAGS)
 
-test_img_propress.o: test_img_propress.cc
-	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_img_propress.o -c test_img_propress.cc
+test_img_prepross.o: test_img_prepross.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_img_prepross.o -c test_img_prepross.cc
 
 fetch_opencv:
 	@ test -d ${THIRD_PARTY_DIR} ||  mkdir ${THIRD_PARTY_DIR}
@@ -67,5 +67,5 @@ fetch_opencv:
 clean:
 	rm -f test_model.o
 	rm -f test_model
-      rm -f test_img_propress.o
-	rm -f test_img_propress
+      rm -f test_img_prepross.o
+	rm -f test_img_prepross

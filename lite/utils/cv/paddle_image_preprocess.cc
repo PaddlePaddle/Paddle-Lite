@@ -37,7 +37,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat,
   this->dstFormat_ = dstFormat;
   this->transParam_ = param;
 }
-void ImagePreprocess::imageCovert(const uint8_t* src, uint8_t* dst) {
+void ImagePreprocess::imageConvert(const uint8_t* src, uint8_t* dst) {
   ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
@@ -47,10 +47,10 @@ void ImagePreprocess::imageCovert(const uint8_t* src, uint8_t* dst) {
                      this->transParam_.ih);
 }
 
-void ImagePreprocess::imageCovert(const uint8_t* src,
-                                  uint8_t* dst,
-                                  ImageFormat srcFormat,
-                                  ImageFormat dstFormat) {
+void ImagePreprocess::imageConvert(const uint8_t* src,
+                                   uint8_t* dst,
+                                   ImageFormat srcFormat,
+                                   ImageFormat dstFormat) {
   ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
@@ -91,19 +91,6 @@ void ImagePreprocess::imageRotate(const uint8_t* src,
                                   float degree) {
   ImageRotate img_rotate;
   img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
-  // if (degree != 90 && degree != 180 && degree != 270) {
-  //   printf("this degree: %f not support \n", degree);
-  // }
-  // if (srcFormat == GRAY) {
-  //   rotate_hwc1(src, dst, srcw, srch, degree);
-  // } else if (srcFormat == BGR || srcFormat == RGB) {
-  //   rotate_hwc3(src, dst, srcw, srch, degree);
-  // } else if (srcFormat == BGRA || srcFormat == RGBA) {
-  //   rotate_hwc4(src, dst, srcw, srch, degree);
-  // } else {
-  //   printf("this srcFormat: %d does not support! \n", srcFormat);
-  //   return;
-  // }
 }
 
 void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
@@ -113,10 +100,6 @@ void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
   auto degree = this->transParam_.rotate_param;
   ImageRotate img_rotate;
   img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
-  // if (degree != 90 && degree != 180 && degree != 270) {
-  //   printf("this degree: %f not support \n", degree);
-  // }
-  // ImagePreprocess::imageRotate(src, dst, srcFormat, srcw, srch, degree);
 }
 
 void ImagePreprocess::imageFlip(const uint8_t* src,
@@ -125,18 +108,8 @@ void ImagePreprocess::imageFlip(const uint8_t* src,
                                 int srcw,
                                 int srch,
                                 FlipParam flip_param) {
-  imageFlip img_flip;
+  ImageFlip img_flip;
   img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
-  // if (srcFormat == GRAY) {
-  //   flip_hwc1(src, dst, srcw, srch, flip_param);
-  // } else if (srcFormat == BGR || srcFormat == RGB) {
-  //   flip_hwc3(src, dst, srcw, srch, flip_param);
-  // } else if (srcFormat == BGRA || srcFormat == RGBA) {
-  //   flip_hwc4(src, dst, srcw, srch, flip_param);
-  // } else {
-  //   printf("this srcFormat: %d does not support! \n", srcFormat);
-  //   return;
-  // }
 }
 
 void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
@@ -144,13 +117,12 @@ void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
   auto srch = this->transParam_.oh;
   auto srcFormat = this->dstFormat_;
   auto flip_param = this->transParam_.flip_param;
-  imageFlip img_flip;
+  ImageFlip img_flip;
   img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
-  // ImagePreprocess::imageFlip(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   Tensor* dstTensor,
+                                   paddle::lite_api::Tensor* dstTensor,
                                    ImageFormat srcFormat,
                                    int srcw,
                                    int srch,
@@ -163,7 +135,7 @@ void ImagePreprocess::image2Tensor(const uint8_t* src,
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   Tensor* dstTensor,
+                                   paddle::lite_api::Tensor* dstTensor,
                                    LayoutType layout,
                                    float* means,
                                    float* scales) {

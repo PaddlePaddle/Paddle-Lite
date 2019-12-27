@@ -19,11 +19,12 @@
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_place.h"
+
 namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
-typedef paddle::lite_api::Tensor Tensor;
+// typedef paddle::lite_api::Tensor;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 // color enum
 enum ImageFormat {
@@ -73,7 +74,7 @@ class ImagePreprocess {
   * param src: input image data
   * param dst: output image data
   */
-  void imageCovert(const uint8_t* src, uint8_t* dst);
+  void imageConvert(const uint8_t* src, uint8_t* dst);
   /*
   * image color convert
   * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
@@ -88,10 +89,10 @@ class ImagePreprocess {
   * param dstFormat: output image image format, support GRAY, BGR(RGB) and
   * BGRA(RGBA)
   */
-  void imageCovert(const uint8_t* src,
-                   uint8_t* dst,
-                   ImageFormat srcFormat,
-                   ImageFormat dstFormat);
+  void imageConvert(const uint8_t* src,
+                    uint8_t* dst,
+                    ImageFormat srcFormat,
+                    ImageFormat dstFormat);
   /*
   * image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
@@ -180,7 +181,7 @@ class ImagePreprocess {
   * param scales: scales of image
   */
   void image2Tensor(const uint8_t* src,
-                    Tensor* dstTensor,
+                    paddle::lite_api::Tensor* dstTensor,
                     LayoutType layout,
                     float* means,
                     float* scales);
@@ -198,7 +199,7 @@ class ImagePreprocess {
   * param scales: scales of image
   */
   void image2Tensor(const uint8_t* src,
-                    Tensor* dstTensor,
+                    paddle::lite_api::Tensor* dstTensor,
                     ImageFormat srcFormat,
                     int srcw,
                     int srch,

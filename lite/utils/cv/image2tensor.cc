@@ -60,7 +60,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
   * param scales: scales of image
 */
 void Image2Tensor::choose(const uint8_t* src,
-                          Tensor* dst,
+                          paddle::lite_api::Tensor* dst,
                           ImageFormat srcFormat,
                           LayoutType layout,
                           int srcw,

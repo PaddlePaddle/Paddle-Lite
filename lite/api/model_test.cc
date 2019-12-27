@@ -86,6 +86,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     for (int i = 0; i < input_shapes[j].size(); ++i) {
       input_num *= input_shapes[j][i];
     }
+
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
     }

@@ -17,9 +17,9 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
-#include "paddle_api.h"  // NOLINT
-// #include "paddle_image_preprocess.h"
-// #include "time.h"
+#include "paddle_api.h"               // NOLINT
+#include "paddle_image_preprocess.h"  // NOLINT
+#include "time.h"                     // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -28,14 +28,51 @@ int64_t ShapeProduction(const shape_t& shape) {
   for (auto i : shape) res *= i;
   return res;
 }
+// fill tensor with mean and scale and trans layout: nhwc -> nchw, neon speed up
+void neon_mean_scale(
+    const float* din, float* dout, int size, float* mean, float* scale) {
+  float32x4_t vmean0 = vdupq_n_f32(mean[0]);
+  float32x4_t vmean1 = vdupq_n_f32(mean[1]);
+  float32x4_t vmean2 = vdupq_n_f32(mean[2]);
+  float32x4_t vscale0 = vdupq_n_f32(1.f / scale[0]);
+  float32x4_t vscale1 = vdupq_n_f32(1.f / scale[1]);
+  float32x4_t vscale2 = vdupq_n_f32(1.f / scale[2]);
 
-void pre_process(const cv::Mat& img,
-                 int width,
-                 int height,
-                 Tensor dstTensor,
-                 float* means,
-                 float* scales) {
+  float* dout_c0 = dout;
+  float* dout_c1 = dout + size;
+  float* dout_c2 = dout + size * 2;
+
+  int i = 0;
+  for (; i < size - 3; i += 4) {
+    float32x4x3_t vin3 = vld3q_f32(din);
+    float32x4_t vsub0 = vsubq_f32(vin3.val[0], vmean0);
+    float32x4_t vsub1 = vsubq_f32(vin3.val[1], vmean1);
+    float32x4_t vsub2 = vsubq_f32(vin3.val[2], vmean2);
+    float32x4_t vs0 = vmulq_f32(vsub0, vscale0);
+    float32x4_t vs1 = vmulq_f32(vsub1, vscale1);
+    float32x4_t vs2 = vmulq_f32(vsub2, vscale2);
+    vst1q_f32(dout_c0, vs0);
+    vst1q_f32(dout_c1, vs1);
+    vst1q_f32(dout_c2, vs2);
+
+    din += 12;
+    dout_c0 += 4;
+    dout_c1 += 4;
+    dout_c2 += 4;
+  }
+  for (; i < size; i++) {
+    *(dout_c0++) = (*(din++) - mean[0]) * scale[0];
+    *(dout_c0++) = (*(din++) - mean[1]) * scale[1];
+    *(dout_c0++) = (*(din++) - mean[2]) * scale[2];
+  }
+}
+void pre_process(const cv::Mat& img, int width, int height, Tensor dstTensor) {
 #ifdef LITE_WITH_CV
+  typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
+  typedef paddle::lite::utils::cv::FlipParam FlipParam;
+  typedef paddle::lite::utils::cv::TransParam TransParam;
+  typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
+  typedef paddle::lite_api::DataLayoutType LayoutType;
   // init TransParam
   TransParam tp;
   tp.iw = img.cols;
@@ -55,14 +92,19 @@ void pre_process(const cv::Mat& img,
   // do resize
   img_process.imageResize(rgb_ptr, resize_ptr);
   // data--tensor and normalize
+  float means[3] = {103.94f, 116.78f, 123.68f};
+  float scales[3] = {0.017f, 0.017f, 0.017f};
   img_process.image2Tensor(
-      resize_ptr, dstTensor, LayoutType::kNCHW, means, scales);
+      resize_ptr, &dstTensor, LayoutType::kNCHW, means, scales);
+  float* data = dstTensor.mutable_data<float>();
 #else
   cv::Mat rgb_img;
   cv::cvtColor(img, rgb_img, cv::COLOR_BGR2RGB);
   cv::resize(rgb_img, rgb_img, cv::Size(width, height), 0.f, 0.f);
   cv::Mat imgf;
   rgb_img.convertTo(imgf, CV_32FC3, 1 / 255.f);
+  float means[3] = {0.485f, 0.456f, 0.406f};
+  float scales[3] = {0.229f, 0.224f, 0.225f};
   const float* dimg = reinterpret_cast<const float*>(imgf.data);
   float* data = dstTensor.mutable_data<float>();
   neon_mean_scale(dimg, data, width * height, means, scales);
@@ -85,7 +127,6 @@ void RunModel(std::string model_dir,
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
-
   // 3. Prepare input data from image
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(
@@ -93,10 +134,8 @@ void RunModel(std::string model_dir,
   auto* data = input_tensor->mutable_data<float>();
   // read img and pre-process
   cv::Mat img = imread(img_path, cv::IMREAD_COLOR);
-  //   pre_process(img, width, height, data);
-  float means[3] = {103.94f, 116.78f, 123.68f};
-  float scales[3] = {0.017f, 0.017f, 0.017f};
-  pre_process(img, width, height, *input_tensor, means, scales);
+
+  pre_process(img, input_shape[3], input_shape[2], *input_tensor);
 
   // 4. Run predictor
   for (int i = 0; i < warmup; ++i) {
@@ -118,16 +157,17 @@ void RunModel(std::string model_dir,
     if (t > max_time) {
       max_time = t;
     }
-    LOG(INFO) << "iter: " << i << ", time: " << t << " ms";
+    std::cout << "iter: " << i << ", time: " << t << " ms" << std::endl;
   }
-  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << model_dir
+  std::cout << "================== Speed Report ==================="
+            << std::endl;
+  std::cout << "Model: " << model_dir
             << ", power_mode: " << static_cast<int>(power_mode)
             << ", threads num " << thread_num << ", warmup: " << warmup
             << ", repeats: " << test_iter << ", avg time: " << lps / test_iter
             << " ms"
             << ", min time: " << min_time << " ms"
-            << ", max time: " << max_time << " ms.";
+            << ", max time: " << max_time << " ms." << std::endl;
 
   // 5. Get output and post process
   std::unique_ptr<const Tensor> output_tensor(
@@ -138,9 +178,10 @@ void RunModel(std::string model_dir,
   for (int i = 0; i < shape_out.size(); ++i) {
     output_num *= shape_out[i];
   }
-  LOG(INFO) << "output_num: " << output_num;
-  LOG(INFO) << "out " << outptr[0];
-  LOG(INFO) << "out " << outptr[1];
+  std::cout << "output_num: " << output_num << std::endl;
+  for (int i = 0; i < output_num; i += 100) {
+    std::cout << "i: " << i << ", out: " << outptr[i] << std::endl;
+  }
 }
 
 int main(int argc, char** argv) {
@@ -152,10 +193,10 @@ int main(int argc, char** argv) {
   std::string model_dir = argv[1];
   std::string img_path = argv[2];
   std::vector<int> input_shape;
-  input_shape[0] = atoi(argv[3]);
-  input_shape[1] = atoi(argv[4]);
-  input_shape[2] = atoi(argv[5]);
-  input_shape[3] = atoi(argv[6]);
+  input_shape.push_back(atoi(argv[3]));
+  input_shape.push_back(atoi(argv[4]));
+  input_shape.push_back(atoi(argv[5]));
+  input_shape.push_back(atoi(argv[6]));
   int power_mode = 3;
   int threads = 1;
   int test_iter = 100;
@@ -172,7 +213,6 @@ int main(int argc, char** argv) {
   if (argc > 10) {
     warmup = atoi(argv[10]);
   }
-
   RunModel(model_dir,
            img_path,
            input_shape,

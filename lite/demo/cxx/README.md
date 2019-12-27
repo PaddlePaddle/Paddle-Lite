@@ -66,6 +66,7 @@ adb -s emulator-5554 pull /data/local/tmp/test_detection_result.jpg ./
 cd ../mobile_classify
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
+./model_optimize_tool optimize model
 make
 adb -s emulator-5554 push mobile_classify /data/local/tmp/
 adb -s emulator-5554 push test.jpg /data/local/tmp/
@@ -73,19 +74,34 @@ adb -s emulator-5554 push labels.txt /data/local/tmp/
 adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
 adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
+/data/local/tmp/mobile_classify /data/local/tmp/mobilenetv1opt2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
 ```
 运行成功将在控制台输出预测结果的前5个类别的预测概率
 - 如若想看前10个类别的预测概率，在运行命令输入topk的值即可
     eg:
     ```shell
     adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-    /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1 /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10"
+    /data/local/tmp/mobile_classify /data/local/tmp/mobilenetv1opt2/ /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10"
     ```
 - 如若想看其他模型的分类结果， 在运行命令输入model_dir 及其model的输入大小即可
     eg:
     ```shell
     adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-    /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10 224 224"
+    /data/local/tmp/mobile_classify /data/local/tmp/mobilenetv2opt2/ /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10 224 224"
     ```
     
+9. 编译CV预处理库demo 
+```shell
+cd ../test_cv
+wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
+tar zxvf mobilenet_v1.tar.gz
+./model_optimize_tool optimize model
+make
+adb -s emulator-5554 push test_model /data/local/tmp/
+adb -s emulator-5554 push test.jpg /data/local/tmp/
+adb -s emulator-5554 push labels.txt /data/local/tmp/
+adb -s emulator-5554 push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
+adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
+/data/local/tmp/mobile_classify /data/local/tmp/mobilenetv1opt2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
+```
