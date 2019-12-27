@@ -1042,23 +1042,6 @@ function main {
                 build_test_arm_subtask_armlinux
                 shift
                 ;;
-            build_test_arm_model_mobilenetv1)
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
-                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
-                shift
-                ;;
-            build_test_arm_model_mobilenetv2)
-                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
-                shift
-                ;;
-            build_test_arm_model_resnet50)
-                build_test_arm_subtask_model test_resnet50 resnet50
-                shift
-                ;;
-            build_test_arm_model_inceptionv4)
-                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
-                shift
-                ;;
             check_style)
                 check_style
                 shift
