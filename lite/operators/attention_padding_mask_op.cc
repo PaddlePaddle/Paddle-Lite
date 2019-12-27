@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/attention_padding_mask_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/scope.h"
 
@@ -39,7 +40,8 @@ bool AttentionPaddingMaskOp::InferShape() const {
       << "Mismatch batch size, bottom0: " << att_batch
       << ", bottom1: " << src_batch;
 
-  param_.pad_begin->Resize({static_cast<int64_t>(src_batch)});
+  param_.pad_begin->Resize(
+      std::vector<int64_t>({static_cast<int64_t>(src_batch)}));
   param_.Out->Resize(param_.X->dims());
   param_.Out->set_lod(param_.X->lod());
 

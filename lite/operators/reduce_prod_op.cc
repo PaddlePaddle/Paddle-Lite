@@ -50,7 +50,7 @@ bool ReduceProdOpLite::InferShape() const {
     if (keep_dim) {
       out->Resize({static_cast<int64_t>(x_rank), 1});
     } else {
-      out->Resize({1});
+      out->Resize(std::vector<int64_t>({1L}));
     }
   } else {
     auto dims_vector = x_dims.Vectorize();

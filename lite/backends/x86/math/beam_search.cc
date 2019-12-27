@@ -86,7 +86,8 @@ class BeamSearchFunctor<TARGET(kX86), T> {
     //    selected_ids->mutable_data<int64_t>(dims, platform::CPUPlace());
     // auto *selected_scores_data =
     //    selected_scores->mutable_data<float>(dims, platform::CPUPlace());
-    parent_idx->Resize({static_cast<int64_t>(num_instances)});
+    parent_idx->Resize(
+        std::vector<int64_t>({static_cast<int64_t>(num_instances)}));
     auto *parent_idx_data =
         parent_idx ? parent_idx->mutable_data<int>(TARGET(kX86)) : nullptr;
     // auto *parent_idx_data =
