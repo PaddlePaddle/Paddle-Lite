@@ -145,4 +145,3 @@ REGISTER_LITE_KERNEL(fill_constant_batch_size_like,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
-

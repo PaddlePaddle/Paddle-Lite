@@ -138,6 +138,8 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
     std::string op_type = inst.op()->op_info()->Type();
+    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+            << " on Target " << TargetToStr(inst.kernel()->target());
 
 #ifndef LITE_WITH_FPGA
     if (op_type == "feed" || op_type == "fetch") continue;

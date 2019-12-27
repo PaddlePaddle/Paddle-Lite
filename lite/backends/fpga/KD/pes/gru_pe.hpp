@@ -76,7 +76,9 @@ class GRUPE : public PE {
     reset_hidden_.mutableData<void>(FP16, hidden_shape);
 
     ElementwiseMulParam& mul_param = mul_pe_.param();
-    mul_param.inputs = {&reset_gate_, &prev_hidden_};
+    // mul_param.inputs = {&reset_gate_, &prev_hidden_};
+    mul_param.input_x = &reset_gate_;
+    mul_param.input_y = &prev_hidden_;
     mul_param.output = &reset_hidden_;
     mul_pe_.init();
     mul_pe_.apply();

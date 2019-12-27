@@ -46,7 +46,10 @@ void ConvCompute::PrepareForRun() {
     conv_param.dilations = *param.dilations;
     fill_scale_bias_const(&conv_param);
     conv_param.bias()->copyFrom(param.bias->ZynqTensor());
-    conv_param.relu.enabled = param.fuse_relu;
+
+    if (param.fuse_relu) {
+      conv_param.activeParam.type = zynqmp::TYPE_RELU;
+    }
 
     dw_conv_pe_.init();
     dw_conv_pe_.apply();
@@ -65,7 +68,9 @@ void ConvCompute::PrepareForRun() {
       conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     }
 
-    conv_param.relu.enabled = param.fuse_relu;
+    if (param.fuse_relu) {
+      conv_param.activeParam.type = zynqmp::TYPE_RELU;
+    }
     conv_pe_.init();
     conv_pe_.apply();
   }
@@ -77,9 +82,23 @@ void ConvCompute::Run() {
       param.groups == param.x->ZynqTensor()->shape().channel()) {
     dw_conv_pe_.dispatch();
   } else {
-    conv_pe_.dispatch();
-#ifdef FPGA_PRINT_TENSOR
     zynqmp::ConvParam& conv_param = conv_pe_.param();
+
+    if (conv_param.output->shape().channel() == 12 &&
+        conv_param.output->shape().height() == 13) {
+      conv_param.input->saveToFile("conv_in", true);
+      conv_param.output->saveToFile("conv_o", true);
+    }
+
+    conv_pe_.dispatch();
+
+    if (conv_param.output->shape().channel() == 12 &&
+        conv_param.output->shape().height() == 13) {
+      // conv_param.input->saveToFile("conv_in", true);
+      conv_param.output->saveToFile("conv_out", true);
+    }
+#ifdef FPGA_PRINT_TENSOR
+    // zynqmp::ConvParam& conv_param = conv_pe_.param();
     Debugger::get_instance().registerOutput("conv", conv_param.output);
 #endif
   }
