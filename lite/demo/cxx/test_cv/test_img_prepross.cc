@@ -201,7 +201,13 @@ void test_img(std::vector<int> cluster_id,
 
         begin = clock();
         // rotate 90
-        cv::transpose(im_convert, im_rotate);
+        if (rotate == 90) {
+          cv::flip(im_convert.t(), im_rotate, 1);
+        } else if (rotate == 180) {
+          cv::flip(im_convert, im_rotate, -1);
+        } else if (rotate == 270) {
+          cv::flip(im_convert.t(), im_rotate, 0);
+        }
         end = clock();
         to_3 += (end - begin);
 
@@ -318,61 +324,21 @@ void test_img(std::vector<int> cluster_id,
       std::string flip_name = dst_path + "/flip.jpg";
       cv::Mat resize_mat(dsth, dstw, CV_8UC3);
       cv::Mat convert_mat(srch, srcw, CV_8UC3);
-      cv::Mat rotate_mat(srch, srcw, CV_8UC3);
+      cv::Mat rotate_mat;
+      if (rotate == 90 || rotate == 270) {
+        rotate_mat = cv::Mat(srcw, srch, CV_8UC3);
+      } else {
+        rotate_mat = cv::Mat(srch, srcw, CV_8UC3);
+      }
       cv::Mat flip_mat(srch, srcw, CV_8UC3);
       fill_with_mat(resize_mat, resize_tmp);
       fill_with_mat(convert_mat, lite_dst);
-      printf("lite_dst: %d, %d, %d, %d, %d, %d \n",
-             lite_dst[0],
-             lite_dst[1],
-             lite_dst[2],
-             lite_dst[3],
-             lite_dst[4],
-             lite_dst[5]);
-      printf("im_convert: %d, %d, %d, %d, %d, %d \n",
-             im_convert.data[0],
-             im_convert.data[1],
-             im_convert.data[2],
-             im_convert.data[3],
-             im_convert.data[4],
-             im_convert.data[5]);
-
       fill_with_mat(rotate_mat, tv_out_ratote);
-      printf("tv_out_rotate: %d, %d, %d, %d, %d, %d \n",
-             tv_out_ratote[0],
-             tv_out_ratote[1],
-             tv_out_ratote[2],
-             tv_out_ratote[3],
-             tv_out_ratote[4],
-             tv_out_ratote[5]);
-      printf("im_rotate: %d, %d, %d, %d, %d, %d \n",
-             im_rotate.data[0],
-             im_rotate.data[1],
-             im_rotate.data[2],
-             im_rotate.data[3],
-             im_rotate.data[4],
-             im_rotate.data[5]);
-
       fill_with_mat(flip_mat, tv_out_flip);
-      printf("tv_out_flip: %d, %d, %d, %d, %d, %d \n",
-             tv_out_flip[0],
-             tv_out_flip[1],
-             tv_out_flip[2],
-             tv_out_flip[3],
-             tv_out_flip[4],
-             tv_out_flip[5]);
-      printf("im_flip: %d, %d, %d, %d, %d, %d \n",
-             im_flip.data[0],
-             im_flip.data[1],
-             im_flip.data[2],
-             im_flip.data[3],
-             im_flip.data[4],
-             im_flip.data[5]);
       cv::imwrite(convert_name, convert_mat);
       cv::imwrite(resize_name, resize_mat);
       cv::imwrite(rotate_name, rotate_mat);
       cv::imwrite(flip_name, flip_mat);
-      // cv::imwrite(flip_name, im_flip);
       delete[] lite_dst;
       delete[] resize_tmp;
       delete[] tv_out_ratote;

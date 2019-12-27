@@ -70,6 +70,9 @@ void rotate_hwc1(
     rotate_hwc1_180(src, dst, srcw, srch, srcw, srch);
   } else if (degree == 270) {
     rotate_hwc1_270(src, dst, srcw, srch, srch, srcw);
+  } else {
+    printf("this degree: %f does not support! \n", degree);
+    return;
   }
 }
 
@@ -81,6 +84,9 @@ void rotate_hwc3(
     rotate_hwc3_180(src, dst, srcw, srch, srcw, srch);
   } else if (degree == 270) {
     rotate_hwc3_270(src, dst, srcw, srch, srch, srcw);
+  } else {
+    printf("this degree: %f does not support! \n", degree);
+    return;
   }
 }
 
@@ -92,6 +98,9 @@ void rotate_hwc4(
     rotate_hwc4_180(src, dst, srcw, srch, srcw, srch);
   } else if (degree == 270) {
     rotate_hwc4_270(src, dst, srcw, srch, srch, srcw);
+  } else {
+    printf("this degree: %f does not support! \n", degree);
+    return;
   }
 }
 #ifdef __aarch64__

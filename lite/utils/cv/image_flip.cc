@@ -60,6 +60,9 @@ void flip_hwc1(const uint8_t* src,
     flip_hwc1_y(src, dst, srcw, srch);
   } else if (flip_param == XY) {
     flip_hwc1_xy(src, dst, srcw, srch);
+  } else {
+    printf("its doesn't support Flip: %d \n", static_cast<int>(flip_param));
+    return;
   }
 }
 
@@ -74,6 +77,9 @@ void flip_hwc3(const uint8_t* src,
     flip_hwc3_y(src, dst, srcw, srch);
   } else if (flip_param == XY) {
     flip_hwc3_xy(src, dst, srcw, srch);
+  } else {
+    printf("its doesn't support Flip: %d \n", static_cast<int>(flip_param));
+    return;
   }
 }
 
@@ -88,6 +94,9 @@ void flip_hwc4(const uint8_t* src,
     flip_hwc4_y(src, dst, srcw, srch);
   } else if (flip_param == XY) {
     flip_hwc4_xy(src, dst, srcw, srch);
+  } else {
+    printf("its doesn't support Flip: %d \n", static_cast<int>(flip_param));
+    return;
   }
 }
 /*

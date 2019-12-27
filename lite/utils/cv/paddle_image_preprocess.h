@@ -38,9 +38,9 @@ enum ImageFormat {
 };
 // flip enum
 enum FlipParam {
-  X = 0,  // flip along the X axis
-  Y,      // flip along the Y axis
-  XY      // flip along the XY axis
+  XY = -1,  // flip along the XY axis
+  X = 0,    // flip along the X axis
+  Y         // flip along the Y axis
 };
 // transform param
 typedef struct {
