@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import sys
 import logging
 from ast import RegisterLiteKernelParser
 from ast import RegisterLiteOpParser
 
-if len(sys.argv)!=4:
+if len(sys.argv) != 4:
     print("Error: record_supported_kernel_op.py requires three inputs!")
-    exit()
+    exit(1)
 kernels_list_path = sys.argv[1]
 ops_list_path = sys.argv[2]
 kernel_op_map_dest_path = sys.argv[3]
@@ -44,6 +45,7 @@ out_lines = [
 #pragma once
 #include<vector>
 #include<map>
+#include<string>
 
 const std::vector<std::vector<std::string>> supported_ops_target = {
 '''
@@ -52,8 +54,8 @@ const std::vector<std::vector<std::string>> supported_ops_target = {
 ops_lines=[]
 
 # valid targets and valid_ops
-valid_ops=[[],[],[],[],[],[],[],[],[],[]]
-valid_targets=["kUnk","kHost","kX86","kCUDA","kARM","kOpenCL","kFPGA","kNPU","kXPU","kAny"]
+valid_targets = ["kUnk","kHost","kX86","kCUDA","kARM","kOpenCL","kFPGA","kNPU","kXPU","kAny"]
+valid_ops = [[],[],[],[],[],[],[],[],[],[]]
 class TargetType:
     kUnk = 0
     kHost = 1
@@ -75,9 +77,9 @@ with open(kernels_list_path) as f:
             kernel_parser = RegisterLiteKernelParser(c)
             kernel_parser.parse()
             for k in kernel_parser.kernels:
-                  if hasattr(TargetType, k.target):
-                      index=getattr(TargetType, k.target)
-                      valid_ops[index].append(k.op_type)
+                if hasattr(TargetType, k.target):
+                    index=getattr(TargetType, k.target)
+                    valid_ops[index].append(k.op_type)
 
 # clear the repeated ops
 for target in valid_targets:
@@ -97,14 +99,14 @@ for path in paths:
         out = '    {"%s", { "' % op
         op_targets = []
         for target in valid_targets:
-           if(op in valid_ops[getattr(TargetType, target)]):
-              op_targets.append(target)
+            if op in valid_ops[getattr(TargetType, target)]:
+                op_targets.append(target)
         if len(op_targets) > 0:
-           out = out +'", "'.join(op_targets)+ '" }}'
+            out = out +'", "'.join(op_targets)+ '" }}'
         else:
-           # unknow type op:  kUnk = 0
-           valid_ops[0].append(op)
-           out = out +'kUnk" }}'
+            # unknow type op:  kUnk = 0
+            valid_ops[0].append(op)
+            out = out +'kUnk" }}'
         ops_lines.append(out)
 
 with open(kernel_op_map_dest_path, 'w') as f:
@@ -112,10 +114,10 @@ with open(kernel_op_map_dest_path, 'w') as f:
     f.write('\n'.join(out_lines))
     # write kernels into head file
     for target in valid_targets:
-       f.write("\n    // %s_OPS: " %target)
-       f.write('\n    {"')
-       f.write('","'.join(valid_ops[getattr(TargetType, target)]))
-       f.write('"},\n')
+        f.write("\n    // %s_OPS: " %target)
+        f.write('\n    {"')
+        f.write('","'.join(valid_ops[getattr(TargetType, target)]))
+        f.write('"},\n')
     f.write('};')
     # write op info into head file
     f.write('\nconst std::map<std::string, std::vector<std::string>> supported_ops={\n')

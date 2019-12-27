@@ -13,13 +13,14 @@
 # limitations under the License.
 ''' Collect op registry information. '''
 
+from __future__ import print_function
 import sys
 import logging
 from ast import RegisterLiteOpParser
 
-if len(sys.argv)!=5:
+if len(sys.argv) != 5:
     print("Error: parse_op_registry.py requires four inputs!")
-    exit()
+    exit(1)
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
 minops_list_path = sys.argv[3]

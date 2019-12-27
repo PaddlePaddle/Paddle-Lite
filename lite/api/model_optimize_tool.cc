@@ -188,15 +188,21 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kXPU",
                                       "kAny",
                                       "kUnk"};
+  int maximum_optype_length = 0;
+  for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
+    maximum_optype_length = it->first.size() > maximum_optype_length
+                                ? it->first.size()
+                                : maximum_optype_length;
+  }
   std::cout << std::setiosflags(std::ios::internal);
-  std::cout << std::setw(40) << "OP_name";
+  std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (int i = 0; i < targets.size(); i++) {
     std::cout << std::setw(10) << targets[i];
   }
   std::cout << std::endl;
   if (valid_ops.empty()) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
-      std::cout << std::setw(40) << it->first;
+      std::cout << std::setw(maximum_optype_length) << it->first;
       auto ops_valid_places = it->second;
       for (int i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
@@ -211,7 +217,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
     }
   } else {
     for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
-      std::cout << std::setw(40) << *op;
+      std::cout << std::setw(maximum_optype_length) << *op;
       auto ops_valid_places = supported_ops.at(*op);
       for (int i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
@@ -289,16 +295,17 @@ void CheckIfModelSupported() {
 
   std::set<std::string> unsupported_ops;
   std::set<std::string> input_model_ops;
-  auto main_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block->OpsSize(); ++i) {
-    auto& op_desc = *main_block->GetOp<lite::cpp::OpDesc>(i);
-    auto op_type = op_desc.Type();
-    input_model_ops.insert(op_type);
-    if (valid_ops_set.count(op_type) == 0) {
-      unsupported_ops.insert(op_type);
+  for (int index = 0; index < cpp_prog.BlocksSize(); index++) {
+    auto current_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(index);
+    for (size_t i = 0; i < current_block->OpsSize(); ++i) {
+      auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
+      auto op_type = op_desc.Type();
+      input_model_ops.insert(op_type);
+      if (valid_ops_set.count(op_type) == 0) {
+        unsupported_ops.insert(op_type);
+      }
     }
   }
-
   // 3. Print ops_info of input model and check if this model is supported
   if (FLAGS_print_model_ops) {
     std::cout << "OPs in the input model include:\n";
@@ -405,30 +412,29 @@ void Main() {
 }  // namespace lite_api
 }  // namespace paddle
 
-  // at least one argument should be inputed
-  const std::string help_info =
-      "At least one argument should be inputed. Valid arguments are listed "
-      "below:\n"
-      "  Arguments of model optimization:\n"
-      "        `--model_dir=<model_param_dir>`\n"
-      "        `--model_file=<model_path>`\n"
-      "        `--param_file=<param_path>`\n"
-      "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
-      "        `--optimize_out=<output_optimize_model_dir>`\n"
-      "        `--valid_targets=(arm|opencl|x86)`\n"
-      "        `--prefer_int8_kernel=(true|false)`\n"
-      "        `--record_tailoring_info=(true|false)`\n"
-      "  Arguments of model checking and ops information:\n"
-      "        `--print_all_ops=true`   Display all the valid operators of "
-      "Paddle-Lite\n"
-      "        `--print_supported_ops=true  --valid_targets=(arm|opencl|x86)`"
-      "  Display valid operators of input targets\n"
-      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86)`"
-      "  Display operators in the input model\n";
+// at least one argument should be inputed
+const char help_info[] =
+    "At least one argument should be inputed. Valid arguments are listed "
+    "below:\n"
+    "  Arguments of model optimization:\n"
+    "        `--model_dir=<model_param_dir>`\n"
+    "        `--model_file=<model_path>`\n"
+    "        `--param_file=<param_path>`\n"
+    "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
+    "        `--optimize_out=<output_optimize_model_dir>`\n"
+    "        `--valid_targets=(arm|opencl|x86)`\n"
+    "        `--prefer_int8_kernel=(true|false)`\n"
+    "        `--record_tailoring_info=(true|false)`\n"
+    "  Arguments of model checking and ops information:\n"
+    "        `--print_all_ops=true`   Display all the valid operators of "
+    "Paddle-Lite\n"
+    "        `--print_supported_ops=true  --valid_targets=(arm|opencl|x86)`"
+    "  Display valid operators of input targets\n"
+    "        `--print_model_ops=true  --model_dir=<model_param_dir> "
+    "--valid_targets=(arm|opencl|x86)`"
+    "  Display operators in the input model\n";
 
 int main(int argc, char** argv) {
-
   if (argc < 2) {
     std::cerr << help_info << std::endl;
     exit(1);
