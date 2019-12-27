@@ -114,10 +114,14 @@ with open(kernel_op_map_dest_path, 'w') as f:
     f.write('\n'.join(out_lines))
     # write kernels into head file
     for target in valid_targets:
-        f.write("\n    // %s_OPS: " %target)
-        f.write('\n    {"')
-        f.write('","'.join(valid_ops[getattr(TargetType, target)]))
-        f.write('"},\n')
+        if len(valid_ops[getattr(TargetType, target)]) == 0 :
+            f.write("\n    // %s_OPS: " %target)
+            f.write('\n    {}')
+        else:
+            f.write("\n    // %s_OPS: " %target)
+            f.write('\n    {"')
+            f.write('","'.join(valid_ops[getattr(TargetType, target)]))
+            f.write('"},\n')
     f.write('};')
     # write op info into head file
     f.write('\nconst std::map<std::string, std::vector<std::string>> supported_ops={\n')

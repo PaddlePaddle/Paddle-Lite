@@ -72,9 +72,8 @@ DEFINE_bool(print_supported_ops,
 DEFINE_bool(print_all_ops,
             false,
             "Print all the valid operators of Paddle-Lite");
-DEFINE_bool(print_model_ops,
-            false,
-            "Print all the valid operators of Paddle-Lite");
+DEFINE_bool(print_model_ops, false, "Print operators in the input model");
+DEFINE_bool(help, false, "Print help info");
 namespace paddle {
 namespace lite_api {
 //! Display the kernel information.
@@ -218,6 +217,11 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   } else {
     for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
       std::cout << std::setw(maximum_optype_length) << *op;
+      // Check: If this kernel doesn't match any operator, we will skip it.
+      if (supported_ops.find(*op) == supported_ops.end()) {
+        continue;
+      }
+      // Print OP info.
       auto ops_valid_places = supported_ops.at(*op);
       for (int i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
@@ -412,34 +416,43 @@ void Main() {
 }  // namespace lite_api
 }  // namespace paddle
 
-// at least one argument should be inputed
-const char help_info[] =
-    "At least one argument should be inputed. Valid arguments are listed "
-    "below:\n"
-    "  Arguments of model optimization:\n"
-    "        `--model_dir=<model_param_dir>`\n"
-    "        `--model_file=<model_path>`\n"
-    "        `--param_file=<param_path>`\n"
-    "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
-    "        `--optimize_out=<output_optimize_model_dir>`\n"
-    "        `--valid_targets=(arm|opencl|x86)`\n"
-    "        `--prefer_int8_kernel=(true|false)`\n"
-    "        `--record_tailoring_info=(true|false)`\n"
-    "  Arguments of model checking and ops information:\n"
-    "        `--print_all_ops=true`   Display all the valid operators of "
-    "Paddle-Lite\n"
-    "        `--print_supported_ops=true  --valid_targets=(arm|opencl|x86)`"
-    "  Display valid operators of input targets\n"
-    "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-    "--valid_targets=(arm|opencl|x86)`"
-    "  Display operators in the input model\n";
-
+void PrintHelpInfo() {
+  // at least one argument should be inputed
+  const char help_info[] =
+      "At least one argument should be inputed. Valid arguments are listed "
+      "below:\n"
+      "  Arguments of model optimization:\n"
+      "        `--model_dir=<model_param_dir>`\n"
+      "        `--model_file=<model_path>`\n"
+      "        `--param_file=<param_path>`\n"
+      "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
+      "        `--optimize_out=<output_optimize_model_dir>`\n"
+      "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
+      "        `--prefer_int8_kernel=(true|false)`\n"
+      "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of model checking and ops information:\n"
+      "        `--print_all_ops=true`   Display all the valid operators of "
+      "Paddle-Lite\n"
+      "        `--print_supported_ops=true  "
+      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "  Display valid operators of input targets\n"
+      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
+      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "  Display operators in the input model\n";
+  "  Arguments of help information:\n"
+  "        `--help=true`  Print help info\n" std::cerr
+      << help_info << std::endl;
+  exit(1);
+}
 int main(int argc, char** argv) {
+  // If there is none input argument, print help info.
   if (argc < 2) {
-    std::cerr << help_info << std::endl;
-    exit(1);
+    PrintHelpInfo();
   }
   google::ParseCommandLineFlags(&argc, &argv, false);
+  if (FLAGS_help) {
+    PrintHelpInfo();
+  }
   paddle::lite_api::ParseInputCommand();
   paddle::lite_api::CheckIfModelSupported();
   paddle::lite_api::Main();
