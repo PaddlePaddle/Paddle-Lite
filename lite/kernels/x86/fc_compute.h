@@ -139,8 +139,9 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto w_dims0 = padding_weights ? w_dims[0] - 4 : w_dims[0];
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
 
+    DDim out_dims;
+    out_dims.resize(static_cast<size_t>(in_num_col_dims + 1));
     auto& in_dims = input->dims();
-    DDim out_dims(static_cast<size_t>(in_num_col_dims + 1));
     for (int i = 0; i < in_num_col_dims; ++i) {
       out_dims[i] = in_dims[i];
     }

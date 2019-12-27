@@ -62,10 +62,10 @@ bool BatchNormOp::InferShape() const {
       break;
   }
   if (!param_.is_test) {
-    param_.mean_out->Resize({channel_size});
-    param_.variance_out->Resize({channel_size});
-    param_.saved_mean->Resize({channel_size});
-    param_.saved_variance->Resize({channel_size});
+    param_.mean_out->Resize(std::vector<int64_t>({channel_size}));
+    param_.variance_out->Resize(std::vector<int64_t>({channel_size}));
+    param_.saved_mean->Resize(std::vector<int64_t>({channel_size}));
+    param_.saved_variance->Resize(std::vector<int64_t>({channel_size}));
   }
   param_.y->Resize(x_dims);
   return true;

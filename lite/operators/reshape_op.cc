@@ -100,7 +100,8 @@ bool Reshape2Op::CheckShape() const {
 bool Reshape2Op::InferShape() const {
   ReshapeOp::InferShape();
   auto &x_dims = param_.x->dims();
-  DDim xshape_dims(x_dims.size() + 1);
+  DDim xshape_dims;
+  xshape_dims.resize(x_dims.size() + 1);
   xshape_dims[0] = 0;
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
@@ -126,7 +127,8 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
   const int unk_dim_val = -1;
   const int copy_dim_val = 0;
 
-  DDim output_dims(shape.size());
+  DDim output_dims;
+  output_dims.resize(shape.size());
   DDim::value_type capacity = 1;
   int unk_dim_idx = -1;
   for (size_t i = 0; i < shape.size(); ++i) {

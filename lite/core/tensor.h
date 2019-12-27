@@ -73,7 +73,6 @@ class DDimLite {
   DDimLite() = default;
 
   explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
-  explicit DDimLite(size_t size) { data_.resize(size); }
 
   void ConstructFrom(const std::vector<value_type> &x) {
     data_.resize(x.size());
@@ -93,6 +92,7 @@ class DDimLite {
   }
 
   size_t size() const { return data_.size(); }
+  void resize(size_t size) { data_.resize(size); }
   bool empty() const { return data_.size() == 0U; }
 
   const DDimVector &data() const { return data_; }
