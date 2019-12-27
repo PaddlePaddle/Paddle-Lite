@@ -54,7 +54,7 @@ const std::vector<std::vector<std::string>> supported_ops_target = {
 ops_lines=[]
 
 # valid targets and valid_ops
-valid_targets = ["kUnk","kHost","kX86","kCUDA","kARM","kOpenCL","kFPGA","kNPU","kXPU","kAny"]
+valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU"]
 valid_ops = [[],[],[],[],[],[],[],[],[],[]]
 class TargetType:
     kUnk = 0
@@ -116,7 +116,7 @@ with open(kernel_op_map_dest_path, 'w') as f:
     for target in valid_targets:
         if len(valid_ops[getattr(TargetType, target)]) == 0 :
             f.write("\n    // %s_OPS: " %target)
-            f.write('\n    {}')
+            f.write('\n    {},')
         else:
             f.write("\n    // %s_OPS: " %target)
             f.write('\n    {"')
