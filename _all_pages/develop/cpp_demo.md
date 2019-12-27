@@ -87,7 +87,9 @@ adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_full_api
 adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
 {% endhighlight %}
 
-注：我们也提供了轻量级 API 的 demo，可以执行以下代码运行轻量级 API 示例。
+注：我们也提供了轻量级 API 的 demo、图像分类demo和目标检测demo，支持图像输入；
+
+### Light API Demo
 
 {% highlight bash %}
 cd ../mobile_light
@@ -97,7 +99,6 @@ adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
 adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
 {% endhighlight %}
 
-另外，我们也提供图像分类demo和目标检测demo，支持图像输入。
 
 ### 图像分类 Demo
 
@@ -112,17 +113,6 @@ adb -s emulator-5554 push labels.txt /data/local/tmp/
 adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
 adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1.opt /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
-{% endhighlight %}
-
-Demo 运行结果:
-{% highlight bash %}
-parameter:  model_dir, image_path and label_file are necessary
-parameter:  topk, input_width,  input_height, are optional
-i: 0, index: 285, name:  Egyptian cat, score: 0.482870
-i: 1, index: 281, name:  tabby, tabby cat, score: 0.471593
-i: 2, index: 282, name:  tiger cat, score: 0.039779
-i: 3, index: 287, name:  lynx, catamount, score: 0.002430
-i: 4, index: 722, name:  ping-pong ball, score: 0.000508
 {% endhighlight %}
 
 ### 目标检测 Demo
@@ -140,16 +130,11 @@ adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_
 adb -s emulator-5554 pull /data/local/tmp/test_detection_result.jpg ./
 {% endhighlight %}
 
-Demo 运行结果:
-{% highlight bash %}
-running result:
-detection image size: 935, 1241, detect object: person, score: 0.996098, location: x=187, y=43, width=540, height=592
-detection image size: 935, 1241, detect object: person, score: 0.935293, location: x=123, y=639, width=579, height=597
-{% endhighlight %}
-
 ## Demo 程序运行结果
 
-Demo 运行成功后 ，将在控制台输出预测结果的前10个类别的预测概率：
+### light API Demo 运行结果
+
+运行成功后 ，将在控制台输出预测结果的前10个类别的预测概率：
 
 {% highlight bash %}
 Output dim: 1000
@@ -163,6 +148,30 @@ Output[600]: 0.004829
 Output[700]: 0.001845
 Output[800]: 0.000202
 Output[900]: 0.000586
+{% endhighlight %}
+
+### 图像分类 Demo 运行结果
+
+运行成功后 ，将在控制台输出预测结果的前5个类别的类型索引、名字和预测概率：
+
+{% highlight bash %}
+parameter:  model_dir, image_path and label_file are necessary
+parameter:  topk, input_width,  input_height, are optional
+i: 0, index: 285, name:  Egyptian cat, score: 0.482870
+i: 1, index: 281, name:  tabby, tabby cat, score: 0.471593
+i: 2, index: 282, name:  tiger cat, score: 0.039779
+i: 3, index: 287, name:  lynx, catamount, score: 0.002430
+i: 4, index: 722, name:  ping-pong ball, score: 0.000508
+{% endhighlight %}
+
+### 目标检测 Demo 运行结果
+
+运行成功后 ，将在控制台输出检测目标的类型、预测概率和坐标：
+
+{% highlight bash %}
+running result:
+detection image size: 935, 1241, detect object: person, score: 0.996098, location: x=187, y=43, width=540, height=592
+detection image size: 935, 1241, detect object: person, score: 0.935293, location: x=123, y=639, width=579, height=597
 {% endhighlight %}
 
 ## 如何在代码中使用 API
