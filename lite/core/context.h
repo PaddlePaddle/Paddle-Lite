@@ -25,12 +25,6 @@
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
-#ifdef LITE_WITH_NPU
-#include "lite/backends/npu/runtime.h"
-#endif
-#ifdef LITE_WITH_XPU
-#include "lite/backends/xpu/runtime.h"
-#endif
 
 #include <map>
 #include <memory>
@@ -100,12 +94,6 @@ class Context<TargetType::kBM> {
   void CopySharedTo(BMContext* ctx) {}
 
   std::string name() const { return "BMContext"; }
-  void* compiler_handle() { 
-    return compiler_handle_;
-  }
-
- private:
-  void* compiler_handle_{nullptr};
 };
 #endif
 
@@ -114,7 +102,7 @@ template <>
 class Context<TargetType::kXPU> {
  public:
   Context() {}
-  explicit Context(const NPUContext& ctx);
+  explicit Context(const XPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(XPUContext* ctx) {}

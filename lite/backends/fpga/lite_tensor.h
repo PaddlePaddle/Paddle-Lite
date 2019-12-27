@@ -106,7 +106,7 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
-    return zynq_tensor_->data<R>();
+    return zynq_tensor_->data<R>() + offset_;
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
@@ -125,6 +125,7 @@ class TensorLite {
 
   bool persistable() const { return persistable_; }
   void set_persistable(bool persistable) { persistable_ = persistable; }
+
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
@@ -147,6 +148,8 @@ class TensorLite {
 
   size_t memory_size() const { return zynq_tensor_->memorySize(); }
 
+  size_t offset() const { return offset_; }
+
   bool IsInitialized() const { return buffer_->data(); }
 
   // Other share data to this.
@@ -156,6 +159,9 @@ class TensorLite {
 
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
+
+  template <typename T>
+  void Slice(TensorLite &dst, int64_t begin, int64_t end) const;  // NOLINT
 
   TargetType target() const { return target_; }
 
@@ -173,15 +179,20 @@ class TensorLite {
 
  private:
   TargetType target_{TargetType::kHost};
+
+  // precision_ and persistable_ are only used for persistable vars.
+  // If your tensor wants to be saved and loaded correctly, you must
+  // set values of precision_ and persistable_ after updating it.
+  // If your tensor is just a temp tensor, such as activations,
+  // you can ignore these two attributes.
+  PrecisionType precision_{PrecisionType::kUnk};
+  bool persistable_{false};
+
   DDimLite dims_;
   std::shared_ptr<Buffer> buffer_;
   LoD lod_;
   size_t memory_size_{};
-
   size_t offset_{0};
-
-  PrecisionType precision_{PrecisionType::kUnk};
-  bool persistable_{false};
 
   zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
 
@@ -197,6 +208,9 @@ R *TensorLite::mutable_data() {
   }
   zynqmp::LayoutType layout_type = zynqmp::NCHW;
   switch (v.size()) {
+    case 0:
+      layout_type = zynqmp::None;
+      break;
     case 1:
       layout_type = zynqmp::N;
       break;
@@ -228,24 +242,60 @@ R *TensorLite::mutable_data(TargetType target) {
   return mutable_data<T>();
 }
 
+template <typename T>
+TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
+  throw - 1;
+  CHECK_GE(begin, 0);
+  CHECK_LE(end, dims_[0]);
+  CHECK_LT(begin, end);
+  if (dims_[0] == 1) {
+    return *this;
+  } else {
+    int64_t base = numel() / dims_[0];
+
+    TensorLite dst;
+    dst.target_ = target_;
+    auto dst_dims = dims_;
+    dst_dims[0] = end - begin;
+    dst.Resize(dst_dims);
+    void *dst_data = dst.mutable_data<T>();
+
+    T *src_data = const_cast<T *>(data<T>());
+    memcpy(dst_data,
+           src_data + static_cast<size_t>(begin * base) * sizeof(T),
+           dst_dims.production() * sizeof(T));
+    dst.ZynqTensor()->saveToFile("_slice", true);
+
+    return dst;
+  }
+}
+
+template <typename T>
+void TensorLite::Slice(TensorLite &dst, int64_t begin, int64_t end) const {
+  CHECK_GE(begin, 0);
+  CHECK_LE(end, dims_[0]);
+  CHECK_LT(begin, end);
+
+  dst.target_ = target_;
+  auto dst_dims = dims_;
+  dst_dims[0] = end - begin;
+  dst.Resize(dst_dims);
+  void *dst_data = dst.mutable_data<T>();
+
+  int64_t base = numel() / dims_[0];
+
+  T *src_data = const_cast<T *>(data<T>());
+  memcpy(dst_data,
+         src_data + static_cast<size_t>(begin * dst_dims.production()),
+         dst_dims.production() * sizeof(T));
+}
+
 template <typename TensorT>
 bool TensorCompareWith(const TensorT &a, const TensorT &b) {
   if (a.dims() != b.dims()) return false;
   if (memcmp(a.raw_data(), b.raw_data(), a.data_size()) != 0) return false;
   return true;
 }
-template <typename T>
-TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
-  int64_t base = numel() / dims_[0];
 
-  TensorLite dst;
-  dst.buffer_ = buffer_;
-  dst.target_ = target_;
-  auto dst_dims = dims_;
-  dst_dims[0] = end - begin;
-  dst.Resize(dst_dims);
-  dst.offset_ = offset_ + static_cast<size_t>(begin * base) * sizeof(T);
-  return dst;
-}
 }  // namespace lite
 }  // namespace paddle

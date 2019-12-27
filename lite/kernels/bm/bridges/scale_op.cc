@@ -12,27 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/bridges/registry.h"
-#include "lite/backends/bm/builder.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "bmcompiler_if.h"
-#include "bmcompiler_op_code.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace bm {
-namespace bridges {
 
-node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
-    // output converted nodes
-    node_map_type output_nodes;
-    
-    auto scope = scale_op->scope();
-    auto op_info = scale_op->op_info();
+int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+    CHECK(ctx != nullptr);
+    CHECK(op != nullptr);
+    auto graph = static_cast<Graph*>(ctx);
+
+    auto scope = op->scope();
+    auto op_info = op->op_info();
     auto op_type = op_info->Type();
-    auto unique_op_name = lite::bm::UniqueName(op_type);
+    auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
     
     // input
     auto x_var_name = op_info->Input("X").front();
@@ -57,8 +55,8 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
     }
 
   
-    auto unique_op_scale_name = lite::bm::UniqueName(op_type); 
-    add_const_binary_layer(graph_ctx->bm_compiler_handle,
+    auto unique_op_scale_name = lite::subgraph::bm::UniqueName(op_type); 
+    add_const_binary_layer(graph->GetCompilerHandle(),
                            static_cast<const char*>(x_var_name.c_str()),
                            const_cast<const int*>(i_x_shape_data),
                            x_dims.size(),
@@ -68,7 +66,7 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
                            0);
 
 
-    add_const_binary_layer(graph_ctx->bm_compiler_handle,
+    add_const_binary_layer(graph->GetCompilerHandle(),
                     static_cast<const char*>(unique_op_scale_name.c_str()),
                     const_cast<const int*>(i_x_shape_data),
                     x_dims.size(),
@@ -77,14 +75,13 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
                     BINARY_ADD,
                     0);
 
-    output_nodes[output_var_name] = output_var_name;
-    return output_nodes;
+    graph->AddNode(output_var_name);
+    return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace bm
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_BM_BRIDGE(scale, paddle::lite::kernels::bm::bridges::ScaleConverter);
+REGISTER_SUBGRAPH_BRIDGE(BM, scale, paddle::lite::subgraph::bm::ScaleConverter);

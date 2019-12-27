@@ -16,6 +16,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -63,6 +64,10 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
+  const std::unordered_map<std::string, PrecisionType>& var_data_type() const {
+    return var_data_type_;
+  }
+
  private:
   // Build from a program and scope.
   void Build(const cpp::ProgramDesc& program);
@@ -70,6 +75,7 @@ struct Program {
   void PrepareWorkspace(const cpp::ProgramDesc& program);
 
  private:
+  std::unordered_map<std::string, PrecisionType> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
   std::list<std::shared_ptr<OpLite>> ops_;
@@ -134,6 +140,11 @@ class LITE_API RuntimeProgram {
 #ifdef LITE_WITH_PROFILE
     set_profiler();
 #endif
+  }
+  ~RuntimeProgram() {
+#ifdef LITE_WITH_PROFILE
+    LOG(INFO) << "\n" << profiler_.Summary();
+#endif  // LITE_WITH_PROFILE
   }
 
   void Run();

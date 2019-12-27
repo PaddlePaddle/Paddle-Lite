@@ -78,7 +78,8 @@ const std::string& PrecisionToStr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutToStr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {"unk", "NCHW", "any", "NHWC"};
+  static const std::string datalayout2string[] = {
+      "unk", "NCHW", "any", "NHWC", "ImageDefault", "ImageFolder", "ImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -117,8 +118,13 @@ const std::string& PrecisionRepr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutRepr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {
-      "kUnk", "kNCHW", "kAny", "kNHWC"};
+  static const std::string datalayout2string[] = {"kUnk",
+                                                  "kNCHW",
+                                                  "kAny",
+                                                  "kNHWC",
+                                                  "kImageDefault",
+                                                  "kImageFolder",
+                                                  "kImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -149,8 +155,12 @@ std::set<PrecisionType> ExpandValidPrecisions(PrecisionType precision) {
 }
 
 std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
-  static const std::set<DataLayoutType> valid_set(
-      {DATALAYOUT(kNCHW), DATALAYOUT(kAny), DATALAYOUT(kNHWC)});
+  static const std::set<DataLayoutType> valid_set({DATALAYOUT(kNCHW),
+                                                   DATALAYOUT(kAny),
+                                                   DATALAYOUT(kNHWC),
+                                                   DATALAYOUT(kImageDefault),
+                                                   DATALAYOUT(kImageFolder),
+                                                   DATALAYOUT(kImageNW)});
   if (layout == DATALAYOUT(kAny)) {
     return valid_set;
   }

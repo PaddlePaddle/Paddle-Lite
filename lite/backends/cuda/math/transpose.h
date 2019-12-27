@@ -26,17 +26,27 @@ namespace cuda {
 namespace math {
 
 template <typename T>
-void NCHW2NHWC(int N, int C, int HxW, const T* X, T* Y, CUDAContext* context);
+class Transpose {
+ public:
+  void NCHW2NHWC(int N, int C, int HxW, const T* X, T* Y, cudaStream_t* stream);
 
-template <typename T>
-void NHWC2NCHW(int N, int C, int HxW, const T* X, T* Y, CUDAContext* context);
+  void NHWC2NCHW(int N, int C, int HxW, const T* X, T* Y, cudaStream_t* stream);
 
-template <typename T>
-void Transpose(const std::vector<int64_t>& X_dims,
-               const std::vector<int>& axes,
-               const T* X,
-               T* Y,
-               CUDAContext* ctx);
+  void transpose(T* dst,
+                 const T* src,
+                 const std::vector<int64_t>& src_dims,
+                 const std::vector<int>& axes,
+                 cudaStream_t* stream);
+
+  // void transpose(T* dst,
+  //               const T* src,
+  //               const std::vector<int>& src_dims,
+  //               const std::vector<int>& axes,
+  //               cudaStream_t* stream);
+
+ private:
+  lite::Tensor Y_dims_, strides_;  // for transpose.
+};
 
 }  // namespace math
 }  // namespace cuda

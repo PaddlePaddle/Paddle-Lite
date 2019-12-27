@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -162,6 +163,9 @@ class CLImage {
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
     // use real image dims to create mem
     real_image_dims_ = real_image_dims;
+    // when init fake size image ,
+    // reinit image is allow , it is disallowed after this..
+    shared_mem_ = false;
     InitCLImage(context, real_image_dims_[0], real_image_dims_[1], nullptr);
     // cheat cl_image they got what they wanted
     image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
@@ -282,6 +286,7 @@ class CLImage {
   cl_event GetClEvent() const { return cl_event_.get(); }
 
   CLImageConverterBase *Converter() const { return image_converter_; }
+  void PrintTensor(const CLImage &cl_image) const;
 
  private:
   void InitCLImage(cl_context context, size_t width, size_t height,

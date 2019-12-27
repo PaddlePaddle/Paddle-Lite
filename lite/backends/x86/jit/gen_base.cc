@@ -21,13 +21,15 @@
 // posix_memalign
 #include "lite/backends/x86/cpu_info.h"
 #include "lite/backends/x86/jit/macro.h"
+#include "lite/utils/env.h"
 #include "lite/utils/paddle_enforce.h"
 
 #ifndef _WIN32
 #define posix_memalign_free free
 #endif
 
-DEFINE_bool(dump_jitcode, false, "Whether to dump the jitcode to file");
+// DEFINE_bool(dump_jitcode, false, "Whether to dump the jitcode to file");
+bool dump_jitcode = paddle::lite::GetBoolFromEnv("dump_jitcode");
 
 namespace paddle {
 namespace lite {

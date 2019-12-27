@@ -12,26 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/bridges/registry.h"
-#include "lite/backends/bm/builder.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace bm {
-namespace bridges {
 
-node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
-    // output converted nodes
-    node_map_type output_nodes;
-    
-    auto scope = bn_op->scope();
-    auto op_info = bn_op->op_info();
+int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+    CHECK(ctx != nullptr);
+    CHECK(op != nullptr);
+    auto graph = static_cast<Graph*>(ctx);
+    auto scope = op->scope();
+    auto op_info = op->op_info();
     auto op_type = op_info->Type();
-    auto unique_op_name = lite::bm::UniqueName(op_type);
+    auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
     
     // input
     auto x_var_name = op_info->Input("X").front();
@@ -68,7 +66,7 @@ node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
     }
     
     auto epsilon = op_info->GetAttr<float>("epsilon");
-    auto unique_bn_out_name = lite::bm::UniqueName("batch_norm_out");
+    auto unique_bn_out_name = lite::subgraph::bm::UniqueName("batch_norm_out");
 
     auto* scale_data = scale->mutable_data<float>();
     auto* bias_data = bias->mutable_data<float>();
@@ -90,7 +88,7 @@ node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
     dim[0] = x_dims.size();
     shape[0] = i_x_shape_data;
                         
-    add_scale_layer(graph_ctx->bm_compiler_handle,
+    add_scale_layer(graph->GetCompilerHandle(),
         input_num,
         shape,
         dim,
@@ -109,14 +107,13 @@ node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> bn_op,
     delete [] name;
     delete [] dim;
 
-    output_nodes[output_var_name] = output_var_name;
-    return output_nodes;
+    graph->AddNode(output_var_name);
+    return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace bm
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_BM_BRIDGE(batch_norm, paddle::lite::kernels::bm::bridges::BatchNormConverter);
+REGISTER_SUBGRAPH_BRIDGE(BM, batch_norm, paddle::lite::subgraph::bm::BatchNormConverter);

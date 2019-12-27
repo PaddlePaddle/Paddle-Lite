@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/bridges/registry.h"
-#include "lite/backends/bm/builder.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace bm {
-namespace bridges {
 
-node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
-    // output converted nodes
-    node_map_type output_nodes;
-    
-    auto scope = mul_op->scope();
-    auto op_info = mul_op->op_info();
+int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+    CHECK(ctx != nullptr);
+    CHECK(op != nullptr);
+    auto scope = op->scope();
+    auto op_info = op->op_info();
     auto op_type = op_info->Type();
-    auto unique_op_name = lite::bm::UniqueName(op_type);
+    auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
     
     // only support y is const
     
@@ -52,8 +49,8 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
         i_x_reshape_shape_data[i] = static_cast<int>(x_shape_data[i]);
     }
     int reshape_param[] = {0, -1};
-    auto unique_op_reshape_name = lite::bm::UniqueName(op_type + "_reshape");
-    add_reshape_layer(graph_ctx->bm_compiler_handle,
+    auto unique_op_reshape_name = lite::subgraph::bm::UniqueName(op_type + "_reshape");
+    add_reshape_layer(graph->GetCompilerHandle(),
                       const_cast<const int*>(i_x_shape_data),
                       x_dims.size(),
                       static_cast<const char*>(x_var_name.c_str()),
@@ -76,7 +73,7 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
         i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
     }
 
-    add_fc_layer(graph_ctx->bm_compiler_handle,
+    add_fc_layer(graph->GetCompilerHandle(),
                  const_cast<const int*>(i_x_reshape_shape_data),
                  2,
                  static_cast<const char*>(unique_op_reshape_name.c_str()),
@@ -91,14 +88,13 @@ node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
                  0,
                  0);
     
-    output_nodes[output_var_name] = output_var_name;
-    return output_nodes;
+    graph->AddNode(output_var_name);
+    return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace bm
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_BM_BRIDGE(mul, paddle::lite::kernels::bm::bridges::MulConverter);
+REGISTER_SUBGRAPH_BRIDGE(BM, mul, paddle::lite::subgraph::bm::MulConverter);

@@ -13,48 +13,68 @@
 // limitations under the License.
 
 #include "lite/operators/reshape_op.h"
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
-                               const node_map_type& inputs_map) {
-  auto scope = reshape_op->scope();
-  auto op_info = reshape_op->op_info();
+int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // get input, output and op attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
-  // create reshape node and set input node from inputs_map
-  auto reshape_node = std::make_shared<ge::op::Reshape>(unique_op_type);
-  CHECK(inputs_map.count(x_var_name));
-  reshape_node->set_input_tensor(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
 
-  // read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
-  if (lite::npu::HasInputArg(op_info, scope, "ShapeTensor")) {
-    LOG(FATAL) << "[NPU] not support \"Shape\" from more than one Tensor.";
-  } else if (lite::npu::HasInputArg(op_info, scope, "Shape")) {
-    auto actual_shape_var_name = op_info->Input("Shape").front();
-    if (!inputs_map.count(actual_shape_var_name)) {
-      auto actual_shape =
-          scope->FindVar(actual_shape_var_name)->GetMutable<lite::Tensor>();
+  // Reshape node
+  auto reshape_node = graph->AddNode<ge::op::Reshape>(out_name);
+  reshape_node->set_input_tensor(*x_node);
+
+  // Read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
+  if (HasInputArg(op_info, scope, "ShapeTensor")) {
+    LOG(WARNING) << "[NPU] not support \"Shape\" from more than one Tensor.";
+    return FAILED;
+  } else if (HasInputArg(op_info, scope, "Shape")) {
+    auto actual_shape_name = op_info->Input("Shape").front();
+    // auto actual_shape_type = kernel->GetInputDeclType("Shape");
+    // CHECK(actual_shape_type->precision() == PRECISION(kInt32));
+    // CHECK(actual_shape_type->layout() == DATALAYOUT(kNCHW));
+    std::shared_ptr<ge::Operator> actual_shape_node = nullptr;
+    if (graph->HasNode(actual_shape_name)) {
+      actual_shape_node = graph->GetNode(actual_shape_name);
+    } else {
+      auto actual_shape = scope->FindMutableTensor(actual_shape_name);
       auto actual_shape_dims = actual_shape->dims();
       auto actual_shape_data = actual_shape->mutable_data<int>();
       auto shape =
           std::vector<int>(actual_shape_data,
                            actual_shape_data + actual_shape_dims.production());
-      auto out_dims = operators::ValidateShape(shape, x_dims);
+      auto out_dims = lite::operators::ValidateShape(shape, x_dims);
       auto out_shape = out_dims.Vectorize();
       if (out_shape.size() > 4) {
         LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
@@ -62,19 +82,14 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
                      << out_shape.size();
       }
       auto actual_shape_const_node =
-          std::make_shared<ge::op::Const>(actual_shape_var_name);
-      actual_shape_const_node->set_attr_value(
-          lite::npu::CreateTensorAndFillData(
-              std::vector<int>(out_shape.begin(), out_shape.end())));
-      reshape_node->set_input_w(*actual_shape_const_node);
-      lite::npu::OpList::Global().add(actual_shape_const_node);
-    } else {
-      reshape_node->set_input_w(*inputs_map.at(actual_shape_var_name));
-      lite::npu::OpList::Global().add(inputs_map.at(actual_shape_var_name));
+          graph->AddNode(actual_shape_name,
+                         std::vector<int>(out_shape.begin(), out_shape.end()));
+      actual_shape_node = actual_shape_const_node;
     }
+    reshape_node->set_input_w(*actual_shape_node);
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
-    auto out_dims = operators::ValidateShape(shape, x_dims);
+    auto out_dims = lite::operators::ValidateShape(shape, x_dims);
     auto out_shape = out_dims.Vectorize();
     if (out_shape.size() > 4) {
       LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
@@ -84,12 +99,10 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
     reshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   }
-  lite::npu::OpList::Global().add(reshape_node);
 
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = reshape_node;
+  // XShape node
   if (op_type == "reshape2") {
-    // append an extra reshape node to calc XShape
+    // Append an extra reshape node to calc XShape
     std::vector<int64_t> xshape_dims(x_dims.size() + 1, 1);
     for (size_t i = 0; i < x_dims.size(); i++) {
       xshape_dims[i + 1] = x_dims[i];
@@ -98,25 +111,28 @@ node_map_type ReshapeConverter(const std::shared_ptr<lite::OpLite> reshape_op,
       LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
                       "but XShape has "
                    << xshape_dims.size();
+      return FAILED;
     }
-    auto xshape_node =
-        std::make_shared<ge::op::Reshape>(unique_op_type + "/xshape");
-    xshape_node->set_input_tensor(*inputs_map.at(x_var_name));
+    auto xshape_name = op_info->Output("XShape").front();
+    // auto xshape_type = kernel->GetOutputDeclType("XShape");
+    // CHECK(xshape_type->precision() == PRECISION(kFloat));
+    // CHECK(xshape_type->layout() == DATALAYOUT(kNCHW));
+    auto xshape_node = graph->AddNode<ge::op::Reshape>(xshape_name);
+    xshape_node->set_input_tensor(*x_node);
     xshape_node->set_attr_shape(
         ge::AttrValue::LIST_INT(xshape_dims.begin(), xshape_dims.end()));
-    lite::npu::OpList::Global().add(xshape_node);
-    outputs_map[op_info->Output("XShape").front()] = xshape_node;
   }
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(reshape,
-                    paddle::lite::kernels::npu::bridges::ReshapeConverter);
-REGISTER_NPU_BRIDGE(reshape2,
-                    paddle::lite::kernels::npu::bridges::ReshapeConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         reshape,
+                         paddle::lite::subgraph::npu::ReshapeConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         reshape2,
+                         paddle::lite::subgraph::npu::ReshapeConverter);

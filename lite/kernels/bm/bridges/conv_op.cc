@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/bridges/registry.h"
-#include "lite/backends/bm/builder.h"
+#include "lite/operators/conv_op.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace bm {
-namespace bridges {
 
-node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
-  // output converted nodes
-  node_map_type output_nodes;
-  
-  auto scope = conv_op->scope();
-  auto op_info = conv_op->op_info();
+int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+    
+  auto graph = static_cast<Graph*>(ctx);
+  auto scope = op->scope();
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::bm::UniqueName(op_type);
+  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
 
   auto input_var_name = op_info->Input("Input").front();
   auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
@@ -47,7 +47,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   CHECK(output_dims.size() == 4);
   CHECK(filter_dims.size() == 4);
     
-  bool has_bias = lite::bm::HasInputArg(op_info, scope, "Bias");
+  bool has_bias = lite::subgraph::bm::HasInputArg(op_info, scope, "Bias");
   float* bias_data = nullptr;
   if (has_bias) {
     auto bias_var_name = op_info->Input("Bias").front();
@@ -76,7 +76,7 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
 
-  add_conv_layer(graph_ctx->bm_compiler_handle,
+  add_conv_layer(graph->GetCompilerHandle(),
                  const_cast<const int*>(i_input_shape_data),
                  input_dims.size(),
                  static_cast<const char*>(input_var_name.c_str()),
@@ -98,15 +98,13 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> conv_op,
                  dilations[0],
                  dilations[1],
                  static_cast<int>(has_bias));
-    
-  output_nodes[output_var_name] = output_var_name;
-  return output_nodes;
+  graph->AddNode(output_var_name);
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace bm
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_BM_BRIDGE(conv2d, paddle::lite::kernels::bm::bridges::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(BM, conv2d, paddle::lite::subgraph::bm::ConvConverter);

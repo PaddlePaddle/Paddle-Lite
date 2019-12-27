@@ -74,7 +74,7 @@ lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 # cv build options
-lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF IF NOT LITE_WITH_ARM)
+lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF)
 
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
@@ -170,6 +170,10 @@ endif()
 
 ########################################################################################
 
+if(LITE_WITH_XPU)
+    include(xpu)
+endif()
+
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 include(external/libxsmm)   # download, build, install libxsmm
@@ -189,14 +193,9 @@ if(LITE_WITH_CUDA)
   include(cuda)
 endif()
 
-if(LITE_WITH_XPU)
-  include(xpu)
-endif()
-
 if(LITE_WITH_BM)
   include(bm)
 endif()
-
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs

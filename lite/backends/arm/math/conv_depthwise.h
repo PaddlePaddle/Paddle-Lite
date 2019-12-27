@@ -37,6 +37,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                const float* weights,
                                const float* bias,
                                const operators::ConvParam& param,
+                               const operators::ActivationParam act_param,
                                ARMContext* ctx);
 
 void conv_3x3s2_depthwise_fp32(const float* i_data,
@@ -51,6 +52,7 @@ void conv_3x3s2_depthwise_fp32(const float* i_data,
                                const float* weights,
                                const float* bias,
                                const operators::ConvParam& param,
+                               const operators::ActivationParam act_param,
                                ARMContext* ctx);
 
 void conv_depthwise_3x3s1_fp32(const float* din,
@@ -66,7 +68,7 @@ void conv_depthwise_3x3s1_fp32(const float* din,
                                const float* bias,
                                int pad,
                                bool flag_bias,
-                               bool flag_relu,
+                               const operators::ActivationParam act_param,
                                ARMContext* ctx);
 
 void conv_depthwise_3x3s2_fp32(const float* din,
@@ -82,7 +84,7 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                const float* bias,
                                int pad,
                                bool flag_bias,
-                               bool flag_relu,
+                               const operators::ActivationParam act_param,
                                ARMContext* ctx);
 
 template <typename Dtype>

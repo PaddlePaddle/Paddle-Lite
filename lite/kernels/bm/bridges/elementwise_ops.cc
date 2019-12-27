@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/bridges/registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "bmcompiler_if.h"
 #include "bmcompiler_if_lite.h"
 #include "bmcompiler_defs.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace bm {
-namespace bridges {
 
-node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwise_op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
-    // output converted nodes
-    node_map_type output_nodes;
-    auto scope = elementwise_op->scope();
-    auto op_info = elementwise_op->op_info();
+int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+    CHECK(ctx != nullptr);
+    CHECK(op != nullptr);
+    
+    auto graph = static_cast<Graph*>(ctx);
+    auto scope = op->scope();
+    auto op_info = op->op_info();
     auto op_type = op_info->Type();
+    auto graph = static_cast<Graph*>(ctx);
     
     // input
     const int input_num = 2;
@@ -61,7 +63,7 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
         i_y_shape_data[i] = static_cast<int>(y_shape_data[i]);
     }
     shape[1] = i_y_shape_data;
-    bool y_is_const = input_nodes.find(y_var_name) == input_nodes.end();
+    bool y_is_const = !graph->HasNode(y_var_name);
    
     // output
     auto output_var_name = op_info->Output("Out").front();
@@ -92,7 +94,7 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
     }
     
     if (!y_is_const) {
-        add_eltwise_layer(graph_ctx->bm_compiler_handle,
+        add_eltwise_layer(graph->GetCompilerHandle(),
                       input_num,
                       shape,
                       dim,
@@ -112,7 +114,7 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
                             static_cast<bm_data_type_t>(DTYPE_FP32),
                             static_cast<const void*>(y_data));
 
-        add_binary_layer_v2(graph_ctx->bm_compiler_handle,
+        add_binary_layer_v2(graph->GetCompilerHandle(),
                           name[0],
                           shape[0],
                           dim[0],
@@ -131,14 +133,13 @@ node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> elementwi
     delete [] name;
     delete [] dim;
     
-    output_nodes[output_var_name] = output_var_name;
-    return output_nodes;
+    graph->AddNode(output_var_name);
+    return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace bm
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_BM_BRIDGE(elementwise_add, paddle::lite::kernels::bm::bridges::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(BM, elementwise_add, paddle::lite::subgraph::bm::ElementwiseConverter);

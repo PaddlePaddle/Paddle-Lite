@@ -76,6 +76,7 @@ void conv_3x3s1_direct_fp32(const float* i_data,
   const int threads = ctx->threads();
   int l2_size = ctx->llc_size() / sizeof(float);
   auto paddings = *param.paddings;
+  auto act_param = param.activation_param;
 
   const int pad_h = paddings[0];
   const int pad_w = paddings[2];
@@ -469,7 +470,8 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                                 oh,
                                 ow,
                                 flag_relu,
-                                ptr_write);
+                                ptr_write,
+                                &act_param);
       }
       const float* weight_remain_ptr = weights + c_round_down * w_stride;
 #pragma omp parallel for num_threads(threads)
@@ -780,7 +782,8 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                                 oh,
                                 ow,
                                 flag_relu,
-                                ptr_write);
+                                ptr_write,
+                                &act_param);
       }
     }
   }

@@ -50,7 +50,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                         "lod_reset",
                                         "concat",
                                         "yolo_box",
-                                        "graph_op",
+                                        "subgraph",
                                         "feed",
                                         "fetch"};
     for (auto* tmp : node->inlinks) {

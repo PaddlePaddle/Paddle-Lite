@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
+#include "lite/backends/cuda/math/cudnn_conv.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -25,10 +27,12 @@ class VarConv2DCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   using param_t = operators::VarConv2DParam;
 
   void Run() override;
+  void PrepareForRun() override;
   virtual ~VarConv2DCompute() = default;
 
  private:
-  void var_im2col(const cudaStream_t& stream);
+  mutable operators::ConvParam conv_param_;
+  std::unique_ptr<lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>> conv_impl_;
 };
 
 }  // namespace cuda

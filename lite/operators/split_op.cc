@@ -89,16 +89,20 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "AxisTensor") !=
       input_arg_names.end()) {
     auto args = opdesc.Input("AxisTensor");
-    auto *var = scope->FindVar(args.front());
-    param_.axis_tensor = var->GetMutable<lite::Tensor>();
+    if (!args.empty()) {
+      auto *var = scope->FindVar(args.front());
+      param_.axis_tensor = var->GetMutable<lite::Tensor>();
+    }
   }
   if (std::find(input_arg_names.begin(),
                 input_arg_names.end(),
                 "SectionsTensorList") != input_arg_names.end()) {
     auto args = opdesc.Input("SectionsTensorList");
-    auto *var = scope->FindVar(args.front());
-    param_.sections_tensor_list =
-        *(var->GetMutable<std::vector<lite::Tensor *>>());
+    if (!args.empty()) {
+      auto *var = scope->FindVar(args.front());
+      param_.sections_tensor_list =
+          *(var->GetMutable<std::vector<lite::Tensor *>>());
+    }
   }
   return true;
 }

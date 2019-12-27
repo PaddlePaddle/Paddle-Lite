@@ -29,7 +29,7 @@ inline DDim trim_singular_dims(const DDim& dims) {
   }
   std::vector<int64_t> trim_dims;
   trim_dims.resize(actual_dims_size);
-  for (int i = 0; i < actual_dims_size; ++i) {
+  for (size_t i = 0; i < actual_dims_size; ++i) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {
@@ -41,6 +41,7 @@ inline DDim trim_singular_dims(const DDim& dims) {
 #define NCHWTONHWC(type)                                                  \
   auto& param = this->template Param<param_t>();                          \
   auto& ctx = this->ctx_->template As<CUDAContext>();                     \
+  auto stream = ctx.exec_stream();                                        \
   auto input = param.x->template data<type>();                            \
   auto input_dim = param.x->dims();                                       \
   DDim input_trim_dim = trim_singular_dims(input_dim);                    \
@@ -56,11 +57,12 @@ inline DDim trim_singular_dims(const DDim& dims) {
   int w = input_dim[3];                                                   \
   param.y->Resize({n, h, w, c});                                          \
   auto output = param.y->template mutable_data<type>(TARGET(kCUDA));      \
-  lite::cuda::math::NCHW2NHWC<type>(n, c, h * w, input, output, &ctx);
+  trans.NCHW2NHWC(n, c, h* w, input, output, &stream);
 
 #define NHWCTONCHW(type)                                                  \
   auto& param = this->template Param<param_t>();                          \
   auto& ctx = this->ctx_->template As<CUDAContext>();                     \
+  auto stream = ctx.exec_stream();                                        \
   auto input = param.x->template data<type>();                            \
   auto input_dim = param.x->dims();                                       \
   DDim input_trim_dim = trim_singular_dims(input_dim);                    \
@@ -76,7 +78,7 @@ inline DDim trim_singular_dims(const DDim& dims) {
   int c = input_dim[3];                                                   \
   param.y->Resize({n, c, h, w});                                          \
   auto output = param.y->template mutable_data<type>(TARGET(kCUDA));      \
-  lite::cuda::math::NHWC2NCHW<type>(n, c, h * w, input, output, &ctx);
+  trans.NHWC2NCHW(n, c, h* w, input, output, &stream);
 
 void NCHWToNHWCCompute::Run() { NCHWTONHWC(float) }
 

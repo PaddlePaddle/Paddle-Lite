@@ -338,6 +338,11 @@ class OpParam {
   }
 
   template <typename T>
+  static T *GridFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Grid", inputs, scope);
+  }
+
+  template <typename T>
   static const T GetAttr(const string &key, const AttributeMap &map) {
     return ((Attribute)map.at(key)).Get<T>();
   }
@@ -484,6 +489,7 @@ class ConvParam : public OpParam {
     EXEC_SLIDINGWINDOW5x5_FLOAT,
     EXEC_SLIDINGWINDOW7x7_FLOAT,
     EXEC_GEMM1x1s1_FLOAT,
+    EXEC_DEPTHWISEBASIC_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -925,6 +931,35 @@ class InstanceNormParam : public OpParam {
   InstanceNormParam(const VariableNameMap &inputs,
                     const VariableNameMap &outputs, const AttributeMap &attrs,
                     Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    output_y_ = OutputYFrom<GType>(outputs, *scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *OutputY() const { return output_y_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+ private:
+  GType *input_x_;
+  GType *output_y_;
+  float epsilon_;
+};
+#endif
+
+#ifdef FUSION_INSTANCENORM_RELU_OP
+template <typename Dtype>
+class FusionInstanceNormReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionInstanceNormReluParam(const VariableNameMap &inputs,
+                              const VariableNameMap &outputs,
+                              const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
@@ -3008,7 +3043,7 @@ class SplitParam : public OpParam {
   int axis;
   int num;
   std::vector<int> sections;
-  //  std::vector<GType> out_ts_;
+//  std::vector<GType> out_ts_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -3069,12 +3104,20 @@ class NearestInterpolationParam : public OpParam {
     out_ = OutFrom<GType>(outputs, *scope);
     out_h_ = GetAttr<int>("out_h", attrs);
     out_w_ = GetAttr<int>("out_w", attrs);
+    if (HasAttr("scale", attrs)) {
+      has_scale_ = true;
+      scale_ = GetAttr<float>("scale", attrs);
+    }
+    DLOG << "has_scale_:  " << has_scale_;
+    DLOG << "scale_:  " << scale_;
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
   GType *Out() const { return out_; }
   int OutH() const { return out_h_; }
   int OutW() const { return out_w_; }
+  float Scale() const { return scale_; }
+  bool HasScale() const { return has_scale_; }
 
  private:
   GType *input_x_;
@@ -3082,6 +3125,8 @@ class NearestInterpolationParam : public OpParam {
   GType *out_;
   int out_h_;
   int out_w_;
+  float scale_;
+  bool has_scale_;
 };
 #endif
 
@@ -3658,5 +3703,60 @@ class PixelShuffleParam : public OpParam {
 };
 #endif
 
+#ifdef GRID_SAMPLER_OP
+template <typename Dtype>
+class GridSamplerParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  GridSamplerParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    grid_ = GridFrom<GType>(inputs, *scope);
+    output_ = OutputFrom<GType>(outputs, *scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  const GType *Grid() const { return grid_; }
+
+  GType *Output() const { return output_; }
+
+ private:
+  GType *input_x_;
+  GType *grid_;
+  GType *output_;
+};
+#endif
+
+#ifdef EXPAND_OP
+template <typename Dtype>
+class ExpandParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ExpandParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    expand_times = OpParam::GetAttr<std::vector<int>>("expand_times", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  std::vector<int> expand_times;
+
+ private:
+  GType *input_x_;
+  GType *out_;
+};
+
+#endif
 }  // namespace operators
 }  // namespace paddle_mobile

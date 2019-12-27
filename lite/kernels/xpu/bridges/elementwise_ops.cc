@@ -12,85 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace xpu {
-namespace bridges {
 
-node_map_type ElementwiseConverter(const std::shared_ptr<lite::OpLite> op,
-                                   graph_ctx_type* graph_ctx,
-                                   const node_map_type& input_nodes) {
-  auto scope = op->scope();
+int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(op != nullptr);
+  CHECK(ctx != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "[XPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // check context
-  CHECK(graph_ctx != nullptr);
-  CHECK(graph_ctx->builder != nullptr);
-  CHECK(graph_ctx->params != nullptr);
-
-  // get input, and attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto y_var_name = op_info->Input("Y").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto y_name = op_info->Input("Y").front();
+  auto y_type = kernel->GetInputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  auto y = scope->FindMutableTensor(y_name);
+  auto y_dims = y->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
-  auto x_tensor = scope->FindMutableTensor(x_var_name);
-  auto y_tensor = scope->FindMutableTensor(y_var_name);
-  auto x_dims = x_tensor->dims();
-  auto y_dims = y_tensor->dims();
 
-  // create x and y node
+  // X node
   std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (input_nodes.count(x_var_name)) {
-    x_node = input_nodes.at(x_var_name);
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
   } else {
-    x_node = std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateTensor(
-        x_var_name, lite::xpu::CvtShape(x_dims), ::xtcl::Float(32)));
-    auto x_const_tensor = lite::xpu::CvtTensor(x_tensor);
-    graph_ctx->params->emplace(std::make_pair(x_var_name, *x_const_tensor));
+    x_node = graph->AddNode(x_name, x_dims);
   }
 
+  // Y node
   std::shared_ptr<xtcl::xExpr> y_node = nullptr;
-  if (input_nodes.count(y_var_name)) {
-    y_node = input_nodes.at(y_var_name);
+  if (graph->HasNode(y_name)) {
+    y_node = graph->GetNode(y_name);
   } else {
-    y_node = std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateTensor(
-        y_var_name, lite::xpu::CvtShape(y_dims), ::xtcl::Float(32)));
-    auto y_const_tensor = lite::xpu::CvtTensor(y_tensor);
-    graph_ctx->params->emplace(std::make_pair(y_var_name, *y_const_tensor));
+    y_node = graph->AddNode(y_name, y_dims);
   }
 
-  // create elementwise node and set input, attributes
+  // Elementwise node
   std::shared_ptr<xtcl::xExpr> elementwise_node = nullptr;
   if (y_dims.size() == 1) {
-    elementwise_node = std::make_shared<xtcl::xExpr>(
-        graph_ctx->builder->CreateBiasAdd(*x_node, axis, *y_node));
+    elementwise_node = graph->AddNode(
+        out_name, graph->builder_.CreateBiasAdd(*x_node, axis, *y_node));
   } else if (x_dims.size() == y_dims.size()) {
-    elementwise_node = std::make_shared<xtcl::xExpr>(
-        graph_ctx->builder->CreateBinaryOp("add", *x_node, *y_node));
+    elementwise_node = graph->AddNode(
+        out_name, graph->builder_.CreateBinaryOp("add", *x_node, *y_node));
   } else {
-    LOG(ERROR) << "XPU elementwise_add only support y of one dimension, or x "
-                  "and y of the same dimension. But recieved x's dimension: "
-               << x_dims << ", y's dimension: " << y_dims << ", axis: " << axis;
+    LOG(WARNING)
+        << "[XPU] elementwise_add only support y of one dimension, or x "
+           "and y of the same dimension. But recieved x's dimension: "
+        << x_dims << ", y's dimension: " << y_dims << ", axis: " << axis;
+    return FAILED;
   }
-  graph_ctx->builder->SetLayer(unique_op_type);
-
-  // output converted nodes
-  node_map_type output_nodes;
-  output_nodes[op_info->Output("Out").front()] = elementwise_node;
-  return output_nodes;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(elementwise_add,
-                    paddle::lite::kernels::xpu::bridges::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(XPU,
+                         elementwise_add,
+                         paddle::lite::subgraph::xpu::ElementwiseConverter);

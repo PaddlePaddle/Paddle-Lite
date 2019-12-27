@@ -1,25 +1,32 @@
-lite_cc_library(bm_bridge_registry SRCS registry.cc)
+if(NOT LITE_WITH_BM)
+  return()
+endif()
 
-set(bm_bridge_deps bm_bridge_registry bm_builder op)
 
-lite_cc_library(bm_bridge_act_op SRCS act_op.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_conv_op SRCS conv_op.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_elementwise_ops SRCS elementwise_ops.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_pool_op SRCS pool_op.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_softmax_op SRCS softmax_op.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_mul_op SRCS mul_op.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_batch_norm_op SRCS batch_norm_op.cc DEPS ${bm_bridge_deps})
-lite_cc_library(bm_bridge_scale_op SRCS scale_op.cc DEPS ${bm_bridge_deps})
+lite_cc_library(subgraph_bridge_utility_bm SRCS utility.cc DEPS)
+lite_cc_library(subgraph_bridge_graph_bm SRCS graph.cc DEPS subgraph_bridge_utility_bm)
 
-set(bm_bridges
-        bm_bridge_registry
-        bm_bridge_act_op
-        bm_bridge_conv_op
-        bm_bridge_elementwise_ops
-        bm_bridge_pool_op
-        bm_bridge_softmax_op
-        bm_bridge_mul_op
-        bm_bridge_batch_norm_op
-        bm_bridge_scale_op
-        CACHE INTERNAL "bm_bridges")
+set(bm_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_bm subgraph_bridge_graph_bm)
 
+lite_cc_library(subgraph_bridge_act_op_bm SRCS act_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_conv_op_bm SRCS conv_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_elementwise_ops_bm SRCS elementwise_ops.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_pool_op_bm SRCS pool_op.cc DEPS ${subgraph_bridge_deps_bm})
+lite_cc_library(subgraph_bridge_softmax_op_bm SRCS softmax_op.cc DEPS ${subgraph_bridge_deps_bm})
+lite_cc_library(subgraph_bridge_mul_op_bm SRCS mul_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_batch_norm_op_bm SRCS batch_norm_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_scale_op_bm SRCS scale_op.cc DEPS ${bm_subgraph_bridge_deps})
+
+
+set(bm_subgraph_bridges
+        subgraph_bridge_registry
+        subgraph_bridge_graph_bm
+        subgraph_bridge_act_op_bm
+        subgraph_bridge_conv_op_bm
+        subgraph_bridge_elementwise_ops_bm
+        subgraph_bridge_pool_op_bm
+        subgraph_bridge_softmax_op_bm
+        subgraph_bridge_mul_op_bm
+        subgraph_bridge_batch_norm_op_bm
+        subgraph_bridge_scale_op_bm
+        CACHE INTERNAL "bm_subgraph_bridges")
