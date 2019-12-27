@@ -136,9 +136,9 @@ class CLEngine {
   size_t GetKernelWorkSize(cl_kernel kernel) {
     cl_int status;
     size_t kernel_work_size = 0;
-    status = clGetKernelWorkGroupInfo(kernel, devices_[0],
-                                      Cexecutor.cpp L_KERNEL_WORK_GROUP_SIZE,
-                                      sizeof(size_t), &kernel_work_size, NULL);
+    status =
+        clGetKernelWorkGroupInfo(kernel, devices_[0], CL_KERNEL_WORK_GROUP_SIZE,
+                                 sizeof(size_t), &kernel_work_size, NULL);
     if (status != CL_SUCCESS) {
       return 0;
     }
