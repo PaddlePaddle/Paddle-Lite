@@ -28,12 +28,14 @@ namespace subgraph {
 
 class Engine {
  public:
-  Engine(int block_idx,
+  Engine(KernelContext *ctx,
+         int block_idx,
          cpp::BlockDesc *block_desc,
          const std::vector<std::string> &input_names,
          const std::vector<std::string> &output_names,
          lite::Scope *scope)
-      : block_idx_(block_idx),
+      : ctx_(ctx),
+        block_idx_(block_idx),
         block_desc_(block_desc),
         input_names_(input_names),
         output_names_(output_names),
@@ -55,6 +57,7 @@ class Engine {
 
   virtual bool InputShapeChanged();
 
+  KernelContext *ctx_{nullptr};
   int block_idx_;
   cpp::BlockDesc *block_desc_;
   std::vector<std::string> input_names_;

@@ -103,13 +103,15 @@ void test_stack(Place place) {
 }
 
 TEST(Stack, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
+  Place place;
 #ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_stack(place);
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
 #endif
+  test_stack(place);
 }
 
 }  // namespace lite

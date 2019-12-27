@@ -27,21 +27,21 @@ bool FcOpLite::CheckShape() const {
 
   const auto input_dims = param_.input->dims();
   const auto w_dims = param_.w->dims();
+  CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
 
+  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
   if (param_.bias) {
     const auto bias_dims = param_.bias->dims();
     if (bias_dims.size() == 2) {
       CHECK_EQ_OR_FALSE(bias_dims[0], 1);
-      CHECK_EQ_OR_FALSE(bias_dims[1], w_dims[1]);
+      CHECK_EQ_OR_FALSE(bias_dims[1], w_dims_1);
     } else if (bias_dims.size() == 1) {
-      CHECK_EQ_OR_FALSE(bias_dims[0], w_dims[1]);
+      CHECK_EQ_OR_FALSE(bias_dims[0], w_dims_1);
     }
   }
 
-  CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
-
   param_.in_mat_dims = input_dims.Flatten2D(param_.in_num_col_dims);
   // CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
 
@@ -91,7 +91,9 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
     param_.activation_type = op_desc.GetAttr<std::string>("activation_type");
   }
   if (op_desc.HasAttr("padding_weights")) {
-    param_.activation_type = op_desc.GetAttr<bool>("padding_weights");
+    param_.padding_weights = op_desc.GetAttr<bool>("padding_weights");
+  } else {
+    param_.padding_weights = false;
   }
 
   // For Int8

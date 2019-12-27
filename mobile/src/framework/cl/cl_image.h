@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -285,6 +286,7 @@ class CLImage {
   cl_event GetClEvent() const { return cl_event_.get(); }
 
   CLImageConverterBase *Converter() const { return image_converter_; }
+  void PrintTensor(const CLImage &cl_image) const;
 
  private:
   void InitCLImage(cl_context context, size_t width, size_t height,
