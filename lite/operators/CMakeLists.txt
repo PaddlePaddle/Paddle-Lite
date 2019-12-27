@@ -50,6 +50,7 @@ add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
 add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
+add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
@@ -78,11 +79,9 @@ add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEP
 add_operator(generate_proposals_op extra SRCS generate_proposals_op.cc DEPS ${op_DEPS})
 add_operator(roi_align_op extra SRCS roi_align_op.cc DEPS ${op_DEPS})
 add_operator(box_clip_op extra SRCS box_clip_op.cc DEPS ${op_DEPS})
-add_operator(flatten_op extra SRCS flatten_op.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_range_abs_max_op extra SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
 add_operator(sequence_expand_as_op_lite extra SRCS sequence_expand_as_op.cc DEPS ${op_DEPS})
 add_operator(assign_value_op extra SRCS assign_value_op.cc DEPS ${op_DEPS})
-
 add_operator(fake_quantize_dequantize_moving_avg_abs_max_op extra SRCS fake_quantize_dequantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 add_operator(fake_channel_wise_dequantize_max_abs_op extra SRCS fake_channel_wise_dequantize_max_abs.cc DEPS ${op_DEPS})
 add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc DEPS ${op_DEPS})
