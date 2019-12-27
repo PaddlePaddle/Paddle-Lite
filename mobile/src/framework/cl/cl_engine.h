@@ -124,9 +124,9 @@ class CLEngine {
     if (status != CL_SUCCESS || ret_size / sizeof(size_t) < 3) {
       return CLLocalWorkSizeInfo(0, 0, 0, 0);
     }
-    DLOG << max_work_item_sizes[0];
-    DLOG << max_work_item_sizes[1];
-    DLOG << max_work_item_sizes[2];
+    DLOG << " max_work_item_sizes {" << max_work_item_sizes[0] << ", "
+         << max_work_item_sizes[1] << ", " << max_work_item_sizes[2] << "}";
+
     localWorkSizeInfo_ =
         CLLocalWorkSizeInfo(max_work_group_size, max_work_item_sizes[0],
                             max_work_item_sizes[1], max_work_item_sizes[2]);
@@ -136,9 +136,9 @@ class CLEngine {
   size_t GetKernelWorkSize(cl_kernel kernel) {
     cl_int status;
     size_t kernel_work_size = 0;
-    status =
-        clGetKernelWorkGroupInfo(kernel, devices_[0], CL_KERNEL_WORK_GROUP_SIZE,
-                                 sizeof(size_t), &kernel_work_size, NULL);
+    status = clGetKernelWorkGroupInfo(kernel, devices_[0],
+                                      Cexecutor.cpp L_KERNEL_WORK_GROUP_SIZE,
+                                      sizeof(size_t), &kernel_work_size, NULL);
     if (status != CL_SUCCESS) {
       return 0;
     }
@@ -182,8 +182,8 @@ class CLEngine {
     cl_program p =
         clCreateProgramWithSource(context, 1, &source, sourceSize, &status_);
 
-    DLOG << " cl kernel from source";
-    DLOG << " source size: " << sourceSize[0];
+    LOG(kLOG_DEBUG4) << " cl kernel from source";
+    LOG(kLOG_DEBUG4) << " source size: " << sourceSize[0];
     CL_CHECK_ERRORS(status_);
 
     std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
