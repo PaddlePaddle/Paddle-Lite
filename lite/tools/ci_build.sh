@@ -773,7 +773,7 @@ function build_test_arm_subtask_armlinux {
     echo "Done"
 }
 
-# sub-task-model
+# this method need to invoke `build_test_arm_subtask_android` first.
 function build_test_arm_subtask_model {
     # We just test following single one environment to limit the CI time.
     local os=android
@@ -785,9 +785,7 @@ function build_test_arm_subtask_model {
 
     cur_dir=$(pwd)
     build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
-    mkdir -p $build_dir
     cd $build_dir
-    cmake_arm $os $abi $lang
     make $test_name -j$NUM_CORES_FOR_COMPILE
 
     # prepare adb devices
@@ -802,7 +800,6 @@ function build_test_arm_subtask_model {
     fi
     echo "Done"
     cd -
-    rm -rf $build_dir
 }
 
 
@@ -1034,27 +1031,15 @@ function main {
                 ;;
             build_test_arm_subtask_android)
                 build_test_arm_subtask_android
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
+                build_test_arm_subtask_model test_resnet50 resnet50
+                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
                 shift
                 ;;
             build_test_arm_subtask_armlinux)
                 build_test_arm_subtask_armlinux
-                shift
-                ;;
-            build_test_arm_model_mobilenetv1)
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
-                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
-                shift
-                ;;
-            build_test_arm_model_mobilenetv2)
-                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
-                shift
-                ;;
-            build_test_arm_model_resnet50)
-                build_test_arm_subtask_model test_resnet50 resnet50
-                shift
-                ;;
-            build_test_arm_model_inceptionv4)
-                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
                 shift
                 ;;
             check_style)

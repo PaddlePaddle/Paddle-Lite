@@ -136,7 +136,13 @@ class ConvOpLite : public OpLite {
   mutable ConvParam param_;
   std::string padding_algorithm_{""};
 };
-
+// update padding dilation
+void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                              std::vector<int>* dilations,
+                              const std::vector<int>& strides,
+                              const std::string padding_algorithm,
+                              const lite::DDim data_dims,
+                              const lite::DDim& ksize);
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

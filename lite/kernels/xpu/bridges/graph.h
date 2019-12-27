@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
@@ -27,42 +28,75 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-// The Context of the converters which used for converting the ops of subgraph
-// to the XPU IR graph
+// Type of graph nodes
+class Type {
+ public:
+  Type(PrecisionType precision = PRECISION(kFloat),
+       DataLayoutType layout = DATALAYOUT(kNCHW),
+       bool persistable = false)
+      : precision_(precision), layout_(layout), persistable_(persistable) {}
+
+  void set_precision(PrecisionType precision) { precision_ = precision; }
+  void set_layout(DataLayoutType layout) { layout_ = layout; }
+  void set_persistable(bool persistable) { persistable_ = persistable; }
+
+  PrecisionType precision() const { return precision_; }
+  DataLayoutType layout() const { return layout_; }
+  bool persistable() const { return persistable_; }
+
+ private:
+  PrecisionType precision_{PRECISION(kFloat)};
+  DataLayoutType layout_{DATALAYOUT(kNCHW)};
+  bool persistable_{false};
+};
+
+// Graph to collect all of converted XPU IR nodes
 class Graph {
  public:
   // Layer node
-  std::shared_ptr<xtcl::xExpr> AddNode(const std::string& name,
-                                       const xtcl::xExpr& layer);
+  std::shared_ptr<xtcl::xExpr> AddNode(
+      const std::string& name,
+      const xtcl::xExpr& layer,
+      PrecisionType precision = PRECISION(kFloat),
+      DataLayoutType layout = DATALAYOUT(kNCHW));
 
   // Const node
   std::shared_ptr<xtcl::xExpr> AddNode(
       const std::string& name,
       const Tensor& tensor,
-      PrecisionType ptype = PRECISION(kFloat),
-      DataLayoutType ltype = DATALAYOUT(kNCHW));
+      PrecisionType precision = PRECISION(kFloat),
+      DataLayoutType layout = DATALAYOUT(kNCHW));
 
   std::shared_ptr<xtcl::xExpr> AddNode(
       const std::string& name,
       const Tensor& tensor,
       std::vector<int64_t> shape,
-      PrecisionType ptype = PRECISION(kFloat),
-      DataLayoutType ltype = DATALAYOUT(kNCHW));
+      PrecisionType precision = PRECISION(kFloat),
+      DataLayoutType layout = DATALAYOUT(kNCHW));
+
+  std::shared_ptr<xtcl::xExpr> AddNode(
+      const std::string& name,
+      const Tensor& tensor,
+      DDim dims,
+      PrecisionType precision = PRECISION(kFloat),
+      DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return AddNode(name, tensor, dims.Vectorize(), precision, layout);
+  }
 
   template <typename T>
   std::shared_ptr<xtcl::xExpr> AddNode(
       const std::string& name,
       const std::vector<T>& data,
       std::vector<int64_t> shape = {},
-      DataLayoutType ltype = DATALAYOUT(kNCHW)) {
+      DataLayoutType layout = DATALAYOUT(kNCHW)) {
     const std::type_info& info = typeid(T);
-    PrecisionType ptype = PRECISION(kFloat);
+    PrecisionType precision = PRECISION(kFloat);
     if (info == typeid(float)) {
-      ptype = PRECISION(kFloat);
+      precision = PRECISION(kFloat);
     } else if (info == typeid(int8_t)) {
-      ptype = PRECISION(kFloat);
+      precision = PRECISION(kFloat);
     } else if (info == typeid(int32_t)) {
-      ptype = PRECISION(kInt32);
+      precision = PRECISION(kInt32);
     } else {
       LOG(FATAL) << "[XPU] Unknow data type " << info.name();
     }
@@ -80,7 +114,16 @@ class Graph {
     std::memcpy(reinterpret_cast<uint8_t*>(tensor.mutable_data<T>()),
                 reinterpret_cast<const uint8_t*>(data.data()),
                 data.size() * sizeof(T));
-    return AddNode(name, tensor, ptype, ltype);
+    return AddNode(name, tensor, precision, layout);
+  }
+
+  template <typename T>
+  std::shared_ptr<xtcl::xExpr> AddNode(
+      const std::string& name,
+      const std::vector<T>& data,
+      DDim dims,
+      DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return AddNode(name, data, dims.Vectorize(), layout);
   }
 
   template <typename T>
@@ -88,25 +131,47 @@ class Graph {
       const std::string& name,
       T value,
       std::vector<int64_t> shape = {1},
-      DataLayoutType ltype = DATALAYOUT(kNCHW)) {
+      DataLayoutType layout = DATALAYOUT(kNCHW)) {
     int64_t size = 1;
     for (auto i : shape) {
       size *= i;
     }
     std::vector<T> data(size, value);
-    return AddNode(name, data, shape, ltype);
+    return AddNode(name, data, shape, layout);
+  }
+
+  template <typename T>
+  std::shared_ptr<xtcl::xExpr> AddNode(
+      const std::string& name,
+      T value,
+      DDim dims,
+      DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return AddNode(name, value, dims.Vectorize(), layout);
   }
 
   // Data node
   std::shared_ptr<xtcl::xExpr> AddNode(
       const std::string& name,
       std::vector<int64_t> shape,
-      PrecisionType ptype = PRECISION(kFloat),
-      DataLayoutType ltype = DATALAYOUT(kNCHW));
+      PrecisionType precision = PRECISION(kFloat),
+      DataLayoutType layout = DATALAYOUT(kNCHW));
+
+  std::shared_ptr<xtcl::xExpr> AddNode(
+      const std::string& name,
+      DDim dims,
+      PrecisionType precision = PRECISION(kFloat),
+      DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return AddNode(name, dims.Vectorize(), precision, layout);
+  }
 
   std::shared_ptr<xtcl::xExpr> GetNode(const std::string& name) {
     CHECK(HasNode(name)) << "[XPU] Node " << name << " not found.";
-    return nodes_.at(name);
+    return nodes_.at(name).first;
+  }
+
+  const Type& GetType(const std::string& name) {
+    CHECK(HasNode(name)) << "[XPU] Node " << name << " not found.";
+    return nodes_.at(name).second;
   }
 
   bool HasNode(const std::string& name) {
@@ -119,7 +184,8 @@ class Graph {
   xtcl::network::xTensorCompiler::ParamNDArrayMap params_;
 
  private:
-  std::unordered_map<std::string, std::shared_ptr<xtcl::xExpr>> nodes_;
+  std::unordered_map<std::string, std::pair<std::shared_ptr<xtcl::xExpr>, Type>>
+      nodes_;
   std::unordered_map<std::string, int> counts_;
 };
 

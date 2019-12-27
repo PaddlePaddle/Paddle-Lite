@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int UnsqueezeConverter(void* ctx, OpLite* op) {
+int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,14 +30,31 @@ int UnsqueezeConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " << op_type << "... ";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-  auto out_shape = scope->FindTensor(out_var_name)->dims().Vectorize();
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto out_shape = scope->FindTensor(out_name)->dims().Vectorize();
   CHECK(op_info->HasAttr("axes"))
       << "[NPU] unsqueeze not support axes from tensor now";
 
-  auto unsqueeze_node = graph->AddNode<ge::op::Reshape>(out_var_name);
-  unsqueeze_node->set_input_tensor(*graph->GetNode(x_var_name));
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Unsqueeze node
+  auto unsqueeze_node = graph->AddNode<ge::op::Reshape>(out_name);
+  unsqueeze_node->set_input_tensor(*x_node);
   unsqueeze_node->set_attr_shape(
       ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   return REBUILD_WHEN_SHAPE_CHANGED;

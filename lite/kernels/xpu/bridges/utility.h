@@ -33,22 +33,33 @@ bool HasInputArg(const OpInfo* op_info,
 
 xtcl::DataType CvtPrecisionType(PrecisionType in_type);
 
-DLDataType CvtDataType(PrecisionType in_type);
+DLDataType CvtDLDataType(PrecisionType in_type);
+DLDeviceType CvtDLDeviceType(TargetType in_type);
 
-xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int>& in_shape);
+template <typename T>
+xtcl::Array<T> CvtShape(const std::vector<int>& in_shape) {
+  xtcl::Array<T> out_shape;
+  for (auto dim : in_shape) {
+    out_shape.push_back(dim);
+  }
+  return out_shape;
+}
 
-xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int64_t>& in_shape);
+template <typename T>
+xtcl::Array<T> CvtShape(const std::vector<int64_t>& in_shape) {
+  return CvtShape<T>(std::vector<int>(in_shape.begin(), in_shape.end()));
+}
 
-xtcl::Array<xtcl::xIndexExpr> CvtShape(const DDim& in_dims);
+template <typename T>
+xtcl::Array<T> CvtShape(const DDim& in_dims) {
+  return CvtShape<T>(in_dims.Vectorize());
+}
 
 std::shared_ptr<xtcl::xNDArray> CvtTensor(
     const Tensor& in_tensor,
     std::vector<int64_t> out_shape = {},
-    PrecisionType in_ptype = PRECISION(kFloat),
-    DataLayoutType in_ltype = DATALAYOUT(kNCHW));
-
-xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const std::vector<int64_t>& input);
-xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const DDim& input);
+    PrecisionType in_precision = PRECISION(kFloat),
+    DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
 }  // namespace xpu
 }  // namespace subgraph

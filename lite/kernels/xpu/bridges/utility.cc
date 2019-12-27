@@ -47,8 +47,14 @@ xtcl::DataType CvtPrecisionType(PrecisionType in_type) {
     case PRECISION(kInt8):
       out_type = ::xtcl::Int(8);
       break;
+    case PRECISION(kInt16):
+      out_type = ::xtcl::Int(16);
+      break;
     case PRECISION(kInt32):
       out_type = ::xtcl::Int(32);
+      break;
+    case PRECISION(kInt64):
+      out_type = ::xtcl::Int(64);
       break;
     default:
       LOG(FATAL) << "[XPU] Can not convert precision type("
@@ -58,7 +64,7 @@ xtcl::DataType CvtPrecisionType(PrecisionType in_type) {
   return out_type;
 }
 
-DLDataType CvtDataType(PrecisionType in_type) {
+DLDataType CvtDLDataType(PrecisionType in_type) {
   DLDataType out_type = {kDLFloat, 32, 1};
   switch (in_type) {
     case PRECISION(kFloat):
@@ -67,74 +73,62 @@ DLDataType CvtDataType(PrecisionType in_type) {
     case PRECISION(kInt8):
       out_type = {kDLInt, 8, 1};
       break;
+    case PRECISION(kInt16):
+      out_type = {kDLInt, 16, 1};
+      break;
     case PRECISION(kInt32):
       out_type = {kDLInt, 32, 1};
       break;
+    case PRECISION(kInt64):
+      out_type = {kDLInt, 64, 1};
+      break;
     default:
-      LOG(FATAL) << "[XPU] Can not convert data type("
-                 << PrecisionToStr(in_type) << ") from Lite to XPU";
+      LOG(FATAL) << "[XPU] Can not convert precision type("
+                 << PrecisionToStr(in_type) << ") from Lite to XPU DLDataType";
       break;
   }
   return out_type;
 }
 
-xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int>& in_shape) {
-  xtcl::Array<xtcl::xIndexExpr> out_shape;
-  for (auto dim : in_shape) {
-    out_shape.push_back(dim);
+DLDeviceType CvtDLDeviceType(TargetType in_type) {
+  DLDeviceType out_type = kDLCPU;
+  switch (in_type) {
+    case TARGET(kX86):
+      out_type = kDLCPU;
+      break;
+    case TARGET(kHost):
+      out_type = kDLCPU;
+      break;
+    case TARGET(kCUDA):
+      out_type = kDLGPU;
+      break;
+    case TARGET(kXPU):
+      out_type = kDLCPU;
+      break;
+    default:
+      LOG(FATAL) << "[XPU] Can not convert target type(" << TargetToStr(in_type)
+                 << ") from Lite to XPU DLDeviceType";
+      break;
   }
-  return out_shape;
-}
-
-xtcl::Array<xtcl::xIndexExpr> CvtShape(const std::vector<int64_t>& in_shape) {
-  return CvtShape(std::vector<int>(in_shape.begin(), in_shape.end()));
-}
-
-xtcl::Array<xtcl::xIndexExpr> CvtShape(const DDim& in_dims) {
-  return CvtShape(in_dims.Vectorize());
+  return out_type;
 }
 
 std::shared_ptr<xtcl::xNDArray> CvtTensor(const Tensor& in_tensor,
                                           std::vector<int64_t> out_shape,
-                                          PrecisionType in_ptype,
-                                          DataLayoutType in_ltype) {
-  const uint8_t* in_data = nullptr;
-  auto in_size = in_tensor.dims().production();
+                                          PrecisionType in_precision,
+                                          DataLayoutType in_layout) {
   auto in_shape = in_tensor.dims().Vectorize();
   if (out_shape.empty()) {
     out_shape = in_shape;
   }
-  int in_bytes;
-  if (in_ptype == PRECISION(kFloat)) {
-    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<float>());
-    in_bytes = in_size * sizeof(float);
-  } else if (in_ptype == PRECISION(kInt32)) {
-    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<int32_t>());
-    in_bytes = in_size * sizeof(int32_t);
-  } else if (in_ptype == PRECISION(kInt8)) {
-    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<int8_t>());
-    in_bytes = in_size * sizeof(int8_t);
-  } else {
-    LOG(FATAL) << "[XPU] Unknow precision type " << PrecisionToStr(in_ptype);
-  }
   auto out_tensor = std::make_shared<xtcl::xNDArray>(
-      xtcl::xNDArray::Empty(out_shape, CvtDataType(in_ptype), {kDLCPU, 0}));
+      xtcl::xNDArray::Empty(out_shape,
+                            CvtDLDataType(in_precision),
+                            {CvtDLDeviceType(TARGET(kHost)), 0}));
   auto out_data =
       reinterpret_cast<uint8_t*>(out_tensor->ToDLPack()->dl_tensor.data);
-  std::memcpy(out_data, in_data, in_bytes);
+  std::memcpy(out_data, in_tensor.raw_data(), in_tensor.memory_size());
   return out_tensor;
-}
-
-xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const std::vector<int64_t>& input) {
-  xtcl::Array<xtcl::Integer> output;
-  for (auto i : input) {
-    output.push_back(i);
-  }
-  return output;
-}
-
-xtcl::Array<xtcl::Integer> Cvt2ArrayInt(const DDim& input) {
-  return Cvt2ArrayInt(input.Vectorize());
 }
 
 }  // namespace xpu

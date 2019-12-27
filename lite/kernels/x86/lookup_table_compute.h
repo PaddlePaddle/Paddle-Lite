@@ -24,7 +24,7 @@ namespace kernels {
 namespace x86 {
 
 template <typename T>
-class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
+class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::LookupTableParam;
 

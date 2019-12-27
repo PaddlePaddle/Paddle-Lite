@@ -18,6 +18,37 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
+void CLImage::PrintTensor(const CLImage &cl_image) const {
+  size_t width = cl_image.ImageDims()[0];
+  size_t height = cl_image.ImageDims()[1];
+
+  half_t *image_data = new half_t[height * width * 4];
+  cl_int err;
+  cl_mem image = cl_image.GetCLImage();
+  size_t origin[3] = {0, 0, 0};
+  size_t region[3] = {width, height, 1};
+  err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
+                           region, 0, 0, image_data, 0, NULL, NULL);
+
+  CL_CHECK_ERRORS(err);
+
+  PADDLE_MOBILE_ENFORCE(cl_image.numel() != 0,
+                        "cl_image numel should not be 0 ");
+  float *tensor_data = new float[cl_image.numel()];
+  auto converter = cl_image.Converter();
+  converter->ImageToNCHW(image_data, tensor_data, cl_image.ImageDims(),
+                         cl_image.dims());
+  int stride = cl_image.numel() / 20;
+  stride = stride > 0 ? stride : 1;
+
+  for (int i = 0; i < cl_image.numel(); i++) {
+    printf("%f \n", tensor_data[i]);
+  }
+
+  delete[](tensor_data);
+  delete[](image_data);
+}
+
 void CLImageToTensor(CLImage *cl_image, Tensor *tensor, cl_context context,
                      cl_command_queue commandQueue, cl_kernel kernel) {
   tensor->mutable_data<float>();

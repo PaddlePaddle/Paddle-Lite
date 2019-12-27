@@ -82,6 +82,10 @@ void SplitLodTensorCompute::Run() {
         ranges.begin(), ranges.end(), 0UL, [](size_t a, const CopyRange &b) {
           return a + b.end - b.begin;
         });
+    if (height == 0) {
+      out->clear();
+      continue;
+    }
     auto x_dim = x->dims();
     x_dim[0] = static_cast<int64_t>(height);
     out->Resize(x_dim);

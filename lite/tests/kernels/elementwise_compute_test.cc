@@ -653,5 +653,17 @@ TEST(FusionElementwise, precision) {
 #endif
 }
 
+#ifdef LITE_WITH_XPU
+TEST(Elementwise_XPU, precision) {
+  Place place(TARGET(kXPU));
+  for (int axis : {-1, 1}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ElementwiseComputeTester(place, "def", axis));
+    arena::Arena arena(std::move(tester), place, 2e-5);
+    arena.TestPrecision();
+  }
+}
+#endif
+
 }  // namespace lite
 }  // namespace paddle

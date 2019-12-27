@@ -24,39 +24,56 @@
 DEFINE_string(model_file, "", "model file path of combined protobuf model");
 DEFINE_string(params_file, "", "params file path of combined protobuf model");
 DEFINE_string(optimized_model_dir, "", "path of optimized naive buffer model");
-DEFINE_string(input_tensor_shape, "1,3,224,224", "shapes of input tensors");
-DEFINE_int32(output_tensor_num, 1, "number of output tensors");
+DEFINE_string(input_tensor_shape, "1,3,224,224", "shape of input tensors");
+DEFINE_string(input_tensor_type, "float32", "data type of input tensors");
+DEFINE_string(output_tensor_type, "float32", "data type of output tensors");
 
 namespace paddle {
 namespace lite {
 
 // The helper functions for loading and running model from command line and
 // verifying output data
-std::vector<std::vector<int64_t>> ShapeParsing(std::string txt) {
-  std::vector<std::vector<int64_t>> shape;
-  while (!txt.empty()) {
-    size_t idx = txt.find_first_of(":");
-    std::string dims = txt.substr(0, idx);
-    std::vector<int64_t> s;
-    while (!dims.empty()) {
-      size_t idx = dims.find_first_of(",");
-      int d = atoi(dims.substr(0, idx).c_str());
-      VLOG(3) << d;
-      s.push_back(d);
-      if (idx == std::string::npos) {
-        break;
-      } else {
-        dims = dims.substr(idx + 1);
-      }
-    }
-    shape.push_back(s);
-    if (idx == std::string::npos) {
+std::vector<std::string> TypeParsing(std::string text) {
+  std::vector<std::string> types;
+  while (!text.empty()) {
+    size_t index = text.find_first_of(":");
+    std::string type = text.substr(0, index);
+    VLOG(3) << type;
+    types.push_back(type);
+    if (index == std::string::npos) {
       break;
     } else {
-      txt = txt.substr(idx + 1);
+      text = text.substr(index + 1);
     }
   }
-  return shape;
+  return types;
+}
+
+std::vector<std::vector<int64_t>> ShapeParsing(std::string text) {
+  std::vector<std::vector<int64_t>> shapes;
+  while (!text.empty()) {
+    size_t index = text.find_first_of(":");
+    std::string slice = text.substr(0, index);
+    std::vector<int64_t> shape;
+    while (!slice.empty()) {
+      size_t index = slice.find_first_of(",");
+      int d = atoi(slice.substr(0, index).c_str());
+      VLOG(3) << d;
+      shape.push_back(d);
+      if (index == std::string::npos) {
+        break;
+      } else {
+        slice = slice.substr(index + 1);
+      }
+    }
+    shapes.push_back(shape);
+    if (index == std::string::npos) {
+      break;
+    } else {
+      text = text.substr(index + 1);
+    }
+  }
+  return shapes;
 }
 
 int64_t ShapeProduction(std::vector<int64_t> shape) {
@@ -70,40 +87,55 @@ int64_t ShapeProduction(std::vector<int64_t> shape) {
 void FillInputTensors(
     const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
+    const std::vector<std::string>& input_tensor_type,
     const float value) {
+#define FILL_TENSOR_WITH_TYPE(type)                            \
+  auto input_tensor_data = input_tensor->mutable_data<type>(); \
+  for (int j = 0; j < input_tensor_size; j++) {                \
+    input_tensor_data[i] = static_cast<type>(value);           \
+  }
   for (int i = 0; i < input_tensor_shape.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
     input_tensor->Resize(input_tensor_shape[i]);
-    auto input_tensor_data = input_tensor->mutable_data<float>();
     auto input_tensor_size = ShapeProduction(input_tensor->shape());
-    for (int j = 0; j < input_tensor_size; j++) {
-      input_tensor_data[i] = value;
+    if (input_tensor_type[i] == "float32") {
+      FILL_TENSOR_WITH_TYPE(float)
+    } else if (input_tensor_type[i] == "int64") {
+      FILL_TENSOR_WITH_TYPE(int64_t)
     }
   }
+#undef FILL_TENSOR_WITH_TYPE
 }
 
 void CheckOutputTensors(
     const std::shared_ptr<lite_api::PaddlePredictor>& tar_predictor,
     const std::shared_ptr<lite_api::PaddlePredictor>& ref_predictor,
-    const int output_tensor_num) {
-  for (int i = 0; i < output_tensor_num; i++) {
+    const std::vector<std::string>& output_tensor_type) {
+#define CHECK_TENSOR_WITH_TYPE(type)                                          \
+  auto tar_output_tensor_data = tar_output_tensor->data<type>();              \
+  auto ref_output_tensor_data = ref_output_tensor->data<type>();              \
+  for (size_t j = 0; j < ref_output_tensor_size; j++) {                       \
+    auto abs_diff =                                                           \
+        std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]);     \
+    auto rel_diff = abs_diff / (std::fabs(ref_output_tensor_data[j]) + 1e-6); \
+    VLOG(5) << "val: " << tar_output_tensor_data[j]                           \
+            << " ref: " << ref_output_tensor_data[j]                          \
+            << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;        \
+    EXPECT_LT(rel_diff, 0.1);                                                 \
+  }
+  for (int i = 0; i < output_tensor_type.size(); i++) {
     auto tar_output_tensor = tar_predictor->GetOutput(i);
     auto ref_output_tensor = ref_predictor->GetOutput(i);
-    auto tar_output_tensor_data = tar_output_tensor->data<float>();
-    auto ref_output_tensor_data = ref_output_tensor->data<float>();
     auto tar_output_tensor_size = ShapeProduction(tar_output_tensor->shape());
     auto ref_output_tensor_size = ShapeProduction(ref_output_tensor->shape());
     EXPECT_EQ(tar_output_tensor_size, ref_output_tensor_size);
-    for (size_t j = 0; j < ref_output_tensor_size; j++) {
-      auto abs_diff =
-          std::fabs(tar_output_tensor_data[j] - ref_output_tensor_data[j]);
-      auto rel_diff = abs_diff / (std::fabs(ref_output_tensor_data[j]) + 1e-6);
-      VLOG(5) << "val: " << tar_output_tensor_data[j]
-              << " ref: " << ref_output_tensor_data[j]
-              << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;
-      EXPECT_LT(rel_diff, 0.1);
+    if (output_tensor_type[i] == "float32") {
+      CHECK_TENSOR_WITH_TYPE(float)
+    } else if (output_tensor_type[i] == "int64") {
+      CHECK_TENSOR_WITH_TYPE(int64_t)
     }
   }
+#undef CHECK_TENSOR_WITH_TYPE
 }
 
 std::shared_ptr<lite_api::PaddlePredictor> TestModel(
@@ -112,6 +144,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     const std::string& params_file,
     const std::vector<lite_api::Place>& valid_places,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
+    const std::vector<std::string>& input_tensor_type,
     const std::string& optimized_model_dir) {
   // Generate optimized model
   lite_api::CxxConfig cxx_config;
@@ -128,7 +161,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
-  FillInputTensors(predictor, input_tensor_shape, 1);
+  FillInputTensors(predictor, input_tensor_shape, input_tensor_type, 1);
   // Run optimized model
   for (int i = 0; i < FLAGS_warmup; i++) {
     predictor->Run();
@@ -148,10 +181,13 @@ TEST(Subgraph, generate_model_and_check_precision) {
                  "the path of model files.";
     return;
   }
-  // Parsing the shapes of input tensors from strings, supported formats:
+  // Parsing the shape of input tensors from strings, supported formats:
   // "1,3,224,224" and "1,3,224,224:1,80"
-  std::vector<std::vector<int64_t>> input_tensor_shape =
-      ShapeParsing(FLAGS_input_tensor_shape);
+  auto input_tensor_shape = ShapeParsing(FLAGS_input_tensor_shape);
+  // Parsing the data type of input and output tensors from strings, supported
+  // formats: "float32" and "float32:int64:int8"
+  auto input_tensor_type = TypeParsing(FLAGS_input_tensor_type);
+  auto output_tensor_type = TypeParsing(FLAGS_output_tensor_type);
   std::vector<lite_api::Place> valid_places({
 #ifdef LITE_WITH_ARM
       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
@@ -166,6 +202,7 @@ TEST(Subgraph, generate_model_and_check_precision) {
                                  FLAGS_params_file,
                                  valid_places,
                                  input_tensor_shape,
+                                 input_tensor_type,
                                  FLAGS_optimized_model_dir + "/ref_opt_model");
 // Generate and run optimized model on NPU/XPU as the target predictor
 #ifdef LITE_WITH_NPU
@@ -179,10 +216,11 @@ TEST(Subgraph, generate_model_and_check_precision) {
                                  FLAGS_params_file,
                                  valid_places,
                                  input_tensor_shape,
+                                 input_tensor_type,
                                  FLAGS_optimized_model_dir + "/tar_opt_model");
   // Check the difference of the output tensors between reference predictor and
   // target predictor
-  CheckOutputTensors(tar_predictor, ref_predictor, FLAGS_output_tensor_num);
+  CheckOutputTensors(tar_predictor, ref_predictor, output_tensor_type);
 }
 
 }  // namespace lite

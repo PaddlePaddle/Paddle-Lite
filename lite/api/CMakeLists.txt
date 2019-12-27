@@ -35,6 +35,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
         NPU_DEPS ${npu_kernels})
 
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} paddle_cv_arm ${npu_kernels})
+
     if (LITE_WITH_NPU)
         # Strips the symbols of our protobuf functions to fix the conflicts during
         # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)
@@ -85,9 +86,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
                         X86_DEPS ${x86_kernels}
                         ARM_DEPS ${arm_kernels}
-                        CV_DEPS ${paddle_cv_arm}
-                        NPU_DEPS ${npu_kernels} ${npu_bridges} npu_pass
-                        XPU_DEPS ${xpu_kernels} ${xpu_bridges} xpu_pass
+
+                        CV_DEPS paddle_cv_arm
+                        NPU_DEPS ${npu_kernels}
+                        XPU_DEPS ${xpu_kernels}
                         CL_DEPS ${opencl_kernels}
                         FPGA_DEPS ${fpga_kernels})
 endif()
@@ -298,6 +300,28 @@ endif()
 # Some bins
 if(NOT IOS)
     lite_cc_binary(test_model_bin SRCS model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels}
+        ARM_DEPS ${arm_kernels}
+        CV_DEPS paddle_cv_arm
+        NPU_DEPS ${npu_kernels}
+        XPU_DEPS ${xpu_kernels}
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        X86_DEPS ${x86_kernels}
+        CUDA_DEPS ${cuda_kernels})
+
+
+    lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels}
+        ARM_DEPS ${arm_kernels}
+        CV_DEPS paddle_cv_arm
+        NPU_DEPS ${npu_kernels}
+        XPU_DEPS ${xpu_kernels}
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        X86_DEPS ${x86_kernels}
+        CUDA_DEPS ${cuda_kernels})
+    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
