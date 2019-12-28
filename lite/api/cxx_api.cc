@@ -201,7 +201,11 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
   const bool model_from_memory = config.model_from_memory();
-  LOG(INFO) << "load from memory " << model_from_memory;
+  if (model_from_memory) {
+    LOG(INFO) << "Load model from memory.";
+  } else {
+    LOG(INFO) << "Load model from file.";
+  }
 
   Build(model_path,
         model_file,
