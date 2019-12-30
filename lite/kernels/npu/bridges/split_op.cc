@@ -47,33 +47,34 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int64_t sections_num = static_cast<int64_t>(sections.size());
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Split node
-  auto split_node = graph->AddNode<ge::op::Split>(op_type + "/" + x_name);
-  split_node->set_input_x(*x_node);
-  split_node->set_attr_axis(static_cast<int64_t>(axis));
+  auto split_node = graph->Add<ge::op::Split>(op_type + "/" + x_name);
+  auto split_op = split_node->data<ge::op::Split>();
+  split_op->set_input_x(*x_node->data());
+  split_op->set_attr_axis(static_cast<int64_t>(axis));
   if (num > 0) {
-    split_node->set_attr_output_num(static_cast<int64_t>(num));
+    split_op->set_attr_output_num(static_cast<int64_t>(num));
   } else {
-    split_node->set_attr_output_num(sections_num);
+    split_op->set_attr_output_num(sections_num);
     auto size_split = ge::AttrValue::LIST_INT(sections.begin(), sections.end());
-    split_node->set_attr_size_split(size_split);
+    split_op->set_attr_size_split(size_split);
   }
 
-  split_node->create_dynamic_output_y(out_names.size());
+  split_op->create_dynamic_output_y(out_names.size());
   int idx = 1;
   for (auto& out_name : out_names) {
-    auto zero_const_node =
-        graph->AddNode(out_name + "/zero" + std::to_string(idx), 0);
-    auto add_node = graph->AddNode<ge::op::Add>(out_name);
-    add_node->set_input_x1(*split_node, "y" + std::to_string(idx));
-    add_node->set_input_x2(*zero_const_node);
+    auto zero_node = graph->Add(out_name + "/zero" + std::to_string(idx), 0);
+    auto add_node = graph->Add<ge::op::Add>(out_name);
+    auto add_op = add_node->data<ge::op::Add>();
+    add_op->set_input_x1(*split_node->data(), "y" + std::to_string(idx));
+    add_op->set_input_x2(*zero_node->data());
     idx++;
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
@@ -84,6 +85,6 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         split,
+REGISTER_SUBGRAPH_BRIDGE(split,
+                         kNPU,
                          paddle::lite::subgraph::npu::SplitConverter);

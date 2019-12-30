@@ -44,16 +44,17 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Reshape node
-  auto reshape_node = graph->AddNode<ge::op::Reshape>(out_name);
-  reshape_node->set_input_tensor(*x_node);
+  auto reshape_node = graph->Add<ge::op::Reshape>(out_name);
+  auto reshape_op = reshape_node->data<ge::op::Reshape>();
+  reshape_op->set_input_tensor(*x_node->data());
 
   // Read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
   if (HasInputArg(op_info, scope, "ShapeTensor")) {
@@ -64,9 +65,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     // auto actual_shape_type = kernel->GetInputDeclType("Shape");
     // CHECK(actual_shape_type->precision() == PRECISION(kInt32));
     // CHECK(actual_shape_type->layout() == DATALAYOUT(kNCHW));
-    std::shared_ptr<ge::Operator> actual_shape_node = nullptr;
-    if (graph->HasNode(actual_shape_name)) {
-      actual_shape_node = graph->GetNode(actual_shape_name);
+    std::shared_ptr<Node> actual_shape_node = nullptr;
+    if (graph->Has(actual_shape_name)) {
+      actual_shape_node = graph->Get(actual_shape_name);
     } else {
       auto actual_shape = scope->FindMutableTensor(actual_shape_name);
       auto actual_shape_dims = actual_shape->dims();
@@ -81,12 +82,11 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                         "but Shape has "
                      << out_shape.size();
       }
-      auto actual_shape_const_node =
-          graph->AddNode(actual_shape_name,
-                         std::vector<int>(out_shape.begin(), out_shape.end()));
-      actual_shape_node = actual_shape_const_node;
+      actual_shape_node =
+          graph->Add(actual_shape_name,
+                     std::vector<int>(out_shape.begin(), out_shape.end()));
     }
-    reshape_node->set_input_w(*actual_shape_node);
+    reshape_op->set_input_w(*actual_shape_node->data());
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
     auto out_dims = lite::operators::ValidateShape(shape, x_dims);
@@ -96,7 +96,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                       "but shape has "
                    << out_shape.size();
     }
-    reshape_node->set_attr_shape(
+    reshape_op->set_attr_shape(
         ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   }
 
@@ -117,9 +117,10 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     // auto xshape_type = kernel->GetOutputDeclType("XShape");
     // CHECK(xshape_type->precision() == PRECISION(kFloat));
     // CHECK(xshape_type->layout() == DATALAYOUT(kNCHW));
-    auto xshape_node = graph->AddNode<ge::op::Reshape>(xshape_name);
-    xshape_node->set_input_tensor(*x_node);
-    xshape_node->set_attr_shape(
+    auto xshape_node = graph->Add<ge::op::Reshape>(xshape_name);
+    auto xshape_op = xshape_node->data<ge::op::Reshape>();
+    xshape_op->set_input_tensor(*x_node->data());
+    xshape_op->set_attr_shape(
         ge::AttrValue::LIST_INT(xshape_dims.begin(), xshape_dims.end()));
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
@@ -130,9 +131,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         reshape,
+REGISTER_SUBGRAPH_BRIDGE(reshape,
+                         kNPU,
                          paddle::lite::subgraph::npu::ReshapeConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         reshape2,
+REGISTER_SUBGRAPH_BRIDGE(reshape2,
+                         kNPU,
                          paddle::lite::subgraph::npu::ReshapeConverter);

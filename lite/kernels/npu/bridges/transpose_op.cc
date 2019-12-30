@@ -41,19 +41,20 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Transpose node
-  auto transpose_node = graph->AddNode<ge::op::Permute>(out_name);
-  transpose_node->set_input_x(*x_node);
-  auto w_const_node = graph->AddNode(out_name + "/w", 1.0f);
-  transpose_node->set_input_w(*w_const_node);
-  transpose_node->set_attr_order(
+  auto transpose_node = graph->Add<ge::op::Permute>(out_name);
+  auto transpose_op = transpose_node->data<ge::op::Permute>();
+  transpose_op->set_input_x(*x_node->data());
+  auto w_node = graph->Add(out_name + "/w", 1.0f);
+  transpose_op->set_input_w(*w_node->data());
+  transpose_op->set_attr_order(
       ge::AttrValue::LIST_INT(axis.begin(), axis.end()));
   return SUCCESS;
 }
@@ -63,9 +64,9 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         transpose,
+REGISTER_SUBGRAPH_BRIDGE(transpose,
+                         kNPU,
                          paddle::lite::subgraph::npu::TransposeConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         transpose2,
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kNPU,
                          paddle::lite::subgraph::npu::TransposeConverter);

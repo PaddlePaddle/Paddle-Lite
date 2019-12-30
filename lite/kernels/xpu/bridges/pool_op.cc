@@ -50,21 +50,22 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto exclusive = op_info->GetAttr<bool>("exclusive");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Pool node
   if (pooling_type == "max") {
     if (global_pooling) {
-      graph->AddNode(out_name, graph->builder_.CreateGlobalMaxPool2D(*x_node));
+      graph->Add(out_name,
+                 graph->builder_.CreateGlobalMaxPool2D(*x_node->data()));
     } else {
-      graph->AddNode(
+      graph->Add(
           out_name,
-          graph->builder_.CreateMaxPool2D(*x_node,
+          graph->builder_.CreateMaxPool2D(*x_node->data(),
                                           CvtShape<xtcl::xIndexExpr>(ksize),
                                           CvtShape<xtcl::xIndexExpr>(strides),
                                           CvtShape<xtcl::xIndexExpr>(paddings),
@@ -73,12 +74,13 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   } else if (pooling_type == "avg") {
     if (global_pooling) {
-      graph->AddNode(out_name, graph->builder_.CreateGlobalAvgPool2D(*x_node));
+      graph->Add(out_name,
+                 graph->builder_.CreateGlobalAvgPool2D(*x_node->data()));
     } else {
       // !exclusive ---> count_include_pad
-      graph->AddNode(
+      graph->Add(
           out_name,
-          graph->builder_.CreateAvgPool2D(*x_node,
+          graph->builder_.CreateAvgPool2D(*x_node->data(),
                                           CvtShape<xtcl::xIndexExpr>(ksize),
                                           CvtShape<xtcl::xIndexExpr>(strides),
                                           CvtShape<xtcl::xIndexExpr>(paddings),
@@ -98,6 +100,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         pool2d,
+REGISTER_SUBGRAPH_BRIDGE(pool2d,
+                         kXPU,
                          paddle::lite::subgraph::xpu::PoolConverter);

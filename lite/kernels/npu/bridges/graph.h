@@ -19,7 +19,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
+#include "graph/op/all_ops.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 
@@ -28,94 +28,97 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-// Type of graph nodes
-class Type {
+// Graph and node is defined to collect all of converted HiAI IR nodes
+class Node {
  public:
-  Type(PrecisionType precision = PRECISION(kFloat),
-       DataLayoutType layout = DATALAYOUT(kNCHW),
-       bool persistable = false)
-      : precision_(precision), layout_(layout), persistable_(persistable) {}
+  enum class Role {
+    kVar = 0,
+    kConst,
+    kData,
+  };
 
+  Node(std::shared_ptr<ge::Operator> data,
+       PrecisionType precision,
+       DataLayoutType layout,
+       Role role)
+      : data_(data), precision_(precision), layout_(layout), role_(role) {}
+  Node(PrecisionType precision, DataLayoutType layout, Role role)
+      : precision_(precision), layout_(layout), role_(role) {}
+
+  void set_data(std::shared_ptr<ge::Operator> data) { data_ = data; }
   void set_precision(PrecisionType precision) { precision_ = precision; }
   void set_layout(DataLayoutType layout) { layout_ = layout; }
-  bool set_persistable(bool persistable) { persistable_ = persistable; }
+  void set_role(Role role) { role_ = role; }
 
+  template <typename T>
+  std::shared_ptr<T> data() {
+    return std::static_pointer_cast<T>(data_);
+  }
+  std::shared_ptr<ge::Operator> data() { return data_; }
   PrecisionType precision() const { return precision_; }
   DataLayoutType layout() const { return layout_; }
-  bool persistable() const { return persistable_; }
+  bool is_var() const { return role_ == Role::kVar; }
+  bool is_const() const { return role_ == Role::kConst; }
+  bool is_data() const { return role_ == Role::kData; }
 
  private:
+  std::shared_ptr<ge::Operator> data_{nullptr};
   PrecisionType precision_{PRECISION(kFloat)};
   DataLayoutType layout_{DATALAYOUT(kNCHW)};
-  bool persistable_{false};
+  Role role_{Role::kVar};
 };
 
-// Graph to collect all of converted HiAI IR nodes
 class Graph {
  public:
+  int Add(const std::string& name, std::shared_ptr<Node> node);
+
+  // Variable, const or data node
   template <typename T>
-  std::shared_ptr<T> AddNode(const std::string& name,
-                             PrecisionType precision = PRECISION(kFloat),
-                             DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    auto unique_name = [&](const std::string& key) {
-      int idx = 1;
-      auto it = counts_.find(key);
-      if (it == counts_.end()) {
-        counts_.insert(std::make_pair(key, idx));
-      } else {
-        idx = ++(it->second);
-      }
-      return key + "_" + std::to_string(idx);
-    };
-    bool persistable = typeid(T) == typeid(ge::op::Const);
-    auto it = nodes_.find(name);
-    if (it != nodes_.end()) {
-      // Only variable can rebind the name
-      CHECK(!it->second.second.persistable() && !persistable)
-          << "[NPU] Node " << name << " redefined.";
-      // Generate a new unique name as the key to bind the origin node:
-      // new_name->node
-      nodes_.insert(std::make_pair(unique_name(name + "_var"), it->second));
-      nodes_.erase(it);
+  std::shared_ptr<Node> Add(const std::string& name,
+                            PrecisionType precision = PRECISION(kFloat),
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    Node::Role role = Node::Role::kVar;
+    if (typeid(T) == typeid(ge::op::Const)) {
+      role = Node::Role::kConst;
+    } else if (typeid(T) == typeid(ge::op::Data)) {
+      role = Node::Role::kData;
     }
-    // Create a new node and bind with the name: name->new_node
-    auto node = std::make_shared<T>(unique_name(name + "_op"));
-    nodes_.insert(std::make_pair(
-        name, std::make_pair(node, Type(precision, layout, persistable))));
+    auto node = std::make_shared<Node>(precision, layout, role);
+    auto idx = Add(name, node);
+    CHECK_GE(idx, 1);
+    // Generate a unique name for the created HiAI IR
+    node->set_data(std::make_shared<T>(name + "__" + std::to_string(idx)));
     return node;
   }
 
+  // Const or data node
+  std::shared_ptr<Node> Add(const std::string& name,
+                            const Tensor& tensor,
+                            std::vector<int64_t> shape,
+                            PrecisionType precision = PRECISION(kFloat),
+                            DataLayoutType layout = DATALAYOUT(kNCHW));
+
+  std::shared_ptr<Node> Add(const std::string& name,
+                            const Tensor& tensor,
+                            PrecisionType precision = PRECISION(kFloat),
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return Add(name, tensor, tensor.dims().Vectorize(), precision, layout);
+  }
+
+  std::shared_ptr<Node> Add(const std::string& name,
+                            const Tensor& tensor,
+                            DDim dims,
+                            PrecisionType precision = PRECISION(kFloat),
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return Add(name, tensor, dims.Vectorize(), precision, layout);
+  }
+
   // Const node
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      const Tensor& tensor,
-      PrecisionType precision = PRECISION(kFloat),
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return AddNode(name, tensor, tensor.dims().Vectorize(), precision, layout);
-  }
-
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      const Tensor& tensor,
-      std::vector<int64_t> shape,
-      PrecisionType precision = PRECISION(kFloat),
-      DataLayoutType layout = DATALAYOUT(kNCHW));
-
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      const Tensor& tensor,
-      DDim dims,
-      PrecisionType precision = PRECISION(kFloat),
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return AddNode(name, tensor, dims.Vectorize(), precision, layout);
-  }
-
   template <typename T>
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      const std::vector<T>& data,
-      std::vector<int64_t> shape = {},
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
+  std::shared_ptr<Node> Add(const std::string& name,
+                            const std::vector<T>& data,
+                            std::vector<int64_t> shape = {},
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
     const std::type_info& info = typeid(T);
     PrecisionType precision = PRECISION(kFloat);
     if (info == typeid(float)) {
@@ -138,78 +141,66 @@ class Graph {
     }
     Tensor tensor;
     tensor.Resize(shape);
+    tensor.set_persistable(true);
     std::memcpy(reinterpret_cast<uint8_t*>(tensor.mutable_data<T>()),
                 reinterpret_cast<const uint8_t*>(data.data()),
                 data.size() * sizeof(T));
-    return AddNode(name, tensor, precision, layout);
+    return Add(name, tensor, precision, layout);
   }
 
   template <typename T>
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      const std::vector<T>& data,
-      DDim dims,
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return AddNode(name, data, dims.Vectorize(), layout);
+  std::shared_ptr<Node> Add(const std::string& name,
+                            const std::vector<T>& data,
+                            DDim dims,
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return Add(name, data, dims.Vectorize(), layout);
   }
 
   template <typename T>
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      T value,
-      std::vector<int64_t> shape = {1},
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
+  std::shared_ptr<Node> Add(const std::string& name,
+                            T value,
+                            std::vector<int64_t> shape = {1},
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
     int64_t size = 1;
     for (auto i : shape) {
       size *= i;
     }
     std::vector<T> data(size, value);
-    return AddNode(name, data, shape, layout);
+    return Add(name, data, shape, layout);
   }
 
   template <typename T>
-  std::shared_ptr<ge::op::Const> AddNode(
-      const std::string& name,
-      T value,
-      DDim dims,
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return AddNode(name, value, dims.Vectorize(), layout);
+  std::shared_ptr<Node> Add(const std::string& name,
+                            T value,
+                            DDim dims,
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return Add(name, value, dims.Vectorize(), layout);
   }
 
   // Data node
-  std::shared_ptr<ge::op::Data> AddNode(
-      const std::string& name,
-      std::vector<int64_t> shape,
-      PrecisionType precision = PRECISION(kFloat),
-      DataLayoutType layout = DATALAYOUT(kNCHW));
+  std::shared_ptr<Node> Add(const std::string& name,
+                            std::vector<int64_t> shape,
+                            PrecisionType precision = PRECISION(kFloat),
+                            DataLayoutType layout = DATALAYOUT(kNCHW));
 
-  std::shared_ptr<ge::op::Data> AddNode(
-      const std::string& name,
-      DDim dims,
-      PrecisionType precision = PRECISION(kFloat),
-      DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return AddNode(name, dims.Vectorize(), precision, layout);
+  std::shared_ptr<Node> Add(const std::string& name,
+                            DDim dims,
+                            PrecisionType precision = PRECISION(kFloat),
+                            DataLayoutType layout = DATALAYOUT(kNCHW)) {
+    return Add(name, dims.Vectorize(), precision, layout);
   }
 
-  std::shared_ptr<ge::Operator> GetNode(std::string name) {
-    CHECK(HasNode(name)) << "[NPU] Node " << name << " not found.";
-    return nodes_.at(name).first;
+  std::shared_ptr<Node> Get(std::string name) {
+    CHECK(Has(name)) << "[NPU] Node " << name << " not found.";
+    return nodes_.at(name).back();
   }
 
-  const Type& GetType(const std::string& name) {
-    CHECK(HasNode(name)) << "[NPU] Node " << name << " not found.";
-    return nodes_.at(name).second;
-  }
-
-  bool HasNode(const std::string& name) {
+  bool Has(const std::string& name) {
     return nodes_.find(name) != nodes_.end();
   }
 
  private:
-  std::unordered_map<std::string,
-                     std::pair<std::shared_ptr<ge::Operator>, Type>>
-      nodes_;
-  std::unordered_map<std::string, int> counts_;
+  std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
 };
 
 }  // namespace npu

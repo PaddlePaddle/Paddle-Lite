@@ -64,28 +64,28 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto epsilon = op_info->GetAttr<float>("epsilon");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Scale, Bias, Mean, Variance node
-  auto scale_const_node = graph->AddNode(scale_name, *scale);
-  auto bias_const_node = graph->AddNode(bias_name, *bias);
-  auto mean_const_node = graph->AddNode(mean_name, *mean);
-  auto variance_const_node = graph->AddNode(variance_name, *variance);
+  auto scale_node = graph->Add(scale_name, *scale);
+  auto bias_node = graph->Add(bias_name, *bias);
+  auto mean_node = graph->Add(mean_name, *mean);
+  auto variance_node = graph->Add(variance_name, *variance);
 
   // Batch Norm node and extract the first field as the output node
-  auto batch_norm_node = graph->builder_.CreateBatchNorm(*x_node,
-                                                         *scale_const_node,
-                                                         *bias_const_node,
-                                                         *mean_const_node,
-                                                         *variance_const_node,
+  auto batch_norm_data = graph->builder_.CreateBatchNorm(*x_node->data(),
+                                                         *scale_node->data(),
+                                                         *bias_node->data(),
+                                                         *mean_node->data(),
+                                                         *variance_node->data(),
                                                          1,
                                                          epsilon);
-  graph->AddNode(y_name, graph->builder_.GetField(batch_norm_node, 0));
+  graph->Add(y_name, graph->builder_.GetField(batch_norm_data, 0));
   return SUCCESS;
 }
 
@@ -94,6 +94,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         batch_norm,
+REGISTER_SUBGRAPH_BRIDGE(batch_norm,
+                         kXPU,
                          paddle::lite::subgraph::xpu::BatchNormConverter);
