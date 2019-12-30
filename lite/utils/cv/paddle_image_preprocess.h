@@ -24,7 +24,7 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
-// typedef paddle::lite_api::Tensor;
+typedef paddle::lite_api::Tensor Tensor;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 // color enum
 enum ImageFormat {
@@ -70,7 +70,8 @@ class ImagePreprocess {
   * BGR(RGB)and BGRA(RGBA) transform,
   * BGR(RGB)and RGB(BGR) transform,
   * BGR(RGB)and RGBA(BGRA) transform,
-  * BGR(RGB)and GRAY transform,
+  * BGR(RGB) and GRAY transform,
+  * BGRA(RGBA) and GRAY transform,
   * param src: input image data
   * param dst: output image data
   */
@@ -82,6 +83,7 @@ class ImagePreprocess {
   * BGR(RGB)and RGB(BGR) transform,
   * BGR(RGB)and RGBA(BGRA) transform,
   * BGR(RGB)and GRAY transform,
+  * BGRA(RGBA) and GRAY transform,
   * param src: input image data
   * param dst: output image data
   * param srcFormat: input image image format support: GRAY, NV12(NV21),
@@ -172,7 +174,8 @@ class ImagePreprocess {
                  FlipParam flip_param);
   /*
   * change image data to tensor data
-  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+  * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
+  * and
   * NCHW
   * param src: input image data
   * param dstTensor: output tensor data
@@ -181,13 +184,14 @@ class ImagePreprocess {
   * param scales: scales of image
   */
   void image2Tensor(const uint8_t* src,
-                    paddle::lite_api::Tensor* dstTensor,
+                    Tensor* dstTensor,
                     LayoutType layout,
                     float* means,
                     float* scales);
   /*
    * change image data to tensor data
-  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+  * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
+  * and
   * NCHW
   * param src: input image data
   * param dstTensor: output tensor data
@@ -199,7 +203,7 @@ class ImagePreprocess {
   * param scales: scales of image
   */
   void image2Tensor(const uint8_t* src,
-                    paddle::lite_api::Tensor* dstTensor,
+                    Tensor* dstTensor,
                     ImageFormat srcFormat,
                     int srcw,
                     int srch,

@@ -18,6 +18,13 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void gray_to_tensor(const uint8_t* src,
+                    float* output,
+                    int width,
+                    int height,
+                    float* means,
+                    float* scales);
+
 void bgr_to_tensor_chw(const uint8_t* src,
                        float* output,
                        int width,
@@ -52,7 +59,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
  * NCHW
   * param src: input image data
   * param dstTensor: output tensor data
-  * param srcFormat: input image format, support BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param layout: output tensor layout，support NHWC and NCHW
@@ -60,7 +67,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
   * param scales: scales of image
 */
 void Image2Tensor::choose(const uint8_t* src,
-                          paddle::lite_api::Tensor* dst,
+                          Tensor* dst,
                           ImageFormat srcFormat,
                           LayoutType layout,
                           int srcw,
@@ -79,6 +86,9 @@ void Image2Tensor::choose(const uint8_t* src,
   } else if (layout == LayoutType::kNHWC &&
              (srcFormat == BGRA || srcFormat == RGBA)) {
     impl_ = bgra_to_tensor_hwc;
+  } else if ((layout == LayoutType::kNHWC || layout == LayoutType::kNCHW) &&
+             (srcFormat == GRAY)) {
+    impl_ = gray_to_tensor;
   } else {
     printf("this layout: %d or image format: %d not support \n",
            static_cast<int>(layout),
@@ -87,6 +97,147 @@ void Image2Tensor::choose(const uint8_t* src,
   }
   impl_(src, output, srcw, srch, means, scales);
 }
+
+void gray_to_tensor(const uint8_t* src,
+                    float* output,
+                    int width,
+                    int height,
+                    float* means,
+                    float* scales) {
+  int size = width * height;
+  float mean_val = means[0];
+  float scale_val = scales[0];
+
+  int dim16 = width >> 16;
+  int remain = width % 16;
+
+  float32x4_t vmean = vdupq_n_f32(mean_val);
+  float32x4_t vscale = vdupq_n_f32(scale_val);
+#pragma omp parallel for
+  for (int i = 0; i < height; i += 1) {
+    const uint8_t* din_ptr = src + i * width;
+    float* ptr_h = output + i * width;
+    int cnt = dim16;
+    if (cnt > 0) {
+#ifdef __aarch64__
+      asm volatile(
+          "prfm   pldl1keep, [%[inptr0]]                \n"
+          "prfm   pldl1keep, [%[inptr0], #64]   \n"
+          "prfm   pldl1keep, [%[inptr0], #128]   \n"
+          "prfm   pldl1keep, [%[inptr0], #192]   \n"
+          "1:     \n"
+          "ld1 {v0.8b}, [%[inptr0]], #8 \n"  // d8 = y0y1y2.."
+          "ld1 {v1.8b}, [%[inptr0]], #8 \n"  // d8 = y0y1y2.."
+          // 8->16
+          "ushll v3.8h, v0.8b, #0  \n"
+          "ushll v4.8h, v0.8b, #0  \n"
+          // 16->32
+          "ushll v6.4s, v3.4h, #0   \n"
+          "ushll2 v7.4s, v3.8h, #0   \n"
+          "ushll v8.4s, v4.4h, #0   \n"
+          "ushll2 v9.4s, v4.8h, #0   \n"
+          // int32->fp32
+          "ucvtf v12.4s, v6.4s \n"
+          "ucvtf v13.4s, v7.4s \n"
+          "ucvtf v14.4s, v8.4s \n"
+          "ucvtf v15.4s, v9.4s \n"
+          // sub -mean
+          "fsub v12.4s, v12.4s, %w[vmean].4s \n"
+          "fsub v13.4s, v13.4s, %w[vmean].4s \n"
+          "fsub v14.4s, v14.4s, %w[vmean].4s \n"
+          "fsub v15.4s, v15.4s, %w[vmean].4s \n"
+          // mul * scale
+          "fmul v6.4s, v12.4s, %w[vscale].4s \n"
+          "fmul v7.4s, v13.4s, %w[vscale].4s \n"
+          "fmul v8.4s, v14.4s, %w[vscale].4s \n"
+          "fmul v9.4s, v15.4s, %w[vscale].4s \n"
+          // store
+          "st1 {v6.4s}, [%[outr0]], #16 \n"
+          "subs %w[cnt], %w[cnt], #1 \n"
+          "st1 {v7.4s}, [%[outr0]], #16 \n"
+          "st1 {v8.4s}, [%[outr0]], #16 \n"
+          "st1 {v9.4s}, [%[outr0]], #16 \n"
+          "bne 1b \n"
+          : [inptr0] "+r"(din_ptr), [outr0] "+r"(ptr_h), [cnt] "+r"(cnt)
+          : [vmean] "w"(vmean), [vscale] "w"(vscale)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15");
+#else
+      asm volatile(
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #64]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #128]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #192]                         @ preload a, 64byte\n"
+          "1: \n"
+          "vld1.8 {d12, d13}, [%[inptr0]]! \n"
+          // 8->16
+          "vmovl.u8 q8, d12 \n"
+          "vmovl.u8 q9, d13 \n"
+          // 16->32
+          "vmovl.u16 q11, d16 \n"
+          "vmovl.u16 q12, d17 \n"
+          "vmovl.u16 q13, d18 \n"
+          "vmovl.u16 q14, d19 \n"
+          // int32->fp32
+          "vcvt.f32.u32 q7, q11 \n"
+          "vcvt.f32.u32 q8, q12 \n"
+          "vcvt.f32.u32 q9, q13 \n"
+          "vcvt.f32.u32 q10, q14 \n"
+          // sub -mean
+          "vsub.f32 q7, q7, %q[vmean] \n"
+          "vsub.f32 q8, q8, %q[vmean] \n"
+          "vsub.f32 q9, q9, %q[vmean] \n"
+          "vsub.f32 q10, q10, %q[vmean] \n"
+          // mul *scale
+          "vmul.f32 q11, q7, %q[vscale] \n"
+          "vmul.f32 q12, q8, %q[vscale] \n"
+          "vmul.f32 q13, q9, %q[vscale] \n"
+          "vmul.f32 q14, q10, %q[vscale] \n"
+          // store
+          "vst1.32  {d22 - d23}, [%[outr0]]! \n"
+          "subs %[cnt], #1 \n"
+          "vst1.32  {d24 - d25}, [%[outr0]]! \n"
+          "vst1.32  {d26 - d27}, [%[outr0]]! \n"
+          "vst1.32  {d28 - d29}, [%[outr2]]! \n"
+          "bne 1b"
+          : [inptr0] "+r"(din_ptr), [outr0] "+r"(ptr_h), [cnt] "+r"(cnt)
+          : [vmean] "w"(vmean), [vscale] "w"(vscale)
+          : "cc",
+            "memory",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12",
+            "q13",
+            "q14");
+#endif
+    }
+    for (int j = 0; j < remain; j++) {
+      *ptr_h++ = (*din_ptr - mean_val) * scale_val;
+      din_ptr++;
+    }
+  }
+}
+
 void bgr_to_tensor_chw(const uint8_t* src,
                        float* output,
                        int width,
@@ -390,6 +541,7 @@ void bgra_to_tensor_chw(const uint8_t* src,
     }
   }
 }
+
 void bgr_to_tensor_hwc(const uint8_t* src,
                        float* output,
                        int width,

@@ -29,7 +29,7 @@ typedef void (*tensor_func)(const uint8_t* src,
 class Image2Tensor {
  public:
   void choose(const uint8_t* src,
-              paddle::lite_api::Tensor* dst,
+              Tensor* dst,
               ImageFormat srcFormat,
               LayoutType layout,
               int srcw,

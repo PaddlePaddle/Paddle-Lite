@@ -30,10 +30,14 @@ void nv21_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 void nv21_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 void nv12_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// bgra rgba to gray
+void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgr rgb to gray
 void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // gray to bgr rgb
 void hwc1_to_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch);
+// gray to bgra rgba
+void hwc1_to_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgr to bgra or rgb to rgba
 void hwc3_to_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 // bgra to bgr or rgba to rgb
@@ -112,6 +116,12 @@ void ImageConvert::choose(const uint8_t* src,
     } else if ((srcFormat == RGB && dstFormat == BGRA) ||
                (srcFormat == BGR && dstFormat == RGBA)) {
       impl_ = hwc3_trans_hwc4;
+    } else if ((srcFormat == GRAY && dstFormat == RGBA) ||
+               (srcFormat == GRAY && dstFormat == BGRA)) {
+      impl_ = hwc1_to_hwc4;
+    } else if ((srcFormat == RGBA && dstFormat == GRAY) ||
+               (srcFormat == BGRA && dstFormat == GRAY)) {
+      impl_ = hwc4_to_hwc1;
     } else {
       printf("srcFormat: %d, dstFormat: %d does not support! \n",
              srcFormat,
@@ -816,10 +826,10 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8_t g = 75;
   uint8_t r = 38;
 
+#ifdef __aarch64__
   uint8x8_t vb = vdup_n_u8(b);
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
-#ifdef __aarch64__
 #else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
@@ -989,7 +999,7 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "vshrn.u32 d24, q6, #7 \n"
           "vshrn.u32 d25, q7, #7 \n"
           "vshrn.u32 d26, q8, #7 \n"
-          "vshrn.u32 d27, q8, #7 \n"
+          "vshrn.u32 d27, q9, #7 \n"
           // 16->8
           "vmovn.u16 d4, q10 \n"
           "vmovn.u16 d5, q11 \n"
@@ -1077,6 +1087,280 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   }
 }
 /*
+采用CV_BGR2GRAY,转换公式Gray = 0.1140*B + 0.5870*G + 0.2989*R
+采用CV_RGB2GRAY,转换公式Gray = 0.1140*R + 0.5870*G + 0.2989*B
+b = 0.114 *128 = 14.529 = 15
+g = 0.587 * 128 = 75.136 = 75
+r = 0.2989 * 127 = 38.2592 = 38
+Gray = (15*B + 75*G + 38*R)/128
+bgra2gray, rgba2gray
+*/
+void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
+  uint8_t b = 15;
+  uint8_t g = 75;
+  uint8_t r = 38;
+
+#ifdef __aarch64__
+  uint8x8_t vb = vdup_n_u8(b);
+  uint8x8_t vg = vdup_n_u8(g);
+  uint8x8_t vr = vdup_n_u8(r);
+#else
+  uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
+  uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
+  uint8_t vr_array[8] = {r, r, r, r, r, r, r, r};
+#endif
+  int cnt_pro = srcw >> 3;
+  int remain_pro = srcw % 8;
+  int win = srcw * 4;
+  int i = 0;
+#pragma omp parallel for
+  for (i = 0; i < srch - 3; i += 4) {
+    int j = 0;
+    const uint8_t* inptr0 = src + i * win;
+    const uint8_t* inptr1 = inptr0 + win;
+    const uint8_t* inptr2 = inptr1 + win;
+    const uint8_t* inptr3 = inptr2 + win;
+    uint8_t* outr0 = dst + i * srcw;
+    uint8_t* outr1 = outr0 + srcw;
+    uint8_t* outr2 = outr1 + srcw;
+    uint8_t* outr3 = outr2 + srcw;
+
+    int cnt = cnt_pro;
+    if (cnt > 0) {
+#ifdef __aarch64__
+      asm volatile(
+          "prfm   pldl1keep, [%[inptr0]]                \n"
+          "prfm   pldl1keep, [%[inptr0], #128]   \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr1], #128]   \n"
+          "prfm   pldl1keep, [%[inptr2]]                \n"
+          "prfm   pldl1keep, [%[inptr2], #128]   \n"
+          "prfm   pldl1keep, [%[inptr3]]                \n"
+          "prfm   pldl1keep, [%[inptr3], #128]   \n"
+          "1: \n"
+          "ld4 {v0.8b - v3.8b}, [%[inptr0]], #32 \n"    // d8 = y0y3y6y9.. d9 =
+                                                        // y1y4y7...
+          "ld4 {v4.8b - v7.8b}, [%[inptr1]], #32 \n"    // d8 = y0y3y6y9.. d9 =
+                                                        // y1y4y7...
+          "ld4 {v8.8b - v11.8b}, [%[inptr2]], #32 \n"   // d8 = y0y3y6y9.. d9 =
+                                                        // y1y4y7...
+          "ld4 {v12.8b - v15.8b}, [%[inptr3]], #32 \n"  // d8 = y0y3y6y9.. d9 =
+                                                        // y1y4y7...
+          // mul b
+          "umull v13.8h, v0.8b, %w[vb].8b \n"   // v0 * vb
+          "umull v14.8h, v4.8b, %w[vb].8b \n"   // v0 * vb
+          "umull v15.8h, v8.8b, %w[vb].8b \n"   // v0 * vb
+          "umull v16.8h, v12.8b, %w[vb].8b \n"  // v0 * vb
+          // mul g
+          "umull v17.8h, v1.8b, %w[vg].8b \n"   // v0 * vb
+          "umull v18.8h, v5.8b, %w[vg].8b \n"   // v0 * vb
+          "umull v19.8h, v9.8b, %w[vg].8b \n"   // v0 * vb
+          "umull v20.8h, v13.8b, %w[vg].8b \n"  // v0 * vb
+          // mul r
+          "umlal v13.8h, v2.8b, %w[vr].8b \n"   // v0 * vb
+          "umlal v14.8h, v6.8b, %w[vr].8b \n"   // v0 * vb
+          "umlal v15.8h, v10.8b, %w[vr].8b \n"  // v0 * vb
+          "umlal v16.8h, v14.8b, %w[vr].8b \n"  // v0 * vb
+          // 16->32
+          "uaddl v0.4s, v17.4h, v13.4h \n"
+          "uaddl2 v1.4s, v17.8h, v13.8h \n"
+          "uaddl v2.4s, v18.4h, v14.4h \n"
+          "uaddl2 v3.4s, v18.8h, v14.8h \n"
+          "uaddl v4.4s, v19.4h, v15.4h \n"
+          "uaddl2 v5.4s, v19.8h, v15.8h \n"
+          "uaddl v6.4s, v20.4h, v16.4h \n"
+          "uaddl2 v7.4s, v20.8h, v16.8h \n"
+          // 32->16 v0 >> 7
+          "shrn v12.4h, v0.4s, #7 \n"
+          "shrn2 v12.8h, v1.4s, #7 \n"
+          "shrn v13.4h, v2.4s, #7 \n"
+          "shrn2 v13.8h, v3.4s, #7 \n"
+          "shrn v14.4h, v4.4s, #7 \n"
+          "shrn2 v14.8h, v5.4s, #7 \n"
+          "shrn v15.4h, v6.4s, #7 \n"
+          "shrn2 v15.8h, v7.4s, #7 \n"
+          // 16->8
+          "xtn v0.8b, v12.8h \n"
+          "xtn v1.8b, v13.8h \n"
+          "xtn v2.8b, v14.8h \n"
+          "xtn v3.8b, v15.8h \n"
+          "subs %w[cnt], %w[cnt], #1 \n"
+          "st1 {v0.8b}, [%[outr0]], #8 \n"
+          "st1 {v1.8b}, [%[outr1]], #8 \n"
+          "st1 {v2.8b}, [%[outr2]], #8 \n"
+          "st1 {v3.8b}, [%[outr3]], #8 \n"
+          "bne 1b \n"
+          : [inptr0] "+r"(inptr0),
+            [inptr1] "+r"(inptr1),
+            [inptr2] "+r"(inptr2),
+            [inptr3] "+r"(inptr3),
+            [outr0] "+r"(outr0),
+            [outr1] "+r"(outr1),
+            [outr2] "+r"(outr2),
+            [outr3] "+r"(outr3),
+            [cnt] "+r"(cnt)
+          : [vb] "w"(vb), [vg] "w"(vg), [vr] "w"(vr)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "v17",
+            "v18",
+            "v19",
+            "v20");
+#else
+      asm volatile(
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr0], #128]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]            @ preload a, 64byte\n"
+          "pld [%[inptr1], #128]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]            @ preload a, 64byte\n"
+          "pld [%[inptr2], #128]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]            @ preload a, 64byte\n"
+          "pld [%[inptr3], #128]                         @ preload a, 64byte\n"
+          "vld1.8 d0, [%[vb]] \n"
+          "vld1.8 d1, [%[vg]] \n"
+          "vld1.8 d2, [%[vr]] \n"
+          "1: \n"
+          "vld4.8 {d3, d4, d5, d6}, [%[inptr0]]! \n"
+          "vld4.8 {d7, d8, d9, d10}, [%[inptr1]]! \n"
+          "vld4.8 {d11, d12, d13, d14}, [%[inptr2]]! \n"
+          "vld4.8 {d15, d16, d17, d18}, [%[inptr3]]! \n"
+          // vb
+          "vmull.u8 q10, d3, d0 \n"
+          "vmull.u8 q11, d7, d0 \n"
+          "vmull.u8 q12, d11, d0 \n"
+          "vmull.u8 q13, d15, d0 \n"
+          // vg
+          "vmull.u8 q14, d4, d1 \n"
+          "vmull.u8 q15, d8, d1 \n"
+          "vmull.u8 q5, d12, d1 \n"
+          "vmull.u8 q7, d16, d1 \n"
+          // vr
+          "vmlal.u8 q10, d5, d2 \n"
+          "vmlal.u8 q11, d9, d2 \n"
+          "vmlal.u8 q12, d13, d2 \n"
+          "vmlal.u8 q13, d17, d2 \n"
+          // 16->32
+          "vaddl.u16 q2, d28, d20 \n"
+          "vaddl.u16 q3, d29, d21 \n"
+          "vaddl.u16 q4, d30, d22 \n"
+          "vaddl.u16 q10, d31, d23 \n"
+          "vaddl.u16 q6, d10, d24 \n"
+          "vaddl.u16 q11, d11, d25 \n"
+          "vaddl.u16 q8, d14, d26 \n"
+          "vaddl.u16 q9, d15, d27 \n"
+          // 32->16 q2 >> 7
+          "vshrn.u32  d10, q2, #7 \n"
+          "vshrn.u32 d11, q3, #7 \n"
+          "vshrn.u32 d14, q4, #7 \n"
+          "vshrn.u32 d15, q10, #7 \n"
+          "vshrn.u32 d24, q6, #7 \n"
+          "vshrn.u32 d25, q11, #7 \n"
+          "vshrn.u32 d26, q8, #7 \n"
+          "vshrn.u32 d27, q9, #7 \n"
+          // 16->8
+          "vmovn.u16 d4, q5 \n"
+          "vmovn.u16 d5, q7 \n"
+          "vmovn.u16 d6, q12 \n"
+          "vmovn.u16 d7, q13 \n"
+          "subs %[cnt], #1 \n"
+          // store
+          "vst1.8 d4, [%[outr0]]! \n"
+          "vst1.8 d5, [%[outr1]]! \n"
+          "vst1.8 d6, [%[outr2]]! \n"
+          "vst1.8 d7, [%[outr3]]! \n"
+          "bne 1b \n"
+          : [inptr0] "+r"(inptr0),
+            [inptr1] "+r"(inptr1),
+            [inptr2] "+r"(inptr2),
+            [inptr3] "+r"(inptr3),
+            [outr0] "+r"(outr0),
+            [outr1] "+r"(outr1),
+            [outr2] "+r"(outr2),
+            [outr3] "+r"(outr3),
+            [cnt] "+r"(cnt)
+          : [vb] "r"(vb_array), [vg] "r"(vg_array), [vr] "r"(vr_array)
+          : "cc",
+            "memory",
+            "q0",
+            "q1",
+            "q2",
+            "q3",
+            "q4",
+            "q5",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12",
+            "q13",
+            "q14",
+            "q15");
+#endif
+    }
+    for (; j < remain_pro; j++) {
+      *outr0++ = (inptr0[0] * b + inptr0[1] * g + inptr0[2] * r) >> 7;
+      *outr1++ = (inptr1[0] * b + inptr1[1] * g + inptr1[2] * r) >> 7;
+      *outr2++ = (inptr2[0] * b + inptr2[1] * g + inptr2[2] * r) >> 7;
+      *outr3++ = (inptr3[0] * b + inptr3[1] * g + inptr3[2] * r) >> 7;
+      inptr0 += 4;
+      inptr1 += 4;
+      inptr2 += 4;
+      inptr3 += 4;
+    }
+  }
+  for (; i < srch; i++) {
+    int j = 0;
+    const uint8_t* inptr0 = src + i * win;
+    uint8_t* outr0 = dst + i * srcw;
+    for (j = 0; j < cnt_pro; j++) {
+      uint8x8x4_t y0 = vld4_u8(inptr0);  // d8 = y0y3y6y9.. d9 = y1y4y7...y
+      uint16x8_t val0 = vmull_u8(y0.val[0], vb);
+
+      uint16x8_t val0_1 = vmull_u8(y0.val[1], vg);
+
+      val0 = vmlal_u8(val0, y0.val[2], vr);
+
+      uint32x4_t v0_sum0 = vaddl_u16(vget_low_u16(val0_1), vget_low_u16(val0));
+      uint32x4_t v0_sum1 =
+          vaddl_u16(vget_high_u16(val0_1), vget_high_u16(val0));
+
+      uint16x4_t v0_sum0_16 = vshrn_n_u32(v0_sum0, 7);
+      uint16x4_t v0_sum1_16 = vshrn_n_u32(v0_sum1, 7);
+
+      uint16x8_t v0_sum = vcombine_u16(v0_sum0_16, v0_sum1_16);
+
+      uint8x8_t vout0 = vmovn_u16(v0_sum);
+
+      inptr0 += 32;
+      vst1_u8(outr0, vout0);
+      outr0 += 8;
+    }
+    for (; j < srcw; j++) {
+      *outr0++ = (inptr0[0] * b + inptr0[1] * g + inptr0[2] * r) >> 7;
+      inptr0 += 4;
+    }
+  }
+}
+/*
 采用CV_GRAY2BGR,转换公式B = G = R = Gray
 采用CV_GRAY2RGB,转换公式R = G = B = Gray
 gray2bgr, gray2rgb
@@ -1087,6 +1371,22 @@ void hwc1_to_hwc3(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       *dst++ = *src;
       *dst++ = *src;
       *dst++ = *src;
+      src++;
+    }
+  }
+}
+/*
+采用CV_GRAY2BGRA,转换公式B = G = R = Gray A=255
+采用CV_GRAY2RGBA,转换公式R = G = B = Gray A=255
+gray2bgra, gray2rgba
+*/
+void hwc1_to_hwc4(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
+  for (int i = 0; i < srch; i++) {
+    for (int j = 0; j < srcw; j++) {
+      *dst++ = *src;
+      *dst++ = *src;
+      *dst++ = *src;
+      *dst++ = 255;
       src++;
     }
   }

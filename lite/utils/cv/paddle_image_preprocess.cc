@@ -122,7 +122,7 @@ void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   paddle::lite_api::Tensor* dstTensor,
+                                   Tensor* dstTensor,
                                    ImageFormat srcFormat,
                                    int srcw,
                                    int srch,
@@ -135,7 +135,7 @@ void ImagePreprocess::image2Tensor(const uint8_t* src,
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   paddle::lite_api::Tensor* dstTensor,
+                                   Tensor* dstTensor,
                                    LayoutType layout,
                                    float* means,
                                    float* scales) {

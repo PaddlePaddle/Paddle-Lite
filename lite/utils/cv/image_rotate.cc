@@ -607,6 +607,7 @@ void rotate_hwc1_90(const uint8_t* src,
   int stride_h = 4 * w_in;
   int stride_h_w = 4 * w_in - 8;
   int stride_out = 4 * w_out;
+  int ww = w_out - 8;
 #pragma omp parallel for
   for (i = 0; i < h_in - 7; i += 8) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -615,7 +616,7 @@ void rotate_hwc1_90(const uint8_t* src,
     const uint8_t* inptr3 = inptr2 + w_in;
     int j = 0;
     for (; j < w_in - 7; j += 8) {
-      uint8_t* outptr0 = dst + j * w_out + i;
+      uint8_t* outptr0 = dst + j * w_out + (ww - i);
       uint8_t* outptr1 = outptr0 + w_out;
       uint8_t* outptr2 = outptr1 + w_out;
       uint8_t* outptr3 = outptr2 + w_out;
@@ -677,7 +678,7 @@ void rotate_hwc1_90(const uint8_t* src,
     const uint8_t* inptr6 = inptr5 + w_in;
     const uint8_t* inptr7 = inptr6 + w_in;
     for (; j < w_in; j++) {
-      uint8_t* outptr = dst + j * w_out + i;
+      uint8_t* outptr = dst + j * w_out + ww - i;
       *outptr++ = *inptr0++;
       *outptr++ = *inptr1++;
       *outptr++ = *inptr2++;
@@ -688,10 +689,11 @@ void rotate_hwc1_90(const uint8_t* src,
       *outptr++ = *inptr7++;
     }
   }
+  ww = w_out - 1;
   for (; i < h_in; i++) {
     const uint8_t* inptr0 = src + i * w_in;
     for (int j = 0; j < w_in; j++) {
-      uint8_t* outptr0 = dst + j * w_out + i;
+      uint8_t* outptr0 = dst + j * w_out + ww - i;
       *outptr0 = *inptr0++;
     }
   }
@@ -722,9 +724,9 @@ void rotate_hwc1_180(const uint8_t* src,
     const uint8_t* inptr3 = inptr2 + w_in;
 
     uint8_t* outptr0 = dst + (h_in - i) * w_out - stride_w;  // last
-    uint8_t* outptr1 = outptr0 + w_out;
-    uint8_t* outptr2 = outptr1 + w_out;
-    uint8_t* outptr3 = outptr2 + w_out;
+    uint8_t* outptr1 = outptr0 - w_out;
+    uint8_t* outptr2 = outptr1 - w_out;
+    uint8_t* outptr3 = outptr2 - w_out;
 
     if (i + 3 >= h_in) {
       uint8_t* ptr = zerobuff + w_in - stride_w;
