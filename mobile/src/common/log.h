@@ -80,7 +80,6 @@ static const char *ANDROID_LOG_TAG =
 #endif
 
 enum LogLevel {
-  kNO_LOG,
   kLOG_ERROR,
   kLOG_WARNING,
   kLOG_INFO,
@@ -89,15 +88,16 @@ enum LogLevel {
   kLOG_DEBUG1,
   kLOG_DEBUG2,
   kLOG_DEBUG3,
-  kLOG_DEBUG4
+  kLOG_DEBUG4,
+  kNO_LOG,
 };
 
 // log level
 static LogLevel log_level = kLOG_DEBUG4;
 
-static std::vector<std::string> logs{"NO     ", "ERROR  ", "WARNING", "INFO   ",
-                                     "VERBOSE", "DEBUG  ", "DEBUG1 ", "DEBUG2 ",
-                                     "DEBUG3 ", "DEBUG4 "};
+static std::vector<std::string> logs{"ERROR  ", "WARNING", "INFO   ", "VERBOSE",
+                                     "DEBUG  ", "DEBUG1 ", "DEBUG2 ", "DEBUG3 ",
+                                     "DEBUG4 ", "NO     "};
 struct ToLog;
 struct Print;
 
@@ -217,7 +217,6 @@ struct ToLog {
 #define ANDROIDLOGV(...)
 
 enum LogLevel {
-  kNO_LOG,
   kLOG_ERROR,
   kLOG_WARNING,
   kLOG_INFO,
@@ -226,7 +225,8 @@ enum LogLevel {
   kLOG_DEBUG1,
   kLOG_DEBUG2,
   kLOG_DEBUG3,
-  kLOG_DEBUG4
+  kLOG_DEBUG4,
+  kNO_LOG
 };
 
 struct ToLog;
