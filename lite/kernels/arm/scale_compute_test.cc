@@ -28,7 +28,7 @@ void scale_compute_ref(const operators::ScaleParam& param) {
   dtype* output_data = param.output->mutable_data<dtype>();
   DDim x_dims = param.x->dims();
   DDim output_dims = param.output->dims();
-  ASSERT_EQ(x_dims.data(), output_dims.data());
+  ASSERT_EQ(x_dims, output_dims);
   bool bias_after_scale = param.bias_after_scale;
   float scale = param.scale;
   float bias = param.bias;

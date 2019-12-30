@@ -30,7 +30,7 @@ void activation_compute_ref(const operators::ActivationParam& param) {
   auto output_data = param.Out->mutable_data<dtype>();
   DDim x_dims = param.X->dims();
   DDim output_dims = param.Out->dims();
-  ASSERT_EQ(x_dims.data(), output_dims.data());
+  ASSERT_EQ(x_dims, output_dims);
   for (int i = 0; i < output_dims.production(); i++) {
     output_data[i] = std::max(0.f, x_data[i]);
   }

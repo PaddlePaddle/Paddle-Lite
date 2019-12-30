@@ -35,7 +35,7 @@ void TransposeCompute::Run() {
   float* out = Out->mutable_data<float>(TARGET(kCUDA));
 
   int ndim = X->dims().size();
-  std::vector<int64_t> dims = X->dims().data();
+  std::vector<int64_t> dims = X->dims().Vectorize();
 
   // NCHW -> NHWC
   if (axes.size() == 4 && axes[0] == 0 && axes[1] == 2 && axes[2] == 3 &&

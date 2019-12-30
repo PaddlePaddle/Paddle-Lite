@@ -157,8 +157,9 @@ void SliceCompute<T, PType>::Run() {
   auto new_out_dims = out->dims();
   const auto* x_data = in->template data<T>();
   auto* o_data = out->template mutable_data<T>();
+  std::vector<int64_t> in_dims_data = in_dims.Vectorize();
   lite::arm::math::slice(
-      x_data, in_dims.data(), axes, starts, ends, o_data, &ctx);
+      x_data, in_dims_data, axes, starts, ends, o_data, &ctx);
 }
 
 }  // namespace arm
