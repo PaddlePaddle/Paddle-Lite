@@ -23,8 +23,11 @@ namespace lite {
 namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::FcFuser fuser;
+  fusion::FcFuser fuser(true);
   fuser(graph.get());
+
+  fusion::FcFuser fuser2(false);
+  fuser2(graph.get());
 }
 
 }  // namespace mir
