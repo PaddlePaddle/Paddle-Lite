@@ -38,7 +38,7 @@ class TensorLite;
 using DDim = lite::DDimLite;
 using Tensor = lite::TensorLite;
 
-template <typename ValueType, int DimLength>
+template <typename ValueType, size_t DimLength>
 class DimVector {
  public:
   DimVector() {
@@ -48,7 +48,9 @@ class DimVector {
 
   size_t size() const { return size_; }
   void resize(size_t new_size) {
-    CHECK_LE(new_size, DimLength);
+    CHECK_LE(new_size, DimLength)
+        << "Expected the number of dimentations <= " << DimLength
+        << ", received " << new_size << ".";
     size_ = new_size;
   }
 
@@ -63,10 +65,10 @@ class DimVector {
   size_t size_{0};
 };
 
-constexpr int kMaxDimLength = 10;
-
 class DDimLite {
  public:
+  constexpr static size_t kMaxDimLength = 10;
+
   using value_type = int64_t;
   using DDimVector = DimVector<value_type, kMaxDimLength>;
 
