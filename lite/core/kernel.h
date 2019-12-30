@@ -83,14 +83,11 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
-
 #ifdef LITE_WITH_PROFILE
-    CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
-                        "When LITE_WITH_PROFILE is defined, please set a "
-                        "Profiler for Instruction.";
-    profiler_->StartTiming(profile_id_, ctx_.get());
+    profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
+    profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     Run();
-    profiler_->StopTiming(profile_id_, ctx_.get());
+    profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
 #else
     Run();
 #endif

@@ -592,6 +592,7 @@ struct MulticlassNmsParam {
   const lite::Tensor* bboxes{};
   const lite::Tensor* scores{};
   lite::Tensor* out{};
+  lite::Tensor* index{};
   int background_label{0};
   float score_threshold{};
   int nms_top_k{};
@@ -767,6 +768,12 @@ struct SequencePoolParam {
   float pad_value{0.0};
   lite::Tensor* MaxIndex{};
 #endif
+};
+
+struct SequencePoolConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  std::vector<std::string> pool_type{};
 };
 
 struct SearchGroupPaddingParam {
@@ -1117,6 +1124,12 @@ struct InstanceNormParam {
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
   float epsilon;
+};
+/// --------------------- grid sampler operators --------------------
+struct GridSamplerParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* grid{};
 };
 
 }  // namespace operators

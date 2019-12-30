@@ -21,10 +21,10 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
-  auto x_dims = x.dims();
+std::vector<int64_t> CvtYShape(const DDim& x_dims,
+                               const DDim& y_dims,
+                               int axis) {
   CHECK_EQ(x_dims.size(), 4UL) << "[NPU] Only support 4-dimension x";
-  auto y_dims = y->dims();
   CHECK_GE(x_dims.size(), y_dims.size());
 
   if (axis < 0) {
@@ -45,7 +45,7 @@ std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
   return y_new_shape;
 }
 
-int ElementwiseConverter(void* ctx, OpLite* op) {
+int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -54,41 +54,62 @@ int ElementwiseConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto y_var_name = op_info->Input("Y").front();
-  auto out_var_name = op_info->Output("Out").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto y_name = op_info->Input("Y").front();
+  auto y_type = kernel->GetInputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  auto y = scope->FindMutableTensor(y_name);
+  auto y_dims = y->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
 
-  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
-  std::shared_ptr<ge::Operator> x_node = graph->GetNode(x_var_name);
-  std::shared_ptr<ge::Operator> y_node = nullptr;
-  if (graph->HasNode(y_var_name)) {
-    y_node = graph->GetNode(y_var_name);
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
   } else {
-    auto x = scope->FindTensor(x_var_name);
-    auto y = scope->FindMutableTensor(y_var_name);
-    auto y_new_shape = CvtYShape(*x, y, axis);
-    y_node = graph->AddNode(y_var_name, y, y_new_shape);
+    x_node = graph->AddNode(x_name, x_dims);
   }
 
+  // Y node
+  std::shared_ptr<ge::Operator> y_node = nullptr;
+  if (graph->HasNode(y_name)) {
+    y_node = graph->GetNode(y_name);
+  } else {
+    auto y_new_shape = CvtYShape(x_dims, y_dims, axis);
+    y_node = graph->AddNode(y_name, y_new_shape);
+  }
+
+  // Elementwise node
+  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    auto elt_node = graph->AddNode<ge::op::Add>(out_var_name);
+    auto elt_node = graph->AddNode<ge::op::Add>(out_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_sub") {
-    auto elt_node = graph->AddNode<ge::op::Sub>(out_var_name);
+    auto elt_node = graph->AddNode<ge::op::Sub>(out_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_mul") {
-    auto elt_node = graph->AddNode<ge::op::Mul>(out_var_name);
+    auto elt_node = graph->AddNode<ge::op::Mul>(out_name);
     elt_node->set_input_x(*x_node);
     elt_node->set_input_y(*y_node);
     elementwise_node = elt_node;
   } else if (op_type == "elementwise_div") {
-    auto elt_node = graph->AddNode<ge::op::RealDiv>(out_var_name);
+    auto elt_node = graph->AddNode<ge::op::RealDiv>(out_name);
     elt_node->set_input_x1(*x_node);
     elt_node->set_input_x2(*y_node);
     elementwise_node = elt_node;
@@ -97,9 +118,10 @@ int ElementwiseConverter(void* ctx, OpLite* op) {
     return FAILED;
   }
 
+  // Act node
   if (op_type == "fusion_elementwise_add_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    auto act_node = graph->AddNode<ge::op::Activation>(out_var_name);
+    auto act_node = graph->AddNode<ge::op::Activation>(out_name);
     act_node->set_input_x(*elementwise_node);
     // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
     // clipped_relu etc.

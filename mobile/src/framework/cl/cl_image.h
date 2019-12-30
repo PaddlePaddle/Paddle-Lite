@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -86,14 +87,14 @@ class CLImage {
     PADDLE_MOBILE_ENFORCE(tensor_data_ != nullptr,
                           " need call SetTensorData first");
 
-    DLOG << " begin init cl image ";
+    LOG(kNO_LOG) << " begin init cl image ";
     image_dims_ = converter->InitImageDimInfoWith(tensor_dims_);
 
     half_t *image_data = new half_t[product(image_dims_) * 4];
 
-    DLOG << " convert to image";
+    LOG(kNO_LOG) << " convert to image";
     converter->NCHWToImage(tensor_data_, image_data, tensor_dims_);
-    DLOG << " end convert to image";
+    LOG(kNO_LOG) << " end convert to image";
 
     InitCLImage(context, image_dims_[0], image_dims_[1], image_data);
 
@@ -104,7 +105,7 @@ class CLImage {
     tensor_data_ = nullptr;
     image_converter_ = converter;
     initialized_ = true;
-    DLOG << " end init cl image";
+    LOG(kNO_LOG) << " end init cl image";
   }
 
   void InitNImage(cl_context context, cl_command_queue command_queue) {
@@ -136,9 +137,9 @@ class CLImage {
     //    CLImageConverterFolder();
     CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
     PADDLE_MOBILE_ENFORCE(!shared_mem_, "do not init mem after shared .")
-    DLOG << " to get image dims ";
+    //    LOG(kNO_LOG) << " to get image dims ";
     image_dims_ = normal_converter->InitImageDimInfoWith(dim);
-    DLOG << " end get image dims " << image_dims_;
+    //    LOG(kNO_LOG) << " end get image dims " << image_dims_;
 
     InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
 
@@ -147,7 +148,7 @@ class CLImage {
     image_converter_ = normal_converter;
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
     initialized_ = true;
-    DLOG << " end init cl image";
+    //    LOG(kNO_LOG) << " end init cl image";
   }
   /**
    *  create fake size cl_mem for mem share
@@ -168,9 +169,9 @@ class CLImage {
     InitCLImage(context, real_image_dims_[0], real_image_dims_[1], nullptr);
     // cheat cl_image they got what they wanted
     image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
-    DLOG << "InitFakeSizeImage ... ";
-    DLOG << "real_image_dims:  " << real_image_dims_;
-    DLOG << "image_dims_:  " << image_dims_;
+    LOG(kNO_LOG) << "InitFakeSizeImage ... ";
+    LOG(kNO_LOG) << "real_image_dims:  " << real_image_dims_;
+    LOG(kNO_LOG) << "image_dims_:  " << image_dims_;
     PADDLE_MOBILE_ENFORCE(real_image_dims_[0] >= image_dims_[0] &&
                               real_image_dims_[1] >= image_dims_[1],
                           "real image is not enough");
@@ -181,7 +182,7 @@ class CLImage {
     initialized_ = true;
     shared_mem_ = true;
 
-    DLOG << " end init FakeSizeImage";
+    LOG(kNO_LOG) << " end init FakeSizeImage";
   }
   /**
    * init cl mem with a exist cl mem
@@ -196,15 +197,15 @@ class CLImage {
     real_image_dims_ = src.real_image_dims_;
     image_dims_ = normal_converter->InitImageDimInfoWith(need_dims);
 
-    DLOG << "InitWithExistMem ... ";
-    DLOG << "real_image_dims:  " << real_image_dims_;
-    DLOG << "image_dims_:  " << image_dims_;
+    LOG(kNO_LOG) << "InitWithExistMem ... ";
+    LOG(kNO_LOG) << "real_image_dims:  " << real_image_dims_;
+    LOG(kNO_LOG) << "image_dims_:  " << image_dims_;
 
     if (real_image_dims_[0] < image_dims_[0] ||
         real_image_dims_[1] < image_dims_[1]) {
-      DLOG << "real image is not enough!";
-      DLOG << "real_image_dims:  " << real_image_dims_;
-      DLOG << "image_dims_:  " << image_dims_;
+      LOG(kNO_LOG) << "real image is not enough!";
+      LOG(kNO_LOG) << "real_image_dims:  " << real_image_dims_;
+      LOG(kNO_LOG) << "image_dims_:  " << image_dims_;
     }
     PADDLE_MOBILE_ENFORCE(real_image_dims_[0] >= image_dims_[0] &&
                               real_image_dims_[1] >= image_dims_[1],
@@ -220,7 +221,7 @@ class CLImage {
     initialized_ = true;
     shared_mem_ = true;
 
-    DLOG << " end init WithExistMem";
+    LOG(kNO_LOG) << " end init WithExistMem";
   }
 
   void InitConv2dTransposeFilterCLImage(cl_context context,
@@ -285,6 +286,7 @@ class CLImage {
   cl_event GetClEvent() const { return cl_event_.get(); }
 
   CLImageConverterBase *Converter() const { return image_converter_; }
+  void PrintTensor(const CLImage &cl_image) const;
 
  private:
   void InitCLImage(cl_context context, size_t width, size_t height,

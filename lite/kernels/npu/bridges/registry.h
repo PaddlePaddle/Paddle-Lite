@@ -33,7 +33,8 @@ inline bool CHECK_REBUILD_WHEN_SHAPE_CHANGED(int status) {
   return status & REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-using cvt_func_type = std::function<int(void* ctx, OpLite* op)>;
+using cvt_func_type =
+    std::function<int(void* ctx, OpLite* op, KernelBase* kernel)>;
 using cvt_map_type =
     std::unordered_map<std::string,
                        std::unordered_map<std::string, cvt_func_type>>;

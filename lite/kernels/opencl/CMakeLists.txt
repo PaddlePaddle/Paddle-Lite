@@ -14,7 +14,7 @@ add_kernel(pool_opencl OPENCL basic SRCS pool_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(io_copy_compute_opencl OPENCL basic SRCS io_copy_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 add_kernel(relu_opencl OPENCL basic SRCS relu_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(conv2d_1x1_opencl OPENCL basic SRCS conv2d_1x1_compute.cc DEPS ${cl_kernel_deps})
+#add_kernel(conv2d_1x1_opencl OPENCL basic SRCS conv2d_1x1_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl OPENCL basic SRCS conv_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl OPENCL basic SRCS layout_compute.cc DEPS ${cl_kernel_deps})
@@ -49,12 +49,14 @@ lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
         DEPS depthwise_conv2d_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
-lite_cc_test(test_conv2d_1x1_opencl SRCS conv2d_1x1_compute_test.cc
-        DEPS conv2d_1x1_opencl cl_image_converter op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#lite_cc_test(test_conv2d_1x1_opencl SRCS conv2d_1x1_compute_test.cc
+#        DEPS conv2d_1x1_opencl cl_image_converter op_registry program context
+#        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
 lite_cc_test(test_reshape_opencl SRCS reshape_compute_test.cc
         DEPS reshape_opencl cl_image_converter op_registry program context
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
 lite_cc_test(test_conv_opencl SRCS conv_compute_test.cc
         DEPS conv_opencl op_registry program context
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)

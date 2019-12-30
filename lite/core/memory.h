@@ -120,6 +120,7 @@ class Buffer {
     if (space_ > 0) {
       TargetFree(target_, data_);
     }
+    data_ = nullptr;
     target_ = TargetType::kHost;
     space_ = 0;
   }

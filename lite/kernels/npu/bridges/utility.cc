@@ -44,11 +44,20 @@ ge::DataType CvtPrecisionType(PrecisionType itype) {
     case PRECISION(kFloat):
       otype = ge::DT_FLOAT;
       break;
+    case PRECISION(kFP16):
+      otype = ge::DT_FLOAT16;
+      break;
     case PRECISION(kInt8):
       otype = ge::DT_INT8;
       break;
+    case PRECISION(kInt16):
+      otype = ge::DT_INT16;
+      break;
     case PRECISION(kInt32):
       otype = ge::DT_INT32;
+      break;
+    case PRECISION(kInt64):
+      otype = ge::DT_INT64;
       break;
     default:
       LOG(FATAL) << "[NPU] Can not convert precision type("
@@ -64,6 +73,9 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
     case DATALAYOUT(kNCHW):
       otype = ge::FORMAT_NCHW;
       break;
+    case DATALAYOUT(kNHWC):
+      otype = ge::FORMAT_NHWC;
+      break;
     // TODO(hong19860320) support more data layout type
     default:
       LOG(FATAL) << "[NPU] Can not convert data layout type("
@@ -75,39 +87,22 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
 
 ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape,
-                        PrecisionType in_ptype,
-                        DataLayoutType in_ltype) {
-  const uint8_t* in_data = nullptr;
+                        PrecisionType in_precision,
+                        DataLayoutType in_layout) {
   auto in_size = in_tensor.dims().production();
   auto in_shape = in_tensor.dims().Vectorize();
   if (out_shape.empty()) {
     out_shape = in_shape;
   }
-  int in_bytes;
-  if (in_ptype == PRECISION(kFloat)) {
-    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<float>());
-    in_bytes = in_size * sizeof(float);
-  } else if (in_ptype == PRECISION(kInt32)) {
-    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<int32_t>());
-    in_bytes = in_size * sizeof(int32_t);
-  } else if (in_ptype == PRECISION(kInt8)) {
-    in_data = reinterpret_cast<const uint8_t*>(in_tensor.data<int8_t>());
-    in_bytes = in_size * sizeof(int8_t);
-  } else {
-    LOG(FATAL) << "[NPU] Unknow precision type " << PrecisionToStr(in_ptype);
-  }
-  ge::DataType out_ptype = CvtPrecisionType(in_ptype);
-  ge::Format out_ltype = CvtDataLayoutType(in_ltype);
-
-  ge::TensorDesc out_desc(ge::Shape(out_shape), out_ltype, out_ptype);
-  CHECK_EQ(out_ltype, ge::FORMAT_NCHW);
-
+  ge::TensorDesc out_desc(ge::Shape(out_shape),
+                          CvtDataLayoutType(in_layout),
+                          CvtPrecisionType(in_precision));
   auto out_size = out_desc.GetShape().GetShapeSize();
   CHECK_EQ(out_size, in_size);
-
   ge::TensorPtr out_tensor = std::make_shared<ge::Tensor>();
   out_tensor->SetTensorDesc(out_desc);
-  out_tensor->SetData(in_data, in_bytes);
+  out_tensor->SetData(reinterpret_cast<const uint8_t*>(in_tensor.raw_data()),
+                      in_tensor.memory_size());
   return out_tensor;
 }
 

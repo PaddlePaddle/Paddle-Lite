@@ -344,15 +344,23 @@ class OpParam {
 
   template <typename T>
   static const T GetAttr(const string &key, const AttributeMap &map) {
+    PADDLE_MOBILE_ENFORCE(HasAttr(key, map), "%s is not contained in attr map",
+                          key.c_str())
     return ((Attribute)map.at(key)).Get<T>();
   }
   static const std::string GetStringAttr(const string &key,
                                          const AttributeMap &map) {
+    PADDLE_MOBILE_ENFORCE(HasAttr(key, map), "%s is not contained in attr map",
+                          key.c_str())
     return ((Attribute)map.at(key)).GetString();
   }
 
   static const bool HasAttr(const string &key, const AttributeMap &map) {
     return map.count(key) > 0;
+  }
+
+  static const bool HasVar(const string &key, const VariableNameMap &var_map) {
+    return var_map.count(key) > 0;
   }
 
   template <typename T>
@@ -489,6 +497,7 @@ class ConvParam : public OpParam {
     EXEC_SLIDINGWINDOW5x5_FLOAT,
     EXEC_SLIDINGWINDOW7x7_FLOAT,
     EXEC_GEMM1x1s1_FLOAT,
+    EXEC_DEPTHWISEBASIC_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -3099,16 +3108,37 @@ class NearestInterpolationParam : public OpParam {
                             const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
-    input_outsize_ = InputOutSizeFrom<GType>(inputs, *scope);
+    const bool has_out_size = HasVar("OutSize", inputs);
+
+    if (has_out_size) {
+      input_outsize_ = InputOutSizeFrom<GType>(inputs, *scope);
+    }
+
     out_ = OutFrom<GType>(outputs, *scope);
-    out_h_ = GetAttr<int>("out_h", attrs);
-    out_w_ = GetAttr<int>("out_w", attrs);
+
+    if (HasAttr("out_h", attrs)) {
+      out_h_ = GetAttr<int>("out_h", attrs);
+    } else if (HasAttr("out_h ", attrs)) {
+      // some models hurts ....   attr with space ..
+      out_h_ = GetAttr<int>("out_h ", attrs);
+    }
+
+    if (HasAttr("out_w", attrs)) {
+      out_w_ = GetAttr<int>("out_w", attrs);
+    } else if (HasAttr("out_w ", attrs)) {
+      // some models hurts ....   attr with space ..
+      out_w_ = GetAttr<int>("out_w ", attrs);
+    }
+
+    LOG(kLOG_DEBUG1) << "out_h_: " << out_h_;
+    LOG(kLOG_DEBUG1) << "out_w_: " << out_w_;
+
     if (HasAttr("scale", attrs)) {
       has_scale_ = true;
       scale_ = GetAttr<float>("scale", attrs);
     }
-    DLOG << "has_scale_:  " << has_scale_;
-    DLOG << "scale_:  " << scale_;
+    LOG(kLOG_DEBUG1) << "has_scale_:  " << has_scale_;
+    LOG(kLOG_DEBUG1) << "scale_:  " << scale_;
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }

@@ -143,7 +143,8 @@ class LITE_API RuntimeProgram {
   }
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
-    LOG(INFO) << "\n" << profiler_.Summary();
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
 #endif  // LITE_WITH_PROFILE
   }
 

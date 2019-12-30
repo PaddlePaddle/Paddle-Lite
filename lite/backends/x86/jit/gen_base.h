@@ -20,7 +20,8 @@
 #include <vector>
 #include "lite/backends/x86/jit/kernel_base.h"
 
-DECLARE_bool(dump_jitcode);
+// DECLARE_bool(dump_jitcode);
+extern bool dump_jitcode;
 
 namespace paddle {
 namespace lite {
@@ -36,7 +37,7 @@ class GenBase : public Kernel {
   template <typename Func>
   Func getCode() const {
     const unsigned char* code = this->getCodeInternal();
-    if (FLAGS_dump_jitcode) {
+    if (dump_jitcode) {
       this->dumpCode(code);
     }
     // Note: failed to cast with reinterpret_cast<const Func> on Mac clang,
