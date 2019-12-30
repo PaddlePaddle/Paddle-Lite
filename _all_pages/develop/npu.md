@@ -54,9 +54,9 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 # 编译支持NPU的Paddle Lite库
 
 - 从https://developer.huawei.com/consumer/cn/hiai/下载华为HiAI DDK后解压到任意路径（注意：华为提供了多个版本的DDK，我们需要下载针对麒麟810/990芯片HiAI Foundation开发套件，例如最新的[DDK V310版本](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)）。
-- 在Paddle Lite源码目录下使用[NPU编译脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_npu.sh)编译full_publish和tiny_publish。
+- 将HiAI DDK中的ai_ddk_lib目录拷贝至Paddle Lite源码根目录后，使用[NPU编译脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_npu.sh)编译full_publish和tiny_publish。
 
-注意：必须将--ddk_root参数设置为HiAI DDK根目录，以下是HiAI DDK V310版解压后的目录结构，--ddk_root应当设置为ai_ddk_lib目录。
+注意：以下是HiAI DDK V310版解压后的目录结构，需要将ai_ddk_lib目录拷贝至Paddle Lite源码根目录。
 ```shell
 - app_sample
 - ddk
@@ -70,14 +70,14 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - full_publish and tiny_publish for armv8，由于HiAI DDK的armv7和armv8的so库均基于c++_shared构建，因此，建议使用c++_shared编译Paddle Lite。
 ```shell
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib full_publish
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib tiny_publish
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared full_publish
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared tiny_publish
 ```
 
 - full_publish and tiny_publish for armv7
 ```shell
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib full_publish
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared --ddk_root=/to/your/ai_ddk_lib tiny_publish
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared full_publish
+$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared tiny_publish
 ```
 
 注意：为了保证编译环境一致，建议参考[源码编译指南](../source_compile)中的Docker开发环境进行配置，然后再执行上述命令。
@@ -95,7 +95,7 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     --prefer_int8_kernel=(true|false) \
     --record_tailoring_info =(true|false)
 ```
-- model_optimize_tool生成的模型只是标记了NPU支持的Paddle算子，并没有真正生成了NPU HiAI模型，只有在执行时才会将标记的Paddle算子转成HiAI IR，最终生成并执行HiAI模型，具体实现参考PR[2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)。
+- model_optimize_tool生成的模型只是标记了NPU支持的Paddle算子，并没有真正生成NPU HiAI模型，只有在执行时才会将标记的Paddle算子转成HiAI IR，最终生成并执行HiAI模型，具体实现参考PR[2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)。
 - 不同模型，不同型号（ROM版本）的华为手机，在执行阶段，由于某些Paddle算子无法完全转成HiAI IR，或目标手机的HiAI版本过低等原因，可能导致HiAI模型无法成功生成，在这种情况下，Paddle Lite会调用CPU版算子进行运算完成整个预测任务。
 
 # 通过JAVA接口加载并执行NPU模型
