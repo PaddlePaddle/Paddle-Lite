@@ -47,10 +47,34 @@ bool KernelRegistered(const std::string name, const Place& place) {
   return false;
 }
 
-bool PassMatchesTarget(const mir::Pass& pass, TargetType target) {
-  const auto& targets = pass.Targets();
-  if (targets.find(TARGET(kAny)) != targets.end()) return true;
-  return (targets.find(target) != targets.end());
+bool PassMatchesTarget(const mir::Pass& pass,
+                       const std::set<TargetType>& targets) {
+  // Whether the pass is suitable for targets ? The condition is the
+  // intersection of targets and pass's bound targets is not empty, besides the
+  // intersection of targets and pass's excluded targets is empty. The formula
+  // is as follows: matched = !empty(targets ^ pass.bound_targets) &&
+  // empty(targets ^ pass.excluded_targets), where ^ is intersection operation.
+  const auto& bound_targets = pass.BoundTargets();
+  bool matched = bound_targets.find(TARGET(kAny)) != bound_targets.end();
+  std::set<TargetType> inter_bound_targets;
+  std::set_intersection(
+      bound_targets.begin(),
+      bound_targets.end(),
+      targets.begin(),
+      targets.end(),
+      std::inserter(inter_bound_targets, inter_bound_targets.begin()));
+  matched |= !inter_bound_targets.empty();
+  const auto& excluded_targets = pass.ExcludedTargets();
+  matched &= excluded_targets.find(TARGET(kAny)) == excluded_targets.end();
+  std::set<TargetType> inter_excluded_targets;
+  std::set_intersection(
+      excluded_targets.begin(),
+      excluded_targets.end(),
+      targets.begin(),
+      targets.end(),
+      std::inserter(inter_excluded_targets, inter_excluded_targets.begin()));
+  matched &= inter_excluded_targets.empty();
+  return matched;
 }
 
 bool PassMatchesKernels(const mir::Pass& pass) {

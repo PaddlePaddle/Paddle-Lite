@@ -25,12 +25,6 @@
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
-#ifdef LITE_WITH_NPU
-#include "lite/backends/npu/runtime.h"
-#endif
-#ifdef LITE_WITH_XPU
-#include "lite/backends/xpu/runtime.h"
-#endif
 
 #include <map>
 #include <memory>
@@ -93,7 +87,7 @@ template <>
 class Context<TargetType::kXPU> {
  public:
   Context() {}
-  explicit Context(const NPUContext& ctx);
+  explicit Context(const XPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(XPUContext* ctx) {}
@@ -231,6 +225,13 @@ class Context<TargetType::kCUDA> {
   }
 
   std::string name() const { return "CUDAContext"; }
+
+  CUDAContext& operator=(const CUDAContext& context) {
+    this->Init(
+        context.device_id_, context.exec_stream_id_, context.io_stream_id_);
+    cublas_fp32_ = const_cast<CUDAContext&>(context).cublas_fp32();
+    return *this;
+  }
 
  private:
   int device_id_;

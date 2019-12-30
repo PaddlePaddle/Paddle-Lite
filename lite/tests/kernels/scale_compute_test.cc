@@ -82,11 +82,17 @@ class ScaleComputeTester : public arena::TestCase {
 };
 
 TEST(Scale, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+  abs_error = 3e-4;  // Some operations use fp16 in XPU
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
 
   for (float scale : {0.123, 2., -1.2}) {
@@ -94,7 +100,7 @@ TEST(Scale, precision) {
       for (bool bias_before : {true, false}) {
         std::unique_ptr<arena::TestCase> tester(
             new ScaleComputeTester(place, "def", scale, bias, bias_before));
-        arena::Arena arena(std::move(tester), place, 2e-5);
+        arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
       }
     }
@@ -102,11 +108,13 @@ TEST(Scale, precision) {
 }
 
 TEST(Scale, performance) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
 
   std::unique_ptr<arena::TestCase> tester(

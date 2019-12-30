@@ -12,109 +12,103 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type FCConverter(const std::shared_ptr<lite::OpLite> fc_op,
-                          const node_map_type& inputs_map) {
-  auto scope = fc_op->scope();
-  auto op_info = fc_op->op_info();
+int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto fc_node = std::make_shared<ge::op::FullConnection>(unique_op_type);
-
-  auto x_var_name = op_info->Input("Input").front();
-  auto w_var_name = op_info->Input("W").front();
-
-  int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto w = scope->FindVar(w_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = x->dims();
+  auto input_name = op_info->Input("Input").front();
+  auto input_type = kernel->GetInputDeclType("Input");
+  CHECK(input_type->precision() == PRECISION(kFloat));
+  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
+  auto input = scope->FindMutableTensor(input_name);
+  auto input_dims = input->dims();
+  CHECK_GE(input_dims.size(), 2UL);
+  auto w_name = op_info->Input("W").front();
+  auto w_type = kernel->GetInputDeclType("W");
+  CHECK(w_type->precision() == PRECISION(kFloat));
+  CHECK(w_type->layout() == DATALAYOUT(kNCHW));
+  auto w = scope->FindMutableTensor(w_name);
   auto w_dims = w->dims();
-
-  CHECK_GE(x_dims.size(), 2UL);
   CHECK_EQ(w_dims.size(), 2UL);
-
-  int m = x_dims.Slice(0, in_num_col_dims).production();
-  int k = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
+  int m = input_dims.Slice(0, in_num_col_dims).production();
+  int k = input_dims.Slice(in_num_col_dims, input_dims.size()).production();
   int n = w_dims[1];
   CHECK_EQ(k * n, w_dims.production());
-  VLOG(3) << "[NPU] x dims: " << x_dims << " w dims: " << w_dims << " m: " << m
-          << " k: " << k << " n: " << n;
+  VLOG(3) << "[NPU] input dims: " << input_dims << " w dims: " << w_dims
+          << " m: " << m << " k: " << k << " n: " << n;
 
-  CHECK(inputs_map.count(x_var_name));
-  CHECK(!inputs_map.count(w_var_name));
+  // Create input node and reshape it to (m, k, 1, 1)
+  std::shared_ptr<ge::Operator> input_node = nullptr;
+  if (graph->HasNode(input_name)) {
+    input_node = graph->GetNode(input_name);
+  } else {
+    input_node = graph->AddNode(input_name, input_dims);
+  }
+  auto reshaped_input_node =
+      graph->AddNode<ge::op::Reshape>(input_name + "/reshape");
+  reshaped_input_node->set_input_tensor(*input_node);
+  reshaped_input_node->set_attr_shape({m, k, 1, 1});
+  reshaped_input_node->set_attr_axis(0);
 
-  // reshape x to (m, k, 1, 1)
-  auto reshaped_x_node =
-      std::make_shared<ge::op::Reshape>(x_var_name + "_reshape");
-  reshaped_x_node->set_input_tensor(*inputs_map.at(x_var_name));
-  reshaped_x_node->set_attr_shape({m, k, 1, 1});
-  reshaped_x_node->set_attr_axis(0);
-  fc_node->set_input_x(*reshaped_x_node);
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(reshaped_x_node);
-
-  // create w const node, set its shape to (k, n, 1, 1) and fill with
+  // Create w const node, set its shape to (n, k, 1, 1) and fill with
   // the transposed w tensor
-  auto w_const_node = std::make_shared<ge::op::Const>(w_var_name);
-  ge::TensorDesc w_const_desc(
-      ge::Shape({n, k, 1, 1}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-  ge::TensorPtr w_const_tensor = std::make_shared<ge::Tensor>();
-  w_const_tensor->SetTensorDesc(w_const_desc);
+  Tensor transpose_w;
+  transpose_w.Resize({n, k, 1, 1});
+  auto transpose_w_data = transpose_w.mutable_data<float>();
   auto w_data = w->mutable_data<float>();
-  std::vector<float> transposed_w_data(w_dims.production());
   for (int i = 0; i < k; i++) {
     for (int j = 0; j < n; j++) {
-      transposed_w_data[j * k + i] = w_data[i * n + j];
+      transpose_w_data[j * k + i] = w_data[i * n + j];
     }
   }
-  w_const_tensor->SetData(reinterpret_cast<uint8_t*>(transposed_w_data.data()),
-                          transposed_w_data.size() * sizeof(float));
-  w_const_node->set_attr_value(w_const_tensor);
-  fc_node->set_input_w(*w_const_node);
-  lite::npu::OpList::Global().add(w_const_node);
+  auto trans_w_const_node = graph->AddNode(w_name, transpose_w);
 
-  // add bias node if bias tensor exists
-  if (lite::npu::HasInputArg(op_info, scope, "Bias")) {
-    auto bias_var_name = op_info->Input("Bias").front();
-    auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+  // FC node
+  auto fc_node = graph->AddNode<ge::op::FullConnection>(out_name + "/fc");
+  fc_node->set_input_x(*reshaped_input_node);
+  fc_node->set_input_w(*trans_w_const_node);
+  // Add bias node if bias tensor exists
+  if (HasInputArg(op_info, scope, "Bias")) {
+    auto bias_name = op_info->Input("Bias").front();
+    auto bias_type = kernel->GetInputDeclType("Bias");
+    CHECK(bias_type->precision() == PRECISION(kFloat));
+    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+    auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
-    CHECK(!inputs_map.count(bias_var_name));
     CHECK_EQ(bias_dims.production(), n);
-
-    auto bias_const_node = std::make_shared<ge::op::Const>(bias_var_name);
-    bias_const_node->set_attr_value(lite::npu::CvtTensor(bias, {1, n, 1, 1}));
+    auto bias_const_node = graph->AddNode(bias_name, *bias, {1, n, 1, 1});
     fc_node->set_input_b(*bias_const_node);
-    lite::npu::OpList::Global().add(bias_const_node);
   }
-  lite::npu::OpList::Global().add(fc_node);
-
-  // reshape output of fc_node from (m, n, 1, 1) to (m, n)
-  auto reshaped_fc_node =
-      std::make_shared<ge::op::Reshape>(unique_op_type + "_reshape");
+  // Reshape output of FC node from (m, n, 1, 1) to (m, n)
+  auto reshaped_fc_node = graph->AddNode<ge::op::Reshape>(out_name);
   reshaped_fc_node->set_input_tensor(*fc_node);
   reshaped_fc_node->set_attr_shape({m, n});
   reshaped_fc_node->set_attr_axis(0);
-  lite::npu::OpList::Global().add(reshaped_fc_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = reshaped_fc_node;
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(fc, paddle::lite::kernels::npu::bridges::FCConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, fc, paddle::lite::subgraph::npu::FCConverter);

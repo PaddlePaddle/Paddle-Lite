@@ -13,12 +13,10 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include <stdio.h>
+#include <iostream>
 #include <vector>
-#include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
-#include "paddle_use_passes.h"   // NOLINT
+#include "paddle_api.h"         // NOLINT
+#include "paddle_use_passes.h"  // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -32,11 +30,21 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+// 0. Enable OpenCL, if needed
+// Enable `DEMO_WITH_OPENCL` macro below, if user need use gpu(opencl)
+// #define DEMO_WITH_OPENCL
 void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
+#ifdef DEMO_WITH_OPENCL
+  std::vector<Place> valid_places{
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kARM), PRECISION(kFloat)}};
+#else
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
+#endif
   if (FLAGS_prefer_int8_kernel) {
     valid_places.insert(valid_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
@@ -68,14 +76,22 @@ void RunModel() {
   // 6. Get output
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  printf("Output dim: %d\n", output_tensor->shape()[1]);
+  std::cout << "Output shape " << output_tensor->shape()[1] << std::endl;
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
-    printf("Output[%d]: %f\n", i, output_tensor->data<float>()[i]);
+    std::cout << "Output[" << i << "]: " << output_tensor->data<float>()[i]
+              << std::endl;
   }
 }
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
+  if (FLAGS_model_dir == "" || FLAGS_optimized_model_dir == "") {
+    std::cerr << "[ERROR] usage: " << argv[0]
+              << " --model_dir=<your-model-directory>"
+              << " --optimized_model_dir=<your-optmized-model-directory> "
+              << " --prefer_int8_kernel=[true|false]\n";
+    exit(1);
+  }
   RunModel();
   return 0;
 }

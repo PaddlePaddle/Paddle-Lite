@@ -143,11 +143,11 @@ void conv_compute_ref(const operators::ConvParam& param) {
   int kernel_h = param.filter->dims()[3];
   int stride_w = param.strides[0];
   int stride_h = param.strides[1];
-  int dila_w = param.dilations[0];
-  int dila_h = param.dilations[1];
+  int dila_w = (*param.dilations)[0];
+  int dila_h = (*param.dilations)[1];
 
-  int pad_w = param.paddings[0];
-  int pad_h = param.paddings[1];
+  int pad_w = (*param.paddings)[2];
+  int pad_h = (*param.paddings)[0];
   bool flag_bias = (param.bias != nullptr);
   bool flag_relu = param.fuse_relu;
 
@@ -277,9 +277,10 @@ TEST(conv_fpga, compute) {
                             param.bias = &bias;
                           }
                           param.fuse_relu = flag_relu;
-                          param.paddings = std::vector<int>({padding, padding});
+                          *param.paddings = std::vector<int>(
+                              {padding, padding, padding, padding});
                           param.strides = std::vector<int>({stride, stride});
-                          param.dilations =
+                          *param.dilations =
                               std::vector<int>({dilation, dilation});
                           param.groups = group;
                           conv.SetParam(param);

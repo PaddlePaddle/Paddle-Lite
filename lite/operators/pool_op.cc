@@ -41,6 +41,7 @@ bool PoolOpLite::CheckShape() const {
   return true;
 }
 
+<<<<<<< HEAD
 inline void UpdatePadding(std::vector<int>* paddings,
                           const bool global_pooling,
                           const bool adaptive,
@@ -74,6 +75,8 @@ inline void UpdatePadding(std::vector<int>* paddings,
   }
 }
 
+=======
+>>>>>>> 9188571c60284519335da9b90b5e451a561e868f
 int PoolOutputSize(int input_size,
                    int filter_size,
                    int pad_left,

@@ -24,13 +24,6 @@
 namespace paddle {
 namespace lite {
 
-static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
-    ".tailored_ops_source_list";
-static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
-static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
-    ".tailored_kernels_source_list";
-static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
-
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
                           bool record_info) {
@@ -140,21 +133,28 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 
 // get inputs names
 std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
+
 // get outputnames
 std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
+
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
-  auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
-  std::vector<cpp::OpDesc *> feeds;
-  std::vector<cpp::OpDesc *> fetchs;
-  for (size_t i = 0; i < current_block->OpsSize(); i++) {
-    auto op = current_block->GetOp<cpp::OpDesc>(i);
+  if (!program_) {
+    GenRuntimeProgram();
+  }
+
+  std::vector<const cpp::OpDesc *> feeds;
+  std::vector<const cpp::OpDesc *> fetchs;
+  const auto &insts = program_->instructions();
+  for (size_t i = 0; i < program_->num_instructions(); i++) {
+    const auto &op = insts[i].op()->op_info();
     if (op->Type() == "feed") {
       feeds.push_back(op);
     } else if (op->Type() == "fetch") {
       fetchs.push_back(op);
     }
   }
+
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
   for (size_t i = 0; i < feeds.size(); i++) {
@@ -190,6 +190,7 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
 }
+
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const lite_api::CxxConfig &config,
@@ -200,7 +201,11 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
   const bool model_from_memory = config.model_from_memory();
-  LOG(INFO) << "load from memory " << model_from_memory;
+  if (model_from_memory) {
+    LOG(INFO) << "Load model from memory.";
+  } else {
+    LOG(INFO) << "Load model from file.";
+  }
 
   Build(model_path,
         model_file,
@@ -246,16 +251,18 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
+  // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   inner_places.emplace_back(
       TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
   Program program(desc, scope_, inner_places);
-  /// The first place in valid_places is
+
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
+
   optimizer_.Run(std::move(program), inner_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
   PrepareFeedFetch();
@@ -271,6 +278,7 @@ const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   return &var->Get<lite::Tensor>();
 }
+
 // get input by name
 lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   auto element = std::find(input_names_.begin(), input_names_.end(), name);

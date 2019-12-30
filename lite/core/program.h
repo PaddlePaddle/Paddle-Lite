@@ -16,15 +16,13 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/cpp/program_desc.h"
-#ifdef LITE_WITH_PROFILE
-#include "lite/core/profile/basic_profiler.h"
-#endif  // LITE_WITH_PROFILE
 
 namespace paddle {
 namespace lite {
@@ -66,6 +64,10 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
+  const std::unordered_map<std::string, PrecisionType>& var_data_type() const {
+    return var_data_type_;
+  }
+
  private:
   // Build from a program and scope.
   void Build(const cpp::ProgramDesc& program);
@@ -73,6 +75,7 @@ struct Program {
   void PrepareWorkspace(const cpp::ProgramDesc& program);
 
  private:
+  std::unordered_map<std::string, PrecisionType> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
   std::list<std::shared_ptr<OpLite>> ops_;
@@ -87,22 +90,7 @@ struct Program {
 struct Instruction {
   Instruction(const std::shared_ptr<OpLite>& op,
               std::unique_ptr<KernelBase>&& kernel)
-      : op_(op), kernel_(std::move(kernel)) {
-#ifdef LITE_WITH_PROFILE
-    if (op_->Type() != "feed" && op_->Type() != "fetch") {
-      profile_id_ = profile::BasicProfiler<profile::BasicTimer>::Global()
-                        .NewRcd(kernel_->SerializedKernelType())
-                        .id();
-      kernel_->SetProfileID(profile_id_);
-      // Set profile custom info
-      auto& profiler =
-          *profile::BasicProfiler<profile::BasicTimer>::Global().mutable_record(
-              profile_id_);
-      profiler.SetCustomInfo("op_type", op_->Type());
-      profiler.SetCustomInfo("op_info", op_->SerializedOpInfo());
-    }
-#endif  // LITE_WITH_PROFILE
-  }
+      : op_(op), kernel_(std::move(kernel)) {}
 
   // Run the instruction.
   void Run();
@@ -113,6 +101,20 @@ struct Instruction {
   const KernelBase* kernel() const { return kernel_.get(); }
   KernelBase* mutable_kernel() { return kernel_.get(); }
 
+#ifdef LITE_WITH_PROFILE
+  void set_profiler(profile::Profiler* profiler) {
+    profiler_ = profiler;
+    if (op_->Type() != "feed" && op_->Type() != "fetch") {
+      profile::OpCharacter ch;
+      ch.target = kernel()->target();
+      ch.op_type = op_->Type();
+      ch.kernel_name = kernel()->name();
+      profile_id_ = profiler->NewTimer(ch);
+      kernel_->SetProfiler(profiler_, profile_id_);
+    }
+  }
+#endif
+
  private:
   std::shared_ptr<OpLite> op_;
   std::unique_ptr<KernelBase> kernel_;
@@ -120,7 +122,7 @@ struct Instruction {
   bool has_run_{false};
 
 #ifdef LITE_WITH_PROFILE
-  // for profiler
+  profile::Profiler* profiler_;
   int profile_id_{-1};
 #endif  // LITE_WITH_PROFILE
 };
@@ -135,6 +137,15 @@ class LITE_API RuntimeProgram {
     if (instructions_.empty()) {
       LOG(FATAL) << "no instructions";
     }
+#ifdef LITE_WITH_PROFILE
+    set_profiler();
+#endif
+  }
+  ~RuntimeProgram() {
+#ifdef LITE_WITH_PROFILE
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
+#endif  // LITE_WITH_PROFILE
   }
 
   void Run();
@@ -159,6 +170,15 @@ class LITE_API RuntimeProgram {
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<Instruction> instructions_;
   lite::Scope* exec_scope_{};
+
+#ifdef LITE_WITH_PROFILE
+  profile::Profiler profiler_;
+  void set_profiler() {
+    for (auto i = instructions_.begin(); i != instructions_.end(); ++i) {
+      i->set_profiler(&profiler_);
+    }
+  }
+#endif
 };
 
 }  // namespace lite

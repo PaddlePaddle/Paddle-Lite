@@ -14,6 +14,7 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_CL
 #include "pass/memory_optimize_cl.h"
 #include <algorithm>
+#include <utility>
 #include "framework/cl/cl_image.h"
 #include "framework/lod_tensor.h"
 namespace paddle_mobile {
@@ -79,7 +80,7 @@ void MemoryOptPassCl::operator()(
 
     std::vector<ClVarNode *> fetch_var_nodes;
     for (const auto &op : block->Ops()) {
-      DLOG << "op_desc->Type(): " << op->Type();
+      LOG(kNO_LOG) << "op_desc->Type(): " << op->Type();
       for (const auto &outputs : op->GetOutputs()) {
         for (const auto &output : outputs.second) {
           // not a persistable and not a exclude one ,then add it to
@@ -87,7 +88,7 @@ void MemoryOptPassCl::operator()(
           if (!IsPersistable(output) &&
               std::find(exclude_var_names.begin(), exclude_var_names.end(),
                         output) == exclude_var_names.end()) {
-            DLOG << "output: " << output;
+            LOG(kNO_LOG) << "output: " << output;
             ClVarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
           }
@@ -100,7 +101,7 @@ void MemoryOptPassCl::operator()(
           if (!IsPersistable(input) &&
               std::find(exclude_var_names.begin(), exclude_var_names.end(),
                         input) == exclude_var_names.end()) {
-            DLOG << "input: " << input;
+            LOG(kNO_LOG) << "input: " << input;
             ClVarNode *node = CreateNode(input);
             analysis_nodes_.push(node);
             if (op->Type() == "fetch") {
@@ -114,7 +115,7 @@ void MemoryOptPassCl::operator()(
           if (!IsPersistable(output) &&
               std::find(exclude_var_names.begin(), exclude_var_names.end(),
                         output) == exclude_var_names.end()) {
-            DLOG << "output: " << output;
+            LOG(kNO_LOG) << "output: " << output;
             ClVarNode *node = CreateNode(output);
             analysis_nodes_.push(node);
           }
@@ -164,8 +165,8 @@ void MemoryOptPassCl::ShareData(
   cl_command_queue command_queue = scope->GetCLScpoe()->CommandQueue();
 
   for (const auto &list : reused_nodes_) {
-    DLOG << "\n";
-    DLOG << "gpu . share memory within these variables";
+    LOG(kNO_LOG) << "\n";
+    LOG(kNO_LOG) << "gpu . share memory within these variables";
     int64_t x_based_max_numl = -1;
     int64_t y_based_max_numl = -1;
     int64_t x_based_max_x = -1;

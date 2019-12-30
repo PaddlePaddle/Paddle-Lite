@@ -31,7 +31,7 @@
 #include "lite/utils/replace_stl/stream.h"
 
 #ifdef LITE_WITH_PROFILE
-#include "lite/core/profile/basic_profiler.h"
+#include "lite/core/profile/profiler.h"
 #endif  // LITE_WITH_PROFILE
 
 namespace paddle {
@@ -58,7 +58,10 @@ class KernelBase {
   virtual void Run() = 0;
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileID(uint32_t id) { profile_id_ = id; }
+  void SetProfiler(profile::Profiler* profiler, int id) {
+    profiler_ = profiler;
+    profile_id_ = id;
+  }
 #endif
 
   void Launch() {
@@ -80,12 +83,11 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
-
 #ifdef LITE_WITH_PROFILE
-    if (profile_id_ >= 0) {
-      profile::ProfileBlock x(profile_id_, "kernel");
-      Run();
-    }
+    profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
+    profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+    Run();
+    profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
 #else
     Run();
 #endif
@@ -175,6 +177,7 @@ class KernelBase {
   bool is_first_epoch_{true};
 
 #ifdef LITE_WITH_PROFILE
+  profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
 #endif
 };

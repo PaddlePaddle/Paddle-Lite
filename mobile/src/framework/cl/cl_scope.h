@@ -47,14 +47,14 @@ class CLScope {
   std::unique_ptr<_cl_kernel, CLKernelDeleter> GetKernel(
       const std::string &kernel_name, const std::string &file_name,
       const std::string &options) {
-    DLOG << " to get program " << file_name;
+    LOG(kLOG_DEBUG2) << " to get program " << file_name;
     auto program = Program(file_name, kernel_name, options);
-    DLOG << " end get program ~ ";
-    DLOG << " to create kernel: " << kernel_name;
+    LOG(kLOG_DEBUG2) << " end get program ~ ";
+    LOG(kLOG_DEBUG2) << " to create kernel: " << kernel_name;
     std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(
         clCreateKernel(program, kernel_name.c_str(), &status_));
     CL_CHECK_ERRORS(status_);
-    DLOG << " end create kernel ~ ";
+    LOG(kLOG_DEBUG2) << " end create kernel ~ ";
     return std::move(kernel);
   }
 
@@ -81,9 +81,11 @@ class CLScope {
       auto program = CLEngine::Instance()->CreateProgramWithSource(
           context_, source.c_str());
 
-      DLOG << " --- begin build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- begin build program -> " << program_key
+                       << " --- ";
       CLEngine::Instance()->BuildProgram(program.get(), options);
-      DLOG << " --- end build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- end build program -> " << program_key
+                       << " --- ";
 
       programs_[program_key] = std::move(program);
       return programs_[program_key].get();
@@ -100,9 +102,11 @@ class CLScope {
           context_,
           CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
 
-      DLOG << " --- begin build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- begin build program ele-> " << program_key
+                       << " --- ";
       CLEngine::Instance()->BuildProgram(program.get(), options);
-      DLOG << " --- end build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- end build program ele-> " << program_key
+                       << " --- ";
 
       programs_[program_key] = std::move(program);
       return programs_[program_key].get();
