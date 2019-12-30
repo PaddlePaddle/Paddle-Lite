@@ -12,108 +12,95 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-// Note: inputs_map the var_name contains only the data, the weight should be
-// handle in this converter
-node_map_type MulConverter(const std::shared_ptr<lite::OpLite> mul_op,
-                           const node_map_type& inputs_map) {
-  auto scope = mul_op->scope();
-  auto op_info = mul_op->op_info();
+// Note: all of the input weight vars should be handled in this converter
+int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto output_node = std::make_shared<ge::op::MatMul>(unique_op_type);
-
-  auto x_var_name = op_info->Input("X").front();
-  auto y_var_name = op_info->Input("Y").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto y_name = op_info->Input("Y").front();
+  auto y_type = kernel->GetInputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  auto y = scope->FindMutableTensor(y_name);
+  auto y_dims = y->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   int x_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
   int y_num_col_dims = op_info->GetAttr<int>("y_num_col_dims");
-  auto* xtensor = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto* ytensor = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
+  int m = x_dims.Slice(0, x_num_col_dims).production();
+  int k = x_dims.Slice(x_num_col_dims, x_dims.size()).production();
+  CHECK_EQ(k, y_dims.Slice(0, y_num_col_dims).production())
+      << "[NPU] columns of X must be equal with rows of Y";
+  int n = y_dims.Slice(y_num_col_dims, y_dims.size()).production();
+  VLOG(3) << "m:" << m << ",n:" << n << ",k:" << k;
+  VLOG(3) << "x_name:" << x_name << ", is data: " << graph->HasNode(x_name);
+  VLOG(3) << "y_name:" << y_name << ", is data: " << graph->HasNode(y_name);
+  CHECK(graph->HasNode(x_name))
+      << "[NPU] MatMul in HiAI DDK only support X is data, Y is const yet.";
 
-  int m = xtensor->dims().Slice(0, x_num_col_dims).production();
-  int x_w = xtensor->dims()
-                .Slice(x_num_col_dims, xtensor->dims().size())
-                .production();
-  int y_h = ytensor->dims().Slice(0, y_num_col_dims).production();
-  int n = ytensor->dims()
-              .Slice(y_num_col_dims, ytensor->dims().size())
-              .production();
-  CHECK_EQ(x_w, y_h) << "[NPU] x_w must be equal with y_h";
-  int k = x_w;
-  LOG(INFO) << "m:" << m << ",n:" << n << ",k:" << k;
-  LOG(INFO) << "x_var_name:" << x_var_name
-            << ", is data: " << inputs_map.count(x_var_name);
-  LOG(INFO) << "y_var_name:" << y_var_name
-            << ", is data: " << inputs_map.count(y_var_name);
-  CHECK(inputs_map.count(x_var_name))
-      << "[NPU] MatMul only support X is data, Y is const yet";
-  if (inputs_map.count(x_var_name)) {
-    auto xsrc = inputs_map.at(x_var_name);
-    auto reshapex = std::make_shared<ge::op::Reshape>(x_var_name + "_reshape");
-    reshapex->set_input_tensor(*xsrc);
-    reshapex->set_attr_shape({m, k});
-    reshapex->set_attr_axis(0);
-    lite::npu::OpList::Global().add(xsrc);
-    lite::npu::OpList::Global().add(reshapex);
-    output_node->set_input_x(*reshapex);
+  // X node which supports persistable and non-persistable tensor, and
+  // reshape to (m, k)
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+    auto reshaped_x_node = graph->AddNode<ge::op::Reshape>(x_name + "/reshape");
+    reshaped_x_node->set_input_tensor(*x_node);
+    reshaped_x_node->set_attr_shape({m, k});
+    reshaped_x_node->set_attr_axis(0);
+    x_node = reshaped_x_node;
   } else {
-    auto constx = std::make_shared<ge::op::Const>(x_var_name);
-    ge::TensorDesc desc(ge::Shape({m, k}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    auto size = desc.GetShape().GetShapeSize();
-    CHECK_EQ(size, xtensor->dims().production());
-    ge::TensorPtr ptensor = std::make_shared<ge::Tensor>();
-    ptensor->SetTensorDesc(desc);
-    auto* pdata = reinterpret_cast<uint8_t*>(xtensor->mutable_data<float>());
-    ptensor->SetData(pdata, size * sizeof(float));
-    constx->set_attr_value(ptensor);
-    lite::npu::OpList::Global().add(constx);
-    output_node->set_input_x(*constx);
+    auto x_const_node = graph->AddNode(x_name, *x, {m, k});
+    x_node = x_const_node;
   }
 
-  if (inputs_map.count(y_var_name)) {
-    auto ysrc = inputs_map.at(y_var_name);
-    auto reshapey = std::make_shared<ge::op::Reshape>(y_var_name + "_reshape");
-    reshapey->set_input_tensor(*ysrc);
-    reshapey->set_attr_shape({k, n});
-    reshapey->set_attr_axis(0);
-    lite::npu::OpList::Global().add(ysrc);
-    lite::npu::OpList::Global().add(reshapey);
-    output_node->set_input_w(*reshapey);
+  // Y node which only supports persistable tensor, and reshape to
+  // (k,n)
+  std::shared_ptr<ge::Operator> y_node = nullptr;
+  if (graph->HasNode(y_name)) {
+    y_node = graph->GetNode(y_name);
+    auto reshaped_y_node = graph->AddNode<ge::op::Reshape>(y_name + "/reshape");
+    reshaped_y_node->set_input_tensor(*y_node);
+    reshaped_y_node->set_attr_shape({k, n});
+    reshaped_y_node->set_attr_axis(0);
+    y_node = reshaped_y_node;
   } else {
-    auto consty = std::make_shared<ge::op::Const>(y_var_name);
-    ge::TensorDesc desc(ge::Shape({k, n}), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    auto size = desc.GetShape().GetShapeSize();
-    CHECK_EQ(size, ytensor->dims().production());
-    ge::TensorPtr ptensor = std::make_shared<ge::Tensor>();
-    ptensor->SetTensorDesc(desc);
-    auto* pdata = reinterpret_cast<uint8_t*>(ytensor->mutable_data<float>());
-    ptensor->SetData(pdata, size * sizeof(float));
-    consty->set_attr_value(ptensor);
-    lite::npu::OpList::Global().add(consty);
-    output_node->set_input_w(*consty);
+    auto y_const_node = graph->AddNode(y_name, *y, {k, n});
+    y_node = y_const_node;
   }
 
-  lite::npu::OpList::Global().add(output_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = output_node;
-  return outputs_map;
+  // Matmul node
+  auto mul_node = graph->AddNode<ge::op::MatMul>(out_name);
+  mul_node->set_input_x1(*x_node);
+  mul_node->set_input_x2(*y_node);
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(mul, paddle::lite::kernels::npu::bridges::MulConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU, mul, paddle::lite::subgraph::npu::MulConverter);

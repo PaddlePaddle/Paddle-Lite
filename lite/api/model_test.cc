@@ -21,14 +21,14 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
-#include "lite/tests/utils/timer.h"
+#include "lite/core/profile/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
 
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
@@ -47,7 +47,6 @@ void OutputOptModel(const std::string& load_model_dir,
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
   config.set_valid_places({
-      Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
@@ -72,10 +71,6 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int thread_num,
          const int repeat,
          const int warmup_times = 0) {
-#ifdef LITE_WITH_PROFILE
-  lite::profile::BasicProfiler<lite::profile::BasicTimer>::Global().SetWarmup(
-      warmup_times);
-#endif
   lite_api::MobileConfig config;
   config.set_model_dir(model_dir);
   config.set_power_mode(power_mode);
@@ -102,20 +97,20 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
 
   Timer ti;
   for (int j = 0; j < repeat; ++j) {
-    ti.start();
+    ti.Start();
     predictor->Run();
-    ti.end();
-    LOG(INFO) << "iter: " << j << ", time: " << ti.latest_time() << " ms";
+    float t = ti.Stop();
+    LOG(INFO) << "iter: " << j << ", time: " << t << " ms";
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir
             << ", power_mode: " << static_cast<int>(power_mode)
             << ", threads num " << thread_num << ", warmup: " << warmup_times
-            << ", repeats: " << repeat << ", avg time: " << ti.get_average_ms()
+            << ", repeats: " << repeat << ", avg time: " << ti.LapTimes().Avg()
             << " ms"
-            << ", min time: " << ti.get_min_time() << " ms"
-            << ", max time: " << ti.get_max_time() << " ms.";
+            << ", min time: " << ti.LapTimes().Min() << " ms"
+            << ", max time: " << ti.LapTimes().Max() << " ms.";
 
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();

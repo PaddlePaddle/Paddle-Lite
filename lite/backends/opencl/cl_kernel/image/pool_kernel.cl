@@ -12,15 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#define MIN_VALUE -FLT_MAX
+#include <cl_common.h>
 
-__kernel void pool_max(
-    __private const int in_height, __private const int in_width,
-    __private const int out_height, __private const int out_width,
-    __private const int pad_top, __private const int pad_left,
-    __private const int stride_h, __private const int stride_w,
-    __private const int ksize_h, __private const int ksize_w,
-    __read_only image2d_t input, __write_only image2d_t output) {
+__kernel void pool_max(__read_only image2d_t input,
+    __write_only image2d_t output,
+    __private const int in_height,
+    __private const int in_width,
+    __private const int out_height,
+    __private const int out_width,
+    __private const int ksize_h,
+    __private const int ksize_w,
+    __private const int stride_h,
+    __private const int stride_w,
+    __private const int pad_top,
+    __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -40,25 +45,30 @@ __kernel void pool_max(
 
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
-  float4 max_value = (float4)(MIN_VALUE);
+  CL_DTYPE4 max_value = (CL_DTYPE4)(MIN_VALUE);
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
-      float4 tmp = read_imagef(input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
+      CL_DTYPE4 tmp = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
       max_value = max(max_value, tmp);
     }
   }
 
   const int pos_out_x = mad24(out_c, out_width, out_w);
-  write_imagef(output, (int2)(pos_out_x, out_nh), max_value);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_out_x, out_nh), max_value);
 }
 
-__kernel void pool_avg(
-    __private const int in_height, __private const int in_width,
-    __private const int out_height, __private const int out_width,
-    __private const int pad_top, __private const int pad_left,
-    __private const int stride_h, __private const int stride_w,
-    __private const int ksize_h, __private const int ksize_w,
-    __read_only image2d_t input, __write_only image2d_t output) {
+__kernel void pool_avg(__read_only image2d_t input,
+  __write_only image2d_t output,
+  __private const int in_height,
+  __private const int in_width,
+  __private const int out_height,
+  __private const int out_width,
+  __private const int ksize_h,
+  __private const int ksize_w,
+  __private const int stride_h,
+  __private const int stride_w,
+  __private const int pad_top,
+  __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -76,15 +86,14 @@ __kernel void pool_avg(
 
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
-  float4 sum = (float4)(0.0f);
-  int num = 0;
+  CL_DTYPE4 sum = (CL_DTYPE4)(0.0f);
+
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
-      sum += read_imagef(input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
-      num++;
+      sum += READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
     }
   }
-  float4 avg = sum / num;
+  CL_DTYPE4 avg = sum / (ksize_h * ksize_w);
   const int pos_out_x = mad24(out_c, out_width, out_w);
-  write_imagef(output, (int2)(pos_out_x, out_nh), avg);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_out_x, out_nh), avg);
 }

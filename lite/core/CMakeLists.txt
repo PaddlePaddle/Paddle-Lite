@@ -33,9 +33,9 @@ lite_cc_library(scope SRCS scope.cc DEPS tensor)
 lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context gflags NPU_DEPS npu_runtime)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context gflags)
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags XPU_DEPS xpu_runtime)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags)
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
@@ -95,11 +95,19 @@ add_custom_command(
 add_custom_target(op_list_h DEPENDS ops.h)
 add_custom_target(kernel_list_h DEPENDS kernels.h)
 add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
-
+# create headfile to restore ops info sorted by suppported platforms
+add_custom_command(
+  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
+  ${kernels_src_list}
+  ${ops_src_list}
+  ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
+  OUTPUT supported_kernel_op_info.h # not a real path to the output to force it execute every time.
+  )
+  add_custom_target(supported_kernel_op_info_h DEPENDS supported_kernel_op_info.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 lite_cc_library(kernel SRCS kernel.cc
         DEPS context type_system target_wrapper any op_params tensor
-        PROFILE_DEPS basic_profiler
+        PROFILE_DEPS lite_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
   cpp_op_desc tensor
@@ -113,7 +121,7 @@ lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
 lite_cc_library(program SRCS program.cc
     DEPS op kernel model_parser ${ops} ${cpp_wrapper}
-    PROFILE_DEPS basic_profiler)
+    PROFILE_DEPS lite_profiler)
 
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)

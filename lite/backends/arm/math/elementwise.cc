@@ -558,6 +558,52 @@ void elementwise_mul<float>(const float* dinx,
 }
 
 template <>
+void elementwise_mul<int>(const int* dinx,
+                          const int* diny,
+                          int* dout,
+                          int num) {
+  int cnt = num >> 4;
+  int remain = num % 16;
+#pragma omp parallel for
+  for (int i = 0; i < cnt; ++i) {
+    const int* dinx_ptr = dinx + (i << 4);
+    const int* diny_ptr = diny + (i << 4);
+    int* dout_ptr = dout + (i << 4);
+
+    int32x4_t dinx0 = vld1q_s32(dinx_ptr);
+    int32x4_t dinx1 = vld1q_s32(dinx_ptr + 4);
+    int32x4_t dinx2 = vld1q_s32(dinx_ptr + 8);
+    int32x4_t dinx3 = vld1q_s32(dinx_ptr + 12);
+
+    int32x4_t diny0 = vld1q_s32(diny_ptr);
+    int32x4_t diny1 = vld1q_s32(diny_ptr + 4);
+    int32x4_t diny2 = vld1q_s32(diny_ptr + 8);
+    int32x4_t diny3 = vld1q_s32(diny_ptr + 12);
+
+    dinx0 = vmulq_s32(dinx0, diny0);
+    dinx1 = vmulq_s32(dinx1, diny1);
+    dinx2 = vmulq_s32(dinx2, diny2);
+    dinx3 = vmulq_s32(dinx3, diny3);
+
+    vst1q_s32(dout_ptr, dinx0);
+    vst1q_s32(dout_ptr + 4, dinx1);
+    vst1q_s32(dout_ptr + 8, dinx2);
+    vst1q_s32(dout_ptr + 12, dinx3);
+  }
+  if (remain > 0) {
+    const int* dinx_ptr = dinx + (cnt << 4);
+    const int* diny_ptr = diny + (cnt << 4);
+    int* dout_ptr = dout + (cnt << 4);
+    for (int i = 0; i < remain; i++) {
+      *dout_ptr = *dinx_ptr * *diny_ptr;
+      dout_ptr++;
+      dinx_ptr++;
+      diny_ptr++;
+    }
+  }
+}
+
+template <>
 void elementwise_mul_relu<float>(const float* dinx,
                                  const float* diny,
                                  float* dout,
@@ -663,6 +709,73 @@ void elementwise_mul_broadcast<float>(const float* dinx,
         float32x4_t din0 = vld1q_f32(din_ptr);
         din0 = vmulq_f32(din0, rb);
         vst1q_f32(dout_ptr, din0);
+        din_ptr += 4;
+        dout_ptr += 4;
+        remain -= 4;
+      }
+      if (remain > 0) {
+        for (int p = 0; p < remain; ++p) {
+          *dout_ptr = *din_ptr * diny_data;
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
+  }
+}
+
+template <>
+void elementwise_mul_broadcast<int>(const int* dinx,
+                                    const int* diny,
+                                    int* dout,
+                                    int batch,
+                                    int channels,
+                                    int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int* din_ptr = dinx + offset;
+      const int diny_data = diny[j];
+      int* dout_ptr = dout + offset;
+
+      int cnt = num >> 4;
+      int remain = num % 16;
+      int32x4_t rb = vdupq_n_s32(diny_data);
+      for (int k = 0; k < cnt; ++k) {
+        int32x4_t din0 = vld1q_s32(din_ptr);
+        int32x4_t din1 = vld1q_s32(din_ptr + 4);
+        int32x4_t din2 = vld1q_s32(din_ptr + 8);
+        int32x4_t din3 = vld1q_s32(din_ptr + 12);
+
+        din0 = vmulq_s32(din0, rb);
+        din1 = vmulq_s32(din1, rb);
+        din2 = vmulq_s32(din2, rb);
+        din3 = vmulq_s32(din3, rb);
+
+        vst1q_s32(dout_ptr, din0);
+        vst1q_s32(dout_ptr + 4, din1);
+        vst1q_s32(dout_ptr + 8, din2);
+        vst1q_s32(dout_ptr + 12, din3);
+
+        din_ptr += 16;
+        dout_ptr += 16;
+      }
+      if (remain >= 8) {
+        int32x4_t din0 = vld1q_s32(din_ptr);
+        int32x4_t din1 = vld1q_s32(din_ptr + 4);
+        din0 = vmulq_s32(din0, rb);
+        din1 = vmulq_s32(din1, rb);
+        vst1q_s32(dout_ptr, din0);
+        vst1q_s32(dout_ptr + 4, din1);
+        din_ptr += 8;
+        dout_ptr += 8;
+        remain -= 8;
+      }
+      if (remain >= 4) {
+        int32x4_t din0 = vld1q_s32(din_ptr);
+        din0 = vmulq_s32(din0, rb);
+        vst1q_s32(dout_ptr, din0);
         din_ptr += 4;
         dout_ptr += 4;
         remain -= 4;

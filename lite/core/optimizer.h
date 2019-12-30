@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
@@ -25,12 +27,6 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
-#ifdef LITE_WITH_NPU
-#include "lite/core/mir/subgraph/generate_npu_program_pass.h"
-#endif
-#ifdef LITE_WITH_XPU
-#include "lite/core/mir/subgraph/generate_xpu_program_pass.h"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -49,6 +45,7 @@ class Optimizer {
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
     CHECK(!graph_) << "duplicate optimize found";
+
     graph_.reset(new mir::SSAGraph);
     graph_->Build(program, valid_places);
     graph_->SetValidPlaces(valid_places);
@@ -57,23 +54,24 @@ class Optimizer {
     InitTargetTypeTransformPass();
 
     if (passes.empty()) {
-      RunPasses(std::vector<std::string>{
+      std::vector<std::string> passes_local{
           {"lite_quant_dequant_fuse_pass",     //
            "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",           //
            "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
-           // This pass is disabled to force some opencl kernels selected for
-           // final running, otherwise, they will be fused to ARM fusion
-           // kernels, and the OpenCL devices will be discarded.
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
            "lite_conv_activation_fuse_pass",              //
+           "lite_var_conv_2d_activation_fuse_pass",       //
            "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //
            "lite_transpose_softmax_transpose_fuse_pass",  //
            "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+           "elementwise_mul_constant_eliminate_pass",     //
+           "lite_sequence_pool_concat_fuse_pass",         //
+#if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
+    (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
            "static_kernel_pick_pass",        // pick original kernel from graph
@@ -105,16 +103,14 @@ class Optimizer {
            "argument_type_display_pass",  //
 
            "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "argument_type_display_pass",
 
            "runtime_context_assign_pass",
-           "argument_type_display_pass",  //
-#if !defined(LITE_WITH_OPENCL) && !defined(LITE_WITH_NPU) && \
-    !defined(LITE_WITH_XPU)
-           // TODO(ysh329): cause CL_INVALID_MEM_OBJECT when setArg in kernel
+           "argument_type_display_pass",
            "memory_optimize_pass",
-#endif
-           "argument_type_display_pass"}});
+           "npu_subgraph_pass",
+           "xpu_subgraph_pass"}};
+      RunPasses(passes_local);
     } else {
       RunPasses(passes);
     }
@@ -125,39 +121,6 @@ class Optimizer {
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
-#if defined(LITE_WITH_NPU) || defined(LITE_WITH_XPU)
-    auto target_place = Place{
-#ifdef LITE_WITH_NPU
-        TARGET(kNPU),
-#endif
-#ifdef LITE_WITH_XPU
-        TARGET(kXPU),
-#endif
-        PRECISION(kFloat)};
-    if (std::find(valid_places_.begin(), valid_places_.end(), target_place) !=
-        valid_places_.end()) {
-#ifdef LITE_WITH_NPU
-      auto pass = mir::PassManager::Global()
-                      .LookUp<mir::subgraph::GenerateNPUProgramPass>(
-                          "generate_npu_program_pass");
-#endif
-#ifdef LITE_WITH_XPU
-      auto pass = mir::PassManager::Global()
-                      .LookUp<mir::subgraph::GenerateXPUProgramPass>(
-                          "generate_xpu_program_pass");
-#endif
-      try {
-        pass->Apply(graph_);
-        auto program = pass->GenProgram();
-        CHECK(exec_scope_);
-        program->set_exec_scope(exec_scope_);
-        return program;
-      } catch (...) {
-        LOG(WARNING) << "Build " << TargetToStr(target_place.target)
-                     << " program failed!";
-      }
-    }
-#endif
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);
@@ -199,14 +162,16 @@ class Optimizer {
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);
-      CHECK(pass) << "Can not find pass: " << x;
-      bool matched = false;
-      for (const auto& place : valid_places_) {
-        if (PassMatchesTarget(*pass, place.target)) {
-          matched = true;
-        }
+      if (!pass) {
+        LOG(INFO) << "   - Skip " << x << " because the pass isn't found.";
+        continue;
       }
-      matched = matched && PassMatchesKernels(*pass);
+      std::set<TargetType> targets;
+      for (const auto& place : valid_places_) {
+        targets.insert(place.target);
+      }
+      bool matched =
+          PassMatchesTarget(*pass, targets) && PassMatchesKernels(*pass);
       if (!matched) {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";

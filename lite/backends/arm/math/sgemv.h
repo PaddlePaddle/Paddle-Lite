@@ -15,6 +15,8 @@
 #pragma once
 
 #include <cmath>
+#include "lite/core/context.h"
+#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite {
@@ -28,9 +30,10 @@ bool sgemv(const float* A,
            bool transA,
            int M,
            int N,
-           bool is_bias = false,
-           const float* bias = nullptr,
-           bool is_relu = false);
+           bool is_bias,
+           const float* bias,
+           bool is_relu,
+           const ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm

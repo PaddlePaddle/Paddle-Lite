@@ -12,77 +12,141 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ElementwiseConverter(
-    const std::shared_ptr<lite::OpLite> elementwise_op,
-    const node_map_type& inputs_map) {
-  auto scope = elementwise_op->scope();
-  auto op_info = elementwise_op->op_info();
-  auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+std::vector<int64_t> CvtYShape(const DDim& x_dims,
+                               const DDim& y_dims,
+                               int axis) {
+  CHECK_EQ(x_dims.size(), 4UL) << "[NPU] Only support 4-dimension x";
+  CHECK_GE(x_dims.size(), y_dims.size());
 
-  std::shared_ptr<ge::op::Eltwise> elementwise_node =
-      std::make_shared<ge::op::Eltwise>(unique_op_type);
-
-  auto x_var_name = op_info->Input("X").front();
-  auto y_var_name = op_info->Input("Y").front();
-
-  CHECK_EQ(op_info->GetAttr<int>("axis"), -1)
-      << "[NPU] elementwise only support inputs with same size";
-
-  CHECK(inputs_map.find(x_var_name) != inputs_map.end());
-  elementwise_node->set_input_x1(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-
-  if (inputs_map.find(y_var_name) != inputs_map.end()) {
-    elementwise_node->set_input_x2(*inputs_map.at(y_var_name));
-    lite::npu::OpList::Global().add(inputs_map.at(y_var_name));
-  } else {
-    auto y_const_node = std::make_shared<ge::op::Const>(y_var_name);
-    auto* y = scope->FindVar(y_var_name)->GetMutable<Tensor>();
-    y_const_node->set_attr_value(lite::npu::CvtTensor(y));
-    elementwise_node->set_input_x2(*y_const_node);
-    lite::npu::OpList::Global().add(y_const_node);
+  if (axis < 0) {
+    axis += x_dims.size();
   }
 
-  lite::npu::OpList::Global().add(elementwise_node);
+  std::vector<int64_t> y_new_shape(y_dims.Vectorize());
+  if (y_new_shape.size() == 4UL) {
+    return y_new_shape;
+  }
+  for (int i = 0; i < axis; i++) {
+    y_new_shape.insert(y_new_shape.begin(), 1);
+  }
+  while (y_new_shape.size() < 4) {
+    y_new_shape.push_back(1);
+  }
+  CHECK_EQ(y_new_shape.size(), 4UL);
+  return y_new_shape;
+}
 
-  // paddlelite has sum only
-  elementwise_node->set_attr_mode(1);
+int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
+  auto op_type = op_info->Type();
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  node_map_type outputs_map;
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto y_name = op_info->Input("Y").front();
+  auto y_type = kernel->GetInputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+  auto y = scope->FindMutableTensor(y_name);
+  auto y_dims = y->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto axis = op_info->GetAttr<int>("axis");
+
+  // X node
+  std::shared_ptr<ge::Operator> x_node = nullptr;
+  if (graph->HasNode(x_name)) {
+    x_node = graph->GetNode(x_name);
+  } else {
+    x_node = graph->AddNode(x_name, x_dims);
+  }
+
+  // Y node
+  std::shared_ptr<ge::Operator> y_node = nullptr;
+  if (graph->HasNode(y_name)) {
+    y_node = graph->GetNode(y_name);
+  } else {
+    auto y_new_shape = CvtYShape(x_dims, y_dims, axis);
+    y_node = graph->AddNode(y_name, y_new_shape);
+  }
+
+  // Elementwise node
+  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
+  if (op_type == "elementwise_add" ||
+      op_type == "fusion_elementwise_add_activation") {
+    auto elt_node = graph->AddNode<ge::op::Add>(out_name);
+    elt_node->set_input_x1(*x_node);
+    elt_node->set_input_x2(*y_node);
+    elementwise_node = elt_node;
+  } else if (op_type == "elementwise_sub") {
+    auto elt_node = graph->AddNode<ge::op::Sub>(out_name);
+    elt_node->set_input_x1(*x_node);
+    elt_node->set_input_x2(*y_node);
+    elementwise_node = elt_node;
+  } else if (op_type == "elementwise_mul") {
+    auto elt_node = graph->AddNode<ge::op::Mul>(out_name);
+    elt_node->set_input_x(*x_node);
+    elt_node->set_input_y(*y_node);
+    elementwise_node = elt_node;
+  } else if (op_type == "elementwise_div") {
+    auto elt_node = graph->AddNode<ge::op::RealDiv>(out_name);
+    elt_node->set_input_x1(*x_node);
+    elt_node->set_input_x2(*y_node);
+    elementwise_node = elt_node;
+  } else {
+    LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
+    return FAILED;
+  }
+
+  // Act node
   if (op_type == "fusion_elementwise_add_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    auto act_node =
-        std::make_shared<ge::op::Activation>(unique_op_type + "/act");
+    auto act_node = graph->AddNode<ge::op::Activation>(out_name);
     act_node->set_input_x(*elementwise_node);
     // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
     // clipped_relu etc.
-    act_node->set_attr_mode(lite::npu::CvtActMode(act_type));
-    lite::npu::OpList::Global().add(act_node);
-    outputs_map[op_info->Output("Out").front()] = act_node;
-  } else {
-    outputs_map[op_info->Output("Out").front()] = elementwise_node;
+    act_node->set_attr_mode(CvtActMode(act_type));
   }
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(elementwise_add,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
-REGISTER_NPU_BRIDGE(fusion_elementwise_add_activation,
-                    paddle::lite::kernels::npu::bridges::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_add,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         fusion_elementwise_add_activation,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_sub,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_mul,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(NPU,
+                         elementwise_div,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);

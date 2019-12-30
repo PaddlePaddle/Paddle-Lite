@@ -40,6 +40,18 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
       return Create<TARGET(target__),                                        \
                     PRECISION(precision__),                                  \
                     DATALAYOUT(kNHWC)>(op_type);                             \
+    case DATALAYOUT(kImageDefault):                                          \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kImageDefault)>(op_type);                     \
+    case DATALAYOUT(kImageFolder):                                           \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kImageFolder)>(op_type);                      \
+    case DATALAYOUT(kImageNW):                                               \
+      return Create<TARGET(target__),                                        \
+                    PRECISION(precision__),                                  \
+                    DATALAYOUT(kImageNW)>(op_type);                          \
     default:                                                                 \
       LOG(FATAL) << "unsupported kernel layout " << DataLayoutToStr(layout); \
   }
@@ -54,6 +66,8 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
       CREATE_KERNEL1(target__, kFP16);                  \
     case PRECISION(kAny):                               \
       CREATE_KERNEL1(target__, kAny);                   \
+    case PRECISION(kInt32):                             \
+      CREATE_KERNEL1(target__, kInt32);                 \
     case PRECISION(kInt64):                             \
       CREATE_KERNEL1(target__, kInt64);                 \
     default:                                            \
@@ -115,6 +129,8 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kCUDA, kAny, kNCHW);
   INIT_FOR(kCUDA, kAny, kAny);
   INIT_FOR(kCUDA, kInt8, kNHWC);
+  INIT_FOR(kCUDA, kInt64, kNCHW);
+  INIT_FOR(kCUDA, kInt64, kNHWC);
 
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
@@ -134,6 +150,7 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kARM, kInt8, kNCHW);
   INIT_FOR(kARM, kAny, kNCHW);
   INIT_FOR(kARM, kAny, kAny);
+  INIT_FOR(kARM, kInt32, kNCHW);
 
   INIT_FOR(kOpenCL, kFloat, kNCHW);
   INIT_FOR(kOpenCL, kFloat, kNHWC);
@@ -142,6 +159,17 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kFloat, kAny);
   INIT_FOR(kOpenCL, kInt8, kNCHW);
   INIT_FOR(kOpenCL, kAny, kAny);
+  INIT_FOR(kOpenCL, kFP16, kNCHW);
+  INIT_FOR(kOpenCL, kFP16, kNHWC);
+  INIT_FOR(kOpenCL, kFP16, kImageDefault);
+  INIT_FOR(kOpenCL, kFP16, kImageFolder);
+  INIT_FOR(kOpenCL, kFP16, kImageNW);
+  INIT_FOR(kOpenCL, kFloat, kImageDefault);
+  INIT_FOR(kOpenCL, kFloat, kImageFolder);
+  INIT_FOR(kOpenCL, kFloat, kImageNW);
+  INIT_FOR(kOpenCL, kAny, kImageDefault);
+  INIT_FOR(kOpenCL, kAny, kImageFolder);
+  INIT_FOR(kOpenCL, kAny, kImageNW);
 
   INIT_FOR(kNPU, kFloat, kNCHW);
   INIT_FOR(kNPU, kInt8, kNCHW);
