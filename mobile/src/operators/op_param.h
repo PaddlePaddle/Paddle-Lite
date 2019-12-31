@@ -2632,6 +2632,7 @@ class ConvTransposeParam : public OpParam {
     EXEC_DECONV4X4_FLOAT,
     EXEC_DEPTHWISETRANS_FLOAT,
     EXEC_CONVTRANS3x3s2_FLOAT,
+    EXEC_CONVTRANS_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
