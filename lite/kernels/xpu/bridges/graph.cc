@@ -21,71 +21,71 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
-                                            const xtcl::xExpr& layer,
-                                            PrecisionType precision,
-                                            DataLayoutType layout) {
-  auto unique_name = [&](const std::string& key) {
-    int idx = 1;
-    auto it = counts_.find(key);
-    if (it == counts_.end()) {
-      counts_.insert(std::make_pair(key, idx));
-    } else {
-      idx = ++(it->second);
-    }
-    return key + "_" + std::to_string(idx);
-  };
+int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
   auto it = nodes_.find(name);
   if (it != nodes_.end()) {
-    // Only variable can rebind the name
-    CHECK(!it->second.second.persistable()) << "[XPU] Node " << name
-                                            << " redefined.";
-    // Generate a new unique name as the key to bind the origin node if the
-    // origin node isn't a const node: new_name->node
-    nodes_.insert(std::make_pair(unique_name(name + "_var"), it->second));
-    nodes_.erase(it);
+    // Only variable node can be shared with the same name
+    if (!node->is_var() || !it->second.back()->is_var()) {
+      LOG(FATAL) << "[XPU] Const or data node " << name << " is redefined.";
+      return -1;
+    }
+  } else {
+    auto ret = nodes_.insert(
+        std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
+    CHECK(ret.second);
+    it = ret.first;
   }
-  // Create a new node and bind with the name: name->new_node
-  auto node = std::make_shared<xtcl::xExpr>(layer);
-  nodes_.insert(std::make_pair(
-      name, std::make_pair(node, Type(precision, layout, false))));
-  builder_.SetLayer(unique_name(name + "_op"));
+  it->second.push_back(node);
+  return it->second.size();
+}
+
+// Variable node
+std::shared_ptr<Node> Graph::Add(const std::string& name,
+                                 const xtcl::xExpr& layer,
+                                 PrecisionType precision,
+                                 DataLayoutType layout) {
+  auto node = std::make_shared<Node>(precision, layout, Node::Role::kVar);
+  auto idx = Add(name, node);
+  CHECK_GE(idx, 1);
+  node->set_data(std::make_shared<xtcl::xExpr>(layer));
+  // Generate a unique name for the current XTCL layer
+  builder_.SetLayer(name + "__" + std::to_string(idx));
   return node;
 }
 
-// Const node
-std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
-                                            const Tensor& tensor,
-                                            PrecisionType precision,
-                                            DataLayoutType layout) {
-  return AddNode(name, tensor, tensor.dims().Vectorize(), precision, layout);
-}
-
-std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
-                                            const Tensor& tensor,
-                                            std::vector<int64_t> shape,
-                                            PrecisionType precision,
-                                            DataLayoutType layout) {
-  CHECK(!HasNode(name)) << "[NPU] Node " << name << " redefined.";
-  auto node = std::make_shared<xtcl::xExpr>(builder_.CreateTensor(
-      name, CvtShape<xtcl::xIndexExpr>(shape), CvtPrecisionType(precision)));
-  nodes_.insert(std::make_pair(
-      name, std::make_pair(node, Type(precision, layout, true))));
-  params_.emplace(
-      std::make_pair(name, *CvtTensor(tensor, shape, precision, layout)));
+// Const or data node
+std::shared_ptr<Node> Graph::Add(const std::string& name,
+                                 const Tensor& tensor,
+                                 std::vector<int64_t> shape,
+                                 PrecisionType precision,
+                                 DataLayoutType layout) {
+  std::shared_ptr<Node> node = nullptr;
+  if (tensor.persistable()) {
+    // Const node
+    node = std::make_shared<Node>(precision, layout, Node::Role::kConst);
+    auto idx = Add(name, node);
+    CHECK_EQ(idx, 1);
+    node->set_data(std::make_shared<xtcl::xExpr>(builder_.CreateTensor(
+        name, CvtShape<xtcl::xIndexExpr>(shape), CvtPrecisionType(precision))));
+    params_.emplace(
+        std::make_pair(name, *CvtTensor(tensor, shape, precision, layout)));
+  } else {
+    // Data node
+    node = Add(name, shape, precision, layout);
+  }
   return node;
 }
 
 // Data node
-std::shared_ptr<xtcl::xExpr> Graph::AddNode(const std::string& name,
-                                            std::vector<int64_t> shape,
-                                            PrecisionType precision,
-                                            DataLayoutType layout) {
-  CHECK(!HasNode(name)) << "[NPU] Node " << name << " redefined.";
-  auto node = std::make_shared<xtcl::xExpr>(builder_.CreateTensor(
-      name, CvtShape<xtcl::xIndexExpr>(shape), CvtPrecisionType(precision)));
-  nodes_.insert(std::make_pair(
-      name, std::make_pair(node, Type(precision, layout, false))));
+std::shared_ptr<Node> Graph::Add(const std::string& name,
+                                 std::vector<int64_t> shape,
+                                 PrecisionType precision,
+                                 DataLayoutType layout) {
+  auto node = std::make_shared<Node>(precision, layout, Node::Role::kData);
+  auto idx = Add(name, node);
+  CHECK_EQ(idx, 1);
+  node->set_data(std::make_shared<xtcl::xExpr>(builder_.CreateTensor(
+      name, CvtShape<xtcl::xIndexExpr>(shape), CvtPrecisionType(precision))));
   return node;
 }
 
