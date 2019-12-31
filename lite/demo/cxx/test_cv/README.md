@@ -24,7 +24,7 @@ tar zxvf mobilenet_v1.tar.gz
 --prefer_int8_kernel=false
 ```
 
-3. 编译并运行完整test_model demo
+3. 编译并运行完整test_model_cv demo
 example:
 ```shell
 cd inference_lite_lib.android.armv8/demo/cxx/test_cv
@@ -32,11 +32,11 @@ cd inference_lite_lib.android.armv8/demo/cxx/test_cv
 
 - 修改MakeFile, 注释编译test_img_propress 语句
     ```shell
-    test_model: fetch_opencv test_model.o
-            $(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model.o -o test_model  $(CXX_LIBS) $(LDFLAGS)
+    test_model_cv: fetch_opencv test_model_cv.o
+            $(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model_cv.o -o test_model_cv  $(CXX_LIBS) $(LDFLAGS)
 
-    test_model.o: test_model.cc
-            $(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model.o -c test_model.cc
+    test_model_cv.o: test_model_cv.cc
+            $(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model_cv.o -c test_model_cv.cc
 
     #test_img_propress: fetch_opencv test_img_propress.o
     #        $(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_img_propress.o -o test_img_propress  $(CXX_LIBS) $(LDFLAGS)
@@ -46,8 +46,8 @@ cd inference_lite_lib.android.armv8/demo/cxx/test_cv
 
     .PHONY: clean
     clean:
-            rm -f test_model.o
-            rm -f test_model
+            rm -f test_model_cv.o
+            rm -f test_model_cv
             #rm -f test_img_propress.o
             #rm -f test_img_propress
     ```
@@ -66,12 +66,12 @@ cd inference_lite_lib.android.armv8/demo/cxx/test_cv
 make
 
 adb -s device_id push mobilenet_v1 /data/local/tmp/
-adb -s device_id push test_model /data/local/tmp/
+adb -s device_id push test_model_cv /data/local/tmp/
 adb -s device_id push test.jpg /data/local/tmp/
 adb -s device_id push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
-adb -s device_id shell chmod +x /data/local/tmp/test_model
+adb -s device_id shell chmod +x /data/local/tmp/test_model_cv
 adb -s device_id shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/test_model /data/local/tmp/mobilenet_v1 /data/local/tmp/test.jpg 1 3 224 224 "
+/data/local/tmp/test_model_cv /data/local/tmp/mobilenet_v1 /data/local/tmp/test.jpg 1 3 224 224 "
 ```
 运行成功将在控制台输出部分预测结果
 
@@ -81,13 +81,13 @@ example:
 cd inference_lite_lib.android.armv8/demo/cxx/test_cv
 ```
 
-- 修改MakeFile, 注释编译test_model 语句
+- 修改MakeFile, 注释编译test_model_cv 语句
     ```shell
-    #test_model: fetch_opencv test_model.o
-    #        $(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model.o -o test_model  $(CXX_LIBS) $(LDFLAGS)
+    #test_model_cv: fetch_opencv test_model_cv.o
+    #        $(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model_cv.o -o test_model_cv  $(CXX_LIBS) $(LDFLAGS)
 
-    #test_model.o: test_model.cc
-    #        $(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model.o -c test_model.cc
+    #test_model_cv.o: test_model_cv.cc
+    #        $(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model_cv.o -c test_model_cv.cc
 
     test_img_propress: fetch_opencv test_img_propress.o
             $(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_img_propress.o -o test_img_propress  $(CXX_LIBS) $(LDFLAGS)
@@ -97,8 +97,8 @@ cd inference_lite_lib.android.armv8/demo/cxx/test_cv
 
     .PHONY: clean
     clean:
-            #rm -f test_model.o
-            #rm -f test_model
+            #rm -f test_model_cv.o
+            #rm -f test_model_cv
             rm -f test_img_propress.o
             rm -f test_img_propress
     ```
@@ -120,7 +120,7 @@ adb -s device_id push mobilenet_v1 /data/local/tmp/
 adb -s device_id push test_img_propress /data/local/tmp/
 adb -s device_id push test.jpg /data/local/tmp/
 adb -s device_id push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
-adb -s device_id shell chmod +x /data/local/tmp/test_model
+adb -s device_id shell chmod +x /data/local/tmp/test_model_cv
 adb -s device_id shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
 /data/local/tmp/test_img_propress /data/local/tmp/test.jpg /data/local/tmp/ 3 3 1 3 224 224 /data/local/tmp/mobilenet_v1  "
 adb -s device_id pull /data/local/tmp/resize.jpg ./

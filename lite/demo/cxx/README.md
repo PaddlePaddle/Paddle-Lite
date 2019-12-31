@@ -90,18 +90,19 @@ adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_
     /data/local/tmp/mobile_classify /data/local/tmp/mobilenetv2opt2/ /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10 224 224"
     ```
     
-9. 编译CV预处理库demo 
+9. 编译含CV预处理库模型单测demo 
 ```shell
 cd ../test_cv
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 ./model_optimize_tool optimize model
 make
-adb -s emulator-5554 push test_model /data/local/tmp/
+adb -s emulator-5554 push test_model_cv /data/local/tmp/
 adb -s emulator-5554 push test.jpg /data/local/tmp/
 adb -s emulator-5554 push labels.txt /data/local/tmp/
 adb -s emulator-5554 push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
+adb -s emulator-5554 shell chmod +x /data/local/tmp/test_model_cv
 adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/mobile_classify /data/local/tmp/mobilenetv1opt2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
+/data/local/tmp/test_model_cv /data/local/tmp/mobilenetv1opt2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
 ```
+运行成功将在控制台输出预测结果的前10个类别的预测概率

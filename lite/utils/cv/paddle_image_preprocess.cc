@@ -67,7 +67,6 @@ void ImagePreprocess::imageResize(const uint8_t* src,
                                   int srch,
                                   int dstw,
                                   int dsth) {
-  // resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
   ImageResize img_resize;
   img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
@@ -80,7 +79,6 @@ void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst) {
   auto srcFormat = this->dstFormat_;
   ImageResize img_resize;
   img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
-  // resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
 void ImagePreprocess::imageRotate(const uint8_t* src,

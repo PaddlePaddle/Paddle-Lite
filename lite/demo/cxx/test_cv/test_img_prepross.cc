@@ -77,9 +77,6 @@ void test_img(std::vector<int> cluster_id,
       // 3. Prepare input data from image
       std::unique_ptr<Tensor> input_tensor(predictor->GetInput(0));
 
-      // read img and pre-process
-      float means[3] = {0.485f, 0.456f, 0.406f};
-      float scales[3] = {0.229f, 0.224f, 0.225f};
       /*
         imread(img_path, param)
         IMREAD_UNCHANGED(<0) 表示加载原图，不做任何改变
