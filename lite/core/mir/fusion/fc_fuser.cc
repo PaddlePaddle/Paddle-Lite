@@ -35,6 +35,7 @@ void FcFuser::BuildPattern() {
   std::vector<PMNode*> mul_inputs{W, x};
   std::vector<PMNode*> add_inputs{mul_out, b};
   mul_inputs >> *mul >> *mul_out;
+
   // Some op specialities.
   mul_out->AsIntermediate();
   mul->AsIntermediate();
