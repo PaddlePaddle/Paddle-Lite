@@ -41,11 +41,11 @@ CXX_LIBS = ${OPENCV_LIBS} -L$(LITE_ROOT)/cxx/lib/ -lpaddle_full_api_shared $(SYS
 
 #CXX_LIBS = ${OPENCV_LIBS} $(LITE_ROOT)/cxx/lib/libpaddle_api_light_bundled.a $(SYSTEM_LIBS)
 
-test_model: fetch_opencv test_model.o
-	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model.o -o test_model  $(CXX_LIBS) $(LDFLAGS)
+test_model_cv: fetch_opencv test_model_cv.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model_cv.o -o test_model_cv  $(CXX_LIBS) $(LDFLAGS)
 
-test_model.o: test_model.cc
-	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model.o -c test_model.cc
+test_model_cv.o: test_model_cv.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_model_cv.o -c test_model_cv.cc
 
 test_img_prepross: fetch_opencv test_img_prepross.o
 	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_img_prepross.o -o test_img_prepross  $(CXX_LIBS) $(LDFLAGS)
@@ -64,7 +64,7 @@ fetch_opencv:
 
 .PHONY: clean
 clean:
-	rm -f test_model.o
-	rm -f test_model
+	rm -f test_model_cv.o
+	rm -f test_model_cv
       rm -f test_img_prepross.o
 	rm -f test_img_prepross
