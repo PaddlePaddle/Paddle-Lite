@@ -51,23 +51,23 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_inner_size = x_dims.Slice(axis, x_rank).production();
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
   if (reshape) {
     auto reshaped_x_dims = x_dims.Slice(0, axis).Vectorize();
     reshaped_x_dims.push_back(x_inner_size);
-    x_node =
-        graph->AddNode(x_name + "/reshape",
-                       graph->builder_.CreateReshape(
-                           *x_node, CvtShape<xtcl::Integer>(reshaped_x_dims)));
+    x_node = graph->Add(
+        x_name + "/reshape",
+        graph->builder_.CreateReshape(
+            *x_node->data(), CvtShape<xtcl::Integer>(reshaped_x_dims)));
   }
 
   // Scale node
-  std::shared_ptr<xtcl::xExpr> scale_const_node = nullptr;
+  std::shared_ptr<Node> scale_node = nullptr;
   if (HasInputArg(op_info, scope, "Scale")) {
     auto scale_name = op_info->Input("Scale").front();
     auto scale_type = kernel->GetInputDeclType("Scale");
@@ -77,14 +77,13 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto scale_dims = scale->dims();
     CHECK_EQ(scale_dims.size(), 1);
     CHECK_EQ(scale_dims.production(), x_inner_size);
-    scale_const_node = graph->AddNode(scale_name, *scale);
+    scale_node = graph->Add(scale_name, *scale);
   } else {
-    scale_const_node =
-        graph->AddNode(y_name + "/scale_one", 1.0f, {x_inner_size});
+    scale_node = graph->Add(y_name + "/scale_one", 1.0f, {x_inner_size});
   }
 
   // Bias node
-  std::shared_ptr<xtcl::xExpr> bias_const_node = nullptr;
+  std::shared_ptr<Node> bias_node = nullptr;
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
     auto bias_type = kernel->GetInputDeclType("Bias");
@@ -94,26 +93,25 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto bias_dims = bias->dims();
     CHECK_EQ(bias_dims.size(), 1);
     CHECK_EQ(bias_dims.production(), x_inner_size);
-    bias_const_node = graph->AddNode(bias_name, *bias);
+    bias_node = graph->Add(bias_name, *bias);
   } else {
-    bias_const_node =
-        graph->AddNode(y_name + "/bias_zero", 0.0f, {x_inner_size});
+    bias_node = graph->Add(y_name + "/bias_zero", 0.0f, {x_inner_size});
   }
 
   // Layer Norm node
   auto layer_norm_node =
-      graph->AddNode(y_name,
-                     graph->builder_.CreateLayerNorm(*x_node,
-                                                     *scale_const_node,
-                                                     *bias_const_node,
-                                                     axis,
-                                                     epsilon,
-                                                     true,
-                                                     true));
+      graph->Add(y_name,
+                 graph->builder_.CreateLayerNorm(*x_node->data(),
+                                                 *scale_node->data(),
+                                                 *bias_node->data(),
+                                                 axis,
+                                                 epsilon,
+                                                 true,
+                                                 true));
   if (reshape) {
-    graph->AddNode(y_name,
-                   graph->builder_.CreateReshape(
-                       *layer_norm_node, CvtShape<xtcl::Integer>(y_dims)));
+    graph->Add(y_name,
+               graph->builder_.CreateReshape(*layer_norm_node->data(),
+                                             CvtShape<xtcl::Integer>(y_dims)));
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
@@ -123,6 +121,6 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         layer_norm,
+REGISTER_SUBGRAPH_BRIDGE(layer_norm,
+                         kXPU,
                          paddle::lite::subgraph::xpu::LayerNormConverter);

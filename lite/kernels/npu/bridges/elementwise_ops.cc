@@ -74,45 +74,45 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto axis = op_info->GetAttr<int>("axis");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Y node
-  std::shared_ptr<ge::Operator> y_node = nullptr;
-  if (graph->HasNode(y_name)) {
-    y_node = graph->GetNode(y_name);
+  std::shared_ptr<Node> y_node = nullptr;
+  if (graph->Has(y_name)) {
+    y_node = graph->Get(y_name);
   } else {
     auto y_new_shape = CvtYShape(x_dims, y_dims, axis);
-    y_node = graph->AddNode(y_name, y_new_shape);
+    y_node = graph->Add(y_name, *y, y_new_shape);
   }
 
   // Elementwise node
-  std::shared_ptr<ge::Operator> elementwise_node = nullptr;
+  std::shared_ptr<Node> elt_node = nullptr;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    auto elt_node = graph->AddNode<ge::op::Add>(out_name);
-    elt_node->set_input_x1(*x_node);
-    elt_node->set_input_x2(*y_node);
-    elementwise_node = elt_node;
+    elt_node = graph->Add<ge::op::Add>(out_name);
+    auto elt_op = elt_node->data<ge::op::Add>();
+    elt_op->set_input_x1(*x_node->data());
+    elt_op->set_input_x2(*y_node->data());
   } else if (op_type == "elementwise_sub") {
-    auto elt_node = graph->AddNode<ge::op::Sub>(out_name);
-    elt_node->set_input_x1(*x_node);
-    elt_node->set_input_x2(*y_node);
-    elementwise_node = elt_node;
+    elt_node = graph->Add<ge::op::Sub>(out_name);
+    auto elt_op = elt_node->data<ge::op::Sub>();
+    elt_op->set_input_x1(*x_node->data());
+    elt_op->set_input_x2(*y_node->data());
   } else if (op_type == "elementwise_mul") {
-    auto elt_node = graph->AddNode<ge::op::Mul>(out_name);
-    elt_node->set_input_x(*x_node);
-    elt_node->set_input_y(*y_node);
-    elementwise_node = elt_node;
+    elt_node = graph->Add<ge::op::Mul>(out_name);
+    auto elt_op = elt_node->data<ge::op::Mul>();
+    elt_op->set_input_x(*x_node->data());
+    elt_op->set_input_y(*y_node->data());
   } else if (op_type == "elementwise_div") {
-    auto elt_node = graph->AddNode<ge::op::RealDiv>(out_name);
-    elt_node->set_input_x1(*x_node);
-    elt_node->set_input_x2(*y_node);
-    elementwise_node = elt_node;
+    elt_node = graph->Add<ge::op::RealDiv>(out_name);
+    auto elt_op = elt_node->data<ge::op::RealDiv>();
+    elt_op->set_input_x1(*x_node->data());
+    elt_op->set_input_x2(*y_node->data());
   } else {
     LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
     return FAILED;
@@ -121,11 +121,12 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Act node
   if (op_type == "fusion_elementwise_add_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    auto act_node = graph->AddNode<ge::op::Activation>(out_name);
-    act_node->set_input_x(*elementwise_node);
+    auto act_node = graph->Add<ge::op::Activation>(out_name);
+    auto act_op = act_node->data<ge::op::Activation>();
+    act_op->set_input_x(*elt_node->data());
     // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
     // clipped_relu etc.
-    act_node->set_attr_mode(CvtActMode(act_type));
+    act_op->set_attr_mode(CvtActMode(act_type));
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
@@ -135,18 +136,18 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         elementwise_add,
+REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
+                         kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         fusion_elementwise_add_activation,
+REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation,
+                         kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         elementwise_sub,
+REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
+                         kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         elementwise_mul,
+REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
+                         kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         elementwise_div,
+REGISTER_SUBGRAPH_BRIDGE(elementwise_div,
+                         kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);

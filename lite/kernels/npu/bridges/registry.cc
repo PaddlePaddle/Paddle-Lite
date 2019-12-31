@@ -24,27 +24,27 @@ Registry& Registry::Instance() {
   return x;
 }
 
-void Registry::Insert(const std::string& dev_type,
-                      const std::string& op_type,
+void Registry::Insert(const std::string& op_type,
+                      const std::string& target,
                       const cvt_func_type& cvt_func_name) {
-  auto it = map_.find(dev_type);
+  auto it = map_.find(target);
   if (it == map_.end()) {
     map_.insert(std::make_pair(
-        dev_type, std::unordered_map<std::string, cvt_func_type>()));
+        target, std::unordered_map<std::string, cvt_func_type>()));
   }
-  map_.at(dev_type).insert(std::make_pair(op_type, cvt_func_name));
+  map_.at(target).insert(std::make_pair(op_type, cvt_func_name));
 }
 
-const cvt_func_type& Registry::Select(const std::string& dev_type,
-                                      const std::string& op_type) const {
-  return map_.at(dev_type).at(op_type);
+const cvt_func_type& Registry::Select(const std::string& op_type,
+                                      const std::string& target) const {
+  return map_.at(target).at(op_type);
 }
 
-bool Registry::Exists(const std::string& dev_type,
-                      const std::string& op_type) const {
-  bool found = map_.find(dev_type) != map_.end();
+bool Registry::Exists(const std::string& op_type,
+                      const std::string& target) const {
+  bool found = map_.find(target) != map_.end();
   if (found) {
-    found = map_.at(dev_type).find(op_type) != map_.at(dev_type).end();
+    found = map_.at(target).find(op_type) != map_.at(target).end();
   }
   return found;
 }

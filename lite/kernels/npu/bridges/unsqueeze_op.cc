@@ -45,17 +45,18 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       << "[NPU] unsqueeze not support axes from tensor now";
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Unsqueeze node
-  auto unsqueeze_node = graph->AddNode<ge::op::Reshape>(out_name);
-  unsqueeze_node->set_input_tensor(*x_node);
-  unsqueeze_node->set_attr_shape(
+  auto unsqueeze_node = graph->Add<ge::op::Reshape>(out_name);
+  auto unsqueeze_op = unsqueeze_node->data<ge::op::Reshape>();
+  unsqueeze_op->set_input_tensor(*x_node->data());
+  unsqueeze_op->set_attr_shape(
       ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
@@ -65,9 +66,9 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         unsqueeze,
+REGISTER_SUBGRAPH_BRIDGE(unsqueeze,
+                         kNPU,
                          paddle::lite::subgraph::npu::UnsqueezeConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         unsqueeze2,
+REGISTER_SUBGRAPH_BRIDGE(unsqueeze2,
+                         kNPU,
                          paddle::lite::subgraph::npu::UnsqueezeConverter);

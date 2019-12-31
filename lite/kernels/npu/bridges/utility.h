@@ -19,12 +19,12 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "ai_ddk_lib/include/graph/buffer.h"
-#include "ai_ddk_lib/include/graph/graph.h"
-#include "ai_ddk_lib/include/graph/model.h"
-#include "ai_ddk_lib/include/graph/op/all_ops.h"
-#include "ai_ddk_lib/include/graph/operator.h"
-#include "ai_ddk_lib/include/graph/operator_reg.h"
+#include "graph/buffer.h"
+#include "graph/graph.h"
+#include "graph/model.h"
+#include "graph/op/all_ops.h"
+#include "graph/operator.h"
+#include "graph/operator_reg.h"
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 
@@ -70,58 +70,15 @@ ge::DataType CvtPrecisionType(PrecisionType itype);
 
 ge::Format CvtDataLayoutType(DataLayoutType itype);
 
+// Padding the shape to 4-dimensions(NCHW) for HiAI
+std::vector<int64_t> CvtShape(const std::vector<int64_t>& in_shape);
+
+std::vector<int64_t> CvtShape(const DDim& in_dims);
+
 ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape = {},
                         PrecisionType in_precision = PRECISION(kFloat),
                         DataLayoutType in_layout = DATALAYOUT(kNCHW));
-
-template <typename T>
-ge::TensorPtr CreateTensorAndFillData(const std::vector<T>& data,
-                                      std::vector<int64_t> shape = {},
-                                      ge::Format format = ge::FORMAT_NCHW) {
-  const std::type_info& info = typeid(T);
-  ge::DataType type = ge::DT_FLOAT;
-  if (info == typeid(float)) {
-    type = ge::DT_FLOAT;
-  } else if (info == typeid(int8_t)) {
-    type = ge::DT_INT8;
-  } else if (info == typeid(int16_t)) {
-    type = ge::DT_INT16;
-  } else if (info == typeid(int32_t)) {
-    type = ge::DT_INT32;
-  } else if (info == typeid(int64_t)) {
-    type = ge::DT_INT64;
-  } else {
-    LOG(FATAL) << "[NPU] Unknow value type " << info.name();
-  }
-  if (shape.empty()) {
-    shape = {static_cast<int64_t>(data.size())};
-  } else {
-    int size = 1;
-    for (auto i : shape) {
-      size *= i;
-    }
-    CHECK_EQ(data.size(), size);
-  }
-  ge::TensorDesc desc(ge::Shape(shape), format, type);
-  ge::TensorPtr tensor = std::make_shared<ge::Tensor>();
-  tensor->SetTensorDesc(desc);
-  tensor->SetData(reinterpret_cast<uint8_t*>(data.data()),
-                  data.size() * sizeof(T));
-  return tensor;
-}
-
-template <typename T>
-ge::TensorPtr CreateTensorAndFillData(T value,
-                                      std::vector<int64_t> shape = {1},
-                                      ge::Format format = ge::FORMAT_NCHW) {
-  int64_t size = 1;
-  for (auto i : shape) {
-    size *= i;
-  }
-  std::vector<T> data(size, value);
-  return CreateTensorAndFillData(data, shape, format);
-}
 
 int CvtActMode(std::string act_type);
 

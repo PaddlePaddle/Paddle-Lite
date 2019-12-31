@@ -58,11 +58,11 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(dilations.size(), 2L);
 
   // Input node
-  std::shared_ptr<ge::Operator> input_node = nullptr;
-  if (graph->HasNode(input_name)) {
-    input_node = graph->GetNode(input_name);
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    input_node = graph->Get(input_name);
   } else {
-    input_node = graph->AddNode(input_name, input_dims);
+    input_node = graph->Add(input_name, *input);
   }
 
   // Create input sizes node to describe the dimensions of input tensor
@@ -83,55 +83,59 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         (input_dims[i + 2] - 1) * strides[i] + kernel_ext - 2 * paddings[i];
     input_sizes.push_back(output_size);
   }
-  auto input_sizes_const_node =
-      graph->AddNode(output_name + "/input_sizes", input_sizes);
+  auto input_sizes_node = graph->Add(output_name + "/input_sizes", input_sizes);
 
   // Filter node
-  auto filter_const_node = graph->AddNode(filter_name, *filter);
+  auto filter_node = graph->Add(filter_name, *filter);
 
   // Deconv node
-  auto conv_transpose_node = graph->AddNode<ge::op::Deconvolution>(output_name);
-  conv_transpose_node->set_input_input_sizes(*input_sizes_const_node);
-  conv_transpose_node->set_input_filter(*filter_const_node);
-  conv_transpose_node->set_input_x(*input_node);
+  auto conv_transpose_node = graph->Add<ge::op::Deconvolution>(output_name);
+  auto conv_transpose_op = conv_transpose_node->data<ge::op::Deconvolution>();
+  conv_transpose_op->set_input_input_sizes(*input_sizes_node->data());
+  conv_transpose_op->set_input_filter(*filter_node->data());
+  conv_transpose_op->set_input_x(*input_node->data());
   // Set attributes
-  conv_transpose_node->set_attr_format(0);    // NCHW
-  conv_transpose_node->set_attr_pad_mode(0);  // NOTSET
-  conv_transpose_node->set_attr_group(groups);
-  conv_transpose_node->set_attr_pad(ge::AttrValue::LIST_INT(
+  conv_transpose_op->set_attr_format(0);    // NCHW
+  conv_transpose_op->set_attr_pad_mode(0);  // NOTSET
+  conv_transpose_op->set_attr_group(groups);
+  conv_transpose_op->set_attr_pad(ge::AttrValue::LIST_INT(
       {paddings[0], paddings[1], paddings[2], paddings[3]}));
-  conv_transpose_node->set_attr_dilation(
+  conv_transpose_op->set_attr_dilation(
       ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
-  conv_transpose_node->set_attr_stride(
+  conv_transpose_op->set_attr_stride(
       ge::AttrValue::LIST_INT({strides[0], strides[1]}));
-  conv_transpose_node->set_attr_kernel(
+  conv_transpose_op->set_attr_kernel(
       ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
 
   // Append add node to add bias if exists bias
-  std::shared_ptr<ge::Operator> output_node = conv_transpose_node;
   if (HasInputArg(op_info, scope, "Bias")) {
-    // Create bias node
+    std::shared_ptr<Node> bias_node = nullptr;
     auto bias_name = op_info->Input("Bias").front();
-    auto bias_type = kernel->GetInputDeclType("Bias");
-    CHECK(bias_type->precision() == PRECISION(kFloat));
-    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
-    auto bias = scope->FindMutableTensor(bias_name);
-    auto channel_size = bias->dims().production();
-    CHECK_EQ(channel_size, filter_dims[1] * groups);
-    auto bias_const_node =
-        graph->AddNode(bias_name, *bias, {1, channel_size, 1, 1});
+    if (graph->Has(bias_name)) {
+      bias_node = graph->Get(bias_name);
+    } else {
+      auto bias_type = kernel->GetInputDeclType("Bias");
+      CHECK(bias_type->precision() == PRECISION(kFloat));
+      CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+      auto bias = scope->FindMutableTensor(bias_name);
+      auto channel_size = bias->dims().production();
+      CHECK_EQ(channel_size, filter_dims[1] * groups);
+      bias_node = graph->Add(bias_name, *bias, {1, channel_size, 1, 1});
+    }
     // Append add node to add bias node
-    auto add_node = graph->AddNode<ge::op::Add>(output_name);
-    add_node->set_input_x1(*conv_transpose_node);
-    add_node->set_input_x2(*bias_const_node);
-    output_node = add_node;
+    auto add_node = graph->Add<ge::op::Add>(output_name);
+    auto add_op = add_node->data<ge::op::Add>();
+    add_op->set_input_x1(*conv_transpose_node->data());
+    add_op->set_input_x2(*bias_node->data());
+    conv_transpose_node = add_node;
   }
 
   if (fuse_relu) {
     // Append relu node if fuse_relu is true
-    auto relu_node = graph->AddNode<ge::op::Activation>(output_name);
-    relu_node->set_input_x(*output_node);
-    relu_node->set_attr_mode(CvtActMode("relu"));
+    auto relu_node = graph->Add<ge::op::Activation>(output_name);
+    auto relu_op = relu_node->data<ge::op::Activation>();
+    relu_op->set_input_x(*conv_transpose_node->data());
+    relu_op->set_attr_mode(CvtActMode("relu"));
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
@@ -141,6 +145,6 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         conv2d_transpose,
+REGISTER_SUBGRAPH_BRIDGE(conv2d_transpose,
+                         kNPU,
                          paddle::lite::subgraph::npu::ConvTransposeConverter);
