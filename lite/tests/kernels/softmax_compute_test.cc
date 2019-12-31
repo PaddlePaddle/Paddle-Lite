@@ -25,33 +25,33 @@ class SoftmaxComputeTest : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string op_type_ = "softmax";
-  std::string input_ = "x";
-  std::string output_ = "out";
-  DDim dims_{{1, 2, 3, 4}};
+  DDim x_dims_{{1, 2, 3, 4}};
+  std::string x_ = "x";
+  std::string out_ = "out";
   int axis_ = 1;
 
  public:
   SoftmaxComputeTest(const Place& place,
                      const std::string& alias,
-                     DDim dims,
+                     DDim x_dims,
                      int axis)
-      : TestCase(place, alias), dims_(dims), axis_(axis) {}
+      : TestCase(place, alias), x_dims_(x_dims), axis_(axis) {}
 
   void RunBaseline(Scope* scope) override {
-    auto x = scope->FindTensor(input_);
-    auto out = scope->NewTensor(output_);
+    auto x = scope->FindTensor(x_);
+    auto out = scope->NewTensor(out_);
     CHECK(out);
-    out->Resize(dims_);
+    out->Resize(x_dims_);
 
     auto x_data = x->data<float>();
     auto out_data = out->mutable_data<float>();
-    auto x_rank = dims_.size();
+    auto x_rank = x_dims_.size();
     if (axis_ < 0) {
       axis_ += x_rank;
     }
-    int axis_size = dims_[axis_];
-    int outer_num = dims_.Slice(0, axis_).production();
-    int inner_num = dims_.Slice(axis_ + 1, x_rank).production();
+    int axis_size = x_dims_[axis_];
+    int outer_num = x_dims_.Slice(0, axis_).production();
+    int inner_num = x_dims_.Slice(axis_ + 1, x_rank).production();
     int compute_size = outer_num * inner_num;
     for (int i = 0; i < compute_size; i++) {
       int idx_inner = i % inner_num;
@@ -84,15 +84,15 @@ class SoftmaxComputeTest : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType(op_type_);
-    op_desc->SetInput("X", {input_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("axis", axis_);
   }
 
   void PrepareData() override {
-    std::vector<float> din(dims_.production());
-    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
-    SetCommonTensor(input_, dims_, din.data());
+    std::vector<float> x(x_dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, x_dims_.production());
+    SetCommonTensor(x_, x_dims_, x.data());
   }
 };
 
@@ -100,18 +100,21 @@ TEST(Softmax, precision) {
   LOG(INFO) << "test softmax op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 4e-3;  // Using fp16 in NPU
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else
   return;
 #endif
 
-  std::vector<std::vector<int64_t>> dims{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}};
-  for (auto dim_in : dims) {
+  for (auto x_dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}}) {
     for (auto axis : {-1, 0, 1, 2, 3}) {
-      if (axis >= dim_in.size()) continue;
+      if (axis >= x_dims.size()) continue;
       std::unique_ptr<arena::TestCase> tester(
-          new SoftmaxComputeTest(place, "def", DDim(dim_in), axis));
+          new SoftmaxComputeTest(place, "def", DDim(x_dims), axis));
       arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
