@@ -36,8 +36,11 @@ std::unique_ptr<xtcl::network::xRuntimeInstance> Device::Build(
   }
   xtcl::xNetwork network =
       builder->FinalizeNetwork(xtcl::relay::TupleNode::make(all_outs));
-  auto target = xtcl::Target::Create(device_name_);
-  auto compiler = xtcl::network::xTensorCompiler(network, target);
+  auto target = xtcl::NullValue<xtcl::Target>();
+  if (!target_.empty()) {
+    target = xtcl::Target::Create(target_);
+  }
+  xtcl::network::xTensorCompiler compiler(network, target);
   compiler.SetParams(*params);  // Set the data of constant tensors
   compiler.Build();
   VLOG(3) << "[XPU] Build done";
