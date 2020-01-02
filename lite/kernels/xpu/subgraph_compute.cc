@@ -175,7 +175,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
     // Update the data pointer of DLTensor to track the origin input tensors
     device_itensors_[i].data =
         const_cast<void*>(origin_itensors_[i]->raw_data());
-    device_program_->SetInputZeroCopy(device_inames_[i], &device_itensors_[i]);
+    device_program_->SetInput(device_inames_[i], &device_itensors_[i]);
   }
   // Run the XPU model
   auto GetCurrentUS = []() -> double {

@@ -103,7 +103,7 @@ DLDeviceType CvtDLDeviceType(TargetType in_type) {
       out_type = kDLGPU;
       break;
     case TARGET(kXPU):
-      out_type = kDLCPU;
+      out_type = static_cast<DLDeviceType>(kDLXPU);
       break;
     default:
       LOG(FATAL) << "[XPU] Can not convert target type(" << TargetToStr(in_type)
