@@ -124,9 +124,9 @@ class CLEngine {
     if (status != CL_SUCCESS || ret_size / sizeof(size_t) < 3) {
       return CLLocalWorkSizeInfo(0, 0, 0, 0);
     }
-    DLOG << max_work_item_sizes[0];
-    DLOG << max_work_item_sizes[1];
-    DLOG << max_work_item_sizes[2];
+    DLOG << " max_work_item_sizes {" << max_work_item_sizes[0] << ", "
+         << max_work_item_sizes[1] << ", " << max_work_item_sizes[2] << "}";
+
     localWorkSizeInfo_ =
         CLLocalWorkSizeInfo(max_work_group_size, max_work_item_sizes[0],
                             max_work_item_sizes[1], max_work_item_sizes[2]);
@@ -182,8 +182,8 @@ class CLEngine {
     cl_program p =
         clCreateProgramWithSource(context, 1, &source, sourceSize, &status_);
 
-    DLOG << " cl kernel from source";
-    DLOG << " source size: " << sourceSize[0];
+    LOG(kLOG_DEBUG4) << " cl kernel from source";
+    LOG(kLOG_DEBUG4) << " source size: " << sourceSize[0];
     CL_CHECK_ERRORS(status_);
 
     std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);

@@ -54,7 +54,7 @@ bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(equal, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(notequal, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(not_equal, paddle::lite::operators::CompareOp);
 REGISTER_LITE_OP(less_than, paddle::lite::operators::CompareOp);
 REGISTER_LITE_OP(less_equal, paddle::lite::operators::CompareOp);
 REGISTER_LITE_OP(greater_than, paddle::lite::operators::CompareOp);

@@ -21,26 +21,52 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-// Const node
-std::shared_ptr<ge::op::Const> Graph::AddNode(const std::string& name,
-                                              const Tensor& tensor,
-                                              std::vector<int64_t> shape,
-                                              PrecisionType precision,
-                                              DataLayoutType layout) {
-  auto node = AddNode<ge::op::Const>(name, precision, layout);
-  node->set_attr_value(CvtTensor(tensor, shape, precision, layout));
+int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
+  auto it = nodes_.find(name);
+  if (it != nodes_.end()) {
+    // Only variable node can be shared with the same name
+    if (!node->is_var() || !it->second.back()->is_var()) {
+      LOG(FATAL) << "[NPU] Const or data node " << name << " is redefined.";
+      return -1;
+    }
+  } else {
+    auto ret = nodes_.insert(
+        std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
+    CHECK(ret.second);
+    it = ret.first;
+  }
+  it->second.push_back(node);
+  return it->second.size();
+}
+
+// Const or data node
+std::shared_ptr<Node> Graph::Add(const std::string& name,
+                                 const Tensor& tensor,
+                                 std::vector<int64_t> shape,
+                                 PrecisionType precision,
+                                 DataLayoutType layout) {
+  std::shared_ptr<Node> node = nullptr;
+  if (tensor.persistable()) {
+    // Const node
+    node = Add<ge::op::Const>(name, precision, layout);
+    node->data<ge::op::Const>()->set_attr_value(
+        CvtTensor(tensor, shape, precision, layout));
+  } else {
+    // Data node
+    node = Add(name, shape, precision, layout);
+  }
   return node;
 }
 
 // Data node
-std::shared_ptr<ge::op::Data> Graph::AddNode(const std::string& name,
-                                             std::vector<int64_t> shape,
-                                             PrecisionType precision,
-                                             DataLayoutType layout) {
-  auto node = AddNode<ge::op::Data>(name);
+std::shared_ptr<Node> Graph::Add(const std::string& name,
+                                 std::vector<int64_t> shape,
+                                 PrecisionType precision,
+                                 DataLayoutType layout) {
+  auto node = Add<ge::op::Data>(name, precision, layout);
   ge::TensorDesc desc(
       ge::Shape(shape), CvtDataLayoutType(layout), CvtPrecisionType(precision));
-  node->update_input_desc_x(desc);
+  node->data<ge::op::Data>()->update_input_desc_x(desc);
   return node;
 }
 

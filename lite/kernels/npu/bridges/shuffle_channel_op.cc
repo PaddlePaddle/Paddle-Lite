@@ -44,17 +44,19 @@ int ShuffleChannelConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto group = op_info->GetAttr<int>("group");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Shuffle Channel node
-  auto shuffle_channel_node = graph->AddNode<ge::op::ShuffleChannel>(out_name);
-  shuffle_channel_node->set_input_x(*x_node);
-  shuffle_channel_node->set_attr_group(group);
+  auto shuffle_channel_node = graph->Add<ge::op::ShuffleChannel>(out_name);
+  auto shuffle_channel_op =
+      shuffle_channel_node->data<ge::op::ShuffleChannel>();
+  shuffle_channel_op->set_input_x(*x_node->data());
+  shuffle_channel_op->set_attr_group(group);
   return SUCCESS;
 }
 
@@ -63,6 +65,6 @@ int ShuffleChannelConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         shuffle_channel,
+REGISTER_SUBGRAPH_BRIDGE(shuffle_channel,
+                         kNPU,
                          paddle::lite::subgraph::npu::ShuffleChannelConverter);

@@ -85,6 +85,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         SRCS cxx_api.cc
                         DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
                         X86_DEPS ${x86_kernels}
+                        CUDA_DEPS ${cuda_kernels}
                         ARM_DEPS ${arm_kernels}
                         CV_DEPS paddle_cv_arm
                         NPU_DEPS ${npu_kernels}
@@ -121,6 +122,7 @@ if(WITH_TESTING)
        DEPS cxx_api mir_passes lite_api_test_helper
        ${ops} ${host_kernels}
        X86_DEPS ${x86_kernels}
+       CUDA_DEPS ${cuda_kernels}
        ARM_DEPS ${arm_kernels}
        CV_DEPS paddle_cv_arm
        NPU_DEPS ${npu_kernels}
@@ -279,7 +281,7 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling model_optimize_tool")
     lite_cc_binary(model_optimize_tool SRCS model_optimize_tool.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS gflags kernel op optimizer mir_passes utils)
-    add_dependencies(model_optimize_tool op_list_h kernel_list_h all_kernel_faked_cc)
+    add_dependencies(model_optimize_tool op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
@@ -308,7 +310,6 @@ if(NOT IOS)
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
-
 
     lite_cc_binary(benchmark_bin SRCS benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
         ${ops} ${host_kernels}

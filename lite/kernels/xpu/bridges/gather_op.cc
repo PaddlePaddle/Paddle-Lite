@@ -54,38 +54,39 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = out->dims();
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Index node
-  std::shared_ptr<xtcl::xExpr> index_node = nullptr;
-  if (graph->HasNode(index_name)) {
-    index_node = graph->GetNode(index_name);
+  std::shared_ptr<Node> index_node = nullptr;
+  if (graph->Has(index_name)) {
+    index_node = graph->Get(index_name);
   } else {
-    index_node = graph->AddNode(
-        index_name, index_dims, index_type->precision(), index_type->layout());
+    index_node = graph->Add(
+        index_name, *index, index_type->precision(), index_type->layout());
   }
   // Flatten index node
   if (index_dims.size() != 1) {
     index_node =
-        graph->AddNode(index_name + "/reshape",
-                       graph->builder_.CreateReshape(*index_node, {-1}),
-                       index_type->precision(),
-                       index_type->layout());
+        graph->Add(index_name + "/reshape",
+                   graph->builder_.CreateReshape(*index_node->data(), {-1}),
+                   index_type->precision(),
+                   index_type->layout());
   }
 
   // Reshape the gather node with the inferred shape as the output node
-  auto gather_node = graph->AddNode(
-      out_name,
-      graph->builder_.CreateGather(*x_node, *index_node, /* axis= */ 0));
+  auto gather_node =
+      graph->Add(out_name,
+                 graph->builder_.CreateGather(
+                     *x_node->data(), *index_node->data(), /* axis= */ 0));
   if (out_dims.size() != 2) {
-    graph->AddNode(out_name,
-                   graph->builder_.CreateReshape(
-                       *gather_node, CvtShape<xtcl::Integer>(out_dims)));
+    graph->Add(out_name,
+               graph->builder_.CreateReshape(
+                   *gather_node->data(), CvtShape<xtcl::Integer>(out_dims)));
   }
   return SUCCESS;
 }
@@ -95,6 +96,6 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         gather,
+REGISTER_SUBGRAPH_BRIDGE(gather,
+                         kXPU,
                          paddle::lite::subgraph::xpu::GatherConverter);

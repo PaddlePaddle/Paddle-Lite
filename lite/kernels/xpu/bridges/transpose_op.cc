@@ -44,19 +44,19 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Transpose node
-  graph->AddNode(out_name,
-                 graph->builder_.CreateTranspose(
-                     *x_node,
-                     CvtShape<xtcl::Integer>(
-                         std::vector<int64_t>(axis.begin(), axis.end()))));
+  graph->Add(out_name,
+             graph->builder_.CreateTranspose(
+                 *x_node->data(),
+                 CvtShape<xtcl::Integer>(
+                     std::vector<int64_t>(axis.begin(), axis.end()))));
 
   return SUCCESS;
 }
@@ -66,9 +66,9 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         transpose,
+REGISTER_SUBGRAPH_BRIDGE(transpose,
+                         kXPU,
                          paddle::lite::subgraph::xpu::TransposeConverter);
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         transpose2,
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kXPU,
                          paddle::lite::subgraph::xpu::TransposeConverter);
