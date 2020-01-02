@@ -214,7 +214,7 @@ void gray_to_tensor(const uint8_t* src,
           "subs %[cnt], #1 \n"
           "vst1.32  {d24 - d25}, [%[outr0]]! \n"
           "vst1.32  {d26 - d27}, [%[outr0]]! \n"
-          "vst1.32  {d28 - d29}, [%[outr2]]! \n"
+          "vst1.32  {d28 - d29}, [%[outr0]]! \n"
           "bne 1b"
           : [inptr0] "+r"(din_ptr), [outr0] "+r"(ptr_h), [cnt] "+r"(cnt)
           : [vmean] "w"(vmean), [vscale] "w"(vscale)

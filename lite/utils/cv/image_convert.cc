@@ -826,10 +826,10 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8_t g = 75;
   uint8_t r = 38;
 
-#ifdef __aarch64__
   uint8x8_t vb = vdup_n_u8(b);
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
+#ifdef __aarch64__
 #else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
@@ -1100,10 +1100,10 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8_t g = 75;
   uint8_t r = 38;
 
-#ifdef __aarch64__
   uint8x8_t vb = vdup_n_u8(b);
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
+#ifdef __aarch64__
 #else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
