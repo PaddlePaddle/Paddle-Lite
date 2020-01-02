@@ -30,7 +30,7 @@ if(NOT NPU_DDK_INC)
   message(FATAL_ERROR "Can not find HiAiModelManagerService.h in ${NPU_DDK_ROOT}/include")
 endif()
 
-include_directories("${NPU_DDK_ROOT}")
+include_directories("${NPU_DDK_ROOT}/include")
 
 set(NPU_SUB_LIB_PATH "lib64")
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")

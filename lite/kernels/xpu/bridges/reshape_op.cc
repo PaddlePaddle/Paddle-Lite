@@ -44,11 +44,11 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   std::vector<int> shape;
@@ -59,6 +59,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     // CHECK(shape_tensor_type->layout() == DATALAYOUT(kNCHW));
     for (auto shape_tensor_name : shape_tensor_names) {
       auto shape_tensor = scope->FindMutableTensor(shape_tensor_name);
+      CHECK(shape_tensor->persistable());
       auto shape_tensor_data = shape_tensor->mutable_data<int>();
       shape.emplace_back(shape_tensor_data[0]);
     }
@@ -73,6 +74,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     // CHECK(actual_shape_type->precision() == PRECISION(kInt32));
     // CHECK(actual_shape_type->layout() == DATALAYOUT(kNCHW));
     auto actual_shape = scope->FindMutableTensor(actual_shape_name);
+    CHECK(actual_shape->persistable());
     auto actual_shape_dims = actual_shape->dims();
     auto actual_shape_data = actual_shape->mutable_data<int>();
     auto shape = std::vector<int>(
@@ -86,9 +88,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = operators::ValidateShape(shape, x_dims);
 
   // Reshape node
-  graph->AddNode(out_name,
-                 graph->builder_.CreateReshape(
-                     *x_node, CvtShape<xtcl::Integer>(out_dims)));
+  graph->Add(out_name,
+             graph->builder_.CreateReshape(*x_node->data(),
+                                           CvtShape<xtcl::Integer>(out_dims)));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -97,9 +99,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         reshape2,
+REGISTER_SUBGRAPH_BRIDGE(reshape2,
+                         kXPU,
                          paddle::lite::subgraph::xpu::ReshapeConverter);
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         reshape,
+REGISTER_SUBGRAPH_BRIDGE(reshape,
+                         kXPU,
                          paddle::lite::subgraph::xpu::ReshapeConverter);

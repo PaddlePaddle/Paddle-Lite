@@ -43,7 +43,10 @@ bool ConvTransposeKernel<GPU_CL, float>::Init(
     this->cl_helper_.AddKernel("conv_transpose3x3s2",
                                "conv_transpose_kernel.cl");
   } else {
-    PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
+    param->ExecMode() = ConvTransposeParam<GPU_CL>::EXEC_CONVTRANS_FLOAT;
+    param->Filter()->InitConv2dTransposeFilterCLImage(
+        cl_helper_.CLContext(), cl_helper_.CLCommandQueue());
+    this->cl_helper_.AddKernel("conv_transpose", "conv_transpose_kernel.cl");
   }
   return true;
 }
@@ -57,6 +60,9 @@ void ConvTransposeKernel<GPU_CL, float>::Compute(
       break;
     case ConvTransposeParam<GPU_CL>::EXEC_CONVTRANS3x3s2_FLOAT:
       ConvTranspose3x3s2AddBnRelu(&this->cl_helper_, param);
+      break;
+    case ConvTransposeParam<GPU_CL>::EXEC_CONVTRANS_FLOAT:
+      ConvTransposeAddBnRelu(&this->cl_helper_, param);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION(

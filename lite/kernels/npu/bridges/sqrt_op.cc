@@ -43,16 +43,17 @@ int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Sqrt node
-  auto sqrt_node = graph->AddNode<ge::op::Sqrt>(out_name);
-  sqrt_node->set_input_x(*x_node);
+  auto sqrt_node = graph->Add<ge::op::Sqrt>(out_name);
+  auto sqrt_op = sqrt_node->data<ge::op::Sqrt>();
+  sqrt_op->set_input_x(*x_node->data());
   return SUCCESS;
 }
 
@@ -61,4 +62,6 @@ int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU, sqrt, paddle::lite::subgraph::npu::SqrtConverter);
+REGISTER_SUBGRAPH_BRIDGE(sqrt,
+                         kNPU,
+                         paddle::lite::subgraph::npu::SqrtConverter);

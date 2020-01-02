@@ -32,6 +32,8 @@ void YoloBoxCompute::Run() {
   int class_num = param.class_num;
   float conf_thresh = param.conf_thresh;
   int downsample_ratio = param.downsample_ratio;
+  Boxes->clear();
+  Scores->clear();
   lite::arm::math::yolobox(X,
                            ImgSize,
                            Boxes,

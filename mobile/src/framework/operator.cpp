@@ -62,31 +62,39 @@ void OperatorBase<Dtype>::Run() {
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
-    auto var_vec_in = inputs_.at(key);
-    for (int i = 0; i < var_vec_in.size(); ++i) {
-      auto var = this->scope_->FindVar(var_vec_in[i]);
-      if (var->IsInitialized() &&
-          var->template IsType<framework::LoDTensor>()) {
-        const Tensor *tensor = var->template Get<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+    if (inputs_.count(key) > 0) {
+      auto var_vec_in = inputs_.at(key);
+      for (int i = 0; i < var_vec_in.size(); ++i) {
+        auto var = this->scope_->FindVar(var_vec_in[i]);
+        if (var->IsInitialized() &&
+            var->template IsType<framework::LoDTensor>()) {
+          const Tensor *tensor = var->template Get<framework::LoDTensor>();
+          if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
 #ifdef PADDLE_MOBILE_FPGA
-        DLOG << var_vec_in[i];
+          DLOG << var_vec_in[i];
 #endif
+        }
       }
+    } else {
+      DLOG << "did not find key (" << key << ") in inputs_";
     }
   }
   for (const auto key : GetOutKeys()) {
-    auto var_vec_out = outputs_.at(key);
-    for (int i = 0; i < var_vec_out.size(); ++i) {
-      auto var = scope_->FindVar(var_vec_out[i]);
-      if (var->IsInitialized() &&
-          var->template IsType<framework::LoDTensor>()) {
-        const Tensor *tensor = var->template Get<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+    if (outputs_.count(key) > 0) {
+      auto var_vec_out = outputs_.at(key);
+      for (int i = 0; i < var_vec_out.size(); ++i) {
+        auto var = scope_->FindVar(var_vec_out[i]);
+        if (var->IsInitialized() &&
+            var->template IsType<framework::LoDTensor>()) {
+          const Tensor *tensor = var->template Get<framework::LoDTensor>();
+          if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
 #ifdef PADDLE_MOBILE_FPGA
-        DLOG << var_vec_out[i];
+          DLOG << var_vec_out[i];
 #endif
+        }
       }
+    } else {
+      DLOG << "did not find key (" << key << ") in outputs_";
     }
   }
 #endif
@@ -100,27 +108,37 @@ void OperatorBase<GPU_CL>::Run() {
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
-    auto var_vec_in = inputs_.at(key);
-    for (int i = 0; i < var_vec_in.size(); ++i) {
-      auto var = scope_->FindVar(var_vec_in[i]);
-      if (var->IsInitialized() && var->template IsType<framework::CLImage>()) {
-        const CLImage *cl_image = var->template Get<framework::CLImage>();
-        if (cl_image) {
-          DLOG << type_ << " input- " << key << "=" << *cl_image;
+    if (inputs_.count(key) > 0) {
+      auto var_vec_in = inputs_.at(key);
+      for (int i = 0; i < var_vec_in.size(); ++i) {
+        auto var = scope_->FindVar(var_vec_in[i]);
+        if (var->IsInitialized() &&
+            var->template IsType<framework::CLImage>()) {
+          const CLImage *cl_image = var->template Get<framework::CLImage>();
+          if (cl_image) {
+            DLOG << type_ << " input- " << key << "=" << *cl_image;
+          }
         }
       }
+    } else {
+      DLOG << "did not find key (" << key << ") in inputs_";
     }
   }
   for (const auto key : GetOutKeys()) {
-    auto var_vec_out = outputs_.at(key);
-    for (int i = 0; i < var_vec_out.size(); ++i) {
-      auto var = scope_->FindVar(var_vec_out[i]);
-      if (var->IsInitialized() && var->template IsType<framework::CLImage>()) {
-        const CLImage *cl_image = var->template Get<framework::CLImage>();
-        if (cl_image) {
-          DLOG << type_ << " output- " << key << "=" << *cl_image;
+    if (outputs_.count(key) > 0) {
+      auto var_vec_out = outputs_.at(key);
+      for (int i = 0; i < var_vec_out.size(); ++i) {
+        auto var = scope_->FindVar(var_vec_out[i]);
+        if (var->IsInitialized() &&
+            var->template IsType<framework::CLImage>()) {
+          const CLImage *cl_image = var->template Get<framework::CLImage>();
+          if (cl_image) {
+            DLOG << type_ << " output- " << key << "=" << *cl_image;
+          }
         }
       }
+    } else {
+      DLOG << "did not find key (" << key << ") in outputs_";
     }
   }
 #endif
