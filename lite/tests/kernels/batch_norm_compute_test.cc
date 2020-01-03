@@ -159,6 +159,8 @@ TEST(BatchNorm, precision) {
   Place place;
 #if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
 #else
   return;
 #endif
