@@ -7,7 +7,7 @@ Lite架构在预测过程中表现出来的高性能得益于其丰富的优化�
 
 ## 准备model_optimize_tool
 当前获得model_optimize_tool方法有三种：
-1. 我们提供当前develop分支编译结果下载：[model_optimize_tool](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A07%3A12Z%2F300%2Fhost%2F68a2ff1c1ef11d366dc958ee6c6dbd00f3df61b94a8c4b18a4e2f6b0ef7af07b)、[model_optimize_tool_mac](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A07%3A23Z%2F300%2Fhost%2F906a0716a02d422922577342d0bd9cf04ec2c7acca78ec358d835b7e254be3e8)
+1. 我们提供当前develop分支编译结果下载：[model_optimize_tool](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A07%3A19Z%2F300%2Fhost%2Fd9d34deb6d9338ffb68e55e10293519ecdf77dc557c109af6982f04578963d8e)、[model_optimize_tool_mac](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A07%3A43Z%2F300%2Fhost%2F6fb8733b86d8f44e38ea7c430daefbcb3ca0d3f4de43e18202e0db69c06901dc)
 
 2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的model_optimize_tool
 
@@ -30,7 +30,7 @@ model_optimize_tool是x86平台上的可执行文件，需要在PC端运行：�
 ```bash
  ./model_optimize_tool
 ```
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_help.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A11%3A08Z%2F300%2Fhost%2F57179eb47be8edaf766ea42bad18682b3e1b3faca8040997726206ba5f38770c)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_help.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A11%3A39Z%2F300%2Fhost%2F89a9cada5087e693a2f8b8011c0575d3f28543b38b1feca4942e2358f9a88a9a)
 ### 功能一：转化模型为Paddle-Lite格式
 model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支持的模型格式，期间执行的操作包括：将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积；执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等性能指标。
 
@@ -41,10 +41,10 @@ model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支�
 PaddlePaddle模型有两种保存格式：
    Combined Param：所有参数信息保存在单个文件`params`中，模型的拓扑信息保存在`__model__`文件中。
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_combined_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A19%3A28Z%2F300%2Fhost%2F179ff9de443fc37c1954756946999f3df4f7bb1cbf5e8c5a70845b44c3fd4fcf)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_combined_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T09%3A58%3A51Z%2F300%2Fhost%2F29f334282ad8617beaf3892f1425313c01dc346465b37435428db9f90bc0e290)
 
    Seperated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_seperated_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A19%3A42Z%2F300%2Fhost%2F0cbe5dde746a09d9209ab572ab849a415bf05fc0bf9ab9c07995c9f92fd6d90b)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_seperated_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A01%3A31Z%2F300%2Fhost%2F88d14139e72b5d8b8e95529169226755182e1513b436f6791431dd7bd8a49386)
 
 (2) 终端中执行`model_optimize_tool`优化模型
 **使用示例**：转化`mobilenet_v1`模型
@@ -53,7 +53,7 @@ PaddlePaddle模型有两种保存格式：
 ```
 以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件位于`mobilenet_v1_opt`，转化结果如下图所示：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_resulted_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A21%3A39Z%2F300%2Fhost%2F8c5580deec3f4c2ff67145100db2ce9efb307c0603d1f19e45bc0db2708309a3)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_resulted_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A02%3A06Z%2F300%2Fhost%2F83837560235c8adf44f1a37f448f0b9a6331d41f38bc7979b6f8b8a24b5dff97)
 
 
 (3) **更详尽的转化命令**总结：
@@ -95,7 +95,7 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 `./model_optimize_tool --print_model_ops=true  --model_dir=mobilenet_v1 --valid_targets=arm`
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_modelops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A22%3A49Z%2F300%2Fhost%2F9dd8708cce6c24630d702e71abdac48bb75ec1219285704b742b420de38b0f02)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_modelops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A03%3A13Z%2F300%2Fhost%2F5a3ee26b85a3b3a8d8abf9794fca4de9b7693206a68a0c9061ddeb9295068fc2)
 
 （2）使用model_optimize_tool打印当前Paddle-Lite支持的算子信息
 
@@ -103,22 +103,22 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 以上命令可以打印出当前Paddle-Lite支持的所有算子信息，包括OP的数量和每个OP支持哪些硬件平台：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_allops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A22%3A07Z%2F300%2Fhost%2Fc6438abfd267edaacae741e990c35f95f63a7ea9a803a0ea9659edcf4c1170df)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_allops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A03%3A36Z%2F300%2Fhost%2F0fe469fa2d22c762f7a0b56e127fd4b5c7dbe2ce25d0a6ab1d481361d5567229)
 
 `./model_optimize_tool ----print_supported_ops=true  --valid_targets=arm`
 
 以上命令可以打印出当`valid_targets=arm`时Paddle-Lite支持的所有OP：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_supportedops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A23%3A46Z%2F300%2Fhost%2F849bd65807abec2cc2a0560006397952b25f3331fe39d13815b4f91f63a7532f)
+![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_supportedops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A04%3A05Z%2F300%2Fhost%2F3718818b4480dd90bc895c457081917e76da1ba775518817c9de909fad2fa811)
 
 ## 其他功能：合并x2paddle和model_optimize_tool的一键脚本
 
 **背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用model_optimize_tool将PaddlePaddle模型转化为Padde-Lite可支持格式。
 为了简化这一过程，我们提供一键脚本，将x2paddle转化和model_optimize_tool转化合并：
 
-**一键转化脚本**：[auto_transform.sh](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/auto_transform.sh?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A35%3A30Z%2F300%2Fhost%2Fccde5ef285cb627fccf72c20079a8fa615990d53a56dee377b8a90942cde999c)
+**一键转化脚本**：[auto_transform.sh](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/auto_transform.sh?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A04%3A55Z%2F300%2Fhost%2Fb67b204067ca7e0cde59ba891370961c5ef43020629f888b81ea1a5d05fcb3a4)
 
-**环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装x2paddle环境，请参考[x2paddle环境安装方法]([https://github.com/PaddlePaddle/X2Paddle#%E7%8E%AF%E5%A2%83%E4%BE%9D%E8%B5%96](https://github.com/PaddlePaddle/X2Paddle#环境依赖))安装x2paddle和其环境依赖项。
+**环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装x2paddle环境，请参考[x2paddle环境安装方法](https://github.com/PaddlePaddle/X2Paddle#环境依赖) 安装x2paddle和其环境依赖项。
 
 **使用方法**：
 
