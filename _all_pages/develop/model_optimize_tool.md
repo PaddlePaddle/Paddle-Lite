@@ -30,7 +30,8 @@ model_optimize_tool是x86平台上的可执行文件，需要在PC端运行：�
 ```bash
  ./model_optimize_tool
 ```
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_help.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A11%3A39Z%2F300%2Fhost%2F89a9cada5087e693a2f8b8011c0575d3f28543b38b1feca4942e2358f9a88a9a)
+![](https://user-images.githubusercontent.com/45189361/71724953-2842c980-2e6d-11ea-8ff5-7d20083ba297.png)
+
 ### 功能一：转化模型为Paddle-Lite格式
 model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支持的模型格式，期间执行的操作包括：将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积；执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等性能指标。
 
@@ -41,10 +42,10 @@ model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支�
 PaddlePaddle模型有两种保存格式：
    Combined Param：所有参数信息保存在单个文件`params`中，模型的拓扑信息保存在`__model__`文件中。
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_combined_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T09%3A58%3A51Z%2F300%2Fhost%2F29f334282ad8617beaf3892f1425313c01dc346465b37435428db9f90bc0e290)
+![opt_combined_model](https://user-images.githubusercontent.com/45189361/71725708-de0f1780-2e6f-11ea-9205-a12a0ec26e02.png)
 
    Seperated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_seperated_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A01%3A31Z%2F300%2Fhost%2F88d14139e72b5d8b8e95529169226755182e1513b436f6791431dd7bd8a49386)
+![opt_seperated_model](https://user-images.githubusercontent.com/45189361/71724977-47d9f200-2e6d-11ea-934b-fb068d45b700.png)
 
 (2) 终端中执行`model_optimize_tool`优化模型
 **使用示例**：转化`mobilenet_v1`模型
@@ -53,7 +54,7 @@ PaddlePaddle模型有两种保存格式：
 ```
 以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件位于`mobilenet_v1_opt`，转化结果如下图所示：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_resulted_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A02%3A06Z%2F300%2Fhost%2F83837560235c8adf44f1a37f448f0b9a6331d41f38bc7979b6f8b8a24b5dff97)
+![opt_resulted_model](https://user-images.githubusercontent.com/45189361/71725712-e10a0800-2e6f-11ea-8cdf-bdc1e1bc2fbc.png)
 
 
 (3) **更详尽的转化命令**总结：
@@ -95,7 +96,7 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 `./model_optimize_tool --print_model_ops=true  --model_dir=mobilenet_v1 --valid_targets=arm`
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_modelops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A03%3A13Z%2F300%2Fhost%2F5a3ee26b85a3b3a8d8abf9794fca4de9b7693206a68a0c9061ddeb9295068fc2)
+![opt_print_modelops](https://user-images.githubusercontent.com/45189361/71725716-e404f880-2e6f-11ea-8db6-81d61aaca481.png)
 
 （2）使用model_optimize_tool打印当前Paddle-Lite支持的算子信息
 
@@ -103,13 +104,13 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 以上命令可以打印出当前Paddle-Lite支持的所有算子信息，包括OP的数量和每个OP支持哪些硬件平台：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_allops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A03%3A36Z%2F300%2Fhost%2F0fe469fa2d22c762f7a0b56e127fd4b5c7dbe2ce25d0a6ab1d481361d5567229)
+![opt_print_allops](https://user-images.githubusercontent.com/45189361/71725719-e6675280-2e6f-11ea-8f03-035f3b7950cd.png)
 
 `./model_optimize_tool ----print_supported_ops=true  --valid_targets=arm`
 
 以上命令可以打印出当`valid_targets=arm`时Paddle-Lite支持的所有OP：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_supportedops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T10%3A04%3A05Z%2F300%2Fhost%2F3718818b4480dd90bc895c457081917e76da1ba775518817c9de909fad2fa811)
+![opt_print_supportedops](https://user-images.githubusercontent.com/45189361/71725721-e8311600-2e6f-11ea-91b0-a3e014aea096.png)
 
 ## 其他功能：合并x2paddle和model_optimize_tool的一键脚本
 
