@@ -302,7 +302,7 @@ elseif(IS_IOS)
     endif()
 else()
   add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-  SET_TARGET_PROPERTIES(paddle-mobile PROPERTIES VERSION 1.3.0 SOVERSION 1)
+  SET_TARGET_PROPERTIES(paddle-mobile PROPERTIES VERSION 1.4.0 SOVERSION 1)
 endif()
 
 # unit test
