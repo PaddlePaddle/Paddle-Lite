@@ -92,7 +92,7 @@ void FillInputTensors(
 #define FILL_TENSOR_WITH_TYPE(type)                            \
   auto input_tensor_data = input_tensor->mutable_data<type>(); \
   for (int j = 0; j < input_tensor_size; j++) {                \
-    input_tensor_data[i] = static_cast<type>(value);           \
+    input_tensor_data[j] = static_cast<type>(value);           \
   }
   for (int i = 0; i < input_tensor_shape.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
