@@ -551,6 +551,12 @@ if (ENABLE_ALL_TEST)
 
         ADD_EXECUTABLE(test-inference-api-v2 net/test_inference_api_v2.cpp test_helper.h test_include.h executor_for_test.h)
         target_link_libraries(test-inference-api-v2 paddle-mobile)
+
+        if (GPU_CL)
+            ADD_EXECUTABLE(test-net-male2fe net/test_mobilenet_male2fe.cpp test_helper.h test_include.h executor_for_test.h)
+            target_link_libraries(test-net-male2fe paddle-mobile)
+        endif()
+
     endif ()
 else ()
     # gen test
