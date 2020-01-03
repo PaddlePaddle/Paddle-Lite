@@ -70,9 +70,9 @@ function build_bm {
         ${CMAKE_COMMON_OPTIONS} \
         -DWITH_GPU=OFF \
         -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DWITH_MKL=OFF \
-        -DLITE_BUILD_EXTRA=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=OFF \
         -DLITE_WITH_BM=ON \
         -DWITH_TESTING=${WITH_TESTING} \

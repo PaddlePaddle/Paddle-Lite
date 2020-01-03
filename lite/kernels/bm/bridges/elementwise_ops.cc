@@ -32,7 +32,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto scope = op->scope();
     auto op_info = op->op_info();
     auto op_type = op_info->Type();
-    auto graph = static_cast<Graph*>(ctx);
     
     // input
     const int input_num = 2;
@@ -107,7 +106,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     } else {
         const float* y_data = const_cast<const float*>(y->mutable_data<float>());
         const float* x_data = const_cast<const float*>(x->mutable_data<float>());
-        bm_add_const_tensor(graph_ctx->bm_compiler_handle,
+        bm_add_const_tensor(graph->GetCompilerHandle(),
                             name[1],
                             shape[0],
                             dim[0],

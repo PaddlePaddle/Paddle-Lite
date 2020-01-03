@@ -21,7 +21,7 @@ namespace subgraph {
 namespace bm {
 
 void Graph::AddNode(const std::string& name) {
-    nodes_.insert(std::make_pair(name, name);
+    nodes_.insert(std::make_pair(name, name));
 }
 
 void Graph::CreateCompilerHandle() {

@@ -94,7 +94,7 @@ std::string SubgraphVisualizer::operator()() {
   }
 
   auto res = dot.Build();
-  std::cout << "subgraphs: " << subgraphs_.size() << "\n" << res << std::endl;
+  //std::cout << "subgraphs: " << subgraphs_.size() << "\n" << res << std::endl;
   return res;
 }
 

@@ -15,6 +15,7 @@
 #include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
+#include "bmcompiler_op_code.h"
 #include "bmcompiler_if.h"
 
 namespace paddle {

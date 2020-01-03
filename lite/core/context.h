@@ -90,7 +90,7 @@ class Context<TargetType::kBM> {
   Context() {}
   explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce();
+  void InitOnce() {}
   void CopySharedTo(BMContext* ctx) {}
 
   std::string name() const { return "BMContext"; }

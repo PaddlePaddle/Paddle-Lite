@@ -34,7 +34,9 @@ void TestModel(const std::vector<Place>& valid_places) {
   //DeviceInfo::Init();
   //DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
-  predictor.Build(FLAGS_model_dir, "", "", valid_places);
+  std::vector<std::string> passes;
+  passes.push_back("bm_subgraph_pass");
+  predictor.Build(FLAGS_model_dir, "", "", valid_places, passes);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
@@ -105,7 +107,8 @@ void TestModel(const std::vector<Place>& valid_places) {
 
 TEST(ResNet50, test_bm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kBM), PRECISION(kFloat)}
+      Place{TARGET(kBM), PRECISION(kFloat)},
+      Place{TARGET(kX86), PRECISION(kFloat)}
   });
 
   TestModel(valid_places);

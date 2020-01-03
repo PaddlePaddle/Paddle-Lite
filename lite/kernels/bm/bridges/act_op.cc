@@ -25,8 +25,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel){
     CHECK(ctx != nullptr);
     CHECK(op != nullptr);
     auto graph = static_cast<Graph*>(ctx);
-    auto scope = act_op->scope();
-    auto op_info = act_op->op_info();
+    auto scope = op->scope();
+    auto op_info = op->op_info();
     auto op_type = op_info->Type();
     
     auto x_var_name = op_info->Input("X").front();

@@ -22,41 +22,63 @@
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/paddle_use_bridges.h"
 #include "lite/kernels/bm/bridges/utility.h"
+#include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
 
-void SubgraphCompute::PrepareForRun() {
-    subgraph::bm::Graph graph;
-    const auto& bridges = subgraph::Registry::Instance();
-    graph.CreateCompilerHandle();
-    
-    for (auto& inst : origin_program_) {
-        auto op = inst.op();
-        CHECK(op);
-        op->CheckShape();
-        op->InferShape();
-        std::string op_type = op->op_info()->Type();
-        if (!bridges.Exists("BM", op_type)) {
-            LOG(FATAL) << "[BM] not support op:" << op_type;
-        }
-        auto kernel = inst.kernel();
-        status |= bridges.Select("BM", op_type)(reinterpret_cast<void*>(&graph),
-                                                 const_cast<OpLite*>(op),
-                                                 const_cast<KernelBase*>(kernel));
-        if (subgraph::CHECK_FAILED(status)) {
-            LOG(FATAL) << "[BM] subgraph CHECK_FAILED";
-        }
+int SubgraphEngine::BuildDeviceProgram() {
+  
+  int status = 0;
+  subgraph::bm::Graph graph;
+  const auto& bridges = subgraph::Registry::Instance();
+  graph.CreateCompilerHandle();
+
+  for (auto& inst : origin_program_) {
+    auto op = inst.op();
+    CHECK(op);
+    op->CheckShape();
+    op->InferShape();
+    std::string op_type = op->op_info()->Type();
+    if (!bridges.Exists("BM", op_type)) {
+      return subgraph::FAILED;
     }
-    
-    std::string net_name = "paddle_bitmain";
-    __bmcompile_opt(graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 2);
-    finish_bmcompiler(graph.GetCompilerHandle());
+    auto kernel = inst.kernel();
+    status |= bridges.Select("BM", op_type)(reinterpret_cast<void*>(&graph),
+                                             const_cast<OpLite*>(op),
+                                             const_cast<KernelBase*>(kernel));
+    if (subgraph::CHECK_FAILED(status)) {
+      return subgraph::FAILED;
+    }
+  }
+
+  std::string net_name = "paddle_bitmain";
+  __bmcompile_opt(graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 2);
+  finish_bmcompiler(graph.GetCompilerHandle());
+  return status;
+}
+
+int SubgraphEngine::LaunchDeviceProgram() {
+  return 0;
+}
+
+void SubgraphCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  engine_.reset(new SubgraphEngine(ctx_.get(),
+                                   param.sub_block_idx,
+                                   param.sub_block_desc,
+                                   param.input_data_names,
+                                   param.output_data_names,
+                                   param.scope));
+  CHECK(engine_);
+  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
+  CHECK(engine_);
+  engine_->Launch();
 }
 
 }  // namespace bm

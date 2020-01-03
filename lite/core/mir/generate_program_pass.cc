@@ -29,6 +29,7 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
       VLOG(4) << stmt;
+      LOG(INFO) << stmt;
       insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
     }
   }

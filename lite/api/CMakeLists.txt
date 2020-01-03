@@ -81,6 +81,7 @@ message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
 message(STATUS "get XPU kernels ${xpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
+message(STATUS "get BM kernels ${bm_kernels}")
 
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)

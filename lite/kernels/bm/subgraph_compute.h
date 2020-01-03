@@ -20,12 +20,30 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
+#include "lite/core/program.h"
+#include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
+    
+class SubgraphEngine : public subgraph::Engine {
+  public:
+    SubgraphEngine(KernelContext *ctx,
+                   int block_idx,
+                   cpp::BlockDesc *block_desc,
+                   const std::vector<std::string> &input_names,
+                   const std::vector<std::string> &output_names,
+                   Scope *scope)
+        : subgraph::Engine(
+                ctx, block_idx, block_desc, input_names, output_names, scope) {}
+        
+  protected:
+    int BuildDeviceProgram() override;
+    int LaunchDeviceProgram() override;
+};
 
 class SubgraphCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
  public:
@@ -39,6 +57,7 @@ class SubgraphCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
 
  private:
   void* bm_compiler_ht_;
+  std::unique_ptr<SubgraphEngine> engine_;
 };
 
 }  // namespace bm

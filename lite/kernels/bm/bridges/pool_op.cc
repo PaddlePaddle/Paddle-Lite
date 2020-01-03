@@ -22,7 +22,7 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CHECK(ctx != nullptr);
     CHECK(op != nullptr);
     auto graph = static_cast<Graph*>(ctx);

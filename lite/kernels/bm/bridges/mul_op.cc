@@ -25,6 +25,7 @@ namespace bm {
 int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CHECK(ctx != nullptr);
     CHECK(op != nullptr);
+    auto graph = static_cast<Graph*>(ctx);
     auto scope = op->scope();
     auto op_info = op->op_info();
     auto op_type = op_info->Type();

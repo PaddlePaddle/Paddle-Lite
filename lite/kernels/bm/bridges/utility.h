@@ -25,11 +25,11 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-std::string UniqueName(const std::string& prefix) {};
+std::string UniqueName(const std::string& prefix);
     
 bool HasInputArg(const OpInfo* op_info,
                      const Scope* scope,
-                     const std::string& argname) {};
+                     const std::string& argname);
  
 }  // namespace bm
 }  // namespace subgraph
