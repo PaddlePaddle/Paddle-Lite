@@ -255,12 +255,14 @@ void Executor<Device, T>::LoadMemory(void **data,
     case VARTYPE_TYPE_INT8:
       LoadMemInternal<int8_t>(
           reinterpret_cast<void **>(data_buf),
-          reinterpret_cast<void *>(tensor->mutable_data<T>()), tensor->numel());
+          reinterpret_cast<void *>(tensor->mutable_data<int8_t>()),
+          tensor->numel());
       break;
     case VARTYPE_TYPE_INT32:
-      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf),
-                           reinterpret_cast<void *>(tensor->mutable_data<T>()),
-                           tensor->numel());
+      LoadMemInternal<int>(
+          reinterpret_cast<void **>(data_buf),
+          reinterpret_cast<void *>(tensor->mutable_data<int>()),
+          tensor->numel());
       break;
     default:
       LOG(kLOG_ERROR) << "data type is not supported";
