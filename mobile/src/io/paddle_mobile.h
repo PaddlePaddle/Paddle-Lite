@@ -26,6 +26,7 @@ limitations under the License. */
 #include "io/paddle_inference_api.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_engine.h"
+#include "io/opencl_interface.h"
 #endif
 
 namespace paddle_mobile {
@@ -34,17 +35,23 @@ template <typename Device, typename T = float>
 class PaddleMobile {
  public:
   explicit PaddleMobile(PaddleMobileConfigInternal config) : config_(config) {
-#ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
+#ifndef PADDLE_MOBILE_CL
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
 #endif
+    if (is_gpu) {
+      prepareOpenclRuntime();
+    }
   }
 
   PaddleMobile() {
-#ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
+#ifndef PADDLE_MOBILE_CL
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
 #endif
+    if (is_gpu) {
+      prepareOpenclRuntime();
+    }
   }
   virtual ~PaddleMobile() { Clear(); }
 
