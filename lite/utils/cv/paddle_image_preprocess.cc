@@ -25,7 +25,6 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
-
 #define PI 3.14159265f
 #define Degrees2Radians(degrees) ((degrees) * (SK_ScalarPI / 180))
 #define Radians2Degrees(radians) ((radians) * (180 / SK_ScalarPI))
@@ -38,7 +37,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat,
   this->dstFormat_ = dstFormat;
   this->transParam_ = param;
 }
-void ImagePreprocess::imageCovert(const uint8_t* src, uint8_t* dst) {
+void ImagePreprocess::imageConvert(const uint8_t* src, uint8_t* dst) {
   ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
@@ -48,10 +47,10 @@ void ImagePreprocess::imageCovert(const uint8_t* src, uint8_t* dst) {
                      this->transParam_.ih);
 }
 
-void ImagePreprocess::imageCovert(const uint8_t* src,
-                                  uint8_t* dst,
-                                  ImageFormat srcFormat,
-                                  ImageFormat dstFormat) {
+void ImagePreprocess::imageConvert(const uint8_t* src,
+                                   uint8_t* dst,
+                                   ImageFormat srcFormat,
+                                   ImageFormat dstFormat) {
   ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
@@ -68,7 +67,8 @@ void ImagePreprocess::imageResize(const uint8_t* src,
                                   int srch,
                                   int dstw,
                                   int dsth) {
-  resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
+  ImageResize img_resize;
+  img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
 void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst) {
@@ -77,7 +77,8 @@ void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst) {
   int dstw = this->transParam_.ow;
   int dsth = this->transParam_.oh;
   auto srcFormat = this->dstFormat_;
-  resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
+  ImageResize img_resize;
+  img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
 void ImagePreprocess::imageRotate(const uint8_t* src,
@@ -86,19 +87,8 @@ void ImagePreprocess::imageRotate(const uint8_t* src,
                                   int srcw,
                                   int srch,
                                   float degree) {
-  if (degree != 90 && degree != 180 && degree != 270) {
-    printf("this degree: %f not support \n", degree);
-  }
-  if (srcFormat == GRAY) {
-    rotate_hwc1(src, dst, srcw, srch, degree);
-  } else if (srcFormat == BGR || srcFormat == RGB) {
-    rotate_hwc3(src, dst, srcw, srch, degree);
-  } else if (srcFormat == BGRA || srcFormat == RGBA) {
-    rotate_hwc4(src, dst, srcw, srch, degree);
-  } else {
-    printf("this srcFormat: %d does not support! \n", srcFormat);
-    return;
-  }
+  ImageRotate img_rotate;
+  img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
 }
 
 void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
@@ -106,10 +96,8 @@ void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
   auto srch = this->transParam_.oh;
   auto srcFormat = this->dstFormat_;
   auto degree = this->transParam_.rotate_param;
-  if (degree != 90 && degree != 180 && degree != 270) {
-    printf("this degree: %f not support \n", degree);
-  }
-  ImagePreprocess::imageRotate(src, dst, srcFormat, srcw, srch, degree);
+  ImageRotate img_rotate;
+  img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
 }
 
 void ImagePreprocess::imageFlip(const uint8_t* src,
@@ -118,16 +106,8 @@ void ImagePreprocess::imageFlip(const uint8_t* src,
                                 int srcw,
                                 int srch,
                                 FlipParam flip_param) {
-  if (srcFormat == GRAY) {
-    flip_hwc1(src, dst, srcw, srch, flip_param);
-  } else if (srcFormat == BGR || srcFormat == RGB) {
-    flip_hwc3(src, dst, srcw, srch, flip_param);
-  } else if (srcFormat == BGRA || srcFormat == RGBA) {
-    flip_hwc4(src, dst, srcw, srch, flip_param);
-  } else {
-    printf("this srcFormat: %d does not support! \n", srcFormat);
-    return;
-  }
+  ImageFlip img_flip;
+  img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
 void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
@@ -135,7 +115,8 @@ void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
   auto srch = this->transParam_.oh;
   auto srcFormat = this->dstFormat_;
   auto flip_param = this->transParam_.flip_param;
-  ImagePreprocess::imageFlip(src, dst, srcFormat, srcw, srch, flip_param);
+  ImageFlip img_flip;
+  img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
 void ImagePreprocess::image2Tensor(const uint8_t* src,
