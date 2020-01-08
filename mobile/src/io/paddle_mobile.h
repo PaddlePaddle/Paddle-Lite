@@ -38,20 +38,22 @@ class PaddleMobile {
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
 #ifndef PADDLE_MOBILE_CL
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
-#endif
+#else
     if (is_gpu) {
       prepareOpenclRuntime();
     }
+#endif
   }
 
   PaddleMobile() {
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
 #ifndef PADDLE_MOBILE_CL
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
-#endif
-    if (is_gpu) {
+#else
+    if (is_gpu) {  // recheck when run cpu in with opencl.
       prepareOpenclRuntime();
     }
+#endif
   }
   virtual ~PaddleMobile() { Clear(); }
 
