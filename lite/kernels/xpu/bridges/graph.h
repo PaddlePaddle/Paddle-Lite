@@ -79,22 +79,19 @@ class Graph {
   std::shared_ptr<Node> Add(const std::string& name,
                             const Tensor& tensor,
                             std::vector<int64_t> shape,
-                            PrecisionType precision = PRECISION(kFloat),
                             DataLayoutType layout = DATALAYOUT(kNCHW));
 
   std::shared_ptr<Node> Add(const std::string& name,
                             const Tensor& tensor,
-                            PrecisionType precision = PRECISION(kFloat),
                             DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return Add(name, tensor, tensor.dims().Vectorize(), precision, layout);
+    return Add(name, tensor, tensor.dims().Vectorize(), layout);
   }
 
   std::shared_ptr<Node> Add(const std::string& name,
                             const Tensor& tensor,
                             DDim dims,
-                            PrecisionType precision = PRECISION(kFloat),
                             DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    return Add(name, tensor, dims.Vectorize(), precision, layout);
+    return Add(name, tensor, dims.Vectorize(), layout);
   }
 
   // Const node
@@ -103,17 +100,6 @@ class Graph {
                             const std::vector<T>& data,
                             std::vector<int64_t> shape = {},
                             DataLayoutType layout = DATALAYOUT(kNCHW)) {
-    const std::type_info& info = typeid(T);
-    PrecisionType precision = PRECISION(kFloat);
-    if (info == typeid(float)) {
-      precision = PRECISION(kFloat);
-    } else if (info == typeid(int8_t)) {
-      precision = PRECISION(kFloat);
-    } else if (info == typeid(int32_t)) {
-      precision = PRECISION(kInt32);
-    } else {
-      LOG(FATAL) << "[XPU] Unknow data type " << info.name();
-    }
     if (shape.empty()) {
       shape = {static_cast<int64_t>(data.size())};
     } else {
@@ -129,7 +115,7 @@ class Graph {
     std::memcpy(reinterpret_cast<uint8_t*>(tensor.mutable_data<T>()),
                 reinterpret_cast<const uint8_t*>(data.data()),
                 data.size() * sizeof(T));
-    return Add(name, tensor, precision, layout);
+    return Add(name, tensor, layout);
   }
 
   template <typename T>
