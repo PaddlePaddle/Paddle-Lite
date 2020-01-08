@@ -144,6 +144,8 @@ class TensorLite {
       precision_ = PrecisionType::kBool;
     } else if (type_id == typeid(float).hash_code()) {  // NOLINT
       precision_ = PrecisionType::kFloat;
+    } else if (type_id == typeid(int8_t).hash_code()) {
+      precision_ = PrecisionType::kInt8;
     } else if (type_id == typeid(int16_t).hash_code()) {
       precision_ = PrecisionType::kInt16;
     } else if (type_id == typeid(int32_t).hash_code()) {

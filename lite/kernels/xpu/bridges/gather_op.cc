@@ -66,27 +66,30 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(index_name)) {
     index_node = graph->Get(index_name);
   } else {
-    index_node = graph->Add(
-        index_name, *index, index_type->precision(), index_type->layout());
+    index_node = graph->Add(index_name, *index);
   }
   // Flatten index node
   if (index_dims.size() != 1) {
     index_node =
         graph->Add(index_name + "/reshape",
                    graph->builder_.CreateReshape(*index_node->data(), {-1}),
-                   index_type->precision(),
-                   index_type->layout());
+                   index_node->precision(),
+                   index_node->layout());
   }
 
   // Reshape the gather node with the inferred shape as the output node
   auto gather_node =
       graph->Add(out_name,
                  graph->builder_.CreateGather(
-                     *x_node->data(), *index_node->data(), /* axis= */ 0));
+                     *x_node->data(), *index_node->data(), /* axis= */ 0),
+                 x_node->precision(),
+                 x_node->layout());
   if (out_dims.size() != 2) {
     graph->Add(out_name,
-               graph->builder_.CreateReshape(
-                   *gather_node->data(), CvtShape<xtcl::Integer>(out_dims)));
+               graph->builder_.CreateReshape(*gather_node->data(),
+                                             CvtShape<xtcl::Integer>(out_dims)),
+               gather_node->precision(),
+               gather_node->layout());
   }
   return SUCCESS;
 }
