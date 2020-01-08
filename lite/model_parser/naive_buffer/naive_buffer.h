@@ -128,7 +128,6 @@ using Float64Builder = PrimaryBuilder<double>;
 
 template <typename Primary>
 class PrimaryListBuilder : public FieldBuilder {
-  // std::vector<Primary> data_;
   const Primary* data_{nullptr};
   int size_{0};
 
