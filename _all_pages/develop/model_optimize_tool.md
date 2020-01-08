@@ -7,6 +7,7 @@ Lite架构在预测过程中表现出来的高性能得益于其丰富的优化�
 
 ## 准备model_optimize_tool
 当前获得model_optimize_tool方法有三种：
+
 1. 我们提供当前develop分支编译结果下载：[model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool%2Fmodel_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool%2Fmodel_optimize_tool_mac)
 
 2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的model_optimize_tool
@@ -30,7 +31,8 @@ model_optimize_tool是x86平台上的可执行文件，需要在PC端运行：�
 ```bash
  ./model_optimize_tool
 ```
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_help.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A11%3A08Z%2F300%2Fhost%2F57179eb47be8edaf766ea42bad18682b3e1b3faca8040997726206ba5f38770c)
+![](https://user-images.githubusercontent.com/45189361/71724953-2842c980-2e6d-11ea-8ff5-7d20083ba297.png)
+
 ### 功能一：转化模型为Paddle-Lite格式
 model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支持的模型格式，期间执行的操作包括：将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积；执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等性能指标。
 
@@ -41,10 +43,10 @@ model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支�
 PaddlePaddle模型有两种保存格式：
    Combined Param：所有参数信息保存在单个文件`params`中，模型的拓扑信息保存在`__model__`文件中。
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_combined_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A19%3A28Z%2F300%2Fhost%2F179ff9de443fc37c1954756946999f3df4f7bb1cbf5e8c5a70845b44c3fd4fcf)
+![opt_combined_model](https://user-images.githubusercontent.com/45189361/71725708-de0f1780-2e6f-11ea-9205-a12a0ec26e02.png)
 
    Seperated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_seperated_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A19%3A42Z%2F300%2Fhost%2F0cbe5dde746a09d9209ab572ab849a415bf05fc0bf9ab9c07995c9f92fd6d90b)
+![opt_seperated_model](https://user-images.githubusercontent.com/45189361/71724977-47d9f200-2e6d-11ea-934b-fb068d45b700.png)
 
 (2) 终端中执行`model_optimize_tool`优化模型
 **使用示例**：转化`mobilenet_v1`模型
@@ -53,7 +55,7 @@ PaddlePaddle模型有两种保存格式：
 ```
 以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件位于`mobilenet_v1_opt`，转化结果如下图所示：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_resulted_model.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A21%3A39Z%2F300%2Fhost%2F8c5580deec3f4c2ff67145100db2ce9efb307c0603d1f19e45bc0db2708309a3)
+![opt_resulted_model](https://user-images.githubusercontent.com/45189361/71725712-e10a0800-2e6f-11ea-8cdf-bdc1e1bc2fbc.png)
 
 
 (3) **更详尽的转化命令**总结：
@@ -95,7 +97,7 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 `./model_optimize_tool --print_model_ops=true  --model_dir=mobilenet_v1 --valid_targets=arm`
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_modelops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A22%3A49Z%2F300%2Fhost%2F9dd8708cce6c24630d702e71abdac48bb75ec1219285704b742b420de38b0f02)
+![opt_print_modelops](https://user-images.githubusercontent.com/45189361/71725716-e404f880-2e6f-11ea-8db6-81d61aaca481.png)
 
 （2）使用model_optimize_tool打印当前Paddle-Lite支持的算子信息
 
@@ -103,22 +105,24 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 以上命令可以打印出当前Paddle-Lite支持的所有算子信息，包括OP的数量和每个OP支持哪些硬件平台：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_allops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A22%3A07Z%2F300%2Fhost%2Fc6438abfd267edaacae741e990c35f95f63a7ea9a803a0ea9659edcf4c1170df)
+![opt_print_allops](https://user-images.githubusercontent.com/45189361/71725719-e6675280-2e6f-11ea-8f03-035f3b7950cd.png)
 
 `./model_optimize_tool ----print_supported_ops=true  --valid_targets=arm`
 
 以上命令可以打印出当`valid_targets=arm`时Paddle-Lite支持的所有OP：
 
-![](http://paddlelite-data.bj.bcebos.com/doc_img/model_optimize_tool/opt_print_supportedops.png?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A23%3A46Z%2F300%2Fhost%2F849bd65807abec2cc2a0560006397952b25f3331fe39d13815b4f91f63a7532f)
+![opt_print_supportedops](https://user-images.githubusercontent.com/45189361/71725721-e8311600-2e6f-11ea-91b0-a3e014aea096.png)
 
 ## 其他功能：合并x2paddle和model_optimize_tool的一键脚本
 
 **背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用model_optimize_tool将PaddlePaddle模型转化为Padde-Lite可支持格式。
 为了简化这一过程，我们提供一键脚本，将x2paddle转化和model_optimize_tool转化合并：
 
+
 **一键转化脚本**：[auto_transform.sh](https://paddlelite-data.bj.bcebos.com/model_optimize_tool%2Fauto_transform.sh)
 
-**环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装x2paddle环境，请参考[x2paddle环境安装方法]([https://github.com/PaddlePaddle/X2Paddle#%E7%8E%AF%E5%A2%83%E4%BE%9D%E8%B5%96](https://github.com/PaddlePaddle/X2Paddle#环境依赖))安装x2paddle和其环境依赖项。
+
+**环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装x2paddle环境，请参考[x2paddle环境安装方法](https://github.com/PaddlePaddle/X2Paddle#环境依赖) 安装x2paddle和其环境依赖项。
 
 **使用方法**：
 
