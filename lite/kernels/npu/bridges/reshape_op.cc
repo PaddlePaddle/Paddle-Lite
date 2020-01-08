@@ -49,7 +49,8 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Reshape node
-  auto reshape_node = graph->Add<ge::op::Reshape>(out_name);
+  auto reshape_node = graph->Add<ge::op::Reshape>(
+      out_name, x_node->precision(), x_node->layout());
   auto reshape_op = reshape_node->data<ge::op::Reshape>();
   reshape_op->set_input_tensor(*x_node->data());
 
