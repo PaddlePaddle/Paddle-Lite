@@ -17,12 +17,10 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 | mobilenetv1（armv8） | 裁剪后--build_tailor=ON  |  788K              |feed,etch,conv2d,depthwise_conv2d,fc,fpool2d,softmax|
 | mobilenetv2（armv8） | 裁剪前--build_tailor=OFF  | 1.5M                | feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax |
 | mobilenetv2（armv8） | 裁剪后--build_tailor=ON  |  912K          |feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax|
-| inceptionv4（armv7） | 裁剪前--build_tailor=OFF    | 938K     |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
-| inceptionv4（armv7） | 裁剪后--build_tailor=ON  | 512K       |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
-| yolov3（armv7） | 裁剪前--build_tailor=OFF     | 938K |feed,fetch,concat,conv2d,depthwise_conv2d,multiclass_nms,nearest_interp,transpose2,yolo_box|
-| yolov3（armv7） | 裁剪后--build_tailor=ON  |516K          |feed,fetch,concat,conv2d,depthwise_conv2d,multiclass_nms,nearest_interp,transpose2,yolo_box|
-
-
+| mobilenetv1（armv7） | 裁剪前--build_tailor=OFF    | 938K     |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
+| mobilenetv1（armv7） | 裁剪后--build_tailor=ON  | 607K   |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
+| mobilenetv2（armv7） | 裁剪前--build_tailor=OFF     | 938K | feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax |
+| mobilenetv2（armv7） | 裁剪后--build_tailor=ON  |687K          |feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax|
 
 
 

@@ -7,7 +7,7 @@ Lite架构在预测过程中表现出来的高性能得益于其丰富的优化�
 
 ## 准备model_optimize_tool
 当前获得model_optimize_tool方法有三种：
-1. 我们提供当前develop分支编译结果下载：[model_optimize_tool](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A07%3A12Z%2F300%2Fhost%2F68a2ff1c1ef11d366dc958ee6c6dbd00f3df61b94a8c4b18a4e2f6b0ef7af07b)、[model_optimize_tool_mac](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A07%3A23Z%2F300%2Fhost%2F906a0716a02d422922577342d0bd9cf04ec2c7acca78ec358d835b7e254be3e8)
+1. 我们提供当前develop分支编译结果下载：[model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool%2Fmodel_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool%2Fmodel_optimize_tool_mac)
 
 2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的model_optimize_tool
 
@@ -116,7 +116,7 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 **背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用model_optimize_tool将PaddlePaddle模型转化为Padde-Lite可支持格式。
 为了简化这一过程，我们提供一键脚本，将x2paddle转化和model_optimize_tool转化合并：
 
-**一键转化脚本**：[auto_transform.sh](http://paddlelite-data.bj.bcebos.com/model_optimize_tool/auto_transform.sh?authorization=bce-auth-v1%2Fda8cb47e87b14fdbbf696cae71997a31%2F2020-01-03T08%3A35%3A30Z%2F300%2Fhost%2Fccde5ef285cb627fccf72c20079a8fa615990d53a56dee377b8a90942cde999c)
+**一键转化脚本**：[auto_transform.sh](https://paddlelite-data.bj.bcebos.com/model_optimize_tool%2Fauto_transform.sh)
 
 **环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装x2paddle环境，请参考[x2paddle环境安装方法]([https://github.com/PaddlePaddle/X2Paddle#%E7%8E%AF%E5%A2%83%E4%BE%9D%E8%B5%96](https://github.com/PaddlePaddle/X2Paddle#环境依赖))安装x2paddle和其环境依赖项。
 

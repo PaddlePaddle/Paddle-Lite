@@ -201,12 +201,18 @@ brew install  curl gcc git make unzip wget
 
 # 2. Install cmake: mac上实现IOS编译和Android编译要求的cmake版本不一致,可以根据需求选择安装。
 # （1）在mac环境编译 Paddle-Lite 的Android版本，需要安装cmake 3.10
-#     可以手动下载安装包`https://cmake.org/files/v3.10/cmake-3.10.3-Darwin-x86_64.dmg`
-#     手动安装cmake3.10后,设置环境变量：
-#      echo "PATH=/Applications/CMake.app/Contents/bin:$PATH" >> ~/.bash_profile
-#      source ~/.bash_profile
+#     mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
+#     wget https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz
+#     tar zxf ./cmake-3.10.2-Darwin-x86_64.tar.gz
+#     mv cmake-3.10.2-Darwin-x86_64/CMake.app/Contents/ ./3.10.2
+#     ln -s /usr/local/Cellar/cmake/3.10.2/bin/cmake /usr/local/bin/cmake
 # （2）在mac环境编译 Paddle-Lite 的IOS版本，需要安装cmake 3.15
-#     可以直接使用 `brew install cmake` 安装3.15版本  
+#     mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
+#     cd /usr/local/Cellar/cmake/
+#     wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz
+#     tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz
+#     mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2
+#     ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
 
 # 3. Download Android NDK for Mac
 #     recommand android-ndk-r17c-darwin-x86_64
@@ -221,6 +227,9 @@ source ~/.bash_profile
 
 # 5. Install Java Environment 
 brew cask install java
+
+# 6. 编译IOS需要安装XCode(Version 10.1)，可以在App Store里安装。安装后执行启动一次并执行下面语句。
+# sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
 至此，完成 Mac 交叉编译环境的准备。
