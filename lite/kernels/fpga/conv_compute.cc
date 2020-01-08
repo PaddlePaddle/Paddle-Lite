@@ -76,6 +76,10 @@ void ConvCompute::Run() {
   if (param.x->ZynqTensor()->shape().channel() != 1 &&
       param.groups == param.x->ZynqTensor()->shape().channel()) {
     dw_conv_pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+    zynqmp::DepthwiseConvParam& dwconv_param = dw_conv_pe_.param();
+    Debugger::get_instance().registerOutput("dwconv", dwconv_param.output);
+#endif
   } else {
     conv_pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
@@ -92,6 +96,20 @@ void ConvCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    depthwise_conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

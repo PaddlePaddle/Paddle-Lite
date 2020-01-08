@@ -214,7 +214,9 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
+  #ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
+  #endif
   if (quantized_op->stmt()->op_info()->HasAttr("input_scale")) {
     op_desc.SetAttr("input_scale", input_scale);
   }

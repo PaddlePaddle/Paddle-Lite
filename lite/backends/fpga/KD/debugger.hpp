@@ -33,7 +33,7 @@ class Debugger {
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
     if (op_config[op_type]) {
-      // tensor->saveToFile(op_type, true);
+      tensor->saveToFile(op_type, true);
     }
   }
 
@@ -43,6 +43,8 @@ class Debugger {
     op_config["concat"] = true;
     op_config["pooling"] = true;
     op_config["conv"] = true;
+    op_config["dwconv"] = true;
+    op_config["ew_add"] = true;
     op_config["crop"] = true;
     op_config["feed"] = true;
     op_config["mul"] = true;
