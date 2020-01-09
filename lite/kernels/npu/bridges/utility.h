@@ -30,29 +30,49 @@
 
 // Extended ops based on HIAI DDK
 namespace ge {
-/**
- * Pads a tensor.
- * <Input>
- *      x : the input tensor
- *      padding : the input tensor must be 2-D
- *      constant_values : constant values must be a scalar
- * <Output>
- *      output : the output tensor
- * <Attr>
- *      t_paddings : Default DT_INT32 , t_paddings must be  the same with
- * datatype of the padding
- *      mode : 0: CONSTANT, 1: REFLECT, 2: SYMMETRIC
- *      T  :  datatype of constant_values  DT_INT32:3   DT_FLOAT:0
- */
+/*
+* Pads a tensor.
+* <Input>
+*    x : the input tensor
+*    padding : the input tensor must be 2-D
+*    constant_values : constant values must be a scalar
+* <Output>
+*    y : the output tensor
+* <Attr>
+*    mode : 0: CONSTANT, 1: REFLECT, 2: SYMMETRIC, 3:EDGE.
+* <Added in HiAI version>
+*    100.320.010.010
+*/
 REG_OP(Pad)
     .INPUT(x, TensorType({DT_FLOAT, DT_INT32}))
     .INPUT(padding, TensorType({DT_INT32}))
     .OPTIONAL_INPUT(constant_values, TensorType({DT_INT32, DT_FLOAT}))
-    .OUTPUT(output, TensorType({DT_FLOAT, DT_INT32}))
-    .ATTR(t_paddings, AttrValue::INT{3})
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32}))
     .ATTR(mode, AttrValue::INT{0})
-    .REQUIRED_ATTR(T, AttrValue::INT)
-    .OP_END();
+    .OP_END()
+
+    /*
+    * Computes instance norm
+    * <Input>
+    *    x : Input tensor which supports 4D dimension format.
+    *    scale : A tesnor, multiple to result
+    *    bias : A tensor, add to result
+    * <Output>
+    *    y : Output tensor
+    * <Attr>
+    *    reduction_indices : The dimensions to reduce
+    *    epsilon : A very small float number used to avoid dividing by zero.
+    * <Added in HiAI version>
+    *    100.320.010.010
+    */
+    REG_OP(InstanceNorm)
+    .INPUT(x, TensorType({DT_FLOAT}))
+    .INPUT(scale, TensorType({DT_FLOAT}))
+    .INPUT(bias, TensorType({DT_FLOAT}))
+    .OUTPUT(y, TensorType({DT_FLOAT}))
+    .REQUIRED_ATTR(reduction_indices, AttrValue::LIST_INT)
+    .ATTR(epsilon, AttrValue::FLOAT{1e-7f})
+    .OP_END()
 
 }  // namespace ge
 

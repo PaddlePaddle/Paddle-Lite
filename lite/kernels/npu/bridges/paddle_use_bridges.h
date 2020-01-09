@@ -53,3 +53,4 @@ USE_SUBGRAPH_BRIDGE(transpose, kNPU);
 USE_SUBGRAPH_BRIDGE(transpose2, kNPU);
 USE_SUBGRAPH_BRIDGE(unsqueeze, kNPU);
 USE_SUBGRAPH_BRIDGE(unsqueeze2, kNPU);
+USE_SUBGRAPH_BRIDGE(instance_norm, kNPU);

@@ -32,7 +32,7 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("Input");
+  auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
@@ -68,7 +68,6 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto pad_value = op_info->GetAttr<float>("pad_value");
     auto pad_value_node = graph->Add(out_name + "/pad_value", pad_value);
     pad2d_op->set_input_constant_values(*pad_value_node->data());
-    pad2d_op->set_attr_T(0);  // type of pad_value:  0:float  3:int32
     pad2d_op->set_attr_mode(0);
   } else if (mode == "reflect") {
     LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
