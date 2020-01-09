@@ -233,7 +233,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                                       DATALAYOUT(kNCHW))})
     .BindInput("ImgSize",
                {LiteType::GetTensorTy(TARGET(kCUDA),
-                                      PRECISION(kFloat),
+                                      PRECISION(kInt32),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Boxes",
                 {LiteType::GetTensorTy(TARGET(kCUDA),
