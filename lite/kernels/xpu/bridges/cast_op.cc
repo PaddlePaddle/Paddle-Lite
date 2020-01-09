@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int CvtDtype(int dtype, PrecisionType* ptype) {
+bool CvtDtype(int dtype, PrecisionType* ptype) {
   switch (dtype) {
     case 21:
       *ptype = PRECISION(kInt8);
@@ -40,9 +40,9 @@ int CvtDtype(int dtype, PrecisionType* ptype) {
       break;
     default:
       LOG(WARNING) << "[XPU] unsupported date type: " << dtype;
-      return FAILED;
+      return false;
   }
-  return SUCCESS;
+  return true;
 }
 
 int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
@@ -63,13 +63,13 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // SIZE_T = 19;UINT8 = 20;INT8 = 21;
   int in_dtype = op_info->GetAttr<int>("in_dtype");
   PrecisionType in_ptype;
-  if (CvtDtype(in_dtype, &in_ptype) == FAILED) {
+  if (!CvtDtype(in_dtype, &in_ptype)) {
     return FAILED;
   }
 
   int out_dtype = op_info->GetAttr<int>("out_dtype");
   PrecisionType out_ptype;
-  if (CvtDtype(out_dtype, &out_ptype) == FAILED) {
+  if (!CvtDtype(out_dtype, &out_ptype)) {
     return FAILED;
   }
 
