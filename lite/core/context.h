@@ -90,8 +90,15 @@ class Context<TargetType::kBM> {
   Context() {}
   explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
+  void InitOnce() {Init(0);}
+    
+  void Init(int dev_id) {
+    TargetWrapperBM::SetDevice(dev_id);
+  }
   void CopySharedTo(BMContext* ctx) {}
+  void* GetHandle() {
+    return TargetWrapperBM::GetHandle();
+  }
 
   std::string name() const { return "BMContext"; }
 };

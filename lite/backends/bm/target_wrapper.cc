@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <map>
 #include "lite/backends/bm/target_wrapper.h"
 #include "bmlib_runtime.h"
 #include "bmcompiler_if.h"
@@ -19,8 +18,8 @@
 namespace paddle {
 namespace lite {
 
-static int g_current_device_id = 0;
-static std::map<int, bm_handle_t> g_bm_handles;
+int TargetWrapperBM::device_id_ = 0;
+std::map<int, void*> TargetWrapperBM::bm_hds_; 
 
 size_t TargetWrapperBM::num_devices() {
   int count = 0;
@@ -29,25 +28,36 @@ size_t TargetWrapperBM::num_devices() {
 }
 
 void TargetWrapperBM::SetDevice(int id) {
-  g_current_device_id = id;
-
-  if (g_bm_handles.find(id) == g_bm_handles.end()) {
+/*
+  if (id < 0 || (size_t)id >= num_devices()) {
+    LOG(FATAL) << "Failed with invalid device id " << id;
+  }
+*/   
+  device_id_ = id;
+  if (bm_hds_.find(id) == bm_hds_.end()) {
     bm_handle_t bm_handle;
     bm_status_t ret = bm_dev_request(&bm_handle, id);
     CHECK_EQ(ret, BM_SUCCESS) << "Failed with error code: " << (int)ret;
-    g_bm_handles.insert(std::pair<int, bm_handle_t>(id, bm_handle));
+    bm_hds_.insert(std::pair<int, bm_handle_t>(id, bm_handle));
   }
   return;
+}
+    
+void* TargetWrapperBM::GetHandle() {
+  if (bm_hds_.find(device_id_) == bm_hds_.end()) {
+    LOG(FATAL) << "device not initialized " << device_id_;
+  }
+  return bm_hds_.at(device_id_);
 }
 
 void* TargetWrapperBM::Malloc(size_t size) {
   void* ptr{};
 
-  if (g_bm_handles.find(g_current_device_id) == g_bm_handles.end()) {
-      SetDevice(g_current_device_id);
+  if (bm_hds_.find(device_id_) == bm_hds_.end()) {
+      SetDevice(device_id_);
   } 
 
-  bm_handle_t bm_handle = g_bm_handles.at(g_current_device_id);
+  bm_handle_t bm_handle = static_cast<bm_handle_t>(bm_hds_.at(device_id_));
   bm_device_mem_t* p_mem = (bm_device_mem_t*)malloc(sizeof(bm_device_mem_t));
   bm_malloc_device_byte(bm_handle, p_mem, size);
   ptr = (void*)p_mem;
@@ -56,7 +66,7 @@ void* TargetWrapperBM::Malloc(size_t size) {
 
 void TargetWrapperBM::Free(void* ptr) {
   if (ptr != NULL) {
-    bm_handle_t bm_handle = g_bm_handles.at(g_current_device_id);
+    bm_handle_t bm_handle = static_cast<bm_handle_t>(bm_hds_.at(device_id_));
     bm_device_mem_t* mem = static_cast<bm_device_mem_t*>(ptr);
     bm_free_device(bm_handle, *mem);
     free(ptr);
@@ -68,11 +78,11 @@ void TargetWrapperBM::MemcpySync(void* dst,
                                    const void* src,
                                    size_t size,
                                    IoDirection dir) {
-  if (g_bm_handles.find(g_current_device_id) == g_bm_handles.end()){
+  if (bm_hds_.find(device_id_) == bm_hds_.end()){
     return;
   }
 
-  bm_handle_t bm_handle = g_bm_handles.at(g_current_device_id);
+  bm_handle_t bm_handle = static_cast<bm_handle_t>(bm_hds_.at(device_id_));
   bm_device_mem_t* pmem{};
   const bm_device_mem_t* pcst_mem{};
 

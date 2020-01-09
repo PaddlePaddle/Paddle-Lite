@@ -14,6 +14,7 @@
 
 #pragma once
 #include "lite/core/target_wrapper.h"
+#include <map>
 
 namespace paddle {
 namespace lite {
@@ -43,6 +44,8 @@ class TargetWrapper<TARGET(kBM)> {
 
   static void* Malloc(size_t size);
   static void Free(void* ptr);
+  
+  static void* GetHandle();
 
   static void MemcpySync(void* dst,
                          const void* src,
@@ -61,6 +64,11 @@ class TargetWrapper<TARGET(kBM)> {
                           int value,
                           size_t count,
                           const stream_t& stream) {}
+
+ private:
+  static int device_id_;
+  static std::map<int, void*> bm_hds_;
+  
 };
 }  // namespace lite
 }  // namespace paddle

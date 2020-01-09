@@ -24,6 +24,9 @@
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
+#include "bmcompiler_if.h"
+#include "bmruntime_interface.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -43,20 +46,25 @@ class SubgraphEngine : public subgraph::Engine {
   protected:
     int BuildDeviceProgram() override;
     int LaunchDeviceProgram() override;
+    
+private:
+    void* bmrt_hd_;
+    std::vector<bm_tensor_t> device_inputs_;
+    std::vector<bm_tensor_t> device_outputs_;
+    std::map<std::string, int> output_map_;
+    const char** net_names_;
+    const bm_net_info_t* net_info_;
+    bm_handle_t bm_hd_;
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
  public:
   using param_t = operators::SubgraphParam;
-
   void PrepareForRun() override;
-
   void Run() override;
-
   virtual ~SubgraphCompute() = default;
 
  private:
-  void* bm_compiler_ht_;
   std::unique_ptr<SubgraphEngine> engine_;
 };
 
