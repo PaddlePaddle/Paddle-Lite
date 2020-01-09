@@ -41,14 +41,10 @@ class DropoutComputeTester : public arena::TestCase {
                        const std::string& alias,
                        DDim dims,
                        float dropout_prob,
-                       bool fix_seed,
-                       int seed,
                        std::string dropout_implementation)
       : TestCase(place, alias),
         dims_(dims),
         dropout_prob_(dropout_prob),
-        fix_seed_(fix_seed),
-        seed_(seed),
         dropout_implementation_(dropout_implementation) {}
 
   void RunBaseline(Scope* scope) override {
@@ -95,7 +91,10 @@ TEST(Dropout, precision) {
   LOG(INFO) << "test dropout op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else
   return;
@@ -106,14 +105,11 @@ TEST(Dropout, precision) {
     for (auto dropout_prob : {0., 0.5, 1.}) {
       for (auto dropout_implementation :
            {"downgrade_in_infer", "upscale_in_train"}) {
-        std::unique_ptr<arena::TestCase> tester(
-            new DropoutComputeTester(place,
-                                     "def",
-                                     DDim(dims),
-                                     dropout_prob,
-                                     true,
-                                     1,
-                                     dropout_implementation));
+#ifdef LITE_WITH_NPU
+        if (dims.size() < 2) continue;
+#endif
+        std::unique_ptr<arena::TestCase> tester(new DropoutComputeTester(
+            place, "def", DDim(dims), dropout_prob, dropout_implementation));
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision({"mask"});
       }
