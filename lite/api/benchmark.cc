@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#include <sys/time.h>
+#include <time.h>
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
@@ -111,7 +113,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     input_tensor->Resize(input_shapes[j]);
     auto input_data = input_tensor->mutable_data<float>();
     int input_num = 1;
-    for (int i = 0; i < input_shapes[j].size(); ++i) {
+    for (size_t i = 0; i < input_shapes[j].size(); ++i) {
       input_num *= input_shapes[j][i];
     }
     for (int i = 0; i < input_num; ++i) {
@@ -200,7 +202,7 @@ int main(int argc, char** argv) {
 
   std::vector<std::string> str_input_shapes = split_string(FLAGS_input_shape);
   std::vector<std::vector<int64_t>> input_shapes;
-  for (int i = 0; i < str_input_shapes.size(); ++i) {
+  for (size_t i = 0; i < str_input_shapes.size(); ++i) {
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }
 

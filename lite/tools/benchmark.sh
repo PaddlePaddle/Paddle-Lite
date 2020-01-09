@@ -54,9 +54,9 @@ adb shell chmod +x $ANDROID_DIR/benchmark_bin
 adb push $MODELS_DIR $ANDROID_DIR
 
 # Run benchmark
-adb shell "echo 'PaddleLite Benchmark\n' > $ANDROID_DIR/$RESULT_FILENAME"
+adb shell "echo 'PaddleLite Benchmark (in ms)\n' > $ANDROID_DIR/$RESULT_FILENAME"
 for threads in ${NUM_THREADS_LIST[@]}; do
-    adb shell "echo threads=$threads warmup=$WARMUP repeats=$REPEATS input_shape=$ power_mode=INPUT_SHAPE $POWER_MODE >> $ANDROID_DIR/$RESULT_FILENAME"
+    adb shell "echo threads=$threads warmup=$WARMUP repeats=$REPEATS input_shape=$INPUT_SHAPE power_mode=$POWER_MODE >> $ANDROID_DIR/$RESULT_FILENAME"
     for model_name in ${MODELS_LIST[@]}; do
       echo "Model=$model_name Threads=$threads"
       adb shell "$ANDROID_DIR/benchmark_bin \
