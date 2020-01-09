@@ -43,14 +43,14 @@ int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
 std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  const Tensor& tensor,
                                  std::vector<int64_t> shape,
-                                 PrecisionType precision,
                                  DataLayoutType layout) {
   std::shared_ptr<Node> node = nullptr;
+  PrecisionType precision = tensor.precision();
   if (tensor.persistable()) {
     // Const node
     node = Add<ge::op::Const>(name, precision, layout);
     node->data<ge::op::Const>()->set_attr_value(
-        CvtTensor(tensor, shape, precision, layout));
+        CvtTensor(tensor, shape, layout));
   } else {
     // Data node
     node = Add(name, shape, precision, layout);

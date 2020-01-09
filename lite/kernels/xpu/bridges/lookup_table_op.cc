@@ -61,16 +61,15 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(ids_name)) {
     ids_node = graph->Get(ids_name);
   } else {
-    ids_node = graph->Add(
-        ids_name, ids_dims, ids_type->precision(), ids_type->layout());
+    ids_node = graph->Add(ids_name, *ids);
   }
   // Flatten Ids node
   if (ids_dims.size() != 1) {
     ids_node =
         graph->Add(ids_name + "/reshape",
                    graph->builder_.CreateReshape(*ids_node->data(), {-1}),
-                   ids_type->precision(),
-                   ids_type->layout());
+                   ids_node->precision(),
+                   ids_node->layout());
   }
 
   // W node
@@ -80,11 +79,15 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto gather_node =
       graph->Add(out_name,
                  graph->builder_.CreateGather(
-                     *w_node->data(), *ids_node->data(), /* axis= */ 0));
+                     *w_node->data(), *ids_node->data(), /* axis= */ 0),
+                 w_node->precision(),
+                 w_node->layout());
   if (out_dims.size() != 2) {
     graph->Add(out_name,
-               graph->builder_.CreateReshape(
-                   *gather_node->data(), CvtShape<xtcl::Integer>(out_dims)));
+               graph->builder_.CreateReshape(*gather_node->data(),
+                                             CvtShape<xtcl::Integer>(out_dims)),
+               gather_node->precision(),
+               gather_node->layout());
   }
   return SUCCESS;
 }
