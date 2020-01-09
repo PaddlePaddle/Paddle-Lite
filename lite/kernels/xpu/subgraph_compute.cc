@@ -39,13 +39,13 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
-    if (!bridges.Exists("XPU", op_type)) {
+    if (!bridges.Exists(op_type, "kXPU")) {
       return subgraph::FAILED;
     }
     auto kernel = inst.kernel();
-    status |= bridges.Select("XPU", op_type)(reinterpret_cast<void*>(&graph),
-                                             const_cast<OpLite*>(op),
-                                             const_cast<KernelBase*>(kernel));
+    status |= bridges.Select(op_type, "kXPU")(reinterpret_cast<void*>(&graph),
+                                              const_cast<OpLite*>(op),
+                                              const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
       return subgraph::FAILED;
     }
@@ -57,26 +57,26 @@ int SubgraphEngine::BuildDeviceProgram() {
   std::vector<xtcl::xExpr*> device_inodes;
   std::vector<xtcl::xExpr*> device_onodes;
   for (auto& input_name : input_names_) {
-    if (graph.HasNode(input_name)) {
-      if (!graph.GetType(input_name).persistable()) {
-        device_inodes.push_back(graph.GetNode(input_name).get());
+    if (graph.Has(input_name)) {
+      if (graph.Get(input_name)->is_data()) {
+        device_inodes.push_back(graph.Get(input_name)->data().get());
         device_inames_.push_back(input_name);
       } else {
         LOG(WARNING) << "[XPU] Input node " << input_name
-                     << " is skipped because it is a persistable node.";
+                     << " is ignored because it is not a data node.";
       }
     } else {
       LOG(WARNING) << "[XPU] Input node " << input_name
-                   << " is skipped because it does not exist.";
+                   << " is ignored because it does not exist.";
     }
   }
   for (auto& output_name : output_names_) {
-    if (graph.HasNode(output_name)) {
-      device_onodes.push_back(graph.GetNode(output_name).get());
+    if (graph.Has(output_name)) {
+      device_onodes.push_back(graph.Get(output_name)->data().get());
       device_onames_.push_back(output_name);
     } else {
       LOG(WARNING) << "[XPU] Output node " << output_name
-                   << " is skipped because it does not exist.";
+                   << " is ignored because it does not exist.";
     }
   }
   CHECK(!device_inames_.empty())
@@ -98,14 +98,14 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_otensors_.resize(device_onames_.size());
   device_otensors_.resize(device_onames_.size());
   for (int i = 0; i < device_inames_.size(); i++) {
-    auto type = graph.GetType(device_inames_[i]);
-    auto precision = type.precision();
-    auto layout = type.layout();
+    auto node = graph.Get(device_inames_[i]);
+    auto precision = node->precision();
+    auto layout = node->layout();
     origin_itensors_[i] = scope_->FindMutableTensor(device_inames_[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
-    VLOG(3) << "[XPU] Inputs[" << i
-            << "] precision: " << PrecisionToStr(precision)
+    VLOG(3) << "[XPU] Inputs[" << i << "] name: " << device_inames_[i]
+            << " precision: " << PrecisionToStr(precision)
             << " layout: " << DataLayoutToStr(layout)
             << " dims: " << origin_idims_[i];
     // Prepare the device input tensors which share data with the origin input
@@ -122,14 +122,14 @@ int SubgraphEngine::BuildDeviceProgram() {
     device_itensors_[i].byte_offset = 0;
   }
   for (int i = 0; i < device_onames_.size(); i++) {
-    auto type = graph.GetType(device_onames_[i]);
-    auto precision = type.precision();
-    auto layout = type.layout();
+    auto node = graph.Get(device_onames_[i]);
+    auto precision = node->precision();
+    auto layout = node->layout();
     origin_otensors_[i] = scope_->FindMutableTensor(device_onames_[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
-    VLOG(3) << "[XPU] Outputs[" << i
-            << "] precision: " << PrecisionToStr(precision)
+    VLOG(3) << "[XPU] Outputs[" << i << "] name: " << device_onames_[i]
+            << " precision: " << PrecisionToStr(precision)
             << " layout: " << DataLayoutToStr(layout)
             << " dims: " << origin_odims_[i];
     // Prepare the device output tensors which share data with the origin output
@@ -175,7 +175,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
     // Update the data pointer of DLTensor to track the origin input tensors
     device_itensors_[i].data =
         const_cast<void*>(origin_itensors_[i]->raw_data());
-    device_program_->SetInputZeroCopy(device_inames_[i], &device_itensors_[i]);
+    device_program_->SetInput(device_inames_[i], &device_itensors_[i]);
   }
   // Run the XPU model
   auto GetCurrentUS = []() -> double {

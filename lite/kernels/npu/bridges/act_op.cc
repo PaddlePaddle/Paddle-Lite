@@ -43,33 +43,34 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Act node
-  auto act_node = graph->AddNode<ge::op::Activation>(out_name);
-  act_node->set_input_x(*x_node);
+  auto act_node = graph->Add<ge::op::Activation>(out_name);
+  auto act_op = act_node->data<ge::op::Activation>();
+  act_op->set_input_x(*x_node->data());
   // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
   // clipped_relu etc.
-  act_node->set_attr_mode(CvtActMode(op_type));
+  act_op->set_attr_mode(CvtActMode(op_type));
   if (op_type == "relu_clipped") {
     auto Relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
-    act_node->set_attr_coef(Relu_clipped_coef);
+    act_op->set_attr_coef(Relu_clipped_coef);
   } else if (op_type == "relu6") {
     float Relu_clipped_coef = 6.f;
-    act_node->set_attr_coef(Relu_clipped_coef);
+    act_op->set_attr_coef(Relu_clipped_coef);
   } else if (op_type == "leaky_relu") {
     auto alpha = op_info->GetAttr<float>("alpha");
-    act_node->set_attr_negative_slope(alpha);
+    act_op->set_attr_negative_slope(alpha);
   } else if (op_type == "hard_sigmoid") {
     auto slope = op_info->GetAttr<float>("slope");
     auto offset = op_info->GetAttr<float>("offset");
-    act_node->set_attr_negative_slope(slope);
-    act_node->set_attr_coef(offset);
+    act_op->set_attr_negative_slope(slope);
+    act_op->set_attr_coef(offset);
   }
   return SUCCESS;
 }
@@ -79,25 +80,27 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         sigmoid,
+REGISTER_SUBGRAPH_BRIDGE(sigmoid,
+                         kNPU,
                          paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU, relu, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU, tanh, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         relu_clipped,
+REGISTER_SUBGRAPH_BRIDGE(relu, kNPU, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(tanh, kNPU, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu_clipped,
+                         kNPU,
                          paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU, relu6, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         leaky_relu,
+REGISTER_SUBGRAPH_BRIDGE(relu6,
+                         kNPU,
                          paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU, abs, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         softsign,
+REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+                         kNPU,
                          paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         softplus,
+REGISTER_SUBGRAPH_BRIDGE(abs, kNPU, paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(softsign,
+                         kNPU,
                          paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         hard_sigmoid,
+REGISTER_SUBGRAPH_BRIDGE(softplus,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(hard_sigmoid,
+                         kNPU,
                          paddle::lite::subgraph::npu::ActConverter);

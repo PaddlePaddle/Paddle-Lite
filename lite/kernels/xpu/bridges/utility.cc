@@ -103,7 +103,7 @@ DLDeviceType CvtDLDeviceType(TargetType in_type) {
       out_type = kDLGPU;
       break;
     case TARGET(kXPU):
-      out_type = kDLCPU;
+      out_type = static_cast<DLDeviceType>(kDLXPU);
       break;
     default:
       LOG(FATAL) << "[XPU] Can not convert target type(" << TargetToStr(in_type)
@@ -115,8 +115,8 @@ DLDeviceType CvtDLDeviceType(TargetType in_type) {
 
 std::shared_ptr<xtcl::xNDArray> CvtTensor(const Tensor& in_tensor,
                                           std::vector<int64_t> out_shape,
-                                          PrecisionType in_precision,
                                           DataLayoutType in_layout) {
+  PrecisionType in_precision = in_tensor.precision();
   auto in_shape = in_tensor.dims().Vectorize();
   if (out_shape.empty()) {
     out_shape = in_shape;

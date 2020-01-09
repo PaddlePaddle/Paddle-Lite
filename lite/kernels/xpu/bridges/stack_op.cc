@@ -46,19 +46,19 @@ int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (auto& x_name : x_names) {
     auto x = scope->FindMutableTensor(x_name);
     auto x_dims = x->dims();
-    std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-    if (graph->HasNode(x_name)) {
-      x_node = graph->GetNode(x_name);
+    std::shared_ptr<Node> x_node = nullptr;
+    if (graph->Has(x_name)) {
+      x_node = graph->Get(x_name);
     } else {
-      x_node = graph->AddNode(x_name, x_dims);
+      x_node = graph->Add(x_name, *x);
     }
-    x_nodes.push_back(*x_node);
+    x_nodes.push_back(*x_node->data());
   }
 
   // Stack node
-  graph->AddNode(y_name,
-                 graph->builder_.CreateStack(
-                     xtcl::network::TupleNode::make(x_nodes), axis));
+  graph->Add(y_name,
+             graph->builder_.CreateStack(
+                 xtcl::network::TupleNode::make(x_nodes), axis));
   return SUCCESS;
 }
 
@@ -67,6 +67,6 @@ int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         stack,
+REGISTER_SUBGRAPH_BRIDGE(stack,
+                         kXPU,
                          paddle::lite::subgraph::xpu::StackConverter);

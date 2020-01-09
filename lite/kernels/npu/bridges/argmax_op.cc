@@ -44,20 +44,21 @@ int ArgmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int axis = op_info->GetAttr<int64_t>("axis");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Axis node
-  auto axis_const_node = graph->AddNode(out_name + "/axis", axis);
+  auto axis_node = graph->Add(out_name + "/axis", axis);
 
   // Argmax node
-  auto argmax_node = graph->AddNode<ge::op::ArgMax>(out_name);
-  argmax_node->set_input_x1(*x_node);
-  argmax_node->set_input_x2(*axis_const_node);
+  auto argmax_node = graph->Add<ge::op::ArgMax>(out_name);
+  auto argmax_op = argmax_node->data<ge::op::ArgMax>();
+  argmax_op->set_input_x1(*x_node->data());
+  argmax_op->set_input_x2(*axis_node->data());
   return SUCCESS;
 }
 
@@ -66,6 +67,6 @@ int ArgmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         arg_max,
+REGISTER_SUBGRAPH_BRIDGE(arg_max,
+                         kNPU,
                          paddle::lite::subgraph::npu::ArgmaxConverter);

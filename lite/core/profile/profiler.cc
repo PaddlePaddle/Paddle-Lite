@@ -28,36 +28,55 @@ auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
 };
 }
 
-int Profiler::NewTimer(const OpCharacter& ch) {
-  StatisUnit unit;
-  unit.character = ch;
+std::map<Type, std::string> TypeStr{
+    {Type::kUnk, "Unknown"},
+    {Type::kCreate, "Create"},
+    {Type::kDispatch, "Dispatch"},
+};
+
+StatisUnit::StatisUnit(const OpCharacter& ch) : character(ch) {
+  create_t.reset(new DeviceTimer<TargetType::kHost>());
   if (ch.target == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    unit.timer.reset(new DeviceTimer<TargetType::kCUDA>());
+    dispatch_t.reset(new DeviceTimer<TargetType::kCUDA>());
 #else
     LOG(ERROR) << "The timer type specified as cuda is uninitialized, so the "
                   "default x86 timer is used instead.";
 #endif
   } else {
-    unit.timer.reset(new DeviceTimer<TargetType::kHost>());
+    dispatch_t.reset(new DeviceTimer<TargetType::kHost>());
   }
+}
+
+lite::profile::Timer* StatisUnit::Timer(Type type) {
+  if (type == Type::kCreate) {
+    return create_t.get();
+  } else if (type == Type::kDispatch) {
+    return dispatch_t.get();
+  }
+  LOG(FATAL) << "Timer cannot be returned for unknown platforms.";
+  return nullptr;
+}
+
+int Profiler::NewTimer(const OpCharacter& ch) {
+  StatisUnit unit(ch);
   units_.push_back(std::move(unit));
   return units_.size() - 1;
 }
 
-void Profiler::StartTiming(const int index, KernelContext* ctx) {
+void Profiler::StartTiming(Type type, const int index, KernelContext* ctx) {
   CHECK_LT(index, units_.size())
       << "The timer index in the profiler is out of range.";
-  units_[index].timer->Start(ctx);
+  units_[index].Timer(type)->Start(ctx);
 }
 
-float Profiler::StopTiming(const int index, KernelContext* ctx) {
+float Profiler::StopTiming(Type type, const int index, KernelContext* ctx) {
   CHECK_LT(index, units_.size())
       << "The timer index in the profiler is out of range.";
-  return units_[index].timer->Stop(ctx);
+  return units_[index].Timer(type)->Stop(ctx);
 }
 
-std::string Profiler::Summary(bool concise, size_t w) {
+std::string Profiler::Summary(Type type, bool concise, size_t w) {
   using std::setw;
   using std::left;
   using std::fixed;
@@ -65,12 +84,14 @@ std::string Profiler::Summary(bool concise, size_t w) {
   std::string title;
   // Title.
   if (concise) {
-    ss << "Timing cycle = " << units_.front().timer->LapTimes().Size()
+    ss << "Timing cycle = " << units_.front().Timer(type)->LapTimes().Size()
        << std::endl;
-    ss << "===== Concise Profiler Summary: " << name_ << ", Exclude " << w
+    ss << "===== Concise " << TypeStr.find(type)->second
+       << " Profiler Summary: " << name_ << ", Exclude " << w
        << " warm-ups =====" << std::endl;
   } else {
-    ss << "===== Detailed Profiler Summary: " << name_ << ", Exclude " << w
+    ss << "===== Detailed " << TypeStr.find(type)->second
+       << " Profiler Summary: " << name_ << ", Exclude " << w
        << " warm-ups =====" << std::endl;
   }
   ss << setw(25) << left << "Operator Type"
@@ -84,16 +105,16 @@ std::string Profiler::Summary(bool concise, size_t w) {
   if (concise) {
     std::map<OpCharacter, TimeInfo, decltype(op_comp)> summary(op_comp);
     for (auto& unit : units_) {
-      auto ch = summary.find(unit.character);
+      auto ch = summary.find(unit.Character());
       if (ch != summary.end()) {
-        ch->second.avg += unit.timer->LapTimes().Avg(w);
-        ch->second.min += unit.timer->LapTimes().Min(w);
-        ch->second.max += unit.timer->LapTimes().Max(w);
+        ch->second.avg += unit.Timer(type)->LapTimes().Avg(w);
+        ch->second.min += unit.Timer(type)->LapTimes().Min(w);
+        ch->second.max += unit.Timer(type)->LapTimes().Max(w);
       } else {
-        TimeInfo info({unit.timer->LapTimes().Avg(w),
-                       unit.timer->LapTimes().Min(w),
-                       unit.timer->LapTimes().Max(w)});
-        summary.insert({unit.character, info});
+        TimeInfo info({unit.Timer(type)->LapTimes().Avg(w),
+                       unit.Timer(type)->LapTimes().Min(w),
+                       unit.Timer(type)->LapTimes().Max(w)});
+        summary.insert({unit.Character(), info});
       }
     }
     for (const auto& item : summary) {
@@ -109,14 +130,15 @@ std::string Profiler::Summary(bool concise, size_t w) {
     }
   } else {
     for (auto& unit : units_) {
+      const auto& times = unit.Timer(type)->LapTimes();
       // clang-format off
-      ss << setw(25) << left << fixed << unit.character.op_type                \
-         << " " << setw(40) << left << fixed << unit.character.kernel_name     \
-         << " " << setw(12) << left << fixed << unit.character.remark          \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Avg(w)  \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Min(w)  \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Max(w)  \
-         << " " << setw(12) << left << fixed << unit.timer->LapTimes().Last(w) \
+      ss << setw(25) << left << fixed << unit.Character().op_type            \
+         << " " << setw(40) << left << fixed << unit.Character().kernel_name \
+         << " " << setw(12) << left << fixed << unit.Character().remark      \
+         << " " << setw(12) << left << fixed << times.Avg(w)                 \
+         << " " << setw(12) << left << fixed << times.Min(w)                 \
+         << " " << setw(12) << left << fixed << times.Max(w)                 \
+         << " " << setw(12) << left << fixed << times.Last(w)                \
          << std::endl;
       // clang-format on
     }

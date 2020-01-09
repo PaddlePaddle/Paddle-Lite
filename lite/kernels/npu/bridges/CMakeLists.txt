@@ -1,11 +1,10 @@
-if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XPU AND NOT LITE_WITH_BM)
+if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XPU)
   return()
 endif()
 
 lite_cc_library(subgraph_bridge_registry
     SRCS registry.cc
     DEPS op)
-
 lite_cc_library(subgraph_bridge_engine
     SRCS engine.cc
     DEPS tensor op scope program)

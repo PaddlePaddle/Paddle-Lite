@@ -117,7 +117,7 @@ void pre_process(const cv::Mat& img,
                  float* means,
                  float* scales) {
   cv::Mat rgb_img;
-  // cv::cvtColor(img, rgb_img, cv::COLOR_BGR2RGB);
+  cv::cvtColor(img, rgb_img, cv::COLOR_BGR2RGB);
   cv::resize(rgb_img, rgb_img, cv::Size(width, height), 0.f, 0.f);
   cv::Mat imgf;
   rgb_img.convertTo(imgf, CV_32FC3, 1 / 255.f);

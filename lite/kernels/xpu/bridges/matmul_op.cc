@@ -57,19 +57,19 @@ int MatmulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto alpha = op_info->GetAttr<float>("alpha");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Y node
-  std::shared_ptr<xtcl::xExpr> y_node = nullptr;
-  if (graph->HasNode(y_name)) {
-    y_node = graph->GetNode(y_name);
+  std::shared_ptr<Node> y_node = nullptr;
+  if (graph->Has(y_name)) {
+    y_node = graph->Get(y_name);
   } else {
-    y_node = graph->AddNode(y_name, y_dims);
+    y_node = graph->Add(y_name, *y);
   }
 
   // Matmul node
@@ -80,52 +80,55 @@ int MatmulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (x_dims.size() != 3) {
       auto m = static_cast<int>(x_dims[x_dims.size() - 2]);
       auto k = static_cast<int>(x_dims[x_dims.size() - 1]);
-      x_node =
-          graph->AddNode(x_name + "/reshape",
-                         graph->builder_.CreateReshape(*x_node, {-1, m, k}));
+      x_node = graph->Add(
+          x_name + "/reshape",
+          graph->builder_.CreateReshape(*x_node->data(), {-1, m, k}));
       if (transpose_x) {
-        x_node =
-            graph->AddNode(x_name + "/reshape/transpose",
-                           graph->builder_.CreateTranspose(*x_node, {0, 2, 1}));
+        x_node = graph->Add(
+            x_name + "/reshape/transpose",
+            graph->builder_.CreateTranspose(*x_node->data(), {0, 2, 1}));
       }
     }
     // Reshape and transposed Y node
     if (y_dims.size() != 3) {
       auto k = static_cast<int>(y_dims[y_dims.size() - 2]);
       auto n = static_cast<int>(y_dims[y_dims.size() - 1]);
-      y_node =
-          graph->AddNode(y_name + "/reshape",
-                         graph->builder_.CreateReshape(*y_node, {-1, k, n}));
+      y_node = graph->Add(
+          y_name + "/reshape",
+          graph->builder_.CreateReshape(*y_node->data(), {-1, k, n}));
       if (!transpose_y) {
-        y_node =
-            graph->AddNode(y_name + "/reshape/transpose",
-                           graph->builder_.CreateTranspose(*y_node, {0, 2, 1}));
+        y_node = graph->Add(
+            y_name + "/reshape/transpose",
+            graph->builder_.CreateTranspose(*y_node->data(), {0, 2, 1}));
       }
     }
     // Matmul node
-    auto matmul_node = graph->AddNode(
-        out_name, graph->builder_.CreateBatchMatmul(*x_node, *y_node));
+    auto matmul_node = graph->Add(
+        out_name,
+        graph->builder_.CreateBatchMatmul(*x_node->data(), *y_node->data()));
     if (fabs(alpha - 1) > 1e-6f) {
-      matmul_node = graph->AddNode(
-          out_name, graph->builder_.CreateScale(*matmul_node, alpha));
+      matmul_node = graph->Add(
+          out_name, graph->builder_.CreateScale(*matmul_node->data(), alpha));
     }
     if (out_dims.size() != 3) {
-      graph->AddNode(out_name,
-                     graph->builder_.CreateReshape(
-                         *matmul_node, CvtShape<xtcl::Integer>(out_dims)));
+      graph->Add(out_name,
+                 graph->builder_.CreateReshape(
+                     *matmul_node->data(), CvtShape<xtcl::Integer>(out_dims)));
     }
   } else if (x_dims.size() == 2 && y_dims.size() == 2) {
     // x: [M, K], y: [K, N], out: [M, N]
     if (transpose_x) {
-      x_node = graph->AddNode(x_name + "/transpose",
-                              graph->builder_.CreateTranspose(*x_node, {1, 0}));
+      x_node =
+          graph->Add(x_name + "/transpose",
+                     graph->builder_.CreateTranspose(*x_node->data(), {1, 0}));
     }
-    auto matmul_node = graph->AddNode(
-        out_name,
-        graph->builder_.CreateMatmul2D(*x_node, *y_node, transpose_y));
+    auto matmul_node =
+        graph->Add(out_name,
+                   graph->builder_.CreateMatmul2D(
+                       *x_node->data(), *y_node->data(), transpose_y));
     if (fabs(alpha - 1) > 1e-6f) {
-      matmul_node = graph->AddNode(
-          out_name, graph->builder_.CreateScale(*matmul_node, alpha));
+      matmul_node = graph->Add(
+          out_name, graph->builder_.CreateScale(*matmul_node->data(), alpha));
     }
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
@@ -141,6 +144,6 @@ int MatmulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         matmul,
+REGISTER_SUBGRAPH_BRIDGE(matmul,
+                         kXPU,
                          paddle::lite::subgraph::xpu::MatmulConverter);

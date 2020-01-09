@@ -78,7 +78,7 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         Scale->data<T>(),
         Bias->data<T>(),
         static_cast<int>(left),
-        static_cast<const float>(epsilon),
+        epsilon,
         right);
   }
 

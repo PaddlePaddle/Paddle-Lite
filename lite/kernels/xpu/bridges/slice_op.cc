@@ -46,11 +46,11 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto ends = op_info->GetAttr<std::vector<int>>("ends");
 
   // Input node
-  std::shared_ptr<xtcl::xExpr> input_node = nullptr;
-  if (graph->HasNode(input_name)) {
-    input_node = graph->GetNode(input_name);
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    input_node = graph->Get(input_name);
   } else {
-    input_node = graph->AddNode(input_name, input_dims);
+    input_node = graph->Add(input_name, *input);
   }
 
   // Calculate the begin and end of the slice in all of
@@ -74,9 +74,9 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       strides.push_back(1);
     }
   }
-  graph->AddNode(
-      out_name,
-      graph->builder_.CreateStridedSlice(*input_node, begin, end, strides));
+  graph->Add(out_name,
+             graph->builder_.CreateStridedSlice(
+                 *input_node->data(), begin, end, strides));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -85,6 +85,6 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         slice,
+REGISTER_SUBGRAPH_BRIDGE(slice,
+                         kXPU,
                          paddle::lite::subgraph::xpu::SliceConverter);

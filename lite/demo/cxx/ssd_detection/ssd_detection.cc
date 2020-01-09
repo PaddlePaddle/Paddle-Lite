@@ -194,7 +194,7 @@ void RunModel(std::string model_dir, std::string img_path) {
   }
   auto rec_out = detect_object(outptr, static_cast<int>(cnt / 6), 0.6f, img);
   std::string result_name =
-      img_path.substr(0, img_path.find(".")) + "_detection_result.jpg";
+      img_path.substr(0, img_path.find(".")) + "_ssd_detection_result.jpg";
   cv::imwrite(result_name, img);
 }
 
