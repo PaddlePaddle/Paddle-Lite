@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <iomanip>
+#include <numeric>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
@@ -122,23 +125,30 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   }
 
   // run
-  auto start = GetCurrentUS();
+  std::vector<float> perf_vct;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start = GetCurrentUS();
     predictor->Run();
+    auto end = GetCurrentUS();
+    perf_vct.push_back((end - start) / 1000.0);
   }
-  auto end = GetCurrentUS();
+  std::sort(perf_vct.begin(), perf_vct.end());
+  float min_res = perf_vct.back();
+  float max_res = perf_vct.front();
+  float total_res = accumulate(perf_vct.begin(), perf_vct.end(), 0.0);
+  float avg_res = total_res / FLAGS_repeats;
 
   // save result
-  std::FILE* pf = std::fopen(FLAGS_result_filename.c_str(), "a");
-  if (nullptr == pf) {
-    LOG(INFO) << "create result file error";
-    exit(0);
+  std::ofstream ofs(FLAGS_result_filename, std::ios::app);
+  if (!ofs.is_open()) {
+    LOG(FATAL) << "open result file failed";
   }
-  fprintf(pf,
-          "-- %-18s    avg = %5.4f ms\n",
-          model_name.c_str(),
-          (end - start) / FLAGS_repeats / 1000.0);
-  std::fclose(pf);
+  ofs.precision(5);
+  ofs << std::setw(20) << std::fixed << std::left << model_name;
+  ofs << "min = " << std::setw(12) << min_res;
+  ofs << "max = " << std::setw(12) << max_res;
+  ofs << "average = " << std::setw(12) << avg_res;
+  ofs << std::endl;
 }
 #endif
 

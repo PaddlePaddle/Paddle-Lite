@@ -2,13 +2,12 @@
 set -e
 
 # Check input
-if [ $# -lt  3 ];
+if [ $# -lt  2 ];
 then
     echo "Input error"
     echo "Usage:"
-    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_filename>"
-    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_filename> <is_run_model_optimize: [true|false]>"
-    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_filename> <is_run_model_optimize: [true|false]> <is_run_quantized_model: [trur|false]>"
+    echo "  sh benchmark.sh benchmark_bin_path benchmark_models_path <result_filename> <input_shape> <power_mode: [0|1|2|3]> <is_run_model_optimize: [true|false]> <is_run_quantized_model: [trur|false]>"
+    echo "\npower_mode refer: 0 for big cluster, 1 for little cluster, 2 for all cores,  3 for no bind."
     exit
 fi
 
@@ -16,25 +15,37 @@ fi
 ANDROID_DIR=/data/local/tmp
 BENCHMARK_BIN=$1
 MODELS_DIR=$2
-RESULT_FILENAME=$3
 
+RESULT_FILENAME=result.txt
 INPUT_SHAPE=1,3,244,244
+POWER_MODE=3
 WARMUP=10
 REPEATS=30
-POWER_MODE=3
 IS_RUN_MODEL_OPTIMIZE=false
 IS_RUN_QUANTIZED_MODEL=false
 NUM_THREADS_LIST=(1 2 4)
 MODELS_LIST=$(ls $MODELS_DIR)
 
 # Check input
+if [ $# -gt  2 ];
+then
+    RESULT_FILENAME=$3
+fi
 if [ $# -gt  3 ];
 then
-    IS_RUN_MODEL_OPTIMIZE=$4
+    INPUT_SHAPE=$4
 fi
 if [ $# -gt  4 ];
 then
-    IS_RUN_QUANTIZED_MODEL=$5
+    POWER_MODE=$5
+fi
+if [ $# -gt  5 ];
+then
+    IS_RUN_MODEL_OPTIMIZE=$6
+fi
+if [ $# -gt  6 ];
+then
+    IS_RUN_QUANTIZED_MODEL=$7
 fi
 
 # Adb push benchmark_bin, models
@@ -43,9 +54,9 @@ adb shell chmod +x $ANDROID_DIR/benchmark_bin
 adb push $MODELS_DIR $ANDROID_DIR
 
 # Run benchmark
-adb shell "echo 'PaddleLite Benchmark' > $ANDROID_DIR/$RESULT_FILENAME"
+adb shell "echo 'PaddleLite Benchmark\n' > $ANDROID_DIR/$RESULT_FILENAME"
 for threads in ${NUM_THREADS_LIST[@]}; do
-    adb shell "echo Threads=$threads Warmup=$WARMUP Repeats=$REPEATS >> $ANDROID_DIR/$RESULT_FILENAME"
+    adb shell "echo threads=$threads warmup=$WARMUP repeats=$REPEATS input_shape=$ power_mode=INPUT_SHAPE $POWER_MODE >> $ANDROID_DIR/$RESULT_FILENAME"
     for model_name in ${MODELS_LIST[@]}; do
       echo "Model=$model_name Threads=$threads"
       adb shell "$ANDROID_DIR/benchmark_bin \
