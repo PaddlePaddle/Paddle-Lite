@@ -18,8 +18,10 @@ BENCHMARK_BIN=$1
 MODELS_DIR=$2
 RESULT_FILENAME=$3
 
+INPUT_SHAPE=1,3,244,244
 WARMUP=10
 REPEATS=30
+POWER_MODE=3
 IS_RUN_MODEL_OPTIMIZE=false
 IS_RUN_QUANTIZED_MODEL=false
 NUM_THREADS_LIST=(1 2 4)
@@ -48,9 +50,11 @@ for threads in ${NUM_THREADS_LIST[@]}; do
       echo "Model=$model_name Threads=$threads"
       adb shell "$ANDROID_DIR/benchmark_bin \
                    --model_dir=$ANDROID_DIR/${MODELS_DIR}/$model_name \
+                   --input_shape=$INPUT_SHAPE \
                    --warmup=$WARMUP \
                    --repeats=$REPEATS \
                    --threads=$threads \
+                   --power_mode=$POWER_MODE \
                    --result_filename=$ANDROID_DIR/$RESULT_FILENAME \
                    --run_model_optimize=$IS_RUN_MODEL_OPTIMIZE \
                    --is_quantized_model=$IS_RUN_QUANTIZED_MODEL"
