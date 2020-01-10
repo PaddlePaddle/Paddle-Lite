@@ -14,28 +14,19 @@ RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
 
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
-        clang-format-3.8 \
-        cmake-curses-gui \
         curl \
-        fish \
-        gawk \
         gcc \
         g++ \
+        gcc-8 \
+        g++-8 \
         git \
-        graphviz \
-        less \
         make \
-        patch \
         python \
-        python-pip \
-        python-setuptools \
         unzip \
         vim \
         wget
 
-# timezone
-RUN apt install tzdata
-RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/timezone && echo 'Asia/Shanghai' >/etc/timezone
+
 
 # for android simulator
 RUN apt-get install -y --no-install-recommends \
