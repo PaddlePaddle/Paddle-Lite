@@ -57,19 +57,27 @@ class CLLocalWorkSizeInfo {
   // max number of work-items in local_work_size in dim 2
   size_t max_work_item_size2;
 };
-
+inline void ctx_info(const char *errinfo, const void *private_info, size_t cb,
+                     void *user_data) {
+  fprintf(stderr, "OpenCL Error (via pfn_notify): %s\n", errinfo);
+}
 class CLEngine {
  public:
   static CLEngine *Instance();
 
   bool Init();
   bool isInitSuccess();
-  std::unique_ptr<_cl_context, CLContextDeleter> CreateContext() {
+
+  std::shared_ptr<_cl_context> CreateContext() {
+    DLOG << "CreateContext ---";
+    DLOG << "platform: " << platform_;
+    DLOG << "devices_[0]: " << devices_[0];
+
     cl_int status;
-    cl_context c = clCreateContext(NULL, 1, devices_, NULL, NULL, &status);
-    std::unique_ptr<_cl_context, CLContextDeleter> context_ptr(c);
+    cl_context c = clCreateContext(NULL, 1, devices_, &ctx_info, NULL, &status);
+    std::shared_ptr<_cl_context> context(c, CLContextDeleter());
     CL_CHECK_ERRORS(status);
-    return std::move(context_ptr);
+    return std::move(context);
   }
 
   std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> CreateClCommandQueue(
@@ -84,14 +92,14 @@ class CLEngine {
   }
 
   cl_context getContext() {
-    if (context_ == nullptr) {
+    if (context_.get() == nullptr) {
       context_ = CreateContext();
     }
     return context_.get();
   }
 
   cl_command_queue getClCommandQueue() {
-    if (command_queue_ == nullptr) {
+    if (command_queue_.get() == nullptr) {
       command_queue_ = CreateClCommandQueue(getContext());
     }
     return command_queue_.get();
@@ -124,9 +132,9 @@ class CLEngine {
     if (status != CL_SUCCESS || ret_size / sizeof(size_t) < 3) {
       return CLLocalWorkSizeInfo(0, 0, 0, 0);
     }
-    DLOG << max_work_item_sizes[0];
-    DLOG << max_work_item_sizes[1];
-    DLOG << max_work_item_sizes[2];
+    DLOG << " max_work_item_sizes {" << max_work_item_sizes[0] << ", "
+         << max_work_item_sizes[1] << ", " << max_work_item_sizes[2] << "}";
+
     localWorkSizeInfo_ =
         CLLocalWorkSizeInfo(max_work_group_size, max_work_item_sizes[0],
                             max_work_item_sizes[1], max_work_item_sizes[2]);
@@ -182,8 +190,8 @@ class CLEngine {
     cl_program p =
         clCreateProgramWithSource(context, 1, &source, sourceSize, &status_);
 
-    DLOG << " cl kernel from source";
-    DLOG << " source size: " << sourceSize[0];
+    LOG(kLOG_DEBUG4) << " cl kernel from source";
+    LOG(kLOG_DEBUG4) << " source size: " << sourceSize[0];
     CL_CHECK_ERRORS(status_);
 
     std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
@@ -216,11 +224,7 @@ class CLEngine {
       DLOG << " program build error: " << log;
     }
 
-    if (status == CL_SUCCESS) {
-      return true;
-    } else {
-      return false;
-    }
+    return status == CL_SUCCESS;
   }
 
   cl_device_id DeviceID(int index = 0) { return devices_[index]; }
@@ -239,28 +243,13 @@ class CLEngine {
 
   CLLocalWorkSizeInfo localWorkSizeInfo_;
 
-  cl_platform_id platform_;
-
-  cl_device_id *devices_;
-
   cl_int status_;
-
   std::string cl_path_;
-  std::unique_ptr<_cl_program, CLProgramDeleter> program_;
-
-  std::unique_ptr<_cl_context, CLContextDeleter> context_ = nullptr;
-
-  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ =
-      nullptr;
-
-  //  bool SetClContext();
-
-  //  bool SetClCommandQueue();
-
-  //  bool LoadKernelFromFile(const char *kernel_file);
-
-  //  bool BuildProgram();
   bool is_init_success_ = false;
+  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_;
+  std::shared_ptr<_cl_context> context_;
+  cl_device_id devices_[10];
+  cl_platform_id platform_;
 };
 
 }  // namespace framework

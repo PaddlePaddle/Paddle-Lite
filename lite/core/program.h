@@ -90,7 +90,12 @@ struct Program {
 struct Instruction {
   Instruction(const std::shared_ptr<OpLite>& op,
               std::unique_ptr<KernelBase>&& kernel)
-      : op_(op), kernel_(std::move(kernel)) {}
+      : op_(op), kernel_(std::move(kernel)) {
+    std::string op_type = op->Type();
+    if (op_type == "feed" || op_type == "fetch") {
+      is_feed_fetch_op_ = true;
+    }
+  }
 
   // Run the instruction.
   void Run();
@@ -100,6 +105,8 @@ struct Instruction {
   const OpLite* op() const { return op_.get(); }
   const KernelBase* kernel() const { return kernel_.get(); }
   KernelBase* mutable_kernel() { return kernel_.get(); }
+
+  bool is_feed_fetch_op() const { return is_feed_fetch_op_; }
 
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
@@ -118,6 +125,7 @@ struct Instruction {
  private:
   std::shared_ptr<OpLite> op_;
   std::unique_ptr<KernelBase> kernel_;
+  bool is_feed_fetch_op_{false};
   bool first_epoch_{true};
   bool has_run_{false};
 
@@ -143,7 +151,8 @@ class LITE_API RuntimeProgram {
   }
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
-    LOG(INFO) << "\n" << profiler_.Summary();
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
 #endif  // LITE_WITH_PROFILE
   }
 

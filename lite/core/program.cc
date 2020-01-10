@@ -137,8 +137,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-    std::string op_type = inst.op()->op_info()->Type();
-    if (op_type == "feed" || op_type == "fetch") continue;
+    if (inst.is_feed_fetch_op()) continue;
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -147,7 +146,7 @@ void RuntimeProgram::Run() {
 #endif  // LITE_WITH_PROFILE
   }
 #ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary(false, 0);
+  LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 0);
 #endif  // LITE_WITH_PROFILE
 }
 
@@ -252,8 +251,16 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 }
 
 void Instruction::Run() {
+#ifdef LITE_WITH_PROFILE
+  CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
+                      "When LITE_WITH_PROFILE is defined, please set a "
+                      "Profiler for Instruction.";
+  profiler_->StartTiming(
+      profile::Type::kCreate, profile_id_, kernel_->mutable_context());
+#endif
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
+
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
@@ -263,10 +270,7 @@ void Instruction::Run() {
     return;
   }
 
-  // VLOG(4) << "kernel launch";
   op_->InferShape();
-  // VLOG(4) << ">> Running kernel: " << op_->op_info()->Repr() << " on Target "
-  //        << TargetToStr(kernel_->target());
   kernel_->Launch();
   has_run_ = true;
 }

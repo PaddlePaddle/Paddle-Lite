@@ -80,7 +80,7 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
   for (int j = 0; j < ops.size(); ++j) {
     std::shared_ptr<OpDesc> op_desc = ops[j];
-    DLOG << "create op: " << op_desc->Type();
+    LOG(kLOG_INFO) << "create op[" << j << "]: " << op_desc->Type();
 
     auto op_handler = OpRegistry<Device>::CreateOp(
         op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
@@ -111,7 +111,8 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-    DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
+    LOG(kLOG_INFO) << "Initialize op[" << count++
+                   << "]: " << op_handler->Type();
     if (op_handler->Type() == "feed" || op_handler->Type() == "fetch") {
       op_handler->setPrePostType(config_.pre_post_type);
     }
@@ -363,7 +364,10 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
         DLOG << "InitNoPersistableMemory var " << var_desc->Name();
         auto tensor = var->template GetMutable<LoDTensor>();
         if (tensor->IsInitialized() && tensor->dims().size() == 4) {
-          DLOG << "var's tensor is Initialized or dims size != 4";
+          // don't change user's input and avoid memory leaks
+          if (feed_indices_.find(var_desc->Name()) != feed_indices_.end()) {
+            break;
+          }
           DDim tensor_dim = tensor->dims();
           DDim new_dim =
               make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
@@ -1012,7 +1016,7 @@ void Executor<GPU_CL, float>::InitMemory() {
           const TensorDesc &desc = var_desc->Tensor_desc();
           //          DDim ddim = make_ddim(desc.Dims());
           DDim ddim = cl_image->dims();
-          DLOG << var_desc->Name();
+          LOG(kLOG_DEBUG1) << "init image of " << var_desc->Name();
           cl_image->InitEmptyImage(context, command_queue, ddim);
         }
       }

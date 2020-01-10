@@ -40,11 +40,11 @@ CXX_LIBS = ${OPENCV_LIBS} -L$(LITE_ROOT)/cxx/lib/ -lpaddle_light_api_shared $(SY
 
 #CXX_LIBS = $(LITE_ROOT)/cxx/lib/libpaddle_api_light_bundled.a $(SYSTEM_LIBS)
 
-mobile_detection: fetch_opencv mobile_detection.o
-	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) mobile_detection.o -o mobile_detection  $(CXX_LIBS) $(LDFLAGS)
+ssd_detection: fetch_opencv ssd_detection.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) ssd_detection.o -o ssd_detection  $(CXX_LIBS) $(LDFLAGS)
 
-mobile_detection.o: mobile_detection.cc
-	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o mobile_detection.o -c mobile_detection.cc
+ssd_detection.o: ssd_detection.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o ssd_detection.o -c ssd_detection.cc
 
 fetch_opencv:
 	@ test -d ${THIRD_PARTY_DIR} ||  mkdir ${THIRD_PARTY_DIR}
@@ -57,5 +57,5 @@ fetch_opencv:
 
 .PHONY: clean
 clean:
-	rm -f mobile_detection.o
-	rm -f mobile_detection
+	rm -f ssd_detection.o
+	rm -f ssd_detection
