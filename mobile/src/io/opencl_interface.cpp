@@ -28,7 +28,25 @@ cl_command_queue getClCommandQueue() {
 }
 
 bool isInitSuccess() {
+  prepareOpenclRuntime();
   return framework::CLEngine::Instance()->isInitSuccess();
+}
+
+bool prepareOpenclRuntime() {
+#ifdef PREPARE_OPENCL_RUNTIME
+  DLOG << "cl runtime prepared. ";
+  cl_uint numPlatforms;  // the NO. of platforms
+  cl_int status = clGetPlatformIDs(0, NULL, &numPlatforms);
+  if (status == CL_SUCCESS) {
+    if (numPlatforms > 0) {
+      cl_platform_id *platforms = reinterpret_cast<cl_platform_id *>(
+          malloc(numPlatforms * sizeof(cl_platform_id)));
+      status = clGetPlatformIDs(numPlatforms, platforms, NULL);
+      free(platforms);
+    }
+  }
+#endif
+  return true;
 }
 
 }  // namespace paddle_mobile

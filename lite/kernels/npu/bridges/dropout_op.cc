@@ -21,42 +21,56 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NPU] Converting " << op_type << "... ";
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
+  // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  CHECK(x_type->precision() == PRECISION(kFloat));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
+  CHECK_GE(x_rank, 2);
 
   auto out_name = op_info->Output("Out").front();
   auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
-  auto out_shape = scope->FindTensor(out_name)->dims().Vectorize();
-  CHECK(op_info->HasAttr("axes"))
-      << "[NPU] unsqueeze not support axes from tensor now";
+  CHECK(out_type->precision() == PRECISION(kFloat));
+
+  auto dropout_implementation =
+      op_info->GetAttr<std::string>("dropout_implementation");
+  auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
+  if (dropout_implementation == "upscale_in_train") {
+    scale = 1.f;
+  }
+  // HiAI only support [n, c, 1, 1] for the shape of scale
+  std::vector<int64_t> scale_shape = {
+      1, x_rank < 3 ? 1 : x_dims[x_rank - 3], 1, 1};
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
   }
 
-  // Unsqueeze node
-  auto unsqueeze_node = graph->Add<ge::op::Reshape>(out_name);
-  auto unsqueeze_op = unsqueeze_node->data<ge::op::Reshape>();
-  unsqueeze_op->set_input_tensor(*x_node->data());
-  unsqueeze_op->set_attr_shape(
-      ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
+  // Scale node
+  auto scale_node = graph->Add<ge::op::Scale>(out_name);
+  auto scale_op = scale_node->data<ge::op::Scale>();
+  scale_op->set_input_x(*x_node->data());
+  scale_op->set_attr_axis(1);
+
+  // Add filter node(fill with scale)
+  auto filter_node = graph->Add(out_name + "/filter", scale, scale_shape);
+  scale_op->set_input_filter(*filter_node->data());
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -65,9 +79,6 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(unsqueeze,
+REGISTER_SUBGRAPH_BRIDGE(dropout,
                          kNPU,
-                         paddle::lite::subgraph::npu::UnsqueezeConverter);
-REGISTER_SUBGRAPH_BRIDGE(unsqueeze2,
-                         kNPU,
-                         paddle::lite::subgraph::npu::UnsqueezeConverter);
+                         paddle::lite::subgraph::npu::DropoutConverter);
