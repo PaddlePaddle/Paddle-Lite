@@ -102,7 +102,7 @@ bool ConvTransposeOpLite::InferShape() const {
                                                    paddings[i * 2 + 1],
                                                    param_.strides[i]));
   }
-  if (param_.output_size.size()) {
+  if (!param_.output_size.empty()) {
     for (size_t i = 0; i < param_.output_size.size(); ++i) {
       CHECK_LT(param_.output_size[i], output_shape[i + 2] + param_.strides[i])
           << "set output_size error, the output_size should less than "
