@@ -102,6 +102,19 @@ bool ConvTransposeOpLite::InferShape() const {
                                                    paddings[i * 2 + 1],
                                                    param_.strides[i]));
   }
+  if (param_.output_size.size()) {
+    for (size_t i = 0; i < param_.output_size.size(); ++i) {
+      CHECK_LT(param_.output_size[i], output_shape[i + 2] + param_.strides[i])
+          << "set output_size error, the output_size should less than "
+          << output_shape[i + 2] + param_.strides[i] << ", but the value is "
+          << param_.output_size[i];
+      CHECK_GE(param_.output_size[i], output_shape[i + 2])
+          << "set output_size error, the output_size should greater than or "
+          << "equal to " << output_shape[i + 2] << ", but the value is "
+          << param_.output_size[i];
+      output_shape[i + 2] = param_.output_size[i];
+    }
+  }
 
   // Set output dims
   param_.output->Resize(lite::DDim(output_shape));
@@ -156,6 +169,9 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   }
   if (op_desc.HasAttr("fuse_relu")) {
     param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
+  }
+  if (op_desc.HasAttr("output_size")) {
+    param_.output_size = op_desc.GetAttr<std::vector<int>>("output_size");
   }
   return true;
 }

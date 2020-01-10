@@ -288,6 +288,7 @@ struct ConvParam {
   ActivationParam activation_param;
   // support var_length or not
   bool var_length{false};
+  std::vector<int> output_size;  // only used in conv_transpose.
   // for int8
   WITH_INT8_CONFIG
 };
