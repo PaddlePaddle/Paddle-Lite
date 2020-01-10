@@ -72,7 +72,8 @@ for threads in ${NUM_THREADS_LIST[@]}; do
     done
     adb shell "echo >> $ANDROID_DIR/$RESULT_FILENAME"
 done
-
+adb shell "echo >> $ANDROID_DIR/$RESULT_FILENAME"
+adb shell "echo power_mode refer: 0 for big cluster, 1 for little cluster, 2 for all cores,  3 for no bind >> $ANDROID_DIR/$RESULT_FILENAME"
 # Adb pull benchmark result, show result
 adb pull $ANDROID_DIR/$RESULT_FILENAME .
 echo "\n--------------------------------------"

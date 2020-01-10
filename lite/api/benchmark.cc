@@ -151,6 +151,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   ofs << "max = " << std::setw(12) << max_res;
   ofs << "average = " << std::setw(12) << avg_res;
   ofs << std::endl;
+  ofs.close();
 }
 #endif
 
