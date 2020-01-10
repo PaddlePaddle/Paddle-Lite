@@ -38,18 +38,21 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
+
   auto filter_name = op_info->Input("Filter").front();
   auto filter_type = kernel->GetInputDeclType("Filter");
   CHECK(filter_type->precision() == PRECISION(kFloat));
   CHECK(filter_type->layout() == DATALAYOUT(kNCHW));
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
+
   auto output_name = op_info->Output("Output").front();
   auto output_type = kernel->GetOutputDeclType("Output");
   CHECK(output_type->precision() == PRECISION(kFloat));
   CHECK(output_type->layout() == DATALAYOUT(kNCHW));
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
+
   auto bs = input_dims[0];
   auto ic = input_dims[1];
   auto oc = filter_dims[0];
@@ -62,7 +65,13 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
-  auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  bool with_act =
+      op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
+  std::string act_type =
+      with_act ? op_info->GetAttr<std::string>("act_type") : "";
+  float leaky_relu_alpha = act_type == "leaky_relu"
+                               ? op_info->GetAttr<float>("leaky_relu_alpha")
+                               : 0.f;
   CHECK_EQ(strides.size(), 2L);
   CHECK_EQ(dilations.size(), 2L);
 
@@ -186,10 +195,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_input_x(*input_node->data());
     conv_op->set_input_w(*filter_node->data());
     conv_op->set_attr_mode(1);
-    conv_op->set_attr_pad_mode(0);  // NOTSET
+    // when padding_algorithm=="SAME", NPU is different from lite
+    if (padding_algorithm == "VALID") {
+      conv_op->set_attr_pad_mode(5);
+    } else {
+      conv_op->set_attr_pad_mode(0);
+    }
     conv_op->set_attr_group(groups);
     conv_op->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[2], paddings[2]}));
+        {paddings[0], paddings[1], paddings[2], paddings[3]}));
     conv_op->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
     conv_op->set_attr_stride(ge::AttrValue::LIST_INT({strides[0], strides[1]}));
@@ -211,13 +225,16 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   CHECK(conv_node);
 
-  if (fuse_relu) {
-    // Append relu node if fuse_relu is true
-    auto relu_node = graph->Add<ge::op::Activation>(output_name);
-    auto relu_op = relu_node->data<ge::op::Activation>();
-    relu_op->set_input_x(*conv_node->data());
-    relu_op->set_attr_mode(CvtActMode("relu"));
+  if (!act_type.empty()) {
+    auto act_node = graph->Add<ge::op::Activation>(output_name);
+    auto act_op = act_node->data<ge::op::Activation>();
+    act_op->set_input_x(*conv_node->data());
+    act_op->set_attr_mode(CvtActMode(act_type));
+    if (act_type == "leaky_relu") {
+      act_op->set_attr_negative_slope(leaky_relu_alpha);
+    }
   }
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
