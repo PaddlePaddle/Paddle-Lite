@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <bmcompiler_if.h>
 #include "lite/operators/conv_op.h"
 #include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
-#include "bmcompiler_if.h"
+
 
 namespace paddle {
 namespace lite {
@@ -26,13 +27,11 @@ namespace bm {
 int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-    
   auto graph = static_cast<Graph*>(ctx);
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
-
   auto input_var_name = op_info->Input("Input").front();
   auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
   auto input_dims = input->dims();
@@ -42,11 +41,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto filter_var_name = op_info->Input("Filter").front();
   auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
-    
-  CHECK(input_dims.size() == 4);
-  CHECK(output_dims.size() == 4);
-  CHECK(filter_dims.size() == 4);
-    
+  CHECK_EQ(input_dims.size(), 4);
+  CHECK_EQ(output_dims.size(), 4);
+  CHECK_EQ(filter_dims.size(), 4);
   bool has_bias = lite::subgraph::bm::HasInputArg(op_info, scope, "Bias");
   float* bias_data = nullptr;
   if (has_bias) {
@@ -54,33 +51,31 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
     bias_data = static_cast<float*>(bias->mutable_data<float>());
   }
-    
-  const long int* input_shape_data = const_cast<const long int*>(&input_dims.data()[0]);
-  const long int* output_shape_data = const_cast<const long int*>(&output_dims.data()[0]);
-
-  int i_input_shape_data[input_dims.size()];
-  int i_output_shape_data[output_dims.size()];
+  const int64_t* input_shape_data =
+          const_cast<const int64_t*>(&input_dims.data()[0]);
+  const int64_t* output_shape_data =
+               const_cast<const int64_t*>(&output_dims.data()[0]);
+  std::vector<int32_t> i_input_shape_data(input_dims.size());
+  std::vector<int32_t> i_output_shape_data(output_dims.size());
 
   for (size_t i = 0; i < input_dims.size(); i++) {
     i_input_shape_data[i] = static_cast<int>(input_shape_data[i]);
   }
-
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-    
-  const float* filter_data = const_cast<const float*>(filter->mutable_data<float>());
-
+  const float* filter_data =
+             const_cast<const float*>(filter->mutable_data<float>());
   auto groups = op_info->GetAttr<int>("groups");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
 
   add_conv_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(i_input_shape_data),
+                 const_cast<const int*>(&i_input_shape_data[0]),
                  input_dims.size(),
                  static_cast<const char*>(input_var_name.c_str()),
-                 const_cast<const int*>(i_output_shape_data),
+                 const_cast<const int*>(&i_output_shape_data[0]),
                  output_dims.size(),
                  static_cast<const char*>(output_var_name.c_str()),
                  static_cast<const char*>(unique_op_name.c_str()),
@@ -107,4 +102,5 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(BM, conv2d, paddle::lite::subgraph::bm::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(conv2d, kBM,
+        paddle::lite::subgraph::bm::ConvConverter);

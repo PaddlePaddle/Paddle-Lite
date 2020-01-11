@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <bmcompiler_if.h>
 #include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
-#include "bmcompiler_if.h"
 
 namespace paddle {
 namespace lite {
@@ -30,49 +30,41 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto op_info = op->op_info();
     auto op_type = op_info->Type();
     auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
-    
     // input
     auto x_var_name = op_info->Input("X").front();
     auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
     auto x_dims = x->dims();
-    const long int* x_shape_data = const_cast<const long int*>(&x_dims.data()[0]);
-    int i_x_shape_data[x_dims.size()];
+    const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
+    std::vector<int32_t> i_x_shape_data(x_dims.size());
     for (size_t i = 0; i < x_dims.size(); i++) {
         i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
     }
-    
     int channel_size = x_dims[1];
-
     auto scale_var_name = op_info->Input("Scale").front();
     auto scale = scope->FindVar(scale_var_name)->GetMutable<lite::Tensor>();
-    
     auto bias_var_name = op_info->Input("Bias").front();
     auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-    
     auto mean_var_name = op_info->Input("Mean").front();
     auto mean = scope->FindVar(mean_var_name)->GetMutable<lite::Tensor>();
- 
     auto variance_var_name = op_info->Input("Variance").front();
-    auto variance = scope->FindVar(variance_var_name)->GetMutable<lite::Tensor>();
-
+    auto variance =
+           scope->FindVar(variance_var_name)->GetMutable<lite::Tensor>();
     // output
     auto output_var_name = op_info->Output("Y").front();
     auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
     auto output_dims = output->dims();
-    const long int* output_shape_data = const_cast<const long int*>(&output_dims.data()[0]);
-    int i_output_shape_data[output_dims.size()];
+    const int64_t* output_shape_data =
+                     const_cast<const int64_t*>(&output_dims.data()[0]);
+    std::vector<int32_t> i_output_shape_data(output_dims.size());
     for (size_t i = 0; i < output_dims.size(); i++) {
         i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
     }
-    
     auto epsilon = op_info->GetAttr<float>("epsilon");
     auto unique_bn_out_name = lite::subgraph::bm::UniqueName("batch_norm_out");
-
     auto* scale_data = scale->mutable_data<float>();
     auto* bias_data = bias->mutable_data<float>();
     auto* mean_data = mean->mutable_data<float>();
     auto* variance_data = variance->mutable_data<float>();
- 
     for (int c = 0; c < channel_size; c++) {
         float inv_scale = 1.f / (std::sqrt(variance_data[c] + epsilon));
         bias_data[c] = bias_data[c] - inv_scale * scale_data[c] * mean_data[c];
@@ -83,17 +75,15 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     int **shape = new int *[input_num];
     int *dim = new int[input_num];
     const char **name = new const char *[input_num];
-    
     name[0] = static_cast<const char*>(x_var_name.c_str());
     dim[0] = x_dims.size();
-    shape[0] = i_x_shape_data;
-                        
+    shape[0] = &i_x_shape_data[0];
     add_scale_layer(graph->GetCompilerHandle(),
         input_num,
         shape,
         dim,
         name,
-        const_cast<const int*>(i_output_shape_data),
+        const_cast<const int*>(&i_output_shape_data[0]),
         output_dims.size(),
         static_cast<const char*>(output_var_name.c_str()),
         static_cast<const char*>(unique_op_name.c_str()),
@@ -102,7 +92,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         1,
         1,
         1);
-   
     delete [] shape;
     delete [] name;
     delete [] dim;
@@ -116,4 +105,5 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(BM, batch_norm, paddle::lite::subgraph::bm::BatchNormConverter);
+REGISTER_SUBGRAPH_BRIDGE(batch_norm, kBM,
+         paddle::lite::subgraph::bm::BatchNormConverter);
