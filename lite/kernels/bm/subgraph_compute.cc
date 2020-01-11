@@ -101,7 +101,8 @@ int SubgraphEngine::BuildDeviceProgram() {
              static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
     CHECK_EQ(bm_malloc_device_byte(bm_hd_,
-             p_mem, origin_otensors_[mapping_index]->memory_size()), BM_SUCCESS);
+             p_mem, origin_otensors_[mapping_index]->memory_size()), 
+             BM_SUCCESS);
     bmrt_tensor_with_device(&device_outputs_[i], *p_mem,
                     net_info_->output_dtypes[i],
                     stage.output_shapes[i]);
