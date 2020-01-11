@@ -118,7 +118,6 @@ class InstanceNormComputeTest : public arena::TestCase {
     DDim scale_bias_dims{{dims_[1]}};
     std::vector<float> scale(scale_bias_dims.production());
     fill_data_rand(scale.data(), -1.f, 1.f, scale_bias_dims.production());
-
     std::vector<float> bias(scale_bias_dims.production());
     fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_dims.production());
 
@@ -164,7 +163,7 @@ TEST(InstanceNorm, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-  ignored_outs = {"SavedMean", "SavedVariance"};
+  ignored_outs = {"saved_mean", "saved_variance"};
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

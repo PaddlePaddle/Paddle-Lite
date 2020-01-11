@@ -31,18 +31,18 @@
 // Extended ops based on HIAI DDK
 namespace ge {
 /*
-* Pads a tensor.
-* <Input>
-*    x : the input tensor
-*    padding : the input tensor must be 2-D
-*    constant_values : constant values must be a scalar
-* <Output>
-*    y : the output tensor
-* <Attr>
-*    mode : 0: CONSTANT, 1: REFLECT, 2: SYMMETRIC, 3:EDGE.
-* <Added in HiAI version>
-*    100.320.010.010
-*/
+ * Pads a tensor.
+ * <Input>
+ *    x : the input tensor
+ *    padding : the input tensor must be 2-D
+ *    constant_values : constant values must be a scalar
+ * <Output>
+ *    y : the output tensor
+ * <Attr>
+ *    mode : 0: CONSTANT, 1: REFLECT, 2: SYMMETRIC, 3:EDGE.
+ * <Added in HiAI version>
+ *    100.320.010.010
+ */
 REG_OP(Pad)
     .INPUT(x, TensorType({DT_FLOAT, DT_INT32}))
     .INPUT(padding, TensorType({DT_INT32}))
@@ -52,19 +52,39 @@ REG_OP(Pad)
     .OP_END()
 
     /*
-    * Computes instance norm
-    * <Input>
-    *    x : Input tensor which supports 4D dimension format.
-    *    scale : A tesnor, multiple to result
-    *    bias : A tensor, add to result
-    * <Output>
-    *    y : Output tensor
-    * <Attr>
-    *    reduction_indices : The dimensions to reduce
-    *    epsilon : A very small float number used to avoid dividing by zero.
-    * <Added in HiAI version>
-    *    100.320.010.010
-    */
+     * The operation pads input according to the paddings and constant_values.
+     * <Input>
+     *    x : The input tensor.
+     *    paddings : The values of paddings, as a role of dimensions to be added
+     * on the input tensor x, must be a Const-OP. constant_values : A tensor of
+     * the same type as x, that indicates the value to use for padding input,
+     *                      must be a Const-OP.
+     * <Output>
+     *    y : The output tensor.
+     * <Added in HiAI version>
+     *    100.320.010.010
+     */
+    REG_OP(PadV2)
+    .INPUT(x, TensorType({DT_FLOAT, DT_INT32}))
+    .INPUT(paddings, TensorType({DT_INT32}))
+    .INPUT(constant_values, TensorType({DT_FLOAT, DT_INT32}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32}))
+    .OP_END()
+
+    /*
+     * Computes instance norm
+     * <Input>
+     *    x : Input tensor which supports 4D dimension format.
+     *    scale : A tesnor, multiple to result
+     *    bias : A tensor, add to result
+     * <Output>
+     *    y : Output tensor
+     * <Attr>
+     *    reduction_indices : The dimensions to reduce
+     *    epsilon : A very small float number used to avoid dividing by zero.
+     * <Added in HiAI version>
+     *    100.320.010.010
+     */
     REG_OP(InstanceNorm)
     .INPUT(x, TensorType({DT_FLOAT}))
     .INPUT(scale, TensorType({DT_FLOAT}))

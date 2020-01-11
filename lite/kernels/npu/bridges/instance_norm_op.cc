@@ -38,12 +38,14 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   CHECK_EQ(x_dims.size(), 4L);
-  auto bs = x_dims[0];
-  auto ic = x_dims[1];
-  auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto batch_size = x_dims[0];
+  auto channel_size = x_dims[1];
+  auto spatial_size = x_dims[2] * x_dims[3];
+  DDim scale_bias_dims({1, channel_size, 1, 1});
+  auto y_name = op_info->Output("Y").front();
+  auto y_type = kernel->GetOutputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   float epsilon = op_info->GetAttr<float>("epsilon");
 
   // X node
@@ -52,21 +54,6 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Get(x_name);
   } else {
     x_node = graph->Add(x_name, *x);
-  }
-
-  // Scale node
-  std::shared_ptr<Node> scale_node = nullptr;
-  if (HasInputArg(op_info, scope, "Scale")) {
-    auto scale_name = op_info->Input("Scale").front();
-    auto scale_type = kernel->GetInputDeclType("Scale");
-    CHECK(scale_type->precision() == PRECISION(kFloat));
-    CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
-    auto scale = scope->FindMutableTensor(scale_name);
-    auto scale_dims = scale->dims();
-    CHECK_EQ(ic, scale_dims.production());
-    scale_node = graph->Add(scale_name, *scale, {1, ic, 1, 1});
-  } else {
-    scale_node = graph->Add(out_name + "/scale", 1, {1, ic, 1, 1});
   }
 
   // Bias node
@@ -78,19 +65,64 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
     auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
-    CHECK_EQ(ic, bias_dims.production());
-    bias_node = graph->Add(bias_name, *bias, {1, ic, 1, 1});
+    CHECK_EQ(channel_size, bias_dims.production());
+    if (spatial_size <= 1) {
+      // Bug exists in HiAI DDK when h=1 and w=1
+      auto bias_data = bias->mutable_data<float>();
+      Tensor y;
+      y.Resize(x_dims);
+      y.set_persistable(true);
+      auto y_data = y.mutable_data<float>();
+      for (int i = 0; i < batch_size; i++) {
+        std::memcpy(y_data, bias_data, sizeof(float) * channel_size);
+        y_data += channel_size;
+      }
+      graph->Add(y_name, y);
+      return SUCCESS;
+    } else {
+      if (!bias->persistable()) {
+        LOG(WARNING) << "[NPU] Only supporting persistable bias tensor.";
+        bias->set_persistable(true);
+      }
+      bias_node = graph->Add(bias_name, *bias, scale_bias_dims);
+    }
   } else {
-    bias_node = graph->Add(out_name + "/bias", 0, {1, ic, 1, 1});
+    if (spatial_size <= 1) {
+      // Bug exists in HiAI DDK when h=1 and w=1
+      graph->Add(y_name, 0.0f, x_dims);
+      return SUCCESS;
+    } else {
+      bias_node = graph->Add(y_name + "/bias", 0.0f, scale_bias_dims);
+    }
+  }
+
+  // Scale node
+  std::shared_ptr<Node> scale_node = nullptr;
+  if (HasInputArg(op_info, scope, "Scale")) {
+    auto scale_name = op_info->Input("Scale").front();
+    auto scale_type = kernel->GetInputDeclType("Scale");
+    CHECK(scale_type->precision() == PRECISION(kFloat));
+    CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
+    auto scale = scope->FindMutableTensor(scale_name);
+    auto scale_dims = scale->dims();
+    CHECK_EQ(channel_size, scale_dims.production());
+    if (!scale->persistable()) {
+      LOG(WARNING) << "[NPU] Only supporting persistable scale tensor.";
+      scale->set_persistable(true);
+    }
+    scale_node = graph->Add(scale_name, *scale, scale_bias_dims);
+  } else {
+    scale_node = graph->Add(y_name + "/scale", 1.0f, scale_bias_dims);
   }
 
   // InstanceNorm node
-  auto instance_norm_node = graph->Add<ge::op::InstanceNorm>(out_name);
+  auto instance_norm_node = graph->Add<ge::op::InstanceNorm>(y_name);
   auto instance_norm_op = instance_norm_node->data<ge::op::InstanceNorm>();
   instance_norm_op->set_input_x(*x_node->data());
   instance_norm_op->set_input_scale(*scale_node->data());
   instance_norm_op->set_input_bias(*bias_node->data());
-  instance_norm_op->set_attr_reduction_indices(ge::AttrValue::LIST_INT({}));
+  instance_norm_op->set_attr_reduction_indices(
+      ge::AttrValue::LIST_INT({0, 1, 2}));
   instance_norm_op->set_attr_epsilon(epsilon);
   return SUCCESS;
 }
