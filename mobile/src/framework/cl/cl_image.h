@@ -211,7 +211,7 @@ class CLImage {
                               real_image_dims_[1] >= image_dims_[1],
                           "real image is not enough!");
     if (cl_image_ != src.cl_image_) {
-      cl_image_.reset(src.cl_image_.get(), CLMemDeleter());
+      cl_image_ = src.cl_image_;
     }
 
     tensor_dims_ = need_dims;
@@ -231,18 +231,6 @@ class CLImage {
     CLImageConverterConv2dTransposeTransWeight *converter =
         new CLImageConverterConv2dTransposeTransWeight();
     InitCLImage(context, command_queue, converter);
-  }
-
-  /*! The internal of two tensors share the same memory block. */
-  inline CLImage &ShareHolderWith(const CLImage &src) {
-    PADDLE_MOBILE_ENFORCE(
-        src.cl_image_ != nullptr,
-        "Tensor holds no memory. Call Tensor::mutable_data first.")
-
-    if (cl_image_ != src.cl_image_) {
-      cl_image_.reset(src.cl_image_.get(), CLMemDeleter());
-    }
-    return *this;
   }
 
   cl_mem GetCLImage() const { return cl_image_.get(); }

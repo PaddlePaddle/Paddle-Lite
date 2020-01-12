@@ -79,7 +79,7 @@ PaddlePaddle/Paddle/paddle/fluid/
 # 如何添加新的算子
 
 1. 在`KernelType` 中添加 `your_key` 。
-2. 实现Reference 的逻辑，这个是必须是在CPU上的实现，并且不能依赖任何第三方库。实现后在`refer/CmakeLists.txt`中添加`USE_JITKERNEL_REFER(your_key)`来使用该kernel。
+2. 实现Reference 的逻辑，这个是必须是在CPU上的实现，并且不能依赖任何第三方库。实现后在`refer/CmakeLists.txt`中添加`USE_JITKERNEL_REFER_LITE(your_key)`来使用该kernel。
 3. (optional) 实现更多的算法在`more`目录下，可以依赖mkl，intrinsic或者mkldnn等第三方库。
 4. (optional) 实现基于Xbyak的生成code，在`gen`目下。 jitcode需要实现自己的`JitCodeCreator`，并注册在与refer相同的`KernelType`上。
 5. 添加新的`KernelTuple`，需要与`KernelType`一一对应，是所有类型的一个打包，包括数据类型，属性的类型，以及返回的函数类型。可以参考`SeqPoolTuple`，新加的Attr类型需要特例化`JitCodeKey`方法。

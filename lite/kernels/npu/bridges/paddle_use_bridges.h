@@ -28,6 +28,7 @@ USE_SUBGRAPH_BRIDGE(conv2d, kNPU);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kNPU);
 USE_SUBGRAPH_BRIDGE(conv2d_transpose, kNPU);
 
+USE_SUBGRAPH_BRIDGE(dropout, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_add, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_sub, kNPU);
@@ -51,3 +52,5 @@ USE_SUBGRAPH_BRIDGE(sqrt, kNPU);
 USE_SUBGRAPH_BRIDGE(square, kNPU);
 USE_SUBGRAPH_BRIDGE(transpose, kNPU);
 USE_SUBGRAPH_BRIDGE(transpose2, kNPU);
+USE_SUBGRAPH_BRIDGE(unsqueeze, kNPU);
+USE_SUBGRAPH_BRIDGE(unsqueeze2, kNPU);

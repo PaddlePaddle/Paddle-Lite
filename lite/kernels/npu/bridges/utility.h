@@ -77,7 +77,6 @@ std::vector<int64_t> CvtShape(const DDim& in_dims);
 
 ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape = {},
-                        PrecisionType in_precision = PRECISION(kFloat),
                         DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
 int CvtActMode(std::string act_type);

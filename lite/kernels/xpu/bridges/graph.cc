@@ -57,9 +57,9 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
 std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  const Tensor& tensor,
                                  std::vector<int64_t> shape,
-                                 PrecisionType precision,
                                  DataLayoutType layout) {
   std::shared_ptr<Node> node = nullptr;
+  PrecisionType precision = tensor.precision();
   if (tensor.persistable()) {
     // Const node
     node = std::make_shared<Node>(precision, layout, Node::Role::kConst);
@@ -67,8 +67,7 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
     CHECK_EQ(idx, 1);
     node->set_data(std::make_shared<xtcl::xExpr>(builder_.CreateTensor(
         name, CvtShape<xtcl::xIndexExpr>(shape), CvtPrecisionType(precision))));
-    params_.emplace(
-        std::make_pair(name, *CvtTensor(tensor, shape, precision, layout)));
+    params_.emplace(std::make_pair(name, *CvtTensor(tensor, shape, layout)));
   } else {
     // Data node
     node = Add(name, shape, precision, layout);

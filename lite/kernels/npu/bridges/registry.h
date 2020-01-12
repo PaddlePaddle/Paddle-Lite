@@ -67,14 +67,14 @@ class Registry {
 #define UNUSED __attribute__((unused))
 #endif
 
-#define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(uniq_name, msg)              \
+#define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(uniq_name, msg)         \
   struct __test_global_namespace_##uniq_name##__ {};                          \
   static_assert(std::is_same<::__test_global_namespace_##uniq_name##__,       \
                              __test_global_namespace_##uniq_name##__>::value, \
                 msg)
 
 #define REGISTER_SUBGRAPH_BRIDGE(op_type__, target__, cvt_func_name)      \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                               \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                          \
       __reg_subgraph_bridge_##op_type__##_##target__##__,                 \
       "REGISTER_SUBGRAPH_BRIDGE must be called in global namespace only " \
       "once!");                                                           \
