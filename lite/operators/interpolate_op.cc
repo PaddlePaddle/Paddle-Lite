@@ -35,8 +35,7 @@ bool InterpolateOp::CheckShape() const {
 }
 
 bool InterpolateOp::InferShape() const {
-  auto* X = param_.X;
-  auto* OutSize = param_.OutSize;
+  auto X = param_.X;
 
   int n = X->dims()[0];
   int c = X->dims()[1];
@@ -46,39 +45,40 @@ bool InterpolateOp::InferShape() const {
   int out_w;
 
   auto SizeTensor = param_.SizeTensor;
+  auto OutSize = param_.OutSize;
+  auto Scale = param_.Scale;
   if (!SizeTensor.empty()) {
-    CHECK(SizeTensor.size() == 2)
+    CHECK_EQ(SizeTensor.size(), 2)
         << "Input(SizeTensor)'size of Op(interpolate) must be 2. "
            "Attr(out_shape)'s length must be 2 for 4-D input tensor.";
+    out_h = SizeTensor[0]->data<int>()[0];
+    out_w = SizeTensor[1]->data<int>()[0];
+  } else if (OutSize) {
+    auto OutSize_dims = OutSize->dims();
+    CHECK_EQ(OutSize_dims.size(), 1) << "Input(OutSize)'s dims size must be 1";
+    CHECK_EQ(OutSize_dims[0], 2) << "OutSize's dim[0] must be 2";
+    auto OutSize_data = OutSize->data<int>();
+    out_h = OutSize_data[0];
+    out_w = OutSize_data[1];
+  } else if (param_.out_h > 0 && param_.out_w > 0) {
     out_h = param_.out_h;
     out_w = param_.out_w;
-    param_.Out->Resize({n, c, out_h, out_w});
-    return true;
-  }
-
-  auto Scale = param_.Scale;
-  if (Scale) {
-    auto scale_dims = Scale->dims();
-    CHECK(scale_dims.size() == 1) << "Scale's dimension size must be 1.";
-    out_h = -1;
-    out_w = -1;
   } else {
-    auto scale = param_.scale;
-    if (scale > 0) {
-      out_h = static_cast<int>(h * scale);
-      out_w = static_cast<int>(w * scale);
-      out_h = out_h > 0 ? out_h : -1;
-      out_w = out_w > 0 ? out_w : -1;
+    float scale = -1.f;
+    if (Scale) {
+      auto Scale_dims = Scale->dims();
+      CHECK_EQ(Scale_dims.size(), 1) << "Scale's dimension size must be 1.";
+      scale = Scale->data<float>()[0];
     } else {
-      out_h = param_.out_h;
-      out_w = param_.out_w;
+      scale = param_.scale;
     }
+    CHECK(scale > 0) << "scale must large than 0.";
+    out_h = static_cast<int>(h * scale);
+    out_w = static_cast<int>(w * scale);
   }
 
-  if (OutSize != nullptr) {
-    auto out_lod = param_.Out->mutable_lod();
-    *out_lod = param_.X->lod();
-  }
+  auto out_lod = param_.Out->mutable_lod();
+  *out_lod = param_.X->lod();
   param_.Out->Resize({n, c, out_h, out_w});
 
   return true;
