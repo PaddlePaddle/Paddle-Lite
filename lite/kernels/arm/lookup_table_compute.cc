@@ -36,7 +36,7 @@ void LookupTableCompute::Run() {
 
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
-  auto ids_data = ids->data<int64_t>();
+  auto ids_data = ids->data<float>();
 
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
