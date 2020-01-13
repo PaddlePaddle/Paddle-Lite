@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -29,19 +30,19 @@ class ReshapeComputeTester : public arena::TestCase {
   std::string xshape_ = "xshape";
   std::vector<std::string> shape_tensor_vct_;
   std::string shape_tensor_;
-  DDim x_dims_;
+  DDim dims_;
   std::vector<int> shape_;
   bool inplace_ = false;
 
  public:
   ReshapeComputeTester(const Place& place,
                        const std::string& alias,
-                       DDim x_dims,
+                       DDim dims,
                        std::vector<int> shape,
                        bool is_shape_tensor_vct = false,
                        bool is_shape_tensor = false,
                        bool is_shape = true)
-      : TestCase(place, alias), x_dims_(x_dims) {
+      : TestCase(place, alias), dims_(dims) {
     if (is_shape_tensor_vct) {
       for (size_t i = 0; i < shape.size(); i++) {
         shape_tensor_vct_.emplace_back(op_type_ + "/shape" + std::to_string(i));
@@ -60,7 +61,6 @@ class ReshapeComputeTester : public arena::TestCase {
     CHECK(out);
 
     auto* x = scope->FindTensor(input_);
-    auto x_dims = x->dims();
 
     std::vector<int> out_shape;
     if (shape_tensor_vct_.size() > 0) {
@@ -86,8 +86,8 @@ class ReshapeComputeTester : public arena::TestCase {
         CHECK_EQ(unk_dim_idx, -1);
         unk_dim_idx = i;
       } else if (out_shape[i] == 0) {
-        CHECK_LE(i, x_dims.size());
-        final_out_shape[i] = x_dims[i];
+        CHECK_LE(i, dims_.size());
+        final_out_shape[i] = dims_[i];
       } else if (out_shape[i] > 0) {
         final_out_shape[i] = out_shape[i];
       } else {
@@ -97,18 +97,18 @@ class ReshapeComputeTester : public arena::TestCase {
     }
 
     if (unk_dim_idx > -1) {
-      final_out_shape[unk_dim_idx] = x_dims.production() / cap;
+      final_out_shape[unk_dim_idx] = dims_.production() / cap;
     }
 
     out->Resize(final_out_shape);
 
     auto x_data = x->data<float>();
     auto out_data = out->mutable_data<float>();
-    memcpy(out_data, x_data, sizeof(float) * x_dims.production());
+    memcpy(out_data, x_data, sizeof(float) * dims_.production());
 
     if (op_type_ == "reshape2") {
       auto* xshape = scope->NewTensor(xshape_);
-      auto xshape_dims = x_dims.Vectorize();
+      auto xshape_dims = dims_.Vectorize();
       xshape_dims.insert(xshape_dims.begin(), 0);
       xshape->Resize(xshape_dims);
     }
@@ -134,11 +134,9 @@ class ReshapeComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(x_dims_.production());
-    for (int i = 0; i < x_dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-    SetCommonTensor(input_, x_dims_, data.data());
+    std::vector<float> din(dims_.production());
+    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(input_, dims_, din.data());
 
     if (shape_tensor_vct_.size() > 0) {
       for (size_t i = 0; i < shape_.size(); i++) {
@@ -161,13 +159,16 @@ TEST(Reshape, precision) {
   LOG(INFO) << "test Reshape op";
   float abs_error = 2e-5;
   Place place;
-#ifdef LITE_WITH_XPU
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else
   return;
 #endif
 
-  DDim x_dims{{2, 3, 4, 5}};
+  DDim dims{{2, 3, 4, 5}};
   std::vector<std::vector<int>> shapes{{5, 4, 3, 2},
                                        {2, 3, 20},
                                        {2, 60},
@@ -176,8 +177,11 @@ TEST(Reshape, precision) {
                                        {0, 0, 20},
                                        {0, 0, -1}};
   for (auto shape : shapes) {
+#ifdef LITE_WITH_NPU
+    if (dims.size() > 4 || shape.size() > 4) continue;
+#endif
     std::unique_ptr<arena::TestCase> tester(
-        new ReshapeComputeTester(place, "def", x_dims, shape));
+        new ReshapeComputeTester(place, "def", dims, shape));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision({"xshape"});
   }

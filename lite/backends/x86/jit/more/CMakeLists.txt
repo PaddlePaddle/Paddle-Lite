@@ -1,6 +1,6 @@
 
-function(USE_JITKERNEL_MORE TARGET TYPE)
-    file(APPEND ${jit_file} "USE_JITKERNEL_MORE(${TARGET} ${TYPE});\n")
+function(USE_JITKERNEL_MORE_LITE TARGET TYPE)
+    file(APPEND ${jit_file} "USE_JITKERNEL_MORE_LITE(${TARGET} ${TYPE});\n")
 endfunction()
 
 # enable it latter

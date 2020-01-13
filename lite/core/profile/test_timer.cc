@@ -69,10 +69,10 @@ TEST(profiler, real_latency) {
   ch.op_type = "operator/1";
   ch.kernel_name = "kernel/1";
   int idx = profiler.NewTimer(ch);
-  profiler.StartTiming(idx, &ctx);
+  profiler.StartTiming(Type::kDispatch, idx, &ctx);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  profiler.StopTiming(idx, &ctx);
-  std::cout << profiler.Summary();
+  profiler.StopTiming(Type::kDispatch, idx, &ctx);
+  std::cout << profiler.Summary(Type::kDispatch);
 }
 #endif
 

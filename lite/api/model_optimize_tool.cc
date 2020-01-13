@@ -16,8 +16,9 @@
 #ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest.h>
 #endif
-// "all_kernel_faked.cc" and "kernel_src_map.h" are created automatically during
-// model_optimize_tool's compiling period
+// "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
+// are created automatically during model_optimize_tool's compiling period
+#include <iomanip>
 #include "all_kernel_faked.cc"  // NOLINT
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
@@ -25,8 +26,11 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
+#include "lite/model_parser/compatible_pb.h"
+#include "lite/model_parser/pb/program_desc.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+#include "supported_kernel_op_info.h"  // NOLINT
 
 DEFINE_string(model_dir,
               "",
@@ -62,10 +66,16 @@ DEFINE_string(valid_targets,
               "The targets this model optimized for, should be one of (arm, "
               "opencl, x86), splitted by space");
 DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
+DEFINE_bool(print_supported_ops,
+            false,
+            "Print supported operators on the inputed target");
+DEFINE_bool(print_all_ops,
+            false,
+            "Print all the valid operators of Paddle-Lite");
+DEFINE_bool(print_model_ops, false, "Print operators in the input model");
 
 namespace paddle {
 namespace lite_api {
-
 //! Display the kernel information.
 void DisplayKernels() {
   LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
@@ -130,9 +140,7 @@ void RunOptimize(const std::string& model_dir,
   config.set_model_dir(model_dir);
   config.set_model_file(model_file);
   config.set_param_file(param_file);
-
   config.set_valid_places(valid_places);
-
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   LiteModelType model_type;
@@ -167,6 +175,202 @@ void CollectModelMetaInfo(const std::string& output_dir,
       lite::Join<std::string>({output_dir, filename}, "/");
   lite::WriteLines(std::vector<std::string>(total.begin(), total.end()),
                    output_path);
+}
+void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
+  std::vector<std::string> targets = {"kHost",
+                                      "kX86",
+                                      "kCUDA",
+                                      "kARM",
+                                      "kOpenCL",
+                                      "kFPGA",
+                                      "kNPU",
+                                      "kXPU",
+                                      "kAny",
+                                      "kUnk"};
+  int maximum_optype_length = 0;
+  for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
+    maximum_optype_length = it->first.size() > maximum_optype_length
+                                ? it->first.size()
+                                : maximum_optype_length;
+  }
+  std::cout << std::setiosflags(std::ios::internal);
+  std::cout << std::setw(maximum_optype_length) << "OP_name";
+  for (int i = 0; i < targets.size(); i++) {
+    std::cout << std::setw(10) << targets[i].substr(1);
+  }
+  std::cout << std::endl;
+  if (valid_ops.empty()) {
+    for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
+      std::cout << std::setw(maximum_optype_length) << it->first;
+      auto ops_valid_places = it->second;
+      for (int i = 0; i < targets.size(); i++) {
+        if (std::find(ops_valid_places.begin(),
+                      ops_valid_places.end(),
+                      targets[i]) != ops_valid_places.end()) {
+          std::cout << std::setw(10) << "Y";
+        } else {
+          std::cout << std::setw(10) << " ";
+        }
+      }
+      std::cout << std::endl;
+    }
+  } else {
+    for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
+      std::cout << std::setw(maximum_optype_length) << *op;
+      // Check: If this kernel doesn't match any operator, we will skip it.
+      if (supported_ops.find(*op) == supported_ops.end()) {
+        continue;
+      }
+      // Print OP info.
+      auto ops_valid_places = supported_ops.at(*op);
+      for (int i = 0; i < targets.size(); i++) {
+        if (std::find(ops_valid_places.begin(),
+                      ops_valid_places.end(),
+                      targets[i]) != ops_valid_places.end()) {
+          std::cout << std::setw(10) << "Y";
+        } else {
+          std::cout << std::setw(10) << " ";
+        }
+      }
+      std::cout << std::endl;
+    }
+  }
+}
+/// Print help information
+void PrintHelpInfo() {
+  // at least one argument should be inputed
+  const char help_info[] =
+      "At least one argument should be inputed. Valid arguments are listed "
+      "below:\n"
+      "  Arguments of model optimization:\n"
+      "        `--model_dir=<model_param_dir>`\n"
+      "        `--model_file=<model_path>`\n"
+      "        `--param_file=<param_path>`\n"
+      "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
+      "        `--optimize_out=<output_optimize_model_dir>`\n"
+      "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
+      "        `--prefer_int8_kernel=(true|false)`\n"
+      "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of model checking and ops information:\n"
+      "        `--print_all_ops=true`   Display all the valid operators of "
+      "Paddle-Lite\n"
+      "        `--print_supported_ops=true  "
+      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "  Display valid operators of input targets\n"
+      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
+      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "  Display operators in the input model\n";
+  std::cout << help_info << std::endl;
+  exit(1);
+}
+
+// Parse Input command
+void ParseInputCommand() {
+  if (FLAGS_print_all_ops) {
+    std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
+              << " ops in total." << std::endl;
+    PrintOpsInfo();
+    exit(1);
+  } else if (FLAGS_print_supported_ops) {
+    auto valid_places = paddle::lite_api::ParserValidPlaces();
+    // get valid_targets string
+    std::vector<TargetType> target_types = {};
+    for (int i = 0; i < valid_places.size(); i++) {
+      target_types.push_back(valid_places[i].target);
+    }
+    std::string targets_str = TargetToStr(target_types[0]);
+    for (int i = 1; i < target_types.size(); i++) {
+      targets_str = targets_str + TargetToStr(target_types[i]);
+    }
+
+    std::cout << "Supported OPs on '" << targets_str << "': " << std::endl;
+    target_types.push_back(TARGET(kHost));
+    target_types.push_back(TARGET(kUnk));
+
+    std::set<std::string> valid_ops;
+    for (int i = 0; i < target_types.size(); i++) {
+      auto ops = supported_ops_target[static_cast<int>(target_types[i])];
+      valid_ops.insert(ops.begin(), ops.end());
+    }
+    PrintOpsInfo(valid_ops);
+    exit(1);
+  }
+}
+// test whether this model is supported
+void CheckIfModelSupported() {
+  // 1. parse valid places and valid targets
+  auto valid_places = paddle::lite_api::ParserValidPlaces();
+  // set valid_ops
+  auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
+  auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
+  valid_ops.insert(
+      valid_ops.end(), valid_unktype_ops.begin(), valid_unktype_ops.end());
+  for (int i = 0; i < valid_places.size(); i++) {
+    auto target = valid_places[i].target;
+    auto ops = supported_ops_target[static_cast<int>(target)];
+    valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
+  }
+  // get valid ops
+  std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
+
+  // 2.Load model into program to get ops in model
+  std::string prog_path = FLAGS_model_dir + "/__model__";
+  if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
+    prog_path = FLAGS_model_file;
+  }
+  lite::cpp::ProgramDesc cpp_prog;
+  framework::proto::ProgramDesc pb_proto_prog =
+      *lite::LoadProgram(prog_path, false);
+  lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
+  // Transform to cpp::ProgramDesc
+  lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
+
+  std::set<std::string> unsupported_ops;
+  std::set<std::string> input_model_ops;
+  for (int index = 0; index < cpp_prog.BlocksSize(); index++) {
+    auto current_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(index);
+    for (size_t i = 0; i < current_block->OpsSize(); ++i) {
+      auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
+      auto op_type = op_desc.Type();
+      input_model_ops.insert(op_type);
+      if (valid_ops_set.count(op_type) == 0) {
+        unsupported_ops.insert(op_type);
+      }
+    }
+  }
+  // 3. Print ops_info of input model and check if this model is supported
+  if (FLAGS_print_model_ops) {
+    std::cout << "OPs in the input model include:\n";
+    PrintOpsInfo(input_model_ops);
+  }
+  if (!unsupported_ops.empty()) {
+    std::string unsupported_ops_str = *unsupported_ops.begin();
+    for (auto op_str = ++unsupported_ops.begin();
+         op_str != unsupported_ops.end();
+         op_str++) {
+      unsupported_ops_str = unsupported_ops_str + ", " + *op_str;
+    }
+    std::vector<TargetType> targets = {};
+    for (int i = 0; i < valid_places.size(); i++) {
+      targets.push_back(valid_places[i].target);
+    }
+    std::sort(targets.begin(), targets.end());
+    targets.erase(unique(targets.begin(), targets.end()), targets.end());
+    std::string targets_str = TargetToStr(targets[0]);
+    for (int i = 1; i < targets.size(); i++) {
+      targets_str = targets_str + "," + TargetToStr(targets[i]);
+    }
+
+    LOG(ERROR) << "Error: This model is not supported, because "
+               << unsupported_ops.size() << " ops are not supported on '"
+               << targets_str << "'. These unsupported ops are: '"
+               << unsupported_ops_str << "'.";
+    exit(1);
+  }
+  if (FLAGS_print_model_ops) {
+    std::cout << "Paddle-Lite supports this model!" << std::endl;
+    exit(1);
+  }
 }
 
 void Main() {
@@ -241,7 +445,13 @@ void Main() {
 }  // namespace paddle
 
 int main(int argc, char** argv) {
+  // If there is none input argument, print help info.
+  if (argc < 2) {
+    paddle::lite_api::PrintHelpInfo();
+  }
   google::ParseCommandLineFlags(&argc, &argv, false);
+  paddle::lite_api::ParseInputCommand();
+  paddle::lite_api::CheckIfModelSupported();
   paddle::lite_api::Main();
   return 0;
 }

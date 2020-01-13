@@ -18,8 +18,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
-#include "ai_ddk_lib/include/hiai_ir_build.h"
+#include "HiAiModelManagerService.h"  // NOLINT
+#include "hiai_ir_build.h"            // NOLINT
 
 namespace paddle {
 namespace lite {

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/loader.h"
+#include <memory>
 
 #include "framework/lod_tensor.h"
 #include "framework/program/program-optimize/program_optimize.h"
@@ -173,7 +174,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   rewind(fp);
 
   DLOG << "model size: " << size;
-
+  PADDLE_MOBILE_ENFORCE(size > 0, "model size should > 0")
   *out = reinterpret_cast<uint8_t *>(malloc(size));
 
   size_t cur_len = 0;

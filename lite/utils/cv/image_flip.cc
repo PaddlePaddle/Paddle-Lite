@@ -19,6 +19,23 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void ImageFlip::choose(const uint8_t* src,
+                       uint8_t* dst,
+                       ImageFormat srcFormat,
+                       int srcw,
+                       int srch,
+                       FlipParam flip_param) {
+  if (srcFormat == GRAY) {
+    flip_hwc1(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    flip_hwc3(src, dst, srcw, srch, flip_param);
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    flip_hwc4(src, dst, srcw, srch, flip_param);
+  } else {
+    printf("this srcFormat: %d does not support! \n", srcFormat);
+    return;
+  }
+}
 // gray
 void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
@@ -43,6 +60,9 @@ void flip_hwc1(const uint8_t* src,
     flip_hwc1_y(src, dst, srcw, srch);
   } else if (flip_param == XY) {
     flip_hwc1_xy(src, dst, srcw, srch);
+  } else {
+    printf("its doesn't support Flip: %d \n", static_cast<int>(flip_param));
+    return;
   }
 }
 
@@ -57,6 +77,9 @@ void flip_hwc3(const uint8_t* src,
     flip_hwc3_y(src, dst, srcw, srch);
   } else if (flip_param == XY) {
     flip_hwc3_xy(src, dst, srcw, srch);
+  } else {
+    printf("its doesn't support Flip: %d \n", static_cast<int>(flip_param));
+    return;
   }
 }
 
@@ -71,6 +94,9 @@ void flip_hwc4(const uint8_t* src,
     flip_hwc4_y(src, dst, srcw, srch);
   } else if (flip_param == XY) {
     flip_hwc4_xy(src, dst, srcw, srch);
+  } else {
+    printf("its doesn't support Flip: %d \n", static_cast<int>(flip_param));
+    return;
   }
 }
 /*

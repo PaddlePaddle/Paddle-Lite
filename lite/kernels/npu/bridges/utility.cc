@@ -85,10 +85,26 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
   return otype;
 }
 
+std::vector<int64_t> CvtShape(const std::vector<int64_t>& in_shape) {
+  std::vector<int64_t> out_shape;
+  // Padding the shape to 4-dimensions(NCHW)
+  for (int i = 0; i < 4 - in_shape.size(); i++) {
+    out_shape.push_back(1);
+  }
+  for (int i = 0; i < in_shape.size(); i++) {
+    out_shape.push_back(in_shape[i]);
+  }
+  return out_shape;
+}
+
+std::vector<int64_t> CvtShape(const DDim& in_dims) {
+  return CvtShape(in_dims.Vectorize());
+}
+
 ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape,
-                        PrecisionType in_precision,
                         DataLayoutType in_layout) {
+  PrecisionType in_precision = in_tensor.precision();
   auto in_size = in_tensor.dims().production();
   auto in_shape = in_tensor.dims().Vectorize();
   if (out_shape.empty()) {

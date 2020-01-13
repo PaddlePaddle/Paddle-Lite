@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -24,13 +25,13 @@ int data_index(std::vector<int> pos, DDimLite dims) {
   int d1 = dims[1];
   int d2 = dims[2];
   int d3 = dims[3];
-  return pos[3] + pos[2] * d3 + pos[1] * d3 * d2 + pos[0] * d3 * d2 * d1;
+  return pos[0] * d1 * d2 * d3 + pos[1] * d2 * d3 + pos[2] * d3 + pos[3];
 }
 
 std::vector<int> pos_trans(std::vector<int> in_pos, std::vector<int> axis) {
   std::vector<int> out_pos(in_pos.size());
   for (int i = 0; i < axis.size(); i++) {
-    out_pos[axis[i]] = in_pos[i];
+    out_pos[i] = in_pos[axis[i]];
   }
   return out_pos;
 }
@@ -42,35 +43,34 @@ class TransposeComputeTester : public arena::TestCase {
   std::string input_ = "x";
   std::string output_ = "out";
   std::string xshape_ = "xshape";
-  DDim x_dims_;
+  DDim dims_;
   std::vector<int> axis_;
 
  public:
   TransposeComputeTester(const Place& place,
                          const std::string& alias,
-                         DDim x_dims,
+                         DDim dims,
                          std::vector<int> axis)
-      : TestCase(place, alias), x_dims_(x_dims), axis_(axis) {}
+      : TestCase(place, alias), dims_(dims), axis_(axis) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
 
     auto* x = scope->FindTensor(input_);
-    auto x_dims = x->dims();
 
-    std::vector<int64_t> out_shape(x_dims.size(), 0);
-    for (size_t i = 0; i < x_dims.size(); i++) {
-      out_shape[i] = x_dims[axis_[i]];
+    std::vector<int64_t> out_shape(dims_.size(), 0);
+    for (size_t i = 0; i < dims_.size(); i++) {
+      out_shape[i] = dims_[axis_[i]];
     }
     out->Resize(out_shape);
 
     auto y_dims = out->dims();
 
-    int input_n = x_dims[0];
-    int input_c = x_dims[1];
-    int input_h = x_dims[2];
-    int input_w = x_dims[3];
+    int input_n = dims_[0];
+    int input_c = dims_[1];
+    int input_h = dims_[2];
+    int input_w = dims_[3];
 
     auto input_data = x->data<float>();
     auto output_data = out->mutable_data<float>();
@@ -81,7 +81,7 @@ class TransposeComputeTester : public arena::TestCase {
           for (int w = 0; w < input_w; ++w) {
             std::vector<int> in_pos{n, c, h, w};
             std::vector<int> out_pos = pos_trans(in_pos, axis_);
-            int in_index = data_index(in_pos, x_dims);
+            int in_index = data_index(in_pos, dims_);
             int out_index = data_index(out_pos, y_dims);
             output_data[out_index] = input_data[in_index];
           }
@@ -91,7 +91,7 @@ class TransposeComputeTester : public arena::TestCase {
 
     if (op_type_ == "transpose2") {
       auto* xshape = scope->NewTensor(xshape_);
-      auto xshape_dims = x_dims.Vectorize();
+      auto xshape_dims = dims_.Vectorize();
       xshape_dims.insert(xshape_dims.begin(), 0);
       xshape->Resize(xshape_dims);
     }
@@ -108,11 +108,9 @@ class TransposeComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(x_dims_.production());
-    for (int i = 0; i < x_dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-    SetCommonTensor(input_, x_dims_, data.data());
+    std::vector<float> din(dims_.production());
+    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(input_, dims_, din.data());
   }
 };
 
@@ -122,14 +120,16 @@ TEST(Transpose, precision) {
   Place place;
 #ifdef LITE_WITH_XPU
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
 
   DDim x_dims{{2, 3, 4, 5}};
-  // [XPU]: {3, 1, 0, 2} is unsupported
   std::vector<std::vector<int>> axes{
-      {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}};
+      {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2}};
   for (auto axis : axes) {
     std::unique_ptr<arena::TestCase> tester(
         new TransposeComputeTester(place, "def", x_dims, axis));

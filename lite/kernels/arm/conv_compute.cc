@@ -109,8 +109,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
-  bool flag_dw_5x5 = pads_all_equal &&
-                     ((kw == 5 && sw == 1) || (kw == 5 && sw == 2 && pw == 2));
+  bool flag_dw_5x5 = pads_all_equal && (kw == 5 && sw == 1);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
@@ -155,8 +154,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
-  bool flag_dw_5x5 = pads_all_equal &&
-                     ((kw == 5 && sw == 1) || (kw == 5 && sw == 2 && pw == 2));
+  bool flag_dw_5x5 = pads_all_equal && (kw == 5 && sw == 1);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
