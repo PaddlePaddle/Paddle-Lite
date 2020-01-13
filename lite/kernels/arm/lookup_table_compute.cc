@@ -28,7 +28,6 @@ namespace arm {
 
 void LookupTableCompute::Run() {
   auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
   // inputs
   auto w = param.W;
   auto ids = param.Ids;
@@ -67,6 +66,16 @@ void LookupTableCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(lookup_table,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::LookupTableCompute,
+                     def)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(lookup_table_v2,
                      kARM,
                      kFloat,
                      kNCHW,

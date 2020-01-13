@@ -12,40 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/operators/calib_op.h"
+#include "lite/core/mir/kernel_place_correct_pass.h"
+#include <memory>
+#include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace fpga {
+namespace mir {
 
-class CalibComputeFp32ToFP16
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::CalibParam;
+void KernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
+  CorrectArgumentPlace(graph.get());
+}
 
-  void Run() override;
-
-  ~CalibComputeFp32ToFP16() override{};
-
- private:
-};
-
-class CalibComputeFP16ToFp32
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeFP16ToFp32() override{};
-
- private:
-};
-
-}  // namespace fpga
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(kernel_place_correct_pass,
+                  paddle::lite::mir::KernelPlaceCorrectPass)
+    .BindTargets({TARGET(kFPGA)});

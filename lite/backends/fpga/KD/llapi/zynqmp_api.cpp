@@ -61,7 +61,9 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
+
 #ifdef PADDLE_MOBILE_OS_LINUX
+
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (ptr == MAP_FAILED) {

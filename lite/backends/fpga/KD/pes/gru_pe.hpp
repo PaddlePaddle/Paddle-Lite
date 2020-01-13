@@ -121,7 +121,6 @@ class GRUPE : public PE {
         prev_hidden_.copyFrom(value.pre_output);
       }
       mul_pe_.dispatch();
-      // reset_hidden_.saveToFile("reset_hidden_.txt");
       update_gate_data += stride_update;
       reset_gate_data += stride_update;
 
@@ -172,7 +171,6 @@ class GRUPE : public PE {
   zynqmp::Tensor bias_;
   zynqmp::Tensor weight_;
   zynqmp::Tensor state_weight_;
-
   zynqmp::Tensor update_gate_;
   zynqmp::Tensor reset_gate_;
   zynqmp::Tensor cell_state_;

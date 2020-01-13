@@ -656,7 +656,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
   }
   size_t size = params.size();
   if (ret == 0 && size > 1) {
-    // Tensor* output = conv_params.output;
     Tensor& img = params[0]->output;
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {
