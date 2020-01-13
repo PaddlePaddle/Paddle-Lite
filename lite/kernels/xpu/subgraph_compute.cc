@@ -39,11 +39,12 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
-    if (!bridges.Exists(op_type, "kXPU")) {
+    if (!bridges.Exists(op_type, TARGET(kXPU))) {
       return subgraph::FAILED;
     }
     auto kernel = inst.kernel();
-    status |= bridges.Select(op_type, "kXPU")(reinterpret_cast<void*>(&graph),
+    status |=
+        bridges.Select(op_type, TARGET(kXPU))(reinterpret_cast<void*>(&graph),
                                               const_cast<OpLite*>(op),
                                               const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
