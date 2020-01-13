@@ -29,6 +29,11 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       act_types.push_back("leaky_relu");
       break;
     }
+    if (place.target == TARGET(kARM)) {
+      act_types.push_back("leaky_relu");
+      act_types.push_back("relu6");
+      break;
+    }
   }
   for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
     for (auto act_type : act_types) {
