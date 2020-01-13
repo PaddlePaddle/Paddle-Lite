@@ -61,7 +61,7 @@ void* TargetWrapperBM::Malloc(size_t size) {
 
   bm_handle_t bm_handle = static_cast<bm_handle_t>(bm_hds_.at(device_id_));
   bm_device_mem_t* p_mem =
-      reinterpret_cast<bm_device_mem_t*> malloc(sizeof(bm_device_mem_t));
+      reinterpret_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
   bm_malloc_device_byte(bm_handle, p_mem, size);
   ptr = reinterpret_cast<void*>(p_mem);
   return ptr;
@@ -93,7 +93,7 @@ void TargetWrapperBM::MemcpySync(void* dst,
     case IoDirection::HtoD:
       pmem = static_cast<bm_device_mem_t*>(dst);
       bm_memcpy_s2d_partial_offset(
-          bm_handle, *pmem, reinterpret_cast<void*>(src), size, 0);
+          bm_handle, *pmem, const_cast<void*>(src), size, 0);
       break;
     case IoDirection::DtoH:
       pcst_mem = static_cast<const bm_device_mem_t*>(src);
