@@ -11,13 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "lite/kernels/bm/subgraph_compute.h"
 #include <sys/time.h>
 #include <time.h>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/kernels/bm/bridges/graph.h"
@@ -54,8 +53,8 @@ int SubgraphEngine::BuildDeviceProgram() {
   }
 
   std::string net_name = "paddle_bitmain";
-  __bmcompile_opt(graph.GetCompilerHandle(),
-                  const_cast<char*>(net_name.c_str()), 2);
+  __bmcompile_opt(
+      graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 2);
   void* bmodel_data = nullptr;
   unsigned int data_size = 0;
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
@@ -66,7 +65,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   }
   bmrt_get_network_names(bmrt_hd_, &net_names_);
   net_info_ = bmrt_get_network_info(bmrt_hd_, net_names_[0]);
-  auto &stage = net_info_->stages[0];
+  auto& stage = net_info_->stages[0];
   // input
   origin_idims_.resize(input_names_.size());
   origin_itensors_.resize(input_names_.size());
@@ -76,13 +75,15 @@ int SubgraphEngine::BuildDeviceProgram() {
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     bm_device_mem_t* p_mem =
-       static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
+        static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
-    CHECK_EQ(bm_malloc_device_byte(bm_hd_,
-            p_mem, origin_itensors_[i]->memory_size()), BM_SUCCESS);
-    bmrt_tensor_with_device(&device_inputs_[i], *p_mem,
-                    net_info_->input_dtypes[i],
-                    stage.input_shapes[i]);
+    CHECK_EQ(bm_malloc_device_byte(
+                 bm_hd_, p_mem, origin_itensors_[i]->memory_size()),
+             BM_SUCCESS);
+    bmrt_tensor_with_device(&device_inputs_[i],
+                            *p_mem,
+                            net_info_->input_dtypes[i],
+                            stage.input_shapes[i]);
   }
   // output
   origin_odims_.resize(output_names_.size());
@@ -98,14 +99,15 @@ int SubgraphEngine::BuildDeviceProgram() {
   for (size_t i = 0; i < output_names_.size(); i++) {
     int mapping_index = output_map_.at(net_info_->output_names[i]);
     bm_device_mem_t* p_mem =
-             static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
+        static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
-    CHECK_EQ(bm_malloc_device_byte(bm_hd_,
-             p_mem, origin_otensors_[mapping_index]->memory_size()), 
+    CHECK_EQ(bm_malloc_device_byte(
+                 bm_hd_, p_mem, origin_otensors_[mapping_index]->memory_size()),
              BM_SUCCESS);
-    bmrt_tensor_with_device(&device_outputs_[i], *p_mem,
-                    net_info_->output_dtypes[i],
-                    stage.output_shapes[i]);
+    bmrt_tensor_with_device(&device_outputs_[i],
+                            *p_mem,
+                            net_info_->output_dtypes[i],
+                            stage.output_shapes[i]);
   }
 
   return status;
@@ -118,16 +120,18 @@ int SubgraphEngine::LaunchDeviceProgram() {
                   const_cast<void*>(origin_itensors_[i]->raw_data()));
   }
   bmrt_launch_tensor_ex(bmrt_hd_,
-            net_names_[0],
-            static_cast<const bm_tensor_t*>(&device_inputs_[0]),
-            net_info_->input_num,
-            static_cast<bm_tensor_t*>(&device_outputs_[0]),
-            net_info_->output_num, true, false);
+                        net_names_[0],
+                        static_cast<const bm_tensor_t*>(&device_inputs_[0]),
+                        net_info_->input_num,
+                        static_cast<bm_tensor_t*>(&device_outputs_[0]),
+                        net_info_->output_num,
+                        true,
+                        false);
   bm_thread_sync(bm_hd_);
   for (size_t i = 0; i < device_outputs_.size(); i++) {
     bm_memcpy_d2s(bm_hd_,
-       const_cast<void*>(origin_otensors_[i]->raw_data()),
-       device_outputs_[i].device_mem);
+                  const_cast<void*>(origin_otensors_[i]->raw_data()),
+                  device_outputs_[i].device_mem);
   }
   return 0;
 }
