@@ -30,12 +30,12 @@ class ConvComputeTester : public arena::TestCase {
   std::string output_ = "output";
   DDim dims_;
 
+  int out_channels_ = 1;
+  int ksize_ = 3;
   std::vector<int> strides_{1, 1};
   std::vector<int> paddings_{0, 0};
   int groups_ = 1;
   std::vector<int> dilations_{1, 1};
-  int out_channels_ = 1;
-  int ksize_ = 3;
   std::string padding_algorithm_;
   bool with_bias_ = false;
   std::string bias_ = "bias";
