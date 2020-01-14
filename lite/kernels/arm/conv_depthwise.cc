@@ -52,7 +52,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
   } else if (kw == 5) {
     // VLOG(5) << "invoke 5x5 dw conv fp32";
-    if (param.strides[0] == 2 && paddings[0] != 2) {  // conv5x5s2_dw
+    if (param.strides[0] == 2) {  // conv5x5s2_dw
       constexpr int cblock = 4;
       auto oc = w_dims[0];
       auto kh = w_dims[2];
