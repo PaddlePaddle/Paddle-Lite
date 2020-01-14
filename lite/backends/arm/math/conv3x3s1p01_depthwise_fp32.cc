@@ -924,58 +924,58 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                            \
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
-#define RIGHT_RESULT_S1_RELU6                                             \
-  "fmax v12.4s, v12.4s, v20.4s \n" /*relu*/                               \
-                                                                          \
-  "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "fmla v13.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-                                                                          \
-  "fmin v12.4s, v12.4s, %[vsix].4s \n" /*relu6*/                          \
-                                                                          \
-  "fmla v15.4s ,  v17.4s,  %[w0].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-  "fmla v14.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-  "fmla v13.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-                                                                          \
-  "ext  v16.16b, v8.16b, v9.16b, #4 \n"                  /* v16 = 1234*/  \
-  "ext  v17.16b, v8.16b, v9.16b, #8 \n" /* v16 = 2345 */ /* r3 */         \
-  "bif v12.16b, v22.16b, v18.16b \n"                                      \
-  "fmla v15.4s ,  v8.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
-  "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
-  "fmax v13.4s, v13.4s, v20.4s \n"      /*relu*/                          \
-                                                                          \
-  "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "fmla v14.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "st1 {v12.4s}, [%[doutr0]], #16     \n"                                 \
-                                                                          \
-  "fmin v13.4s, v13.4s, %[vsix].4s \n" /*relu6*/                          \
-                                                                          \
-  "fmla v15.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-  "fmla v14.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-                                                                          \
-  "ext  v16.16b, v10.16b, v11.16b, #4 \n" /* v16 = 1234*/                 \
-  "ext  v17.16b, v10.16b, v11.16b, #8 \n" /* v16 = 2345 */                \
-  "bif v13.16b, v23.16b, v18.16b \n"                                      \
-                                                                          \
-  "fmla v15.4s ,  v10.4s,  v20.s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-                                                                          \
-  "fmax v14.4s, v14.4s, v20.4s \n"        /*relu*/                        \
-  "st1 {v13.4s}, [%[doutr1]], #16     \n" /* r3 */                        \
-                                                                          \
-  "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-                                                                          \
-  "fmin v14.4s, v14.4s, %[vsix].4s \n" /*relu6*/                          \
-                                                                          \
-  "fmla v15.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-                                                                          \
-  "bif v14.16b, v24.16b, v18.16b \n"                                      \
-  "fmax v15.4s, v15.4s, v20.4s \n" /*relu*/                               \
-                                                                          \
-  "st1 {v14.4s}, [%[doutr2]], #16     \n"                                 \
-                                                                          \
-  "fmin v15.4s, v15.4s, %[vsix].4s \n" /*relu6*/                          \
-  "bif v15.16b, v25.16b, v18.16b \n"                                      \
-                                                                          \
+#define RIGHT_RESULT_S1_RELU6                                              \
+  "fmax v12.4s, v12.4s, v20.4s \n" /*relu*/                                \
+                                                                           \
+  "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "fmla v13.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+                                                                           \
+  "fmin v12.4s, v12.4s, %[vsix].4s \n" /*relu6*/                           \
+                                                                           \
+  "fmla v15.4s ,  v17.4s,  %[w0].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+  "fmla v14.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+  "fmla v13.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+                                                                           \
+  "ext  v16.16b, v8.16b, v9.16b, #4 \n"                  /* v16 = 1234*/   \
+  "ext  v17.16b, v8.16b, v9.16b, #8 \n" /* v16 = 2345 */ /* r3 */          \
+  "bif v12.16b, v22.16b, v18.16b \n"                                       \
+  "fmla v15.4s ,  v8.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
+  "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
+  "fmax v13.4s, v13.4s, v20.4s \n"      /*relu*/                           \
+                                                                           \
+  "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "fmla v14.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "st1 {v12.4s}, [%[doutr0]], #16     \n"                                  \
+                                                                           \
+  "fmin v13.4s, v13.4s, %[vsix].4s \n" /*relu6*/                           \
+                                                                           \
+  "fmla v15.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+  "fmla v14.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+                                                                           \
+  "ext  v16.16b, v10.16b, v11.16b, #4 \n" /* v16 = 1234*/                  \
+  "ext  v17.16b, v10.16b, v11.16b, #8 \n" /* v16 = 2345 */                 \
+  "bif v13.16b, v23.16b, v18.16b \n"                                       \
+                                                                           \
+  "fmla v15.4s ,  v10.4s,   %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/ \
+                                                                           \
+  "fmax v14.4s, v14.4s, v20.4s \n"        /*relu*/                         \
+  "st1 {v13.4s}, [%[doutr1]], #16     \n" /* r3 */                         \
+                                                                           \
+  "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+                                                                           \
+  "fmin v14.4s, v14.4s, %[vsix].4s \n" /*relu6*/                           \
+                                                                           \
+  "fmla v15.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+                                                                           \
+  "bif v14.16b, v24.16b, v18.16b \n"                                       \
+  "fmax v15.4s, v15.4s, v20.4s \n" /*relu*/                                \
+                                                                           \
+  "st1 {v14.4s}, [%[doutr2]], #16     \n"                                  \
+                                                                           \
+  "fmin v15.4s, v15.4s, %[vsix].4s \n" /*relu6*/                           \
+  "bif v15.16b, v25.16b, v18.16b \n"                                       \
+                                                                           \
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
 #define RIGHT_RESULT_S1_LEAKY_RELU                                        \
@@ -1586,7 +1586,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   /* r3 */                                                               \
   "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"                \
                                                                          \
-  "vld1.32  {d28-d29}, [%[six_ptr]]!    @ load din r0\n"                 \
+  "vld1.32  {d28-d29}, [%[six_ptr]]    @ load din r0\n"                  \
   "vmax.f32  q4, q4, %q[vzero]  @ relu \n"                               \
                                                                          \
   "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                 \
@@ -1617,7 +1617,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   /* r3 */                                                               \
   "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"                \
                                                                          \
-  "vld1.32  {d28-d29}, [%[scale_ptr]]!    @ load din r0\n"               \
+  "vld1.32  {d28-d29}, [%[scale_ptr]]    @ load din r0\n"                \
                                                                          \
   "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                 \
                                                                          \
@@ -1694,7 +1694,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   /* r3 */                                                              \
   "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"               \
                                                                         \
-  "vld1.32  {d28-d29}, [%[scale_ptr]]!    @ load din r0\n"              \
+  "vld1.32  {d28-d29}, [%[scale_ptr]]    @ load din r0\n"               \
                                                                         \
   "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                \
                                                                         \
