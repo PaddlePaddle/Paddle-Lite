@@ -15,28 +15,23 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace subgraph {
+namespace bm {
 
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+std::string UniqueName(const std::string& prefix);
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname);
 
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace bm
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

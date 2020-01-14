@@ -12,31 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/kernels/bm/bridges/graph.h"
+#include <bmcompiler_if.h>
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace subgraph {
+namespace bm {
 
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+void Graph::AddNode(const std::string& name) {
+  nodes_.insert(std::make_pair(name, name));
+}
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+void Graph::CreateCompilerHandle() {
+  compiler_handle_ = create_bmcompiler("BM1684");
+  CHECK(compiler_handle_ != nullptr);
+}
 
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace bm
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
