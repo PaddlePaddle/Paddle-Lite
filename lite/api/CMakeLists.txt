@@ -174,10 +174,12 @@ if(WITH_TESTING)
            ${ops} ${host_kernels} ${x86_kernels}
            ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
         add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
-        lite_cc_test(test_resnet50_lite_bm SRCS test_resnet50_lite_bm.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
-           ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+        if(LITE_WITH_BM)
+           lite_cc_test(test_resnet50_lite_bm SRCS test_resnet50_lite_bm.cc
+              DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+              ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
+              ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+        endif()
     endif()
 endif()
 
