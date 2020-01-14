@@ -27,7 +27,7 @@ void WriteToArrayCompute::Run() {
   auto precision_type = param.X->precision();
 
 #define SOLVE_TYPE(type__, T)                                       \
-  case type__:                                                      \
+  case type__: {                                                    \
     const auto* x_data = param.X->data<T>();                        \
     int id = param.I->data<int64_t>()[0];                           \
     if (id >= param.Out->size()) {                                  \
@@ -42,14 +42,15 @@ void WriteToArrayCompute::Run() {
     auto* o_data = (*param.Out)[id].mutable_data<T>(TARGET(kHost)); \
     int input_size = param.X->numel();                              \
     memcpy(o_data, x_data, sizeof(T) * input_size);                 \
-    break;
+  } break;
 
   switch (precision_type) {
-    SOLVE_TYPE(kFloat, float);
-    SOLVE_TYPE(kInt64, int64_t);
+    SOLVE_TYPE(PRECISION(kFloat), float);
+    SOLVE_TYPE(PRECISION(kInt64), int64_t);
     default:
-      LOG(FATAL) << "Unsupported precision type."
+      LOG(FATAL) << "Unsupported precision type.";
   }
+#undef SOLVE_TYPE
 }
 
 }  // namespace arm

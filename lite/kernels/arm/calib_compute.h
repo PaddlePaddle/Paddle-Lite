@@ -52,7 +52,7 @@ class CalibComputeFp32ToInt64
 
   void Run() override;
 
-  ~CalibComputeFp32ToInt8() override{};
+  ~CalibComputeFp32ToInt64() override{};
 
  private:
 };
@@ -64,7 +64,7 @@ class CalibComputeInt64ToFp32
 
   void Run() override;
 
-  ~CalibComputeInt8ToFp32() override{};
+  ~CalibComputeInt64ToFp32() override{};
 
  private:
 };

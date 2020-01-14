@@ -24,6 +24,11 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <class in_type, class out_type>
+out_type TransOp(in_type in) {
+  return static_cast<out_type>(in);
+}
+
 void CalibComputeFp32ToInt8::Run() {
   auto& param = this->Param<operators::CalibParam>();
   std::vector<float> scale = {param.scale};
@@ -50,9 +55,10 @@ void CalibComputeInt64ToFp32::Run() {
   auto* dout = param.output->mutable_data<float>();
 
   const int64_t* x_data_begin = param.input->data<int64_t>();
-  const int64_t* x_data_end = x_data_begin + param.X->numel();
-  float* out_data = param.Out->mutable_data<float>();
+  const int64_t* x_data_end = x_data_begin + param.input->numel();
+  float* out_data = param.output->mutable_data<float>();
   std::transform(x_data_begin, x_data_end, out_data, TransOp<int64_t, float>);
+
   return;
 }
 
@@ -62,8 +68,8 @@ void CalibComputeFp32ToInt64::Run() {
   auto* dout = param.output->mutable_data<int64_t>();
 
   const float* x_data_begin = param.input->data<float>();
-  const float* x_data_end = x_data_begin + param.X->numel();
-  int64_t* out_data = param.Out->mutable_data<int64_t>();
+  const float* x_data_end = x_data_begin + param.input->numel();
+  int64_t* out_data = param.output->mutable_data<int64_t>();
   std::transform(x_data_begin, x_data_end, out_data, TransOp<float, int64_t>);
   return;
 }
