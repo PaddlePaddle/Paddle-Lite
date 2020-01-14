@@ -683,23 +683,6 @@ void conv_depthwise_5x5_fp32(const void* din,
   bool flag_bias = param.bias != nullptr;
   ctx->ExtendWorkspace((w_in + w_out) * sizeof(float));
   if (stride == 2) {
-    // if (pad == 2) {
-    //   conv_depthwise_5x5s2p2_fp32(reinterpret_cast<const float*>(din),
-    //                               reinterpret_cast<float*>(dout),
-    //                               num,
-    //                               ch_out,
-    //                               h_out,
-    //                               w_out,
-    //                               ch_in,
-    //                               h_in,
-    //                               w_in,
-    //                               reinterpret_cast<const float*>(weights),
-    //                               bias,
-    //                               pad,
-    //                               flag_bias,
-    //                               flag_relu,
-    //                               ctx);
-    // } else {
     conv_depthwise_5x5s2_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),
                               num,
@@ -714,7 +697,6 @@ void conv_depthwise_5x5_fp32(const void* din,
                               param,
                               act_param,
                               ctx);
-    // }
   } else if (stride == 1) {
     conv_depthwise_5x5s1_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),

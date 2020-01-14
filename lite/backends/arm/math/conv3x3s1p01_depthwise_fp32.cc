@@ -2961,8 +2961,6 @@ void conv_depthwise_3x3s1p1_bias_s(float *dout,
         }
         doutr0 = doutr1;
         doutr1 += w_out;
-        // hs += 2;
-        // he += 2;
       }  // end of processing heights
     }    // end of processing channels
   }      // end of processing batchs
