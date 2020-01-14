@@ -67,6 +67,8 @@ void MulCompute::Run() {
     if (is_tranposed_y) {
       ldb = k_;
     }
+    operators::ActivationParam act_param;
+    act_param.has_active = false;
     lite::arm::math::sgemm_prepack(is_tranposed_y,
                                    m_,
                                    n_,
@@ -79,7 +81,7 @@ void MulCompute::Run() {
                                    n_,
                                    nullptr,
                                    false,
-                                   false,
+                                   act_param,
                                    &ctx);
   }
 }

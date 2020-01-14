@@ -44,6 +44,8 @@ void conv_winograd3x3(const float* din,
   int size_out_channel = wout * hout;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
+  act_param.has_active = false;
 
   //! transform input
   int tile_w = (wout + 5) / 6;
@@ -127,7 +129,7 @@ void conv_winograd3x3(const float* din,
                     size_tile,
                     nullptr,
                     false,
-                    false,
+                    act_param,
                     ctx);
     }
 
