@@ -14,29 +14,11 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include "lite/core/mir/pass.h"
-
-namespace paddle {
-namespace lite {
-namespace mir {
-
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
-}  // namespace lite
-}  // namespace paddle
+USE_SUBGRAPH_BRIDGE(relu, kBM);
+USE_SUBGRAPH_BRIDGE(conv2d, kBM);
+USE_SUBGRAPH_BRIDGE(elementwise_add, kBM);
+USE_SUBGRAPH_BRIDGE(pool2d, kBM);
+USE_SUBGRAPH_BRIDGE(softmax, kBM);
+USE_SUBGRAPH_BRIDGE(mul, kBM);
+USE_SUBGRAPH_BRIDGE(batch_norm, kBM);
+USE_SUBGRAPH_BRIDGE(scale, kBM);

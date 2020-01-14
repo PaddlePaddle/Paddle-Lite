@@ -15,28 +15,34 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace subgraph {
+namespace bm {
 
-class NPUSubgraphPass : public ProgramPass {
+// Graph to collect all of converted BM IR nodes
+class Graph {
  public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void AddNode(const std::string& name);
+  bool HasNode(const std::string& name) {
+    return nodes_.find(name) != nodes_.end();
+  }
+  void CreateCompilerHandle();
+  void* GetCompilerHandle() { return compiler_handle_; }
+
+ private:
+  std::unordered_map<std::string, std::string> nodes_;
+  void* compiler_handle_;
 };
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace bm
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

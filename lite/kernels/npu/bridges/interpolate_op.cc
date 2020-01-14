@@ -48,11 +48,15 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_w = op_info->GetAttr<int>("out_w");
   auto out_h = op_info->GetAttr<int>("out_h");
   auto align_corners = op_info->GetAttr<bool>("align_corners");
-  int align_mode = op_info->GetAttr<int>("align_mode");
+  int align_mode =
+      op_info->HasAttr("align_mode") ? op_info->GetAttr<int>("align_mode") : 1;
   auto interp_method = op_info->GetAttr<std::string>("interp_method");
-  CHECK(!(align_mode == 0 && !align_corners)) << "[NPU] align_mode = 0 && "
-                                                 "align_corners = false isn't "
-                                                 "supported in HiAI DDK";
+  if (align_mode == 0 && !align_corners) {
+    LOG(WARNING) << "[NPU] align_mode = 0 && "
+                    "align_corners = false isn't "
+                    "supported in HiAI DDK";
+    return FAILED;
+  }
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
@@ -93,10 +97,12 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (interp_method == "bilinear") {
       const float largest_multiple = 7.0f;
       float multiple = static_cast<float>(x_h * x_w) / (out_h * out_w);
-      CHECK_LT(multiple, largest_multiple)
-          << "[NPU] multiple=(ih*iw)/(oh*ow)=" << multiple
-          << " is too large, should not exceed " << largest_multiple
-          << " in HiAI DDK";
+      if (multiple >= largest_multiple) {
+        LOG(WARNING) << "[NPU] multiple=(ih*iw)/(oh*ow)=" << multiple
+                     << " is too large, should not exceed " << largest_multiple
+                     << " in HiAI DDK";
+        return FAILED;
+      }
     }
     out_size_node =
         graph->Add(out_name + "/out_size", std::vector<int>({out_h, out_w}));

@@ -79,7 +79,7 @@ const int DEFAULT_L3_CACHE_SIZE = 0;
 int get_cpu_num() {
 #ifdef LITE_WITH_LINUX
   // get cpu count from /sys/devices/system/cpu/cpunum/uevent
-  int max_cpu_num = 20;
+  int max_cpu_num = 128;
   int cpu_num = 0;
   for (int i = 0; i < max_cpu_num; ++i) {
     char path[256];
@@ -227,19 +227,24 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
 #ifdef LITE_WITH_LINUX
 
 std::string get_cpu_name() {
-  std::string cpu_name;
+  std::string cpu_name = "";
   FILE* fp = fopen("/proc/cpuinfo", "rb");
   if (!fp) {
     return "";
   }
   char line[1024];
+  bool first_model_name = true;
   while (!feof(fp)) {
     char* s = fgets(line, 1024, fp);
     if (!s) {
       break;
     }
     if (strstr(line, "Hardware") != NULL) {
-      cpu_name = std::string(line);
+      cpu_name += std::string(line);
+    }
+    if (strstr(line, "model name") != NULL && first_model_name) {
+      cpu_name += std::string(line);
+      first_model_name = false;
     }
   }
 #ifdef LITE_WITH_ANDROID
@@ -815,6 +820,21 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(2, 1, 4096 * 1024);
     SetFP16Info(1, 1);
     SetDotInfo(1, 1);
+    return true;
+  } else if (dev_name_.find("FT2000PLUS") != std::string::npos) {
+    core_num_ = 64;
+    core_ids_.resize(core_num_);
+    big_core_ids_.resize(core_num_);
+    cluster_ids_.resize(core_num_);
+    for (int i = 0; i < core_num_; ++i) {
+      core_ids_[i] = i;
+      big_core_ids_[i] = i;
+      cluster_ids_[i] = 0;
+    }
+    little_core_ids_ = {};
+    SetCacheInfo(0, 1, 64 * 1024);
+    SetCacheInfo(1, 1, 32 * 1024 * 1024);
+    SetCacheInfo(2, 1, 128 * 1024 * 1024);
     return true;
   }
   return false;

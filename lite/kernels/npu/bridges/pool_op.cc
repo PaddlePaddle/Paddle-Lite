@@ -61,8 +61,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     mode = 0;
   } else if (pooling_type == "avg") {
     mode = 1;
-    CHECK(op_info->GetAttr<bool>("exclusive"))
-        << "[NPU] exclusive must be true in HiAI DDK";
+    if (!op_info->GetAttr<bool>("exclusive")) {
+      LOG(WARNING) << "[NPU] Only exclusive=true is supported for the pooling "
+                      "type 'avg' by HiAI DDK";
+    }
   } else {
     LOG(WARNING) << "[NPU] Unsupported pooling type: " << pooling_type;
     return FAILED;
