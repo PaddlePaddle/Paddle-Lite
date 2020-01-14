@@ -33,6 +33,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  private:
   mutable operators::ConvParam conv_param_;
   std::unique_ptr<lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>> conv_impl_;
+  lite::Tensor offset_;
 };
 
 }  // namespace cuda
