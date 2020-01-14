@@ -180,6 +180,8 @@ void conv1x1s1_gemm(const float* i_data,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
 
+  auto act_param = param.activation_param;
+
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
@@ -223,7 +225,7 @@ void conv1x1s1_gemm(const float* i_data,
                       n,
                       bias_group,
                       flag_bias,
-                      flag_relu,
+                      act_param,
                       ctx);
       }
     }
@@ -361,6 +363,8 @@ void conv_im2col_gemm(const float* i_data,
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
+
+  auto act_param = param.activation_param;
   if (n > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
@@ -422,7 +426,7 @@ void conv_im2col_gemm(const float* i_data,
                       n,
                       bias_group,
                       flag_bias,
-                      flag_relu,
+                      act_param,
                       ctx);
       }
     }

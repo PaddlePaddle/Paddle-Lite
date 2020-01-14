@@ -42,6 +42,9 @@ void MatMulCompute::Run() {
   float alpha = param.alpha;
   auto& ctx = this->ctx_->template As<ARMContext>();
 
+  operators::ActivationParam act_param;
+  act_param.has_active = false;
+
   if (x_dims.size() > 2 && y_dims.size() >= 2) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
     // x: [B, M, K], y: [K, N], out: [B, M, N]
@@ -97,7 +100,6 @@ void MatMulCompute::Run() {
     if (x_transpose) {
       x_data_trans = static_cast<float*>(malloc(sizeof(float) * x_inner));
     }
-
     if (y_dims.size() > 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::sgemm(x_transpose,
@@ -115,7 +117,7 @@ void MatMulCompute::Run() {
                                ldc,
                                nullptr,
                                false,
-                               false,
+                               act_param,
                                &ctx);
       }
     } else {
@@ -135,7 +137,7 @@ void MatMulCompute::Run() {
                                ldc,
                                nullptr,
                                false,
-                               false,
+                               act_param,
                                &ctx);
       }
     }
@@ -200,7 +202,7 @@ void MatMulCompute::Run() {
                            ldc,
                            nullptr,
                            false,
-                           false,
+                           act_param,
                            &ctx);
   } else if (x_dims.size() > 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
@@ -254,7 +256,7 @@ void MatMulCompute::Run() {
                                ldc,
                                nullptr,
                                false,
-                               false,
+                               act_param,
                                &ctx);
       }
     }

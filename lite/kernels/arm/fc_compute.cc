@@ -94,6 +94,8 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     b_data = bias_.data<float>();
   }
   if (flag_gemm_) {
+    operators::ActivationParam act_param;
+    act_param.has_active = false;
     lite::arm::math::sgemm(false,
                            false,
                            m_,
@@ -109,7 +111,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            n_,
                            nullptr,
                            false,
-                           false,
+                           act_param,
                            &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
