@@ -40,6 +40,11 @@ void* TargetMalloc(TargetType target, size_t size) {
       data = TargetWrapper<TARGET(kFPGA)>::Malloc(size);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_BM
+    case TargetType::kBM:
+      data = TargetWrapper<TARGET(kBM)>::Malloc(size);
+      break;
+#endif
     default:
       LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
   }
@@ -69,6 +74,11 @@ void TargetFree(TargetType target, void* data) {
       TargetWrapper<TARGET(kFPGA)>::Free(data);
       break;
 #endif  // LITE_WITH_CUDA
+#ifdef LITE_WITH_BM
+    case TargetType::kBM:
+      TargetWrapper<TARGET(kBM)>::Free(data);
+      break;
+#endif
     default:
       LOG(FATAL) << "Unknown type";
   }
@@ -93,6 +103,11 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
     case TargetType::kFPGA:
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(
           dst, src, size, IoDirection::DtoD);
+      break;
+#endif
+#ifdef LITE_WITH_BM
+    case TargetType::kBM:
+      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, IoDirection::DtoD);
       break;
 #endif
 #ifdef LITE_WITH_OPENCL
