@@ -52,7 +52,6 @@ int SubgraphEngine::BuildDeviceProgram() {
       return subgraph::FAILED;
     }
   }
-
   std::string net_name = "paddle_bitmain";
   __bmcompile_opt(
       graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 2);
