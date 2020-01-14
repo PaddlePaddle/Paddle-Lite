@@ -164,7 +164,7 @@ void fill_bias_relu<int>(int* tensor,
   "vld1.32 {d10-d11}, [%[din_ptr]]! @ vld1q_f32(din_ptr) \n" \
   "vld1.32 {d12-d13}, [%[din_ptr]]! @ vld1q_f32(din_ptr) \n" \
   "vadd.f32 q3, q3, %q[vbias] @ add \n"                      \
-  "vadd.f32 q4, q5, %q[vbias] @ add \n"                      \
+  "vadd.f32 q4, q4, %q[vbias] @ add \n"                      \
   "vadd.f32 q5, q5, %q[vbias] @ add \n"                      \
   "vadd.f32 q6, q6, %q[vbias] @ add \n"
 #define FILL_RELU                               \
@@ -189,7 +189,7 @@ void fill_bias_relu<int>(int* tensor,
   "vbif q3, q8, q7               @ choose \n"    \
   "vbif q4, q10, q9              @ choose \n"    \
   "vbif q5, q12, q11             @ choose \n"    \
-  "vbif q6, q13, q13             @ choose \n"
+  "vbif q6, q14, q13             @ choose \n"
 #define FILL_STORE                                          \
   "subs %[cnt], #1                                \n"       \
   "vst1.32 {d6-d7}, [%[dout_ptr]]!       @ vst1q_f32()  \n" \
@@ -209,8 +209,6 @@ void fill_bias_act<float>(float* tensor,
   int cnt = channel_size >> 4;
   int remain = channel_size % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int j = 0; j < channel; j++) {
-  }
   if (act_param != nullptr && act_param->has_active) {
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
