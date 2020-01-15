@@ -143,6 +143,7 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   }
   if (op_desc.HasAttr("fuse_relu")) {
     param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
+    param_.activation_param.active_type = lite_api::ActivationType::kRelu;
   }
   if (op_desc.HasAttr("output_size")) {
     param_.output_size = op_desc.GetAttr<std::vector<int>>("output_size");
