@@ -55,6 +55,20 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     }
   } else if (kw == 5) {
     // VLOG(5) << "invoke 5x5 dw conv fp32";
+    auto strides = param.strides;
+    if (strides[0] == 1 && strides[1] == 1) {
+      // trans weights
+      constexpr int cblock = 4;
+      auto oc = w_dims[0];
+      auto kh = w_dims[2];
+      auto cround = ROUNDUP(oc, cblock);
+      weights_.Resize({cround, 1, kh, kw});
+      auto w_data = weights_.mutable_data<float>();
+      auto w_data_in = param.filter->data<float>();
+      lite::arm::math::conv_trans_weights_numc(
+          w_data_in, w_data, oc, 1, cblock, kh * kw);
+      flag_trans_weights_ = true;
+    }
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
   } else {
     LOG(FATAL) << "this type dw conv not impl";
