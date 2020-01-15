@@ -906,8 +906,7 @@ void pooling1x1s2p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win,
-                        ARMContext* ctx) {
+                        int win) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -916,9 +915,11 @@ void pooling1x1s2p0_max(const float* din,
   int w_unroll_size = wout / 4;
   int w_unroll_remian = wout - w_unroll_size * 4;
   int win_ext = w_unroll_size * 8;
-  float* zero_ptr = ctx->workspace_data<float>();
+  auto zero_ptr =
+      static_cast<float*>(TargetMalloc(TARGET(kARM), win * sizeof(float)));
   memset(zero_ptr, 0, win * sizeof(float));
-  float* write_ptr = zero_ptr + win;
+  auto write_ptr =
+      static_cast<float*>(TargetMalloc(TARGET(kARM), wout * sizeof(float)));
 
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;

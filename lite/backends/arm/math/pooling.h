@@ -73,8 +73,7 @@ void pooling1x1s2p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win,
-                        ARMContext* ctx);
+                        int win);
 
 void pooling2x2s2_max(const float* din,
                       float* dout,
