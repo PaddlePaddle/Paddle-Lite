@@ -133,7 +133,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                              k_,
                              param.bias != nullptr,
                              b_data,
-                             flag_relu,  // false,
+                             flag_relu,
                              &ctx);
     }
   }
@@ -187,7 +187,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  scale_.data(),
                                  param.bias != nullptr,
                                  b_data,
-                                 flag_relu,  // false,
+                                 flag_relu,
                                  &ctx);
     }
   }

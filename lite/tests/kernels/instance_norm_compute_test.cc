@@ -122,8 +122,8 @@ class InstanceNormComputeTest : public arena::TestCase {
     fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_dims.production());
 
     SetCommonTensor(x_, dims_, x.data());
-    SetCommonTensor(scale_, scale_bias_dims, scale.data());
-    SetCommonTensor(bias_, scale_bias_dims, bias.data());
+    SetCommonTensor(scale_, scale_bias_dims, scale.data(), {}, true);
+    SetCommonTensor(bias_, scale_bias_dims, bias.data(), {}, true);
   }
 };
 
