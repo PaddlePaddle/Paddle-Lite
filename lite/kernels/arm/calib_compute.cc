@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/calib_compute.h"
-#include <algorithm>
 #include <vector>
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/op_registry.h"
@@ -23,11 +22,6 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-template <class in_type, class out_type>
-out_type TransOp(in_type in) {
-  return static_cast<out_type>(in);
-}
 
 void CalibComputeFp32ToInt8::Run() {
   auto& param = this->Param<operators::CalibParam>();
