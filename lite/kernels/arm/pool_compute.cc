@@ -53,7 +53,7 @@ void PoolCompute::Run() {
   bool global_pooling = (paddings[0] == 0) && (ksize[0] == in_dims[2]) &&
                         (ksize[1] == in_dims[3]) && pads_equal;
   global_pooling = param.global_pooling || global_pooling;
-  auto& ctx = this->ctx_->template As<ARMContext>();
+  
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[2 * i] = 0;
@@ -85,6 +85,7 @@ void PoolCompute::Run() {
     }
   } else {
     if (ksize[0] == 1 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
+      auto& ctx = this->ctx_->template As<ARMContext>();
       if (pooling_type == "max") {
         lite::arm::math::pooling1x1s2p0_max(din,
                                             dout,
