@@ -45,30 +45,6 @@ class CalibComputeInt8ToFp32
  private:
 };
 
-class CalibComputeFp32ToInt64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeFp32ToInt64() override{};
-
- private:
-};
-
-class CalibComputeInt64ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeInt64ToFp32() override{};
-
- private:
-};
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
