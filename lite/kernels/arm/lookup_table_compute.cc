@@ -83,6 +83,6 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
                      paddle::lite::kernels::arm::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM)), PRECISION(kInt64})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM)), PRECISION(kInt64)})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
