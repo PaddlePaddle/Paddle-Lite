@@ -115,7 +115,18 @@ struct Instruction {
       profile::OpCharacter ch;
       ch.target = kernel()->target();
       ch.op_type = op_->Type();
-      ch.kernel_name = kernel()->name();
+      ch.kernel_name = const_cast<paddle::lite::KernelBase*>(kernel())
+                           ->GetProfilerKernelName();  // kernel()->name();
+      ch.remark = const_cast<paddle::lite::KernelBase*>(kernel())
+                      ->GetProfilerKernelInfo();
+      ch.ops =
+          const_cast<paddle::lite::KernelBase*>(kernel())->GetProfilerOPS();
+      ch.input_shape = const_cast<paddle::lite::KernelBase*>(kernel())
+                           ->GetProfilerInputShape();
+      ch.filter_shape = const_cast<paddle::lite::KernelBase*>(kernel())
+                            ->GetProfilerFilterShape();
+      ch.output_shape = const_cast<paddle::lite::KernelBase*>(kernel())
+                            ->GetProfilerOutputShape();
       profile_id_ = profiler->NewTimer(ch);
       kernel_->SetProfiler(profiler_, profile_id_);
     }
