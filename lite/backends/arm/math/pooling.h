@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include "lite/core/context.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {

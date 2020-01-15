@@ -1007,6 +1007,8 @@ void pooling1x1s2p0_max(const float* din,
       }
     }
   }
+  TargetFree(TARGET(kARM), zero_ptr);
+  TargetFree(TARGET(kARM), write_ptr);
 }
 
 void pooling2x2s2_max(const float* din,
