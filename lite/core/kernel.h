@@ -64,6 +64,47 @@ class KernelBase {
   }
 #endif
 
+  // kernel name
+  std::string* GetProfilerKernelName() { return &profiler_kernel_name_; }
+
+  void SetProfilerKernelName(std::string kernel_name) {
+    profiler_kernel_name_ = kernel_name + "/" + TargetToStr(target()) + "/" +
+                            PrecisionToStr(precision()) + "/" +
+                            DataLayoutToStr(layout());
+  }
+
+  // kernel info
+  std::string* GetProfilerKernelInfo() { return &profiler_kernel_info_; }
+
+  void SetProfilerKernelInfo(std::string kernel_info) {
+    profiler_kernel_info_ = kernel_info;
+  }
+
+  // ops
+  float* GetProfilerOPS() { return &profiler_ops_; }
+
+  void SetProfilerOPS(float ops) {
+    profiler_ops_ = 1e-9f * ops;  // GOPs
+  }
+
+  // input shape
+  std::string* GetProfilerInputShape() { return &profiler_input_shape_; }
+  void SetProfilerInputShape(std::string input_shape) {
+    profiler_input_shape_ = input_shape;
+  }
+
+  // output shape
+  std::string* GetProfilerOutputShape() { return &profiler_output_shape_; }
+  void SetProfilerOutputShape(std::string output_shape) {
+    profiler_output_shape_ = output_shape;
+  }
+
+  // filter shape
+  std::string* GetProfilerFilterShape() { return &profiler_filter_shape_; }
+  void SetProfilerFilterShape(std::string filter_shape) {
+    profiler_filter_shape_ = filter_shape;
+  }
+
   void Launch() {
     /// First run, init kernel, do weights transform once
     if (is_first_epoch_) {
@@ -178,11 +219,17 @@ class KernelBase {
   // is the unique ID for the kernel.
   std::string alias_{};
   bool is_first_epoch_{true};
-
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
 #endif
+  // detailed kernel info for profiler usage
+  std::string profiler_kernel_name_{};
+  std::string profiler_kernel_info_{};
+  float profiler_ops_{0.f};
+  std::string profiler_input_shape_{};
+  std::string profiler_output_shape_{};
+  std::string profiler_filter_shape_{};
 };
 
 // Light-weight kernel implementation.

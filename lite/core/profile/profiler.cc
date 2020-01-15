@@ -24,7 +24,11 @@ namespace profile {
 namespace {
 auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
   return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
-         (c1.kernel_name < c2.kernel_name) || (c1.remark < c2.remark);
+         (*(c1.kernel_name) < *(c2.kernel_name)) ||
+         (*(c1.remark) < *(c2.remark)) ||
+         (*(c1.input_shape) < *(c2.input_shape)) ||
+         (*(c1.filter_shape) < *(c2.filter_shape)) ||
+         (*(c1.output_shape) < *(c2.output_shape)) || (*(c1.ops) < *(c2.ops));
 };
 }
 
@@ -76,6 +80,10 @@ std::string Profiler::Summary(bool concise, size_t w) {
   ss << setw(25) << left << "Operator Type"
      << " " << setw(40) << left << "Kernel Name"
      << " " << setw(12) << left << "Remark"
+     << " " << setw(12) << left << "Input"
+     << " " << setw(12) << left << "Filter"
+     << " " << setw(12) << left << "Output"
+     << " " << setw(12) << left << "GOPs"
      << " " << setw(12) << left << "Avg (ms)"
      << " " << setw(12) << left << "Min (ms)"
      << " " << setw(12) << left << "Max (ms)"
@@ -98,12 +106,16 @@ std::string Profiler::Summary(bool concise, size_t w) {
     }
     for (const auto& item : summary) {
       // clang-format off
-      ss << setw(25) << left << fixed << item.first.op_type             \
-         << " " << setw(40) << left << fixed << item.first.kernel_name  \
-         << " " << setw(12) << left << fixed << item.first.remark       \
-         << " " << setw(12) << left << fixed << item.second.avg         \
-         << " " << setw(12) << left << fixed << item.second.min         \
-         << " " << setw(12) << left << fixed << item.second.max         \
+      ss << setw(25) << left << fixed << item.first.op_type                \
+         << " " << setw(40) << left << fixed << *(item.first.kernel_name)  \
+         << " " << setw(12) << left << fixed << *(item.first.remark)       \
+         << " " << setw(12) << left << fixed << *(item.first.input_shape)  \
+         << " " << setw(12) << left << fixed << *(item.first.filter_shape) \
+         << " " << setw(12) << left << fixed << *(item.first.output_shape) \
+         << " " << setw(12) << left << fixed << *(item.first.ops)          \
+         << " " << setw(12) << left << fixed << item.second.avg            \
+         << " " << setw(12) << left << fixed << item.second.min            \
+         << " " << setw(12) << left << fixed << item.second.max            \
          << " " << std::endl;
       // clang-format on
     }
@@ -111,8 +123,12 @@ std::string Profiler::Summary(bool concise, size_t w) {
     for (auto& unit : units_) {
       // clang-format off
       ss << setw(25) << left << fixed << unit.character.op_type                \
-         << " " << setw(40) << left << fixed << unit.character.kernel_name     \
-         << " " << setw(12) << left << fixed << unit.character.remark          \
+         << " " << setw(40) << left << fixed << *(unit.character.kernel_name)  \
+         << " " << setw(12) << left << fixed << *(unit.character.remark)       \
+         << " " << setw(12) << left << fixed << *(unit.character.input_shape)  \
+         << " " << setw(12) << left << fixed << *(unit.character.filter_shape) \
+         << " " << setw(12) << left << fixed << *(unit.character.output_shape) \
+         << " " << setw(12) << left << fixed << *(unit.character.ops)          \
          << " " << setw(12) << left << fixed << unit.timer->LapTimes().Avg(w)  \
          << " " << setw(12) << left << fixed << unit.timer->LapTimes().Min(w)  \
          << " " << setw(12) << left << fixed << unit.timer->LapTimes().Max(w)  \

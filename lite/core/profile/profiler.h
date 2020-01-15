@@ -31,8 +31,12 @@ struct TimeInfo {
 struct OpCharacter {
   TargetType target;
   std::string op_type{std::string("N/A")};
-  std::string kernel_name{std::string("N/A")};
-  std::string remark{std::string("N/A")};
+  std::string* kernel_name{nullptr};
+  float* ops{nullptr};
+  std::string* input_shape{nullptr};
+  std::string* filter_shape{nullptr};
+  std::string* output_shape{nullptr};
+  std::string* remark{nullptr};
 };
 
 struct StatisUnit {

@@ -30,6 +30,21 @@ namespace arm {
 template <>
 void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
+  auto& param = this->template Param<operators::FcParam>();
+  SetProfilerKernelName("fc");
+  SetProfilerKernelInfo("m" + std::to_string(m_) + "n" + std::to_string(n_) +
+                        "k" + std::to_string(k_));
+  SetProfilerOPS(2.f * m_ * n_ * k_);
+  SetProfilerInputShape(std::to_string(param.input->dims()[0]) + "x" +
+                        std::to_string(param.input->dims()[1]) + "x" +
+                        std::to_string(param.input->dims()[2]) + "x" +
+                        std::to_string(param.input->dims()[3]));
+  SetProfilerFilterShape(std::to_string(param.w->dims()[0]) + "x" +
+                         std::to_string(param.w->dims()[1]));
+  SetProfilerOutputShape(std::to_string(param.output->dims()[0]) + "x" +
+                         std::to_string(param.output->dims()[1]) + "x" +
+                         std::to_string(param.output->dims()[2]) + "x" +
+                         std::to_string(param.output->dims()[3]));
 }
 
 /// for int8 kernel with fp32 output
@@ -48,6 +63,20 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
       scale_[i] = param.weight_scale[i] * input_scale;
     }
   }
+  SetProfilerKernelName("fc");
+  SetProfilerKernelInfo("m" + std::to_string(m_) + "n" + std::to_string(n_) +
+                        "k" + std::to_string(k_));
+  SetProfilerOPS(2.f * m_ * n_ * k_);
+  SetProfilerInputShape(std::to_string(param.input->dims()[0]) + "x" +
+                        std::to_string(param.input->dims()[1]) + "x" +
+                        std::to_string(param.input->dims()[2]) + "x" +
+                        std::to_string(param.input->dims()[3]));
+  SetProfilerFilterShape(std::to_string(param.w->dims()[0]) + "x" +
+                         std::to_string(param.w->dims()[1]));
+  SetProfilerOutputShape(std::to_string(param.output->dims()[0]) + "x" +
+                         std::to_string(param.output->dims()[1]) + "x" +
+                         std::to_string(param.output->dims()[2]) + "x" +
+                         std::to_string(param.output->dims()[3]));
 }
 
 /// for int8 kernel with int8 output
@@ -79,6 +108,20 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     }
     flag_trans_bias_ = true;
   }
+  SetProfilerKernelName("fc");
+  SetProfilerKernelInfo("m" + std::to_string(m_) + "n" + std::to_string(n_) +
+                        "k" + std::to_string(k_));
+  SetProfilerOPS(2.f * m_ * n_ * k_);
+  SetProfilerInputShape(std::to_string(param.input->dims()[0]) + "x" +
+                        std::to_string(param.input->dims()[1]) + "x" +
+                        std::to_string(param.input->dims()[2]) + "x" +
+                        std::to_string(param.input->dims()[3]));
+  SetProfilerFilterShape(std::to_string(param.w->dims()[0]) + "x" +
+                         std::to_string(param.w->dims()[1]));
+  SetProfilerOutputShape(std::to_string(param.output->dims()[0]) + "x" +
+                         std::to_string(param.output->dims()[1]) + "x" +
+                         std::to_string(param.output->dims()[2]) + "x" +
+                         std::to_string(param.output->dims()[3]));
 }
 
 template <>
