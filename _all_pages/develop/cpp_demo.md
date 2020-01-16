@@ -248,8 +248,6 @@ std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 
 {% highlight cpp %}
 #include "paddle_api.h"         // NOLINT
-#include "paddle_use_kernels.h" // NOLINT
-#include "paddle_use_ops.h"     // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 #include <gflags/gflags.h>
 #include <stdio.h>
@@ -332,14 +330,18 @@ int main(int argc, char **argv) {
 {% endhighlight %}
 
 3. 运行方法：
-   参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
+ 参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑。
+```
+简单编译出`OCR_DEMO`的方法：用以上示例代码替换编译结果中`build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mobile_full/mobilenetv1_full_api.cc`文件的内容，终端进入该路径（`demo/cxx/mobile_full/`），终端中执行`make && mv mobilenetv1_full_api OCR_DEMO`即编译出了OCR模型的可执行文件`OCR_DEMO`
+```
    在终端中输入以下命令执行OCR model测试：
 
 {% highlight shell %}
-#OCR_DEMO为编译出的可执行文件名称，ocr_attention为ocr_attention模型的文件夹名称
+#OCR_DEMO为编译出的可执行文件名称；ocr_attention为ocr_attention模型的文件夹名称；libpaddle_full_api_shared.so是编译出的动态库文件，位于`build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/cxx/lib`
 adb push OCR_DEMO /data/local/tmp
 adb push ocr_attention /data/local/tmp
-adb shell 'cd /data/local/tmp && ./OCR_DEMO --model_dir=./OCR_DEMO'
+adb push libpaddle_full_api_shared.so /data/local/tmp/
+adb shell 'export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && cd /data/local/tmp && ./OCR_DEMO --model_dir=./OCR_DEMO'
 {% endhighlight %}
 
 4. 运行结果
