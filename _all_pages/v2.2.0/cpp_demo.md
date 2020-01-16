@@ -79,10 +79,10 @@ tar zxvf mobilenet_v1.tar.gz
 
 make
 
-adb -s emulator-5554 push mobilenet_v1 /data/local/tmp/
-adb -s emulator-5554 push mobilenetv1_full_api /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_full_api
-adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
+adb push mobilenet_v1 /data/local/tmp/
+adb push mobilenetv1_full_api /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobilenetv1_full_api
+adb shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
 {% endhighlight %}
 
 注：我们也提供了轻量级 API 的 demo，可以执行以下代码运行轻量级 API 示例。
@@ -90,9 +90,9 @@ adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/da
 {% highlight bash %}
 cd ../mobile_light
 make
-adb -s emulator-5554 push mobilenetv1_light_api /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
-adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
+adb push mobilenetv1_light_api /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobilenetv1_light_api
+adb shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
 {% endhighlight %}
 
 ## Demo 程序运行结果
@@ -187,8 +187,6 @@ std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 
 {% highlight cpp %}
 #include "paddle_api.h"         // NOLINT
-#include "paddle_use_kernels.h" // NOLINT
-#include "paddle_use_ops.h"     // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 #include <gflags/gflags.h>
 #include <stdio.h>
@@ -271,7 +269,12 @@ int main(int argc, char **argv) {
 {% endhighlight %}
 
 3. 运行方法：
-   参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
+   参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑。
+
+```
+简单编译出`OCR_DEMO`的方法：用以上示例代码替换编译结果中`build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mobile_full/mobilenetv1_full_api.cc`文件的内容，终端进入该路径（`demo/cxx/mobile_full/`），终端中执行`make && mv mobilenetv1_full_api OCR_DEMO`即编译出了OCR模型的可执行文件`OCR_DEMO`
+```
+
    在终端中输入以下命令执行OCR model测试：
 
 {% highlight shell %}
