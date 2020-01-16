@@ -93,6 +93,10 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
+  bool flag_relu = false;
+  if (param.activation_type == "relu") {
+    flag_relu = true;
+  }
   if (flag_gemm_) {
     operators::ActivationParam act_param;
     act_param.has_active = false;
@@ -115,7 +119,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_);
+      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_relu);
     }
   } else {
     for (int i = 0; i < m_; ++i) {
@@ -129,7 +133,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                              k_,
                              param.bias != nullptr,
                              b_data,
-                             false,
+                             flag_relu,
                              &ctx);
     }
   }
@@ -148,6 +152,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
+  bool flag_relu = false;
+  if (param.activation_type == "relu") {
+    flag_relu = true;
+  }
   if (flag_gemm_) {
     lite::arm::math::gemm_s8(false,
                              false,
@@ -164,7 +172,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_);
+      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_relu);
     }
   } else {
     for (int i = 0; i < m_; ++i) {
@@ -179,7 +187,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  scale_.data(),
                                  param.bias != nullptr,
                                  b_data,
-                                 false,
+                                 flag_relu,
                                  &ctx);
     }
   }
@@ -198,6 +206,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
+  bool flag_relu = false;
+  if (param.activation_type == "relu") {
+    flag_relu = true;
+  }
   if (flag_gemm_) {
     CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
                           "must not have bias";
@@ -211,7 +223,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              o_data,
                              nullptr,
                              false,
-                             false,
+                             flag_relu,
                              scale_.data(),
                              &ctx);
   } else {
@@ -227,7 +239,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                  scale_.data(),
                                  param.bias != nullptr,
                                  b_data,
-                                 false,
+                                 flag_relu,
                                  &ctx);
     }
   }
