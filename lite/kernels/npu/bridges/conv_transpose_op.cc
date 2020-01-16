@@ -57,6 +57,7 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(strides.size(), 2L);
   auto groups = op_info->GetAttr<int>("groups");
   if (groups > 1) {
+    LOG(WARNING) << "[NPU] only support groups == 1";
     return FAILED;
   }
 
@@ -89,6 +90,8 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
   if (paddings[0] != paddings[1] || paddings[2] != paddings[3]) {
+    LOG(WARNING) << "[NPU] only support \"pad_top == pad_bottom && pad_left == "
+                    "pad_right\" .";
     return FAILED;
   }
 
@@ -113,6 +116,8 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (!output_size.empty()) {
     CHECK_EQ(output_size.size(), 2L);
     if (output_size[0] != input_sizes[2] || output_size[1] != input_sizes[3]) {
+      LOG(WARNING) << "[NPU] not support output_size: " << output_size[0]
+                   << ", " << output_size[1];
       return FAILED;
     }
   }
