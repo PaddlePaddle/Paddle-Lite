@@ -98,7 +98,7 @@ apt-get install -y --no-install-recommends \
   gcc g++ git make wget python unzip adb curl
 
 # 2. Prepare Java env.
-apt-get install -y default-jdk
+apt-get install -y openjdk-8-jdk
 
 # 3. Install cmake 3.10 or above
 wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
