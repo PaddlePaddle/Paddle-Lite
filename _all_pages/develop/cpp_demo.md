@@ -81,10 +81,10 @@ tar zxvf mobilenet_v1.tar.gz
 
 make
 
-adb -s emulator-5554 push mobilenet_v1 /data/local/tmp/
-adb -s emulator-5554 push mobilenetv1_full_api /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_full_api
-adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
+adb push mobilenet_v1 /data/local/tmp/
+adb push mobilenetv1_full_api /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobilenetv1_full_api
+adb shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
 {% endhighlight %}
 
 注：我们也提供了轻量级 API 的 demo、图像分类demo和目标检测demo，支持图像输入；
@@ -94,9 +94,9 @@ adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/da
 {% highlight bash %}
 cd ../mobile_light
 make
-adb -s emulator-5554 push mobilenetv1_light_api /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
-adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
+adb push mobilenetv1_light_api /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobilenetv1_light_api
+adb shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
 {% endhighlight %}
 
 
@@ -107,12 +107,12 @@ cd ../mobile_classify
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 make
-adb -s emulator-5554 push mobile_classify /data/local/tmp/
-adb -s emulator-5554 push test.jpg /data/local/tmp/
-adb -s emulator-5554 push labels.txt /data/local/tmp/
-adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
-adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1.opt /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
+adb push mobile_classify /data/local/tmp/
+adb push test.jpg /data/local/tmp/
+adb push labels.txt /data/local/tmp/
+adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobile_classify
+adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1.opt /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
 {% endhighlight %}
 
 ### 目标检测 Demo
@@ -122,12 +122,12 @@ cd ../mobile_detection
 wget https://paddle-inference-dist.bj.bcebos.com/mobilenetv1-ssd.tar.gz
 tar zxvf mobilenetv1-ssd.tar.gz
 make
-adb -s emulator-5554 push mobile_detection /data/local/tmp/
-adb -s emulator-5554 push test.jpg /data/local/tmp/
-adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_detection
-adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_detection /data/local/tmp/mobilenetv1-ssd /data/local/tmp/test.jpg"
-adb -s emulator-5554 pull /data/local/tmp/test_detection_result.jpg ./
+adb push mobile_detection /data/local/tmp/
+adb push test.jpg /data/local/tmp/
+adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobile_detection
+adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_detection /data/local/tmp/mobilenetv1-ssd /data/local/tmp/test.jpg"
+adb pull /data/local/tmp/test_detection_result.jpg ./
 {% endhighlight %}
 
 ## Demo 程序运行结果
@@ -337,9 +337,9 @@ int main(int argc, char **argv) {
 
 {% highlight shell %}
 #OCR_DEMO为编译出的可执行文件名称，ocr_attention为ocr_attention模型的文件夹名称
-adb push OCR_DEMO data/local/tmp
-adb push ocr_attention data/local/tmp
-adb shell 'cd data/local/tmp && ./OCR_DEMO --model_dir=./OCR_DEMO'
+adb push OCR_DEMO /data/local/tmp
+adb push ocr_attention /data/local/tmp
+adb shell 'cd /data/local/tmp && ./OCR_DEMO --model_dir=./OCR_DEMO'
 {% endhighlight %}
 
 4. 运行结果
