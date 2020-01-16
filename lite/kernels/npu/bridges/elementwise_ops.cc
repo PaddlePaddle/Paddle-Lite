@@ -21,28 +21,29 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-std::vector<int64_t> CvtYShape(const DDim& x_dims,
-                               const DDim& y_dims,
-                               int axis) {
-  CHECK_EQ(x_dims.size(), 4UL) << "[NPU] Only support 4-dimension x";
-  CHECK_GE(x_dims.size(), y_dims.size());
+void CvtYShape(std::vector<int64_t>* x_shape,
+               std::vector<int64_t>* y_shape,
+               int axis) {
+  CHECK_GE(x_shape->size(), y_shape->size());
 
   if (axis < 0) {
-    axis += x_dims.size();
+    axis = x_shape->size() - y_shape->size();
   }
 
-  std::vector<int64_t> y_new_shape(y_dims.Vectorize());
-  if (y_new_shape.size() == 4UL) {
-    return y_new_shape;
+  if (x_shape->size() < 4) {
+    x_shape->insert(x_shape->begin(), 1);
+    axis++;
   }
-  for (int i = 0; i < axis; i++) {
-    y_new_shape.insert(y_new_shape.begin(), 1);
+  while (x_shape->size() < 4) {
+    x_shape->push_back(1);
   }
-  while (y_new_shape.size() < 4) {
-    y_new_shape.push_back(1);
+
+  y_shape->insert(y_shape->begin(), axis, 1);
+  while (y_shape->size() < 4) {
+    y_shape->push_back(1);
   }
-  CHECK_EQ(y_new_shape.size(), 4UL);
-  return y_new_shape;
+  CHECK_EQ(x_shape->size(), 4UL);
+  CHECK_EQ(y_shape->size(), 4UL);
 }
 
 int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
@@ -61,24 +62,31 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+
   auto y_name = op_info->Input("Y").front();
   auto y_type = kernel->GetInputDeclType("Y");
   CHECK(y_type->precision() == PRECISION(kFloat));
   CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
+
   auto out_name = op_info->Output("Out").front();
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+
   auto axis = op_info->GetAttr<int>("axis");
+
+  auto x_new_shape = x_dims.Vectorize();
+  auto y_new_shape = y_dims.Vectorize();
+  CvtYShape(&x_new_shape, &y_new_shape, axis);
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    x_node = graph->Add(x_name, *x, x_new_shape);
   }
 
   // Y node
@@ -86,7 +94,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(y_name)) {
     y_node = graph->Get(y_name);
   } else {
-    auto y_new_shape = CvtYShape(x_dims, y_dims, axis);
     y_node = graph->Add(y_name, *y, y_new_shape);
   }
 
@@ -98,17 +105,20 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto elt_op = elt_node->data<ge::op::Add>();
     elt_op->set_input_x1(*x_node->data());
     elt_op->set_input_x2(*y_node->data());
-  } else if (op_type == "elementwise_sub") {
+  } else if (op_type == "elementwise_sub" ||
+             op_type == "fusion_elementwise_sub_activation") {
     elt_node = graph->Add<ge::op::Sub>(out_name);
     auto elt_op = elt_node->data<ge::op::Sub>();
     elt_op->set_input_x1(*x_node->data());
     elt_op->set_input_x2(*y_node->data());
-  } else if (op_type == "elementwise_mul") {
+  } else if (op_type == "elementwise_mul" ||
+             op_type == "fusion_elementwise_mul_activation") {
     elt_node = graph->Add<ge::op::Mul>(out_name);
     auto elt_op = elt_node->data<ge::op::Mul>();
     elt_op->set_input_x(*x_node->data());
     elt_op->set_input_y(*y_node->data());
-  } else if (op_type == "elementwise_div") {
+  } else if (op_type == "elementwise_div" ||
+             op_type == "fusion_elementwise_div_activation") {
     elt_node = graph->Add<ge::op::RealDiv>(out_name);
     auto elt_op = elt_node->data<ge::op::RealDiv>();
     elt_op->set_input_x1(*x_node->data());
@@ -119,7 +129,10 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Act node
-  if (op_type == "fusion_elementwise_add_activation") {
+  if (op_type == "fusion_elementwise_add_activation" ||
+      op_type == "fusion_elementwise_sub_activation" ||
+      op_type == "fusion_elementwise_mul_activation" ||
+      op_type == "fusion_elementwise_div_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
     auto act_node = graph->Add<ge::op::Activation>(out_name);
     auto act_op = act_node->data<ge::op::Activation>();
@@ -139,9 +152,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
                          kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
                          kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
@@ -149,5 +159,17 @@ REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
                          kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_div,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation,
                          kNPU,
                          paddle::lite::subgraph::npu::ElementwiseConverter);
