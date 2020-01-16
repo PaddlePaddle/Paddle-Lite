@@ -82,7 +82,7 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     } else {
       if (!bias->persistable()) {
         LOG(WARNING) << "[NPU] Only supporting persistable bias tensor.";
-        bias->set_persistable(true);
+        return FAILED;
       }
       bias_node = graph->Add(bias_name, *bias, scale_bias_dims);
     }
@@ -108,7 +108,7 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CHECK_EQ(channel_size, scale_dims.production());
     if (!scale->persistable()) {
       LOG(WARNING) << "[NPU] Only supporting persistable scale tensor.";
-      scale->set_persistable(true);
+      return FAILED;
     }
     scale_node = graph->Add(scale_name, *scale, scale_bias_dims);
   } else {
@@ -121,8 +121,7 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   instance_norm_op->set_input_x(*x_node->data());
   instance_norm_op->set_input_scale(*scale_node->data());
   instance_norm_op->set_input_bias(*bias_node->data());
-  instance_norm_op->set_attr_reduction_indices(
-      ge::AttrValue::LIST_INT({0, 1, 2}));
+  instance_norm_op->set_attr_reduction_indices(ge::AttrValue::LIST_INT({2}));
   instance_norm_op->set_attr_epsilon(epsilon);
   return SUCCESS;
 }
