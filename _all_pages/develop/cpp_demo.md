@@ -31,10 +31,12 @@ title: C++ Demo
 		- libpaddle_api_light_bundled.a
 		- libpaddle_light_api_shared.so
 		- libpaddle_full_api_shared.so
-- demo 
+- demo
 	- cxx  （C++ demo）
 		- mobile_light  (light api demo)
 		- mobile_full    (full api demo)
+    - mobile_detection    (detection model api demo)
+    - mobile_classify    (classify model api demo)
 		- Makefile.def
 		- include
 - third_party  （第三方库文件夹）
@@ -79,25 +81,60 @@ tar zxvf mobilenet_v1.tar.gz
 
 make
 
-adb push mobilenet_v1 /data/local/tmp/
-adb push mobilenetv1_full_api /data/local/tmp/
-adb shell chmod +x /data/local/tmp/mobilenetv1_full_api
-adb shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
+adb -s emulator-5554 push mobilenet_v1 /data/local/tmp/
+adb -s emulator-5554 push mobilenetv1_full_api /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_full_api
+adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_full_api --model_dir=/data/local/tmp/mobilenet_v1 --optimized_model_dir=/data/local/tmp/mobilenet_v1.opt"
 {% endhighlight %}
 
-注：我们也提供了轻量级 API 的 demo，可以执行以下代码运行轻量级 API 示例。
+注：我们也提供了轻量级 API 的 demo、图像分类demo和目标检测demo，支持图像输入；
+
+### Light API Demo
 
 {% highlight bash %}
 cd ../mobile_light
 make
-adb push mobilenetv1_light_api /data/local/tmp/
-adb shell chmod +x /data/local/tmp/mobilenetv1_light_api
-adb shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
+adb -s emulator-5554 push mobilenetv1_light_api /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobilenetv1_light_api
+adb -s emulator-5554 shell "/data/local/tmp/mobilenetv1_light_api --model_dir=/data/local/tmp/mobilenet_v1.opt  "
+{% endhighlight %}
+
+
+### 图像分类 Demo
+
+{% highlight bash %}
+cd ../mobile_classify
+wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
+tar zxvf mobilenet_v1.tar.gz
+make
+adb -s emulator-5554 push mobile_classify /data/local/tmp/
+adb -s emulator-5554 push test.jpg /data/local/tmp/
+adb -s emulator-5554 push labels.txt /data/local/tmp/
+adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
+adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_classify /data/local/tmp/mobilenet_v1.opt /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
+{% endhighlight %}
+
+### 目标检测 Demo
+
+{% highlight bash %}
+cd ../mobile_detection
+wget https://paddle-inference-dist.bj.bcebos.com/mobilenetv1-ssd.tar.gz
+tar zxvf mobilenetv1-ssd.tar.gz
+make
+adb -s emulator-5554 push mobile_detection /data/local/tmp/
+adb -s emulator-5554 push test.jpg /data/local/tmp/
+adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_detection
+adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && /data/local/tmp/mobile_detection /data/local/tmp/mobilenetv1-ssd /data/local/tmp/test.jpg"
+adb -s emulator-5554 pull /data/local/tmp/test_detection_result.jpg ./
 {% endhighlight %}
 
 ## Demo 程序运行结果
 
-Demo 运行成功后 ，将在控制台输出预测结果的前10个类别的预测概率：
+### light API Demo 运行结果
+
+运行成功后 ，将在控制台输出预测结果的前10个类别的预测概率：
 
 {% highlight bash %}
 Output dim: 1000
@@ -113,6 +150,30 @@ Output[800]: 0.000202
 Output[900]: 0.000586
 {% endhighlight %}
 
+### 图像分类 Demo 运行结果
+
+运行成功后 ，将在控制台输出预测结果的前5个类别的类型索引、名字和预测概率：
+
+{% highlight bash %}
+parameter:  model_dir, image_path and label_file are necessary
+parameter:  topk, input_width,  input_height, are optional
+i: 0, index: 285, name:  Egyptian cat, score: 0.482870
+i: 1, index: 281, name:  tabby, tabby cat, score: 0.471593
+i: 2, index: 282, name:  tiger cat, score: 0.039779
+i: 3, index: 287, name:  lynx, catamount, score: 0.002430
+i: 4, index: 722, name:  ping-pong ball, score: 0.000508
+{% endhighlight %}
+
+### 目标检测 Demo 运行结果
+
+运行成功后 ，将在控制台输出检测目标的类型、预测概率和坐标：
+
+{% highlight bash %}
+running result:
+detection image size: 935, 1241, detect object: person, score: 0.996098, location: x=187, y=43, width=540, height=592
+detection image size: 935, 1241, detect object: person, score: 0.935293, location: x=123, y=639, width=579, height=597
+{% endhighlight %}
+
 ## 如何在代码中使用 API
 
 在C++中使用PaddleLite API非常简单，不需要添加太多额外代码，具体步骤如下：
@@ -121,11 +182,11 @@ Output[900]: 0.000586
 
 {% highlight cpp %}
   #include <iostream>
-  #include <vector>        
-  #include "paddle_api.h"          
-  #include "paddle_use_kernels.h"  
-  #include "paddle_use_ops.h"      
-  #include "paddle_use_passes.h"   
+  #include <vector>
+  #include "paddle_api.h"
+  #include "paddle_use_kernels.h"
+  #include "paddle_use_ops.h"
+  #include "paddle_use_passes.h"
 {% endhighlight %}
 
 - 通过MobileConfig设置：模型文件位置（model_dir）、线程数（thread）和能耗模式( power mode )。输入数据（input），从 MobileConfig 创建 PaddlePredictor 并执行预测。  （注：Lite还支持从memory直接加载模型，可以通过MobileConfig::set_model_buffer方法实现）
@@ -187,6 +248,8 @@ std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 
 {% highlight cpp %}
 #include "paddle_api.h"         // NOLINT
+#include "paddle_use_kernels.h" // NOLINT
+#include "paddle_use_ops.h"     // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 #include <gflags/gflags.h>
 #include <stdio.h>
@@ -269,12 +332,7 @@ int main(int argc, char **argv) {
 {% endhighlight %}
 
 3. 运行方法：
-   参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑。
-
-```
-简单编译出`OCR_DEMO`的方法：用以上示例代码替换编译结果中`build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mobile_full/mobilenetv1_full_api.cc`文件的内容，终端进入该路径（`demo/cxx/mobile_full/`），终端中执行`make && mv mobilenetv1_full_api OCR_DEMO`即编译出了OCR模型的可执行文件`OCR_DEMO`
-```
-
+   参考以上代码编译出可执行文件`OCR_DEMO`，模型文件夹为`ocr_attention`。手机以USB调试、文件传输模式连接电脑
    在终端中输入以下命令执行OCR model测试：
 
 {% highlight shell %}
