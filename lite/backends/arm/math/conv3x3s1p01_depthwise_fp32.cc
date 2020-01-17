@@ -2926,7 +2926,7 @@ void conv_depthwise_3x3s1p1_bias_s(float *dout,
         dr2 = dr1 + w_in;
         dr3 = dr2 + w_in;
         //! process bottom pad
-        if (j + 3 > h_in) {  // pad = 1
+        if (j + 3 > h_in) {  
           switch (j + 3 - h_in) {
             case 3:
               dr1_ptr = zero;
@@ -3637,8 +3637,8 @@ void conv_depthwise_3x3s1p0_bias(float *dout,
         dr2 = dr1 + w_in;
         dr3 = dr2 + w_in;
         //! process bottom pad
-        if (i + 4 >= h_in) {
-          switch (i + 4 - h_in) {
+        if (i + 3 > h_in) {
+          switch (i + 3 - h_in) {
             case 3:
               din_ptr1 = zero_ptr;
             case 2:
