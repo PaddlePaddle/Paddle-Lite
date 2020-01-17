@@ -1,6 +1,8 @@
 {
     global:
         *paddle*;
+        *touch_*;
+        *mir_pass_*;
     local:
         *;
 };
