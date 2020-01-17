@@ -79,6 +79,7 @@ void conv_compute_6x6_3x3(const float* input,
                           const float* bias,
                           const operators::ConvParam& param,
                           ARMContext* ctx) {
+  auto act_param = param.activation_param;
   const int pad_h = (*param.paddings)[0];
   const int pad_w = (*param.paddings)[2];
   float* tmp_work_space =
@@ -296,7 +297,7 @@ void conv_compute_6x6_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    nullptr);
+                                    &act_param);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -343,7 +344,7 @@ void conv_compute_6x6_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    nullptr);
+                                    &act_param);
           }
         }
       }
@@ -366,6 +367,7 @@ void conv_compute_2x2_3x3(const float* input,
                           const float* bias,
                           const operators::ConvParam& param,
                           ARMContext* ctx) {
+  auto act_param = param.activation_param;
   const int pad_h = (*param.paddings)[0];
   const int pad_w = (*param.paddings)[2];
   float* tmp_work_space =
@@ -565,7 +567,7 @@ void conv_compute_2x2_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    nullptr);
+                                    &act_param);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -606,7 +608,7 @@ void conv_compute_2x2_3x3(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    nullptr);
+                                    &act_param);
           }
         }
       }
@@ -627,6 +629,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                 const float* bias,
                                 const operators::ConvParam& param,
                                 ARMContext* ctx) {
+  auto act_param = param.activation_param;
   const int pad_h = (*param.paddings)[0];
   const int pad_w = (*param.paddings)[2];
   float* tmp_work_space =
@@ -819,7 +822,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    nullptr);
+                                    &act_param);
           }
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
@@ -860,7 +863,7 @@ void conv_compute_2x2_3x3_small(const float* input,
                                     wout,
                                     false,
                                     zero_ptr,
-                                    nullptr);
+                                    &act_param);
           }
         }
       }
