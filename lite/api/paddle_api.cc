@@ -16,7 +16,11 @@
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
-
+#include "paddle_use_kernels.h"  // NOLINT
+#include "paddle_use_ops.h"      // NOLINT
+#ifndef LITE_ON_TINY_PUBLISH
+#include "lite/api/paddle_use_passes.h"
+#endif
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
 #endif

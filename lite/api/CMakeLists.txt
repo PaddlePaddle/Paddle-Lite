@@ -232,6 +232,7 @@ if (LITE_ON_TINY_PUBLISH)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
+add_dependencies(paddle_api_light op_list_h kernel_list_h)
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
         ${ops}
@@ -240,6 +241,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         NPU_DEPS ${npu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels})
+    add_dependencies(paddle_api_full op_list_h kernel_list_h)
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
