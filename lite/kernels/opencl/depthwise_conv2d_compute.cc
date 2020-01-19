@@ -115,7 +115,7 @@ class DepthwiseConv2dCompute
   }
 
  private:
-  std::string kernel_func_name_{"depthwise_conv2d_3x3"};
+  std::string kernel_func_name_{"depthwise_conv2d"};
   std::string build_options_{"-DCL_DTYPE=float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
