@@ -150,10 +150,25 @@ void conv_depthwise_5x5s2_fp32(const float* din,
                                int win,
                                const float* weights,
                                const float* bias,
-                               int pad,
-                               bool flag_bias,
-                               bool flag_relu,
+                               const operators::ConvParam& param,
+                               const operators::ActivationParam act_param,
                                ARMContext* ctx);
+
+void conv_depthwise_5x5s2p2_fp32(const float* din,
+                                 float* dout,
+                                 int num,
+                                 int chout,
+                                 int hout,
+                                 int wout,
+                                 int chin,
+                                 int hin,
+                                 int win,
+                                 const float* weights,
+                                 const float* bias,
+                                 int pad,
+                                 bool flag_bias,
+                                 bool flag_relu,
+                                 ARMContext* ctx);
 
 template <typename Dtype>
 void conv_depthwise_5x5s1_int8(Dtype* dout,

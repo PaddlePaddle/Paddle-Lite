@@ -30,10 +30,13 @@ USE_SUBGRAPH_BRIDGE(conv2d_transpose, kNPU);
 
 USE_SUBGRAPH_BRIDGE(dropout, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_add, kNPU);
-USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_sub, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_mul, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_div, kNPU);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kNPU);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation, kNPU);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation, kNPU);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNPU);
 
 USE_SUBGRAPH_BRIDGE(fc, kNPU);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kNPU);
@@ -54,3 +57,5 @@ USE_SUBGRAPH_BRIDGE(transpose, kNPU);
 USE_SUBGRAPH_BRIDGE(transpose2, kNPU);
 USE_SUBGRAPH_BRIDGE(unsqueeze, kNPU);
 USE_SUBGRAPH_BRIDGE(unsqueeze2, kNPU);
+USE_SUBGRAPH_BRIDGE(instance_norm, kNPU);
+USE_SUBGRAPH_BRIDGE(layer_norm, kNPU);

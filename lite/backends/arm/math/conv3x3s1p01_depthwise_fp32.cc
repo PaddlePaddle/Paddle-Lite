@@ -924,58 +924,58 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                            \
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
-#define RIGHT_RESULT_S1_RELU6                                             \
-  "fmax v12.4s, v12.4s, v20.4s \n" /*relu*/                               \
-                                                                          \
-  "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "fmla v13.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-                                                                          \
-  "fmin v12.4s, v12.4s, %[vsix].4s \n" /*relu6*/                          \
-                                                                          \
-  "fmla v15.4s ,  v17.4s,  %[w0].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-  "fmla v14.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-  "fmla v13.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-                                                                          \
-  "ext  v16.16b, v8.16b, v9.16b, #4 \n"                  /* v16 = 1234*/  \
-  "ext  v17.16b, v8.16b, v9.16b, #8 \n" /* v16 = 2345 */ /* r3 */         \
-  "bif v12.16b, v22.16b, v18.16b \n"                                      \
-  "fmla v15.4s ,  v8.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
-  "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
-  "fmax v13.4s, v13.4s, v20.4s \n"      /*relu*/                          \
-                                                                          \
-  "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "fmla v14.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-  "st1 {v12.4s}, [%[doutr0]], #16     \n"                                 \
-                                                                          \
-  "fmin v13.4s, v13.4s, %[vsix].4s \n" /*relu6*/                          \
-                                                                          \
-  "fmla v15.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-  "fmla v14.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-                                                                          \
-  "ext  v16.16b, v10.16b, v11.16b, #4 \n" /* v16 = 1234*/                 \
-  "ext  v17.16b, v10.16b, v11.16b, #8 \n" /* v16 = 2345 */                \
-  "bif v13.16b, v23.16b, v18.16b \n"                                      \
-                                                                          \
-  "fmla v15.4s ,  v10.4s,  v20.s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
-                                                                          \
-  "fmax v14.4s, v14.4s, v20.4s \n"        /*relu*/                        \
-  "st1 {v13.4s}, [%[doutr1]], #16     \n" /* r3 */                        \
-                                                                          \
-  "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
-                                                                          \
-  "fmin v14.4s, v14.4s, %[vsix].4s \n" /*relu6*/                          \
-                                                                          \
-  "fmla v15.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
-                                                                          \
-  "bif v14.16b, v24.16b, v18.16b \n"                                      \
-  "fmax v15.4s, v15.4s, v20.4s \n" /*relu*/                               \
-                                                                          \
-  "st1 {v14.4s}, [%[doutr2]], #16     \n"                                 \
-                                                                          \
-  "fmin v15.4s, v15.4s, %[vsix].4s \n" /*relu6*/                          \
-  "bif v15.16b, v25.16b, v18.16b \n"                                      \
-                                                                          \
+#define RIGHT_RESULT_S1_RELU6                                              \
+  "fmax v12.4s, v12.4s, v20.4s \n" /*relu*/                                \
+                                                                           \
+  "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "fmla v13.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+                                                                           \
+  "fmin v12.4s, v12.4s, %[vsix].4s \n" /*relu6*/                           \
+                                                                           \
+  "fmla v15.4s ,  v17.4s,  %[w0].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+  "fmla v14.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+  "fmla v13.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+                                                                           \
+  "ext  v16.16b, v8.16b, v9.16b, #4 \n"                  /* v16 = 1234*/   \
+  "ext  v17.16b, v8.16b, v9.16b, #8 \n" /* v16 = 2345 */ /* r3 */          \
+  "bif v12.16b, v22.16b, v18.16b \n"                                       \
+  "fmla v15.4s ,  v8.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
+  "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
+  "fmax v13.4s, v13.4s, v20.4s \n"      /*relu*/                           \
+                                                                           \
+  "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "fmla v14.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+  "st1 {v12.4s}, [%[doutr0]], #16     \n"                                  \
+                                                                           \
+  "fmin v13.4s, v13.4s, %[vsix].4s \n" /*relu6*/                           \
+                                                                           \
+  "fmla v15.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+  "fmla v14.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+                                                                           \
+  "ext  v16.16b, v10.16b, v11.16b, #4 \n" /* v16 = 1234*/                  \
+  "ext  v17.16b, v10.16b, v11.16b, #8 \n" /* v16 = 2345 */                 \
+  "bif v13.16b, v23.16b, v18.16b \n"                                       \
+                                                                           \
+  "fmla v15.4s ,  v10.4s,   %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/ \
+                                                                           \
+  "fmax v14.4s, v14.4s, v20.4s \n"        /*relu*/                         \
+  "st1 {v13.4s}, [%[doutr1]], #16     \n" /* r3 */                         \
+                                                                           \
+  "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
+                                                                           \
+  "fmin v14.4s, v14.4s, %[vsix].4s \n" /*relu6*/                           \
+                                                                           \
+  "fmla v15.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
+                                                                           \
+  "bif v14.16b, v24.16b, v18.16b \n"                                       \
+  "fmax v15.4s, v15.4s, v20.4s \n" /*relu*/                                \
+                                                                           \
+  "st1 {v14.4s}, [%[doutr2]], #16     \n"                                  \
+                                                                           \
+  "fmin v15.4s, v15.4s, %[vsix].4s \n" /*relu6*/                           \
+  "bif v15.16b, v25.16b, v18.16b \n"                                       \
+                                                                           \
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
 #define RIGHT_RESULT_S1_LEAKY_RELU                                        \
@@ -1586,7 +1586,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   /* r3 */                                                               \
   "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"                \
                                                                          \
-  "vld1.32  {d28-d29}, [%[six_ptr]]!    @ load din r0\n"                 \
+  "vld1.32  {d28-d29}, [%[six_ptr]]    @ load din r0\n"                  \
   "vmax.f32  q4, q4, %q[vzero]  @ relu \n"                               \
                                                                          \
   "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                 \
@@ -1617,7 +1617,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   /* r3 */                                                               \
   "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"                \
                                                                          \
-  "vld1.32  {d28-d29}, [%[scale_ptr]]!    @ load din r0\n"               \
+  "vld1.32  {d28-d29}, [%[scale_ptr]]    @ load din r0\n"                \
                                                                          \
   "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                 \
                                                                          \
@@ -1694,7 +1694,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   /* r3 */                                                              \
   "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"               \
                                                                         \
-  "vld1.32  {d28-d29}, [%[scale_ptr]]!    @ load din r0\n"              \
+  "vld1.32  {d28-d29}, [%[scale_ptr]]    @ load din r0\n"               \
                                                                         \
   "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                \
                                                                         \
@@ -2339,17 +2339,29 @@ void conv_depthwise_3x3s1p1_bias(float *dout,
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  int tile_w = (w_in + 3) >> 2;
-  int cnt_col = tile_w - 2;
+  int tile_w = w_out >> 2;
+  int remain = w_out % 4;
+  int cnt_col = tile_w - 1;
 
-  unsigned int size_pad_right = (unsigned int)(1 + (tile_w << 2) - w_in);
+  unsigned int size_pad_right = (unsigned int)(5 + (tile_w << 2) - w_in);
+  const unsigned int remian_idx[4] = {0, 1, 2, 3};
+
+  if (remain == 0 && size_pad_right == 5) {
+    size_pad_right = 1;
+    cnt_col -= 1;
+    remain = 4;
+  } else if (remain == 0 && size_pad_right == 6) {
+    size_pad_right = 2;
+    cnt_col -= 1;
+    remain = 4;
+  }
 
   uint32x4_t vmask_rp1 =
       vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
   uint32x4_t vmask_rp2 =
       vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
   uint32x4_t vmask_result =
-      vcgtq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
+      vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(remian_idx));
 
   unsigned int vmask[8];
   vst1q_u32(vmask, vmask_rp1);
@@ -2398,7 +2410,7 @@ void conv_depthwise_3x3s1p1_bias(float *dout,
       const float *din_ptr5 = dr5;
       float *ptr_zero = const_cast<float *>(zero);
 #ifdef __aarch64__
-      for (int i = 0; i < h_in; i += 4) {
+      for (int i = 0; i < h_out; i += 4) {
         //! process top pad pad_h = 1
         din_ptr0 = dr0;
         din_ptr1 = dr1;
@@ -2484,7 +2496,7 @@ void conv_depthwise_3x3s1p1_bias(float *dout,
         dout_ptr = dout_ptr + 4 * w_out;
       }
 #else
-      for (int i = 0; i < h_in; i += 2) {
+      for (int i = 0; i < h_out; i += 2) {
         //! process top pad pad_h = 1
         din_ptr0 = dr0;
         din_ptr1 = dr1;
@@ -2883,39 +2895,57 @@ void conv_depthwise_3x3s1p1_bias_s(float *dout,
         wbias = vdupq_n_f32(0.f);
       }
 
-      int hs = -1;
-      int he = 3;
-
       float out_buf1[4];
       float out_buf2[4];
       float trash_buf[4];
 
-      int h_cnt = (h_out + 1) >> 1;
       float *doutr0 = dout_channel;
       float *doutr1 = dout_channel + w_out;
 
-      for (int j = 0; j < h_cnt; ++j) {
-        const float *dr0 = din_channel + hs * w_in;
-        const float *dr1 = dr0 + w_in;
-        const float *dr2 = dr1 + w_in;
-        const float *dr3 = dr2 + w_in;
+      const float *dr0 = din_channel;
+      const float *dr1 = dr0 + w_in;
+      const float *dr2 = dr1 + w_in;
+      const float *dr3 = dr2 + w_in;
 
-        if (hs == -1) {
-          dr0 = zero;
+      for (int j = 0; j < h_out; j += 2) {
+        const float *dr0_ptr = dr0;
+        const float *dr1_ptr = dr1;
+        const float *dr2_ptr = dr2;
+        const float *dr3_ptr = dr3;
+        if (j == 0) {
+          dr0_ptr = zero;
+          dr1_ptr = dr0;
+          dr2_ptr = dr1;
+          dr3_ptr = dr2;
+          dr0 = dr1;
+          dr1 = dr2;
+        } else {
+          dr0 = dr2;
+          dr1 = dr3;
         }
-        switch (he - h_in) {
-          case 2:
-            dr2 = zero;
-            doutr1 = trash_buf;
-          case 1:
-            dr3 = zero;
-          default:
-            break;
+        dr2 = dr1 + w_in;
+        dr3 = dr2 + w_in;
+        //! process bottom pad
+        if (j + 3 > h_in) {
+          switch (j + 3 - h_in) {
+            case 3:
+              dr1_ptr = zero;
+            case 2:
+              dr2_ptr = zero;
+            case 1:
+              dr3_ptr = zero;
+            default:
+              break;
+          }
         }
-        act_switch_3x3s1p1_s(dr0,
-                             dr1,
-                             dr2,
-                             dr3,
+        //! process bottom remain
+        if (j + 2 > h_out) {
+          doutr1 = trash_buf;
+        }
+        act_switch_3x3s1p1_s(dr0_ptr,
+                             dr1_ptr,
+                             dr2_ptr,
+                             dr3_ptr,
                              out_buf1,
                              out_buf2,
                              wr0,
@@ -2931,8 +2961,6 @@ void conv_depthwise_3x3s1p1_bias_s(float *dout,
         }
         doutr0 = doutr1;
         doutr1 += w_out;
-        hs += 2;
-        he += 2;
       }  // end of processing heights
     }    // end of processing channels
   }      // end of processing batchs
@@ -3458,6 +3486,12 @@ void conv_depthwise_3x3s1p0_bias(float *dout,
   unsigned int size_pad_right = (unsigned int)(6 + (tile_w << 2) - w_in);
   const int remian_idx[4] = {0, 1, 2, 3};
 
+  if (remain == 0 && size_pad_right == 6) {  // w_in == w_out and w_out % 4 == 0
+    tile_w -= 1;
+    remain = 4;
+    size_pad_right = 2;
+  }
+
   uint32x4_t vmask_rp1 =
       vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
   uint32x4_t vmask_rp2 =
@@ -3603,15 +3637,13 @@ void conv_depthwise_3x3s1p0_bias(float *dout,
         dr2 = dr1 + w_in;
         dr3 = dr2 + w_in;
         //! process bottom pad
-        if (i + 3 >= h_in) {
-          switch (i + 3 - h_in) {
+        if (i + 4 > h_in) {
+          switch (i + 4 - h_in) {
             case 3:
               din_ptr1 = zero_ptr;
             case 2:
               din_ptr2 = zero_ptr;
             case 1:
-              din_ptr3 = zero_ptr;
-            case 0:
               din_ptr3 = zero_ptr;
             default:
               break;
@@ -4016,21 +4048,20 @@ void conv_depthwise_3x3s1p0_bias_s(float *dout,
         doutr0 = dout_channel + j * w_out;
         doutr1 = doutr0 + w_out;
 
-        if (j + 3 >= h_in) {
-          switch (j + 3 - h_in) {
+        if (j + 4 > h_in) {
+          switch (j + 4 - h_in) {
             case 3:
               dr1 = zero_ptr;
             case 2:
               dr2 = zero_ptr;
             case 1:
               dr3 = zero_ptr;
-              doutr1 = trash_buf;
-            case 0:
-              dr3 = zero_ptr;
-              doutr1 = trash_buf;
             default:
               break;
           }
+        }
+        if (j + 2 > h_out) {
+          doutr1 = trash_buf;
         }
         unsigned int *vmask_ptr = vmask;
         act_switch_3x3s1p0_s(dr0,

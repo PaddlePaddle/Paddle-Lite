@@ -15,6 +15,7 @@
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/npu/bridges/utility.h"
+#include "lite/operators/conv_op.h"
 
 namespace paddle {
 namespace lite {
@@ -38,6 +39,7 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   CHECK_EQ(input_dims.size(), 4);
+
   auto filter_name = op_info->Input("Filter").front();
   auto filter_type = kernel->GetInputDeclType("Filter");
   CHECK(filter_type->precision() == PRECISION(kFloat));
@@ -45,17 +47,53 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
   CHECK_EQ(filter_dims.size(), 4);
+
   auto output_name = op_info->Output("Output").front();
   auto output_type = kernel->GetOutputDeclType("Output");
   CHECK(output_type->precision() == PRECISION(kFloat));
   CHECK(output_type->layout() == DATALAYOUT(kNCHW));
+
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  auto groups = op_info->GetAttr<int>("groups");
-  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
-  auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   CHECK_EQ(strides.size(), 2L);
+  auto groups = op_info->GetAttr<int>("groups");
+  if (groups > 1) {
+    LOG(WARNING) << "[NPU] only support groups == 1";
+    return FAILED;
+  }
+
+  auto fuse_relu =
+      op_info->HasAttr("fuse_relu") && op_info->GetAttr<bool>("fuse_relu");
+  std::vector<int> output_size;
+  if (op_info->HasAttr("output_size")) {
+    output_size = op_info->GetAttr<std::vector<int>>("output_size");
+  }
+
+  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   CHECK_EQ(dilations.size(), 2L);
+  std::string padding_algorithm =
+      op_info->HasAttr("padding_algorithm")
+          ? op_info->GetAttr<std::string>("padding_algorithm")
+          : "";
+  if (paddings.size() == 2L) {
+    for (size_t i = 0; i < 2L; ++i) {
+      int copy_pad = *(paddings.begin() + 2 * i);
+      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+    }
+  }
+  CHECK_EQ(paddings.size(), 4L)
+      << "[NPU] Paddings size should be the same or twice as the input size.";
+  operators::UpdatePaddingAndDilation(&paddings,
+                                      &dilations,
+                                      strides,
+                                      padding_algorithm,
+                                      input_dims,
+                                      filter_dims);
+  if (paddings[0] != paddings[1] || paddings[2] != paddings[3]) {
+    LOG(WARNING) << "[NPU] only support \"pad_top == pad_bottom && pad_left == "
+                    "pad_right\" .";
+    return FAILED;
+  }
 
   // Input node
   std::shared_ptr<Node> input_node = nullptr;
@@ -66,22 +104,22 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Create input sizes node to describe the dimensions of input tensor
-  if (paddings.size() == 2L) {
-    for (size_t i = 0; i < 2L; ++i) {
-      int copy_pad = *(paddings.begin() + 2 * i);
-      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
-    }
-  }
-  CHECK_EQ(paddings.size(), 4L)
-      << "[NPU] Paddings size should be the same or twice as the input size.";
   std::vector<int32_t> input_sizes;
   input_sizes.push_back(input_dims[0]);
   input_sizes.push_back(filter_dims[1] * groups);
   for (int i = 0; i < strides.size(); i++) {
     int kernel_ext = dilations[i] * (filter_dims[i + 2] - 1) + 1;
-    int output_size =
-        (input_dims[i + 2] - 1) * strides[i] + kernel_ext - 2 * paddings[i];
+    int output_size = (input_dims[i + 2] - 1) * strides[i] + kernel_ext -
+                      paddings[i * 2] - paddings[i * 2 + 1];
     input_sizes.push_back(output_size);
+  }
+  if (!output_size.empty()) {
+    CHECK_EQ(output_size.size(), 2L);
+    if (output_size[0] != input_sizes[2] || output_size[1] != input_sizes[3]) {
+      LOG(WARNING) << "[NPU] not support output_size: " << output_size[0]
+                   << ", " << output_size[1];
+      return FAILED;
+    }
   }
   auto input_sizes_node = graph->Add(output_name + "/input_sizes", input_sizes);
 
@@ -95,8 +133,13 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   conv_transpose_op->set_input_filter(*filter_node->data());
   conv_transpose_op->set_input_x(*input_node->data());
   // Set attributes
-  conv_transpose_op->set_attr_format(0);    // NCHW
-  conv_transpose_op->set_attr_pad_mode(0);  // NOTSET
+  conv_transpose_op->set_attr_format(0);  // NCHW
+  // "SAME" is different from paddle
+  if (padding_algorithm == "VALID") {
+    conv_transpose_op->set_attr_pad_mode(5);
+  } else {
+    conv_transpose_op->set_attr_pad_mode(0);  // NOTSET
+  }
   conv_transpose_op->set_attr_group(groups);
   conv_transpose_op->set_attr_pad(ge::AttrValue::LIST_INT(
       {paddings[0], paddings[1], paddings[2], paddings[3]}));
