@@ -140,7 +140,7 @@ TEST(depthwise_conv2d_basic, compute) {
           const int oh = ConvOutputSize(ih, fh, dilation, pad, pad, stride);
           const int ow = ConvOutputSize(iw, fw, dilation, pad, pad, stride);
 
-          LOG(INFO) << "to get kernel ...";
+          VLOG(4) << "to get kernel ...";
           auto kernels =
               KernelRegistry::Global().Create("depthwise_conv2d_basic",
                                               TARGET(kOpenCL),
@@ -149,9 +149,9 @@ TEST(depthwise_conv2d_basic, compute) {
           ASSERT_FALSE(kernels.empty());
 
           auto kernel = std::move(kernels.front());
-          LOG(INFO) << "created depthconv2d kernel";
+          VLOG(4) << "created depthconv2d kernel";
 
-          LOG(INFO) << "prepare kernel ------";
+          VLOG(4) << "prepare kernel ------";
 
           lite::Tensor input, filter, bias, output;
           operators::ConvParam param;
@@ -220,7 +220,7 @@ TEST(depthwise_conv2d_basic, compute) {
           std::vector<float> output_v(batch_size * oc * ih * iw);
           std::vector<float> bias_v(oc);
 
-          LOG(INFO) << "gen input and filter ...";
+          VLOG(4) << "gen input and filter ...";
 
           for (auto& i : input_v) {
             i = gen(engine);
@@ -229,19 +229,19 @@ TEST(depthwise_conv2d_basic, compute) {
             f = gen(engine);
           }
 
-          LOG(INFO) << "after gen input and filter ...";
-          LOG(INFO) << "input_v.size(): " << input_v.size();
-          LOG(INFO) << "filter_v.size(): " << filter_v.size();
-          LOG(INFO) << "output_v.size(): " << output_v.size();
-          LOG(INFO) << "bias_v.size(): " << bias_v.size();
-          LOG(INFO) << "input_dim.production(): " << input_dim.production();
-          LOG(INFO) << "filter_dim.production(): " << filter_dim.production();
-          LOG(INFO) << "out_dim.production(): " << out_dim.production();
-          LOG(INFO) << "bias_dim.production(): " << bias_dim.production();
-          LOG(INFO) << "4 * input_image_height * input_image_width: "
-                    << 4 * input_image_height * input_image_width;
-          LOG(INFO) << "4 * filter_image_width * filter_image_height: "
-                    << 4 * filter_image_width * filter_image_height;
+          VLOG(4) << "after gen input and filter ...";
+          VLOG(4) << "input_v.size(): " << input_v.size();
+          VLOG(4) << "filter_v.size(): " << filter_v.size();
+          VLOG(4) << "output_v.size(): " << output_v.size();
+          VLOG(4) << "bias_v.size(): " << bias_v.size();
+          VLOG(4) << "input_dim.production(): " << input_dim.production();
+          VLOG(4) << "filter_dim.production(): " << filter_dim.production();
+          VLOG(4) << "out_dim.production(): " << out_dim.production();
+          VLOG(4) << "bias_dim.production(): " << bias_dim.production();
+          VLOG(4) << "4 * input_image_height * input_image_width: "
+                  << 4 * input_image_height * input_image_width;
+          VLOG(4) << "4 * filter_image_width * filter_image_height: "
+                  << 4 * filter_image_width * filter_image_height;
 
           CHECK(input_dim.production() == input_v.size());
           CHECK_LE(input_dim.production(),
@@ -251,7 +251,7 @@ TEST(depthwise_conv2d_basic, compute) {
                    4 * filter_image_width * filter_image_height);
 
           paddle::lite::CLImageConverterDefault default_convertor;
-          LOG(INFO) << "set mapped input  ...";
+          VLOG(4) << "set mapped input  ...";
           std::vector<float> x_image_v(input_image_width * input_image_height *
                                        4);  // 4 : RGBA
           std::vector<float> filter_image_v(
@@ -264,7 +264,7 @@ TEST(depthwise_conv2d_basic, compute) {
           default_convertor.NCHWToImage(
               input_v.data(), x_image_v.data(), input_dim);
 
-          LOG(INFO) << "set mapped filter  ...";
+          VLOG(4) << "set mapped filter  ...";
           paddle::lite::CLImageConverterNWBlock nw_convertor;
           nw_convertor.NCHWToImage(
               filter_v.data(), filter_image_v.data(), filter_dim);
@@ -288,18 +288,18 @@ TEST(depthwise_conv2d_basic, compute) {
                 bias_image_width, bias_image_height, bias_image_v.data());
           }
 
-          LOG(INFO) << "resize output  ...";
+          VLOG(4) << "resize output  ...";
           output.Resize(out_dim);
 
           // cpu conv basic calc
           lite::Tensor out_ref;
           out_ref.Resize(out_dim);
 
-          LOG(INFO) << "prepare kernel ready";
+          VLOG(4) << "prepare kernel ready";
 
-          LOG(INFO) << "kernel launch ...";
+          VLOG(4) << "kernel launch ...";
           kernel->Launch();
-          LOG(INFO) << "mutable output ...";
+          VLOG(4) << "mutable output ...";
           auto* output_image2d = output.mutable_data<float, cl::Image2D>(
               out_image_width, out_image_height);
 
@@ -308,8 +308,8 @@ TEST(depthwise_conv2d_basic, compute) {
           auto it = wait_list->find(out_ptr);
 
           if (it != wait_list->end()) {
-            LOG(INFO) << "--- Find the sync event for the target cl "
-                         "tensor. ---";
+            VLOG(4) << "--- Find the sync event for the target cl "
+                       "tensor. ---";
             auto& event = *(it->second);
             event.wait();
           } else {
@@ -333,35 +333,35 @@ TEST(depthwise_conv2d_basic, compute) {
                                         output.dims());
 
           // for (int j = 0; j < input_v.size(); j += 1) {
-          //   LOG(INFO) << "input_v input[" << j
+          //   VLOG(4) << "input_v input[" << j
           //           << "]: " << input_v.data()[j];
           //       std::cout<< j << "  " << input_v.data()[j] << std::endl;
           // }
           // std::cout << std::endl;
 
           // for (int j = 0; j < output_v.size(); j += 1) {
-          //   LOG(INFO) << "output_v output_v[" << j
+          //   VLOG(4) << "output_v output_v[" << j
           //           << "]:" << output_v.data()[j];
           //       std::cout << j << "  " << output_v.data()[j] <<
           //       std::endl;
           // }
 
-          LOG(INFO) << "mutable_data out_ref_data: ";
+          VLOG(4) << "mutable_data out_ref_data: ";
 
           // run cpu ref
           auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
 
-          LOG(INFO) << " conv_basic beigin ..... ";
+          VLOG(4) << " conv_basic beigin ..... ";
           depth_conv<float, 1, 1>(input_v.data(),
                                   input.dims(),
                                   filter_v.data(),
                                   filter.dims(),
                                   out_ref_data,
                                   out_dim);
-          LOG(INFO) << " conv_basic end ..... ";
+          VLOG(4) << " conv_basic end ..... ";
 
-          LOG(INFO) << " input_dim: " << input_dim;
-          LOG(INFO) << " filter_dim: " << filter_dim;
+          VLOG(4) << " input_dim: " << input_dim;
+          VLOG(4) << " filter_dim: " << filter_dim;
           const DDim& out_image_dims = lite::DDim{
               std::vector<int64_t>({static_cast<int64_t>(out_image_width),
                                     static_cast<int64_t>(out_image_height)})};

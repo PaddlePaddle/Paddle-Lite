@@ -175,19 +175,19 @@ class DepthwiseConv2dComputeFP16Image
     int nh = output_dims[0] * output_dims[2];
     auto global_work_size = cl::NDRange(c_block, w, nh);
 
-    LOG(INFO) << "setArg";
-    LOG(INFO) << "c_block = " << c_block;
-    LOG(INFO) << "w = " << w;
-    LOG(INFO) << "nh = " << nh;
+    VLOG(4) << "setArg";
+    VLOG(4) << "c_block = " << c_block;
+    VLOG(4) << "w = " << w;
+    VLOG(4) << "nh = " << nh;
 
-    LOG(INFO) << "strides = " << strides[0];
-    LOG(INFO) << "offset = " << offset;
-    LOG(INFO) << "dilations = " << dilations[0];
-    LOG(INFO) << "input_c_block = " << input_c_block;
-    LOG(INFO) << "x_dims[3] = " << x_dims[3];
-    LOG(INFO) << "x_dims[2] = " << x_dims[2];
-    LOG(INFO) << "output_dims[3] = " << output_dims[3];
-    LOG(INFO) << "output_dims[2] = " << output_dims[2];
+    VLOG(4) << "strides = " << strides[0];
+    VLOG(4) << "offset = " << offset;
+    VLOG(4) << "dilations = " << dilations[0];
+    VLOG(4) << "input_c_block = " << input_c_block;
+    VLOG(4) << "x_dims[3] = " << x_dims[3];
+    VLOG(4) << "x_dims[2] = " << x_dims[2];
+    VLOG(4) << "output_dims[3] = " << output_dims[3];
+    VLOG(4) << "output_dims[2] = " << output_dims[2];
 
     cl_int status;
     int arg_idx = 0;
@@ -412,27 +412,27 @@ class DepthwiseConv2dBasicComputeFP32Image
     int w = default_work_size[1];
     int nh = default_work_size[2];
 
-    LOG(INFO) << "============ depthwise conv2d params ============";
-    LOG(INFO) << "input_image_shape: " << input_image_shape["width"] << ","
-              << input_image_shape["height"];
-    LOG(INFO) << "input_c_block: " << input_c_block;
-    LOG(INFO) << "input_c: " << input_c;
-    LOG(INFO) << "input_image: " << input_image;
-    LOG(INFO) << "filter_dims: " << filter_dims;
-    LOG(INFO) << "filter_image: " << filter_image;
-    LOG(INFO) << "output_dims: " << output_dims;
-    LOG(INFO) << "out_image_shape: " << out_image_shape["width"] << ", "
-              << out_image_shape["height"];
-    LOG(INFO) << "paddings: " << paddings[0] << "," << paddings[1];
-    LOG(INFO) << "has bias: " << has_bias;
-    LOG(INFO) << "is_element_wise_bias : " << is_element_wise_bias;
-    LOG(INFO) << "strides: " << strides[0] << "," << strides[1];
-    LOG(INFO) << "offset: " << offset;
-    LOG(INFO) << "dilations.size : " << dilations.size();
-    LOG(INFO) << "dilations: " << dilations[0] << ", " << dilations[1];
-    LOG(INFO) << "default work size{c_block, w, nh}: "
-              << "{" << c_block << ", " << w << ", " << nh << ""
-              << "}";
+    VLOG(4) << "============ depthwise conv2d params ============";
+    VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
+            << input_image_shape["height"];
+    VLOG(4) << "input_c_block: " << input_c_block;
+    VLOG(4) << "input_c: " << input_c;
+    VLOG(4) << "input_image: " << input_image;
+    VLOG(4) << "filter_dims: " << filter_dims;
+    VLOG(4) << "filter_image: " << filter_image;
+    VLOG(4) << "output_dims: " << output_dims;
+    VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
+            << out_image_shape["height"];
+    VLOG(4) << "paddings: " << paddings[0] << "," << paddings[1];
+    VLOG(4) << "has bias: " << has_bias;
+    VLOG(4) << "is_element_wise_bias : " << is_element_wise_bias;
+    VLOG(4) << "strides: " << strides[0] << "," << strides[1];
+    VLOG(4) << "offset: " << offset;
+    VLOG(4) << "dilations.size : " << dilations.size();
+    VLOG(4) << "dilations: " << dilations[0] << ", " << dilations[1];
+    VLOG(4) << "default work size{c_block, w, nh}: "
+            << "{" << c_block << ", " << w << ", " << nh << ""
+            << "}";
 
     CHECK_GE(dilations.size(), 2);
     CHECK(dilations[0] == dilations[1]);
@@ -454,9 +454,9 @@ class DepthwiseConv2dBasicComputeFP32Image
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    LOG(INFO) << "kernel_key: " << kernel_key.str();
-    LOG(INFO) << "kernel ready ... " << kernel_key.str();
-    LOG(INFO) << "w: " << w;
+    VLOG(4) << "kernel_key: " << kernel_key.str();
+    VLOG(4) << "kernel ready ... " << kernel_key.str();
+    VLOG(4) << "w: " << w;
 
     cl_int status;
     int arg_idx = 0;
@@ -471,7 +471,7 @@ class DepthwiseConv2dBasicComputeFP32Image
     status = kernel.setArg(++arg_idx, *filter_image);
     CL_CHECK_FATAL(status);
     if (has_bias) {
-      LOG(INFO) << "set bias_image: ";
+      VLOG(4) << "set bias_image: ";
       status = kernel.setArg(++arg_idx, *bias_image);
       CL_CHECK_FATAL(status);
     }
@@ -505,9 +505,9 @@ class DepthwiseConv2dBasicComputeFP32Image
                     static_cast<size_t>(default_work_size.data()[1]),
                     static_cast<size_t>(default_work_size.data()[2])};
 
-    LOG(INFO) << "out_image: " << out_image;
-    LOG(INFO) << "global_work_size[3D]: {" << global_work_size[0] << ","
-              << global_work_size[1] << "," << global_work_size[2] << "}";
+    VLOG(4) << "out_image: " << out_image;
+    VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
+            << global_work_size[1] << "," << global_work_size[2] << "}";
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
