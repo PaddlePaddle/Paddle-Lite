@@ -950,16 +950,18 @@ void pooling1x1s2p0_max(const float* din,
               break;
           }
         }
-        if (h * 2 + 4 >= hin) {
-          switch (h * 2 + 4 - hin) {
-            case 4:
+        if (h * 2 + 7 > hin) {
+          switch (h * 2 + 7 - hin) {
+            case 7:
               din0_ptr = zero_ptr;
-            case 3:
-            case 2:
+            case 6:
+            case 5:
               din1_ptr = zero_ptr;
-            case 1:
-            case 0:
+            case 4:
+            case 3:
               din2_ptr = zero_ptr;
+            case 2:
+            case 1:
               din3_ptr = zero_ptr;
             default:
               break;
