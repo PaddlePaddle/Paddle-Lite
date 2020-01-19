@@ -41,6 +41,7 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fc, kNPU);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kNPU);
 USE_SUBGRAPH_BRIDGE(nearest_interp, kNPU);
+USE_SUBGRAPH_BRIDGE(matmul, kNPU);
 USE_SUBGRAPH_BRIDGE(mul, kNPU);
 USE_SUBGRAPH_BRIDGE(pad2d, kNPU);
 USE_SUBGRAPH_BRIDGE(pool2d, kNPU);
