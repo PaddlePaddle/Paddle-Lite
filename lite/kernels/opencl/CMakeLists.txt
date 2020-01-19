@@ -49,6 +49,10 @@ lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
         DEPS depthwise_conv2d_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+lite_cc_test(test_depthwise_conv2d_basic_opencl SRCS depthwise_conv2d_basic_compute_test.cc
+        DEPS depthwise_conv2d_opencl op_registry program context cl_image_converter
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
 #lite_cc_test(test_conv2d_1x1_opencl SRCS conv2d_1x1_compute_test.cc
 #        DEPS conv2d_1x1_opencl cl_image_converter op_registry program context
 #        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)

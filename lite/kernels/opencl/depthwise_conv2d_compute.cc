@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -174,19 +175,19 @@ class DepthwiseConv2dComputeFP16Image
     int nh = output_dims[0] * output_dims[2];
     auto global_work_size = cl::NDRange(c_block, w, nh);
 
-    VLOG(4) << "setArg";
-    VLOG(4) << "c_block = " << c_block;
-    VLOG(4) << "w = " << w;
-    VLOG(4) << "nh = " << nh;
+    LOG(INFO) << "setArg";
+    LOG(INFO) << "c_block = " << c_block;
+    LOG(INFO) << "w = " << w;
+    LOG(INFO) << "nh = " << nh;
 
-    VLOG(4) << "strides = " << strides[0];
-    VLOG(4) << "offset = " << offset;
-    VLOG(4) << "dilations = " << dilations[0];
-    VLOG(4) << "input_c_block = " << input_c_block;
-    VLOG(4) << "x_dims[3] = " << x_dims[3];
-    VLOG(4) << "x_dims[2] = " << x_dims[2];
-    VLOG(4) << "output_dims[3] = " << output_dims[3];
-    VLOG(4) << "output_dims[2] = " << output_dims[2];
+    LOG(INFO) << "strides = " << strides[0];
+    LOG(INFO) << "offset = " << offset;
+    LOG(INFO) << "dilations = " << dilations[0];
+    LOG(INFO) << "input_c_block = " << input_c_block;
+    LOG(INFO) << "x_dims[3] = " << x_dims[3];
+    LOG(INFO) << "x_dims[2] = " << x_dims[2];
+    LOG(INFO) << "output_dims[3] = " << output_dims[3];
+    LOG(INFO) << "output_dims[2] = " << output_dims[2];
 
     cl_int status;
     int arg_idx = 0;
@@ -341,6 +342,189 @@ class DepthwiseConv2d3x3s1ComputeFP16Image
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
+class DepthwiseConv2dBasicComputeFP32Image
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kImageDefault)> {
+ public:
+  using param_t = operators::ConvParam;
+
+  std::string doc() const override {
+    return "DepthwiseConv2d basic using cl::Image2D/kImageDefault, kFloat32";
+  }
+
+  void PrepareForRun() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    const bool has_bias = param.bias != nullptr;
+    const bool is_element_wise_bias =
+        has_bias && param.output->dims() == param.bias->dims();
+    if (param.fuse_relu) {
+      build_options_ += " -DRELU";
+    }
+    if (has_bias) {
+      build_options_ += is_element_wise_bias ? " -DBIASE_ELE" : " -DBIASE_CH";
+    }
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/depthwise_conv2d_basic_kernel.cl",
+                                    build_options_);
+  }
+
+  void Run() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    auto input_dims = param.x->dims();
+    auto paddings = *param.paddings;
+    auto strides = param.strides;
+    auto* input_image = param.x->data<float, cl::Image2D>();
+    auto* filter_image = param.filter->data<float, cl::Image2D>();
+    auto filter_dims = param.filter->dims();
+    auto output_dims = param.output->dims();
+
+    int input_width = input_dims[3];
+    int input_height = input_dims[2];
+    int output_width = output_dims[3];
+    int output_height = output_dims[2];
+    int filter_width = filter_dims[3];
+    int filter_height = filter_dims[2];
+    auto out_image_shape = InitImageDimInfoWith(output_dims);
+    auto* out_image = param.output->mutable_data<float, cl::Image2D>(
+        out_image_shape["width"], out_image_shape["height"]);
+
+    const bool has_bias = param.bias != nullptr;
+    const bool is_element_wise_bias =
+        has_bias && param.output->dims() == param.bias->dims();
+    int offset = static_cast<int>(param.filter->dims()[2]) / 2 -
+                 static_cast<int>(paddings[0]);
+
+    // calc input_c_block
+    auto input_image_shape = InitImageDimInfoWith(input_dims);
+    int input_c_block = input_image_shape["width"] / input_dims[3];
+    int input_c = input_dims[1];
+    auto dilations = *param.dilations;
+
+    const std::vector<size_t>& default_work_size =
+        DefaultWorkSize(output_dims,
+                        DDim(std::vector<DDim::value_type>{
+                            static_cast<int64_t>(out_image_shape["width"]),
+                            static_cast<int64_t>(out_image_shape["height"])}));
+
+    int c_block = default_work_size[0];
+    int w = default_work_size[1];
+    int nh = default_work_size[2];
+
+    LOG(INFO) << "============ depthwise conv2d params ============";
+    LOG(INFO) << "input_image_shape: " << input_image_shape["width"] << ","
+              << input_image_shape["height"];
+    LOG(INFO) << "input_c_block: " << input_c_block;
+    LOG(INFO) << "input_c: " << input_c;
+    LOG(INFO) << "input_image: " << input_image;
+    LOG(INFO) << "filter_dims: " << filter_dims;
+    LOG(INFO) << "filter_image: " << filter_image;
+    LOG(INFO) << "output_dims: " << output_dims;
+    LOG(INFO) << "out_image_shape: " << out_image_shape["width"] << ", "
+              << out_image_shape["height"];
+    LOG(INFO) << "paddings: " << paddings[0] << "," << paddings[1];
+    LOG(INFO) << "has bias: " << has_bias;
+    LOG(INFO) << "is_element_wise_bias : " << is_element_wise_bias;
+    LOG(INFO) << "strides: " << strides[0] << "," << strides[1];
+    LOG(INFO) << "offset: " << offset;
+    LOG(INFO) << "dilations.size : " << dilations.size();
+    LOG(INFO) << "dilations: " << dilations[0] << ", " << dilations[1];
+    LOG(INFO) << "default work size{c_block, w, nh}: "
+              << "{" << c_block << ", " << w << ", " << nh << ""
+              << "}";
+
+    CHECK_GE(dilations.size(), 2);
+    CHECK(dilations[0] == dilations[1]);
+    CHECK_GE(input_dims.size(), 4);
+    CHECK_GE(paddings.size(), 2);
+    CHECK(paddings[0] == paddings[1]);
+    CHECK_GE(strides.size(), 2);
+    CHECK(strides[0] == strides[1]);
+
+    // handle bias  use buffer for channel wise , use image for element wise
+    const cl::Buffer* bias_buf = nullptr;
+    const cl::Image2D* bias_image = nullptr;
+    if (has_bias) {
+      bias_image = param.bias->data<float, cl::Image2D>();
+    }
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    LOG(INFO) << "kernel_key: " << kernel_key.str();
+    LOG(INFO) << "kernel ready ... " << kernel_key.str();
+    LOG(INFO) << "w: " << w;
+
+    cl_int status;
+    int arg_idx = 0;
+    status = kernel.setArg(arg_idx, c_block);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, w);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, nh);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *input_image);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *filter_image);
+    CL_CHECK_FATAL(status);
+    if (has_bias) {
+      LOG(INFO) << "set bias_image: ";
+      status = kernel.setArg(++arg_idx, *bias_image);
+      CL_CHECK_FATAL(status);
+    }
+    status = kernel.setArg(++arg_idx, *out_image);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, strides[0]);
+    CL_CHECK_FATAL(status);
+
+    status = kernel.setArg(++arg_idx, offset);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, input_c_block);
+    CL_CHECK_FATAL(status);
+
+    status = kernel.setArg(++arg_idx, dilations[0]);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, input_width);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, input_height);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, output_width);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, output_height);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, filter_width);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, filter_height);
+    CL_CHECK_FATAL(status);
+
+    auto global_work_size =
+        cl::NDRange{static_cast<size_t>(default_work_size.data()[0]),
+                    static_cast<size_t>(default_work_size.data()[1]),
+                    static_cast<size_t>(default_work_size.data()[2])};
+
+    LOG(INFO) << "out_image: " << out_image;
+    LOG(INFO) << "global_work_size[3D]: {" << global_work_size[0] << ","
+              << global_work_size[1] << "," << global_work_size[2] << "}";
+
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+        kernel,
+        cl::NullRange,
+        global_work_size,
+        cl::NullRange,
+        nullptr,
+        event_.get());
+    CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(out_image, event_);
+  }
+
+ private:
+  std::string kernel_func_name_{"depth_conv2d"};
+  std::string build_options_{"-DCL_DTYPE_float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
+};
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
@@ -380,5 +564,29 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    depthwise_conv2d_basic,
+    kOpenCL,
+    kFloat,
+    kImageDefault,
+    paddle::lite::kernels::opencl::DepthwiseConv2dBasicComputeFP32Image,
+    image2d)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Bias",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kImageNW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
