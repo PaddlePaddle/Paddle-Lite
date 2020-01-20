@@ -164,7 +164,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     }
     conv_op_desc->SetAttr("weight_scale", weight_scale);
   } else if (is_weight_quantization) {
-    std::string scale_name = conv_weight_name + "_quant_scale_list";
+    std::string scale_name = conv_weight_name + "_quant_scale";
     if (conv_op_desc->HasAttr(scale_name)) {
       auto scale = conv_op_desc->GetAttr<std::vector<float>>(scale_name);
       CHECK_EQ(scale.size(), alpha_tensor.numel());

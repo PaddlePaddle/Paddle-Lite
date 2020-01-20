@@ -147,47 +147,66 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 }
 
 void LightPredictor::DequantizeWeight() {
+#define PROCESS_CONV2D_DATA()                                   \
+  for (int64_t i = 0; i < h; ++i) {                             \
+    for (int64_t j = 0; j < w; ++j) {                           \
+      fp_data[i * w + j] = scale_list[i] * int_data[i * w + j]; \
+    }                                                           \
+  }
+
+#define PROCESS_FC_DATA()                           \
+  for (int i = 0; i < input_tensor->numel(); i++) { \
+    *fp_data = scale_list[0] * (*int_data);         \
+    ++fp_data;                                      \
+    ++int_data;                                     \
+  }
+
   Tensor tmp_tensor;
   CHECK(cpp_program_desc_.BlocksSize());
   auto* main_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block->OpsSize(); ++i) {
-    auto* op_desc = main_block->GetOp<cpp::OpDesc>(i);
-    if (op_desc->HasAttr("weight_quant_bits")) {
-      int weight_quant_bits = op_desc->GetAttr<int>("weight_quant_bits");
+  for (size_t k = 0; k < main_block->OpsSize(); ++k) {
+    auto* op_desc = main_block->GetOp<cpp::OpDesc>(k);
+    if (op_desc->HasAttr("weight_quant_bits")) {  //  weight quantized op
       auto input_names = op_desc->input_vars();
       for (auto& input_name : input_names) {
-        std::string input_scale_name = input_name + "_quant_scale_list";
-        if (op_desc->HasAttr(input_scale_name)) {
+        std::string input_scale_name = input_name + "_quant_scale";
+        if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
           auto input_tensor =
               scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
-          auto dims = input_tensor->dims();
+          tmp_tensor.CopyDataFrom(*input_tensor);
           auto scale_list =
               op_desc->GetAttr<std::vector<float>>(input_scale_name);
-          tmp_tensor.CopyDataFrom(*input_tensor);
-
-          int64_t h = dims[0];
-          int64_t w = input_tensor->numel() / h;
-          CHECK_EQ(scale_list.size(), h);
+          int weight_quant_bits = op_desc->GetAttr<int>("weight_quant_bits");
           float* fp_data = input_tensor->mutable_data<float>();
-          if (weight_quant_bits == 8) {
-            const int8_t* int_data = tmp_tensor.data<int8_t>();
-            for (int64_t i = 0; i < h; ++i) {
-              for (int64_t j = 0; j < w; ++j) {
-                fp_data[i * w + j] = scale_list[i] * int_data[i * w + j];
-              }
+
+          std::string op_type = op_desc->Type();
+          if (op_type == "conv2d" || op_type == "depthwise_conv2d") {
+            int64_t h = input_tensor->dims()[0];
+            int64_t w = input_tensor->numel() / h;
+            CHECK_EQ(scale_list.size(), h);
+            if (weight_quant_bits == 8) {
+              const int8_t* int_data = tmp_tensor.data<int8_t>();
+              PROCESS_CONV2D_DATA()
+            } else {
+              const int16_t* int_data = tmp_tensor.data<int16_t>();
+              PROCESS_CONV2D_DATA()
             }
-          } else {
-            const int16_t* int_data = tmp_tensor.data<int16_t>();
-            for (int64_t i = 0; i < h; ++i) {
-              for (int64_t j = 0; j < w; ++j) {
-                fp_data[i * w + j] = scale_list[i] * int_data[i * w + j];
-              }
+          } else if (op_type == "fc" || op_type == "mul") {
+            if (weight_quant_bits == 8) {
+              const int8_t* int_data = tmp_tensor.data<int8_t>();
+              PROCESS_FC_DATA()
+            } else {
+              const int16_t* int_data = tmp_tensor.data<int16_t>();
+              PROCESS_FC_DATA()
             }
           }
         }
       }
     }
   }
+
+#undef PROCESS_CONV2D_DATA
+#undef PROCESS_FC_DATA
 }
 
 }  // namespace lite
