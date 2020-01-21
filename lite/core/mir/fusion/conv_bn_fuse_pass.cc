@@ -26,9 +26,7 @@ namespace mir {
 void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // initialze fuser params
   std::vector<bool> conv_has_bias_cases{true, false};
-  std::vector<std::string> conv_type_cases{
-      "conv2d", "depthwise_conv2d", "conv2d_transpose"};
-
+  std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
   // start fuse using params
   for (auto conv_has_bias : conv_has_bias_cases) {
     for (auto conv_type : conv_type_cases) {
