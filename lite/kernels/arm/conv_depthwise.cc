@@ -53,7 +53,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   } else if (kw == 5) {
     // VLOG(5) << "invoke 5x5 dw conv fp32";
     auto strides = param.strides;
-    if ((strides[0] == 1 && strides[1] == 1) || \
+    if ((strides[0] == 1 && strides[1] == 1) ||
         (strides[0] == 2 && strides[1] == 2)) {
       // trans weights
       constexpr int cblock = 4;
@@ -68,7 +68,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       flag_trans_weights_ = true;
       impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
     } else {
-      LOG(FATAL) << "5x5 depthwise conv only support stride == 1 or stride == 2";
+      LOG(FATAL)
+          << "5x5 depthwise conv only support stride == 1 or stride == 2";
     }
   } else {
     LOG(FATAL) << "this type dw conv not impl";
