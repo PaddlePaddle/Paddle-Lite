@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
