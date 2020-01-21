@@ -188,7 +188,6 @@ void conv1x1s1_gemm(const float* i_data,
   if (n > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -210,8 +209,11 @@ void conv1x1s1_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu,
-              ctx);
+              act_param.has_active,
+              act_param.active_type,
+              ctx,
+              act_param.Relu_clipped_coef,
+              act_param.Leaky_relu_alpha);
       } else {
         sgemm_prepack(false,
                       m,
@@ -410,8 +412,11 @@ void conv_im2col_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu,
-              ctx);
+              act_param.has_active,
+              act_param.active_type,
+              ctx,
+              act_param.Relu_clipped_coef,
+              act_param.Leaky_relu_alpha);
       } else {
         int ldb = n;
         sgemm_prepack(false,
