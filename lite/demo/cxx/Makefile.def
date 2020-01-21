@@ -1,3 +1,6 @@
+# get the name of current operation system: Linux or Darwin
+SYSTEM=$(shell "uname -s")
+
 CXX_DEFINES = -DARM_WITH_OMP -DHPPL_STUB_FUNC -DLITE_WITH_ARM -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK \
               -DLITE_WITH_LINUX -DPADDLE_DISABLE_PROFILER -DPADDLE_NO_PYTHON -DPADDLE_WITH_TESTING
 LDFLAGS = -latomic -pthread -ldl -llog -lz
@@ -9,8 +12,13 @@ SYSTEM_INCLUDES = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
                   -I$(NDK_ROOT)/sources/android/support/include \
                   -I$(NDK_ROOT)/sysroot/usr/include \
 
+
 ifeq ($(ARM_ABI), arm8)
-    CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++
+    ifeq ($(SYSTEM), Linux)
+        CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++
+    else
+        CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/darwin-x86_64/bin/aarch64-linux-android-g++
+    endif
     CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=23 -fexceptions -frtti -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
     CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--gc-sections
     SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-24/arch-arm64
@@ -18,7 +26,11 @@ ifeq ($(ARM_ABI), arm8)
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a
     INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
 else
-    CC = $(NDK_ROOT)/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-g++
+    ifeq ($(SYSTEM), Linux)
+        CC = $(NDK_ROOT)/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-g++
+    else
+        CC = $(NDK_ROOT)/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-g++
+    endif
     CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
                -D__ANDROID_API__=23 -fexceptions -frtti  -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
     CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--fix-cortex-a8 -Wl,--gc-sections -Wl,-z,nocopyreloc
