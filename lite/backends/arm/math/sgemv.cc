@@ -366,7 +366,7 @@ void sgemv_trans(const int M,
             "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
             "1:\n"
             "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu6    */
-            "fmin v1.4s, v0.4s, %[vsix].4s  \n" /*      v0 relu6    */
+            "fmin v1.4s, v1.4s, %[vsix].4s  \n" /*      v1 relu6    */
             "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
             "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
             "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
