@@ -50,11 +50,25 @@ REGISTER_LITE_KERNEL(beam_search,
                      kNCHW,
                      paddle::lite::kernels::arm::BeamSearchCompute,
                      def)
-    .BindInput("pre_ids", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("pre_scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ids", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("selected_ids", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("selected_scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("parent_idx", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("pre_ids",
+               {LiteType::GetTensorTy(
+                   TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindInput("pre_scores",
+               {LiteType::GetTensorTy(
+                   TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .BindInput("ids",
+               {LiteType::GetTensorTy(
+                   TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindInput("scores",
+               {LiteType::GetTensorTy(
+                   TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .BindOutput("selected_ids",
+                {LiteType::GetTensorTy(
+                    TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("selected_scores",
+                {LiteType::GetTensorTy(
+                    TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .BindOutput("parent_idx",
+                {LiteType::GetTensorTy(
+                    TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
     .Finalize();

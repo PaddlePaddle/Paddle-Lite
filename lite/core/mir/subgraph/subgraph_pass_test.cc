@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <unordered_map>
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
@@ -21,12 +22,17 @@
 #include "lite/api/test_helper.h"
 #include "lite/utils/cp_logging.h"
 
-DEFINE_string(model_file, "", "model file path of combined protobuf model");
-DEFINE_string(params_file, "", "params file path of combined protobuf model");
-DEFINE_string(optimized_model_dir, "", "path of optimized naive buffer model");
-DEFINE_string(input_tensor_shape, "1,3,224,224", "shape of input tensors");
-DEFINE_string(input_tensor_type, "float32", "data type of input tensors");
-DEFINE_string(output_tensor_type, "float32", "data type of output tensors");
+DEFINE_string(model_file, "", "The model file path of combined protobuf model");
+DEFINE_string(params_file,
+              "",
+              "The params file path of combined protobuf model");
+DEFINE_string(optimized_model_dir,
+              "",
+              "The path of optimized naive buffer model");
+DEFINE_string(input_tensor_shape, "1,3,224,224", "The shape of input tensors");
+DEFINE_string(input_tensor_lod, "", "The LoD of input tensors");
+DEFINE_string(input_tensor_type, "float32", "The data type of input tensors");
+DEFINE_string(output_tensor_type, "float32", "The data type of output tensors");
 
 namespace paddle {
 namespace lite {
@@ -76,6 +82,49 @@ std::vector<std::vector<int64_t>> ShapeParsing(std::string text) {
   return shapes;
 }
 
+std::unordered_map<int, lite_api::lod_t> LoDParsing(std::string text) {
+  std::unordered_map<int, lite_api::lod_t> lods;
+  while (!text.empty()) {
+    size_t index = text.find_first_of(":");
+    std::string slice = text.substr(0, index);
+    int id = -1;
+    lite_api::lod_t lod;
+    while (!slice.empty()) {
+      size_t index = slice.find_first_of(",");
+      std::string block = slice.substr(0, index);
+      if (id == -1) {
+        id = atoi(block.c_str());
+      } else {
+        std::vector<uint64_t> lvl;
+        while (!block.empty()) {
+          size_t index = block.find_first_of("-");
+          int seq = atoi(block.substr(0, index).c_str());
+          VLOG(3) << seq;
+          lvl.push_back(seq);
+          if (index == std::string::npos) {
+            break;
+          } else {
+            block = block.substr(index + 1);
+          }
+        }
+        lod.push_back(lvl);
+      }
+      if (index == std::string::npos) {
+        break;
+      } else {
+        slice = slice.substr(index + 1);
+      }
+    }
+    lods.insert(std::make_pair(id, lod));
+    if (index == std::string::npos) {
+      break;
+    } else {
+      text = text.substr(index + 1);
+    }
+  }
+  return lods;
+}
+
 int64_t ShapeProduction(std::vector<int64_t> shape) {
   int64_t s = 1;
   for (int64_t dim : shape) {
@@ -87,6 +136,7 @@ int64_t ShapeProduction(std::vector<int64_t> shape) {
 void FillInputTensors(
     const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
+    const std::unordered_map<int, lite_api::lod_t>& input_tensor_lod,
     const std::vector<std::string>& input_tensor_type,
     const float value) {
 #define FILL_TENSOR_WITH_TYPE(type)                            \
@@ -100,8 +150,16 @@ void FillInputTensors(
     auto input_tensor_size = ShapeProduction(input_tensor->shape());
     if (input_tensor_type[i] == "float32") {
       FILL_TENSOR_WITH_TYPE(float)
+    } else if (input_tensor_type[i] == "int8") {
+      FILL_TENSOR_WITH_TYPE(int8_t)
+    } else if (input_tensor_type[i] == "int32") {
+      FILL_TENSOR_WITH_TYPE(int32_t)
     } else if (input_tensor_type[i] == "int64") {
       FILL_TENSOR_WITH_TYPE(int64_t)
+    }
+    auto lod = input_tensor_lod.find(i);
+    if (lod != input_tensor_lod.end()) {
+      input_tensor->SetLoD(lod->second);
     }
   }
 #undef FILL_TENSOR_WITH_TYPE
@@ -131,6 +189,10 @@ void CheckOutputTensors(
     EXPECT_EQ(tar_output_tensor_size, ref_output_tensor_size);
     if (output_tensor_type[i] == "float32") {
       CHECK_TENSOR_WITH_TYPE(float)
+    } else if (output_tensor_type[i] == "int8") {
+      CHECK_TENSOR_WITH_TYPE(int8_t)
+    } else if (output_tensor_type[i] == "int32") {
+      CHECK_TENSOR_WITH_TYPE(int32_t)
     } else if (output_tensor_type[i] == "int64") {
       CHECK_TENSOR_WITH_TYPE(int64_t)
     }
@@ -144,8 +206,10 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     const std::string& params_file,
     const std::vector<lite_api::Place>& valid_places,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
+    const std::unordered_map<int, lite_api::lod_t>& input_tensor_lod,
     const std::vector<std::string>& input_tensor_type,
-    const std::string& optimized_model_dir) {
+    const std::string& optimized_nb_model_dir,
+    const std::string& optimized_pb_model_dir) {
   // Generate optimized model
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(model_dir);
@@ -153,20 +217,20 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   cxx_config.set_param_file(params_file);
   cxx_config.set_valid_places(valid_places);
   auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
-  predictor->SaveOptimizedModel(optimized_model_dir,
+  predictor->SaveOptimizedModel(optimized_nb_model_dir,
                                 lite_api::LiteModelType::kNaiveBuffer);
+  predictor->SaveOptimizedModel(optimized_pb_model_dir,
+                                lite_api::LiteModelType::kProtobuf);
   // Load optimized model
   lite_api::MobileConfig mobile_config;
-  mobile_config.set_model_dir(optimized_model_dir);
+  mobile_config.set_model_dir(optimized_nb_model_dir);
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
-  FillInputTensors(predictor, input_tensor_shape, input_tensor_type, 1);
   // Run optimized model
-  for (int i = 0; i < FLAGS_warmup; i++) {
-    predictor->Run();
-  }
   for (int i = 0; i < FLAGS_repeats; i++) {
+    FillInputTensors(
+        predictor, input_tensor_shape, input_tensor_lod, input_tensor_type, 0);
     auto start = GetCurrentUS();
     predictor->Run();
     LOG(INFO) << i << ", " << GetCurrentUS() - start << "us";
@@ -184,40 +248,54 @@ TEST(Subgraph, generate_model_and_check_precision) {
   // Parsing the shape of input tensors from strings, supported formats:
   // "1,3,224,224" and "1,3,224,224:1,80"
   auto input_tensor_shape = ShapeParsing(FLAGS_input_tensor_shape);
+  // Parsing the LoD of input tensors from strings, supported formats:
+  // "2,0-1,0-1:3,0-1,0-1", '2' and '3' is the index of the input tensor, and
+  // '0-1,0-1' is the LoD data of the input tensor.
+  auto input_tensor_lod = LoDParsing(FLAGS_input_tensor_lod);
   // Parsing the data type of input and output tensors from strings, supported
   // formats: "float32" and "float32:int64:int8"
   auto input_tensor_type = TypeParsing(FLAGS_input_tensor_type);
   auto output_tensor_type = TypeParsing(FLAGS_output_tensor_type);
   std::vector<lite_api::Place> valid_places({
 #ifdef LITE_WITH_ARM
-      lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+      lite_api::Place(TARGET(kARM), PRECISION(kFloat)),
+      lite_api::Place(TARGET(kARM), PRECISION(kInt64)),
 #endif
 #ifdef LITE_WITH_X86
-      lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+      lite_api::Place(TARGET(kX86), PRECISION(kFloat)),
+      lite_api::Place(TARGET(kX86), PRECISION(kInt64)),
 #endif
   });
   // Generate and run optimized model on CPU as the reference predictor
-  auto ref_predictor = TestModel(FLAGS_model_dir,
-                                 FLAGS_model_file,
-                                 FLAGS_params_file,
-                                 valid_places,
-                                 input_tensor_shape,
-                                 input_tensor_type,
-                                 FLAGS_optimized_model_dir + "/ref_opt_model");
+  auto ref_predictor =
+      TestModel(FLAGS_model_dir,
+                FLAGS_model_file,
+                FLAGS_params_file,
+                valid_places,
+                input_tensor_shape,
+                input_tensor_lod,
+                input_tensor_type,
+                FLAGS_optimized_model_dir + "/ref_opt_model_nb",
+                FLAGS_optimized_model_dir + "/ref_opt_model_pb");
 // Generate and run optimized model on NPU/XPU as the target predictor
 #ifdef LITE_WITH_NPU
-  valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
+  valid_places.push_back(lite_api::Place(TARGET(kNPU), PRECISION(kFloat)));
+  valid_places.push_back(lite_api::Place(TARGET(kNPU), PRECISION(kInt64)));
 #endif
 #ifdef LITE_WITH_XPU
-  valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});
+  valid_places.push_back(lite_api::Place(TARGET(kXPU), PRECISION(kFloat)));
+  valid_places.push_back(lite_api::Place(TARGET(kXPU), PRECISION(kInt64)));
 #endif
-  auto tar_predictor = TestModel(FLAGS_model_dir,
-                                 FLAGS_model_file,
-                                 FLAGS_params_file,
-                                 valid_places,
-                                 input_tensor_shape,
-                                 input_tensor_type,
-                                 FLAGS_optimized_model_dir + "/tar_opt_model");
+  auto tar_predictor =
+      TestModel(FLAGS_model_dir,
+                FLAGS_model_file,
+                FLAGS_params_file,
+                valid_places,
+                input_tensor_shape,
+                input_tensor_lod,
+                input_tensor_type,
+                FLAGS_optimized_model_dir + "/tar_opt_model_nb",
+                FLAGS_optimized_model_dir + "/tar_opt_model_pb");
   // Check the difference of the output tensors between reference predictor and
   // target predictor
   CheckOutputTensors(tar_predictor, ref_predictor, output_tensor_type);

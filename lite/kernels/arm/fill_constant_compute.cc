@@ -66,6 +66,12 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
         data[i] = param.value;
       }
     } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT64)) {
+      auto data = param.Out->template mutable_data<int64_t>();
+      for (int i = 0; i < param.Out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
                static_cast<int32_t>(lite::core::FluidType::INT32)) {
       auto data = param.Out->template mutable_data<int32_t>();
       for (int i = 0; i < param.Out->numel(); i++) {
@@ -106,6 +112,12 @@ class FillConstantBatchLikeCompute
         data[i] = param.value;
       }
     } else if (param.dtype ==
+               static_cast<int32_t>(lite::core::FluidType::INT64)) {
+      auto data = param.out->template mutable_data<int64_t>();
+      for (int i = 0; i < param.out->numel(); i++) {
+        data[i] = param.value;
+      }
+    } else if (param.dtype ==
                static_cast<int32_t>(lite::core::FluidType::INT32)) {
       auto data = param.out->template mutable_data<int32_t>();
       for (int i = 0; i < param.out->numel(); i++) {
@@ -137,7 +149,7 @@ REGISTER_LITE_KERNEL(fill_constant,
                      kNCHW,
                      paddle::lite::kernels::arm::FillConstantCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("ShapeTensorList",

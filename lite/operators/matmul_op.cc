@@ -137,6 +137,8 @@ bool MatMulOpLite::InferShape() const {
   DDim dim_out(dim_out_vec);
   param_.Out->Resize(dim_out);
 
+  auto out_lod = param_.Out->mutable_lod();
+  *out_lod = param_.X->lod();
   return true;
 }
 

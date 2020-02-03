@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/lod_reset_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/host/lod_reset_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
-void LodResetCompute::PrepareForRun() {}
+namespace host {
 
 void LodResetCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::LodResetParam>();
-  const auto* x_data = param.X->data<float>();
-  auto* o_data = param.Out->mutable_data<float>();
-  memcpy(o_data, x_data, sizeof(float) * param.X->numel());
+  auto& param = this->Param<param_t>();
+  param.Out->Resize(param.X->dims());
+  param.Out->CopyDataFrom(*param.X);
+
   auto lod = param.Out->mutable_lod();
   if (param.Y) {
     if (param.Y->lod().size()) {
@@ -47,18 +44,24 @@ void LodResetCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(lod_reset,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::LodResetCompute,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::LodResetCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();

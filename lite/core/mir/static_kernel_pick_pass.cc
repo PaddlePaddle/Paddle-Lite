@@ -64,15 +64,17 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;
     CHECK(!instruct.kernels().empty()) << "No kernels found for "
                                        << instruct.op_type();
-    VLOG(4) << "instruct.kernels().size():" << instruct.kernels().size();
+    VLOG(4) << instruct.op_type()
+            << " instruct.kernels().size():" << instruct.kernels().size();
     for (auto&& kernel : instruct.kernels()) {
-      float score = KernelGrade(instruct,
+      float score = KernelGrade(*instruct.op_info(),
                                 *kernel,
                                 graph->valid_places(),
                                 in_types,
                                 out_types,
                                 instruct.op_info()->input_names(),
-                                instruct.op_info()->output_names());
+                                instruct.op_info()->output_names(),
+                                kernel_pick_factors_);
       VLOG(4) << "kernel->summary():" << kernel->summary()
               << " score:" << score;
       scored.emplace_back(score, std::move(kernel));
@@ -122,13 +124,14 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         instruct.ResetOp(update_desc, graph->valid_places());
         scored.clear();
         for (auto&& kernel : instruct.kernels()) {
-          float score = KernelGrade(instruct,
+          float score = KernelGrade(*instruct.op_info(),
                                     *kernel,
                                     graph->valid_places(),
                                     in_types,
                                     out_types,
                                     instruct.op_info()->input_names(),
-                                    instruct.op_info()->output_names());
+                                    instruct.op_info()->output_names(),
+                                    kernel_pick_factors_);
           scored.emplace_back(score, std::move(kernel));
         }
         std::sort(scored.begin(), scored.end(), KernelScoreCmp);

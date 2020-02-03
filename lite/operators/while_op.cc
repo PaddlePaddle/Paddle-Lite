@@ -44,6 +44,8 @@ bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto condition = op_desc.Input("Condition");
   param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
   param_.scope = scope;
+  param_.valid_places =
+      op_desc.GetAttr<std::vector<std::string>>("valid_places");
 
   return true;
 }

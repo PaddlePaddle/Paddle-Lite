@@ -13,30 +13,48 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/program.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class IncrementCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class StepExecutor {
  public:
-  using param_t = operators::IncrementParam;
+  StepExecutor(cpp::BlockDesc *block_desc,
+               Scope *scope,
+               const std::vector<std::string> &valid_places);
 
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~IncrementCompute() {}
+  void Build();
+  void Run();
 
  private:
+  cpp::BlockDesc *block_desc_{nullptr};
+  Scope *scope_{nullptr};
+  std::vector<Place> valid_places_;
+  std::vector<Instruction> insts_;
 };
 
-}  // namespace arm
+class WhileCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::WhileParam;
+
+  void Run() override;
+  void PrepareForRun() override;
+
+ private:
+  std::shared_ptr<StepExecutor> executor_;
+};
+
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -1,0 +1,56 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "lite/kernels/host/write_to_array_compute.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+void WriteToArrayCompute::Run() {
+  auto& param = this->template Param<param_t>();
+  CHECK_EQ(param.I->numel(), 1) << "The size of tensor I should be 1";
+  int idx = param.I->template data<int64_t>()[0];
+  if (idx >= param.Out->size()) {
+    for (int i = param.Out->size(); i < idx + 1; i++) {
+      lite::Tensor tmp;
+      param.Out->push_back(tmp);
+    }
+  }
+  (*param.Out)[idx].Resize(param.X->dims());
+  (*param.Out)[idx].CopyDataFrom(*param.X);
+}
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
+REGISTER_LITE_KERNEL(write_to_array,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::WriteToArrayCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("I",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorListTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .Finalize();

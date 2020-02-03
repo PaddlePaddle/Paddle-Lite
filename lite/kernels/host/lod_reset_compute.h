@@ -12,15 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/increment.h"
-#include <arm_neon.h>
-#include <cmath>
-#include "lite/utils/cp_logging.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {}  // namespace math
-}  // namespace arm
+namespace kernels {
+namespace host {
+
+class LodResetCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::LodResetParam;
+
+  void Run() override;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

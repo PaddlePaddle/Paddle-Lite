@@ -30,6 +30,8 @@ bool IncrementOp::InferShape() const {
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();
   param_.Out->Resize(out_dims);
+  auto out_lod = param_.Out->mutable_lod();
+  *out_lod = param_.X->lod();
   return true;
 }
 
