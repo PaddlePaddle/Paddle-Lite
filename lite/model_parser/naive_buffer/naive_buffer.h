@@ -61,8 +61,12 @@ struct BinaryTable {
 
   /// Serialize the table to a binary buffer.
   void SaveToFile(const std::string& filename) const;
+  void AppendToFile(const std::string& filename) const;
 
-  void LoadFromFile(const std::string& filename);
+  //  void LoadFromFile(const std::string& filename);
+  void LoadFromFile(const std::string& filename,
+                    const size_t& offset = 0,
+                    const size_t& size = -1);
   void LoadFromMemory(const char* buffer, size_t buffer_size);
 };
 

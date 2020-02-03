@@ -535,7 +535,12 @@ void SaveCombinedParamsNaive(const std::string &path,
   }
 
   pt_desc.Save();
-  table.SaveToFile(path);
+
+  uint64_t param_size = table.size();
+  std::cout << "param_table_size:" << param_size << std::endl;
+
+  //  table.SaveToFile(path);
+  table.AppendToFile(path);
 }
 
 void SaveModelNaive(const std::string &model_dir,
@@ -544,30 +549,27 @@ void SaveModelNaive(const std::string &model_dir,
                     bool combined) {
   MkDirRecur(model_dir);
   // Save program
-  const std::string prog_path = model_dir + "/__model__.nb";
+  const std::string prog_path = model_dir + "/model.nb";
   naive_buffer::BinaryTable table;
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
   TransformProgramDescCppToAny(cpp_prog, &nb_prog);
   nb_proto_prog.Save();
-  table.SaveToFile(prog_path);
 
+  // Save topology_size(uint64) into file
+  naive_buffer::BinaryTable topology_size_table;
+  topology_size_table.Require(sizeof(uint64_t));
+  uint64_t topology_size = table.size();
+  memcpy(topology_size_table.cursor(), &topology_size, sizeof(uint64_t));
+  topology_size_table.Consume(sizeof(uint64_t));
+  topology_size_table.SaveToFile(prog_path);
+  std::cout << "topology_size_table:" << topology_size << std::endl;
+
+  // save topology data into model file
+  table.AppendToFile(prog_path);
   // Save Params
-  // NOTE: Only main block be used now.
-  if (combined) {
-    const std::string combined_params_path = model_dir + "/param.nb";
-    SaveCombinedParamsNaive(combined_params_path, exec_scope, cpp_prog);
-  } else {
-    auto prog = cpp_prog;
-    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
-        continue;
-      const std::string path = model_dir + "/" + var.Name() + ".nb";
-      SaveParamNaive(path, exec_scope, var.Name());
-    }
-  }
+  SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
+
   LOG(INFO) << "Save naive buffer model in '" << model_dir << "' successfully";
 }
 #endif
@@ -637,6 +639,7 @@ void LoadParamNaive(const std::string &path,
 }
 
 void LoadCombinedParamsNaive(const std::string &path,
+                             const uint64_t &offset,
                              lite::Scope *scope,
                              const cpp::ProgramDesc &cpp_prog,
                              bool params_from_memory) {
@@ -644,7 +647,7 @@ void LoadCombinedParamsNaive(const std::string &path,
   if (params_from_memory) {
     table.LoadFromMemory(path.c_str(), path.length());
   } else {
-    table.LoadFromFile(path);
+    table.LoadFromFile(path, offset, 0);
   }
   naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
   pt_desc.Load();
@@ -676,11 +679,17 @@ void LoadModelNaive(const std::string &model_dir,
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
-
+  std::cout << "get into LoadModelNaive";
   // Load model
-  const std::string prog_path = model_dir + "/__model__.nb";
+  const std::string prog_path = model_dir + "/model.nb";
+
+  naive_buffer::BinaryTable topology_size_table;
+  topology_size_table.LoadFromFile(prog_path, 0, sizeof(uint64_t));
+  uint64_t topology_size;
+  memcpy(&topology_size, topology_size_table.cursor(), sizeof(uint64_t));
+  std::cout << "topology_size:" << topology_size << std::endl;
   naive_buffer::BinaryTable table;
-  table.LoadFromFile(prog_path);
+  table.LoadFromFile(prog_path, sizeof(uint64_t), topology_size);
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   nb_proto_prog.Load();
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
@@ -689,30 +698,8 @@ void LoadModelNaive(const std::string &model_dir,
   TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
 
   // Load Params
-  // NOTE: Only main block be used now.
-  if (combined) {
-    const std::string combined_params_path = model_dir + "/param.nb";
-    LoadCombinedParamsNaive(combined_params_path, scope, *cpp_prog, false);
-  } else {
-    auto &prog = *cpp_prog;
-    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
-        continue;
-
-      std::string file_path = model_dir + "/" + var.Name() + ".nb";
-      VLOG(4) << "reading weight " << var.Name();
-
-      switch (var.GetType()) {
-        case VarDescAPI::Type::LOD_TENSOR:
-          LoadParamNaive(file_path, scope, var.Name());
-          break;
-        default:
-          CHECK(false) << "unknown weight type";
-      }
-    }
-  }
+  LoadCombinedParamsNaive(
+      prog_path, sizeof(uint64_t) + topology_size, scope, *cpp_prog, false);
 
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
@@ -740,7 +727,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   // Load Params
   // NOTE: Only main block be used now.
   // only combined Params are supported in Loading Model from memory
-  LoadCombinedParamsNaive(param_buffer, scope, *cpp_prog, true);
+  LoadCombinedParamsNaive(param_buffer, 0, scope, *cpp_prog, true);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
