@@ -15,6 +15,7 @@
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(lite_utils)
+include(version)
 
 lite_option(WITH_PADDLE_MOBILE   "Use the paddle-mobile legacy build"    OFF)
 if (WITH_PADDLE_MOBILE)
@@ -199,7 +200,6 @@ endif()
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
-include(version)            # set PADDLE_VERSION
 include(flags)
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
