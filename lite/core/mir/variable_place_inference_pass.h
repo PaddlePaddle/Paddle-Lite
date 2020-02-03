@@ -142,7 +142,7 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             PrecisionType tmp_ptype = x_in->AsArg().type->precision();
             x_in->AsArg().type = LiteType::GetTensorTy(
-                type->target(), tmp_ptype, type->layout());
+                type->target(), type->precision(), type->layout());
           }
         }
       }
@@ -173,7 +173,7 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             PrecisionType tmp_ptype = x_out->AsArg().type->precision();
             x_out->AsArg().type = LiteType::GetTensorTy(
-                type->target(), tmp_ptype, type->layout());
+                type->target(), type->precision(), type->layout());
           }
         }
       }
