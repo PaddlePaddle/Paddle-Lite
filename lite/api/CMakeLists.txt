@@ -35,13 +35,12 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
         NPU_DEPS ${npu_kernels})
 
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
-
-    if (LITE_WITH_NPU)
-        # Strips the symbols of our protobuf functions to fix the conflicts during
-        # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)
-        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
-        set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
-    endif()
+    set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+    set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
+    add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+    add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
+    set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+    add_dependencies(paddle_full_api_shared custom_linker_map)
 else()
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
@@ -106,7 +105,7 @@ endif()
 set(light_api_deps
     scope target_wrapper_host model_parser program)
 if(LITE_WITH_CUDA)
-    get_property(cuda_static_deps GLOBAL PROPERTY CUDA_STATIC_MODULES)
+    get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
@@ -258,9 +257,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
         FPGA_DEPS ${fpga_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
+    target_link_libraries(paddle_api_full ${cuda_deps})
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
-    cc_library(api_full_static SRCS DEPS paddle_api_full cxx_api paddle_api light_api  ${cxx_api_deps} ${ops} ${host_kernels} ${cuda_kernels} program tensor memory naive_buffer types ${fluid_modules} protobuf ${cuda_static_deps})
 endif()
+
 bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
 
