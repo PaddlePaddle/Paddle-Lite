@@ -1,3 +1,5 @@
+lite_cc_library(version SRCS version.cc)
+
 if (WITH_TESTING)
     lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
 endif()
@@ -142,6 +144,7 @@ endif()
 #         ${host_kernels}
 #         )
 
+lite_cc_test(test_version SRCS version_test.cc DEPS version)
 lite_cc_test(test_scope SRCS scope_test.cc DEPS scope)
 lite_cc_test(test_kernel SRCS kernel_test.cc DEPS kernel target_wrapper any)
 lite_cc_test(test_op SRCS op_lite_test.cc DEPS op)
