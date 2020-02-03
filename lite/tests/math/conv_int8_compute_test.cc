@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -467,7 +467,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
             for (auto& c : {1, 3, 5, 8, 16, 32}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 3, 3});
-              for (auto& batch : {2}) {
+              for (auto& batch : {1, 2}) {
                 for (auto& h : {1, 3, 15, 33}) {
                   dims.push_back(DDim({batch, c, h, h}));
                 }
@@ -501,7 +501,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
             for (auto& c : {1, 5, 15, 33}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});
-              for (auto& batch : {2}) {
+              for (auto& batch : {1, 2}) {
                 for (auto& h : {1, 3, 15, 33}) {
                   dims.push_back(DDim({batch, c, h, h}));
                 }
@@ -575,7 +575,7 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                   for (auto& flag_relu : {false, true}) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
-                    for (auto& batch : {2}) {
+                    for (auto& batch : {1, 2}) {
                       for (auto& h : {1, 7, 17, 33}) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
@@ -615,7 +615,7 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
                   for (auto& flag_relu : {false, true}) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
-                    for (auto& batch : {2}) {
+                    for (auto& batch : {1, 2}) {
                       for (auto& h : {1, 7, 19, 33}) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
@@ -663,7 +663,7 @@ TEST(TestConvRandInt8, test_conv_rand) {
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cout, cin / g, kh, kw});
-                              for (auto& batch : {2}) {
+                              for (auto& batch : {1, 2}) {
                                 for (auto& h : {1, 3, 5, 19}) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
