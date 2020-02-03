@@ -39,6 +39,9 @@ class DepthwiseConv2dCompute
     const auto& param = *param_.get_mutable<param_t>();
     if (param.fuse_relu) {
       build_options_ += " -DRELU";
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_ += " -DRELU6";
     }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
@@ -116,7 +119,7 @@ class DepthwiseConv2dCompute
 
  private:
   std::string kernel_func_name_{"depthwise_conv2d"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
@@ -135,6 +138,9 @@ class DepthwiseConv2dComputeFP16Image
     const auto& param = *param_.get_mutable<param_t>();
     if (param.fuse_relu) {
       build_options_ += " -DRELU";
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_ += " -DRELU6";
     }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
@@ -252,6 +258,9 @@ class DepthwiseConv2d3x3s1ComputeFP16Image
     const auto& param = *param_.get_mutable<param_t>();
     if (param.fuse_relu) {
       build_options_ += " -DRELU";
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_ += " -DRELU6";
     }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
@@ -360,6 +369,9 @@ class DepthwiseConv2dBasicComputeFP32Image
         has_bias && param.output->dims() == param.bias->dims();
     if (param.fuse_relu) {
       build_options_ += " -DRELU";
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_ += " -DRELU6";
     }
     if (has_bias) {
       build_options_ += is_element_wise_bias ? " -DBIASE_ELE" : " -DBIASE_CH";
