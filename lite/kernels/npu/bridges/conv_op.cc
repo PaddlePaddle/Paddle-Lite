@@ -38,18 +38,21 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
+
   auto filter_name = op_info->Input("Filter").front();
   auto filter_type = kernel->GetInputDeclType("Filter");
   CHECK(filter_type->precision() == PRECISION(kFloat));
   CHECK(filter_type->layout() == DATALAYOUT(kNCHW));
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
+
   auto output_name = op_info->Output("Output").front();
   auto output_type = kernel->GetOutputDeclType("Output");
   CHECK(output_type->precision() == PRECISION(kFloat));
   CHECK(output_type->layout() == DATALAYOUT(kNCHW));
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
+
   auto bs = input_dims[0];
   auto ic = input_dims[1];
   auto oc = filter_dims[0];
@@ -62,16 +65,22 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
-  auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  bool with_act =
+      op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
+  std::string act_type =
+      with_act ? op_info->GetAttr<std::string>("act_type") : "";
+  float leaky_relu_alpha = act_type == "leaky_relu"
+                               ? op_info->GetAttr<float>("leaky_relu_alpha")
+                               : 0.f;
   CHECK_EQ(strides.size(), 2L);
   CHECK_EQ(dilations.size(), 2L);
 
   // Input node
-  std::shared_ptr<ge::Operator> input_node = nullptr;
-  if (graph->HasNode(input_name)) {
-    input_node = graph->GetNode(input_name);
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    input_node = graph->Get(input_name);
   } else {
-    input_node = graph->AddNode(input_name, input_dims);
+    input_node = graph->Add(input_name, *input);
   }
 
   if (paddings.size() == 2L) {
@@ -109,116 +118,123 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Filter node
-  auto filter_const_node = graph->AddNode(filter_name, *filter);
+  auto filter_node = graph->Add(filter_name, *filter);
 
   // Add bias node if exists bias
   // Supports the bias nodes with the following dimensions
   // 0: {oc}
   // 1: {1, oc, oh, ow}
   // 2: {n, oc, oh, ow}
-  std::shared_ptr<ge::Operator> bias_node = nullptr;
+  std::shared_ptr<Node> bias_node = nullptr;
   bool is_channel_bias = false;
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
-    auto bias_type = kernel->GetInputDeclType("Bias");
-    CHECK(bias_type->precision() == PRECISION(kFloat));
-    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
-    auto bias = scope->FindMutableTensor(bias_name);
-    auto bias_dims = bias->dims();
-    auto bias_data_size = bias_dims.production();
-    auto output_data_size = output_dims.production();
-    std::vector<int64_t> bias_shape;
-    if (bias_data_size == oc) {
-      // 0: {oc}
-      bias_shape = {1, oc, 1, 1};
-      is_channel_bias = true;
-    } else if (bias_data_size == output_data_size / bs) {
-      // 1: {1, oc, oh, ow}
-      bias_shape = {1, output_dims[1], output_dims[2], output_dims[3]};
-    } else if (bias_data_size == output_data_size) {
-      // 2: {n, oc, oh, ow}
-      bias_shape = output_dims.Vectorize();
+    if (graph->Has(bias_name)) {
+      bias_node = graph->Get(bias_name);
     } else {
-      LOG(WARNING) << "[NPU] Bias dimension " << bias_dims
-                   << " isn't supported in conv2d Op when output dimension is "
-                   << output_dims;
-      return FAILED;
-    }
-    if (graph->HasNode(bias_name)) {
-      // Bias node from input node
-      bias_node = graph->GetNode(bias_name);
-    } else {
-      // Bias node with const data
-      bias_node = graph->AddNode(bias_name, *bias, bias_shape);
+      auto bias_type = kernel->GetInputDeclType("Bias");
+      CHECK(bias_type->precision() == PRECISION(kFloat));
+      CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+      auto bias = scope->FindMutableTensor(bias_name);
+      auto bias_dims = bias->dims();
+      auto bias_data_size = bias_dims.production();
+      auto output_data_size = output_dims.production();
+      std::vector<int64_t> bias_shape;
+      if (bias_data_size == oc) {
+        // 0: {oc}
+        bias_shape = {1, oc, 1, 1};
+        is_channel_bias = true;
+      } else if (bias_data_size == output_data_size / bs) {
+        // 1: {1, oc, oh, ow}
+        bias_shape = {1, output_dims[1], output_dims[2], output_dims[3]};
+      } else if (bias_data_size == output_data_size) {
+        // 2: {n, oc, oh, ow}
+        bias_shape = output_dims.Vectorize();
+      } else {
+        LOG(WARNING)
+            << "[NPU] Bias dimension " << bias_dims
+            << " isn't supported in conv2d Op when output dimension is "
+            << output_dims;
+        return FAILED;
+      }
+      bias_node = graph->Add(bias_name, *bias, bias_shape);
     }
   }
 
   // Conv node
-  std::shared_ptr<ge::Operator> conv_node = nullptr;
+  std::shared_ptr<Node> conv_node = nullptr;
   if (use_depthwise_conv && is_depthwise_mode) {
-    auto depthwise_conv_node =
-        graph->AddNode<ge::op::ConvolutionDepthwise>(output_name);
-    depthwise_conv_node->set_input_x(*input_node);
-    depthwise_conv_node->set_input_filter(*filter_const_node);
-    depthwise_conv_node->set_attr_mode(1);
-    depthwise_conv_node->set_attr_algo(0);
-    depthwise_conv_node->set_attr_format(0);    // NCHW
-    depthwise_conv_node->set_attr_pad_mode(5);  // VALID
-    depthwise_conv_node->set_attr_group(groups);
-    depthwise_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
+    conv_node = graph->Add<ge::op::ConvolutionDepthwise>(output_name);
+    auto conv_op = conv_node->data<ge::op::ConvolutionDepthwise>();
+    conv_op->set_input_x(*input_node->data());
+    conv_op->set_input_filter(*filter_node->data());
+    conv_op->set_attr_mode(1);
+    conv_op->set_attr_algo(0);
+    conv_op->set_attr_format(0);    // NCHW
+    conv_op->set_attr_pad_mode(5);  // VALID
+    conv_op->set_attr_group(groups);
+    conv_op->set_attr_pad(ge::AttrValue::LIST_INT(
         {paddings[0], paddings[1], paddings[2], paddings[3]}));
-    depthwise_conv_node->set_attr_dilation(
+    conv_op->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
-    depthwise_conv_node->set_attr_stride(
-        ge::AttrValue::LIST_INT({strides[0], strides[1]}));
-    depthwise_conv_node->set_attr_kernel(
+    conv_op->set_attr_stride(ge::AttrValue::LIST_INT({strides[0], strides[1]}));
+    conv_op->set_attr_kernel(
         ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
-    conv_node = depthwise_conv_node;
     // ConvolutionDepthwise Op doesn't support bias, so append Add node to
     // support bias
     if (bias_node != nullptr) {
-      auto add_node = graph->AddNode<ge::op::Add>(output_name);
-      add_node->set_input_x1(*depthwise_conv_node);
-      add_node->set_input_x2(*bias_node);
+      auto add_node = graph->Add<ge::op::Add>(output_name);
+      auto add_op = add_node->data<ge::op::Add>();
+      add_op->set_input_x1(*conv_node->data());
+      add_op->set_input_x2(*bias_node->data());
       conv_node = add_node;
     }
   } else {
-    auto common_conv_node = graph->AddNode<ge::op::Convolution>(output_name);
-    common_conv_node->set_input_x(*input_node);
-    common_conv_node->set_input_w(*filter_const_node);
-    common_conv_node->set_attr_mode(1);
-    common_conv_node->set_attr_pad_mode(0);  // NOTSET
-    common_conv_node->set_attr_group(groups);
-    common_conv_node->set_attr_pad(ge::AttrValue::LIST_INT(
-        {paddings[0], paddings[0], paddings[2], paddings[2]}));
-    common_conv_node->set_attr_dilation(
+    conv_node = graph->Add<ge::op::Convolution>(output_name);
+    auto conv_op = conv_node->data<ge::op::Convolution>();
+    conv_op->set_input_x(*input_node->data());
+    conv_op->set_input_w(*filter_node->data());
+    conv_op->set_attr_mode(1);
+    // when padding_algorithm=="SAME", NPU is different from lite
+    if (padding_algorithm == "VALID") {
+      conv_op->set_attr_pad_mode(5);
+    } else {
+      conv_op->set_attr_pad_mode(0);
+    }
+    conv_op->set_attr_group(groups);
+    conv_op->set_attr_pad(ge::AttrValue::LIST_INT(
+        {paddings[0], paddings[1], paddings[2], paddings[3]}));
+    conv_op->set_attr_dilation(
         ge::AttrValue::LIST_INT({dilations[0], dilations[1]}));
-    common_conv_node->set_attr_stride(
-        ge::AttrValue::LIST_INT({strides[0], strides[1]}));
-    common_conv_node->set_attr_kernel(
+    conv_op->set_attr_stride(ge::AttrValue::LIST_INT({strides[0], strides[1]}));
+    conv_op->set_attr_kernel(
         ge::AttrValue::LIST_INT({filter_dims[2], filter_dims[3]}));
-    conv_node = common_conv_node;
     // Convolution Op only support bias with dimension {1, oc, 1, 1},
     // so append Add node if dimension is {1, oc, oh, ow} or (n, oc, oh, ow)
     if (bias_node != nullptr) {
       if (is_channel_bias) {
-        common_conv_node->set_input_b(*bias_node);
+        conv_op->set_input_b(*bias_node->data());
       } else {
-        auto add_node = graph->AddNode<ge::op::Add>(output_name);
-        add_node->set_input_x1(*common_conv_node);
-        add_node->set_input_x2(*bias_node);
+        auto add_node = graph->Add<ge::op::Add>(output_name);
+        auto add_op = add_node->data<ge::op::Add>();
+        add_op->set_input_x1(*conv_node->data());
+        add_op->set_input_x2(*bias_node->data());
         conv_node = add_node;
       }
     }
   }
   CHECK(conv_node);
 
-  if (fuse_relu) {
-    // Append relu node if fuse_relu is true
-    auto relu_node = graph->AddNode<ge::op::Activation>(output_name);
-    relu_node->set_input_x(*conv_node);
-    relu_node->set_attr_mode(CvtActMode("relu"));
+  if (!act_type.empty()) {
+    auto act_node = graph->Add<ge::op::Activation>(output_name);
+    auto act_op = act_node->data<ge::op::Activation>();
+    act_op->set_input_x(*conv_node->data());
+    act_op->set_attr_mode(CvtActMode(act_type));
+    if (act_type == "leaky_relu") {
+      act_op->set_attr_negative_slope(leaky_relu_alpha);
+    }
   }
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -227,9 +243,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         conv2d,
+REGISTER_SUBGRAPH_BRIDGE(conv2d,
+                         kNPU,
                          paddle::lite::subgraph::npu::ConvConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         depthwise_conv2d,
+REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
+                         kNPU,
                          paddle::lite::subgraph::npu::ConvConverter);

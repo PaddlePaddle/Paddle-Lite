@@ -48,11 +48,11 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // pool mode
@@ -61,8 +61,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     mode = 0;
   } else if (pooling_type == "avg") {
     mode = 1;
-    CHECK(op_info->GetAttr<bool>("exclusive"))
-        << "[NPU] exclusive must be true in HiAI DDK";
+    if (!op_info->GetAttr<bool>("exclusive")) {
+      LOG(WARNING) << "[NPU] Only exclusive=true is supported for the pooling "
+                      "type 'avg' by HiAI DDK";
+    }
   } else {
     LOG(WARNING) << "[NPU] Unsupported pooling type: " << pooling_type;
     return FAILED;
@@ -109,19 +111,19 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Pooling node
-  auto pool_node = graph->AddNode<ge::op::Pooling>(out_name);
-  pool_node->set_input_x(*x_node);
-  pool_node->set_attr_mode(mode);
-  pool_node->set_attr_pad_mode(pad_mode);
-  pool_node->set_attr_global_pooling(global_pooling);
-  pool_node->set_attr_window(
-      ge::AttrValue::LIST_INT(ksize.begin(), ksize.end()));
-  pool_node->set_attr_pad(ge::AttrValue::LIST_INT{
+  auto pool_node = graph->Add<ge::op::Pooling>(out_name);
+  auto pool_op = pool_node->data<ge::op::Pooling>();
+  pool_op->set_input_x(*x_node->data());
+  pool_op->set_attr_mode(mode);
+  pool_op->set_attr_pad_mode(pad_mode);
+  pool_op->set_attr_global_pooling(global_pooling);
+  pool_op->set_attr_window(ge::AttrValue::LIST_INT(ksize.begin(), ksize.end()));
+  pool_op->set_attr_pad(ge::AttrValue::LIST_INT{
       paddings[0], paddings[1], paddings[2], paddings[3]});
-  pool_node->set_attr_stride(
+  pool_op->set_attr_stride(
       ge::AttrValue::LIST_INT(strides.begin(), strides.end()));
-  pool_node->set_attr_ceil_mode(ceil_mode);
-  // pool_node->set_attr_data_mode(data_mode);
+  pool_op->set_attr_ceil_mode(ceil_mode);
+  // pool_op->set_attr_data_mode(data_mode);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -130,6 +132,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         pool2d,
+REGISTER_SUBGRAPH_BRIDGE(pool2d,
+                         kNPU,
                          paddle::lite::subgraph::npu::PoolConverter);

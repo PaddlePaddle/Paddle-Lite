@@ -31,6 +31,9 @@ void SplitCompute::Run() {
   for (int i = in_dim.size() - 2; i >= 0; --i) {
     in_strides[i] = in_strides[i + 1] * in_dim[i];
   }
+  for (auto out : dout) {
+    out->set_lod(param.x->lod());
+  }
   lite::arm::math::split(din, dout, param.axis, in_strides);
 }
 

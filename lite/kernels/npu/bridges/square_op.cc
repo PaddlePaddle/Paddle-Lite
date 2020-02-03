@@ -43,16 +43,17 @@ int SquareConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Square node
-  auto square_node = graph->AddNode<ge::op::Square>(out_name);
-  square_node->set_input_x(*x_node);
+  auto square_node = graph->Add<ge::op::Square>(out_name);
+  auto square_op = square_node->data<ge::op::Square>();
+  square_op->set_input_x(*x_node->data());
   return SUCCESS;
 }
 
@@ -61,6 +62,6 @@ int SquareConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         square,
+REGISTER_SUBGRAPH_BRIDGE(square,
+                         kNPU,
                          paddle::lite::subgraph::npu::SquareConverter);

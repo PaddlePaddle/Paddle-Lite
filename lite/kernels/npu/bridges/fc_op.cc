@@ -57,22 +57,24 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << " m: " << m << " k: " << k << " n: " << n;
 
   // Create input node and reshape it to (m, k, 1, 1)
-  std::shared_ptr<ge::Operator> input_node = nullptr;
-  if (graph->HasNode(input_name)) {
-    input_node = graph->GetNode(input_name);
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    input_node = graph->Get(input_name);
   } else {
-    input_node = graph->AddNode(input_name, input_dims);
+    input_node = graph->Add(input_name, *input);
   }
   auto reshaped_input_node =
-      graph->AddNode<ge::op::Reshape>(input_name + "/reshape");
-  reshaped_input_node->set_input_tensor(*input_node);
-  reshaped_input_node->set_attr_shape({m, k, 1, 1});
-  reshaped_input_node->set_attr_axis(0);
+      graph->Add<ge::op::Reshape>(input_name + "/reshape");
+  auto reshaped_input_op = reshaped_input_node->data<ge::op::Reshape>();
+  reshaped_input_op->set_input_tensor(*input_node->data());
+  reshaped_input_op->set_attr_shape({m, k, 1, 1});
+  reshaped_input_op->set_attr_axis(0);
 
   // Create w const node, set its shape to (n, k, 1, 1) and fill with
   // the transposed w tensor
   Tensor transpose_w;
   transpose_w.Resize({n, k, 1, 1});
+  transpose_w.set_persistable(true);
   auto transpose_w_data = transpose_w.mutable_data<float>();
   auto w_data = w->mutable_data<float>();
   for (int i = 0; i < k; i++) {
@@ -80,29 +82,36 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       transpose_w_data[j * k + i] = w_data[i * n + j];
     }
   }
-  auto trans_w_const_node = graph->AddNode(w_name, transpose_w);
+  auto trans_w_node = graph->Add(w_name, transpose_w);
 
   // FC node
-  auto fc_node = graph->AddNode<ge::op::FullConnection>(out_name + "/fc");
-  fc_node->set_input_x(*reshaped_input_node);
-  fc_node->set_input_w(*trans_w_const_node);
+  auto fc_node = graph->Add<ge::op::FullConnection>(out_name + "/fc");
+  auto fc_op = fc_node->data<ge::op::FullConnection>();
+  fc_op->set_input_x(*reshaped_input_node->data());
+  fc_op->set_input_w(*trans_w_node->data());
   // Add bias node if bias tensor exists
   if (HasInputArg(op_info, scope, "Bias")) {
+    std::shared_ptr<Node> bias_node = nullptr;
     auto bias_name = op_info->Input("Bias").front();
-    auto bias_type = kernel->GetInputDeclType("Bias");
-    CHECK(bias_type->precision() == PRECISION(kFloat));
-    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
-    auto bias = scope->FindMutableTensor(bias_name);
-    auto bias_dims = bias->dims();
-    CHECK_EQ(bias_dims.production(), n);
-    auto bias_const_node = graph->AddNode(bias_name, *bias, {1, n, 1, 1});
-    fc_node->set_input_b(*bias_const_node);
+    if (graph->Has(bias_name)) {
+      bias_node = graph->Get(bias_name);
+    } else {
+      auto bias_type = kernel->GetInputDeclType("Bias");
+      CHECK(bias_type->precision() == PRECISION(kFloat));
+      CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+      auto bias = scope->FindMutableTensor(bias_name);
+      auto bias_dims = bias->dims();
+      CHECK_EQ(bias_dims.production(), n);
+      bias_node = graph->Add(bias_name, *bias, {1, n, 1, 1});
+    }
+    fc_op->set_input_b(*bias_node->data());
   }
   // Reshape output of FC node from (m, n, 1, 1) to (m, n)
-  auto reshaped_fc_node = graph->AddNode<ge::op::Reshape>(out_name);
-  reshaped_fc_node->set_input_tensor(*fc_node);
-  reshaped_fc_node->set_attr_shape({m, n});
-  reshaped_fc_node->set_attr_axis(0);
+  auto reshaped_fc_node = graph->Add<ge::op::Reshape>(out_name);
+  auto reshaped_fc_op = reshaped_fc_node->data<ge::op::Reshape>();
+  reshaped_fc_op->set_input_tensor(*fc_node->data());
+  reshaped_fc_op->set_attr_shape({m, n});
+  reshaped_fc_op->set_attr_axis(0);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -111,4 +120,4 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU, fc, paddle::lite::subgraph::npu::FCConverter);
+REGISTER_SUBGRAPH_BRIDGE(fc, kNPU, paddle::lite::subgraph::npu::FCConverter);

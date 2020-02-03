@@ -32,7 +32,7 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("Input");
+  auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
@@ -45,39 +45,47 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(padding.size(), 4);
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Padding node
   int xds = x_dims.size();
   padding.insert(padding.begin(), xds * 2 - 4, 0);
-  auto padding_const_node =
-      graph->AddNode(out_name + "/padding", padding, {xds, 2});
+  auto padding_node = graph->Add(out_name + "/padding", padding, {xds, 2});
 
   // Pad node
-  auto pad2d_node = graph->AddNode<ge::op::Pad>(out_name);
-  pad2d_node->set_input_x(*x_node);
-  pad2d_node->set_input_padding(*padding_const_node);
   auto mode = op_info->GetAttr<std::string>("mode");
   if (mode == "constant") {
+    auto pad2d_node = graph->Add<ge::op::PadV2>(out_name);
+    auto pad2d_op = pad2d_node->data<ge::op::PadV2>();
+    pad2d_op->set_input_x(*x_node->data());
+    pad2d_op->set_input_paddings(*padding_node->data());
     // Pad value node
     auto pad_value = op_info->GetAttr<float>("pad_value");
-    auto pad_value_const_node =
-        graph->AddNode(out_name + "/pad_value", pad_value);
-    pad2d_node->set_input_constant_values(*pad_value_const_node);
-    pad2d_node->set_attr_T(0);  // type of pad_value:  0:float  3:int32
-    pad2d_node->set_attr_mode(0);
-  } else if (mode == "reflect") {
-    LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
-    pad2d_node->set_attr_mode(1);
-    return FAILED;
+    auto pad_value_node = graph->Add(out_name + "/pad_value", pad_value);
+    pad2d_op->set_input_constant_values(*pad_value_node->data());
   } else {
-    LOG(WARNING) << "[NPU] pad mode " << mode << " isn't supported in HiAI DDK";
-    return FAILED;
+    auto pad2d_node = graph->Add<ge::op::Pad>(out_name);
+    auto pad2d_op = pad2d_node->data<ge::op::Pad>();
+    pad2d_op->set_input_x(*x_node->data());
+    pad2d_op->set_input_padding(*padding_node->data());
+    if (mode == "reflect") {
+      pad2d_op->set_attr_mode(1);
+      LOG(WARNING) << "[NPU] pad mode " << mode
+                   << " isn't supported in HiAI DDK";
+    } else if (mode == "edge") {
+      pad2d_op->set_attr_mode(3);
+      LOG(WARNING) << "[NPU] pad mode " << mode
+                   << " isn't supported in HiAI DDK";
+    } else {
+      LOG(WARNING) << "[NPU] pad mode " << mode
+                   << " isn't supported in HiAI DDK";
+      return FAILED;
+    }
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
@@ -87,6 +95,6 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         pad2d,
+REGISTER_SUBGRAPH_BRIDGE(pad2d,
+                         kNPU,
                          paddle::lite::subgraph::npu::Pad2dConverter);

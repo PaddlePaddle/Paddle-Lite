@@ -63,7 +63,7 @@ bool FcOpLite::InferShape() const {
   param_.output->Resize(output_dims);
 
   // share LoD
-  // param_.output->set_lod(param_.input->lod());
+  param_.output->set_lod(param_.input->lod());
   return true;
 }
 

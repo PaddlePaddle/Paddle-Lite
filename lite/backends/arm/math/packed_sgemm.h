@@ -17,6 +17,7 @@
 #include <cmath>
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -74,7 +75,7 @@ void sgemm_prepack(bool is_transB,
                    int ldc,
                    const float* bias,
                    bool has_bias,
-                   bool has_relu,
+                   const operators::ActivationParam act_param,
                    ARMContext* ctx);
 
 }  // namespace math

@@ -610,6 +610,44 @@ function build_arm {
 
 }
 
+# $1: ARM_TARGET_OS in "ios", "ios64"
+# $2: ARM_TARGET_ARCH_ABI in "armv7", "armv8"
+function build_ios {
+    local os=$1
+    local abi=$2
+    build_dir=build.ios.${os}.${abi}
+    echo "building ios target into $build_dir"
+    echo "target os: $os"
+    echo "target abi: $abi"
+    mkdir -p ${build_dir}
+    cd ${build_dir}
+    GEN_CODE_PATH_PREFIX=lite/gen_code
+    mkdir -p ./${GEN_CODE_PATH_PREFIX}
+    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+
+    cmake .. \
+            -DWITH_GPU=OFF \
+            -DWITH_MKL=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_CUDA=OFF \
+            -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_ARM=ON \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_JAVA=OFF \
+            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_OPENMP=OFF \
+            -DWITH_ARM_DOTPROD=OFF \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DARM_TARGET_ARCH_ABI=$abi \
+            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DLITE_WITH_CV=$BUILD_CV \
+            -DARM_TARGET_OS=$os
+
+    make -j4 publish_inference
+    cd -
+}
+
 # $1: ARM_TARGET_OS in "android"
 # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7"
 # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -768,6 +806,21 @@ function build_test_arm_subtask_armlinux {
     # job 7
     build_arm "armlinux" "armv7hf" "gcc"
     test_arm "armlinux" "armv7hf" "gcc" $device_armv8
+    cd $cur
+
+    echo "Done"
+}
+
+# sub-task3
+# this task will test IOS compiling, which requires cmake_version>=3.15
+function build_test_arm_subtask_ios {
+    cur=$PWD
+    # job 8
+    build_ios "ios" "armv7"
+    cd $cur
+
+    # job 9
+    build_ios "ios64" "armv8"
     cd $cur
 
     echo "Done"
@@ -1040,6 +1093,10 @@ function main {
                 ;;
             build_test_arm_subtask_armlinux)
                 build_test_arm_subtask_armlinux
+                shift
+                ;;
+            build_test_arm_subtask_ios)
+                build_test_arm_subtask_ios
                 shift
                 ;;
             check_style)

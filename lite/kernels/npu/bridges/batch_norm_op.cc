@@ -64,33 +64,38 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   float momentum = op_info->GetAttr<float>("momentum");
   float epsilon = op_info->GetAttr<float>("epsilon");
   int mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
-  bool use_global_stats = op_info->GetAttr<bool>("use_global_stats");
+  bool use_global_stats = !op_info->HasAttr("use_global_stats") ||
+                          op_info->GetAttr<bool>("use_global_stats");
+  if (!use_global_stats) {
+    LOG(WARNING) << "[NPU] Only use_global_stats=true is supported by HiAI DDK";
+  }
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Scale, Bias, Mean, Variance node
-  auto scale_const_node = graph->AddNode(scale_name, *scale);
-  auto bias_const_node = graph->AddNode(bias_name, *bias);
-  auto mean_const_node = graph->AddNode(mean_name, *mean);
-  auto variance_const_node = graph->AddNode(variance_name, *variance);
+  auto scale_node = graph->Add(scale_name, *scale);
+  auto bias_node = graph->Add(bias_name, *bias);
+  auto mean_node = graph->Add(mean_name, *mean);
+  auto variance_node = graph->Add(variance_name, *variance);
 
   // Batch Norm node
-  auto batch_norm_node = graph->AddNode<ge::op::BatchNormExt2>(y_name);
-  batch_norm_node->set_input_x(*x_node);
-  batch_norm_node->set_input_scale(*scale_const_node);
-  batch_norm_node->set_input_offset(*bias_const_node);
-  batch_norm_node->set_input_mean(*mean_const_node);
-  batch_norm_node->set_input_variance(*variance_const_node);
-  batch_norm_node->set_attr_momentum(momentum);
-  batch_norm_node->set_attr_epsilon(epsilon);
-  batch_norm_node->set_attr_mode(mode);
-  batch_norm_node->set_attr_use_global_stats(use_global_stats);
+  auto batch_norm_node = graph->Add<ge::op::BatchNormExt2>(y_name);
+  auto batch_norm_op = batch_norm_node->data<ge::op::BatchNormExt2>();
+  batch_norm_op->set_input_x(*x_node->data());
+  batch_norm_op->set_input_scale(*scale_node->data());
+  batch_norm_op->set_input_offset(*bias_node->data());
+  batch_norm_op->set_input_mean(*mean_node->data());
+  batch_norm_op->set_input_variance(*variance_node->data());
+  batch_norm_op->set_attr_momentum(momentum);
+  batch_norm_op->set_attr_epsilon(epsilon);
+  batch_norm_op->set_attr_mode(mode);
+  batch_norm_op->set_attr_use_global_stats(use_global_stats);
   return SUCCESS;
 }
 
@@ -99,6 +104,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         batch_norm,
+REGISTER_SUBGRAPH_BRIDGE(batch_norm,
+                         kNPU,
                          paddle::lite::subgraph::npu::BatchNormConverter);
