@@ -22,13 +22,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
     proto_library(framework_proto SRCS framework.proto)
 endif()
 
-if (LITE_WITH_X86)
 lite_cc_library(variable SRCS variable.cc DEPS tensor)
 lite_cc_library(types SRCS types.cc)
-else()
-lite_cc_library(variable SRCS variable.cc DEPS tensor)
-lite_cc_library(types SRCS types.cc)
-endif()
 lite_cc_library(op_registry SRCS op_registry.cc DEPS kernel)
 lite_cc_library(scope SRCS scope.cc DEPS tensor)
 lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
@@ -111,7 +106,7 @@ lite_cc_library(kernel SRCS kernel.cc
         PROFILE_DEPS lite_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
-  cpp_op_desc tensor
+  cpp_op_desc tensor types
   )
 
 add_dependencies(kernel kernel_list_h)
