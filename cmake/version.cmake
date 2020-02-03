@@ -42,4 +42,4 @@ while ("${PADDLE_VERSION}" STREQUAL "")
 endwhile()
 
 add_definitions(-DPADDLE_VERSION=${PADDLE_VERSION})
-message(STATUS "Paddle version is ${PADDLE_VERSION}")
+message(STATUS "Paddle-Lite version is ${PADDLE_VERSION}")
