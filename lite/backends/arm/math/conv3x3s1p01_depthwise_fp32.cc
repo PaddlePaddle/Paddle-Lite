@@ -1627,7 +1627,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                          \
   "vbif q4, q6, q15 @ choose \n"                                         \
   "vcge.f32 q7, q5, %q[vzero]        @ q0 > 0 \n"                        \
-  "vmul.f32 q6, q4, q14 \n"                                              \
+  "vmul.f32 q6, q5, q14 \n"                                              \
   "vst1.32  {d8-d9},   [%[dout_ptr1]]!  @ store result, add pointer\n"   \
   "vld1.32  {d28-d29}, [%[din3_ptr]]!    @ load din r0\n"                \
                                                                          \
@@ -1815,8 +1815,8 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "vmul.f32 q12, q14, q9 \n"                        \
   "vmul.f32 q13, q15, q9 \n"                        \
                                                     \
-  "vbif q14, q10, q12 \n"                           \
-  "vbif q15, q11, q13 \n"                           \
+  "vbif q14, q12, q10 \n"                           \
+  "vbif q15, q13, q11 \n"                           \
                                                     \
   "vst1.32 {d28-d29}, [%[out1]]\n"                  \
   "vst1.32 {d30-d31}, [%[out2]]\n"
