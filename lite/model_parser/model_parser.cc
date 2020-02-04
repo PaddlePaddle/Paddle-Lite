@@ -536,11 +536,6 @@ void SaveCombinedParamsNaive(const std::string &path,
   }
 
   pt_desc.Save();
-
-  uint64_t param_size = table.size();
-  std::cout << "param_table_size:" << param_size << std::endl;
-
-  //  table.SaveToFile(path);
   table.AppendToFile(path);
 }
 
