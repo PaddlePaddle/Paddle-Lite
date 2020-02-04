@@ -85,7 +85,22 @@ void PoolCompute::Run() {
       return;
     }
   } else {
-    if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
+    if (ksize[0] == 1 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
+      auto& ctx = this->ctx_->template As<ARMContext>();
+      if (pooling_type == "max") {
+        lite::arm::math::pooling1x1s2p0_max(din,
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3]);
+        return;
+      }
+    } else if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 &&
+               kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2_max(din,
                                           dout,

@@ -50,8 +50,17 @@ void MulCompute::Run() {
   k_ = x_w;
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (n_ == 1) {
-    lite::arm::math::sgemv(
-        x_data, y_data, o_data, false, m_, k_, false, nullptr, false, &ctx);
+    lite::arm::math::sgemv(x_data,
+                           y_data,
+                           o_data,
+                           false,
+                           m_,
+                           k_,
+                           false,
+                           nullptr,
+                           false,
+                           lite_api::ActivationType::kIndentity,
+                           &ctx);
 
   } else {
     constexpr bool is_tranposed_y = false;
@@ -67,6 +76,8 @@ void MulCompute::Run() {
     if (is_tranposed_y) {
       ldb = k_;
     }
+    operators::ActivationParam act_param;
+    act_param.has_active = false;
     lite::arm::math::sgemm_prepack(is_tranposed_y,
                                    m_,
                                    n_,
@@ -79,7 +90,7 @@ void MulCompute::Run() {
                                    n_,
                                    nullptr,
                                    false,
-                                   false,
+                                   act_param,
                                    &ctx);
   }
 }

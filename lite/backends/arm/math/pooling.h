@@ -64,6 +64,16 @@ void pooling_global_avg(const float* din,
                         int hin,
                         int win);
 
+void pooling1x1s2p0_max(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win);
+
 void pooling2x2s2_max(const float* din,
                       float* dout,
                       int num,
