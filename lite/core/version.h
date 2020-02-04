@@ -22,9 +22,9 @@ namespace lite {
 
 // The program version the current codes generate.
 #ifdef PADDLE_VERSION
-const char kCurProgramVersion[] = PADDLE_VERSION;
+const char kCurProgramVersion[16] = PADDLE_VERSION;
 #else
-const char kCurProgramVersion[] = "0.0.0";
+const char kCurProgramVersion[16] = "0.0.0";
 #endif
 
 const std::string version() { return kCurProgramVersion; }
