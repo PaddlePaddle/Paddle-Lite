@@ -29,8 +29,6 @@ void ReadFromArrayCompute::Run() {
       << "The value of tensor I should be less than the size of TensorArray X";
   param.Out->Resize((*param.X)[idx].dims());
   param.Out->CopyDataFrom((*param.X)[idx]);
-  auto out_lod = param.Out->mutable_lod();
-  *out_lod = (*param.X)[idx].lod();
 }
 
 }  // namespace host

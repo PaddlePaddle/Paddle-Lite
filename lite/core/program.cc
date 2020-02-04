@@ -175,7 +175,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
               sub_block_idx);
       CHECK(sub_block_desc);
       if (!valid_places_.empty()) {
-        std::vector<std::string> serialized_valid_places;
+        std::vector<std::string> valid_places;
         for (auto& valid_place : valid_places_) {
           STL::stringstream ss;
           // We serialize the place value not the string representation here for
@@ -183,10 +183,10 @@ void Program::Build(const cpp::ProgramDesc& prog) {
           ss << static_cast<int>(valid_place.target) << "/";
           ss << static_cast<int>(valid_place.precision) << "/";
           ss << static_cast<int>(valid_place.layout);
-          serialized_valid_places.push_back(ss.str());
+          valid_places.push_back(ss.str());
         }
         const_cast<cpp::OpDesc&>(op_desc).SetAttr<std::vector<std::string>>(
-            "valid_places", serialized_valid_places);
+            "valid_places", valid_places);
       }
       if (op_type == "while") {
         static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(
