@@ -50,8 +50,17 @@ void MulCompute::Run() {
   k_ = x_w;
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (n_ == 1) {
-    lite::arm::math::sgemv(
-        x_data, y_data, o_data, false, m_, k_, false, nullptr, false, &ctx);
+    lite::arm::math::sgemv(x_data,
+                           y_data,
+                           o_data,
+                           false,
+                           m_,
+                           k_,
+                           false,
+                           nullptr,
+                           false,
+                           lite_api::ActivationType::kIndentity,
+                           &ctx);
 
   } else {
     constexpr bool is_tranposed_y = false;
