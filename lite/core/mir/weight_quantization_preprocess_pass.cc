@@ -32,7 +32,7 @@ void WeightQuantizationPreprocessPass::Apply(
                   node->AsStmt().op_type()) != weight_quantized_op.end()) {
       auto* scope = node->stmt()->op()->scope();
       auto* op_desc = node->stmt()->mutable_op_info();
-      if (op_desc->HasAttr("weight_quant_bits")) {
+      if (op_desc->HasAttr("quantize_weight_bits")) {
         for (auto& input_name : op_desc->input_vars()) {
           std::string scale_name = input_name + "_quant_scale";
           if (op_desc->HasAttr(scale_name)) {

@@ -24,10 +24,9 @@ namespace mir {
 /*
  * If the model is quantized by WeightQuantization in PostTrainingQuantization,
  * the data type of the weight in quantized ops (conv2d, depthwise_conv2d) is
- * int,
- * and the scale is save in the quantized ops. WeightQuantizationPreprocessPass
- * obtains the scale value, expands the scale value to a list, and save the list
- * in the quantized ops.
+ * int, and the scale is save in the quantized ops.
+ * WeightQuantizationPreprocessPass obtains the scale value, expands the
+ * scale value to a list, and save the list in the quantized ops.
  */
 class WeightQuantizationPreprocessPass : public ProgramPass {
  public:

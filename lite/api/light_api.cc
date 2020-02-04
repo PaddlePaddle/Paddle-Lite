@@ -166,7 +166,7 @@ void LightPredictor::DequantizeWeight() {
   auto* main_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
   for (size_t k = 0; k < main_block->OpsSize(); ++k) {
     auto* op_desc = main_block->GetOp<cpp::OpDesc>(k);
-    if (op_desc->HasAttr("weight_quant_bits")) {  //  weight quantized op
+    if (op_desc->HasAttr("quantize_weight_bits")) {  //  weight quantized op
       auto input_names = op_desc->input_vars();
       for (auto& input_name : input_names) {
         std::string input_scale_name = input_name + "_quant_scale";
@@ -176,7 +176,8 @@ void LightPredictor::DequantizeWeight() {
           tmp_tensor.CopyDataFrom(*input_tensor);
           auto scale_list =
               op_desc->GetAttr<std::vector<float>>(input_scale_name);
-          int weight_quant_bits = op_desc->GetAttr<int>("weight_quant_bits");
+          int quantize_weight_bits =
+              op_desc->GetAttr<int>("quantize_weight_bits");
           float* fp_data = input_tensor->mutable_data<float>();
 
           std::string op_type = op_desc->Type();
@@ -184,7 +185,7 @@ void LightPredictor::DequantizeWeight() {
             int64_t h = input_tensor->dims()[0];
             int64_t w = input_tensor->numel() / h;
             CHECK_EQ(scale_list.size(), h);
-            if (weight_quant_bits == 8) {
+            if (quantize_weight_bits == 8) {
               const int8_t* int_data = tmp_tensor.data<int8_t>();
               PROCESS_CONV2D_DATA()
             } else {
@@ -192,7 +193,7 @@ void LightPredictor::DequantizeWeight() {
               PROCESS_CONV2D_DATA()
             }
           } else if (op_type == "fc" || op_type == "mul") {
-            if (weight_quant_bits == 8) {
+            if (quantize_weight_bits == 8) {
               const int8_t* int_data = tmp_tensor.data<int8_t>();
               PROCESS_FC_DATA()
             } else {
