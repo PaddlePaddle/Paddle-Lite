@@ -617,7 +617,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fcmge v18.4s, v12.4s,  %[vzero].4s \n" /* vcgeq_f32 */                 \
   "fcmge v19.4s, v13.4s,  %[vzero].4s \n" /* vcgeq_f32 */                 \
   "fmul v20.4s, v12.4s, %[vscale].4s \n"  /* mul */                       \
-  "fmul v21.4s, v12.4s, %[vscale].4s \n"  /* mul */                       \
+  "fmul v21.4s, v13.4s, %[vscale].4s \n"  /* mul */                       \
   "ld1 {v8.4s}, [%[din_ptr4]], #16   \n"  /*vld1q_f32(din_ptr0)*/         \
                                                                           \
   "fmla v15.4s ,  v16.4s,  %[w1].s[0]\n" /* outr00 += din2_0123 * w0[1]*/ \

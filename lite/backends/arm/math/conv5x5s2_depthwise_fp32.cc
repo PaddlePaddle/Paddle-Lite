@@ -209,9 +209,9 @@ namespace math {
   "fcmge v7.4s, v22.4s,  v0.4s \n"       /* vcgeq_f32 */ \
   "fmul  v8.4s, v22.4s, %[vscale].4s \n" /* mul */       \
   "bif  v19.16b, v2.16b, v1.16b \n"      /* choose*/     \
-  "bif  v19.16b, v4.16b, v3.16b \n"      /* choose*/     \
-  "bif  v19.16b, v6.16b, v5.16b \n"      /* choose*/     \
-  "bif  v19.16b, v8.16b, v7.16b \n"      /* choose*/
+  "bif  v20.16b, v4.16b, v3.16b \n"      /* choose*/     \
+  "bif  v21.16b, v6.16b, v5.16b \n"      /* choose*/     \
+  "bif  v22.16b, v8.16b, v7.16b \n"      /* choose*/
 #define STORE                            /* save result */ \
   "str q19, [%[outc0]], #16\n"                             \
   "str q20, [%[outc1]], #16\n"                             \
