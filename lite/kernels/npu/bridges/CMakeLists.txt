@@ -20,6 +20,7 @@ set(npu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_np
 
 lite_cc_library(subgraph_bridge_fc_op_npu SRCS fc_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_op_npu SRCS conv_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_matmul_op_npu SRCS matmul_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_mul_op_npu SRCS mul_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_act_op_npu SRCS act_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_scale_op_npu SRCS scale_op.cc DEPS ${npu_subgraph_bridge_deps})
@@ -50,6 +51,7 @@ set(npu_subgraph_bridges
         subgraph_bridge_graph_npu
         subgraph_bridge_fc_op_npu
         subgraph_bridge_conv_op_npu
+        subgraph_bridge_matmul_op_npu
         subgraph_bridge_mul_op_npu
         subgraph_bridge_act_op_npu
         subgraph_bridge_scale_op_npu
