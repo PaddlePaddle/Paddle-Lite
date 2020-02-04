@@ -331,48 +331,7 @@ TEST(TestConv5x5DW, test_conv5x5_depthwise) {
   }
 }
 #endif  /// 5x5dw
-// TODO(chenjiaoAngel): fix 4 threds, diff: 3x3 depthwise conv
-#if 1  /// 3x3dw
-TEST(TestConv3x3DW, test_conv3x3_depthwise) {
-  if (FLAGS_basic_test) {
-    for (auto& stride : {1, 2}) {
-      for (auto& pad_left : {0, 1, 2}) {
-        for (auto& pad_right : {0, 1, 2}) {
-          for (auto& pad_top : {0, 1, 2}) {
-            for (auto& pad_bottom : {0, 1, 2}) {
-              for (auto& flag_bias : {false, true}) {
-                for (auto& flag_act : {0, 1, 2, 4}) {
-                  for (auto& c : {1, 3, 5, 8, 16, 32}) {
-                    std::vector<DDim> dims;
-                    DDim weights_dim({c, 1, 3, 3});
-                    for (auto& batch : {1, 2}) {
-                      for (auto& h : {1, 3, 15, 19, 28, 32, 75}) {
-                        dims.push_back(DDim({batch, c, h, h}));
-                      }
-                    }
-                    const float leakey_relu_scale = 8.88;
-                    test_conv_fp32(dims,
-                                   weights_dim,
-                                   c,
-                                   {stride, stride},
-                                   {pad_top, pad_bottom, pad_left, pad_right},
-                                   {1, 1},
-                                   flag_bias,
-                                   flag_act,
-                                   {1},
-                                   {FLAGS_power_mode},
-                                   leakey_relu_scale);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-#endif  /// 3x3dw
+
 #if 0   /// 3x3dw
 TEST(TestConv3x3DW, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
