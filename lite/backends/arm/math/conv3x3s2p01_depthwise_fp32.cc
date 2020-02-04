@@ -451,44 +451,44 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                     \
   "blt 1f                                     \n"
 
-#define LEFT_RESULT_S2_LEAKY_RELU                        \
-  "ld1 {v22.4s}, [%[scale_ptr]]                  \n"     \
-  "cmhs v11.4s, v16.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-                                                         \
-  "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32    \n"          \
-  "ld2  {v2.4s, v3.4s}, [%[inptr1]], #32    \n"          \
-  "ld2  {v4.4s, v5.4s}, [%[inptr2]], #32    \n"          \
-                                                         \
-  "fmul v12.4s, v16.4s, v22.4s                  \n"      \
-  "fadd v17.4s, v17.4s, v13.4s                  \n"      \
-                                                         \
-  "ld2  {v6.4s, v7.4s}, [%[inptr3]], #32    \n"          \
-  "ld2  {v8.4s, v9.4s}, [%[inptr4]], #32    \n"          \
-  "ld1 {v15.4s}, [%[inptr0]]                 \n"         \
-                                                         \
-  "fadd v17.4s, v17.4s, v14.4s                  \n"      \
-  "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/        \
-                                                         \
-  "ld1 {v18.4s}, [%[inptr1]]                 \n"         \
-  "ld1 {v19.4s}, [%[inptr2]]                 \n"         \
-                                                         \
-  "ext  v10.16b, v0.16b, v15.16b, #4     \n"             \
-                                                         \
-  "st1 {v16.4s}, [%[outptr0]], #16              \n"      \
-  "cmhs v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v12.4s, v16.4s, v22.4s                  \n"      \
-                                                         \
-  "ld1 {v20.4s}, [%[inptr3]]                 \n"         \
-  "ld1 {v21.4s}, [%[inptr4]]                 \n"         \
-                                                         \
-  "and  v16.16b, %[vbias].16b, %[vbias].16b  \n"         \
-  "bif v17.16b, v12.16b, v11.16b \n" /* choose*/         \
-                                                         \
-  "cmp %w[cnt], #1                             \n"       \
-                                                         \
-  "st1 {v17.4s}, [%[outptr1]], #16              \n"      \
-  "and  v17.16b, %[vbias].16b, %[vbias].16b  \n"         \
-                                                         \
+#define LEFT_RESULT_S2_LEAKY_RELU                         \
+  "ld1 {v22.4s}, [%[scale_ptr]]                  \n"      \
+  "fcmge v11.4s, v16.4s,  %[vzero].4s \n" /* vcgeq_f32 */ \
+                                                          \
+  "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32    \n"           \
+  "ld2  {v2.4s, v3.4s}, [%[inptr1]], #32    \n"           \
+  "ld2  {v4.4s, v5.4s}, [%[inptr2]], #32    \n"           \
+                                                          \
+  "fmul v12.4s, v16.4s, v22.4s                  \n"       \
+  "fadd v17.4s, v17.4s, v13.4s                  \n"       \
+                                                          \
+  "ld2  {v6.4s, v7.4s}, [%[inptr3]], #32    \n"           \
+  "ld2  {v8.4s, v9.4s}, [%[inptr4]], #32    \n"           \
+  "ld1 {v15.4s}, [%[inptr0]]                 \n"          \
+                                                          \
+  "fadd v17.4s, v17.4s, v14.4s                  \n"       \
+  "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/         \
+                                                          \
+  "ld1 {v18.4s}, [%[inptr1]]                 \n"          \
+  "ld1 {v19.4s}, [%[inptr2]]                 \n"          \
+                                                          \
+  "ext  v10.16b, v0.16b, v15.16b, #4     \n"              \
+                                                          \
+  "st1 {v16.4s}, [%[outptr0]], #16              \n"       \
+  "fcmge v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fmul v12.4s, v16.4s, v22.4s                  \n"       \
+                                                          \
+  "ld1 {v20.4s}, [%[inptr3]]                 \n"          \
+  "ld1 {v21.4s}, [%[inptr4]]                 \n"          \
+                                                          \
+  "and  v16.16b, %[vbias].16b, %[vbias].16b  \n"          \
+  "bif v17.16b, v12.16b, v11.16b \n" /* choose*/          \
+                                                          \
+  "cmp %w[cnt], #1                             \n"        \
+                                                          \
+  "st1 {v17.4s}, [%[outptr1]], #16              \n"       \
+  "and  v17.16b, %[vbias].16b, %[vbias].16b  \n"          \
+                                                          \
   "blt 1f                                     \n"
 
 #define MID_RESULT_S2_RELU                                    \
@@ -542,30 +542,30 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                               \
   "bne  2b                                    \n"
 
-#define MID_RESULT_S2_LEAKY_RELU                         \
-  "cmhs v11.4s, v16.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v12.4s, v16.4s, v22.4s                  \n"      \
-                                                         \
-  "fadd v17.4s, v17.4s, v13.4s                  \n"      \
-                                                         \
-  "ld1 {v19.4s}, [%[inptr2]]                 \n"         \
-  "ld1 {v20.4s}, [%[inptr3]]                 \n"         \
-  "ld1 {v21.4s}, [%[inptr4]]                 \n"         \
-                                                         \
-  "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/        \
-  "ext  v10.16b, v0.16b, v15.16b, #4     \n"             \
-  "cmhs v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v12.4s, v17.4s, v22.4s                  \n"      \
-                                                         \
-  "st1 {v16.4s}, [%[outptr0]], #16              \n"      \
-  "subs %w[cnt], %w[cnt], #1                    \n"      \
-                                                         \
-  "and  v16.16b, %[vbias].16b, %[vbias].16b  \n"         \
-  "bif  v17.16b, v12.16b, v11.16b \n" /* choose*/        \
-  "st1 {v17.4s}, [%[outptr1]], #16              \n"      \
-                                                         \
-  "and  v17.16b, %[vbias].16b, %[vbias].16b  \n"         \
-                                                         \
+#define MID_RESULT_S2_LEAKY_RELU                          \
+  "fcmge v11.4s, v16.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fmul v12.4s, v16.4s, v22.4s                  \n"       \
+                                                          \
+  "fadd v17.4s, v17.4s, v13.4s                  \n"       \
+                                                          \
+  "ld1 {v19.4s}, [%[inptr2]]                 \n"          \
+  "ld1 {v20.4s}, [%[inptr3]]                 \n"          \
+  "ld1 {v21.4s}, [%[inptr4]]                 \n"          \
+                                                          \
+  "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/         \
+  "ext  v10.16b, v0.16b, v15.16b, #4     \n"              \
+  "fcmge v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fmul v12.4s, v17.4s, v22.4s                  \n"       \
+                                                          \
+  "st1 {v16.4s}, [%[outptr0]], #16              \n"       \
+  "subs %w[cnt], %w[cnt], #1                    \n"       \
+                                                          \
+  "and  v16.16b, %[vbias].16b, %[vbias].16b  \n"          \
+  "bif  v17.16b, v12.16b, v11.16b \n" /* choose*/         \
+  "st1 {v17.4s}, [%[outptr1]], #16              \n"       \
+                                                          \
+  "and  v17.16b, %[vbias].16b, %[vbias].16b  \n"          \
+                                                          \
   "bne  2b                                    \n"
 
 #define RIGHT_RESULT_S2_RELU                                  \
@@ -606,25 +606,25 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "st1 {v17.4s}, [%[outptr1]], #16              \n"           \
   "4:                                          \n"
 
-#define RIGHT_RESULT_S2_LEAKY_RELU                       \
-  "cmhs v11.4s, v16.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v12.4s, v16.4s, v22.4s                  \n"      \
-  "fadd v17.4s, v17.4s, v13.4s                  \n"      \
-                                                         \
-  "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/        \
-                                                         \
-  "fadd v17.4s, v17.4s, v14.4s                  \n"      \
-                                                         \
-  "bif  v16.16b, v0.16b, %[wmask].16b    \n"             \
-                                                         \
-  "cmhs v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v12.4s, v17.4s, v22.4s                  \n"      \
-                                                         \
-  "st1 {v16.4s}, [%[outptr0]], #16              \n"      \
-  "bif  v17.16b, v12.16b, v11.16b \n" /* choose*/        \
-  "bif  v17.16b, v1.16b, %[wmask].16b    \n"             \
-                                                         \
-  "st1 {v17.4s}, [%[outptr1]], #16              \n"      \
+#define RIGHT_RESULT_S2_LEAKY_RELU                        \
+  "fcmge v11.4s, v16.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fmul v12.4s, v16.4s, v22.4s                  \n"       \
+  "fadd v17.4s, v17.4s, v13.4s                  \n"       \
+                                                          \
+  "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/         \
+                                                          \
+  "fadd v17.4s, v17.4s, v14.4s                  \n"       \
+                                                          \
+  "bif  v16.16b, v0.16b, %[wmask].16b    \n"              \
+                                                          \
+  "fcmge v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fmul v12.4s, v17.4s, v22.4s                  \n"       \
+                                                          \
+  "st1 {v16.4s}, [%[outptr0]], #16              \n"       \
+  "bif  v17.16b, v12.16b, v11.16b \n" /* choose*/         \
+  "bif  v17.16b, v1.16b, %[wmask].16b    \n"              \
+                                                          \
+  "st1 {v17.4s}, [%[outptr1]], #16              \n"       \
   "4:                                          \n"
 
 #define COMPUTE_S_S2                                  \
