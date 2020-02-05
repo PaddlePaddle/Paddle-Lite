@@ -423,13 +423,15 @@ TEST(fusion_elementwise_mul_activation_arm, retrive_op) {
 }
 
 TEST(fusion_elementwise_mul_activation_arm, init) {
-  ElementwiseMulActivationCompute fusion_elementwise_mul_activation;
+  ElementwiseMulActivationCompute<float, PRECISION(kFloat)>
+      fusion_elementwise_mul_activation;
   ASSERT_EQ(fusion_elementwise_mul_activation.precision(), PRECISION(kFloat));
   ASSERT_EQ(fusion_elementwise_mul_activation.target(), TARGET(kARM));
 }
 
 TEST(fusion_elementwise_mul_activation_arm, compute) {
-  ElementwiseMulActivationCompute fusion_elementwise_mul_activation;
+  ElementwiseMulActivationCompute<float, PRECISION(kFloat)>
+      fusion_elementwise_mul_activation;
   operators::FusionElementwiseActivationParam param;
   lite::Tensor x, y, output, output_ref;
 
