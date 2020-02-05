@@ -44,8 +44,6 @@ void ElementwiseMulFloatImageCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
       kernel_func_name_, "image/elementwise_mul_kernel.cl", build_options_);
-
-  //  UpdateParams();
 }
 
 void ElementwiseMulFloatImageCompute::Run() {
@@ -88,7 +86,7 @@ void ElementwiseMulFloatImageCompute::Run() {
   int arg_idx = 0;
   auto y_dims = y->dims();
   if (y_dims == ele_param_->X->dims()) {
-    // elementwise_mul
+    // kernel: elementwise_mul
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *y_img);
@@ -96,18 +94,8 @@ void ElementwiseMulFloatImageCompute::Run() {
     status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
   } else if (y_dims.size() == 1 || y_dims.size() == 2 || y_dims.size() == 4) {
-    if (y_dims.size() == 1) {
-      // channel_mul
-      VLOG(4) << "channel_mul";
-    } else if (y_dims.size() == 2) {
-      // channel_mul_d2
-      VLOG(4) << "channel_mul_d2";
-    } else if (y_dims.size() == 4) {
-      // channel_mul_d4
-      VLOG(4) << "channel_mul_d4";
-    }
-
     auto tensor_w = x->dims()[x->dims().size() - 1];
+    // kernel: channel_mul / channel_mul_d2 / channel_mul_d4
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *y_img);
