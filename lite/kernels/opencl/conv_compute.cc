@@ -70,9 +70,12 @@ void ConvCompute::PrepareForRun() {
     kernel_func_names_.push_back("gemm_batch");
     kernel_func_paths_.push_back("buffer/fc_kernel.cl");
     if (relu_fused) {
-      build_options_.push_back("-DCL_DTYPE=float -DRELU");
+      build_options_.push_back("-DCL_DTYPE_float -DRELU");
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_.push_back("-DCL_DTYPE_float -DRELU6");
     } else {
-      build_options_.push_back("-DCL_DTYPE=float");
+      build_options_.push_back("-DCL_DTYPE_float");
     }
     impl_ = &ConvCompute::Conv2d1x1;
   } else if (pad_equal) {
@@ -80,11 +83,14 @@ void ConvCompute::PrepareForRun() {
     kernel_func_names_.push_back("gemm_batch");
     kernel_func_paths_.push_back("buffer/im2col_kernel.cl");
     kernel_func_paths_.push_back("buffer/fc_kernel.cl");
-    build_options_.push_back("-DCL_DTYPE=float");
+    build_options_.push_back("-DCL_DTYPE_float");
     if (relu_fused) {
-      build_options_.push_back("-DCL_DTYPE=float -DRELU");
+      build_options_.push_back("-DCL_DTYPE_float -DRELU");
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_.push_back("-DCL_DTYPE_float -DRELU6");
     } else {
-      build_options_.push_back("-DCL_DTYPE=float");
+      build_options_.push_back("-DCL_DTYPE_float");
     }
     impl_ = &ConvCompute::GemmlikeConv2d;
     col_buffer_.reset(new lite::Tensor);
