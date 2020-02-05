@@ -112,20 +112,6 @@ __kernel void channel_mul_d2(__global image2d_t input, __global image2d_t bias,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-__kernel void channel_mul_d4(__global image2d_t input, __global image2d_t bias,
-                          __write_only image2d_t outputImage, int w) {
-  int x = get_global_id(0);
-  int y = get_global_id(1);
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-  int2 coords;
-  coords.x = x;
-  coords.y = y;
-  int2 coords_bias;
-  coords_bias.x = x / w;
-  coords_bias.y = 0;
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coords);
-  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias);
-  CL_DTYPE4 output = in * biase;
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
-} 
+// kernel `channel_mul`(y_dims.size() == 1) is same as `channel_mul_d4`(y_dims.size() == 4)
+// __kernel void channel_mul_d4(__global image2d_t input, __global image2d_t bias,
+//                              __write_only image2d_t outputImage, int w)

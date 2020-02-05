@@ -28,21 +28,18 @@ void ElementwiseMulFloatImageCompute::PrepareForRun() {
   auto* y = ele_param_->Y;
   auto y_dims = y->dims();
   if (y_dims == ele_param_->X->dims()) {
-    VLOG(4) << "elementwise_mul";
     kernel_func_name_ = "elementwise_mul";
-  } else if (y_dims.size() == 1) {
-    VLOG(4) << "channel_mul";
+  } else if (y_dims.size() == 1 || y_dims.size() == 4) {
     kernel_func_name_ = "channel_mul";
   } else if (y_dims.size() == 2) {
-    VLOG(4) << "channel_mul_d2";
     kernel_func_name_ = "channel_mul_d2";
-  } else if (y_dims.size() == 4) {
-    VLOG(4) << "channel_mul_d4";
-    kernel_func_name_ = "channel_mul_d4";
   } else {
     LOG(FATAL) << "ElementwiseMul not supported y_dims.size():"
                << y_dims.size();
   }
+  VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+  VLOG(4) << "y_dims:" << y_dims;
+  VLOG(4) << "y_dims.size():" << y_dims.size();
 
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
@@ -72,11 +69,17 @@ void ElementwiseMulFloatImageCompute::Run() {
   auto x_img_height = x_img_shape[1];
   auto out_img_shape =
       default_convertor.InitImageDimInfoWith(out->dims());  // w, h
+  auto y_img_shape = default_convertor.InitImageDimInfoWith(y->dims());
 
   auto* x_img = x->data<float, cl::Image2D>();
   auto* y_img = y->data<float, cl::Image2D>();
   auto* out_img =
       out->mutable_data<float, cl::Image2D>(out_img_shape[0], out_img_shape[1]);
+
+  VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;
+  VLOG(4) << "y_img_shape[w,h]:" << y_img_shape[0] << " " << y_img_shape[1];
+  VLOG(4) << "out_img_shape[w,h]:" << out_img_shape[0] << " "
+          << out_img_shape[1];
 
   STL::stringstream kernel_key;
   kernel_key << kernel_func_name_ << build_options_;
