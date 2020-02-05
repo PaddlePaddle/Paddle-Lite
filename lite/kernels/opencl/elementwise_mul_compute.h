@@ -41,11 +41,6 @@ class ElementwiseMulFloatImageCompute
   void Run() override;
 
  protected:
-  void UpdateParams();
-
-  size_t batch_{1};
-  size_t channels_{1};
-  size_t num_{1};
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{"elementwise_mul"};
   std::string build_options_{"-DCL_DTYPE_float"};
