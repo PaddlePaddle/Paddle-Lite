@@ -545,7 +545,7 @@ void SaveModelNaive(const std::string &model_dir,
                     bool combined) {
   MkDirRecur(model_dir);
   // Save program
-  const std::string prog_path = model_dir + "/model.nb";
+  const std::string prog_path = model_dir + ".nb";
   naive_buffer::BinaryTable table;
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
