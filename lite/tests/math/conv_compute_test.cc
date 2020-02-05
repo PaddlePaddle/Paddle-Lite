@@ -306,8 +306,8 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                     const float leakey_relu_scale) {}
 #endif  // LITE_WITH_ARM
 
-// TODO(chenjiaoAngel): fix 4 threds, diff: 3x3 depthwise conv
-#if 1   /// 3x3dw 
+// TODO(chenjiaoAngel): fix multi-threds, diff: 3x3 depthwise conv
+#if 1  /// 3x3dw
 TEST(TestConv3x3DW, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
