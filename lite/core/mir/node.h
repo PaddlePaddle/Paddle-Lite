@@ -79,7 +79,11 @@ class Node {
 
     // Description.
     std::string desc;
+
+    // for cuda multi stream
     bool need_sync_{false};
+    uint32_t stream_id_{0};
+    std::vector<uint32_t> sync_streams_{};
   };
 
   struct Arg {

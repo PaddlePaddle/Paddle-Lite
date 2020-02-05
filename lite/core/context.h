@@ -242,6 +242,10 @@ class Context<TargetType::kCUDA> {
     output_events_.assign(output_events.begin(), output_events.end());
   }
 
+  std::vector<cudaStream_t> all_exec_streams() {
+    return devs[dev_id].exec_streams();
+  }
+
   std::string name() const { return "CUDAContext"; }
 
   CUDAContext& operator=(const CUDAContext& context) {
@@ -341,7 +345,8 @@ class ContextScheduler {
     return *x;
   }
 
-  std::unique_ptr<KernelContext> NewContext(TargetType target) {
+  std::unique_ptr<KernelContext> NewContext(TargetType target,
+                                            int exec_stream_id = 0) {
     std::unique_ptr<KernelContext> ctx(new KernelContext);
     switch (target) {
       case TARGET(kHost):
@@ -358,7 +363,7 @@ class ContextScheduler {
       case TARGET(kCUDA): {
         int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
         auto& context = ctx->As<CUDAContext>();
-        context.Init(dev_id);
+        context.Init(dev_id, exec_stream_id);
         kernel_contexts_[TargetType::kCUDA].As<CUDAContext>().CopySharedTo(
             &context);
       } break;

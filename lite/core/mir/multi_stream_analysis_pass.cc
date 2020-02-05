@@ -145,17 +145,20 @@ void MultiStreamAnalysisPass::Launch(Node* stmt_node) {
     if (std::find(lanes.begin(), lanes.end(), in_arg->AsArg().lane) ==
         lanes.end()) {
       lanes.push_back(in_arg->AsArg().lane);
+      stmt_node->AsStmt().sync_streams_.push_back(in_arg->AsArg().lane);
     }
   }
+
+  uint32_t stream_id = SelectStreamId(lanes);
 
   // If all inputs of the op are on multiple streams, they need to be
   // synchronized
   if (lanes.size() > 1) {
     stmt_node->AsStmt().need_sync_ = true;
+    stmt_node->AsStmt().stream_id_ = stream_id;
   }
 
   // set output lane and set the output of op to be accessible.
-  uint32_t stream_id = SelectStreamId(lanes);
   for (auto& out_arg : stmt_node->outlinks) {
     out_arg->AsArg().lane = stream_id;
     resources_[out_arg->AsArg().name] = true;
@@ -193,6 +196,8 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
             << " sync: " << node->AsStmt().need_sync_;
     exec_que_.pop();
   }
+
+  graph.get()->SetNodeInOrder(exec_ops_);
 
   for (size_t i = 0; i < ops_in_streams_.size(); ++i) {
     VLOG(3) << "stream " << i << " has " << ops_in_streams_[i].size()

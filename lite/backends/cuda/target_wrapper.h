@@ -45,7 +45,9 @@ class TargetWrapper<TARGET(kCUDA)> {
   static void RecordEvent(const event_t& event) {}
   static void SyncEvent(const event_t& event) {}
 
-  static void StreamSync(const stream_t& stream) {}
+  static void StreamSync(const stream_t& stream) {
+    cudaStreamSynchroize(stream);
+  }
 
   static void* Malloc(size_t size);
   static void Free(void* ptr);

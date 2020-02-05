@@ -105,10 +105,10 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
+           "multi_stream_analysis_pass",
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "memory_optimize_pass",
-           "multi_stream_analysis_pass",
            "npu_subgraph_pass",
            "xpu_subgraph_pass"}};
       RunPasses(passes_local);

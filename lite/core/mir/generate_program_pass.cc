@@ -18,6 +18,9 @@
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/target_wrapper.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -25,11 +28,27 @@ namespace mir {
 
 void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   VLOG(4) << "final program \n" << Visualize(graph.get());
+#ifdef LITE_WITH_CUDA
+  for (auto& item : graph->GetNodesInOrder()) {
+#else
   for (auto& item : graph->StmtTopologicalOrder()) {
+#endif
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
       VLOG(4) << stmt;
+#ifdef LITE_WITH_CUDA
+      std::vector<cudaStream_t> streams;
+      for (size_t i = 0; i < stmt.sync_streams_.size(); ++i) {
+        streams.push_back(
+            stmt.kernels().front().context()->all_exec_streams()[i]);
+      }
+      insts_.emplace_back(stmt.op(),
+                          std::move(stmt.kernels().front()),
+                          stmt.need_sync_,
+                          streams);
+#else
       insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
+#endif
     }
   }
 }

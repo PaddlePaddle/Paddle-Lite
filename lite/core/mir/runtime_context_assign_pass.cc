@@ -27,8 +27,26 @@ class RuntimeContextAssignPass : public StmtPass {
     for (auto& node : graph->mutable_nodes()) {
       if (!node.IsStmt()) continue;
       auto& inst = node.AsStmt();
+
+      // #ifdef LITE_WITH_CUDA
+      bool sync = inst.need_sync_;
+      int stream_id = inst.stream_id_;
+      // auto& ins = node.inlinks;
+      // std::vector<uint32_t> lanes;
+      // for (auto& in_arg : ins) {
+      //   // Weight parameter does not involve stream id, so just skip it.
+      //   if (in_arg->AsArg().is_weight || in_arg->AsArg().is_persist) {
+      //     continue;
+      //   }
+      //   if (std::find(lanes.begin(), lanes.end(), in_arg->AsArg().lane) ==
+      //       lanes.end()) {
+      //     lanes.push_back(in_arg->AsArg().lane);
+      //   }
+      // }
+      // #endif
       inst.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+          ContextScheduler::Global().NewContext(inst.picked_kernel().target()),
+          stream_id);
     }
   }
 };

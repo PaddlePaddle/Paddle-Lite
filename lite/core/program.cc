@@ -138,6 +138,11 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
     if (inst.is_feed_fetch_op()) continue;
+#ifdef LITE_WITH_CUDA
+    if (inst.need_sync()) {
+      inst.cuda_stream_sync();
+    }
+#endif
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
