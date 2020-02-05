@@ -18,6 +18,19 @@
 namespace paddle {
 namespace lite {
 
+void LightPredictor::Build(const std::string& lite_model_file,
+                           bool model_from_memory) {
+  if (model_from_memory) {
+    LoadModelNaiveFromMemory(lite_model_file, scope_.get(), &cpp_program_desc_);
+  } else {
+    LoadModelNaiveFromFile(lite_model_file, scope_.get(), &cpp_program_desc_);
+  }
+  BuildRuntimeProgram(cpp_program_desc_);
+  PrepareFeedFetch();
+}
+
+// warning: this is old inference,and this inference will be abandened in
+// release/v3.0.0
 void LightPredictor::Build(const std::string& model_dir,
                            const std::string& model_buffer,
                            const std::string& param_buffer,

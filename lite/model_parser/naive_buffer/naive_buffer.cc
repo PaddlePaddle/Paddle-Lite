@@ -59,14 +59,13 @@ void BinaryTable::LoadFromFile(const std::string &filename,
                                const size_t &size) {
   // open file in readonly mode
   FILE *fp = fopen(filename.c_str(), "rb");
+  CHECK(fp) << "Unable to open file: " << filename;
   // move fstream pointer backward for size of offset
   size_t buffer_size = size;
   if (size == 0) {
     fseek(fp, 0L, SEEK_END);
     buffer_size = ftell(fp) - offset;
-    std::cout << "params buffer size :" << buffer_size << std::endl;
   }
-
   fseek(fp, offset, SEEK_SET);
   Require(buffer_size);
   // read data of `size` into binary_data_variable:`bytes_`
@@ -76,7 +75,6 @@ void BinaryTable::LoadFromFile(const std::string &filename,
     LOG(FATAL) << "Read file error: " << filename;
   }
   fclose(fp);
-
   // Set readonly.
   is_mutable_mode_ = false;
 }
