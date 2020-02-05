@@ -95,9 +95,7 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-#ifdef RELU
   output = activation_type4(output);
 
-#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }

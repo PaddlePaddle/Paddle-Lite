@@ -233,8 +233,17 @@ void MatMulCompute::Run() {
       int ldb = n_;
       int ldc = n_;
       if (n_ == 1) {
-        lite::arm::math::sgemv(
-            x_data, y_data, o_data, false, m_, k_, false, nullptr, false, &ctx);
+        lite::arm::math::sgemv(x_data,
+                               y_data,
+                               o_data,
+                               false,
+                               m_,
+                               k_,
+                               false,
+                               nullptr,
+                               false,
+                               lite_api::ActivationType::kIndentity,
+                               &ctx);
         if (fabsf(alpha - 1.f) > 1e-8f) {
           for (size_t i = 0; i < param.Out->dims().production(); ++i) {
             o_data[i] *= alpha;

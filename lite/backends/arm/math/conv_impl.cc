@@ -188,7 +188,6 @@ void conv1x1s1_gemm(const float* i_data,
   if (n > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -210,8 +209,11 @@ void conv1x1s1_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu,
-              ctx);
+              act_param.has_active,
+              act_param.active_type,
+              ctx,
+              act_param.Relu_clipped_coef,
+              act_param.Leaky_relu_alpha);
       } else {
         sgemm_prepack(false,
                       m,
@@ -410,8 +412,11 @@ void conv_im2col_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu,
-              ctx);
+              act_param.has_active,
+              act_param.active_type,
+              ctx,
+              act_param.Relu_clipped_coef,
+              act_param.Leaky_relu_alpha);
       } else {
         int ldb = n;
         sgemm_prepack(false,
@@ -677,7 +682,8 @@ void conv_depthwise_5x5_fp32(const void* din,
                              const float* scale) {
   auto paddings = *param.paddings;
   auto act_param = param.activation_param;
-  int pad = paddings[0];
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
@@ -698,20 +704,21 @@ void conv_depthwise_5x5_fp32(const void* din,
                               act_param,
                               ctx);
   } else if (stride == 1) {
-    conv_depthwise_5x5s1_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
+    conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
+                              reinterpret_cast<const float*>(din),
+                              reinterpret_cast<const float*>(weights),
+                              bias,
+                              flag_bias,
+                              flag_relu,
                               num,
-                              ch_out,
-                              h_out,
-                              w_out,
                               ch_in,
                               h_in,
                               w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              pad,
-                              flag_bias,
-                              flag_relu,
+                              h_out,
+                              w_out,
+                              pad_w,
+                              pad_h,
+                              param,
                               ctx);
   } else {
     LOG(FATAL) << "unsupport this type 5x5 dw conv";

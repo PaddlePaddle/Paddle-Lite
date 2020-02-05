@@ -130,7 +130,7 @@ class FcOPTest : public arena::TestCase {
                  1.f,
                  0.f,
                  true,
-                 flag_bias,
+                 static_cast<int>(flag_bias),
                  false);
     } else {
       basic_gemm(false,

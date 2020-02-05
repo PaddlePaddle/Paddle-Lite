@@ -709,7 +709,6 @@ void conv_depthwise_5x5s1_int8(Dtype* dout,
                 "q15");
 #endif
           // clang-format on
-          int32_t* ptr_tmp = ptr_out0 - w_loop * 32;
           block_inr0 = block_inr1;
           block_inr1 = block_inr2;
           block_inr2 = block_inr3;
