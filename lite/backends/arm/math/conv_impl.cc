@@ -180,13 +180,14 @@ void conv1x1s1_gemm(const float* i_data,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
 
+  auto act_param = param.activation_param;
+
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
   if (n > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -208,8 +209,11 @@ void conv1x1s1_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu,
-              ctx);
+              act_param.has_active,
+              act_param.active_type,
+              ctx,
+              act_param.Relu_clipped_coef,
+              act_param.Leaky_relu_alpha);
       } else {
         sgemm_prepack(false,
                       m,
@@ -223,7 +227,7 @@ void conv1x1s1_gemm(const float* i_data,
                       n,
                       bias_group,
                       flag_bias,
-                      flag_relu,
+                      act_param,
                       ctx);
       }
     }
@@ -361,6 +365,8 @@ void conv_im2col_gemm(const float* i_data,
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
+
+  auto act_param = param.activation_param;
   if (n > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
@@ -406,8 +412,11 @@ void conv_im2col_gemm(const float* i_data,
               k,
               flag_bias,
               bias_group,
-              flag_relu,
-              ctx);
+              act_param.has_active,
+              act_param.active_type,
+              ctx,
+              act_param.Relu_clipped_coef,
+              act_param.Leaky_relu_alpha);
       } else {
         int ldb = n;
         sgemm_prepack(false,
@@ -422,7 +431,7 @@ void conv_im2col_gemm(const float* i_data,
                       n,
                       bias_group,
                       flag_bias,
-                      flag_relu,
+                      act_param,
                       ctx);
       }
     }
@@ -579,16 +588,15 @@ void conv_depthwise_3x3_fp32(const void* din,
                              ARMContext* ctx,
                              const float* scale) {
   auto paddings = *param.paddings;
+  auto act_param = param.activation_param;
   const int pad_h = paddings[0];
   const int pad_w = paddings[2];
   int stride = param.strides[1];
   int pad = pad_w;
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  bool pads_equal =
-      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+  bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
   if (stride == 1) {
-    if (pads_equal && (pad_h == pad_w) && (pad < 2)) {  // support pad = [0, 1]
+    if (pads_less && (pad_h == pad_w) && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
@@ -602,7 +610,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 bias,
                                 pad,
                                 flag_bias,
-                                flag_relu,
+                                act_param,
                                 ctx);
     } else {
       conv_3x3s1_depthwise_fp32(reinterpret_cast<const float*>(din),
@@ -617,11 +625,11 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 reinterpret_cast<const float*>(weights),
                                 bias,
                                 param,
+                                act_param,
                                 ctx);
     }
-
   } else if (stride == 2) {
-    if (pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
+    if (pads_less && pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
@@ -635,7 +643,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 bias,
                                 pad,
                                 flag_bias,
-                                flag_relu,
+                                act_param,
                                 ctx);
     } else {
       conv_3x3s2_depthwise_fp32(reinterpret_cast<const float*>(din),
@@ -650,6 +658,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 reinterpret_cast<const float*>(weights),
                                 bias,
                                 param,
+                                act_param,
                                 ctx);
     }
   } else {
@@ -672,12 +681,14 @@ void conv_depthwise_5x5_fp32(const void* din,
                              ARMContext* ctx,
                              const float* scale) {
   auto paddings = *param.paddings;
-  int pad = paddings[0];
+  auto act_param = param.activation_param;
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
   ctx->ExtendWorkspace((w_in + w_out) * sizeof(float));
-  if (pad == 2 && stride == 2) {
+  if (stride == 2) {
     conv_depthwise_5x5s2_fp32(reinterpret_cast<const float*>(din),
                               reinterpret_cast<float*>(dout),
                               num,
@@ -689,25 +700,25 @@ void conv_depthwise_5x5_fp32(const void* din,
                               w_in,
                               reinterpret_cast<const float*>(weights),
                               bias,
-                              pad,
-                              flag_bias,
-                              flag_relu,
+                              param,
+                              act_param,
                               ctx);
   } else if (stride == 1) {
-    conv_depthwise_5x5s1_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
+    conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
+                              reinterpret_cast<const float*>(din),
+                              reinterpret_cast<const float*>(weights),
+                              bias,
+                              flag_bias,
+                              flag_relu,
                               num,
-                              ch_out,
-                              h_out,
-                              w_out,
                               ch_in,
                               h_in,
                               w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              pad,
-                              flag_bias,
-                              flag_relu,
+                              h_out,
+                              w_out,
+                              pad_w,
+                              pad_h,
+                              param,
                               ctx);
   } else {
     LOG(FATAL) << "unsupport this type 5x5 dw conv";

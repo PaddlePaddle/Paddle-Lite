@@ -12,30 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ReduceMeanConverter(
-    const std::shared_ptr<lite::OpLite> reduce_mean_op,
-    const node_map_type& inputs_map) {
-  auto scope = reduce_mean_op->scope();
-  auto op_info = reduce_mean_op->op_info();
+int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // get input, and op attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto x_dims = scope->FindTensor(x_var_name)->dims();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Input("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto keep_dim = op_info->GetAttr<bool>("keep_dim");
   auto dim = op_info->GetAttr<std::vector<int>>("dim");
-  CHECK(!dim.empty()) << "\"dim\" of reduce_mean should not be empty.";
+  CHECK(!dim.empty()) << "[NPU] \"dim\" of reduce_mean should not be empty.";
   for (size_t i = 0; i < dim.size(); i++) {
     if (dim[i] < 0) {
       dim[i] += x_dims.size();
@@ -43,35 +51,37 @@ node_map_type ReduceMeanConverter(
   }
   std::sort(dim.begin(), dim.end());
 
-  // create reduce_mean(reduce_sum + scale) node and set input node from
-  // inputs_map
-  // creat reduce_sum node
-  auto unique_reduce_sum = lite::npu::UniqueName("reduce_sum");
-  auto reduce_sum_node = std::make_shared<ge::op::ReduceSum>(unique_reduce_sum);
-  CHECK(inputs_map.count(x_var_name));
-  reduce_sum_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(reduce_sum_node);
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  auto dim_const_node =
-      std::make_shared<ge::op::Const>(unique_reduce_sum + "/dim");
-  dim_const_node->set_attr_value(lite::npu::CreateTensorAndFillData<int>(dim));
-  reduce_sum_node->set_input_w(*dim_const_node);
-  lite::npu::OpList::Global().add(dim_const_node);
+  // Using ReduceSum + Scale to implement ReduceMean
 
-  reduce_sum_node->set_attr_keep_dims(keep_dim);
+  // Dim node
+  auto dim_node = graph->Add(out_name + "/dim", dim);
 
-  // create scale node
-  auto unique_scale = lite::npu::UniqueName("scale");
-  auto scale_node = std::make_shared<ge::op::Scale>(unique_scale);
-  scale_node->set_input_x(*reduce_sum_node);
-  lite::npu::OpList::Global().add(scale_node);
+  // Reduce Sum node
+  auto reduce_sum_node = graph->Add<ge::op::ReduceSum>(out_name + "/reducesum");
+  auto reduce_sum_op = reduce_sum_node->data<ge::op::ReduceSum>();
+  reduce_sum_op->set_input_x(*x_node->data());
+  reduce_sum_op->set_input_w(*dim_node->data());
+  reduce_sum_op->set_attr_keep_dims(keep_dim);
 
+  // Scale node
+  auto scale_node = graph->Add<ge::op::Scale>(out_name);
+  auto scale_op = scale_node->data<ge::op::Scale>();
+  scale_op->set_input_x(*reduce_sum_node->data());
+  scale_op->set_attr_axis(1);
+
+  // Add filter node(fill with scale)
   float scale = 1;
   for (size_t i = 0; i < dim.size(); i++) {
     scale /= x_dims[dim[i]];
   }
-
   std::vector<int64_t> scale_bias_shape = x_dims.Vectorize();
   if (keep_dim) {
     for (size_t i = 0; i < dim.size(); i++) {
@@ -86,26 +96,16 @@ node_map_type ReduceMeanConverter(
         remove(scale_bias_shape.begin(), scale_bias_shape.end(), kDelFlag),
         scale_bias_shape.end());
   }
-
-  auto filter_const_node =
-      std::make_shared<ge::op::Const>(unique_scale + "/filter");
-  filter_const_node->set_attr_value(
-      lite::npu::CreateTensorAndFillData(scale, scale_bias_shape));
-  scale_node->set_input_filter(*filter_const_node);
-  lite::npu::OpList::Global().add(filter_const_node);
-
-  scale_node->set_attr_axis(1);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = scale_node;
-  return outputs_map;
+  auto filter_node = graph->Add(out_name + "/filter", scale, scale_bias_shape);
+  scale_op->set_input_filter(*filter_node->data());
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(reduce_mean,
-                    paddle::lite::kernels::npu::bridges::ReduceMeanConverter);
+REGISTER_SUBGRAPH_BRIDGE(reduce_mean,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ReduceMeanConverter);

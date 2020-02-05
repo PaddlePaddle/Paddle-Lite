@@ -60,6 +60,7 @@ lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
+lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
 lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
@@ -73,8 +74,8 @@ lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 # cv build options
-lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF IF NOT LITE_WITH_ARM)
-
+lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF)
+lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." ON)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -169,6 +170,10 @@ endif()
 
 ########################################################################################
 
+if(LITE_WITH_XPU)
+    include(xpu)
+endif()
+
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 include(external/libxsmm)   # download, build, install libxsmm
@@ -188,10 +193,9 @@ if(LITE_WITH_CUDA)
   include(cuda)
 endif()
 
-if(LITE_WITH_XPU)
-  include(xpu)
+if(LITE_WITH_BM)
+  include(bm)
 endif()
-
 include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs

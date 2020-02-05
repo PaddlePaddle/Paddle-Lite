@@ -52,8 +52,9 @@ enum class TargetType : int {
   kFPGA = 7,
   kNPU = 8,
   kXPU = 9,
+  kBM = 10,
   kAny = 6,  // any target
-  NUM = 10,  // number of fields.
+  NUM = 11,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -71,8 +72,11 @@ enum class DataLayoutType : int {
   kUnk = 0,
   kNCHW = 1,
   kNHWC = 3,
-  kAny = 2,  // any data layout
-  NUM = 4,   // number of fields.
+  kImageDefault = 4,  // for opencl image2d
+  kImageFolder = 5,   // for opencl image2d
+  kImageNW = 6,       // for opencl image2d
+  kAny = 2,           // any data layout
+  NUM = 7,            // number of fields.
 };
 
 typedef enum {

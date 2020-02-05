@@ -12,102 +12,94 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace xpu {
-namespace bridges {
 
-node_map_type BatchNormConverter(const std::shared_ptr<lite::OpLite> op,
-                                 graph_ctx_type* graph_ctx,
-                                 const node_map_type& input_nodes) {
-  auto scope = op->scope();
+int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "[XPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // check context
-  CHECK(graph_ctx != nullptr);
-  CHECK(graph_ctx->builder != nullptr);
-  CHECK(graph_ctx->params != nullptr);
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
 
-  // get input, and attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto scale_var_name = op_info->Input("Scale").front();
-  auto* scale = scope->FindMutableTensor(scale_var_name);
-  auto bias_var_name = op_info->Input("Bias").front();
-  auto* bias = scope->FindMutableTensor(bias_var_name);
-  auto mean_var_name = op_info->Input("Mean").front();
-  auto* mean = scope->FindMutableTensor(mean_var_name);
-  auto variance_var_name = op_info->Input("Variance").front();
-  auto* variance = scope->FindMutableTensor(variance_var_name);
+  auto scale_name = op_info->Input("Scale").front();
+  auto scale_type = kernel->GetInputDeclType("Scale");
+  CHECK(scale_type->precision() == PRECISION(kFloat));
+  CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
+  auto scale = scope->FindMutableTensor(scale_name);
+
+  auto bias_name = op_info->Input("Bias").front();
+  auto bias_type = kernel->GetInputDeclType("Bias");
+  CHECK(bias_type->precision() == PRECISION(kFloat));
+  CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+  auto bias = scope->FindMutableTensor(bias_name);
+
+  auto mean_name = op_info->Input("Mean").front();
+  auto mean_type = kernel->GetInputDeclType("Mean");
+  CHECK(mean_type->precision() == PRECISION(kFloat));
+  CHECK(mean_type->layout() == DATALAYOUT(kNCHW));
+  auto mean = scope->FindMutableTensor(mean_name);
+
+  auto variance_name = op_info->Input("Variance").front();
+  auto variance_type = kernel->GetInputDeclType("Variance");
+  CHECK(variance_type->precision() == PRECISION(kFloat));
+  CHECK(variance_type->layout() == DATALAYOUT(kNCHW));
+  auto variance = scope->FindMutableTensor(variance_name);
+
+  auto y_name = op_info->Output("Y").front();
+  auto y_type = kernel->GetOutputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+
   auto epsilon = op_info->GetAttr<float>("epsilon");
 
-  // create scale node
-  CHECK(!input_nodes.count(scale_var_name));
-  auto scale_const_node = std::make_shared<xtcl::xExpr>(
-      graph_ctx->builder->CreateTensor(scale_var_name,
-                                       lite::xpu::CvtShape(scale->dims()),
-                                       ::xtcl::Float(32)));
-  auto scale_const_tensor = lite::xpu::CvtTensor(scale);
-  graph_ctx->params->emplace(
-      std::make_pair(scale_var_name, *scale_const_tensor));
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  // create bias node
-  CHECK(!input_nodes.count(bias_var_name));
-  auto bias_const_node =
-      std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateTensor(
-          bias_var_name, lite::xpu::CvtShape(bias->dims()), ::xtcl::Float(32)));
-  auto bias_const_tensor = lite::xpu::CvtTensor(bias);
-  graph_ctx->params->emplace(std::make_pair(bias_var_name, *bias_const_tensor));
+  // Scale, Bias, Mean, Variance node
+  auto scale_node = graph->Add(scale_name, *scale);
+  auto bias_node = graph->Add(bias_name, *bias);
+  auto mean_node = graph->Add(mean_name, *mean);
+  auto variance_node = graph->Add(variance_name, *variance);
 
-  // create mean node
-  CHECK(!input_nodes.count(mean_var_name));
-  auto mean_const_node =
-      std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateTensor(
-          mean_var_name, lite::xpu::CvtShape(mean->dims()), ::xtcl::Float(32)));
-  auto mean_const_tensor = lite::xpu::CvtTensor(mean);
-  graph_ctx->params->emplace(std::make_pair(mean_var_name, *mean_const_tensor));
-
-  // create variance node
-  CHECK(!input_nodes.count(variance_var_name));
-  auto variance_const_node = std::make_shared<xtcl::xExpr>(
-      graph_ctx->builder->CreateTensor(variance_var_name,
-                                       lite::xpu::CvtShape(variance->dims()),
-                                       ::xtcl::Float(32)));
-  auto variance_const_tensor = lite::xpu::CvtTensor(variance);
-  graph_ctx->params->emplace(
-      std::make_pair(variance_var_name, *variance_const_tensor));
-
-  // create batch_norm node and set params from op
-  CHECK(input_nodes.count(x_var_name));
-  auto batch_norm_node = std::make_shared<xtcl::xExpr>(
-      graph_ctx->builder->CreateBatchNorm(*input_nodes.at(x_var_name),
-                                          *scale_const_node,
-                                          *bias_const_node,
-                                          *mean_const_node,
-                                          *variance_const_node,
-                                          1,
-                                          epsilon));
-  batch_norm_node = std::make_shared<xtcl::xExpr>(
-      graph_ctx->builder->GetField(*batch_norm_node, 0));
-  graph_ctx->builder->SetLayer(unique_op_type);
-
-  // output converted nodes
-  node_map_type output_nodes;
-  output_nodes[op_info->Output("Y").front()] = batch_norm_node;
-  return output_nodes;
+  // Batch Norm node and extract the first field as the output node
+  auto batch_norm_data = graph->builder_.CreateBatchNorm(*x_node->data(),
+                                                         *scale_node->data(),
+                                                         *bias_node->data(),
+                                                         *mean_node->data(),
+                                                         *variance_node->data(),
+                                                         1,
+                                                         epsilon);
+  graph->Add(y_name, graph->builder_.GetField(batch_norm_data, 0));
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(batch_norm,
-                    paddle::lite::kernels::xpu::bridges::BatchNormConverter);
+REGISTER_SUBGRAPH_BRIDGE(batch_norm,
+                         kXPU,
+                         paddle::lite::subgraph::xpu::BatchNormConverter);

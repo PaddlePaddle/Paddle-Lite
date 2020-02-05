@@ -238,7 +238,7 @@ TEST(transpose, normal) {
   lite::Tensor x, x_cpu, x_ref;
   lite::Tensor out, out_cpu, out_ref;
 
-  int C = 6, H = 7, W = 8;
+  int C = 3, H = 128, W = 128;
   std::vector<int> axes({2, 0, 1});
   x.Resize({C, H, W});
   out.Resize({W, C, H});

@@ -34,6 +34,10 @@ class MatchMatrixTensorCompute
 
  private:
   std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_;
+  lite::Tensor _input_l_transform;
+  lite::Tensor _input_l_transform_reorganize;
+  lite::Tensor _output_tmp;
+  lite::Tensor _offset_r;
 };
 
 }  // namespace cuda

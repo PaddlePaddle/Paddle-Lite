@@ -55,7 +55,8 @@ const std::string& TargetToStr(TargetType target) {
                                               "any",
                                               "fpga",
                                               "npu",
-                                              "xpu"};
+                                              "xpu",
+                                              "bm"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -77,7 +78,8 @@ const std::string& PrecisionToStr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutToStr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {"unk", "NCHW", "any", "NHWC"};
+  static const std::string datalayout2string[] = {
+      "unk", "NCHW", "any", "NHWC", "ImageDefault", "ImageFolder", "ImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -93,7 +95,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kAny",
                                               "kFPGA",
                                               "kNPU",
-                                              "kXPU"};
+                                              "kXPU",
+                                              "kBM"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -115,8 +118,13 @@ const std::string& PrecisionRepr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutRepr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {
-      "kUnk", "kNCHW", "kAny", "kNHWC"};
+  static const std::string datalayout2string[] = {"kUnk",
+                                                  "kNCHW",
+                                                  "kAny",
+                                                  "kNHWC",
+                                                  "kImageDefault",
+                                                  "kImageFolder",
+                                                  "kImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -129,6 +137,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kOpenCL),
                                                TARGET(kNPU),
                                                TARGET(kXPU),
+                                               TARGET(kBM),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;
@@ -146,8 +155,12 @@ std::set<PrecisionType> ExpandValidPrecisions(PrecisionType precision) {
 }
 
 std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
-  static const std::set<DataLayoutType> valid_set(
-      {DATALAYOUT(kNCHW), DATALAYOUT(kAny), DATALAYOUT(kNHWC)});
+  static const std::set<DataLayoutType> valid_set({DATALAYOUT(kNCHW),
+                                                   DATALAYOUT(kAny),
+                                                   DATALAYOUT(kNHWC),
+                                                   DATALAYOUT(kImageDefault),
+                                                   DATALAYOUT(kImageFolder),
+                                                   DATALAYOUT(kImageNW)});
   if (layout == DATALAYOUT(kAny)) {
     return valid_set;
   }

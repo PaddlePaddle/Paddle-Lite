@@ -12,52 +12,67 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> softmax_op,
-                               const node_map_type& inputs_map) {
-  auto scope = softmax_op->scope();
-  auto op_info = softmax_op->op_info();
+int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Softmax> softmax_node =
-      std::make_shared<ge::op::Softmax>(unique_op_type);
-  auto x_var_name = op_info->Input("X").front();
-
-  auto x_dims = scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
-  if (x_dims.size() > 3) {
-    CHECK(!(axis == 2 && x_dims[3] > 1))
-        << "[NPU] Unsupported softmax params: axis = " << axis
-        << "  :x_w = " << x_dims[3];
+  if (axis < 0) {
+    axis += x_rank;
+  }
+  if (axis == 2 && x_rank > 3 && x_dims[3] != 1) {
+    LOG(WARNING) << "[NPU] Unsupported softmax params: axis = " << axis
+                 << "  :x_w = " << x_dims[3];
+    return FAILED;
   }
 
-  CHECK(inputs_map.count(x_var_name));
-  softmax_node->set_input_x(*inputs_map.at(x_var_name));
-  softmax_node->set_attr_axis(axis);
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(softmax_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = softmax_node;
-  return outputs_map;
+  // Softmax node
+  auto softmax_node = graph->Add<ge::op::Softmax>(out_name);
+  auto softmax_op = softmax_node->data<ge::op::Softmax>();
+  softmax_op->set_input_x(*x_node->data());
+  softmax_op->set_attr_axis(axis);
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(softmax,
-                    paddle::lite::kernels::npu::bridges::SoftmaxConverter);
+REGISTER_SUBGRAPH_BRIDGE(softmax,
+                         kNPU,
+                         paddle::lite::subgraph::npu::SoftmaxConverter);

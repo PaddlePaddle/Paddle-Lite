@@ -50,7 +50,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                         "lod_reset",
                                         "concat",
                                         "yolo_box",
-                                        "graph_op",
+                                        "subgraph",
                                         "feed",
                                         "fetch"};
     for (auto* tmp : node->inlinks) {
@@ -256,4 +256,4 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
     .BindTargets({TARGET(kARM)})
-    .ExcludeTargets({TARGET(kOpenCL), TARGET(kNPU), TARGET(kXPU)});
+    .ExcludeTargets({TARGET(kOpenCL), TARGET(kNPU), TARGET(kXPU), TARGET(kBM)});

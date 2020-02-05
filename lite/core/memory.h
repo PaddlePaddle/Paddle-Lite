@@ -25,6 +25,10 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif  // LITE_WITH_CUDA
 
+#ifdef LITE_WITH_BM
+#include "lite/backends/bm/target_wrapper.h"
+#endif  // LITE_WITH_BM
+
 namespace paddle {
 namespace lite {
 
@@ -72,6 +76,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
       break;
 #endif
+#ifdef LITE_WITH_BM
+    case TARGET(kBM):
+      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
+      break;
+#endif
   }
 }
 
@@ -100,13 +109,14 @@ class Buffer {
   template <typename T>
   void ResetLazyImage2D(TargetType target,
                         const size_t img_w,
-                        const size_t img_h) {
+                        const size_t img_h,
+                        void* host_ptr = nullptr) {
     size_t size = sizeof(T) * img_w * img_h *
                   4;  // 4 for RGBA, un-used for opencl Image2D
     if (target != target_ || cl_image2d_width_ < img_w ||
         cl_image2d_height_ < img_h) {
       Free();
-      data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h);
+      data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
       target_ = target;
       space_ = size;  // un-used for opencl Image2D
       cl_image2d_width_ = img_w;
@@ -119,6 +129,7 @@ class Buffer {
     if (space_ > 0) {
       TargetFree(target_, data_);
     }
+    data_ = nullptr;
     target_ = TargetType::kHost;
     space_ = 0;
   }

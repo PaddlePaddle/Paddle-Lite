@@ -34,7 +34,8 @@ enum activation_type_test {
   LOG,
   EXP,
   FLOOR,
-  RSQRT
+  RSQRT,
+  GELU
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -184,6 +185,13 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case GELU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] * 0.5 *
+                           (1.0 + std::erf(x_data[i] * 0.70710678118654752440));
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
@@ -243,38 +251,53 @@ class ActivationComputeTester : public arena::TestCase {
 
 TEST(Activation_relu, precision) {
   LOG(INFO) << "test relu op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
       for (auto h : {9, 18}) {
         for (auto w : {9, 18}) {
-          for (auto slope : {0.01, 0.1}) {
-            std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-                place,
-                "def",
-                0.01,
-                6.,
-                "all",
-                0.,
-                DDim(std::vector<int64_t>({n, c, h, w})),
-                "relu",
-                RELU));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
-          }
+          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+              place,
+              "def",
+              0.01,
+              6.,
+              "all",
+              0.,
+              DDim(std::vector<int64_t>({n, c, h, w})),
+              "relu",
+              RELU));
+          arena::Arena arena(std::move(tester), place, abs_error);
+          arena.TestPrecision();
         }
       }
     }
   }
-#endif
 }
 
 TEST(Activation_leaky_relu, precision) {
   LOG(INFO) << "test leaky_relu op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -291,20 +314,27 @@ TEST(Activation_leaky_relu, precision) {
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "leaky_relu",
                 LEAKY_RELU));
-            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena::Arena arena(std::move(tester), place, abs_error);
             arena.TestPrecision();
           }
         }
       }
     }
   }
-#endif
 }
 
 TEST(Activation_relu_clipped, precision) {
   LOG(INFO) << "test relu clipped op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -321,14 +351,13 @@ TEST(Activation_relu_clipped, precision) {
                 DDim(std::vector<int64_t>({n, c, h, w})),
                 "relu_clipped",
                 RELU_CLIPPED));
-            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena::Arena arena(std::move(tester), place, abs_error);
             arena.TestPrecision();
           }
         }
       }
     }
   }
-#endif
 }
 
 TEST(Activation_prelu, precision) {
@@ -363,8 +392,16 @@ TEST(Activation_prelu, precision) {
 
 TEST(Activation_sigmoid, precision) {
   LOG(INFO) << "test sigmoid op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -380,19 +417,28 @@ TEST(Activation_sigmoid, precision) {
               DDim(std::vector<int64_t>({n, c, h, w})),
               "sigmoid",
               SIGMOID));
-          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
         }
       }
     }
   }
-#endif
 }
 
 TEST(Activation_tanh, precision) {
   LOG(INFO) << "test tanh op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
 
   for (auto n : {1, 3}) {
     for (auto c : {3, 6}) {
@@ -408,13 +454,12 @@ TEST(Activation_tanh, precision) {
               DDim(std::vector<int64_t>({n, c, h, w})),
               "tanh",
               TANH));
-          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
         }
       }
     }
   }
-#endif
 }
 
 TEST(Activation_swish, precision) {
@@ -586,5 +631,25 @@ TEST(Activation_rsqrt, precision) {
   }
 #endif
 }
+
+TEST(Activation_gelu, precision) {
+  LOG(INFO) << "test gelu op";
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+        place, "def", 0.01, 6., "all", 0., DDim(dims), "gelu", GELU));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle

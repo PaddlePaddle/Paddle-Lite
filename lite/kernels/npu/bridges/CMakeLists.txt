@@ -1,73 +1,80 @@
-lite_cc_library(npu_bridge_registry SRCS registry.cc)
+if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XPU AND NOT LITE_WITH_BM)
+  return()
+endif()
 
-set(npu_bridge_deps npu_bridge_registry npu_builder op)
+lite_cc_library(subgraph_bridge_registry
+    SRCS registry.cc
+    DEPS op)
+lite_cc_library(subgraph_bridge_engine
+    SRCS engine.cc
+    DEPS tensor op scope program)
 
-lite_cc_library(npu_bridge_fc_op SRCS fc_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_conv_op SRCS conv_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_mul_op SRCS mul_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_act_op SRCS act_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_scale_op SRCS scale_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_softmax_op SRCS softmax_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_pool_op SRCS pool_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_batch_norm_op SRCS batch_norm_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_elementwise_ops SRCS elementwise_ops.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_reshape_op SRCS reshape_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_conv_transpose_op SRCS conv_transpose_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_interpolate_op SRCS interpolate_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_transpose_op SRCS transpose_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_split_op SRCS split_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_concat_op SRCS concat_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_shuffle_channel_op SRCS shuffle_channel_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_pad2d_op SRCS pad2d_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_square_op SRCS square_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_sqrt_op SRCS sqrt_op.cc DEPS ${npu_bridge_deps})
-lite_cc_library(npu_bridge_reduce_mean_op SRCS reduce_mean_op.cc DEPS ${npu_bridge_deps})
+if(NOT LITE_WITH_NPU)
+  return()
+endif()
 
-set(npu_bridges
-        npu_bridge_registry
-        npu_bridge_fc_op
-        npu_bridge_conv_op
-        npu_bridge_mul_op
-        npu_bridge_act_op
-        npu_bridge_scale_op
-        npu_bridge_softmax_op
-        npu_bridge_pool_op
-        npu_bridge_batch_norm_op
-        npu_bridge_elementwise_ops
-        npu_bridge_reshape_op
-        npu_bridge_conv_transpose_op
-        npu_bridge_interpolate_op
-        npu_bridge_transpose_op
-        npu_bridge_split_op
-        npu_bridge_concat_op
-        npu_bridge_shuffle_channel_op
-        npu_bridge_pad2d_op
-        npu_bridge_square_op
-        npu_bridge_sqrt_op
-        npu_bridge_reduce_mean_op
-        CACHE INTERNAL "npu_bridges")
+lite_cc_library(subgraph_bridge_utility_npu SRCS utility.cc DEPS ${npu_builder_libs} tensor)
+lite_cc_library(subgraph_bridge_graph_npu SRCS graph.cc DEPS subgraph_bridge_utility_npu)
 
-set(npu_bridge_test_deps ${npu_bridges} ${npu_kernels} ${ops})
+set(npu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_npu subgraph_bridge_graph_npu)
 
-lite_cc_test(test_npu_bridge_fc_op SRCS fc_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_conv_op SRCS conv_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_mul_op SRCS mul_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_act_op SRCS act_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_scale_op SRCS scale_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_softmax_op SRCS softmax_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_pool_op SRCS pool_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_batch_norm_op SRCS batch_norm_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_elementwise_ops SRCS elementwise_ops_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_reshape_op SRCS reshape_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_conv_transpose_op SRCS conv_transpose_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_interpolate_op SRCS interpolate_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_transpose_op SRCS transpose_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_split_op SRCS split_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_concat_op SRCS concat_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_shuffle_channel_op SRCS shuffle_channel_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_pad2d_op SRCS pad2d_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_square_op SRCS square_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_sqrt_op SRCS sqrt_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
-lite_cc_test(test_npu_bridge_reduce_mean_op SRCS reduce_mean_op_test.cc test_helper.cc DEPS ${npu_bridge_test_deps})
+lite_cc_library(subgraph_bridge_fc_op_npu SRCS fc_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_conv_op_npu SRCS conv_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_matmul_op_npu SRCS matmul_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_mul_op_npu SRCS mul_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_act_op_npu SRCS act_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_scale_op_npu SRCS scale_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_softmax_op_npu SRCS softmax_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_pool_op_npu SRCS pool_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_batch_norm_op_npu SRCS batch_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_elementwise_ops_npu SRCS elementwise_ops.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reshape_op_npu SRCS reshape_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_conv_transpose_op_npu SRCS conv_transpose_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_interpolate_op_npu SRCS interpolate_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_transpose_op_npu SRCS transpose_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_split_op_npu SRCS split_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_concat_op_npu SRCS concat_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_shuffle_channel_op_npu SRCS shuffle_channel_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_pad2d_op_npu SRCS pad2d_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_square_op_npu SRCS square_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_sqrt_op_npu SRCS sqrt_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reduce_mean_op_npu SRCS reduce_mean_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_unsqueeze_op_npu SRCS unsqueeze_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_argmax_op_npu SRCS argmax_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_instance_norm_op_npu SRCS instance_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_dropout_op_npu SRCS dropout_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_layer_norm_op_npu SRCS layer_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
 
-message(STATUS "+++++ npu_bridges: ${npu_bridges}")
+set(npu_subgraph_bridges
+        subgraph_bridge_registry
+        subgraph_bridge_utility_npu
+        subgraph_bridge_graph_npu
+        subgraph_bridge_fc_op_npu
+        subgraph_bridge_conv_op_npu
+        subgraph_bridge_matmul_op_npu
+        subgraph_bridge_mul_op_npu
+        subgraph_bridge_act_op_npu
+        subgraph_bridge_scale_op_npu
+        subgraph_bridge_softmax_op_npu
+        subgraph_bridge_pool_op_npu
+        subgraph_bridge_batch_norm_op_npu
+        subgraph_bridge_elementwise_ops_npu
+        subgraph_bridge_reshape_op_npu
+        subgraph_bridge_conv_transpose_op_npu
+        subgraph_bridge_interpolate_op_npu
+        subgraph_bridge_transpose_op_npu
+        subgraph_bridge_split_op_npu
+        subgraph_bridge_concat_op_npu
+        subgraph_bridge_shuffle_channel_op_npu
+        subgraph_bridge_pad2d_op_npu
+        subgraph_bridge_square_op_npu
+        subgraph_bridge_sqrt_op_npu
+        subgraph_bridge_reduce_mean_op_npu
+        subgraph_bridge_unsqueeze_op_npu
+        subgraph_bridge_argmax_op_npu
+        subgraph_bridge_instance_norm_op_npu
+        subgraph_bridge_dropout_op_npu
+        subgraph_bridge_layer_norm_op_npu
+        CACHE INTERNAL "npu_subgraph_bridges")
+
+message(STATUS "+++++ npu_subgraph_bridges: ${npu_subgraph_bridges}")

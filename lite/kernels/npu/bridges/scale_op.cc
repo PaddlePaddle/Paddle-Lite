@@ -12,29 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
-                             const node_map_type& inputs_map) {
-  auto scope = scale_op->scope();
-  auto op_info = scale_op->op_info();
+int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // get input, output and op attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = x->dims().Vectorize();
-  CHECK_GE(x_dims.size(), 2);
-  std::vector<int64_t> scale_bias_shape = {x_dims[1]};
+  // Get input, output and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
+  CHECK_GE(x_rank, 2);
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  // HiAI only support [n, c, 1, 1] for the shape of scale and bias
+  std::vector<int64_t> scale_bias_shape = {
+      1, x_rank < 3 ? 1 : x_dims[x_rank - 3], 1, 1};
   float scale = op_info->GetAttr<float>("scale");
   float bias = op_info->GetAttr<float>("bias");
   bool bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
@@ -42,43 +53,38 @@ node_map_type ScaleConverter(const std::shared_ptr<lite::OpLite> scale_op,
     bias *= scale;
   }
 
-  // create scale node and set input node from inputs_map
-  auto scale_node = std::make_shared<ge::op::Scale>(unique_op_type);
-  CHECK(inputs_map.count(x_var_name));
-  scale_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(scale_node);
-
-  // add filter node(fill with scale)
-  auto filter_const_node =
-      std::make_shared<ge::op::Const>(unique_op_type + "/filter");
-  filter_const_node->set_attr_value(
-      lite::npu::CreateTensorAndFillData(scale, scale_bias_shape));
-  scale_node->set_input_filter(*filter_const_node);
-  lite::npu::OpList::Global().add(filter_const_node);
-
-  // add bias node(fill with bias)
-  if (fabs(bias) > 1e-6f) {
-    auto bias_const_node =
-        std::make_shared<ge::op::Const>(unique_op_type + "/bias");
-    bias_const_node->set_attr_value(
-        lite::npu::CreateTensorAndFillData(bias, scale_bias_shape));
-    scale_node->set_input_bias(*bias_const_node);
-    scale_node->set_attr_has_bias_value(true);
-    lite::npu::OpList::Global().add(bias_const_node);
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
   }
 
-  scale_node->set_attr_axis(1);
+  // Scale node
+  auto scale_node = graph->Add<ge::op::Scale>(out_name);
+  auto scale_op = scale_node->data<ge::op::Scale>();
+  scale_op->set_input_x(*x_node->data());
+  scale_op->set_attr_axis(1);
 
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = scale_node;
-  return outputs_map;
+  // Add filter node(fill with scale)
+  auto filter_node = graph->Add(out_name + "/filter", scale, scale_bias_shape);
+  scale_op->set_input_filter(*filter_node->data());
+
+  // Add bias node(fill with bias)
+  if (fabs(bias) > 1e-6f) {
+    auto bias_node = graph->Add(out_name + "/bias", bias, scale_bias_shape);
+    scale_op->set_input_bias(*bias_node->data());
+    scale_op->set_attr_has_bias_value(true);
+  }
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(scale, paddle::lite::kernels::npu::bridges::ScaleConverter);
+REGISTER_SUBGRAPH_BRIDGE(scale,
+                         kNPU,
+                         paddle::lite::subgraph::npu::ScaleConverter);

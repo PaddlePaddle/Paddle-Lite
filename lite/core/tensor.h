@@ -139,6 +139,22 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data() {
+    auto type_id = typeid(T).hash_code();
+    if (type_id == typeid(bool).hash_code()) {  // NOLINT
+      precision_ = PrecisionType::kBool;
+    } else if (type_id == typeid(float).hash_code()) {  // NOLINT
+      precision_ = PrecisionType::kFloat;
+    } else if (type_id == typeid(int8_t).hash_code()) {
+      precision_ = PrecisionType::kInt8;
+    } else if (type_id == typeid(int16_t).hash_code()) {
+      precision_ = PrecisionType::kInt16;
+    } else if (type_id == typeid(int32_t).hash_code()) {
+      precision_ = PrecisionType::kInt32;
+    } else if (type_id == typeid(int64_t).hash_code()) {
+      precision_ = PrecisionType::kInt64;
+    } else {
+      precision_ = PrecisionType::kUnk;
+    }
     memory_size_ = dims_.production() * sizeof(T);
     buffer_->ResetLazy(target_, memory_size_);
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
@@ -147,9 +163,11 @@ class TensorLite {
 
 #ifdef LITE_WITH_OPENCL
   template <typename T, typename R = T>
-  R *mutable_data(const size_t img_w, const size_t img_h) {
+  R *mutable_data(const size_t img_w,
+                  const size_t img_h,
+                  void *host_ptr = nullptr) {
     target_ = TARGET(kOpenCL);
-    buffer_->ResetLazyImage2D<T>(target_, img_w, img_h);
+    buffer_->ResetLazyImage2D<T>(target_, img_w, img_h, host_ptr);
     return static_cast<cl::Image2D *>(buffer_->data());
   }
 #endif
@@ -161,10 +179,7 @@ class TensorLite {
   template <typename T, typename R = T>
   R *mutable_data(TargetType target) {
     target_ = target;
-    memory_size_ = dims_.production() * sizeof(T);
-    buffer_->ResetLazy(target, memory_size());
-    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
-                                 offset_);
+    return mutable_data<T, R>();
   }
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
@@ -174,6 +189,10 @@ class TensorLite {
         (static_cast<char *>(buffer_->data()) + offset_));
   }
 
+  void clear() {
+    buffer_->Free();
+    offset_ = 0;
+  }
   size_t data_size() const { return this->dims().production(); }
 
   size_t memory_size() const { return memory_size_; }
@@ -251,6 +270,9 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
 #ifdef LITE_WITH_OPENCL
 template <>
 const cl::Image2D *TensorLite::data<float, cl::Image2D>() const;
+
+template <>  // use int16_t represent half float
+const cl::Image2D *TensorLite::data<int16_t, cl::Image2D>() const;
 #endif
 
 }  // namespace lite

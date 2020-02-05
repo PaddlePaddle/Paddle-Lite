@@ -120,7 +120,7 @@ void SequenceArithmeticCompute::Run() {
 
   auto x_data = param.X->data<float>();
   auto x_lod = param.X->lod()[0];
-  auto y_data = param.X->data<float>();
+  auto y_data = param.Y->data<float>();
   auto y_lod = param.Y->lod()[0];
   auto out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
 
@@ -174,7 +174,6 @@ void SequenceArithmeticCompute::Run() {
   int seq_num = x_lod.size() - 1;
   int count = param.X->numel();
   int inner_size = param.X->dims()[1];
-
   switch (param.op_type) {
     case 1:  // sum
       ker_arithmetic_sum<

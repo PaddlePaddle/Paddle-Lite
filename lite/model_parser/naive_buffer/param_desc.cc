@@ -150,9 +150,9 @@ void ParamDesc::SetDim(const std::vector<int64_t>& dim) {
         << "Data Type mismatch";                                            \
     std::vector<T> res;                                                     \
     auto& data_builder = desc_->GetField<PrimaryListBuilder<char>>("data"); \
-    auto& data = data_builder.data();                                       \
-    size_t size = data.size() / sizeof(T);                                  \
-    auto* data_ptr = reinterpret_cast<const T*>(&data[0]);                  \
+    auto data = data_builder.data();                                        \
+    size_t size = data_builder.size() / sizeof(T);                          \
+    auto* data_ptr = reinterpret_cast<const T*>(data);                      \
     for (size_t i = 0; i < size; ++i) {                                     \
       res.push_back(data_ptr[i]);                                           \
     }                                                                       \
@@ -178,8 +178,7 @@ GET_DATA_IMPL(double, FP64);
   data_builder->Clear();                                        \
   size_t size = size__ * sizeof(T);                             \
   auto* data_ptr = reinterpret_cast<const char*>(data_ptr__);   \
-  std::vector<char> data_vec(data_ptr, data_ptr + size);        \
-  data_builder->set(data_vec);
+  data_builder->set(data_ptr, size);
 
 #define SET_DATA_IMPL(T, type__)                                \
   template <>                                                   \

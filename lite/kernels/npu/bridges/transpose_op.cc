@@ -12,64 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type TransposeConverter(
-    const std::shared_ptr<lite::OpLite> transpose_op,
-    const node_map_type& inputs_map) {
-  auto scope = transpose_op->scope();
-  auto op_info = transpose_op->op_info();
+int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  std::shared_ptr<ge::op::Permute> transpose_node =
-      std::make_shared<ge::op::Permute>(unique_op_type);
-  auto x_var_name = op_info->Input("X").front();
-
-  // paddlelite doesn't have this input
-  // w must be set, but it does nothing
-  auto w_var_name = unique_op_type + "/w";
-  auto* w = scope->Var(w_var_name)->GetMutable<Tensor>();
-  w->Resize({1});
-  auto* w_data = w->mutable_data<float>();
-  for (int i = 0; i < w->numel(); i++) {
-    w_data[i] = 1.f;
-  }
-  auto npu_w = std::make_shared<ge::op::Const>(w_var_name);
-  npu_w->set_attr_value(lite::npu::CvtTensor(w));
-  lite::npu::OpList::Global().add(npu_w);
-
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
-  auto npu_axis = ge::AttrValue::LIST_INT(axis.begin(), axis.end());
 
-  CHECK(inputs_map.count(x_var_name));
-  transpose_node->set_input_x(*inputs_map.at(x_var_name));
-  transpose_node->set_input_w(*npu_w);
-  transpose_node->set_attr_order(npu_axis);
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(transpose_node);
-
-  node_map_type outputs_map;
-  outputs_map[op_info->Output("Out").front()] = transpose_node;
-  return outputs_map;
+  // Transpose node
+  auto transpose_node = graph->Add<ge::op::Permute>(out_name);
+  auto transpose_op = transpose_node->data<ge::op::Permute>();
+  transpose_op->set_input_x(*x_node->data());
+  auto w_node = graph->Add(out_name + "/w", 1.0f);
+  transpose_op->set_input_w(*w_node->data());
+  transpose_op->set_attr_order(
+      ge::AttrValue::LIST_INT(axis.begin(), axis.end()));
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(transpose,
-                    paddle::lite::kernels::npu::bridges::TransposeConverter);
-REGISTER_NPU_BRIDGE(transpose2,
-                    paddle::lite::kernels::npu::bridges::TransposeConverter);
+REGISTER_SUBGRAPH_BRIDGE(transpose,
+                         kNPU,
+                         paddle::lite::subgraph::npu::TransposeConverter);
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kNPU,
+                         paddle::lite::subgraph::npu::TransposeConverter);
