@@ -65,6 +65,10 @@ lite_cc_test(test_conv_opencl SRCS conv_compute_test.cc
         DEPS conv_opencl op_registry program context
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+lite_cc_test(test_conv_image2d_opencl SRCS conv_image2d_compute_test.cc
+        DEPS conv_opencl op_registry program context cl_image_converter
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
 lite_cc_test(test_layout_opencl SRCS layout_compute_test.cc
         DEPS layout_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
