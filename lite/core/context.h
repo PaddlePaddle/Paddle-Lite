@@ -24,6 +24,9 @@
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#endif
 
 #include <map>
 #include <memory>
@@ -102,11 +105,27 @@ class Context<TargetType::kXPU> {
  public:
   Context() {}
   explicit Context(const XPUContext& ctx);
+
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(XPUContext* ctx) {}
+  void InitOnce() {
+    _raw_ctx = xdnn::create_context();
+    CHECK(_raw_ctx);
+    xdnn::set_workspace_l3_size(_raw_ctx, 0xFFFC00);
+  }
+
+  void CopySharedTo(XPUContext* ctx) {
+    ctx->_raw_ctx = _raw_ctx;
+  }
+
+  xdnn::Context* GetRawContext() {
+    CHECK(_raw_ctx);
+    return _raw_ctx;
+  }
 
   std::string name() const { return "XPUContext"; }
+
+ private:
+  xdnn::Context* _raw_ctx{nullptr};
 };
 #endif
 

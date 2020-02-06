@@ -30,6 +30,10 @@
 #include "lite/backends/bm/target_wrapper.h"
 #endif  // LITE_WITH_BM
 
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif  // LITE_WITH_XPU
+
 namespace paddle {
 namespace lite {
 
