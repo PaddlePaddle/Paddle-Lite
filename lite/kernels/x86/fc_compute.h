@@ -135,13 +135,13 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     bool with_relu = (param.activation_type == "relu") ? true : false;
 
     bool padding_weights = param.padding_weights;
-    auto& w_dims = w->dims();
+    const auto& w_dims = w->dims();
     auto w_dims0 = padding_weights ? w_dims[0] - 4 : w_dims[0];
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
 
     DDim out_dims;
     out_dims.resize(static_cast<size_t>(in_num_col_dims + 1));
-    auto& in_dims = input->dims();
+    const auto& in_dims = input->dims();
     for (int i = 0; i < in_num_col_dims; ++i) {
       out_dims[i] = in_dims[i];
     }

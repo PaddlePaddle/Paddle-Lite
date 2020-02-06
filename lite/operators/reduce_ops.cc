@@ -29,11 +29,13 @@ bool ReduceOp::CheckShape() const {
 }
 
 bool ReduceOp::InferShape() const {
-  auto& x_dims = param_.x->dims();
+  const auto& x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
-  auto& dims = param_.dim;
+  auto dims = param_.dim;
   for (size_t i = 0; i < dims.size(); ++i) {
-    if (dims[i] < 0) dims[i] = x_rank + dims[i];
+    if (dims[i] < 0) {
+      dims[i] = x_rank + dims[i];
+    }
     CHECK_LT(dims[i], x_rank)
         << "The dim should be in the range [-rank(input), rank(input).";
   }
@@ -58,7 +60,7 @@ bool ReduceOp::InferShape() const {
       int dim_index = 0;
       int out_index = 0;
       for (size_t i = 0; i < x_rank; ++i) {
-        if (dims[dim_index] == i) {
+        if (dims[dim_index] == static_cast<DDim::value_type>(i)) {
           dim_index++;
         } else {
           out_dims[out_index++] = x_dims[i];

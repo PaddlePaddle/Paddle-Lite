@@ -45,8 +45,8 @@ bool MatchMatrixTensorOpLite::CheckShape() const {
 bool MatchMatrixTensorOpLite::InferShape() const {
   const Tensor* x = param_.x;
   const Tensor* y = param_.y;
-  DDim x_dims = param_.x->dims();
-  DDim y_dims = param_.y->dims();
+  const auto& x_dims = param_.x->dims();
+  const auto& y_dims = param_.y->dims();
   int dim_t = param_.dim_t;
 
   const auto& x_lod = x->lod();

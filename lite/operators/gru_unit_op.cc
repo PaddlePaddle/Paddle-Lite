@@ -28,9 +28,9 @@ bool GRUUnitOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.hidden);
   CHECK_OR_FALSE(param_.weight);
 
-  auto input_dims = param_.input->dims();
-  auto hidden_prev_dims = param_.hidden_prev->dims();
-  auto weight_dims = param_.weight->dims();
+  const auto &input_dims = param_.input->dims();
+  const auto &hidden_prev_dims = param_.hidden_prev->dims();
+  const auto &weight_dims = param_.weight->dims();
 
   int input_size = input_dims[1];
   int frame_size = hidden_prev_dims[1];
@@ -52,8 +52,8 @@ bool GRUUnitOpLite::CheckShape() const {
 }
 
 bool GRUUnitOpLite::InferShape() const {
-  auto input_dims = param_.input->dims();
-  auto hidden_prev_dims = param_.hidden_prev->dims();
+  const auto &input_dims = param_.input->dims();
+  const auto &hidden_prev_dims = param_.hidden_prev->dims();
 
   int batch_size = input_dims[0];
   int frame_size = hidden_prev_dims[1];

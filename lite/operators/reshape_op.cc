@@ -27,11 +27,11 @@ bool ReshapeOp::CheckShape() const {
 }
 
 bool ReshapeOp::InferShape() const {
-  auto &shape_tensor_vct = param_.shape_tensor_vct;
+  const auto &shape_tensor_vct = param_.shape_tensor_vct;
   auto *shape_tensor = param_.shape_tensor;
-  auto &shape_vct = param_.shape_vct;
-  std::vector<int> final_shape;
+  const auto &shape_vct = param_.shape_vct;
 
+  std::vector<int> final_shape;
   if (shape_tensor_vct.size() > 0) {
     final_shape.resize(shape_tensor_vct.size());
     for (int i = 0; i < shape_tensor_vct.size(); i++) {
@@ -47,7 +47,7 @@ bool ReshapeOp::InferShape() const {
     LOG(FATAL) << "input shape error";
   }
 
-  auto &x_dims = param_.x->dims();
+  const auto &x_dims = param_.x->dims();
   auto output_dims = ValidateShape(final_shape, x_dims);
   param_.output->Resize(output_dims);
   auto out_lod = param_.output->mutable_lod();
@@ -99,7 +99,7 @@ bool Reshape2Op::CheckShape() const {
 
 bool Reshape2Op::InferShape() const {
   ReshapeOp::InferShape();
-  auto &x_dims = param_.x->dims();
+  const auto &x_dims = param_.x->dims();
   DDim xshape_dims;
   xshape_dims.resize(x_dims.size() + 1);
   xshape_dims[0] = 0;

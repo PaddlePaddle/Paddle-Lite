@@ -43,12 +43,10 @@ bool InstanceNormOp::CheckShape() const {
 }
 
 bool InstanceNormOp::InferShape() const {
-  auto x_dims = param_.x->dims();
-  int64_t batch_size = x_dims[0];
-  int64_t channel_size = x_dims[1];
-  param_.saved_mean->Resize(std::vector<int64_t>({batch_size * channel_size}));
-  param_.saved_variance->Resize(
-      std::vector<int64_t>({batch_size * channel_size}));
+  const auto& x_dims = param_.x->dims();
+  DDim saved_dims({x_dims[0] * x_dims[1]});  // batch_size * channel_size
+  param_.saved_mean->Resize(saved_dims);
+  param_.saved_variance->Resize(saved_dims);
   param_.out->Resize(x_dims);
   return true;
 }

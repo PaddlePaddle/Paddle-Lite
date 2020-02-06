@@ -25,8 +25,8 @@ bool LookupTableOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Ids)
   CHECK_OR_FALSE(param_.Out)
 
-  auto table_dims = param_.W->dims();
-  auto ids_dims = param_.Ids->dims();
+  const auto &table_dims = param_.W->dims();
+  const auto &ids_dims = param_.Ids->dims();
 
   int ids_rank = ids_dims.size();
 
@@ -37,8 +37,8 @@ bool LookupTableOpLite::CheckShape() const {
 }
 
 bool LookupTableOpLite::InferShape() const {
-  auto &table_dims = param_.W->dims();
-  auto &ids_dims = param_.Ids->dims();
+  const auto &table_dims = param_.W->dims();
+  const auto &ids_dims = param_.Ids->dims();
 
   auto out_dims = ids_dims;
   int ids_rank = ids_dims.size();
