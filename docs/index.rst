@@ -7,22 +7,51 @@ Welcome to Paddle-Lite's documentation!
 =======================================
 
 .. toctree::
-   :maxdepth: 1
-   :caption: 简介
-   :name: introduction
+  :maxdepth: 1
+  :caption: 简介
+  :name: sec-introduction
 
-   introduction/tech_highlights
+  introduction/tech_highlights
+  introduction/architecture
 
 .. toctree::
-   :maxdepth: 1
-   :caption: 安装
-   :name: installation
+  :maxdepth: 1
+  :caption: Benchmark数据和方法
+  :name: sec-benchmark
+  
+  benchmark/benchmark
+  benchmark/benchmark_tools
 
-   installation/source_compile
+.. toctree::
+  :maxdepth: 1
+  :caption: 安装
+  :name: sec-install
 
-Indices and tables
-==================
+  installation/source_compile
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+  :maxdepth: 1
+  :caption: 使用指南
+  :name: sec-user-guides
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 进阶使用指南
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 开发者文档
+
+.. toctree::
+  :maxdepth: 1
+  :caption: API文档
+
+.. toctree::
+  :maxdepth: 1
+  :caption: FAQ
+
+.. toctree::
+  :maxdepth: 1
+  :caption: paddle-mobile
+
+
