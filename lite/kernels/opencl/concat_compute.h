@@ -33,10 +33,10 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL), Ptype, layout> {
 
   void Run() override;
 
-  std::string doc() override;
+  std::string doc(); //override;
 
- protected:
-  void UpdateParams();
+// protected:
+ // void UpdateParams();
 
   size_t axis_size_{1};
   size_t post_size_{1};
