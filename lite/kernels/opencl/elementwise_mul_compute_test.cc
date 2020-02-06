@@ -80,9 +80,9 @@ void elementwise_compute_ref(const dtype *x_data,
   } else if (y_dims.size() == 4) {
     // eg: x_dims: [1, 3, 2, 2]
     //     y_dims: [1, 3, 1, 1]
-    ASSERT_EQ(y_dims[2] == y_dims[3]);
-    ASSERT_EQ(y_dims[2] == 1);
-    ASSERT_EQ(y_dims[0] == 1);
+    ASSERT_EQ(y_dims[2], y_dims[3]);
+    ASSERT_EQ(y_dims[2], 1);
+    ASSERT_EQ(y_dims[0], 1);
     auto y_offset = y_dims.production();
     auto x_offset = x_dims.production() / y_offset;
     for (auto x = 0; x < x_dims.production(); ++x) {
