@@ -29,89 +29,72 @@ __kernel void elementwise_mul(__global image2d_t input, __global image2d_t bias,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-__kernel void channel_mul(__global image2d_t input, __global image2d_t bias,
-                          __write_only image2d_t outputImage, int w) {
-  int x = get_global_id(0);
-  int y = get_global_id(1);
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-  int2 coords;
-  coords.x = x;
-  coords.y = y;
-  int2 coords_bias;
-  coords_bias.x = x / w;
-  coords_bias.y = 0;
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coords);
-  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias);
-  CL_DTYPE4 output = in * biase;
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
-}
-
-// etc : 1 1 1 72
-// run time Y  [value,0,0,0] * 72
-__kernel void channel_mul_d2(__global image2d_t input, __global image2d_t bias,
+__kernel void channel_mul_d1(__read_only image2d_t input, __read_only image2d_t bias,
                              __write_only image2d_t outputImage, int w) {
   int x = get_global_id(0);
   int y = get_global_id(1);
+
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
   int2 coords;
   coords.x = x;
   coords.y = y;
 
-  int2 coords_bias0;
-  int2 coords_bias1;
-  int2 coords_bias2;
-  int2 coords_bias3;
+  int2 coords_bias;
+  coords_bias.x = x % w;
+  coords_bias.y = 0;
 
-  /*  if (x == 0 && y == 0) {
-      CL_DTYPE4 b = (CL_DTYPE4){0, 0, 0, 0};
-  #define PPI(j, k)                                                          \
-    b = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2){j, k});                            \
-    printf("bias(%d,%d)={ %f , %f , %f , %f }\n ", j, k, convert_float(b.x), \
-           convert_float(b.y), convert_float(b.z), convert_float(b.w));
-      for (int i = 0; i < 73; ++i) {
-        PPI(i, 0);
-      }
-  #undef PPI
-    }*/
-
-  coords_bias0.x = x / w * 4;
-  coords_bias0.y = 0;
-
-  coords_bias1.x = x / w * 4 + 1;
-  coords_bias1.y = 0;
-
-  coords_bias2.x = x / w * 4 + 2;
-  coords_bias2.y = 0;
-
-  coords_bias3.x = x / w * 4 + 3;
-  coords_bias3.y = 0;
-
-  CL_DTYPE4 biase0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias0);
-  CL_DTYPE4 biase1 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias1);
-  CL_DTYPE4 biase2 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias2);
-  CL_DTYPE4 biase3 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias3);
-  /*  if (x == 0 && y == 0) {
-      printf("bias0={ %f , %f , %f , %f }\n ",
-             convert_float(biase0.x), convert_float(biase0.y),
-             convert_float(biase0.z), convert_float(biase0.w));
-      printf("bias1={ %f , %f , %f , %f }\n ",
-             convert_float(biase1.x), convert_float(biase1.y),
-             convert_float(biase1.z), convert_float(biase1.w));
-      printf("bias2={ %f , %f , %f , %f }\n ",
-             convert_float(biase2.x), convert_float(biase2.y),
-             convert_float(biase2.z), convert_float(biase2.w));
-      printf("bias3={ %f , %f , %f , %f }\n ",
-             convert_float(biase3.x), convert_float(biase3.y),
-             convert_float(biase3.z), convert_float(biase3.w));
-    }*/
-  CL_DTYPE4 biase = {biase0.x, biase1.x, biase2.x, biase3.x};
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coords);
-  CL_DTYPE4 output = mad(in, biase, 0);
+  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias);
+  CL_DTYPE4 output = in * (CL_DTYPE4)(biase.x);
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-// kernel `channel_mul`(y_dims.size() == 1) is same as `channel_mul_d4`(y_dims.size() == 4)
-// __kernel void channel_mul_d4(__global image2d_t input, __global image2d_t bias,
-//                              __write_only image2d_t outputImage, int w)
+__kernel void channel_mul_d2(__read_only image2d_t input, __read_only image2d_t bias,
+                             __write_only image2d_t outputImage, int w, int h) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
+
+  int2 coords_bias;
+  coords_bias.x = x % w;
+  coords_bias.y = y % h;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coords);
+  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias);
+  CL_DTYPE4 output = in * (CL_DTYPE4)(biase.x);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
+}
+
+__kernel void channel_mul_d4(__read_only image2d_t input, __read_only image2d_t bias,
+                             __write_only image2d_t outputImage, int w) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
+
+  int2 coords_bias;
+  coords_bias.x = x / w;
+  coords_bias.y = 0;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coords);
+  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias);
+  CL_DTYPE4 output = in * biase;
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
+}
+

@@ -29,13 +29,15 @@ void ElementwiseMulFloatImageCompute::PrepareForRun() {
   auto y_dims = y->dims();
   if (y_dims == ele_param_->X->dims()) {
     kernel_func_name_ = "elementwise_mul";
-  } else if (y_dims.size() == 1 || y_dims.size() == 4) {
-    kernel_func_name_ = "channel_mul";
+  } else if (y_dims.size() == 1) {
+    kernel_func_name_ = "channel_mul_d1";
   } else if (y_dims.size() == 2) {
     kernel_func_name_ = "channel_mul_d2";
+  } else if (y_dims.size() == 4) {
+    kernel_func_name_ = "channel_mul_d4";
   } else {
-    LOG(FATAL) << "ElementwiseMul not supported y_dims.size():"
-               << y_dims.size();
+    LOG(FATAL) << "ElementwiseMul not supported y_dims.size():" << y_dims.size()
+               << ", x_dims.size():" << ele_param_->X->dims().size();
   }
   VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
   VLOG(4) << "y_dims:" << y_dims;
@@ -86,23 +88,39 @@ void ElementwiseMulFloatImageCompute::Run() {
   int arg_idx = 0;
   auto y_dims = y->dims();
   if (y_dims == ele_param_->X->dims()) {
-    // kernel: elementwise_mul
+    // kernel: elementwise_mul(channel_mul_d4)
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *y_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-  } else if (y_dims.size() == 1 || y_dims.size() == 2 || y_dims.size() == 4) {
+  } else if (y_dims.size() == 1 || y_dims.size() == 4) {
     auto tensor_w = x->dims()[x->dims().size() - 1];
-    // kernel: channel_mul / channel_mul_d2 / channel_mul_d4
+    VLOG(4) << "tensor_w:" << tensor_w;
+    // kernel: channel_mul_d1 / channel_mul_d4
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *y_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, tensor_w);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(tensor_w));
+    CL_CHECK_FATAL(status);
+  } else if (y_dims.size() == 2) {
+    auto y_tensor_h = y->dims()[0];
+    auto y_tensor_w = y->dims()[1];
+    VLOG(4) << "y_tensor_w:" << y_tensor_w << " y_tensor_h:" << y_tensor_h;
+    // kernel: channel_mul_d2
+    cl_int status = kernel.setArg(arg_idx, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *y_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_tensor_w));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_tensor_h));
     CL_CHECK_FATAL(status);
   } else {
     LOG(FATAL) << "ElementwiseMul not supported y_dims.size():"
@@ -120,29 +138,8 @@ void ElementwiseMulFloatImageCompute::Run() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_img, event_);
-}
 
-void ElementwiseMulFloatImageCompute::UpdateParams() {
-  auto axis = ele_param_->axis;
-  const auto& x_dims = ele_param_->X->dims();
-  const auto& y_dims = ele_param_->Y->dims();
-  const auto& out_dims = ele_param_->Out->dims();
-  if (axis < 0) {
-    axis = static_cast<int>(x_dims.size() - y_dims.size());
-  }
-  for (int i = 0; i < axis; ++i) {
-    batch_ *= x_dims[i];
-  }
-  for (int i = 0; i < y_dims.size(); ++i) {
-    channels_ *= y_dims[i];
-  }
-  for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size(); ++i) {
-    num_ *= x_dims[i];
-  }
-  VLOG(4) << "axis: " << axis;
-  VLOG(4) << "batch: " << batch_;
-  VLOG(4) << "channels: " << channels_;
-  VLOG(4) << "num: " << num_;
+  VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 }
 
 }  // namespace opencl
