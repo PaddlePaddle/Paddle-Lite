@@ -109,7 +109,8 @@ TEST(elemul_image2d_fp32, compute_kernel_elemenwise_mul) {
 
   const DDim x_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
   auto out_dim = x_dim;
-  std::vector<DDim> y_dim_v{DDim(std::vector<DDim::value_type>{n, c, h, w}),
+  std::vector<DDim> y_dim_v{DDim(std::vector<DDim::value_type>{n, c, 1, 1}),
+                            DDim(std::vector<DDim::value_type>{n, c, h, w}),
                             DDim(std::vector<DDim::value_type>{h, w}),
                             DDim(std::vector<DDim::value_type>{w})};
   for (auto y_dim : y_dim_v) {
