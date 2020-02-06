@@ -1,0 +1,11 @@
+model: ./tf_model/mobilenetv1opt2, threads: 1, avg: 32.453400 ms, min: 32.303001 ms, max: 32.564999 
+model: ./tf_model/mobilenetv2opt2, threads: 1, avg: 39.304981 ms, min: 39.091999 ms, max: 39.446999 
+model: ./tf_model/mnasnetopt2, threads: 1, avg: 25.531200 ms, min: 25.364000 ms, max: 25.708000 
+model: ./tf_model/mobilenetv1opt2, threads: 2, avg: 19.582321 ms, min: 19.384001 ms, max: 20.422001 
+model: ./tf_model/mobilenetv2opt2, threads: 2, avg: 23.832081 ms, min: 23.577000 ms, max: 25.024000 
+model: ./tf_model/mnasnetopt2, threads: 2, avg: 17.129900 ms, min: 16.667000 ms, max: 20.011000 
+model: ./tf_model/mobilenetv1opt2, threads: 4, avg: 10.831400 ms, min: 10.697000 ms, max: 11.040000 
+model: ./tf_model/mobilenetv2opt2, threads: 4, avg: 14.499840 ms, min: 14.354000 ms, max: 14.648000 
+model: ./tf_model/mnasnetopt2, threads: 4, avg: 11.610640 ms, min: 11.487000 ms, max: 11.703000 
+model: ./tf_model/mobilenetv2opt2/, threads: 1, avg: 54.292000 ms, min: 54.292000 ms, max: 54.292000 ms 
+model: ./tf_model/mobilenetv2opt2/, threads: 4, avg: 14.356000 ms, min: 14.356000 ms, max: 14.356000 ms 
