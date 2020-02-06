@@ -34,9 +34,11 @@ class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto *output_t = param.Out;
     int64_t padding_idx = param.padding_idx;
     auto *ids = ids_t->data<int64_t>();
+    //    LOG(INFO) << "ids->dims: " << ids_t->dims();
     int64_t ids_numel = ids_t->dims().production();
 
     auto *table_t = param.W;
+    //    LOG(INFO) << "W->dims: " << table_t->dims();
     int64_t row_number = table_t->dims()[0];
     int64_t row_width = table_t->dims()[1];
 

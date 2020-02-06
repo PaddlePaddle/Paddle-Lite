@@ -137,6 +137,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
+    //    LOG(INFO) << "Run op: " << inst.op()->op_info()->Type();
     if (inst.is_feed_fetch_op()) continue;
     inst.Run();
 #ifdef LITE_WITH_PROFILE

@@ -38,12 +38,15 @@ bool LookupTableOpLite::CheckShape() const {
 
 bool LookupTableOpLite::InferShape() const {
   const auto &table_dims = param_.W->dims();
+  //  LOG(INFO) << "table_dims: " << table_dims;
   const auto &ids_dims = param_.Ids->dims();
+  //  LOG(INFO) << "ids_dims: " << ids_dims;
 
   auto out_dims = ids_dims;
   int ids_rank = ids_dims.size();
   out_dims[ids_rank - 1] = table_dims[1];
 
+  //  LOG(INFO) << "out_dims: " << out_dims;
   param_.Out->Resize(out_dims);
   param_.Out->set_lod(param_.Ids->lod());
   return true;

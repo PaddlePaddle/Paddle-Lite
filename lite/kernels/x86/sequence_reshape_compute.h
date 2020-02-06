@@ -36,9 +36,9 @@ class SequenceReshapeCompute
     auto* out = param.output;
     int out_width = param.new_dim;
 
-    auto in_dims = in->dims();
+    const auto& in_dims = in->dims();
+    //    LOG(INFO) << "in_dims: " << in_dims;
     int64_t in_width = in_dims[1];
-    // LOG(INFO)<<"sequence_reshape in tensor:"<<*in;
     auto& in_lod = in->lod();
 
     CHECK_EQ(in_lod.size(), 1UL);

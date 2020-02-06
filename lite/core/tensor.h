@@ -42,8 +42,18 @@ template <typename ValueType, size_t DimLength>
 class DimVector {
  public:
   DimVector() {
-    memset(arr_, 0, DimLength * sizeof(ValueType));
+    //    data_ = new ValueType[DimLength];
+    //    data_ = static_cast<ValueType *>(malloc(DimLength *
+    //    sizeof(ValueType)));
+    data_.resize(DimLength);
+    //    memset(data_, 0, DimLength * sizeof(ValueType));
     size_ = 0;
+  }
+  ~DimVector() {
+    //    if (data_) {
+    //      delete[] data_;
+    //      free(data_);
+    //    }
   }
 
   size_t size() const { return size_; }
@@ -51,17 +61,28 @@ class DimVector {
     CHECK_LE(new_size, DimLength)
         << "Expected the number of dimentations <= " << DimLength
         << ", received " << new_size << ".";
+    //    if (new_size != size_) {
+    //      delete[] data_;
+    //      data_ = nullptr;
+    //    }
     size_ = new_size;
   }
 
-  ValueType *data() { return arr_; }
-  const ValueType *data() const { return arr_; }
+  ValueType *mutable_data() {
+    //    if (!data_ && size_ > 0U) {
+    //      data_ = new ValueType[size_];
+    //    }
+    return data_.data();
+  }
+  const ValueType *data() const { return data_.data(); }
 
-  ValueType operator[](int offset) const { return arr_[offset]; }
-  ValueType &operator[](int offset) { return arr_[offset]; }
+  ValueType operator[](int offset) const { return data_[offset]; }
+  ValueType &operator[](int offset) { return data_[offset]; }
 
  private:
-  ValueType arr_[DimLength];
+  //  ValueType data_[DimLength];
+  //  ValueType* data_{nullptr};
+  std::vector<ValueType> data_;
   size_t size_{0};
 };
 
@@ -78,7 +99,7 @@ class DDimLite {
 
   void ConstructFrom(const std::vector<value_type> &x) {
     data_.resize(x.size());
-    memcpy(data_.data(), x.data(), x.size() * sizeof(value_type));
+    memcpy(data_.mutable_data(), x.data(), x.size() * sizeof(value_type));
   }
 
   value_type operator[](int offset) const { return data_[offset]; }
@@ -127,7 +148,9 @@ class DDimLite {
 
   DDimLite &operator=(const DDimLite &a) {
     this->data_.resize(a.size());
-    memcpy(this->data_.data(), a.data_.data(), a.size() * sizeof(value_type));
+    memcpy(this->data_.mutable_data(),
+           a.data_.data(),
+           a.size() * sizeof(value_type));
     return *this;
   }
 
@@ -176,10 +199,19 @@ class TensorLite {
                                        offset_);
   }
 
-  void Resize(const DDimLite &ddim) { dims_ = ddim; }
-  void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
+  void Resize(const DDimLite &ddim) {
+    dims_ = ddim;
+    //    LOG(INFO) << "Set dims: " << dims_ << " for tensor " << this;
+  }
+  void Resize(const std::vector<int64_t> &x) {
+    dims_ = DDimLite(x);
+    //    LOG(INFO) << "Set dims: " << dims_ << " for tensor " << this;
+  }
 
-  const DDimLite &dims() const { return dims_; }
+  const DDimLite &dims() const {
+    //    LOG(INFO) << "Get dims: " << dims_ << " for tensor " << this;
+    return dims_;
+  }
   int64_t numel() const { return dims_.production(); }
 
   const LoD &lod() const { return lod_; }
@@ -216,6 +248,9 @@ class TensorLite {
     }
     memory_size_ = dims_.production() * sizeof(T);
     buffer_->ResetLazy(target_, memory_size_);
+    //    char *ptr = static_cast<char *>(buffer_->data()) + offset_;
+    //    LOG(INFO) << "mutable_data for tensor " << this << ": " << ptr << ",
+    //    memory_size: " << memory_size_;
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
                                  offset_);
   }
