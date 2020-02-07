@@ -71,5 +71,5 @@ lite_cc_test(test_layout_opencl SRCS layout_compute_test.cc
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_concat_opencl SRCS concat_compute_test.cc
-        DEPS concat_opencl op_registry program context
+        DEPS concat_opencl layout_opencl op_registry program context
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)

@@ -259,6 +259,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, axis0);
+    CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, axis_size_);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, pre_size_);
@@ -366,7 +368,7 @@ REGISTER_LITE_KERNEL(
     kFloat,
     kNCHW,
     Concat_buffer,
-    kNCHW)
+    def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFloat),
