@@ -43,7 +43,8 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL), Ptype, layout> {
   size_t pre_size_{1};
   size_t axis_{1};
   param_t* concat_param_{nullptr};
-  std::string kernel_func_name_{"concat"};
+  std::string kernel_func_name1_{"concat2"};
+  std::string kernel_func_name2_{"concat_mul"};
   std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };

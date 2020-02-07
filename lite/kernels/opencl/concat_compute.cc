@@ -62,7 +62,9 @@ void ConcatCompute<PRECISION(kFloat),
                    DATALAYOUT(kImageDefault)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
-      kernel_func_name_, "image/concat_kernel.cl", build_options_);
+      kernel_func_name1_, "image/concat_kernel.cl", build_options_);
+  context.cl_context()->AddKernel(
+      kernel_func_name2_, "image/concat_kernel.cl", build_options_);
   concat_param_ = param_.get_mutable<param_t>();
   // UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
@@ -113,7 +115,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
+  kernel_key << kernel_func_name1_ << build_options_;
+  kernel_key << kernel_func_name2_ << build_options_;
 
   auto inputs = param.x;
   int arg_idx = 0;
@@ -192,7 +195,9 @@ template <>
 void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(
-      kernel_func_name_, "buffer/concat_kernel.cl", build_options_);
+      kernel_func_name1_, "buffer/concat_kernel.cl", build_options_);
+  context.cl_context()->AddKernel(
+      kernel_func_name2_, "buffer/concat_kernel.cl", build_options_);
   concat_param_ = param_.get_mutable<param_t>();
 //  UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
@@ -240,7 +245,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
+  kernel_key << kernel_func_name1_ << build_options_;
+  kernel_key << kernel_func_name2_ << build_options_;
 
   auto inputs = param.x;
   int arg_idx = 0;

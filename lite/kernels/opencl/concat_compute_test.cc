@@ -121,7 +121,7 @@ auto *mapped_x1 = static_cast<float *>(
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
   auto kernels = KernelRegistry::Global().Create(
-      "concat", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "concat2", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
   kernel->SetParam(param);
@@ -197,7 +197,7 @@ TEST(concat_image2d_fp32, compute) {
             auto img_to_buf_kernels = KernelRegistry::Global().Create(
                 "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
             auto concat_img_kernels =
-                KernelRegistry::Global().Create("concat",
+                KernelRegistry::Global().Create("concat_mul",
                                                 TARGET(kOpenCL),
                                                 PRECISION(kFloat),
                                                 DATALAYOUT(kImageDefault));
