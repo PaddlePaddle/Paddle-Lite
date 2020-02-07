@@ -102,7 +102,7 @@ void fp32_to_int8(const float* din,
             "v10",
             "v11");
 #else
-       asm volatile(
+      asm volatile(
           "vld1.32 {d0-d3},    [%[din]]!                  @ load in0~in7\n"
           "vld1.32    {d4-d7},    [%[din]]!       @ load in8~in16\n"
           "0:                                     @ main loop\n"
