@@ -61,10 +61,13 @@ template <>
 void ConcatCompute<PRECISION(kFloat),
                    DATALAYOUT(kImageDefault)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
+  if (concat_param_->x.size() == 2) {
+    kernel_func_name_ = "concat2";
+  } else {
+    kernel_func_name_ = "concat_mul";
+  }
   context.cl_context()->AddKernel(
-      kernel_func_name1_, "image/concat_kernel.cl", build_options_);
-  context.cl_context()->AddKernel(
-      kernel_func_name2_, "image/concat_kernel.cl", build_options_);
+      kernel_func_name_, "image/concat_kernel.cl", build_options_);
   concat_param_ = param_.get_mutable<param_t>();
   // UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
@@ -72,8 +75,8 @@ void ConcatCompute<PRECISION(kFloat),
   auto out_dims = concat_param_->output->dims();
   auto* axis_tensor = concat_param_->axis_tensor;
   if (axis_tensor != nullptr) {
-    // auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
-    // axis = axis_tensor_data[0];
+    auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
+    axis = axis_tensor_data[0];
   }
   auto in_dims = inputs[0]->dims();
   axis_size_ = out_dims[axis];
@@ -83,24 +86,23 @@ void ConcatCompute<PRECISION(kFloat),
   }
   for (int i = axis + 1; i < in_dims.size(); i++) {
     post_size_ *= in_dims[i];
- }
- for (int i = 1; i < inputs.size(); i++) {
+  }
+  for (int i = 1; i < inputs.size(); i++) {
     auto dims = inputs[i]->dims();
-   // auto flag = CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
-   if (in_dims.size() != dims.size()) {
+    // auto flag = CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
+    if (in_dims.size() != dims.size()) {
       printf("input shape must be same \n");
       return;
-   }
-   for (int i = 0; i < dims.size(); i++) {
+    }
+    for (int i = 0; i < dims.size(); i++) {
       if (i != axis) {
-        if (in_dims[i] != dims[i]){
-	   printf("input shape must be same \n");
-	   return;
-	}
+        if (in_dims[i] != dims[i]) {
+          printf("input shape must be same \n");
+          return;
+        }
       }
     }
   }
-
 }
 
 template <>
@@ -115,8 +117,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name1_ << build_options_;
-  kernel_key << kernel_func_name2_ << build_options_;
+  kernel_key << kernel_func_name_ << build_options_;
 
   auto inputs = param.x;
   int arg_idx = 0;
@@ -131,8 +132,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
           << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+  auto kernel = context.cl_context()->GetKernel(kernel_key.str());
   if (inputs.size() == 2) {
-    auto kernel = context.cl_context()->GetKernel("concat2");
     auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
     auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
     cl_int status = kernel.setArg(arg_idx, *x_buf0);
@@ -154,7 +155,6 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
         event_.get());
     CL_CHECK_FATAL(status);
   } else {
-    auto kernel = context.cl_context()->GetKernel("concat_mul");
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
       arg_idx = 0;
@@ -194,19 +194,22 @@ std::string ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::doc() {
 template <>
 void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
+  if (concat_param_->x.size() == 2) {
+    kernel_func_name_ = "concat2";
+  } else {
+    kernel_func_name_ = "concat_mul";
+  }
   context.cl_context()->AddKernel(
-      kernel_func_name1_, "buffer/concat_kernel.cl", build_options_);
-  context.cl_context()->AddKernel(
-      kernel_func_name2_, "buffer/concat_kernel.cl", build_options_);
+      kernel_func_name_, "buffer/concat_kernel.cl", build_options_);
   concat_param_ = param_.get_mutable<param_t>();
-//  UpdateParams<kFloat, kImageDefault>();
+  //  UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
   auto inputs = concat_param_->x;
   auto out_dims = concat_param_->output->dims();
   auto* axis_tensor = concat_param_->axis_tensor;
   if (axis_tensor != nullptr) {
- //   auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
-  //  axis = axis_tensor_data[0];
+    //   auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
+    //  axis = axis_tensor_data[0];
   }
   auto in_dims = inputs[0]->dims();
   axis_size_ = out_dims[axis];
@@ -214,21 +217,21 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::PrepareForRun() {
   for (int i = 0; i < axis; i++) {
     pre_size_ *= in_dims[i];
   }
-for (int i = axis + 1; i < in_dims.size(); i++) {
+  for (int i = axis + 1; i < in_dims.size(); i++) {
     post_size_ *= in_dims[i];
- }
- for (int i = 1; i < inputs.size(); i++) {
+  }
+  for (int i = 1; i < inputs.size(); i++) {
     auto dims = inputs[i]->dims();
     if (in_dims.size() != dims.size()) {
-        printf("input shape must be same \n");
-        return;
-     }
+      printf("input shape must be same \n");
+      return;
+    }
     for (int i = 0; i < dims.size(); i++) {
       if (i != axis) {
         if (in_dims[i] != dims[i]) {
           printf("input shape must be same \n");
           return;
-     	}
+        }
       }
     }
   }
@@ -239,7 +242,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
   auto& param = *param_.get_mutable<param_t>();
   const auto& x_dims = param.output->dims();
   auto image_shape = InitImageDimInfoWith(x_dims);
-  auto* out_buf = param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+  auto* out_buf =
+      param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
   const auto& y_dims = param.output->dims();  // useless: check dim only
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -252,8 +256,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
   int arg_idx = 0;
   auto global_work_size = cl::NDRange{axis_size_};
   int total = axis_size_ * post_size_;
+  auto kernel = context.cl_context()->GetKernel(kernel_key.str());
   if (inputs.size() == 2) {
-    auto kernel = context.cl_context()->GetKernel("concat2");
     auto* x_buf0 = inputs[0]->data<float, cl::Buffer>();
     auto* x_buf1 = inputs[1]->data<float, cl::Buffer>();
     auto axis0 = inputs[0]->dims()[axis_];
@@ -288,13 +292,11 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
         event_.get());
     CL_CHECK_FATAL(status);
   } else {
-    auto kernel = context.cl_context()->GetKernel("concat_mul");
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
       arg_idx = 0;
       auto size = inputs[i]->dims()[axis_];
-      auto* x_buf =
-          inputs[i]->data<float, cl::Buffer>();
+      auto* x_buf = inputs[i]->data<float, cl::Buffer>();
       global_work_size = cl::NDRange{static_cast<size_t>(size)};
       auto total0 = size * post_size_;
       cl_int status = kernel.setArg(arg_idx, *x_buf);
@@ -340,20 +342,15 @@ std::string ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::doc() {
 }  // namespace paddle
 
 typedef paddle::lite::kernels::opencl::ConcatCompute<PRECISION(kFloat),
-                                                DATALAYOUT(kNCHW)>
+                                                     DATALAYOUT(kNCHW)>
     Concat_buffer;
 
 typedef paddle::lite::kernels::opencl::ConcatCompute<PRECISION(kFloat),
-                                                DATALAYOUT(kImageDefault)>
+                                                     DATALAYOUT(kImageDefault)>
     Concat_image;
 
 REGISTER_LITE_KERNEL(
-    concat,
-    kOpenCL,
-    kFloat,
-    kImageDefault,
-    Concat_image,
-    ImageDefault)
+    concat, kOpenCL, kFloat, kImageDefault, Concat_image, ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFloat),
@@ -368,19 +365,13 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    concat,
-    kOpenCL,
-    kFloat,
-    kNCHW,
-    Concat_buffer,
-    def)
+REGISTER_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, Concat_buffer, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW))})
     .BindInput("AxisTensor",
-              {LiteType::GetTensorTy(TARGET(kOpenCL),
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Out",

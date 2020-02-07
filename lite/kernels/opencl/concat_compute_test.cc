@@ -73,10 +73,10 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
     }
   }
 }
-#if 1   // concat_buffer
+#if 1  // concat_buffer
 TEST(opencl_concat_buffer, compute) {
-   // prepare data
-   const DDim x0_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
+  // prepare data
+  const DDim x0_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
   const DDim x1_dim = DDim(std::vector<DDim::value_type>{3, 8, 10, 10});
   const DDim out_dim = DDim(std::vector<DDim::value_type>{3, 14, 10, 10});
   lite::Tensor x0, x1, out, out_ref;
@@ -91,18 +91,18 @@ TEST(opencl_concat_buffer, compute) {
   std::uniform_real_distribution<float> dist(-10, 10);
   auto *mapped_x0 = static_cast<float *>(
       TargetWrapperCL::Map(x0_data, 0, sizeof(float) * x0_dim.production()));
-auto *mapped_x1 = static_cast<float *>(
+  auto *mapped_x1 = static_cast<float *>(
       TargetWrapperCL::Map(x1_data, 0, sizeof(float) * x1_dim.production()));
   for (int i = 0; i < x0_dim.production(); i++) {
     mapped_x0[i] = dist(engine);
   }
   for (int i = 0; i < x1_dim.production(); i++) {
-     mapped_x1[i] = dist(engine);
+    mapped_x1[i] = dist(engine);
   }
 
   // set param and kernel, then run
   operators::ConcatParam param;
-  std::vector<lite::Tensor*> ins;
+  std::vector<lite::Tensor *> ins;
   ins.push_back(&x0);
   ins.push_back(&x1);
   auto axis = 1;
@@ -110,7 +110,7 @@ auto *mapped_x1 = static_cast<float *>(
   param.output = &out;
   param.axis = axis;
 
-  std::vector<const float*> ins_data;
+  std::vector<const float *> ins_data;
   std::vector<const DDim> ins_dim;
 
   ins_data.push_back(mapped_x0);
@@ -121,7 +121,7 @@ auto *mapped_x1 = static_cast<float *>(
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
   auto kernels = KernelRegistry::Global().Create(
-      "concat2", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "concat", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
   kernel->SetParam(param);
@@ -144,9 +144,8 @@ auto *mapped_x1 = static_cast<float *>(
   }
 
   // run compute ref and check
-  auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-  concat_mul_compute_ref<float>(ins_data, ins_dim, axis, out_dim,
-                                out_ref_data);
+  auto *out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
+  concat_mul_compute_ref<float>(ins_data, ins_dim, axis, out_dim, out_ref_data);
 
   auto *out_data = out.mutable_data<float, cl::Buffer>();
   auto *mapped_out = static_cast<float *>(
@@ -163,7 +162,7 @@ auto *mapped_x1 = static_cast<float *>(
 // #define LOOP_TEST
 // #define PRINT_RESULT
 TEST(concat_image2d_fp32, compute) {
-    LOG(INFO) << "main steps of test: host -> layout(buf2img) -> concat(img) -> "
+  LOG(INFO) << "main steps of test: host -> layout(buf2img) -> concat(img) -> "
                "layout(img2buf) "
                "-> host";
 
@@ -180,7 +179,7 @@ TEST(concat_image2d_fp32, compute) {
   const int w = 4;
   const int axis = 1;
 #endif  // LOOP_TEST
-	LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c
+            LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c
                       << " " << h << " " << w << " ========";
             LOG(INFO) << "======== axis: " << axis;
             // set layout kernels
@@ -197,7 +196,7 @@ TEST(concat_image2d_fp32, compute) {
             auto img_to_buf_kernels = KernelRegistry::Global().Create(
                 "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
             auto concat_img_kernels =
-                KernelRegistry::Global().Create("concat_mul",
+                KernelRegistry::Global().Create("concat",
                                                 TARGET(kOpenCL),
                                                 PRECISION(kFloat),
                                                 DATALAYOUT(kImageDefault));
@@ -226,7 +225,7 @@ TEST(concat_image2d_fp32, compute) {
             BufferToImageParam1.y = &concat_in1;
             ImageToBufferParam.x = &concat_out;
             ImageToBufferParam.y = &y;
-            std::vector<lite::Tensor*> ins;
+            std::vector<lite::Tensor *> ins;
             operators::ConcatParam concatParam;
             ins.push_back(&concat_in0);
             ins.push_back(&concat_in1);
@@ -272,7 +271,7 @@ TEST(concat_image2d_fp32, compute) {
               mapped_x1[i] = static_cast<int>(i) - x1_dim.production() / 2;
             }
             for (int i = 0; i < out_dim.production(); ++i) {
-	      mapped_y[i] = static_cast<int>(0);
+              mapped_y[i] = static_cast<int>(0);
             }
             auto *concat_in_data0 = concat_in0.mutable_data<float, cl::Image2D>(
                 concat_image2d_shape_in0["width"],
@@ -282,9 +281,9 @@ TEST(concat_image2d_fp32, compute) {
                 concat_image2d_shape_in1["height"]);
             auto *concat_out_data = concat_out.mutable_data<float, cl::Image2D>(
                 concat_image2d_shape["width"], concat_image2d_shape["height"]);
- 	
-           // set context and kernel args
-           LOG(INFO) << "set context and kernel args";
+
+            // set context and kernel args
+            LOG(INFO) << "set context and kernel args";
             std::unique_ptr<KernelContext> context(new KernelContext);
             context->As<OpenCLContext>().InitOnce();
 
@@ -325,7 +324,7 @@ TEST(concat_image2d_fp32, compute) {
             img_to_buf_kernel->Launch();
 
             // compute ref cp_u
-            std::vector<const float*> ins_ptr;
+            std::vector<const float *> ins_ptr;
             std::vector<const DDim> in_dim;
             ins_ptr.push_back(mapped_x0);
             ins_ptr.push_back(mapped_x1);
@@ -353,8 +352,8 @@ TEST(concat_image2d_fp32, compute) {
                 break;
               }
             }
-	   // free
-	   LOG(INFO) << "free: unmap x, y";
+            // free
+            LOG(INFO) << "free: unmap x, y";
             TargetWrapperCL::Unmap(x_data0, mapped_x0);
             TargetWrapperCL::Unmap(x_data1, mapped_x1);
             TargetWrapperCL::Unmap(y_data, mapped_y);
