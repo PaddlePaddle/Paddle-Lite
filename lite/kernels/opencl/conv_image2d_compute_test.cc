@@ -302,20 +302,46 @@ TEST(conv2d, compute_image2d_1x1) {
 
                 auto* input_image2d = input.mutable_data<float, cl::Image2D>(
                     input_image_width, input_image_height, x_image_v.data());
-                auto* filter_image2d = filter.mutable_data<float, cl::Image2D>(
-                    filter_image_width,
-                    filter_image_height,
-                    filter_image_v.data());
+                // assign filter as target arm
+                filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+                                                               filter_dim);
+                //                auto* filter_image2d =
+                //                filter.mutable_data<float, cl::Image2D>(
+                //                    filter_image_width,
+                //                    filter_image_height,
+                //                    filter_image_v.data());
+                SHADOW_LOG << "卷积核: ----  ";
+                for (int i = 0; i < filter_v.size(); i++) {
+                  SHADOW_LOG << "(" << i << ")" << filter_v[i];
+                }
 
+                SHADOW_LOG << "卷积核1: ----  ";
+                const float* filter_p = filter.data<float>();
+                for (int i = 0; i < filter_v.size(); i++) {
+                  SHADOW_LOG << "(" << i << ")" << *filter_p;
+                  filter_p++;
+                }
+                SHADOW_LOG << "卷积核2: ----  ";
+                const float* filter_p2 = filter.mutable_data<float>();
+                for (int i = 0; i < filter_v.size(); i++) {
+                  SHADOW_LOG << "(" << i << ")" << *filter_p2;
+                  filter_p2++;
+                }
                 if (bias_flag) {
                   for (int i = 0; i < bias_dim.production(); ++i) {
                     bias_v[i] = static_cast<int>(gen(engine));
                   }
-                  CLImageConverterFolder folder_convertor;
-                  folder_convertor.NCHWToImage(
-                      bias_v.data(), bias_image_v.data(), bias_dim);
-                  auto* bias_data = bias.mutable_data<float, cl::Image2D>(
-                      bias_image_width, bias_image_height, bias_image_v.data());
+                  bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                                                               bias_dim);
+                  //                CLImageConverterFolder folder_convertor;
+                  //                folder_convertor.NCHWToImage(
+                  //                    bias_v.data(), bias_image_v.data(),
+                  //                    bias_dim);
+                  //
+                  //                auto* bias_data = bias.mutable_data<float,
+                  //                cl::Image2D>(
+                  //                    bias_image_width, bias_image_height,
+                  //                    bias_image_v.data());
                 }
 
                 SHADOW_LOG << "resize output  ...";
@@ -610,20 +636,31 @@ TEST(conv2d, compute_image2d_5x5) {
               }
               auto* input_image2d = input.mutable_data<float, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
-              auto* filter_image2d = filter.mutable_data<float, cl::Image2D>(
-                  filter_image_width,
-                  filter_image_height,
-                  filter_image_v.data());
+              // assign filter as target arm
+              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+                                                             filter_dim);
+              // filter kernel
+              //              auto* filter_image2d = filter.mutable_data<float,
+              //              cl::Image2D>(
+              //                  filter_image_width,
+              //                  filter_image_height,
+              //                  filter_image_v.data());
 
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                CLImageConverterFolder folder_convertor;
-                folder_convertor.NCHWToImage(
-                    bias_v.data(), bias_image_v.data(), bias_dim);
-                auto* bias_data = bias.mutable_data<float, cl::Image2D>(
-                    bias_image_width, bias_image_height, bias_image_v.data());
+                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                                                             bias_dim);
+                //                CLImageConverterFolder folder_convertor;
+                //                folder_convertor.NCHWToImage(
+                //                    bias_v.data(), bias_image_v.data(),
+                //                    bias_dim);
+                //
+                //                auto* bias_data = bias.mutable_data<float,
+                //                cl::Image2D>(
+                //                    bias_image_width, bias_image_height,
+                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -932,20 +969,32 @@ TEST(conv2d, compute_image2d_7x7) {
               }
               auto* input_image2d = input.mutable_data<float, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
-              auto* filter_image2d = filter.mutable_data<float, cl::Image2D>(
-                  filter_image_width,
-                  filter_image_height,
-                  filter_image_v.data());
+
+              // assign filter as target arm
+              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+                                                             filter_dim);
+
+              //              auto* filter_image2d = filter.mutable_data<float,
+              //              cl::Image2D>(
+              //                  filter_image_width,
+              //                  filter_image_height,
+              //                  filter_image_v.data());
 
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                CLImageConverterFolder folder_convertor;
-                folder_convertor.NCHWToImage(
-                    bias_v.data(), bias_image_v.data(), bias_dim);
-                auto* bias_data = bias.mutable_data<float, cl::Image2D>(
-                    bias_image_width, bias_image_height, bias_image_v.data());
+                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                                                             bias_dim);
+                //                CLImageConverterFolder folder_convertor;
+                //                folder_convertor.NCHWToImage(
+                //                    bias_v.data(), bias_image_v.data(),
+                //                    bias_dim);
+                //
+                //                auto* bias_data = bias.mutable_data<float,
+                //                cl::Image2D>(
+                //                    bias_image_width, bias_image_height,
+                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";

@@ -16,6 +16,7 @@
 
 #include <sstream>
 
+#include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
@@ -303,6 +304,7 @@ void ConvImageCompute::PrepareForRun() {
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
+  float* filter_cpu = param.filter->mutable_data<float>();
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
 
@@ -350,16 +352,43 @@ void ConvImageCompute::PrepareForRun() {
       kernel_func_names_.push_back("conv2d_1x1");
     }
     kernel_func_paths_.push_back("image/conv2d_1x1_kernel.cl");
+
+    CLImageConverterNWBlock converter;
+    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+    std::vector<float> filter_image_v(filter_image_dims[0] *
+                                      filter_image_dims[1] * 4);  // 4 : RGBA
+    converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
+    filter_gpu_image_.mutable_data<float, cl::Image2D>(
+        filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
+
     impl_ = &ConvImageCompute::Conv2d1x1;
   } else if (kernel_h == 5 && kernel_w == 5) {
     // conv2d_5x5
     kernel_func_names_.push_back("conv2d_5x5");
     kernel_func_paths_.push_back("image/conv2d_5x5_kernel.cl");
+
+    CLImageConverterFolder converter;
+    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+    std::vector<float> filter_image_v(filter_image_dims[0] *
+                                      filter_image_dims[1] * 4);  // 4 : RGBA
+    converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
+    filter_gpu_image_.mutable_data<float, cl::Image2D>(
+        filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
+
     impl_ = &ConvImageCompute::Conv2d5x5;
   } else if (kernel_h == 7 && kernel_w == 7) {
     // conv2d_7x7
     kernel_func_names_.push_back("conv2d_7x7");
     kernel_func_paths_.push_back("image/conv2d_7x7_kernel.cl");
+
+    CLImageConverterFolder converter;
+    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+    std::vector<float> filter_image_v(filter_image_dims[0] *
+                                      filter_image_dims[1] * 4);  // 4 : RGBA
+    converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
+    this->filter_gpu_image_.mutable_data<float, cl::Image2D>(
+        filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
+
     impl_ = &ConvImageCompute::Conv2d7x7;
   } else {
     LOG(FATAL) << "conv image compute not support this condition yet! ";
@@ -382,6 +411,19 @@ void ConvImageCompute::PrepareForRun() {
   if (has_bias) {
     build_options_single +=
         is_element_wise_bias ? " -DBIASE_ELE" : " -DBIASE_CH";
+
+    // convert cpu buffer bias --> gpu image
+    CLImageConverterFolder bias_converter;
+    const DDim& bias_image_dims =
+        bias_converter.InitImageDimInfoWith(param.bias->dims());
+    std::vector<float> bias_image_v(bias_image_dims[0] * bias_image_dims[1] *
+                                    4);
+    float* bias_cpu_data = param.bias->mutable_data<float>();
+    bias_converter.NCHWToImage(
+        bias_cpu_data, bias_image_v.data(), param.bias->dims());
+    this->bias_gpu_image_.mutable_data<float, cl::Image2D>(
+        bias_image_dims[0], bias_image_dims[1], bias_image_v.data());
+    // convert cpu buffer bias --> gpu image --- end ----
   }
 
   build_options_.push_back(build_options_single);
@@ -398,7 +440,7 @@ void ConvImageCompute::Conv2d1x1() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<float, cl::Image2D>();
-  auto* filter_image = param.filter->data<float, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<float, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -466,7 +508,7 @@ void ConvImageCompute::Conv2d1x1() {
   const cl::Buffer* bias_buf = nullptr;
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = param.bias->data<float, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<float, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -546,7 +588,7 @@ void ConvImageCompute::Conv2d5x5() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<float, cl::Image2D>();
-  auto* filter_image = param.filter->data<float, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<float, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -615,7 +657,7 @@ void ConvImageCompute::Conv2d5x5() {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = param.bias->data<float, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<float, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -690,7 +732,7 @@ void ConvImageCompute::Conv2d7x7() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<float, cl::Image2D>();
-  auto* filter_image = param.filter->data<float, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<float, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -759,7 +801,7 @@ void ConvImageCompute::Conv2d7x7() {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = param.bias->data<float, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<float, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -858,14 +900,8 @@ REGISTER_LITE_KERNEL(conv2d,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kImageDefault))})
-    .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kImageNW))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFloat),
