@@ -102,7 +102,7 @@ void fp32_to_int8(const float* din,
             "v10",
             "v11");
 #else
-       asm volatile(
+      asm volatile(
           "vld1.32 {d0-d3},    [%[din]]!                  @ load in0~in7\n"
           "vld1.32    {d4-d7},    [%[din]]!       @ load in8~in16\n"
           "0:                                     @ main loop\n"
@@ -151,18 +151,8 @@ void fp32_to_int8(const float* din,
             [vpoff] "w"(vpoff),
             [vnoff] "w"(vnoff),
             [vzero] "w"(vzero),
-            [vmax] "w" (vmax)
-          : "q0",
-            "q1",
-            "q2",
-            "q3",
-            "q4",
-            "q5",
-            "q6",
-            "q7",
-            "q8",
-            "q9",
-            "q10");
+            [vmax] "w"(vmax)
+          : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10");
 #endif
     }
     const float* din_r = din_c + 16 * cnt;
