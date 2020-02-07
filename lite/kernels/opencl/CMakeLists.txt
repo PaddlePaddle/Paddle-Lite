@@ -14,6 +14,7 @@ add_kernel(fusion_elementwise_add_activation_opencl
 add_kernel(pool_opencl OPENCL basic SRCS pool_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(io_copy_compute_opencl OPENCL basic SRCS io_copy_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 add_kernel(relu_opencl OPENCL basic SRCS relu_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(sigmoid_opencl OPENCL basic SRCS sigmoid_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(conv2d_1x1_opencl OPENCL basic SRCS conv2d_1x1_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_compute.cc DEPS ${cl_kernel_deps})
@@ -49,6 +50,10 @@ lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
 lite_cc_test(test_relu_opencl SRCS relu_compute_test.cc
              DEPS relu_opencl layout_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
+lite_cc_test(test_sigmoid_opencl SRCS sigmoid_compute_test.cc
+        DEPS sigmoid_opencl layout_opencl op_registry program context
+        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
              DEPS depthwise_conv2d_opencl op_registry program context
