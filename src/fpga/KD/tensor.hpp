@@ -135,7 +135,7 @@ class Tensor {
     // return shape_->memorySize(CellSize(dataType_));
   }
 
-  void setMemScale(int mem_factor) {
+  void setMemScale(float mem_factor) {
     mem_factor_ = mem_factor;
   }
 
@@ -463,7 +463,7 @@ class Tensor {
 
  private:
   int offset = 0;
-  int mem_factor_ = 1;
+  float mem_factor_ = 1.0f;
   std::shared_ptr<PlaceHolder> placeHolder_;
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
