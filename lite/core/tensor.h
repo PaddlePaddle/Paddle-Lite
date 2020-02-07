@@ -55,6 +55,7 @@ class DDimLite {
   std::vector<int64_t> Vectorize() const { return data_; }
 
   size_t size() const { return data_.size(); }
+  void resize(size_t size) { data_.resize(size); }
   bool empty() const { return data_.empty(); }
 
   value_type production() const;
@@ -63,6 +64,15 @@ class DDimLite {
   value_type count(int start, int end) const;
 
   DDimLite Slice(int start, int end) const;
+
+  bool CheckPositive() const {
+    for (size_t i = 0; i < size(); ++i) {
+      if (data_[i] <= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   DDimLite Flatten2D(int col) const {
     return DDimLite(std::vector<value_type>(
@@ -85,7 +95,11 @@ class DDimLite {
   }
 
   friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    return !(a == b);
+    if (a.size() != b.size()) return true;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != b[i]) return true;
+    }
+    return false;
   }
 
  private:

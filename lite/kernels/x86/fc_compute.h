@@ -31,20 +31,6 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-inline void FCOutputSize(const lite::DDim& in_dims,
-                         const lite::DDim& w_dims,
-                         std::vector<int64_t>& out_dims,  // NOLINT
-                         int in_num_col_dims,
-                         bool padding_weights) {
-  auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
-
-  out_dims.reserve(static_cast<size_t>(in_num_col_dims + 1));
-  for (int i = 0; i < in_num_col_dims; ++i) {
-    out_dims.push_back(in_dims[i]);
-  }
-  out_dims.push_back(w_dims1);
-}
-
 template <lite::TargetType Target, typename T>
 class FCFunctor {
  public:
@@ -84,11 +70,11 @@ class FCFunctor {
       // NOTE: here need to mutable_data for temporary Tensor X1 and Y1,
       //  the overhead is unmeasured.
       lite::Tensor X1;
-      X1.Resize({M * KK});
+      X1.Resize(std::vector<int64_t>{M * KK});
       T* X1_data = X1.mutable_data<T>();
 
       lite::Tensor Y1;
-      Y1.Resize({M * (N + 4)});
+      Y1.Resize(std::vector<int64_t>{M * NN});
       Y1_data = Y1.mutable_data<T>();
 
       auto parallel_memcpy_x = [&](int64_t begin, int64_t end) {
@@ -115,7 +101,7 @@ class FCFunctor {
       if (!B) {
         auto parallel_memcpy_y = [&](int64_t begin, int64_t end) {
           for (int64_t i = begin; i < end; i++) {
-            memcpy(Y + i * N, Y1_data + i * (N + 4), N * sizeof(T));
+            memcpy(Y + i * N, Y1_data + i * NN, N * sizeof(T));
           }
         };
         lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
@@ -148,18 +134,21 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int in_num_col_dims = param.in_num_col_dims;
     bool with_relu = (param.activation_type == "relu") ? true : false;
 
-    auto w_dims = w->dims();
     bool padding_weights = param.padding_weights;
-
-    std::vector<int64_t> output_dims;
-    FCOutputSize(
-        input->dims(), w_dims, output_dims, in_num_col_dims, padding_weights);
-    output->Resize(output_dims);
-    output->set_lod(input->lod());
-
-    auto out_dims = output->dims();
+    const auto& w_dims = w->dims();
     auto w_dims0 = padding_weights ? w_dims[0] - 4 : w_dims[0];
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
+
+    DDim out_dims;
+    out_dims.resize(static_cast<size_t>(in_num_col_dims + 1));
+    const auto& in_dims = input->dims();
+    for (int i = 0; i < in_num_col_dims; ++i) {
+      out_dims[i] = in_dims[i];
+    }
+    out_dims[in_num_col_dims] = w_dims1;
+    output->Resize(out_dims);
+    output->set_lod(input->lod());
+
     int M = out_dims.production() / w_dims1;
 
     const T* input_data = input->data<T>();

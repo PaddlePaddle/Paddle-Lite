@@ -25,21 +25,17 @@ using value_type = int64_t;
 
 value_type DDimLite::production() const {
   value_type res = 1;
-  for (size_t i = 0; i < this->size(); i++) {
-    res *= (*this)[i];
+  for (size_t i = 0; i < data_.size(); i++) {
+    res *= data_[i];
   }
   return res;
 }
 
 value_type DDimLite::count(int start, int end) const {
-  if (start < 0) {
-    start = 0;
-  }
-  if (end > size()) {
-    end = size();
-  }
+  start = std::max(start, 0);
+  end = std::min(end, static_cast<int>(data_.size()));
   if (end < start) {
-    end = start;
+    return 0;
   }
   value_type sum = 1;
   for (auto i = start; i < end; ++i) {
@@ -49,11 +45,14 @@ value_type DDimLite::count(int start, int end) const {
 }
 
 DDimLite DDimLite::Slice(int start, int end) const {
-  std::vector<value_type> vec;
+  start = std::max(start, 0);
+  end = std::min(end, static_cast<int>(data_.size()));
+  DDimLite new_dim;
+  new_dim.resize(end - start);
   for (int i = start; i < end; i++) {
-    vec.push_back((*this)[i]);
+    new_dim[i - start] = data_[i];
   }
-  return DDimLite(vec);
+  return new_dim;
 }
 
 std::string DDimLite::repr() const {
