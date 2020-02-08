@@ -38,10 +38,10 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL), Ptype, layout> {
   // protected:
   // void UpdateParams();
 
-  size_t axis_size_{1};
-  size_t post_size_{1};
-  size_t pre_size_{1};
-  size_t axis_{1};
+  int axis_size_ = 1;
+  int post_size_ = 1;
+  int pre_size_ = 1;
+  int axis_ = 1;
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float"};

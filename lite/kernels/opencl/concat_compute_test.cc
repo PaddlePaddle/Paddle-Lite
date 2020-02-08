@@ -76,9 +76,9 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
 #if 1  // concat_buffer
 TEST(opencl_concat_buffer, compute) {
   // prepare data
-  const DDim x0_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
-  const DDim x1_dim = DDim(std::vector<DDim::value_type>{3, 8, 10, 10});
-  const DDim out_dim = DDim(std::vector<DDim::value_type>{3, 14, 10, 10});
+  const DDim x0_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
+  const DDim x1_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
+  const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 4, 3, 4});
   lite::Tensor x0, x1, out, out_ref;
   x0.Resize(x0_dim);
   x1.Resize(x1_dim);
@@ -129,7 +129,6 @@ TEST(opencl_concat_buffer, compute) {
   context->As<OpenCLContext>().CopySharedTo(
       &(concat_context->As<OpenCLContext>()));
   kernel->SetContext(std::move(concat_context));
-
   kernel->Launch();
 
   auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
@@ -146,9 +145,21 @@ TEST(opencl_concat_buffer, compute) {
   // run compute ref and check
   auto *out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
   concat_mul_compute_ref<float>(ins_data, ins_dim, axis, out_dim, out_ref_data);
-
+  for (int i = 0; i < 24; i++){
+   printf("%f  ", ins_data[0][i]);
+  }
+ printf("\n");
+  for (int i = 0; i < 24; i++){
+   printf("%f  ", ins_data[1][i]);
+  }
+ printf("\n");
+ printf("out: \n");
+  for (int i = 0; i < 48; i++){
+   printf("%f  ", out_ref_data[i]);
+  }
+ printf("\n");
   auto *out_data = out.mutable_data<float, cl::Buffer>();
-  auto *mapped_out = static_cast<float *>(
+  auto *mapped_out = static_cast<float*>(
       TargetWrapperCL::Map(out_data, 0, sizeof(float) * out_dim.production()));
   for (int i = 0; i < out_dim.production(); i++) {
     EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
@@ -160,7 +171,7 @@ TEST(opencl_concat_buffer, compute) {
 #endif  // concat_buffer
 
 // #define LOOP_TEST
-// #define PRINT_RESULT
+#define PRINT_RESULT
 TEST(concat_image2d_fp32, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> concat(img) -> "
                "layout(img2buf) "

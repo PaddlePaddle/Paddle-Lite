@@ -61,6 +61,7 @@ template <>
 void ConcatCompute<PRECISION(kFloat),
                    DATALAYOUT(kImageDefault)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
+  concat_param_ = param_.get_mutable<param_t>(); 
   if (concat_param_->x.size() == 2) {
     kernel_func_name_ = "concat2";
   } else {
@@ -68,15 +69,14 @@ void ConcatCompute<PRECISION(kFloat),
   }
   context.cl_context()->AddKernel(
       kernel_func_name_, "image/concat_kernel.cl", build_options_);
-  concat_param_ = param_.get_mutable<param_t>();
   // UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
   auto inputs = concat_param_->x;
   auto out_dims = concat_param_->output->dims();
   auto* axis_tensor = concat_param_->axis_tensor;
   if (axis_tensor != nullptr) {
-    auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
-    axis = axis_tensor_data[0];
+    //auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
+    //axis = axis_tensor_data[0];
   }
   auto in_dims = inputs[0]->dims();
   axis_size_ = out_dims[axis];
@@ -142,7 +142,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, inputs[0]->dims()[axis_]);
+    status = kernel.setArg(++arg_idx, (int)inputs[0]->dims()[axis_]);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, width);
     CL_CHECK_FATAL(status);
@@ -154,6 +154,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
+    context.cl_context()->GetCommandQueue().finish();
   } else {
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
@@ -178,12 +179,10 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
           nullptr,
           event_.get());
       CL_CHECK_FATAL(status);
+      context.cl_context()->GetCommandQueue().finish();
       start += inputs[i]->dims()[axis_];
     }
   }
-  // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-  // context.cl_wait_list()->emplace(out_buf, event_);
-  context.cl_context()->GetCommandQueue().finish();
 }
 
 template <>
@@ -194,14 +193,15 @@ std::string ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::doc() {
 template <>
 void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
-  if (concat_param_->x.size() == 2) {
+concat_param_ = param_.get_mutable<param_t>();
+ if (concat_param_->x.size() == 2) {
     kernel_func_name_ = "concat2";
   } else {
     kernel_func_name_ = "concat_mul";
   }
   context.cl_context()->AddKernel(
       kernel_func_name_, "buffer/concat_kernel.cl", build_options_);
-  concat_param_ = param_.get_mutable<param_t>();
+  
   //  UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
   auto inputs = concat_param_->x;
@@ -249,8 +249,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name1_ << build_options_;
-  kernel_key << kernel_func_name2_ << build_options_;
+  kernel_key << kernel_func_name_ << build_options_;
 
   auto inputs = param.x;
   int arg_idx = 0;
@@ -269,7 +268,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, axis0);
+    status = kernel.setArg(++arg_idx, (int)axis0);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, axis_size_);
     CL_CHECK_FATAL(status);
@@ -291,6 +290,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
+    context.cl_wait_list()->emplace(out_buf, event_);
   } else {
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
@@ -323,12 +323,10 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
           nullptr,
           event_.get());
       CL_CHECK_FATAL(status);
+       context.cl_wait_list()->emplace(out_buf, event_);
       start += size;
     }
   }
-  // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-  // context.cl_wait_list()->emplace(out_buf, event_);
-  context.cl_context()->GetCommandQueue().finish();
 }
 
 template <>
