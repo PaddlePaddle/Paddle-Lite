@@ -75,8 +75,8 @@ void ConcatCompute<PRECISION(kFloat),
   auto out_dims = concat_param_->output->dims();
   auto* axis_tensor = concat_param_->axis_tensor;
   if (axis_tensor != nullptr) {
-    //auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
-    //axis = axis_tensor_data[0];
+    // auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
+    // axis = axis_tensor_data[0];
   }
   auto in_dims = inputs[0]->dims();
   axis_size_ = out_dims[axis];
