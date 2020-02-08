@@ -52,13 +52,14 @@ bool FcOpLite::InferShape() const {
   const auto& input_dims = param_.input->dims();
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;
+  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
   for (int i = 0; i < in_num_col_dims; ++i) {
     output_dims[i] = input_dims[i];
   }
-  output_dims[in_num_col_dims] = w_dims[1];
+  output_dims[in_num_col_dims] = w_dims_1;
   param_.output->Resize(output_dims);
 
   // share LoD
