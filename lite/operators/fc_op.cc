@@ -54,8 +54,7 @@ bool FcOpLite::InferShape() const {
   int in_num_col_dims = param_.in_num_col_dims;
 
   // Set output dims
-  DDim output_dims;
-  output_dims.resize(in_num_col_dims + 1);
+  std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
   for (int i = 0; i < in_num_col_dims; ++i) {
     output_dims[i] = input_dims[i];
   }

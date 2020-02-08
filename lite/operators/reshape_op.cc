@@ -100,8 +100,7 @@ bool Reshape2Op::CheckShape() const {
 bool Reshape2Op::InferShape() const {
   ReshapeOp::InferShape();
   const auto &x_dims = param_.x->dims();
-  DDim xshape_dims;
-  xshape_dims.resize(x_dims.size() + 1);
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1);
   xshape_dims[0] = 0;
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
@@ -119,7 +118,17 @@ bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
+static bool CheckPositive(const DDim &dims) {
+  for (size_t i = 0; i < dims.size(); ++i) {
+    if (dims[i] <= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
+                                            const DDim &input_dims) {
   const DDim::value_type input_size = input_dims.production();
 
   // only one dimension can be set to -1, whose size will be automatically
@@ -127,8 +136,7 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
   const int unk_dim_val = -1;
   const int copy_dim_val = 0;
 
-  DDim output_dims;
-  output_dims.resize(shape.size());
+  std::vector<DDim::value_type> output_dims(shape.size());
   DDim::value_type capacity = 1;
   int unk_dim_idx = -1;
   for (size_t i = 0; i < shape.size(); ++i) {
@@ -152,7 +160,7 @@ DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims) {
   }
 
   if (unk_dim_idx != -1) {
-    if (input_dims.CheckPositive()) {
+    if (CheckPositive(input_dims)) {
       // input_size < 0 and is un-determinate in compile time, skip the check,
       // for example, input_dims = [-1, 8, 1, 1], shape = [-1, 3, 8],
       // capacity = -24, input_size = -8, output_shape[0] = 0
