@@ -139,22 +139,7 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data() {
-    auto type_id = typeid(T).hash_code();
-    if (type_id == typeid(bool).hash_code()) {  // NOLINT
-      precision_ = PrecisionType::kBool;
-    } else if (type_id == typeid(float).hash_code()) {  // NOLINT
-      precision_ = PrecisionType::kFloat;
-    } else if (type_id == typeid(int8_t).hash_code()) {
-      precision_ = PrecisionType::kInt8;
-    } else if (type_id == typeid(int16_t).hash_code()) {
-      precision_ = PrecisionType::kInt16;
-    } else if (type_id == typeid(int32_t).hash_code()) {
-      precision_ = PrecisionType::kInt32;
-    } else if (type_id == typeid(int64_t).hash_code()) {
-      precision_ = PrecisionType::kInt64;
-    } else {
-      precision_ = PrecisionType::kUnk;
-    }
+    precision_ = lite_api::PrecisionTypeTrait<T>::Type();
     memory_size_ = dims_.production() * sizeof(T);
     buffer_->ResetLazy(target_, memory_size_);
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +

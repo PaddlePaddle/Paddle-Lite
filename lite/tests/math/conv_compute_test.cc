@@ -306,9 +306,10 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                     const float leakey_relu_scale) {}
 #endif  // LITE_WITH_ARM
 
-// TODO(chenjiaoAngel): fix me, diff: 3x3 depthwise conv
-#if 0   /// 3x3dw
-    TEST(TestConv3x3DW, test_conv3x3_depthwise) {
+
+// TODO(chenjiaoAngel): fix multi-threds, diff: 3x3 depthwise conv
+#if 1  /// 3x3dw
+TEST(TestConv3x3DW, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
       for (auto& pad_left : {0, 1, 2}) {
@@ -334,7 +335,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                                    {1, 1},
                                    flag_bias,
                                    flag_act,
-                                   {1, 2, 4},
+                                   {1},
                                    {FLAGS_power_mode},
                                    leakey_relu_scale);
                   }
@@ -352,12 +353,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
 #if 1  /// 5x5dw
 TEST(TestConv5x5DW, test_conv5x5_depthwise) {
   if (FLAGS_basic_test) {
-#ifdef __aarch64__
-    // TODO(chenjiaoAngel): fix me, diff: arm64 5x5s2 depthwise conv
-    for (auto& stride : {1}) {
-#else
     for (auto& stride : {1, 2}) {
-#endif
       for (auto& pad_left : {0, 1, 2}) {
         for (auto& pad_right : {0, 1, 2}) {
           for (auto& pad_top : {0, 1, 2}) {
