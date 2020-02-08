@@ -24,44 +24,12 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-/*
-template <PrecisionType Ptype, DataLayoutType layout>
-void ConcatCompute::UpdateParams() {
-  auto axis = concat_param_->axis;
-  auto inputs = concat_param_->X;
-  auto out_dims = concat_param_->Out->dims();
-  auto* axis_tensor = concat_param_->axis_tensor;
-  if (axis_tensor != nullptr) {
-    auto* axis_tensor_data = axis_tensor->template data<int, cl::Buffer>();
-    axis = axis_tensor_data[0];
-  }
-  auto in_dims = inputs[0]->dims();
-  axis_size_ = out_dims[axis];
-  axis_ = axis;
-  for (int i = 0; i < axis; i++) {
-    pre_size_ *= in_dims[i];
-  }
-  for (int i = axis + 1; i < in_dims.size(); i++) {
-    post_size_ *= in_dims[i];
-  }
-  // check input shape equal
-  for (int i = 1; i < inputs.size(); i++) {
-    auto dims = inputs[i]->dims();
-    CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
-    for (int i = 0; i < dims.size(); i++) {
-      if (i != axis) {
-        CHECK_EQ_OR_FALSE(in_dims[i], dims[i]);
-      }
-    }
-  }
-}
-*/
 
 template <>
 void ConcatCompute<PRECISION(kFloat),
                    DATALAYOUT(kImageDefault)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
-  concat_param_ = param_.get_mutable<param_t>(); 
+  concat_param_ = param_.get_mutable<param_t>();
   if (concat_param_->x.size() == 2) {
     kernel_func_name_ = "concat2";
   } else {
@@ -133,7 +101,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-  if (inputs.size() == 2) {
+  if (inputs.size() == 2 && axis_ == 1) {
     auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
     auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
     cl_int status = kernel.setArg(arg_idx, *x_buf0);
@@ -142,7 +110,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, (int)inputs[0]->dims()[axis_]);
+    status =
+        kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, width);
     CL_CHECK_FATAL(status);
@@ -193,15 +162,15 @@ std::string ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::doc() {
 template <>
 void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
-concat_param_ = param_.get_mutable<param_t>();
- if (concat_param_->x.size() == 2) {
+  concat_param_ = param_.get_mutable<param_t>();
+  if (concat_param_->x.size() == 2) {
     kernel_func_name_ = "concat2";
   } else {
     kernel_func_name_ = "concat_mul";
   }
   context.cl_context()->AddKernel(
       kernel_func_name_, "buffer/concat_kernel.cl", build_options_);
-  
+
   //  UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
   auto inputs = concat_param_->x;
@@ -268,7 +237,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, (int)axis0);
+    status = kernel.setArg(++arg_idx, static_cast<int>(axis0));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, axis_size_);
     CL_CHECK_FATAL(status);
@@ -323,7 +292,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
           nullptr,
           event_.get());
       CL_CHECK_FATAL(status);
-       context.cl_wait_list()->emplace(out_buf, event_);
+      context.cl_wait_list()->emplace(out_buf, event_);
       start += size;
     }
   }
