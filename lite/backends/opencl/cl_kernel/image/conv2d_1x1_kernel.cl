@@ -360,12 +360,12 @@ __read_only image2d_t new_scale,
             READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-#ifdef RELU
+
   output0 = activation_type4(output0);
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
-#endif
+
 
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
