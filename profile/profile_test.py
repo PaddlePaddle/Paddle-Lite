@@ -23,24 +23,13 @@ def profile_test(device_id, model_lists, input_shapes, threads, arm_abi):
 		print('model: ', name)
 		#model_dir = name + '/opt2'
 		model_dir = name
-		lite_res = os.system('sh ./run.sh %s %s %s %s %d %d %d %d' % (device_id, model_dir, 'b', input_shapes[i], 10, 50, threads, arm_abi)
+		lite_res = os.system('sh ./run.sh %s %s %s %s %d %d %d %d' % (device_id, model_dir, 'b', input_shapes[i], 10, 50, threads, arm_abi))
 		if (lite_res != 0):
 			print('lite run error')
 			return
 		i = i + 1
 		time.sleep(10)
 
-def mnn_test(device_id, model_lists, input_shape, threads, arm_abi):
-    i = 0
-    for name in model_lists:
-        print('model: ', name)
-        model_dir = name
-        lite_res = os.system('sh ./run_mnn.sh %s %s %d %d %d %s' % (device_id, model_dir, 50, threads, arm_abi, input_shape[i]))
-        if (lite_res != 0):
-		print('lite run error')
-		return
-        i = i + 1
-        time.sleep(10)
 # device_id = ['17c3cc34', '7f1446bd'] 
 device_id = ['17c3cc34']
 model_lists = ['mobilenetv1', 'mobilenetv2', 'mnasnet']
