@@ -30,11 +30,18 @@ struct EigenDim {
   using Type = Eigen::DSizes<Eigen::DenseIndex, D>;
 
   static Type From(const lite::DDim& dims) {
-    PADDLE_ENFORCE(dims.size() == D, "D must match DDim::size");
+    PADDLE_ENFORCE_EQ(dims.size(), D, "D must match DDim::size");
     Type ret;
     for (size_t d = 0; d < dims.size(); d++) {
       ret[d] = dims[d];
     }
+    return ret;
+  }
+
+  static Type From(const DDim::value_type length) {
+    PADDLE_ENFORCE_EQ(D, 1, "D must be 1.");
+    Type ret;
+    ret[0] = length;
     return ret;
   }
 };
@@ -52,7 +59,7 @@ struct EigenTensor {
   using ConstType =
       Eigen::TensorMap<Eigen::Tensor<const T, D, MajorType, IndexType>>;
 
-  static Type From(Tensor& tensor, lite::DDim dims) {  // NOLINT
+  static Type From(Tensor& tensor, const lite::DDim& dims) {  // NOLINT
     return Type(const_cast<T*>(tensor.data<T>()),
                 EigenDim<D>::From(dims));  // NOLINT
   }
@@ -61,7 +68,7 @@ struct EigenTensor {
     return From(tensor, tensor.dims());
   }  // NOLINT
 
-  static ConstType From(const Tensor& tensor, lite::DDim dims) {
+  static ConstType From(const Tensor& tensor, const lite::DDim& dims) {
     return ConstType(tensor.data<T>(), EigenDim<D>::From(dims));
   }
 
@@ -97,14 +104,15 @@ template <typename T,
 struct EigenVector : public EigenTensor<T, 1, MajorType, IndexType> {
   // Flatten reshapes a Tensor into an EigenVector.
   static typename EigenVector::Type Flatten(Tensor& tensor) {  // NOLINT
-    return EigenVector::From(
-        tensor, lite::DDim(std::vector<int64_t>({tensor.dims().production()})));
+    return typename EigenVector::Type(
+        const_cast<T*>(tensor.data<T>()),
+        EigenDim<1>::From(tensor.dims().production()));
   }
 
   static typename EigenVector::ConstType Flatten(
       const Tensor& tensor) {  // NOLINT
-    return EigenVector::From(
-        tensor, lite::DDim(std::vector<int64_t>({tensor.dims().production()})));
+    return typename EigenVector::ConstType(
+        tensor.data<T>(), EigenDim<1>::From(tensor.dims().production()));
   }
 };
 
