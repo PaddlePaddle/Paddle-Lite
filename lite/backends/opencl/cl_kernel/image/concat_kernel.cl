@@ -25,7 +25,6 @@ __kernel void concat2(__read_only image2d_t input0,
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
   int xx = x / width;
-  
   if (xx < axis_size){
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(x, y));
   }else{

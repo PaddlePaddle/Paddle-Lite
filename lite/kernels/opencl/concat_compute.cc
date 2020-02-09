@@ -101,7 +101,24 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-  if (inputs.size() == 2 && axis_ == 1) {
+  switch (axis_) {
+    case 0:
+      width = x_dims[0];  // n
+      break;
+    case 1:
+      width = x_dims[1];  // c
+      break;
+    case 2:
+      width = x_dims[2];  // h
+      break;
+    case 3:
+    case -1:
+      width = x_dims[3];  // w
+      break;
+    default:
+      printf("this axis: %d does not support \n", axis_);
+  }
+  if (inputs.size() == 2) {
     auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
     auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
     cl_int status = kernel.setArg(arg_idx, *x_buf0);

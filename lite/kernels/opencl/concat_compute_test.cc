@@ -78,26 +78,34 @@ TEST(opencl_concat_buffer, compute) {
   // prepare data
   const DDim x0_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
   const DDim x1_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
-  const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 4, 3, 4});
-  lite::Tensor x0, x1, out, out_ref;
+  const DDim x2_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
+  const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 6, 3, 4});
+  lite::Tensor x0, x1, x2, out, out_ref;
   x0.Resize(x0_dim);
   x1.Resize(x1_dim);
+  x2.Resize(x2_dim);
   out.Resize(out_dim);
   out_ref.Resize(out_dim);
 
   auto *x0_data = x0.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
   auto *x1_data = x1.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+  auto *x2_data = x2.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
   std::default_random_engine engine;
   std::uniform_real_distribution<float> dist(-10, 10);
   auto *mapped_x0 = static_cast<float *>(
       TargetWrapperCL::Map(x0_data, 0, sizeof(float) * x0_dim.production()));
   auto *mapped_x1 = static_cast<float *>(
       TargetWrapperCL::Map(x1_data, 0, sizeof(float) * x1_dim.production()));
+  auto *mapped_x2 = static_cast<float *>(
+      TargetWrapperCL::Map(x2_data, 0, sizeof(float) * x2_dim.production()));
   for (int i = 0; i < x0_dim.production(); i++) {
     mapped_x0[i] = dist(engine);
   }
   for (int i = 0; i < x1_dim.production(); i++) {
     mapped_x1[i] = dist(engine);
+  }
+  for (int i = 0; i < x2_dim.production(); i++) {
+    mapped_x2[i] = dist(engine);
   }
 
   // set param and kernel, then run
@@ -105,6 +113,7 @@ TEST(opencl_concat_buffer, compute) {
   std::vector<lite::Tensor *> ins;
   ins.push_back(&x0);
   ins.push_back(&x1);
+  ins.push_back(&x2);
   auto axis = 1;
   param.x = ins;
   param.output = &out;
@@ -115,8 +124,10 @@ TEST(opencl_concat_buffer, compute) {
 
   ins_data.push_back(mapped_x0);
   ins_data.push_back(mapped_x1);
+  ins_data.push_back(mapped_x2);
   ins_dim.push_back(x0_dim);
   ins_dim.push_back(x1_dim);
+  ins_dim.push_back(x2_dim);
 
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
@@ -155,6 +166,7 @@ TEST(opencl_concat_buffer, compute) {
   TargetWrapperCL::Unmap(out_data, mapped_out);
   TargetWrapperCL::Unmap(x0_data, mapped_x0);
   TargetWrapperCL::Unmap(x1_data, mapped_x1);
+  TargetWrapperCL::Unmap(x2_data, mapped_x2);
 }
 #endif  // concat_buffer
 
