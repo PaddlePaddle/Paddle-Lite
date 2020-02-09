@@ -53,8 +53,9 @@ __kernel void channel_add(__read_only image2d_t input,
      CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coords_bias);
      CL_DTYPE4 output = in + (CL_DTYPE4)(biase.x);
 
+#if 0 // enable to check input/output/bias
      printf("x:%d, y:%d\n", x, y);
-#if 0
+
      if (x == 0 && y == 0) {
          printf("w:%d\n", w);
 
@@ -87,18 +88,13 @@ __kernel void channel_add(__read_only image2d_t input,
          coords.y = 1;
          in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coords);
          printf(">>> input(%d,%d):%.2f %.2f %.2f %.2f\n", coords.x, coords.y, in.x, in.y, in.z, in.w);
-
-
-//         printf("bias(%d,%d):%.2f %.2f %.2f %.2f\n", coords_bias.x, coords_bias.y, bias.x, bias.y, bias.z, bias.w);
-//         printf("bias(%d,%d):%.2f %.2f %.2f %.2f\n", coords_bias.x, coords_bias.y, bias.x, bias.y, bias.z, bias.w);
-
      }
-#endif
-
      printf("==> in(%d,%d):%.2f %.2f %.2f %.2f bias(%d,%d).x:%.2f %.2f %.2f out(%d,%d):%.2f %.2f %.2f %.2f\n",
             coords.x, coords.y, in.x, in.y, in.z, in.w,
             coords_bias.x, coords_bias.y, biase.x, biase.x, biase.x, biase.x,
             coords.x, coords.y, output.x, output.y, output.z, output.w);
+#endif
+
      WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
  }
 
