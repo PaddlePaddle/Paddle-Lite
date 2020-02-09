@@ -51,7 +51,7 @@ class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* output = param.output;
     param.output->mutable_data<T>();
 
-    auto dims = param.dim;
+    const auto& dims = param.dim;
     bool keep_dim = param.keep_dim;
     if (reduce_all) {
       // Flatten and reduce 1-D tensor
