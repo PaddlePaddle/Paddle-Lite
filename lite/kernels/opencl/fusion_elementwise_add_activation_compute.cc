@@ -90,9 +90,11 @@ REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
                                       PRECISION(kFloat),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kOpenCL) PRECISION(kFloat),
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFloat),
                                       DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL) PRECISION(kFloat),
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
