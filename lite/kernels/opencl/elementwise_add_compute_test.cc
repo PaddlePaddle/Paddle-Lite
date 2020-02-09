@@ -284,8 +284,9 @@ TEST(elementwise_add_image2d_fp32, compute) {
                             DDim(std::vector<DDim::value_type>{w})};
   std::vector<int> axis_v{-1, -1, 3, 1};
   std::vector<bool> relu_flag_v{false, true, false, false};
-  CHECK(y_dim_v.size() == axis_v.size() && axis_v.size() == relu_flag)
-      << "y_dim_v.size() == axis_v.size() should be same, and be corresponding "
+  CHECK(y_dim_v.size() == axis_v.size() && axis_v.size() == relu_flag_v.size())
+      << "y_dim_v.size() == axis_v.size() == relu_flag_v.size() should be "
+         "same, and be corresponding "
          "one by one";
 
   // start loop
@@ -347,17 +348,19 @@ TEST(elementwise_add_image2d_fp32, compute) {
     // operator param
     operators::FusionElementwiseActivationParam
         fuseEleaddParam;  // enabled if relu_flag is true
-    eleaddParam.X = &eleadd_x;
-    eleaddParam.Y = &eleadd_y;
-    eleaddParam.Out = &eleadd_out;
-    eleaddParam.axis = axis;
-    eleAddParam.act_type = relu_flag ? "relu" : "";
+    fuseEleaddParam.X = &eleadd_x;
+    fuseEleaddParam.Y = &eleadd_y;
+    fuseEleaddParam.Out = &eleadd_out;
+    fuseEleaddParam.axis = axis;
+    fuseEleaddParam.act_type = relu_flag ? "relu" : "";
 
     operators::ElementwiseParam eleaddParam;
     eleaddParam.X = &eleadd_x;
     eleaddParam.Y = &eleadd_y;
     eleaddParam.Out = &eleadd_out;
     eleaddParam.axis = axis;
+
+    auto op_param = relu_flag ? fuseEleaddParam : eleaddParam;
 
     // set kernel
     auto eleadd_img_kernels =
@@ -375,7 +378,7 @@ TEST(elementwise_add_image2d_fp32, compute) {
     std::unique_ptr<KernelContext> context(new KernelContext);
     context->As<OpenCLContext>().InitOnce();
 
-    eleadd_img_kernel->SetParam(eleaddParam);
+    eleadd_img_kernel->SetParam(op_param);
     std::unique_ptr<KernelContext> eleadd_img_context(new KernelContext);
     context->As<OpenCLContext>().CopySharedTo(
         &(eleadd_img_context->As<OpenCLContext>()));
@@ -405,8 +408,9 @@ TEST(elementwise_add_image2d_fp32, compute) {
                                    out_ref.get(),
                                    x_dim,
                                    y_dim,
-                                   eleaddParam.axis,
-                                   "add");
+                                   op_param.axis,
+                                   "add",
+                                   relu_flag);
 
 #if 0  // enable to check value of x and y
     for (int eidx = 0; eidx < out_dim.production(); eidx++) {
