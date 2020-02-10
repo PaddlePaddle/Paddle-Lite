@@ -362,6 +362,20 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1;
+  } else if (kernel_h == 3 && kernel_h == 3) {
+    // conv2d_3x3
+    kernel_func_names_.push_back("conv2d_3x3");
+    kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
+
+    CLImageConverterFolder converter;
+    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+    std::vector<float> filter_image_v(filter_image_dims[0] *
+                                      filter_image_dims[1] * 4);  // 4 : RGBA
+    converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
+    filter_gpu_image_.mutable_data<float, cl::Image2D>(
+        filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
+
+    impl_ = &ConvImageCompute::Conv2d3x3;
   } else if (kernel_h == 5 && kernel_w == 5) {
     // conv2d_5x5
     kernel_func_names_.push_back("conv2d_5x5");
@@ -582,6 +596,176 @@ void ConvImageCompute::Conv2d1x1() {
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
 }
+
+void ConvImageCompute::Conv2d3x3() {
+  const auto& param = *param_.get_mutable<param_t>();
+  auto input_dims = param.x->dims();
+  auto paddings = *param.paddings;
+  auto strides = param.strides;
+
+  auto* input_image = param.x->data<float, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<float, cl::Image2D>();
+  auto filter_dims = param.filter->dims();
+  auto output_dims = param.output->dims();
+
+  int input_width = input_dims[3];
+  int input_height = input_dims[2];
+  int output_width = output_dims[3];
+  int output_height = output_dims[2];
+  int output_channel = output_dims[1];
+  int filter_width = filter_dims[3];
+  int filter_height = filter_dims[2];
+  int filter_channel = filter_dims[1];
+  auto out_image_shape = InitImageDimInfoWith(output_dims);
+  auto* out_image = param.output->mutable_data<float, cl::Image2D>(
+      out_image_shape["width"], out_image_shape["height"]);
+
+  const bool has_bias = param.bias != nullptr;
+  const bool is_element_wise_bias =
+      has_bias && param.output->dims() == param.bias->dims();
+  int offset = static_cast<int>(param.filter->dims()[2]) / 2 -
+               static_cast<int>(paddings[0]);
+
+  // calc input_c_block
+  auto input_image_shape = InitImageDimInfoWith(input_dims);
+  int input_c_block = input_image_shape["width"] / input_dims[3];
+  int input_c = input_dims[1];
+  auto dilations = *param.dilations;
+
+  const std::vector<size_t>& default_work_size =
+      DefaultWorkSize(output_dims,
+                      DDim(std::vector<DDim::value_type>{
+                          static_cast<int64_t>(out_image_shape["width"]),
+                          static_cast<int64_t>(out_image_shape["height"])}));
+
+  int c_block = default_work_size[0];
+  int w = default_work_size[1];
+  int nh = default_work_size[2];
+
+  // re-calc group for image
+  // not from param.groups
+  int group = -1;
+  if (filter_dims[0] == output_dims[1] && filter_dims[1] == input_dims[1]) {
+    group = 1;
+  } else if (!(filter_dims[0] == input_dims[1] &&
+               filter_dims[1] == 1)) {  // not depthwise
+    group = input_c / filter_channel;
+  }
+
+  VLOG(4) << "============ conv2d params ============";
+  VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
+          << input_image_shape["height"];
+  VLOG(4) << "input_c_block: " << input_c_block;
+  VLOG(4) << "input_c: " << input_c;
+  VLOG(4) << "input_image: " << input_image;
+  VLOG(4) << "input_dims: " << input_dims;
+  VLOG(4) << "filter_dims: " << filter_dims;
+  VLOG(4) << "filter_image: " << filter_image;
+  VLOG(4) << "output_dims: " << output_dims;
+  VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
+          << out_image_shape["height"];
+  VLOG(4) << "paddings: " << paddings[0] << "," << paddings[1];
+  VLOG(4) << "has bias: " << has_bias;
+  VLOG(4) << "is_element_wise_bias : " << is_element_wise_bias;
+  VLOG(4) << "strides: " << strides[0] << "," << strides[1];
+  VLOG(4) << "offset: " << offset;
+  VLOG(4) << "dilations.size : " << dilations.size();
+  VLOG(4) << "dilations: " << dilations[0] << ", " << dilations[1];
+  VLOG(4) << "group:" << group;
+  VLOG(4) << "default work size{c_block, w, nh}: "
+          << "{" << c_block << ", " << w << ", " << nh << ""
+          << "}";
+
+  CHECK_GE(dilations.size(), 2);
+  CHECK(dilations[0] == dilations[1]);
+  CHECK_GE(input_dims.size(), 4);
+  CHECK_GE(paddings.size(), 2);
+  CHECK(paddings[0] == paddings[1]);
+  CHECK_GE(strides.size(), 2);
+  CHECK(strides[0] == strides[1]);
+
+  const cl::Image2D* bias_image = nullptr;
+  if (has_bias) {
+    bias_image = bias_gpu_image_.data<float, cl::Image2D>();
+  }
+
+  auto& context = ctx_->As<OpenCLContext>();
+  CHECK(context.cl_context() != nullptr);
+  STL::stringstream kernel_key;
+  kernel_key << kernel_func_names_[0] << build_options_[0];
+  auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+  VLOG(4) << "kernel_key: " << kernel_key.str();
+  VLOG(4) << "kernel ready ... " << kernel_key.str();
+  VLOG(4) << "w: " << w;
+
+  cl_int status;
+  int arg_idx = 0;
+  status = kernel.setArg(arg_idx, c_block);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, w);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, nh);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, *input_image);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, *filter_image);
+  CL_CHECK_FATAL(status);
+  if (has_bias) {
+    VLOG(4) << "set bias_image: ";
+    status = kernel.setArg(++arg_idx, *bias_image);
+    CL_CHECK_FATAL(status);
+  }
+  status = kernel.setArg(++arg_idx, *out_image);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, strides[0]);
+  CL_CHECK_FATAL(status);
+
+  status = kernel.setArg(++arg_idx, offset);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, input_c_block);
+  CL_CHECK_FATAL(status);
+
+  status = kernel.setArg(++arg_idx, dilations[0]);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, input_width);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, input_height);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, output_width);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, output_height);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, output_channel);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, filter_channel);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, filter_width);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, filter_height);
+  CL_CHECK_FATAL(status);
+  status = kernel.setArg(++arg_idx, group);
+  CL_CHECK_FATAL(status);
+
+  auto global_work_size =
+      cl::NDRange{static_cast<size_t>(default_work_size.data()[0]),
+                  static_cast<size_t>(default_work_size.data()[1]),
+                  static_cast<size_t>(default_work_size.data()[2])};
+
+  VLOG(4) << "out_image: " << out_image;
+  VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
+          << global_work_size[1] << "," << global_work_size[2] << "}";
+
+  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+      kernel,
+      cl::NullRange,
+      global_work_size,
+      cl::NullRange,
+      nullptr,
+      event_.get());
+  CL_CHECK_FATAL(status);
+  context.cl_wait_list()->emplace(out_image, event_);
+}
+
 void ConvImageCompute::Conv2d5x5() {
   const auto& param = *param_.get_mutable<param_t>();
   auto input_dims = param.x->dims();
@@ -726,6 +910,7 @@ void ConvImageCompute::Conv2d5x5() {
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
 }
+
 void ConvImageCompute::Conv2d7x7() {
   const auto& param = *param_.get_mutable<param_t>();
   auto input_dims = param.x->dims();
