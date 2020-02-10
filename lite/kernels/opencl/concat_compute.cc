@@ -101,15 +101,18 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+  int flag = 1;  // cxw
   switch (axis_) {
     case 0:
       width = x_dims[0];  // n
+      flag = 0;
       break;
     case 1:
       width = x_dims[1];  // c
       break;
     case 2:
       width = x_dims[2];  // h
+      flag = 0;
       break;
     case 3:
     case -1:
@@ -129,6 +132,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     CL_CHECK_FATAL(status);
     status =
         kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, flag);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, width);
     CL_CHECK_FATAL(status);
@@ -153,6 +158,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       status = kernel.setArg(++arg_idx, axis_size_);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, start);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, flag);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width);
       CL_CHECK_FATAL(status);
