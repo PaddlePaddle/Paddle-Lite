@@ -28,7 +28,7 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
-#define PADDLE_OS_LINUX
+#define PADDLE_MOBILE_OS_LINUX
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
@@ -38,7 +38,7 @@ static size_t memory_size_max = 0;
 static size_t memory_size = 0;
 
 static inline int do_ioctl(uint64_t req, const void *arg) {
-#ifdef PADDLE_OS_LINUX
+#ifdef PADDLE_MOBILE_OS_LINUX
   return ioctl(fd, req, arg);
 #else
   return -1;
@@ -61,17 +61,33 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-#ifdef ENABLE_DEBUG
-#endif
-#ifdef PADDLE_OS_LINUX
+#ifdef PADDLE_MOBILE_OS_LINUX
+
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
-  if (ptr == NULL) {
+  if (ptr == MAP_FAILED) {
     std::cout << "not enough memory !";
     exit(-1);
   }
+  if (errno == ENOMEM) {
+    std::cout << "mmap failed with not enough memory !";
+    exit(-1);
+  }
+  if (errno == EINVAL) {
+    std::cout << "mmap failed with invalid arguments ! (size=" << size << ")"
+              << std::endl;
+    exit(-1);
+  }
+  if (ptr == NULL) {
+    std::cout << "NULL returned, errno=" << errno
+              << ", mmap failed with other errors other than memory usage !"
+              << std::endl;
+    exit(-1);
+  }
+
   memory_map.insert(std::make_pair(ptr, size));
   memory_size += size;
+
   if (memory_size > memory_size_max) {
     memory_size_max = memory_size;
   }
@@ -87,7 +103,7 @@ size_t fpga_get_memory_size_max() { return memory_size_max; }
 
 size_t fpga_diagnose_memory(int detailed) {
   size_t total = 0;
-  auto iter = memory_map.begin();  // std::map<void *, size_t>::iterator
+  auto iter = memory_map.begin();
   while (iter != memory_map.end()) {
     total += iter->second;
     iter++;
@@ -97,13 +113,15 @@ size_t fpga_diagnose_memory(int detailed) {
 
 void fpga_free(void *ptr) {
   size_t size = 0;
-  auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
+  auto iter = memory_map.find(ptr);
   if (iter != memory_map.end()) {
     size = iter->second;
     memory_map.erase(iter);
   }
+
   memory_size -= size;
-#ifdef PADDLE_OS_LINUX
+
+#ifdef PADDLE_MOBILE_OS_LINUX
   munmap(ptr, size);
 #else
   free(ptr);
@@ -230,6 +248,7 @@ int perform_bypass(const struct BypassArgs &args) {
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
     scale = std::max(scale, scales[0]);
   }
+
   args.output.scale_address[0] = scale;
   args.output.scale_address[1] = 1.0f / scale;
   return ret;
@@ -238,6 +257,26 @@ int perform_bypass(const struct BypassArgs &args) {
 int compute_fpga_concat(const struct ConcatArgs &args) { return -1; }
 
 int compute_fpga_scale(const struct ScaleArgs &args) {
+#ifdef ENABLE_DEBUG
+  std::cout << "======Compute Scale======";
+  std::cout << "scale_address:" << args.scale_address << std::endl;
+  std::cout << "bias_address:" << args.bias_address << std::endl;
+
+  std::cout << "wc_alignment:" << args.wc_alignment << std::endl;
+  std::cout << "channel_alignment:" << args.channel_alignment << std::endl;
+
+  std::cout << "   image_address:" << args.image.address
+            << "   image_scale_address:" << args.image.scale_address
+            << "   image_channels:" << args.image.channels
+            << "   image_height:" << args.image.height
+            << "   image_width:" << args.image.width
+            << "   pad_height:" << args.image.pad_height
+            << "   pad_width:" << args.image.pad_width;
+
+  std::cout << "   out_address:" << args.output.address
+            << "   out_scale_address:" << args.output.scale_address;
+
+#endif
   return do_ioctl(IOCTL_CONFIG_SCALE, &args);
 }
 
