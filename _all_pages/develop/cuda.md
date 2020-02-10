@@ -28,8 +28,8 @@ cd Paddle-Lite
 # 编译过程中如果提示找不到CUDA，CUDNN，请在环境变量设置CUDA_TOOLKIT_ROOT_DIR, CUDNN_ROOT
 # CUDA_TOOLKIT_ROOT_DIR，CUDNN_ROOT分别表示CUDA，CUDNN的根目录
 ./lite/tools/build.sh cuda
-
-
+# 如果使用python接口，需要打开build_python选项
+./lite/tools/build.sh --build_python=ON cuda
 ```
 
 编译结束会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite_core.so`。
@@ -44,6 +44,7 @@ cd Paddle-Lite
 ```
 # 下载模型
 wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/yolov3_infer.tar.gz
+tar -zxf yolov3_infer.tar.gz
 # 下载图片样例
 wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/kite.jpg
 ```
