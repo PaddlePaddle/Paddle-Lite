@@ -1,5 +1,5 @@
 # get the name of current operation system: Linux or Darwin
-SYSTEM=$(shell "uname -s")
+SYSTEM=$(shell "uname")
 
 CXX_DEFINES = -DARM_WITH_OMP -DHPPL_STUB_FUNC -DLITE_WITH_ARM -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK \
               -DLITE_WITH_LINUX -DPADDLE_DISABLE_PROFILER -DPADDLE_NO_PYTHON -DPADDLE_WITH_TESTING
