@@ -169,7 +169,6 @@ class LITE_API CxxConfig : public ConfigBase {
 /// IR optimization or other unnecessary stages.
 class LITE_API MobileConfig : public ConfigBase {
   std::string lite_model_file_;
-  std::string lite_model_buffer_;
 
   std::string model_buffer_;
   std::string param_buffer_;
@@ -178,7 +177,7 @@ class LITE_API MobileConfig : public ConfigBase {
  public:
   void set_model_from_file(const std::string& x) { lite_model_file_ = x; }
   void set_model_from_buffer(const std::string& x) {
-    lite_model_buffer_ = x;
+    lite_model_file_ = x;
     model_from_memory_ = true;
   }
 
@@ -196,7 +195,6 @@ class LITE_API MobileConfig : public ConfigBase {
   const std::string& param_buffer() const { return param_buffer_; }
 
   const std::string& lite_model_file() const { return lite_model_file_; }
-  const std::string& lite_model_buffer() const { return lite_model_buffer_; }
 };
 
 template <typename ConfigT>

@@ -23,7 +23,7 @@ namespace lite {
 
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
-  if (config.lite_model_file().empty() && config.lite_model_buffer().empty()) {
+  if (config.lite_model_file().empty()) {
     raw_predictor_.reset(
         new LightPredictor(config.model_dir(),
                            config.model_buffer(),
