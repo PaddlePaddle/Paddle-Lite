@@ -451,14 +451,14 @@ TEST(conv2d, compute_image2d_1x1) {
 TEST(conv2d, compute_image2d_3x3) {
   // conv infos
   const int ksize = 3;
-  const int stride = 1;
-  const int pad = 2;
-  const int group = 1;
-  const int dilation = 1;
 //  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
-  for (int batch_size = 2; batch_size < 4; ++batch_size) {
+  const int pad = 1;
+  const int dilation = 1;
+  const int stride = 2;
+  const int group = 1;
+  for (int batch_size = 1; batch_size < 2; ++batch_size) {
     for (int oc = 1; oc < 10; oc += 1) {   // oc
       for (int ih = 5; ih < 9; ih += 1) {  // ih
         int iw = ih;
@@ -466,12 +466,17 @@ TEST(conv2d, compute_image2d_3x3) {
           for (bool bias_flag : {true, false}) {
             for (std::string relu_flag : {/*true,*/ "relu"}) {
 #else
-                const int batch_size = 2;
-                const int oc = 1;
+                const int pad = 1;
+                const int dilation = 1;
+                const int stride = 1;
+                const int group = 2;
+
+                const int batch_size = 1;
+                const int ic = 2;
                 const int ih = 3;
                 const int iw = 3;
-                const int ic = 1;
-                const bool bias_flag = false;
+                const int oc = 2;
+                const bool bias_flag = true;
                 const std::string relu_flag = "relu";
 #endif
 
@@ -486,6 +491,7 @@ TEST(conv2d, compute_image2d_3x3) {
                                                   PRECISION(kFloat),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
+              CHECK(batch_size == 1) << "conv3x3 only supprt batch_size == 1";
 
               auto kernel = std::move(kernels.front());
               SHADOW_LOG << "created conv2d kernel";
@@ -536,6 +542,10 @@ TEST(conv2d, compute_image2d_3x3) {
                   lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
               const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+
+              LOG(INFO) << "input_dim:" << input_dim
+                        << " filter_dim:" << filter_dim
+                        << " out_dim:" << out_dim;
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);
@@ -752,6 +762,13 @@ TEST(conv2d, compute_image2d_3x3) {
               const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
                   {static_cast<int64_t>(out_image_width),
                    static_cast<int64_t>(out_image_height)})};
+
+#ifdef PRINT_RESULT
+              for (int i = 0; i < out_dim.production(); i++) {
+                VLOG(4) << "output_v[" << i << "]:" << output_v[i]
+                        << " out_ref_data[" << i << "]:" << out_ref_data[i];
+              }
+#endif
 
               for (int i = 0; i < out_dim.production(); i++) {
                 EXPECT_NEAR(output_v[i], out_ref_data[i], 1e-2);
