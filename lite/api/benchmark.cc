@@ -103,7 +103,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   lite_api::MobileConfig config;
   config.set_threads(FLAGS_threads);
   config.set_power_mode(static_cast<PowerMode>(FLAGS_power_mode));
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_dir + ".nb");
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
