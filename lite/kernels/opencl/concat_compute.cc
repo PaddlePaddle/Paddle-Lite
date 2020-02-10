@@ -296,7 +296,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, (int)size);
+      status = kernel.setArg(++arg_idx, static_cast<int>(size));
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, pre_size_);
       CL_CHECK_FATAL(status);
