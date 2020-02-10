@@ -93,7 +93,6 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
         LOG(FATAL) << "Unsupported attribute type: the type of attribute `is_test` in BatchNormOP should be int or bool.";
   }
 
-  param_.is_test = op_desc.GetAttr<bool>("is_test");
   if (op_desc.HasAttr("use_global_stats")) {
     param_.use_global_stats = op_desc.GetAttr<bool>("use_global_stats");
   }
