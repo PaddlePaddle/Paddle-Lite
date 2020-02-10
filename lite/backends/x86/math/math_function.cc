@@ -128,9 +128,9 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
     PADDLE_ENFORCE_EQ(vector.numel(), size);
     PADDLE_ENFORCE_EQ(output->dims(), in_dims);
 
-    auto input_data = input.data<T>();
-    auto vector_data = vector.data<T>();
-    auto output_data = output->mutable_data<T>();
+    const T* input_data = input.data<T>();
+    const T* vector_data = vector.data<T>();
+    T* output_data = output->mutable_data<T>();
     for (int64_t i = 0; i < in_dims[0]; ++i) {
       for (int64_t j = 0; j < in_dims[1]; ++j) {
         output_data[i * in_dims[0] + j] =
