@@ -104,19 +104,19 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   int flag = 1;  // cxw
   switch (axis_) {
     case 0:
-      width = x_dims[0];  // n
+      width = x_dims[2];  // n
       flag = 0;
       break;
     case 1:
-      width = x_dims[1];  // c
+      width = x_dims[3];  // c
       break;
     case 2:
-      width = x_dims[2];  // h
+      width = x_dims[0];  // h
       flag = 0;
       break;
     case 3:
     case -1:
-      width = x_dims[3];  // w
+      width = x_dims[1];  // w
       break;
     default:
       printf("this axis: %d does not support \n", axis_);
@@ -288,15 +288,15 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
       arg_idx = 0;
-      auto size = inputs[i]->dims()[axis_];
+      int size = inputs[i]->dims()[axis_];
       auto* x_buf = inputs[i]->data<float, cl::Buffer>();
       global_work_size = cl::NDRange{static_cast<size_t>(size)};
-      auto total0 = size * post_size_;
+      int total0 = size * post_size_;
       cl_int status = kernel.setArg(arg_idx, *x_buf);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, size);
+      status = kernel.setArg(++arg_idx, (int)size);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, pre_size_);
       CL_CHECK_FATAL(status);

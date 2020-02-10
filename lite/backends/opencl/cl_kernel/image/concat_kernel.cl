@@ -30,11 +30,14 @@ __kernel void concat2(__read_only image2d_t input0,
   }
   if (xx < axis_size){
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(x, y));
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
   }else{
     int new_val = xx - axis_size;
+    new_val *= width;
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(new_val, y));
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
   }
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+  // WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
 __kernel void concat_mul(__read_only image2d_t input0,
@@ -53,6 +56,7 @@ __kernel void concat_mul(__read_only image2d_t input0,
   
   if (xx < axis_size && xx >= start){
     xx -= start;
+   xx *= width;
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(xx, y));
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
   }
