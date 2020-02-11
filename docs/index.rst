@@ -38,6 +38,10 @@ Welcome to Paddle-Lite's documentation!
   :maxdepth: 1
   :caption: 进阶使用指南
 
+  advanced_user_guides/support_operation_list
+  advanced_user_guides/add_operation
+  advanced_user_guides/model_quantization
+  
 .. toctree::
   :maxdepth: 1
   :caption: 开发者文档
