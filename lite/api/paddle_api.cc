@@ -206,6 +206,9 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
                                     size_t model_buffer_size,
                                     const char *param_buffer,
                                     size_t param_buffer_size) {
+  LOG(WARNING) << "warning: `set_model_buffer` will be abandened in "
+                  "release/v3.0.0, new method `set_model_from_buffer(const "
+                  "std::string &x)` is recommended.";
   model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
   param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
   model_from_memory_ = true;
