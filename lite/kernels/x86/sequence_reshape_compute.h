@@ -37,10 +37,9 @@ class SequenceReshapeCompute
     int out_width = param.new_dim;
 
     const auto& in_dims = in->dims();
-    //    LOG(INFO) << "in_dims: " << in_dims;
     int64_t in_width = in_dims[1];
-    auto& in_lod = in->lod();
 
+    auto& in_lod = in->lod();
     CHECK_EQ(in_lod.size(), 1UL);
     CHECK_EQ((uint64_t)in_dims[0], in_lod[0].back());
 
@@ -63,13 +62,11 @@ class SequenceReshapeCompute
       }
     }
 
-    out->Resize(in_dims);
+    out->Resize(std::vector<int64_t>{static_cast<int64_t>(out->lod()[0].back()),
+                                     out_width});
     auto* dst_ptr = out->mutable_data<T>();
     auto size = in->numel() * sizeof(T);
     std::memcpy(dst_ptr, in->data<T>(), size);
-    std::vector<int64_t> out_shape{static_cast<int64_t>(out->lod()[0].back()),
-                                   out_width};
-    out->Resize(lite::DDim(out_shape));
   }
 
   virtual ~SequenceReshapeCompute() = default;
