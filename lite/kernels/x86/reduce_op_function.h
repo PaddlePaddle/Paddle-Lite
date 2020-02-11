@@ -63,8 +63,29 @@ void ReduceFunctor(const lite::Tensor& input,
     auto out = EigenScalar<T>::From(output);
     functor(&x, &out, reduce_dim);
   } else {
-    auto out = EigenTensor<T, (D - R_D)>::From(*output, output->dims());
-    functor(&x, &out, reduce_dim);
+    auto fun_name = typeid(Functor).name();
+    const char* sum_fun = "SumFunctor";
+    auto te = strstr(fun_name, sum_fun);
+    if (D == 3 && R_D == 1 && te != NULL) {
+      lite::DDim input_dims = input.dims();
+      const T* input_data = input.data<T>();
+      T* output_data = output->mutable_data<T>();
+      for (int i = 0; i < input_dims[0]; i++) {
+        for (int k = 0; k < input_dims[2]; k++) {
+          int out_d = i * input_dims[2] + k;
+          T output_temp = 0;
+          for (int j = 0; j < input_dims[1]; j++) {
+            int input_d =
+                i * input_dims[1] * input_dims[2] + j * input_dims[2] + k;
+            output_temp = output_temp + input_data[input_d];
+          }
+          output_data[out_d] = output_temp;
+        }
+      }
+    } else {
+      auto out = EigenTensor<T, (D - R_D)>::From(*output, output->dims());
+      functor(&x, &out, reduce_dim);
+    }
   }
 }
 
