@@ -27,7 +27,7 @@ bool ConcatOpLite::CheckShape() const {
 }
 
 bool ConcatOpLite::InferShape() const {
-  std::vector<lite::Tensor *> &inputs = param_.x;
+  const std::vector<Tensor *> &inputs = param_.x;
   const size_t n = inputs.size();
   CHECK_GT_OR_FALSE(n, 0);
 
@@ -45,7 +45,7 @@ bool ConcatOpLite::InferShape() const {
   auto out_dims = inputs[0]->dims();
   size_t in_zero_dims_size = out_dims.size();
   for (size_t i = 1; i < n; i++) {
-    auto &input_dims_i = inputs[i]->dims();
+    const auto &input_dims_i = inputs[i]->dims();
     for (size_t j = 0; j < in_zero_dims_size; j++) {
       if (j == static_cast<size_t>(axis)) {
         out_dims[axis] += input_dims_i[j];

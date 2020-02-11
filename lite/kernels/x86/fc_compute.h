@@ -131,7 +131,6 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* w = param.w;
     auto* bias = param.bias;
     auto* output = param.output;
-    int in_num_col_dims = param.in_num_col_dims;
     bool with_relu = (param.activation_type == "relu") ? true : false;
 
     bool padding_weights = param.padding_weights;
@@ -139,17 +138,7 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto w_dims0 = padding_weights ? w_dims[0] - 4 : w_dims[0];
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
 
-    DDim out_dims;
-    out_dims.resize(static_cast<size_t>(in_num_col_dims + 1));
-    const auto& in_dims = input->dims();
-    for (int i = 0; i < in_num_col_dims; ++i) {
-      out_dims[i] = in_dims[i];
-    }
-    out_dims[in_num_col_dims] = w_dims1;
-    output->Resize(out_dims);
-    output->set_lod(input->lod());
-
-    int M = out_dims.production() / w_dims1;
+    int M = output->dims().production() / w_dims1;
 
     const T* input_data = input->data<T>();
     const T* w_data = w->data<T>();

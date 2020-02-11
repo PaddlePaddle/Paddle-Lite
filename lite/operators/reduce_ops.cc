@@ -49,8 +49,7 @@ bool ReduceOp::InferShape() const {
       param_.output->Resize(std::vector<int64_t>{1});
   } else {
     size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
-    DDim out_dims;
-    out_dims.resize(out_rank);
+    std::vector<DDim::value_type> out_dims(out_rank);
     if (keep_dim) {
       for (size_t i = 0; i < dims.size(); ++i) {
         out_dims[dims[i]] = 1;

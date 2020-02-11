@@ -37,22 +37,21 @@ value_type DDimLite::count(int start, int end) const {
   if (end < start) {
     return 0;
   }
-  value_type res = 1;
+  value_type sum = 1;
   for (auto i = start; i < end; ++i) {
-    res *= data_[i];
+    sum *= data_[i];
   }
-  return res;
+  return sum;
 }
 
 DDimLite DDimLite::Slice(int start, int end) const {
   start = std::max(start, 0);
   end = std::min(end, static_cast<int>(data_.size()));
-  DDimLite new_dim;
-  new_dim.resize(end - start);
-  for (int i = start; i < end; ++i) {
+  std::vector<value_type> new_dim(end - start);
+  for (int i = start; i < end; i++) {
     new_dim[i - start] = data_[i];
   }
-  return new_dim;
+  return DDim(new_dim);
 }
 
 std::string DDimLite::repr() const {
