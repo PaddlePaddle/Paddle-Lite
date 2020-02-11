@@ -82,8 +82,9 @@ class Node {
 
     // for cuda multi stream
     bool need_sync_{false};
-    uint32_t stream_id_{0};
-    std::vector<uint32_t> sync_streams_{};
+    int stream_id_{-1};
+    // streams which need to be sync. exclude stream_id_
+    std::vector<int> sync_streams_{};
   };
 
   struct Arg {
@@ -97,7 +98,7 @@ class Node {
     // if the need more than one tool operator(eg. io_copy layout calib), the
     // argument between them should be persist to make sure it's only run once
     bool is_persist{false};
-    uint32_t lane{0};
+    int lane{-1};
   };
 
   Arg& AsArg(const std::string& name, int id);

@@ -133,7 +133,7 @@ class Env {
     static Devs* devs = new Devs();
     return *devs;
   }
-  static void Init(int max_stream = 4) {
+  static void Init(int max_stream = 8) {
     Devs& devs = Global();
     if (devs.size() > 0) {
       return;

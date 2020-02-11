@@ -37,15 +37,14 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       auto& stmt = item->AsStmt();
       VLOG(4) << stmt;
 #ifdef LITE_WITH_CUDA
-      std::vector<cudaStream_t> streams;
-      for (size_t i = 0; i < stmt.sync_streams_.size(); ++i) {
-        streams.push_back(
-            stmt.kernels().front().context()->all_exec_streams()[i]);
+      // std::vector<cudaStream_t> streams;
+      LOG(INFO) << "streams init, " << stmt.op_type() << " " << stmt.stream_id_;
+      if (stmt.kernels().front()->target() == TargetType::kCUDA) {
+        stmt.kernels().front()->mutable_context()->As<CUDAContext>().set_need_sync(stmt.need_sync_);
+        stmt.kernels().front()->mutable_context()->As<CUDAContext>().set_sync_streams(stmt.sync_streams_);
       }
-      insts_.emplace_back(stmt.op(),
-                          std::move(stmt.kernels().front()),
-                          stmt.need_sync_,
-                          streams);
+      insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
+      LOG(INFO) << stmt.op_type() << " done"; 
 #else
       insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
 #endif

@@ -18,6 +18,7 @@
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/blas.h"
 #include "lite/backends/cuda/cuda_utils.h"
+#include "lite/backends/cuda/target_wrapper.h"
 #endif
 #ifdef LITE_WITH_OPENCL
 #include <gflags/gflags.h>
@@ -212,6 +213,7 @@ class Context<TargetType::kCUDA> {
 
     exec_stream_id_ = exec_stream_id;
     io_stream_id_ = io_stream_id;
+    need_sync_ = false;
   }
   void CopySharedTo(CUDAContext* ctx) {
     CHECK(ctx);
@@ -243,7 +245,38 @@ class Context<TargetType::kCUDA> {
   }
 
   std::vector<cudaStream_t> all_exec_streams() {
+    int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
     return devs[dev_id].exec_streams();
+  }
+
+  void set_sync_streams(const std::vector<int>& nums) {
+    sync_streams_.clear();
+    std::vector<cudaStream_t> exec_streams = all_exec_streams();
+    for (size_t i = 0; i < nums.size(); ++i) {
+      CHECK(nums[i] >=0 && nums[i] < static_cast<int>(exec_streams.size())) << "streams id is not valid";
+      sync_streams_.push_back(exec_streams[nums[i]]);
+    }
+    init_sync_events(nums.size());
+  }
+
+  void init_sync_events(const int num) {
+    sync_events_.clear();
+    for (int i = 0; i < num; ++i) {
+      cudaEvent_t eve;
+      TargetWrapperCuda::CreateEventWithFlags(&eve);
+      sync_events_.push_back(eve);
+    }
+  }
+
+  void set_need_sync(bool sync) { need_sync_ = sync; }
+  bool need_sync() const { return need_sync_; }
+
+  void sync() {
+    CHECK_EQ(sync_streams_.size(), sync_events_.size());
+    for (size_t i = 0; i < sync_events_.size(); ++i) {
+      TargetWrapperCuda::RecordEvent(sync_events_[i], sync_streams_[i]);
+      TargetWrapperCuda::StreamSync(exec_stream_, sync_events_[i]);
+    }
   }
 
   std::string name() const { return "CUDAContext"; }
@@ -269,6 +302,10 @@ class Context<TargetType::kCUDA> {
   // kernel information
   std::vector<cudaEvent_t> input_events_;
   std::vector<cudaEvent_t> output_events_;
+  // multi stream sync.
+  std::vector<cudaStream_t> sync_streams_;
+  std::vector<cudaEvent_t> sync_events_;
+  bool need_sync_;
 };
 #endif
 

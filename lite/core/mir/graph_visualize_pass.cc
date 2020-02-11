@@ -44,10 +44,10 @@ std::string Visualize(mir::SSAGraph* graph) {
                           node.AsArg().name.c_str(),
                           static_cast<int>(node.AsArg().lane));
     } else {
-      key = string_format("%s%d, sync=%d",
+      key = string_format("%s%d, sync=%d, stream=%d",
                           node.AsStmt().op_type().c_str(),
                           id++,
-                          node.AsStmt().need_sync_);
+                          node.AsStmt().need_sync_, node.AsStmt().stream_id_);
     }
     if (node.IsStmt()) {
       dot.AddNode(key,

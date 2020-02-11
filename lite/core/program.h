@@ -101,22 +101,6 @@ struct Instruction {
     }
   }
 
-#ifdef LITE_WITH_CUDA
-  Instruction(const std::shared_ptr<OpLite>& op,
-              std::unique_ptr<KernelBase>&& kernel,
-              bool need_sync = false,
-              const std::vector<cudaStream_t>& streams = {})
-      : op_(op),
-        kernel_(std::move(kernel)),
-        streams_(streams),
-        need_sync_(need_sync) {
-    std::string op_type = op->Type();
-    if (op_type == "feed" || op_type == "fetch") {
-      is_feed_fetch_op_ = true;
-    }
-  }
-#endif
-
   // Run the instruction.
   void Run();
 
@@ -129,11 +113,9 @@ struct Instruction {
   bool is_feed_fetch_op() const { return is_feed_fetch_op_; }
 
 #ifdef LITE_WITH_CUDA
-  bool need_sync() const { return need_sync_; }
-  void cuda_stream_sync() const {
-    for (auto& stream : streams_) {
-      TargetWrapperCuda::StreamSync(stream);
-    }
+  bool need_sync() const { return kernel_->mutable_context()->As<CUDAContext>().need_sync(); }
+  void sync() const {
+    kernel_->mutable_context()->As<CUDAContext>().sync();
   }
 #endif
 
@@ -157,11 +139,6 @@ struct Instruction {
   bool is_feed_fetch_op_{false};
   bool first_epoch_{true};
   bool has_run_{false};
-
-#ifdef LITE_WITH_CUDA
-  bool need_sync_{false};
-  std::vector<cudaStream_t> streams_{};
-#endif  // LITE_WITH_CUDA
 
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_;

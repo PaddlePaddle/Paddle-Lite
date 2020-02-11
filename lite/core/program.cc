@@ -140,7 +140,7 @@ void RuntimeProgram::Run() {
     if (inst.is_feed_fetch_op()) continue;
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
-      inst.cuda_stream_sync();
+      inst.sync();
     }
 #endif
     inst.Run();

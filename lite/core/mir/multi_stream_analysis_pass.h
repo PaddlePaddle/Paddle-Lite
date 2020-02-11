@@ -57,7 +57,7 @@ class MultiStreamAnalysisPass : public StmtPass {
   // 1. Make the number of ops on each stream as close as possible.
   // 2. The selected stream must be one of the streams contained in the input
   // arg
-  uint32_t SelectStreamId(const std::vector<uint32_t>& lanes);
+  int SelectStreamId(const std::vector<int>& lanes);
 
  private:
   std::list<Node*> wait_que_;
@@ -65,7 +65,8 @@ class MultiStreamAnalysisPass : public StmtPass {
   std::vector<Node*> exec_ops_;
   std::vector<std::vector<Node*>> ops_in_streams_;
   std::unordered_map<std::string, bool> resources_;
-  std::unordered_map<std::string, uint32_t> map_arg_to_lane_;
+  std::unordered_map<std::string, int> map_arg_to_lane_;
+  int max_stream_;
 };
 
 }  // namespace mir

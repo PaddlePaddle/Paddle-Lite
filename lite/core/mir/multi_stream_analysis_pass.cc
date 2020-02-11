@@ -22,12 +22,13 @@
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
+void MultiStreamAnalysisPass::Init(SSAGraph* graph) {  
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (op_node->IsStmt()) {
       // Set all outputs of op to inaccessible state.
@@ -61,7 +62,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
 
   // Set the stream id according to the number of feed ops, and set the output
   // of the feed op to be accessible.
-  uint32_t lane = 0;
+  int lane = 0;
   auto nodes = graph->inputs();
 
   for (auto& node : nodes) {
@@ -77,8 +78,12 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
           map_arg_to_lane_[var->AsArg().name] = lane;
           resources_[var->AsArg().name] = true;
         }
+        feed_ops->AsStmt().stream_id_ = lane;
         ops_in_streams_.push_back({feed_ops});
         ++lane;
+        if (lane >= max_stream_) {
+          lane = 0;
+        }
       }
     }
   }
@@ -114,13 +119,13 @@ bool MultiStreamAnalysisPass::CheckAccess(
   return true;
 }
 
-uint32_t MultiStreamAnalysisPass::SelectStreamId(
-    const std::vector<uint32_t>& lanes) {
+int MultiStreamAnalysisPass::SelectStreamId(
+    const std::vector<int>& lanes) {
   if (lanes.size() == 0) {
     return 0;
   }
 
-  uint32_t res = lanes[0];
+  int res = lanes[0];
   size_t min_num = ops_in_streams_[lanes[0]].size();
   for (size_t i = 1; i < lanes.size(); ++i) {
     if (ops_in_streams_[lanes[i]].size() < min_num) {
@@ -135,7 +140,7 @@ uint32_t MultiStreamAnalysisPass::SelectStreamId(
 void MultiStreamAnalysisPass::Launch(Node* stmt_node) {
   // record ops launch order.
   exec_que_.push(stmt_node);
-  std::vector<uint32_t> lanes;
+  std::vector<int> lanes;
   for (auto& in_arg : stmt_node->inlinks) {
     // Weight parameter does not involve stream id, so just skip it.
     if (in_arg->AsArg().is_weight || in_arg->AsArg().is_persist) {
@@ -145,18 +150,22 @@ void MultiStreamAnalysisPass::Launch(Node* stmt_node) {
     if (std::find(lanes.begin(), lanes.end(), in_arg->AsArg().lane) ==
         lanes.end()) {
       lanes.push_back(in_arg->AsArg().lane);
-      stmt_node->AsStmt().sync_streams_.push_back(in_arg->AsArg().lane);
     }
   }
 
-  uint32_t stream_id = SelectStreamId(lanes);
+  int stream_id = SelectStreamId(lanes);
 
   // If all inputs of the op are on multiple streams, they need to be
   // synchronized
   if (lanes.size() > 1) {
+    for (size_t i = 0; i < lanes.size(); ++i) {
+      if (lanes[i] != stream_id) {
+        stmt_node->AsStmt().sync_streams_.push_back(lanes[i]);
+      }
+    }
     stmt_node->AsStmt().need_sync_ = true;
-    stmt_node->AsStmt().stream_id_ = stream_id;
   }
+  stmt_node->AsStmt().stream_id_ = stream_id;
 
   // set output lane and set the output of op to be accessible.
   for (auto& out_arg : stmt_node->outlinks) {
@@ -167,6 +176,15 @@ void MultiStreamAnalysisPass::Launch(Node* stmt_node) {
 }
 
 void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+#ifdef LITE_WITH_CUDA
+  typename Env<TargetType::kCUDA>::Devs& devs =
+      Env<TargetType::kCUDA>::Global();
+  int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
+  max_stream_ = devs[dev_id].max_stream();
+#else
+  max_stream_ = -1;
+#endif
+
   // Find the correct startup sequence for op.
   Init(graph.get());
   size_t prev_size;
@@ -192,15 +210,15 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   while (!exec_que_.empty()) {
     auto* node = exec_que_.front();
     exec_ops_.push_back(node);
-    VLOG(3) << node->AsStmt().op_type()
-            << " sync: " << node->AsStmt().need_sync_;
+    LOG(INFO) << node->AsStmt().op_type() << " stream: " << node->AsStmt().stream_id_
+            << ", sync: " << node->AsStmt().need_sync_;
     exec_que_.pop();
   }
 
   graph.get()->SetNodeInOrder(exec_ops_);
 
   for (size_t i = 0; i < ops_in_streams_.size(); ++i) {
-    VLOG(3) << "stream " << i << " has " << ops_in_streams_[i].size()
+    LOG(INFO) << "stream " << i << " has " << ops_in_streams_[i].size()
             << " ops.";
   }
 
