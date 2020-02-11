@@ -198,24 +198,24 @@ namespace math {
   "fmin v20.4s, v20.4s, %[vsix].4s\n" \
   "fmin v21.4s, v21.4s, %[vsix].4s\n" \
   "fmin v22.4s, v22.4s, %[vsix].4s\n"
-#define LEAKY_RELU                      /* LeakyRelu */ \
-  "movi v0.4s, #0\n"                    /* for relu */  \
-  "cmhs v1.4s, v19.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v2.4s, v19.4s, %[vscale].4s \n" /* mul */       \
-  "cmhs v3.4s, v20.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v4.4s, v20.4s, %[vscale].4s \n" /* mul */       \
-  "cmhs v5.4s, v21.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v6.4s, v21.4s, %[vscale].4s \n" /* mul */       \
-  "cmhs v7.4s, v22.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v8.4s, v22.4s, %[vscale].4s \n" /* mul */       \
-  "bif  v19.16b, v2.16b, v1.16b \n"     /* choose*/     \
-  "bif  v19.16b, v4.16b, v3.16b \n"     /* choose*/     \
-  "bif  v19.16b, v6.16b, v5.16b \n"     /* choose*/     \
-  "bif  v19.16b, v8.16b, v7.16b \n"     /* choose*/
-#define STORE                           /* save result */ \
-  "str q19, [%[outc0]], #16\n"                            \
-  "str q20, [%[outc1]], #16\n"                            \
-  "str q21, [%[outc2]], #16\n"                            \
+#define LEAKY_RELU                       /* LeakyRelu */ \
+  "movi v0.4s, #0\n"                     /* for relu */  \
+  "fcmge v1.4s, v19.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v2.4s, v19.4s, %[vscale].4s \n" /* mul */       \
+  "fcmge v3.4s, v20.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v4.4s, v20.4s, %[vscale].4s \n" /* mul */       \
+  "fcmge v5.4s, v21.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v6.4s, v21.4s, %[vscale].4s \n" /* mul */       \
+  "fcmge v7.4s, v22.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v8.4s, v22.4s, %[vscale].4s \n" /* mul */       \
+  "bif  v19.16b, v2.16b, v1.16b \n"      /* choose*/     \
+  "bif  v20.16b, v4.16b, v3.16b \n"      /* choose*/     \
+  "bif  v21.16b, v6.16b, v5.16b \n"      /* choose*/     \
+  "bif  v22.16b, v8.16b, v7.16b \n"      /* choose*/
+#define STORE                            /* save result */ \
+  "str q19, [%[outc0]], #16\n"                             \
+  "str q20, [%[outc1]], #16\n"                             \
+  "str q21, [%[outc2]], #16\n"                             \
   "str q22, [%[outc3]], #16\n"
 
 #else
@@ -276,8 +276,8 @@ namespace math {
   "vmla.f32   q13, q9, q4              @ w2 * inr4\n"                        \
   "vmla.f32   q14, q9, q6              @ w2 * inr6\n"                        \
   "vmla.f32   q15, q9, q1              @ w2 * inr8\n"                        \
-  "vld1.32    {d4-d7}, [%[r1]]         @ load r1, 9, 10\n"                   \
   "vmla.f32   q12, q10, q3              @ w3 * inr3\n"                       \
+  "vld1.32    {d4-d7}, [%[r1]]         @ load r1, 9, 10\n"                   \
   "vmla.f32   q13, q10, q5              @ w3 * inr5\n"                       \
   "vmla.f32   q14, q10, q0              @ w3 * inr7\n"                       \
   "vmla.f32   q15, q10, q2              @ w3 * inr9\n"                       \
@@ -302,7 +302,7 @@ namespace math {
   "vld1.32    {d0-d3}, [%[r2]]!         @ load r2, 7, 8\n"                   \
   "vmla.f32   q12, q9, q2              @ w2 * inr2\n"                        \
   "vmla.f32   q13, q9, q4              @ w2 * inr4\n"                        \
-  "vmla.f32   q14, q8, q4              @ w1 * inr5\n"                        \
+  "vmla.f32   q14, q8, q5              @ w1 * inr5\n"                        \
   "vmla.f32   q15, q8, q0              @ w1 * inr7\n"                        \
   "vmla.f32   q12, q10, q3              @ w3 * inr3\n"                       \
   "vmla.f32   q13, q10, q5              @ w3 * inr5\n"                       \
@@ -334,15 +334,15 @@ namespace math {
   "vmla.f32   q13, q9, q4              @ w2 * inr4\n"                        \
   "vmla.f32   q14, q8, q5              @ w1 * inr5\n"                        \
   "vmla.f32   q15, q8, q0              @ w1 * inr7\n"                        \
-  "vld1.32    {d4-d7}, [%[r3]]         @ load r3, 9, 10\n"                   \
   "vmla.f32   q12, q10, q3              @ w3 * inr3\n"                       \
+  "vld1.32    {d4-d7}, [%[r3]]         @ load r3, 9, 10\n"                   \
   "vmla.f32   q13, q10, q5              @ w3 * inr5\n"                       \
   "vmla.f32   q14, q9, q6              @ w2 * inr6\n"                        \
   "vmla.f32   q15, q9, q1              @ w2 * inr8\n"                        \
   "vmla.f32   q12, q11, q4              @ w4 * inr4\n"                       \
   "vmla.f32   q13, q11, q6              @ w4 * inr6\n"                       \
-  "vmla.f32   q14, q9, q0              @ w3 * inr7\n"                        \
-  "vmla.f32   q15, q9, q2              @ w3 * inr9\n"                        \
+  "vmla.f32   q14, q10, q0              @ w3 * inr7\n"                       \
+  "vmla.f32   q15, q10, q2              @ w3 * inr9\n"                       \
   "vld1.32    {d14-d17}, [%[wc0]]!\n" /* load w0-1, to q7-8 */               \
   "sub %[r3], %[r3], #16                @ r1 - 16 to nextline address\n"     \
   "vmla.f32   q14, q11, q1              @ w4 * inr8\n"                       \
@@ -364,15 +364,15 @@ namespace math {
   "vmla.f32   q13, q9, q4              @ w2 * inr4\n"                        \
   "vmla.f32   q14, q8, q5              @ w1 * inr5\n"                        \
   "vmla.f32   q15, q8, q0              @ w1 * inr7\n"                        \
-  "vld1.32    {d4-d7}, [%[r4]]         @ load r3, 9, 10\n"                   \
   "vmla.f32   q12, q10, q3              @ w3 * inr3\n"                       \
+  "vld1.32    {d4-d7}, [%[r4]]         @ load r3, 9, 10\n"                   \
   "vmla.f32   q13, q10, q5              @ w3 * inr5\n"                       \
   "vmla.f32   q14, q9, q6              @ w2 * inr6\n"                        \
   "vmla.f32   q15, q9, q1              @ w2 * inr8\n"                        \
   "vmla.f32   q12, q11, q4              @ w4 * inr4\n"                       \
   "vmla.f32   q13, q11, q6              @ w4 * inr6\n"                       \
-  "vmla.f32   q14, q9, q0              @ w3 * inr7\n"                        \
-  "vmla.f32   q15, q9, q2              @ w3 * inr9\n"                        \
+  "vmla.f32   q14, q10, q0              @ w3 * inr7\n"                       \
+  "vmla.f32   q15, q10, q2              @ w3 * inr9\n"                       \
   "sub    %[wc0], %[wc0], #400          @ wc0 - 400 to start address\n"      \
   "sub %[r4], %[r4], #16                @ r1 - 16 to nextline address\n"     \
   "vmla.f32   q14, q11, q1              @ w4 * inr8\n"                       \

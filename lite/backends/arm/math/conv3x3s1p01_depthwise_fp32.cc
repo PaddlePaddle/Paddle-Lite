@@ -614,11 +614,11 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "blt 3f \n"
 
 #define LEFT_RESULT_S1_LEAKY_RELU                                         \
-  "cmhs v18.4s, v12.4s,  %[vzero].4s \n" /* vcgeq_u32 */                  \
-  "cmhs v19.4s, v13.4s,  %[vzero].4s \n" /* vcgeq_u32 */                  \
-  "fmul v20.4s, v12.4s, %[vscale].4s \n" /* mul */                        \
-  "fmul v21.4s, v12.4s, %[vscale].4s \n" /* mul */                        \
-  "ld1 {v8.4s}, [%[din_ptr4]], #16   \n" /*vld1q_f32(din_ptr0)*/          \
+  "fcmge v18.4s, v12.4s,  %[vzero].4s \n" /* vcgeq_f32 */                 \
+  "fcmge v19.4s, v13.4s,  %[vzero].4s \n" /* vcgeq_f32 */                 \
+  "fmul v20.4s, v12.4s, %[vscale].4s \n"  /* mul */                       \
+  "fmul v21.4s, v13.4s, %[vscale].4s \n"  /* mul */                       \
+  "ld1 {v8.4s}, [%[din_ptr4]], #16   \n"  /*vld1q_f32(din_ptr0)*/         \
                                                                           \
   "fmla v15.4s ,  v16.4s,  %[w1].s[0]\n" /* outr00 += din2_0123 * w0[1]*/ \
   "fmla v14.4s ,  v16.4s,  %[w2].s[0]\n" /* outr00 += din2_0123 * w1[1]*/ \
@@ -639,8 +639,8 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                           \
   "ld1 {v12.4s}, [%[bias_val]]      \n" /*vdupq_n_f32(bias_val)*/         \
   "ld1 {v13.4s}, [%[bias_val]]      \n" /*vdupq_n_f32(bias_val)*/ /* r5*/ \
-  "cmhs v18.4s, v14.4s,  %[vzero].4s \n" /* vcgeq_u32 */                  \
-  "fmul v20.4s, v14.4s, %[vscale].4s \n" /* mul */                        \
+  "fcmge v18.4s, v14.4s,  %[vzero].4s \n" /* vcgeq_f32 */                 \
+  "fmul v20.4s, v14.4s, %[vscale].4s \n"  /* mul */                       \
                                                                           \
   "ld1 {v10.4s}, [%[din_ptr5]], #16  \n" /*vld1q_f32(din_ptr0)*/          \
                                                                           \
@@ -657,10 +657,10 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "ext  v16.16b, v0.16b, v1.16b, #4 \n" /* v16 = 1234*/                   \
   "ext  v17.16b, v0.16b, v1.16b, #8 \n" /* v16 = 2345 */                  \
                                                                           \
-  "cmhs v18.4s, v15.4s,  %[vzero].4s \n" /* vcgeq_u32 */                  \
-  "fmul v20.4s, v15.4s, %[vscale].4s \n" /* mul */                        \
-  "ld1 {v14.4s}, [%[bias_val]]      \n"  /*vdupq_n_f32(bias_val)*/        \
-  "bif  v15.16b, v20.16b, v18.16b \n"    /* choose*/                      \
+  "fcmge v18.4s, v15.4s,  %[vzero].4s \n" /* vcgeq_f32 */                 \
+  "fmul v20.4s, v15.4s, %[vscale].4s \n"  /* mul */                       \
+  "ld1 {v14.4s}, [%[bias_val]]      \n"   /*vdupq_n_f32(bias_val)*/       \
+  "bif  v15.16b, v20.16b, v18.16b \n"     /* choose*/                     \
   "cmp  %w[cnt], #1                \n"                                    \
   "st1 {v15.4s}, [%[doutr3]], #16 \n"   /* vst1q_f32() */                 \
   "ld1 {v15.4s}, [%[bias_val]]      \n" /*vdupq_n_f32(bias_val)*/         \
@@ -802,7 +802,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
 
 #define MID_RESULT_S1_LEAKY_RELU                                           \
   "movi v21.4s, #0 \n"                                                     \
-  "cmhs v18.4s, v12.4s,  v21.4s \n"      /* vcgeq_u32 */                   \
+  "fcmge v18.4s, v12.4s,  v21.4s \n"     /* vcgeq_f32 */                   \
   "fmul v20.4s, v12.4s, %[vscale].4s \n" /* mul */                         \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -824,7 +824,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
                                                                            \
   "ld1 {v8.4s}, [%[din_ptr4]], #16   \n" /*vld1q_f32(din_ptr0)*/           \
-  "cmhs v18.4s, v13.4s,  v21.4s \n"      /* vcgeq_u32 */                   \
+  "fcmge v18.4s, v13.4s,  v21.4s \n"     /* vcgeq_f32 */                   \
   "fmul v20.4s, v13.4s, %[vscale].4s \n" /* mul */                         \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -846,7 +846,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fmla v15.4s ,  v10.4s,  %[w2].s[0]\n"  /* outr00 += din0_0123 * w0[0]*/ \
   "ld1 {v10.4s}, [%[din_ptr5]], #16   \n" /*vld1q_f32(din_ptr0)*/          \
   "ld1 {v13.4s}, [%[bias_val]]      \n"   /*vdupq_n_f32(bias_val)*/        \
-  "cmhs v18.4s, v14.4s,  v21.4s \n"       /* vcgeq_u32 */                  \
+  "fcmge v18.4s, v14.4s,  v21.4s \n"      /* vcgeq_f32 */                  \
   "fmul v20.4s, v14.4s, %[vscale].4s \n"  /* mul */                        \
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -861,7 +861,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "ext  v17.16b, v0.16b, v1.16b, #8 \n" /* v16 = 2345 */                   \
   "st1 {v14.4s}, [%[doutr2]], #16     \n"                                  \
                                                                            \
-  "cmhs v18.4s, v15.4s,  v21.4s \n"      /* vcgeq_u32 */                   \
+  "fcmge v18.4s, v15.4s,  v21.4s \n"     /* vcgeq_f32 */                   \
   "fmul v20.4s, v15.4s, %[vscale].4s \n" /* mul */                         \
                                                                            \
   "ld1 {v14.4s}, [%[bias_val]]      \n" /*vdupq_n_f32(bias_val)*/          \
@@ -980,7 +980,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
 
 #define RIGHT_RESULT_S1_LEAKY_RELU                                        \
   "movi v1.4s, #0 \n"                                                     \
-  "cmhs v20.4s, v12.4s,  v1.4s \n"       /* vcgeq_u32 */                  \
+  "fcmge v20.4s, v12.4s,  v1.4s \n"      /* vcgeq_f32 */                  \
   "fmul v21.4s, v12.4s, %[vscale].4s \n" /* mul */                        \
                                                                           \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/ \
@@ -999,7 +999,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "fmla v15.4s ,  v8.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
   "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
                                                                           \
-  "cmhs v20.4s, v13.4s,  v1.4s \n"       /* vcgeq_u32 */                  \
+  "fcmge v20.4s, v13.4s,  v1.4s \n"      /* vcgeq_f32 */                  \
   "fmul v21.4s, v13.4s, %[vscale].4s \n" /* mul */                        \
   "st1 {v12.4s}, [%[doutr0]], #16     \n"                                 \
                                                                           \
@@ -1017,7 +1017,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                           \
   "fmla v15.4s ,  v10.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/ \
                                                                           \
-  "cmhs v20.4s, v14.4s,  v1.4s \n"        /* vcgeq_u32 */                 \
+  "fcmge v20.4s, v14.4s,  v1.4s \n"       /* vcgeq_f32 */                 \
   "fmul v21.4s, v14.4s, %[vscale].4s \n"  /* mul */                       \
   "st1 {v13.4s}, [%[doutr1]], #16     \n" /* r3 */                        \
                                                                           \
@@ -1028,7 +1028,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                           \
   "bif v14.16b, v24.16b, v18.16b \n"                                      \
                                                                           \
-  "cmhs v20.4s, v15.4s,  v1.4s \n"       /* vcgeq_u32 */                  \
+  "fcmge v20.4s, v15.4s,  v1.4s \n"      /* vcgeq_f32 */                  \
   "fmul v21.4s, v15.4s, %[vscale].4s \n" /* mul */                        \
                                                                           \
   "st1 {v14.4s}, [%[doutr2]], #16     \n"                                 \
@@ -1128,18 +1128,18 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "st1 {v12.4s}, [%[out1]]\n"          \
   "st1 {v13.4s}, [%[out2]]\n"
 
-#define RESULT_S_S1_LEAKY_RELU                           \
-  "prfm pldl1keep, [%[out1]]\n"                          \
-  "prfm pldl1keep, [%[out2]]\n"                          \
-                                                         \
-  "cmhs v18.4s, v12.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "cmhs v19.4s, v13.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v20.4s, v12.4s, %[vscale].4s \n" /* mul */       \
-  "fmul v21.4s, v13.4s, %[vscale].4s \n" /* mul */       \
-                                                         \
-  "bif v12.16b, v20.16b, v18.16b \n"                     \
-  "bif v13.16b, v21.16b, v19.16b \n"                     \
-  "st1 {v12.4s}, [%[out1]]\n"                            \
+#define RESULT_S_S1_LEAKY_RELU                            \
+  "prfm pldl1keep, [%[out1]]\n"                           \
+  "prfm pldl1keep, [%[out2]]\n"                           \
+                                                          \
+  "fcmge v18.4s, v12.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fcmge v19.4s, v13.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
+  "fmul v20.4s, v12.4s, %[vscale].4s \n"  /* mul */       \
+  "fmul v21.4s, v13.4s, %[vscale].4s \n"  /* mul */       \
+                                                          \
+  "bif v12.16b, v20.16b, v18.16b \n"                      \
+  "bif v13.16b, v21.16b, v19.16b \n"                      \
+  "st1 {v12.4s}, [%[out1]]\n"                             \
   "st1 {v13.4s}, [%[out2]]\n"
 #define COMPUTE_S_S1_P0                                   \
   "prfm pldl1keep, [%[din0]]\n"                           \
@@ -1627,7 +1627,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                          \
   "vbif q4, q6, q15 @ choose \n"                                         \
   "vcge.f32 q7, q5, %q[vzero]        @ q0 > 0 \n"                        \
-  "vmul.f32 q6, q4, q14 \n"                                              \
+  "vmul.f32 q6, q5, q14 \n"                                              \
   "vst1.32  {d8-d9},   [%[dout_ptr1]]!  @ store result, add pointer\n"   \
   "vld1.32  {d28-d29}, [%[din3_ptr]]!    @ load din r0\n"                \
                                                                          \
@@ -1815,8 +1815,8 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "vmul.f32 q12, q14, q9 \n"                        \
   "vmul.f32 q13, q15, q9 \n"                        \
                                                     \
-  "vbif q14, q10, q12 \n"                           \
-  "vbif q15, q11, q13 \n"                           \
+  "vbif q14, q12, q10 \n"                           \
+  "vbif q15, q13, q11 \n"                           \
                                                     \
   "vst1.32 {d28-d29}, [%[out1]]\n"                  \
   "vst1.32 {d30-d31}, [%[out2]]\n"
@@ -3637,15 +3637,13 @@ void conv_depthwise_3x3s1p0_bias(float *dout,
         dr2 = dr1 + w_in;
         dr3 = dr2 + w_in;
         //! process bottom pad
-        if (i + 3 >= h_in) {
-          switch (i + 3 - h_in) {
+        if (i + 4 > h_in) {
+          switch (i + 4 - h_in) {
             case 3:
               din_ptr1 = zero_ptr;
             case 2:
               din_ptr2 = zero_ptr;
             case 1:
-              din_ptr3 = zero_ptr;
-            case 0:
               din_ptr3 = zero_ptr;
             default:
               break;

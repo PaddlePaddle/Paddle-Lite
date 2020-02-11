@@ -78,6 +78,8 @@ class LITE_API LightPredictor {
 
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
 
+  void DequantizeWeight();
+
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
