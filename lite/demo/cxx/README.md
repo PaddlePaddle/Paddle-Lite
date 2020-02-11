@@ -126,7 +126,7 @@ adb push mask_classification /data/local/tmp
 adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb shell chmod +x /data/local/tmp/mask_detection
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/mask_detection /data/local/tmp/face_detection 
+/data/local/tmp/mask_detection /data/local/tmp/face_detection \
 /data/local/tmp/mask_classification /data/local/tmp/test.jpg"
 adb pull /data/local/tmp/test_mask_detection_result.jpg ./
 ```
