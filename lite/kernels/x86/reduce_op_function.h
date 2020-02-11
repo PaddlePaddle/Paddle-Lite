@@ -63,9 +63,7 @@ void ReduceFunctor(const lite::Tensor& input,
     auto out = EigenScalar<T>::From(output);
     functor(&x, &out, reduce_dim);
   } else {
-    auto fun_name = typeid(Functor).name();
-    const char* sum_fun = "SumFunctor";
-    auto te = strstr(fun_name, sum_fun);
+    auto te = strstr(typeid(Functor).name(), "SumFunctor");
     if (D == 3 && R_D == 1 && te != NULL) {
       lite::DDim input_dims = input.dims();
       const T* input_data = input.data<T>();
