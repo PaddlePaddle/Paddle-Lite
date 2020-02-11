@@ -13,7 +13,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 
 
 # global variables
-BUILD_EXTRA=OFF
+BUILD_EXTRA=ON
 BUILD_JAVA=ON
 BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
@@ -177,6 +177,8 @@ function make_all_tests {
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_PROFILE=ON \
+      -DLITE_WITH_PRECISION_PROFILE=ON \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
