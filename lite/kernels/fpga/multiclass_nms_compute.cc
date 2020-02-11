@@ -384,6 +384,7 @@ void MulticlassNmsCompute::Run() {
             scores_slice, boxes_slice, all_indices[i], score_dims.size(), &out);
         outs->ZynqTensor()->copyFrom(out.ZynqTensor());
       }
+      outs->Resize({static_cast<int64_t>(e - s), out_dim});
     }
   }
   LoD lod;
