@@ -40,6 +40,9 @@ namespace lite {
  */
 class LITE_API LightPredictor {
  public:
+  // constructor function of LightPredictor, `lite_model_file` refers to data in
+  // model file or buffer,`model_from_memory` refers to whther to load model
+  // from memory.
   LightPredictor(const std::string& lite_model_file,
                  bool model_from_memory = false) {
     scope_ = std::make_shared<Scope>();

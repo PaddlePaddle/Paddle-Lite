@@ -190,5 +190,26 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+// set model data in combined format, `set_model_from_file` refers to loading
+// model from file, set_model_from_buffer refers to loading model from memory
+// buffer
+void MobileConfig::set_model_from_file(const std::string &x) {
+  lite_model_file_ = x;
+}
+void MobileConfig::set_model_from_buffer(const std::string &x) {
+  lite_model_file_ = x;
+  model_from_memory_ = true;
+}
+// warning: set model data from memory buffer, which is in old format and will
+// be abandened in release/v3.0.0
+void MobileConfig::set_model_buffer(const char *model_buffer,
+                                    size_t model_buffer_size,
+                                    const char *param_buffer,
+                                    size_t param_buffer_size) {
+  model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
+  param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
+  model_from_memory_ = true;
+}
+
 }  // namespace lite_api
 }  // namespace paddle

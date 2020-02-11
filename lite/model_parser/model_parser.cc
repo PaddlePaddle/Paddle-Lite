@@ -561,13 +561,16 @@ void SaveModelNaive(const std::string &model_dir,
   meta_version_table.SaveToFile(prog_path);
 
   // Save lite_version(char[16]) into file
+  const uint_8 paddle_version_length = 16 * sizeof(char);
   naive_buffer::BinaryTable paddle_version_table;
-  paddle_version_table.Require(16);
+  paddle_version_table.Require(paddle_version_length);
   std::string paddle_version = version();
-  memcpy(paddle_version_table.cursor(), paddle_version.c_str(), 16);
-  paddle_version_table.Consume(16);
+  memcpy(paddle_version_table.cursor(),
+         paddle_version.c_str(),
+         paddle_version_length);
+  paddle_version_table.Consume(paddle_version_length);
   paddle_version_table.AppendToFile(prog_path);
-  std::cout << "paddle_version:" << paddle_version << std::endl;
+  VLOG(4) << "paddle_version:" << paddle_version << std::endl;
 
   // Save topology_size(uint64) into file
   naive_buffer::BinaryTable topology_size_table;
@@ -576,7 +579,6 @@ void SaveModelNaive(const std::string &model_dir,
   memcpy(topology_size_table.cursor(), &topology_size, sizeof(uint64_t));
   topology_size_table.Consume(sizeof(uint64_t));
   topology_size_table.AppendToFile(prog_path);
-  std::cout << "topology_size_table:" << topology_size << std::endl;
 
   // save topology data into model file
   table.AppendToFile(prog_path);
