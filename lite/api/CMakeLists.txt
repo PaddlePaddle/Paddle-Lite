@@ -296,10 +296,10 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
-    message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+    message(STATUS "Compiling OPT")
+    lite_cc_binary(OPT SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS gflags kernel op optimizer mir_passes utils)
-    add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
+    add_dependencies(OPT op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
