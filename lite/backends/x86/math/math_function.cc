@@ -132,7 +132,7 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
     const T* vector_data = vector.data<T>();
     T* output_data = output->mutable_data<T>();
     for (int64_t i = 0; i < in_dims[0]; ++i) {
-      for (int64_t j = 0; j < in_dims[1]; ++j) {
+      for (int64_t j = 0; j < size; ++j) {
         output_data[i * in_dims[0] + j] =
             input_data[i * in_dims[0] + j] + vector_data[j];
       }
