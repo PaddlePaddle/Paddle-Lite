@@ -152,10 +152,8 @@ void ParamDesc::SetDim(const std::vector<int64_t>& dim) {
     auto& data_builder = desc_->GetField<PrimaryListBuilder<char>>("data"); \
     auto data = data_builder.data();                                        \
     size_t size = data_builder.size() / sizeof(T);                          \
-    auto* data_ptr = reinterpret_cast<const T*>(data);                      \
-    for (size_t i = 0; i < size; ++i) {                                     \
-      res.push_back(data_ptr[i]);                                           \
-    }                                                                       \
+    res.resize(size);                                                       \
+    memcpy(&res[0], data, data_builder.size());                             \
     return res;                                                             \
   }
 
