@@ -271,6 +271,12 @@ class Blas {
   template <typename T>
   void VMERF(int n, const T* a, T* y, int64_t mode) const;
 
+  template <typename T>
+  void VABS(int n, const T* a, T* y) const;
+
+  template <typename T>
+  void VDIV(int n, const T* a, const T* b, T* y) const;
+
  private:
   const lite::Context<Target>& context_;
 };
@@ -380,6 +386,16 @@ class BlasT : private Blas<Target> {
   template <typename... ARGS>
   void VMERF(ARGS... args) const {
     Base()->template VMERF<T>(args...);
+  }
+
+  template <typename... ARGS>
+  void VABS(ARGS... args) const {
+    Base()->template VABS<T>(args...);
+  }
+
+  template <typename... ARGS>
+  void VDIV(ARGS... args) const {
+    Base()->template VDIV<T>(args...);
   }
 
  private:

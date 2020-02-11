@@ -129,6 +129,15 @@ struct CBlas<float> {
   static void VMERF(ARGS... args) {
     lite::x86::vmsErf(args...);
   }
+
+  template <typename... ARGS>
+  static void VABS(ARGS... args) {
+    lite::x86::vsAbs(args...);
+  }
+  template <typename... ARGS>
+  static void VDIV(ARGS... args) {
+    lite::x86::vsDiv(args...);
+  }
 };
 
 template <>
@@ -233,6 +242,15 @@ struct CBlas<double> {
   template <typename... ARGS>
   static void VMERF(ARGS... args) {
     lite::x86::vmdErf(args...);
+  }
+
+  template <typename... ARGS>
+  static void VABS(ARGS... args) {
+    lite::x86::vdAbs(args...);
+  }
+  template <typename... ARGS>
+  static void VDIV(ARGS... args) {
+    lite::x86::vdDiv(args...);
   }
 };
 
@@ -806,6 +824,32 @@ void Blas<lite::TargetType::kX86>::VMERF(int n,
 #endif
 }
 
+template <>
+template <typename T>
+void Blas<lite::TargetType::kX86>::VABS(int n, const T *a, T *y) const {
+#ifdef PADDLE_WITH_MKLML
+  CBlas<T>::VABS(n, a, y);
+#else
+  for (int i = 0; i < n; ++i) {
+    y[i] = std::abs(a[i]);
+  }
+#endif
+}
+
+template <>
+template <typename T>
+void Blas<lite::TargetType::kX86>::VDIV(int n,
+                                        const T *a,
+                                        const T *b,
+                                        T *y) const {
+#ifdef PADDLE_WITH_MKLML
+  CBlas<T>::VDIV(n, a, b, y);
+#else
+  for (int i = 0; i < n; ++i) {
+    y[i] = a[i] / b[i];
+  }
+#endif
+}
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

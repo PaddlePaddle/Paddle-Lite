@@ -226,7 +226,17 @@ template <typename T>
 struct SoftsignFunctor : public BaseActivationFunctor<T> {
   template <typename Device, typename X, typename Out>
   void operator()(Device d, X x, Out out) {
-    out.device(d) = x / (static_cast<T>(1) + x.abs());
+    auto x_data = x.data();
+    auto out_data = out.data();
+    int n = std::min(x.size(), out.size());
+
+    std::memset(out_data, 0, n * sizeof(T));
+    paddle::lite::x86::math::CBlas<T>::VABS(n, x_data, out_data);
+    for (int i = 0; i < n; i++) {
+      out_data[i] += static_cast<T>(1);
+    }
+    paddle::lite::x86::math::CBlas<T>::VDIV(n, x_data, out_data, out_data);
+    // out.device(d) = x / (static_cast<T>(1) + x.abs());
   }
 };
 
