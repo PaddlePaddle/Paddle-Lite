@@ -71,25 +71,25 @@ tar zxvf mobilenet_v1.tar.gz
 ./model_optimize_tool optimize model
 make
 
-adb -s emulator-5554 push mobile_classify /data/local/tmp/
-adb -s emulator-5554 push test.jpg /data/local/tmp/
-adb -s emulator-5554 push labels.txt /data/local/tmp/
-adb -s emulator-5554 push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/mobile_classify
-adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
+adb push mobile_classify /data/local/tmp/
+adb push test.jpg /data/local/tmp/
+adb push labels.txt /data/local/tmp/
+adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mobile_classify
+adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
 /data/local/tmp/mobile_classify /data/local/tmp/mobilenetv1opt2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
 ```
 运行成功将在控制台输出预测结果的前5个类别的预测概率
 - 如若想看前10个类别的预测概率，在运行命令输入topk的值即可
     eg:
     ```shell
-    adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
+    adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
     /data/local/tmp/mobile_classify /data/local/tmp/mobilenetv1opt2/ /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10"
     ```
 - 如若想看其他模型的分类结果， 在运行命令输入model_dir 及其model的输入大小即可
     eg:
     ```shell
-    adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
+    adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
     /data/local/tmp/mobile_classify /data/local/tmp/mobilenetv2opt2/ /data/local/tmp/test.jpg /data/local/tmp/labels.txt 10 224 224"
     ```
     
@@ -100,12 +100,34 @@ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 ./model_optimize_tool optimize model
 make
-adb -s emulator-5554 push test_model_cv /data/local/tmp/
-adb -s emulator-5554 push test.jpg /data/local/tmp/
-adb -s emulator-5554 push labels.txt /data/local/tmp/
-adb -s emulator-5554 push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
-adb -s emulator-5554 shell chmod +x /data/local/tmp/test_model_cv
-adb -s emulator-5554 shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
+adb push test_model_cv /data/local/tmp/
+adb push test.jpg /data/local/tmp/
+adb push labels.txt /data/local/tmp/
+adb push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
+adb shell chmod +x /data/local/tmp/test_model_cv
+adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
 /data/local/tmp/test_model_cv /data/local/tmp/mobilenetv1opt2 /data/local/tmp/test.jpg /data/local/tmp/labels.txt"
 ```
 运行成功将在控制台输出预测结果的前10个类别的预测概率
+
+10. 编译并运行mask_detection口罩检测的demo
+
+注：运行该demo所需的libpaddle_light_api_shared.so，编译选项需使用build_extra=ON
+
+```shell
+cd ../mask_detection
+wget https://paddle-inference-dist.bj.bcebos.com/mask_detection.tar.gz
+tar zxvf mask_detection.tar.gz
+make
+adb push mask_detection /data/local/tmp/
+adb push test.jpg /data/local/tmp/
+adb push face_detection /data/local/tmp
+adb push mask_classification /data/local/tmp
+adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+adb shell chmod +x /data/local/tmp/mask_detection
+adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
+/data/local/tmp/mask_detection /data/local/tmp/face_detection 
+/data/local/tmp/mask_classification /data/local/tmp/test.jpg"
+adb pull /data/local/tmp/test_mask_detection_result.jpg ./
+```
+运行成功将在mask_detection目录下看到生成的口罩检测结果图像: test_mask_detection_result.jpg
