@@ -446,7 +446,7 @@ TEST(conv2d, compute_image2d_1x1) {
 #undef LOOP_TEST
 #undef PRINT_RESULT
 
-#define PRINT_RESULT
+// #define PRINT_RESULT
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_3x3) {
   // conv infos
@@ -472,7 +472,7 @@ TEST(conv2d, compute_image2d_3x3) {
                 const int group = 2;
 
                 const int batch_size = 1;
-                const int ic = 2;
+                const int ic = 1;
                 const int ih = 3;
                 const int iw = 3;
                 const int oc = 2;
