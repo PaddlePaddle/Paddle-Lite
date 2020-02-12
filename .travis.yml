@@ -14,14 +14,14 @@ addons:
 #      - python2.7-dev
 #      - libc6-i386
 #      - curl
-      - python3
-      - python3-pip
+      - python
+      - python-pip
       - clang-format-3.8
-      - python3-setuptools
+      - python-setuptools
         
 before_install:
-  - sudo python3 -m pip install cpplint
-  - sudo python3 -m pip install pre-commit
+  - sudo python -m pip install cpplint
+  - sudo python -m pip install pre-commit
   - sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format
   # Download and install recent cmake
 
