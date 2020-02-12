@@ -610,6 +610,7 @@ void ConvImageCompute::Conv2d3x3() {
 
   int input_width = input_dims[3];
   int input_height = input_dims[2];
+  int input_channel = input_dims[1];
   int output_width = output_dims[3];
   int output_height = output_dims[2];
   int output_channel = output_dims[1];
@@ -632,6 +633,18 @@ void ConvImageCompute::Conv2d3x3() {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
+  // re-calc group
+  int new_groups{param.groups};
+  if (filter_dims[0] == output_dims[1] && filter_dims[1] == input_dims[1]) {
+    new_groups = 1;
+  } else if (!(filter_dims[0] == input_dims[1] && filter_dims[1] == 1)) {
+    new_groups = input_channel / filter_channel;
+  } else {
+    LOG(FATAL) << "Not support conv3x3 case with"
+               << " input_dims:" << input_dims << " output_dims:" << output_dims
+               << " filter_dims:" << filter_dims;
+  }
+
   const std::vector<size_t>& default_work_size =
       DefaultWorkSize(output_dims,
                       DDim(std::vector<DDim::value_type>{
@@ -641,16 +654,6 @@ void ConvImageCompute::Conv2d3x3() {
   int c_block = default_work_size[0];
   int w = default_work_size[1];
   int nh = default_work_size[2];
-
-  // re-calc group for image
-  // not from param.groups
-  int group = -1;
-  if (filter_dims[0] == output_dims[1] && filter_dims[1] == input_dims[1]) {
-    group = 1;
-  } else if (!(filter_dims[0] == input_dims[1] &&
-               filter_dims[1] == 1)) {  // not depthwise
-    group = input_c / filter_channel;
-  }
 
   VLOG(4) << "============ conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
@@ -671,7 +674,8 @@ void ConvImageCompute::Conv2d3x3() {
   VLOG(4) << "offset: " << offset;
   VLOG(4) << "dilations.size : " << dilations.size();
   VLOG(4) << "dilations: " << dilations[0] << ", " << dilations[1];
-  VLOG(4) << "group:" << group;
+  VLOG(4) << "param.groups(groups):" << param.groups;
+  VLOG(4) << "new_groups:" << new_groups;
   VLOG(4) << "default work size{c_block, w, nh}: "
           << "{" << c_block << ", " << w << ", " << nh << ""
           << "}";
@@ -743,7 +747,7 @@ void ConvImageCompute::Conv2d3x3() {
   CL_CHECK_FATAL(status);
   status = kernel.setArg(++arg_idx, filter_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, group);
+  status = kernel.setArg(++arg_idx, new_groups);
   CL_CHECK_FATAL(status);
 
   auto global_work_size =

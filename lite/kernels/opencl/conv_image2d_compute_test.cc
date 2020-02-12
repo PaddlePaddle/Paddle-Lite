@@ -446,7 +446,7 @@ TEST(conv2d, compute_image2d_1x1) {
 #undef LOOP_TEST
 #undef PRINT_RESULT
 
-// #define PRINT_RESULT
+#define PRINT_RESULT
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_3x3) {
   // conv infos
@@ -468,7 +468,7 @@ TEST(conv2d, compute_image2d_3x3) {
 #else
                 const int pad = 1;
                 const int dilation = 1;
-                const int stride = 1;
+                const int stride = 2;
                 const int group = 2;
 
                 const int batch_size = 1;
@@ -476,7 +476,7 @@ TEST(conv2d, compute_image2d_3x3) {
                 const int ih = 3;
                 const int iw = 3;
                 const int oc = 2;
-                const bool bias_flag = true;
+                const bool bias_flag = false;
                 const std::string relu_flag = "relu";
 #endif
 
@@ -503,6 +503,7 @@ TEST(conv2d, compute_image2d_3x3) {
               param.x = &input;
               param.filter = &filter;
               param.output = &output;
+              param.groups = group;
               if (bias_flag) {
                 param.bias = &bias;
               }
@@ -580,11 +581,11 @@ TEST(conv2d, compute_image2d_3x3) {
               std::vector<float> bias_v(oc);
 
               SHADOW_LOG << "gen input and filter ...";
-              for (auto& i : input_v) {
-                i = gen(engine);
+              for (int i = 0; i < input_v.size(); ++i) {
+                input_v[i] = i;  // gen(engine);
               }
-              for (auto& f : filter_v) {
-                f = gen(engine);
+              for (int i = 0; i < filter_v.size(); ++i) {
+                filter_v[i] = 1;  // gen(engine);
               }
 
               SHADOW_LOG << "after gen input and filter ...";
@@ -598,6 +599,10 @@ TEST(conv2d, compute_image2d_3x3) {
                          << filter_dim.production();
               SHADOW_LOG << "out_dim.production(): " << out_dim.production();
               SHADOW_LOG << "bias_dim.production(): " << bias_dim.production();
+              SHADOW_LOG << "input_image_height:" << input_image_height
+                         << " input_image_width:" << input_image_width;
+              SHADOW_LOG << "filter_image_height:" << filter_image_height
+                         << " filter_image_width:" << filter_image_width;
               SHADOW_LOG << "4 * input_image_height *input_image_width: "
                          << 4 * input_image_height * input_image_width;
               SHADOW_LOG << "4 * filter_image_width * filter_image_height: "
