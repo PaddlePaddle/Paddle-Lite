@@ -43,8 +43,14 @@ void FetchCompute::PrepareForRun() {
 }
 
 void FetchCompute::Run() {
-  pe_.dispatch();
   auto& param = this->Param<param_t>();
+  auto fetch_list = param.fetch_list;
+  if (fetch_list->size() <= static_cast<size_t>(param.col)) {
+    fetch_list->resize(param.col + 1);
+  }
+  Tensor& out = param.fetch_list->at(param.col);
+  out.Resize(param.input->dims());
+  pe_.dispatch();
 
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::OutputParam& fetch_param = pe_.param();
@@ -67,10 +73,7 @@ REGISTER_LITE_KERNEL(fetch,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(fetch,
@@ -79,12 +82,6 @@ REGISTER_LITE_KERNEL(fetch,
                      kNHWC,
                      paddle::lite::kernels::fpga::FetchCompute,
                      host_host)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
