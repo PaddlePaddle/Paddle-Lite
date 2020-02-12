@@ -73,16 +73,15 @@ TEST(scale_image2d_fp32, compute) {
   LOG(INFO) << "prepare input";
   CLImageConverterDefault* default_converter = new CLImageConverterDefault();
   DDim image_shape = default_converter->InitImageDimInfoWith(in_dim);
-  LOG(INFO) << "image_shape = " << image_shape[0] << " "
-            << image_shape[1];
+  LOG(INFO) << "image_shape = " << image_shape[0] << " " << image_shape[1];
   std::vector<float> x_image_data(image_shape.production() * 4);  // 4 : RGBA
   default_converter->NCHWToImage(input_v.data(), x_image_data.data(), in_dim);
   auto* x_image = x.mutable_data<float, cl::Image2D>(
       image_shape[0], image_shape[1], x_image_data.data());
   LOG(INFO) << "x_image:" << x_image;
 
-  auto* out_image = out.mutable_data<float, cl::Image2D>(image_shape[0],
-                                                         image_shape[1]);
+  auto* out_image =
+      out.mutable_data<float, cl::Image2D>(image_shape[0], image_shape[1]);
   LOG(INFO) << "out_image:" << out_image;
   kernel->Launch();
 

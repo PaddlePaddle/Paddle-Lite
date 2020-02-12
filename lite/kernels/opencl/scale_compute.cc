@@ -27,8 +27,8 @@ namespace kernels {
 namespace opencl {
 
 class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
-                                             PRECISION(kFloat),
-                                             DATALAYOUT(kImageDefault)> {
+                                              PRECISION(kFloat),
+                                              DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ScaleParam;
 
@@ -54,7 +54,6 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto* out_img = param.output->mutable_data<float, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
     LOG(INFO) << "out_image" << out_img;
-
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
