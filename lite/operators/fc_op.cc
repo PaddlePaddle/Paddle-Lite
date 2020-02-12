@@ -49,23 +49,25 @@ bool FcOpLite::CheckShape() const {
 }
 
 bool FcOpLite::InferShape() const {
-  const auto input_dims = param_.input->dims();
-  const auto w_dims = param_.w->dims();
+  const auto& input_dims = param_.input->dims();
+  const auto& w_dims = param_.w->dims();
+  int in_num_col_dims = param_.in_num_col_dims;
+  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
 
   // Set output dims
-  std::vector<int64_t> output_dims(param_.in_num_col_dims + 1, 0);
-  for (int i = 0; i < param_.in_num_col_dims; ++i) {
+  std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
+  for (int i = 0; i < in_num_col_dims; ++i) {
     output_dims[i] = input_dims[i];
   }
-  output_dims.back() = w_dims[1];
-  param_.output->Resize(lite::DDim(output_dims));
+  output_dims[in_num_col_dims] = w_dims_1;
+  param_.output->Resize(output_dims);
 
   // share LoD
   param_.output->set_lod(param_.input->lod());
   return true;
 }
 
-bool FcOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto W = op_desc.Input("W").front();
   auto out = op_desc.Output("Out").front();

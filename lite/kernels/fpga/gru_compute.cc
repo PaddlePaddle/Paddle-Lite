@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <unistd.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -83,6 +84,7 @@ void GRUCompute::PrepareForRun() {
 void GRUCompute::Run() {
   auto& param = this->Param<param_t>();
   param.hidden->mutable_data<float>();
+
   // inputs
   auto input = param.input;
   auto h0 = param.h0;
@@ -130,6 +132,7 @@ void GRUCompute::Run() {
     // //3.
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
     gru_tensors.pre_output = ordered_h0.ZynqTensor();
+
   } else {
     gru_value.prev_out_value = nullptr;
     gru_tensors.pre_output = nullptr;
@@ -169,6 +172,7 @@ void GRUCompute::Run() {
 
     float* hidden_data =
         hidden_out.mutableData<float>(zynqmp::FP32, float_input_shape);
+
     gru_tensors.gate = &float_input;
     gru_tensors.output = &hidden_out;
 
@@ -187,11 +191,6 @@ void GRUCompute::Run() {
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
-
-  save_tensor(const_cast<Tensor*>(input), "_input.txt");
-  save_tensor(hidden, "_gru.txt");
-
-  exit(-1);
 }
 
 }  // namespace fpga
