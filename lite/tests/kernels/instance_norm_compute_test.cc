@@ -24,8 +24,8 @@ namespace lite {
 class InstanceNormComputeTest : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string input_ = "x";
-  std::string output_ = "y";
+  std::string x_ = "x";
+  std::string y_ = "y";
   std::string saved_mean_ = "saved_mean";
   std::string saved_variance_ = "saved_variance";
   std::string scale_ = "scale";
@@ -42,24 +42,24 @@ class InstanceNormComputeTest : public arena::TestCase {
       : TestCase(place, alias), dims_(dims), epsilon_(epsilon) {}
 
   void RunBaseline(Scope* scope) override {
-    auto x = scope->FindTensor(input_);
+    auto x = scope->FindTensor(x_);
     auto scale = scope->FindTensor(scale_);
     auto bias = scope->FindTensor(bias_);
-    auto out = scope->NewTensor(output_);
+    auto y = scope->NewTensor(y_);
     auto saved_mean = scope->NewTensor(saved_mean_);
     auto saved_variance = scope->NewTensor(saved_variance_);
-    CHECK(out);
+    CHECK(y);
     CHECK(saved_mean);
     CHECK(saved_variance);
     DDim saved_dim({dims_[0] * dims_[1]});
-    out->Resize(dims_);
+    y->Resize(dims_);
     saved_mean->Resize(saved_dim);
     saved_variance->Resize(saved_dim);
 
     auto x_data = x->data<float>();
     auto scale_data = scale->data<float>();
     auto bias_data = bias->data<float>();
-    auto out_data = out->mutable_data<float>();
+    auto y_data = y->mutable_data<float>();
     auto saved_mean_data = saved_mean->mutable_data<float>();
     auto saved_variance_data = saved_variance->mutable_data<float>();
 
@@ -89,46 +89,47 @@ class InstanceNormComputeTest : public arena::TestCase {
     // compute out
     for (int i = 0; i < n * c; ++i) {
       const float* x_ptr = x_data + i * spatial_size;
-      float* out_ptr = out_data + i * spatial_size;
+      float* y_ptr = y_data + i * spatial_size;
       float scale_val = scale_data[i % c];
       float bias_val = bias_data[i % c];
       for (int j = 0; j < spatial_size; ++j) {
-        out_ptr[j] = scale_val * (x_ptr[j] - saved_mean_data[i]) *
-                         saved_variance_data[i] +
-                     bias_val;
+        y_ptr[j] = scale_val * (x_ptr[j] - saved_mean_data[i]) *
+                       saved_variance_data[i] +
+                   bias_val;
       }
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("instance_norm");
-    op_desc->SetInput("X", {input_});
+    op_desc->SetInput("X", {x_});
     op_desc->SetInput("Bias", {bias_});
     op_desc->SetInput("Scale", {scale_});
-    op_desc->SetOutput("Y", {output_});
+    op_desc->SetOutput("Y", {y_});
     op_desc->SetOutput("SavedMean", {saved_mean_});
     op_desc->SetOutput("SavedVariance", {saved_variance_});
     op_desc->SetAttr("epsilon", epsilon_);
   }
 
   void PrepareData() override {
-    std::vector<float> din(dims_.production());
-    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    std::vector<float> x(dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
 
-    DDim scale_dim{{dims_[1]}};
-    std::vector<float> scale(scale_dim.production());
-    fill_data_rand(scale.data(), -1.f, 1.f, scale_dim.production());
+    DDim scale_bias_dims{{dims_[1]}};
+    std::vector<float> scale(scale_bias_dims.production());
+    fill_data_rand(scale.data(), -1.f, 1.f, scale_bias_dims.production());
+    std::vector<float> bias(scale_bias_dims.production());
+    fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_dims.production());
 
-    std::vector<float> bias(scale_dim.production());
-    fill_data_rand(bias.data(), -1.f, 1.f, scale_dim.production());
-
-    SetCommonTensor(input_, dims_, din.data());
-    SetCommonTensor(scale_, scale_dim, scale.data());
-    SetCommonTensor(bias_, scale_dim, bias.data());
+    SetCommonTensor(x_, dims_, x.data());
+    SetCommonTensor(scale_, scale_bias_dims, scale.data(), {}, true);
+    SetCommonTensor(bias_, scale_bias_dims, bias.data(), {}, true);
   }
 };
 
-void test_instance_norm(Place place) {
+void TestInstanceNorm(Place place,
+                      float abs_error = 6e-5,
+                      std::vector<std::string> ignored_outs = {}) {
   for (auto& n : {1, 3, 16}) {
     for (auto& c : {1, 4, 16}) {
       for (auto& h : {1, 16, 33, 56}) {
@@ -138,11 +139,13 @@ void test_instance_norm(Place place) {
           std::unique_ptr<arena::TestCase> tester(
               new InstanceNormComputeTest(place, "def", dim_in, epsilon));
 #ifdef LITE_WITH_ARM
-          auto& ctx = tester->context()->As<ARMContext>();
-          ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
+          if (place == TARGET(kARM)) {
+            auto& ctx = tester->context()->As<ARMContext>();
+            ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
+          }
 #endif
-          arena::Arena arena(std::move(tester), place, 6e-5);
-          if (!arena.TestPrecision()) {
+          arena::Arena arena(std::move(tester), place, abs_error);
+          if (!arena.TestPrecision(ignored_outs)) {
             LOG(ERROR) << "run n: " << n << ", c: " << c << ", h: " << h
                        << ", w: " << w;
             return;
@@ -154,10 +157,19 @@ void test_instance_norm(Place place) {
 }
 
 TEST(InstanceNorm, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_instance_norm(place);
+  Place place;
+  float abs_error = 6e-5;
+  std::vector<std::string> ignored_outs = {};
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+  ignored_outs = {"saved_mean", "saved_variance"};
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
+  TestInstanceNorm(place, abs_error, ignored_outs);
 }
 
 }  // namespace lite

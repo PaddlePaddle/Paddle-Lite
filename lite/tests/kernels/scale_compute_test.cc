@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -23,31 +24,33 @@ namespace lite {
 class ScaleComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string input_ = "x";
-  std::string output_ = "out";
+  std::string x_ = "x";
+  std::string out_ = "out";
+  DDim x_dims_{{100, 20}};
   float scale_ = 0.;
   float bias_ = 0.;
-  DDim dims_{{100, 20}};
   bool bias_after_scale_;
 
  public:
   ScaleComputeTester(const Place& place,
                      const std::string& alias,
+                     const DDim& x_dims,
                      float scale,
                      float bias,
                      bool bias_after_scale)
       : TestCase(place, alias),
+        x_dims_(x_dims),
         scale_(scale),
         bias_(bias),
         bias_after_scale_(bias_after_scale) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
+    auto* out = scope->NewTensor(out_);
     CHECK(out);
-    out->Resize(dims_);
+    out->Resize(x_dims_);
     auto* out_data = out->mutable_data<float>();
 
-    auto* x = scope->FindTensor(input_);
+    auto* x = scope->FindTensor(x_);
     const auto* x_data = x->data<float>();
 
     float bias = bias_;
@@ -56,61 +59,71 @@ class ScaleComputeTester : public arena::TestCase {
       bias *= scale_;
     }
 
-    for (int i = 0; i < dims_.production(); i++) {
+    for (int i = 0; i < x_dims_.production(); i++) {
       out_data[i] = x_data[i] * scale_ + bias;
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("scale");
-    op_desc->SetInput("X", {input_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("scale", scale_);
     op_desc->SetAttr("bias", bias_);
     op_desc->SetAttr("bias_after_scale", bias_after_scale_);
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(input_, dims_, data.data());
+    std::vector<float> x(x_dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, x_dims_.production());
+    SetCommonTensor(x_, x_dims_, x.data());
   }
 };
 
 TEST(Scale, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 4e-3;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+  abs_error = 3e-4;  // Some operations use fp16 in XPU
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
 
-  for (float scale : {0.123, 2., -1.2}) {
-    for (float bias : {1., 0., -1.2331}) {
-      for (bool bias_before : {true, false}) {
-        std::unique_ptr<arena::TestCase> tester(
-            new ScaleComputeTester(place, "def", scale, bias, bias_before));
-        arena::Arena arena(std::move(tester), place, 2e-5);
-        arena.TestPrecision();
+  for (auto x_dims :
+       std::vector<std::vector<int64_t>>{{5, 2, 3, 4}, {8, 3, 5}, {12, 3}}) {
+    for (float scale : {0.123, 2., -1.2}) {
+      for (float bias : {1., 0., -1.2331}) {
+        for (bool bias_after_scale : {true, false}) {
+          std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(
+              place, "def", DDim(x_dims), scale, bias, bias_after_scale));
+          arena::Arena arena(std::move(tester), place, abs_error);
+          arena.TestPrecision();
+        }
       }
     }
   }
 }
 
 TEST(Scale, performance) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
 
-  std::unique_ptr<arena::TestCase> tester(
-      new ScaleComputeTester(place, "def", 1.2, 1.1, true));
+  std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(
+      place, "def", DDim(std::vector<int64_t>{5, 2, 3, 4}), 1.2, 1.1, true));
 
   // To modify the arm context, one can retrive the context as follows.
   // #ifdef LITE_WITH_ARM

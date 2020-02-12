@@ -89,7 +89,7 @@ else()
 endif()
 
 find_library(XPU_SDK_LLVM_FILE NAMES LLVM-8
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib/gcc482)
+  PATHS ${XPU_SDK_ROOT}/XTDK/shlib)
 
 if(NOT XPU_SDK_LLVM_FILE)
   message(FATAL_ERROR "Can not find LLVM Library in ${XPU_SDK_ROOT}")
@@ -99,7 +99,7 @@ else()
   set_property(TARGET xpu_sdk_llvm PROPERTY IMPORTED_LOCATION ${XPU_SDK_LLVM_FILE})
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1 -D_GLIBCXX_USE_CXX11_ABI=0")
 
 set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_xpu_jitc xpu_sdk_llvm CACHE INTERNAL "xpu runtime libs")
 set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_xpu_jitc xpu_sdk_llvm CACHE INTERNAL "xpu builder libs")

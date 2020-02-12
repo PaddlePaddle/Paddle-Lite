@@ -15,6 +15,7 @@
 #pragma once
 
 #include <xtcl/xtcl.h>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <utility>
@@ -30,7 +31,18 @@ class Device {
     static Device x;
     return x;
   }
-  Device() {}
+  Device() {
+    char* name = std::getenv("XPU_DEVICE_NAME");
+    if (name) {
+      name_ = std::string(name);
+    }
+    // XPU_DEVICE_TARGET for XPU model building, which supports 'llvm' and 'xpu
+    // -libs=xdnn'
+    char* target = std::getenv("XPU_DEVICE_TARGET");
+    if (target) {
+      target_ = std::string(target);
+    }
+  }
 
   // Build the XPU graph to the XPU runtime, return the XPU runtime which can be
   // used to run inference.
@@ -39,10 +51,12 @@ class Device {
       xtcl::network::xTensorCompiler::ParamNDArrayMap* params,
       std::vector<xtcl::xExpr*>* outputs);
 
+  const std::string name() const { return name_; }
+  const std::string target() const { return target_; }
+
  private:
-  // Keep reserved fields
-  int device_id_{0};
-  std::string device_name_{"llvm"};
+  std::string name_{""};
+  std::string target_{""};
 };
 
 }  // namespace xpu

@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int ArgmaxConverter(void* ctx, OpLite* op) {
+int ArgmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,15 +30,35 @@ int ArgmaxConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   int axis = op_info->GetAttr<int64_t>("axis");
 
-  auto argmax_node = graph->AddNode<ge::op::ArgMax>(out_var_name);
-  argmax_node->set_input_x1(*graph->GetNode(x_var_name));
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  auto x2 = graph->AddNode(out_var_name + "/axis", axis);
-  argmax_node->set_input_x2(*x2);
+  // Axis node
+  auto axis_node = graph->Add(out_name + "/axis", axis);
+
+  // Argmax node
+  auto argmax_node = graph->Add<ge::op::ArgMax>(out_name);
+  auto argmax_op = argmax_node->data<ge::op::ArgMax>();
+  argmax_op->set_input_x1(*x_node->data());
+  argmax_op->set_input_x2(*axis_node->data());
   return SUCCESS;
 }
 
@@ -47,6 +67,6 @@ int ArgmaxConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         arg_max,
+REGISTER_SUBGRAPH_BRIDGE(arg_max,
+                         kNPU,
                          paddle::lite::subgraph::npu::ArgmaxConverter);

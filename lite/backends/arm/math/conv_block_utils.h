@@ -614,16 +614,16 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "fmin   v3.4s, v3.4s, %[six].4s  \n" /* relu6 */
 
 #define NCHWC1_TRANS_FP32_LEAKY_RELU                   \
-  "cmhs v4.4s, v0.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "cmhs v5.4s, v1.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "cmhs v6.4s, v2.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "cmhs v7.4s, v3.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "fmul v8.4s, v0.4s, %[scale].4s \n"  /* mul */       \
-  "fmul v9.4s, v1.4s, %[scale].4s \n"  /* mul */       \
+  "fcmge v4.4s, v0.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v5.4s, v1.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v6.4s, v2.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v7.4s, v3.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fmul v8.4s, v0.4s, %[scale].4s  \n" /* mul */       \
+  "fmul v9.4s, v1.4s, %[scale].4s  \n" /* mul */       \
   "fmul v10.4s, v2.4s, %[scale].4s \n" /* mul */       \
   "fmul v11.4s, v3.4s, %[scale].4s \n" /* mul */       \
-  "bif  v0.16b, v8.16b, v4.16b \n"     /* choose*/     \
-  "bif  v1.16b, v9.16b, v5.16b \n"     /* choose*/     \
+  "bif  v0.16b, v8.16b, v4.16b  \n"    /* choose*/     \
+  "bif  v1.16b, v9.16b, v5.16b  \n"    /* choose*/     \
   "bif  v2.16b, v10.16b, v6.16b \n"    /* choose*/     \
   "bif  v3.16b, v11.16b, v7.16b \n"    /* choose*/
 
@@ -674,15 +674,15 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "vbif q3, q12, q8 @ choose \n"
 
 #define NCHWC1_TRANS_FP32_STORE                                 \
-  "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result    \n" \
-  "vst1.32  {d2-d3}, [%[doutc0r0]]!       @ store result,  \n"  \
+  "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result  \n"   \
+  "vst1.32  {d2-d3}, [%[doutc0r0]]!       @ store result, \n"   \
   "subs   %[cnt], %[cnt], #1              @ loop count - 1\n"   \
                                                                 \
-  "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data \n"       \
-  "vst1.32  {d4-d5}, [%[doutc0r0]]!       @ store result    \n" \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data      \n"  \
+  "vst1.32  {d4-d5}, [%[doutc0r0]]!       @ store result   \n"  \
   "vst1.32  {d6-d7}, [%[doutc0r0]]!       @ store result,  \n"  \
                                                                 \
-  "vld1.32 {d4-d7}, [%[ptr_din]]!         @ load data \n"       \
+  "vld1.32 {d4-d7}, [%[ptr_din]]!         @ load data     \n"   \
                                                                 \
   "bne    1b                              @ jump to main loop\n"
 #endif
@@ -934,12 +934,12 @@ inline bool write_to_output_c1_fp32(const float* din,
   "fmin   v2.4s, v2.4s, %[six].4s  \n" /* relu6 */ \
   "fmin   v3.4s, v3.4s, %[six].4s  \n" /* relu6 */
 
-#define NCHWC2_TRANS_FP32_LEAKY_RELU                  \
-  "cmhs v6.4s, v2.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "cmhs v7.4s, v3.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "fmul v4.4s, v2.4s, %[scale].4s \n" /* mul */       \
-  "fmul v5.4s, v3.4s, %[scale].4s \n" /* mul */       \
-  "bif  v2.16b, v4.16b, v6.16b \n"    /* choose*/     \
+#define NCHWC2_TRANS_FP32_LEAKY_RELU                   \
+  "fcmge v6.4s, v2.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v7.4s, v3.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fmul v4.4s, v2.4s, %[scale].4s \n" /* mul */        \
+  "fmul v5.4s, v3.4s, %[scale].4s \n" /* mul */        \
+  "bif  v2.16b, v4.16b, v6.16b \n"    /* choose*/      \
   "bif  v3.16b, v5.16b, v7.16b \n"    /* choose*/
 
 #define NCHWC2_TRANS_FP32_STORE                          \
@@ -1275,19 +1275,19 @@ inline bool write_to_output_c2_fp32(const float* din,
   "fmin   v18.4s, v18.4s, %[six].4s  \n" /* relu6 */ \
   "fmin   v19.4s, v19.4s, %[six].4s  \n" /* relu6 */
 
-#define NCHWC4_TRANS_FP32_LEAKY_RELU                   \
-  "cmhs v8.4s, v16.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "cmhs v9.4s, v17.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "cmhs v10.4s, v18.4s, v20.4s \n"     /* vcgeq_u32 */ \
-  "cmhs v11.4s, v19.4s, v20.4s \n"     /* vcgeq_u32 */ \
-  "fmul v4.4s, v16.4s, %[scale].4s \n" /* mul */       \
-  "fmul v5.4s, v17.4s, %[scale].4s \n" /* mul */       \
-  "fmul v6.4s, v18.4s, %[scale].4s \n" /* mul */       \
-  "fmul v7.4s, v19.4s, %[scale].4s \n" /* mul */       \
-  "bif  v16.16b, v4.16b, v8.16b \n"    /* choose*/     \
-  "bif  v17.16b, v5.16b, v9.16b \n"    /* choose*/     \
-  "bif  v18.16b, v6.16b, v10.16b \n"   /* choose*/     \
-  "bif  v19.16b, v7.16b, v11.16b \n"   /* choose*/
+#define NCHWC4_TRANS_FP32_LEAKY_RELU                    \
+  "fcmge v8.4s, v16.4s, v20.4s  \n"     /* vcgeq_f32 */ \
+  "fcmge v9.4s, v17.4s, v20.4s  \n"     /* vcgeq_f32 */ \
+  "fcmge v10.4s, v18.4s, v20.4s \n"     /* vcgeq_f32 */ \
+  "fcmge v11.4s, v19.4s, v20.4s \n"     /* vcgeq_f32 */ \
+  "fmul v4.4s, v16.4s, %[scale].4s \n"  /* mul */       \
+  "fmul v5.4s, v17.4s, %[scale].4s \n"  /* mul */       \
+  "fmul v6.4s, v18.4s, %[scale].4s \n"  /* mul */       \
+  "fmul v7.4s, v19.4s, %[scale].4s \n"  /* mul */       \
+  "bif  v16.16b, v4.16b, v8.16b  \n"    /* choose*/     \
+  "bif  v17.16b, v5.16b, v9.16b  \n"    /* choose*/     \
+  "bif  v18.16b, v6.16b, v10.16b \n"    /* choose*/     \
+  "bif  v19.16b, v7.16b, v11.16b \n"    /* choose*/
 
 #define NCHWC4_TRANS_FP32_STORE                          \
   "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/    \
@@ -1754,15 +1754,15 @@ inline bool write_to_output_c4_fp32(const float* din,
   "fmin   v13.4s, v13.4s, %[six].4s  \n" /*relu6*/
 
 #define NCHWC8_TRANS_FP32_LEAKY_RELU                \
-  "cmhs v10.4s, v16.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v11.4s, v17.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v14.4s, v18.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v15.4s, v19.4s, v20.4s \n" /* vcgeq_u32 */  \
+  "fcmge v10.4s, v16.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v11.4s, v17.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v14.4s, v18.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v15.4s, v19.4s, v20.4s \n" /* vcgeq_u32 */ \
                                                     \
-  "cmhs v21.4s, v8.4s, v20.4s \n"  /* vcgeq_u32 */  \
-  "cmhs v22.4s, v9.4s, v20.4s \n"  /* vcgeq_u32 */  \
-  "cmhs v23.4s, v12.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v24.4s, v13.4s, v20.4s \n" /* vcgeq_u32 */  \
+  "fcmge v21.4s, v8.4s, v20.4s \n"  /* vcgeq_u32 */ \
+  "fcmge v22.4s, v9.4s, v20.4s \n"  /* vcgeq_u32 */ \
+  "fcmge v23.4s, v12.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v24.4s, v13.4s, v20.4s \n" /* vcgeq_u32 */ \
                                                     \
   "fmul v25.4s, v16.4s, %[scale].4s \n" /* mul */   \
   "fmul v26.4s, v17.4s, %[scale].4s \n" /* mul */   \
@@ -1839,7 +1839,7 @@ inline bool write_to_output_c4_fp32(const float* din,
   "vmin.f32  q7, q7, %q[six]                 @ relu6\n"
 
 #define NCHWC8_TRANS_FP32_LEAKY_RELU           \
-  "vcge.f32   q9, q0, q15        @ q0 > 0 \n"  \
+  "vcge.f32   q9, q0,  q15        @ q0 > 0 \n" \
   "vcge.f32   q10, q1, q15        @ q0 > 0 \n" \
   "vcge.f32   q11, q2, q15        @ q0 > 0 \n" \
   "vcge.f32   q12, q3, q15        @ q0 > 0 \n" \
@@ -2168,19 +2168,19 @@ inline void act_switch_c8_fp32(const float* din_ptr,
   "fmin v1.4s, v1.4s, %[vsix].4s   \n" /* vmaxq_f32() */ \
   "fmin v2.4s, v2.4s, %[vsix].4s   \n" /* vmaxq_f32() */ \
   "fmin v3.4s, v3.4s, %[vsix].4s   \n" /* vmaxq_f32() */
-#define DO_LEAKY_RELU                                     \
-  "cmhs v4.4s, v0.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v5.4s, v0.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v6.4s, v1.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v7.4s, v1.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v8.4s, v2.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v9.4s, v2.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v10.4s, v3.4s,  %[vzero].4s  \n"  /* vcgeq_u32 */ \
-  "fmul v11.4s, v3.4s, %[vscale].4s \n"   /* vmulq_f32 */ \
-  "bif v0.16b, v5.16b, v4.16b       \n"   /* choose*/     \
-  "bif v1.16b, v7.16b, v6.16b       \n"   /* choose*/     \
-  "bif v2.16b, v9.16b, v8.16b       \n"   /* choose*/     \
-  "bif v3.16b, v11.16b, v10.16b       \n" /* choose*/
+#define DO_LEAKY_RELU                                    \
+  "fcmge v4.4s, v0.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v5.4s, v0.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v6.4s, v1.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v7.4s, v1.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v8.4s, v2.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v9.4s, v2.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v10.4s, v3.4s,  %[vzero].4s \n" /* vcgeq_f32 */ \
+  "fmul v11.4s, v3.4s, %[vscale].4s  \n" /* vmulq_f32 */ \
+  "bif v0.16b, v5.16b, v4.16b        \n" /* choose*/     \
+  "bif v1.16b, v7.16b, v6.16b        \n" /* choose*/     \
+  "bif v2.16b, v9.16b, v8.16b        \n" /* choose*/     \
+  "bif v3.16b, v11.16b, v10.16b      \n" /* choose*/
 #define DO_STORE                                         \
   "subs %w[cnt], %w[cnt], #1                    \n"      \
   "st1 {v0.4s}, [%[dout_ptr]], #16 \n" /* vst1q_f32() */ \
@@ -2217,7 +2217,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
   "vbif q3, q8, q7               @ choose \n"    \
   "vbif q4, q10, q9              @ choose \n"    \
   "vbif q5, q12, q11             @ choose \n"    \
-  "vbif q6, q13, q13             @ choose \n"
+  "vbif q6, q14, q13             @ choose \n"
 #define DO_STORE                                            \
   "subs %[cnt], #1                                \n"       \
   "vst1.32 {d6-d7}, [%[dout_ptr]]!       @ vst1q_f32()  \n" \
@@ -2237,7 +2237,7 @@ inline void act_switch_process(float* src,
   int cnt = size >> 4;
   int remain = size % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-  if (act_param != nullptr && act_param->has_active) {
+  if (act_param != nullptr) {
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     if (cnt > 0) {
@@ -2327,6 +2327,7 @@ inline void act_switch_process(float* src,
           src++;
           dst++;
         }
+        break;
       case lite_api::ActivationType::kRelu6:
         for (int i = 0; i < remain; i++) {
           float tmp = *src >= 0.f ? *src : 0.f;
@@ -2336,6 +2337,7 @@ inline void act_switch_process(float* src,
           src++;
           dst++;
         }
+        break;
       case lite_api::ActivationType::kLeakyRelu:
         for (int i = 0; i < remain; i++) {
           if (*src >= 0.f) {

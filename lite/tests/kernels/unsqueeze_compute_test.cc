@@ -107,6 +107,7 @@ class UnsqueezeComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
+    SetPrecisionType(out_, PRECISION(kFloat));
     std::vector<float> in_data(dims_.production());
     for (int i = 0; i < dims_.production(); ++i) {
       in_data[i] = i;
@@ -213,6 +214,7 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
+    SetPrecisionType(out_, PRECISION(kFloat));
     std::vector<float> in_data(dims_.production());
     for (int i = 0; i < dims_.production(); ++i) {
       in_data[i] = i;
@@ -221,67 +223,73 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
   }
 };
 
-void test_unsqueeze(Place place) {
+void test_unsqueeze(Place place, float abs_error = 2e-5) {
   for (std::vector<int> axes : {std::vector<int>({1}),
                                 std::vector<int>({0, 2}),
                                 std::vector<int>({0, -2})}) {
-    for (int N : {1}) {
-      for (int C : {3}) {
-        for (int H : {1}) {
-          for (int W : {5}) {
-            for (int input_axes_flag : {1, 2, 3}) {
-              LOG(INFO) << N << " " << C << " " << H << " " << W << " "
-                        << input_axes_flag;
-              std::unique_ptr<arena::TestCase> tester(
-                  new UnsqueezeComputeTester(
-                      place, "def", axes, DDim({N, C, H, W}), input_axes_flag));
-              arena::Arena arena(std::move(tester), place, 2e-5);
-              arena.TestPrecision();
-            }
-          }
-        }
+    for (auto dims : std::vector<std::vector<int64_t>>{{3}, {3, 5}, {3, 5, 7}})
+      for (int input_axes_flag : {1, 2, 3}) {
+#ifdef LITE_WITH_NPU
+        if (input_axes_flag != 1) continue;
+        if (dims.size() + axes.size() > 4) continue;
+#endif
+        std::unique_ptr<arena::TestCase> tester(new UnsqueezeComputeTester(
+            place, "def", axes, DDim(dims), input_axes_flag));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
       }
-    }
   }
 }
 
-void test_unsqueeze2(Place place) {
+void test_unsqueeze2(Place place,
+                     float abs_error = 2e-5,
+                     std::vector<std::string> ignored_outs = {}) {
   for (std::vector<int> axes : {std::vector<int>({0}),
                                 std::vector<int>({0, 2}),
                                 std::vector<int>({0, -2})}) {
-    for (int N : {1}) {
-      for (int C : {3}) {
-        for (int H : {1}) {
-          for (int W : {5}) {
-            std::unique_ptr<arena::TestCase> tester(new Unsqueeze2ComputeTester(
-                place, "def", axes, DDim({N, C, H, W})));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
-          }
-        }
-      }
+    for (auto dims :
+         std::vector<std::vector<int64_t>>{{3}, {3, 5}, {3, 5, 7}}) {
+#ifdef LITE_WITH_NPU
+      if (dims.size() + axes.size() > 4) continue;
+#endif
+      std::unique_ptr<arena::TestCase> tester(
+          new Unsqueeze2ComputeTester(place, "def", axes, DDim(dims)));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision(ignored_outs);
     }
   }
 }
 
 TEST(squeeze, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#ifdef LITE_WITH_NPU
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_unsqueeze(place);
-#endif
+
+  test_unsqueeze(place, abs_error);
 }
 
 TEST(squeeze2, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::string> ignored_outs = {};
+#ifdef LITE_WITH_NPU
+  place = TARGET(kNPU);
+  abs_error = 1e-2;                  // Using fp16 in NPU
+  ignored_outs.push_back("XShape");  // not supported out in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_unsqueeze2(place);
-#endif
+
+  test_unsqueeze2(place, abs_error, ignored_outs);
 }
 
 }  // namespace lite

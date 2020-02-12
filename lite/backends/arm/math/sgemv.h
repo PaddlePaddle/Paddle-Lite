@@ -17,23 +17,26 @@
 #include <cmath>
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-// TODO(xxx): fixme now only support transA = false
-bool sgemv(const float* A,
-           const float* x,
-           float* y,
+bool sgemv(const float *A,
+           const float *x,
+           float *y,
            bool transA,
            int M,
            int N,
            bool is_bias,
-           const float* bias,
-           bool is_relu,
-           const ARMContext* ctx);
+           const float *bias,
+           bool flag_act,
+           lite_api::ActivationType act,
+           const ARMContext *ctx,
+           float six = 6.f,
+           float alpha = 1.f);
 
 }  // namespace math
 }  // namespace arm

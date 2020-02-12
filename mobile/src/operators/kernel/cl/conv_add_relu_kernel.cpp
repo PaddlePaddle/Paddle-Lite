@@ -72,6 +72,14 @@ bool ConvAddReluKernel<GPU_CL, float>::Init(
                                  build_options);
     }
 
+  } else if (param->Filter()->dims()[1] == 1 &&
+             param->Input()->dims()[1] == param->Output()->dims()[1] &&
+             param->Filter()->dims()[2] != 3) {
+    param->Filter()->InitDWImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+    DLOG << "init depwise conv basic";
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT;
+    this->cl_helper_.AddKernel("depth_conv", conv_kernel_file, build_options);
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     //    if (param->Strides()[0] == param->Strides()[1] &&
@@ -130,6 +138,7 @@ void ConvAddReluKernel<GPU_CL, float>::Compute(
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW5x5_FLOAT:
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW7x7_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param, true, param.Bias());
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:

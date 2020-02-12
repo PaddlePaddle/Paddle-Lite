@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int UnsqueezeConverter(void* ctx, OpLite* op) {
+int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,15 +30,32 @@ int UnsqueezeConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " << op_type << "... ";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-  auto out_shape = scope->FindTensor(out_var_name)->dims().Vectorize();
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto out_shape = scope->FindTensor(out_name)->dims().Vectorize();
   CHECK(op_info->HasAttr("axes"))
       << "[NPU] unsqueeze not support axes from tensor now";
 
-  auto unsqueeze_node = graph->AddNode<ge::op::Reshape>(out_var_name);
-  unsqueeze_node->set_input_tensor(*graph->GetNode(x_var_name));
-  unsqueeze_node->set_attr_shape(
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Unsqueeze node
+  auto unsqueeze_node = graph->Add<ge::op::Reshape>(out_name);
+  auto unsqueeze_op = unsqueeze_node->data<ge::op::Reshape>();
+  unsqueeze_op->set_input_tensor(*x_node->data());
+  unsqueeze_op->set_attr_shape(
       ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
@@ -48,9 +65,9 @@ int UnsqueezeConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         unsqueeze,
+REGISTER_SUBGRAPH_BRIDGE(unsqueeze,
+                         kNPU,
                          paddle::lite::subgraph::npu::UnsqueezeConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         unsqueeze2,
+REGISTER_SUBGRAPH_BRIDGE(unsqueeze2,
+                         kNPU,
                          paddle::lite::subgraph::npu::UnsqueezeConverter);

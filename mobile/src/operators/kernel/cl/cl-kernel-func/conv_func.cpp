@@ -241,7 +241,9 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
   cl_int status;
   int index = 0;
 
-  if (param.Filter()->dims()[2] == 1 && param.Filter()->dims()[3] == 1) {
+  const int filter_height = param.Filter()->dims()[2];
+  const int filter_width = param.Filter()->dims()[3];
+  if (filter_height == 1 && filter_width == 1) {
     status = clSetKernelArg(kernel, index++, sizeof(int), &c_block);
     CL_CHECK_ERRORS(status);
 
@@ -404,7 +406,7 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
     status = clSetKernelArg(kernel, index++, sizeof(int), &output_height);
     CL_CHECK_ERRORS(status);
 
-    if (param.Filter()->dims()[2] == 3 && param.Filter()->dims()[3] == 3) {
+    if (filter_height == 3 && filter_width == 3) {
       // normal conv
       if (param.Filter()->dims()[0] == param.Output()->dims()[1] &&
           param.Filter()->dims()[1] == param.Input()->dims()[1]) {
@@ -423,6 +425,17 @@ void ConvAddBnRelu(framework::CLHelper *cl_helper,
         CL_CHECK_ERRORS(status);
         int group = input_channel / filter_channel;
         status = clSetKernelArg(kernel, index++, sizeof(int), &group);
+        CL_CHECK_ERRORS(status);
+      }
+    } else if (filter_height != 3 && filter_width != 3) {
+      // not 3x3
+      if (param.Filter()->dims()[1] == 1 &&
+          param.Input()->dims()[1] == param.Output()->dims()[1]) {
+        // deepwise basic use in not 3x3
+        status = clSetKernelArg(kernel, index++, sizeof(int), &filter_width);
+        CL_CHECK_ERRORS(status);
+
+        status = clSetKernelArg(kernel, index++, sizeof(int), &filter_height);
         CL_CHECK_ERRORS(status);
       }
     }

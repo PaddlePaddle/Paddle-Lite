@@ -21,26 +21,42 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int TransposeConverter(void* ctx, OpLite* op) {
+int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto scope = op->scope();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // Create node and set params from op
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
-  CHECK(graph->HasNode(x_var_name));
-  graph->AddNode(
-      out_var_name,
-      graph->builder_.CreateTranspose(
-          *graph->GetNode(x_var_name),
-          Cvt2ArrayInt(std::vector<int64_t>(axis.begin(), axis.end()))));
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Transpose node
+  graph->Add(out_name,
+             graph->builder_.CreateTranspose(
+                 *x_node->data(),
+                 CvtShape<xtcl::Integer>(
+                     std::vector<int64_t>(axis.begin(), axis.end()))));
 
   return SUCCESS;
 }
@@ -50,9 +66,9 @@ int TransposeConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         transpose,
+REGISTER_SUBGRAPH_BRIDGE(transpose,
+                         kXPU,
                          paddle::lite::subgraph::xpu::TransposeConverter);
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         transpose2,
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kXPU,
                          paddle::lite::subgraph::xpu::TransposeConverter);

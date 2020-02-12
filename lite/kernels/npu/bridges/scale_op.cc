@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int ScaleConverter(void* ctx, OpLite* op) {
+int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -31,12 +31,21 @@ int ScaleConverter(void* ctx, OpLite* op) {
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   // Get input, output and op attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = x->dims().Vectorize();
-  CHECK_GE(x_dims.size(), 2);
-  auto out_var_name = op_info->Output("Out").front();
-  std::vector<int64_t> scale_bias_shape = {x_dims[1]};
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
+  CHECK_GE(x_rank, 2);
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  // HiAI only support [n, c, 1, 1] for the shape of scale and bias
+  std::vector<int64_t> scale_bias_shape = {
+      1, x_rank < 3 ? 1 : x_dims[x_rank - 3], 1, 1};
   float scale = op_info->GetAttr<float>("scale");
   float bias = op_info->GetAttr<float>("bias");
   bool bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
@@ -44,23 +53,30 @@ int ScaleConverter(void* ctx, OpLite* op) {
     bias *= scale;
   }
 
-  // Create scale node and set input node from inputs_map
-  auto scale_node = graph->AddNode<ge::op::Scale>(out_var_name);
-  scale_node->set_input_x(*graph->GetNode(x_var_name));
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
+  }
+
+  // Scale node
+  auto scale_node = graph->Add<ge::op::Scale>(out_name);
+  auto scale_op = scale_node->data<ge::op::Scale>();
+  scale_op->set_input_x(*x_node->data());
+  scale_op->set_attr_axis(1);
 
   // Add filter node(fill with scale)
-  auto filter_const_node =
-      graph->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
-  scale_node->set_input_filter(*filter_const_node);
+  auto filter_node = graph->Add(out_name + "/filter", scale, scale_bias_shape);
+  scale_op->set_input_filter(*filter_node->data());
 
   // Add bias node(fill with bias)
   if (fabs(bias) > 1e-6f) {
-    auto bias_const_node =
-        graph->AddNode(out_var_name + "/bias", bias, scale_bias_shape);
-    scale_node->set_input_bias(*bias_const_node);
-    scale_node->set_attr_has_bias_value(true);
+    auto bias_node = graph->Add(out_name + "/bias", bias, scale_bias_shape);
+    scale_op->set_input_bias(*bias_node->data());
+    scale_op->set_attr_has_bias_value(true);
   }
-  scale_node->set_attr_axis(1);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -69,6 +85,6 @@ int ScaleConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         scale,
+REGISTER_SUBGRAPH_BRIDGE(scale,
+                         kNPU,
                          paddle::lite::subgraph::npu::ScaleConverter);

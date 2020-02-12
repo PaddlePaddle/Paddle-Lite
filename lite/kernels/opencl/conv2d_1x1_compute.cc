@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -45,8 +46,14 @@ class Conv2d1x1Image2DCompute : public KernelLite<TARGET(kOpenCL),
       build_options_ += is_element_wise_bias ? " -DBIASE_ELE" : " -DBIASE_CH";
     }
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/conv2d_1x1_kernel.cl", build_options_);
+    if (param.x->dims()[1] % 4 == 0) {
+      context.cl_context()->AddKernel(kernel_func_name_simple_,
+                                      "image/conv2d_1x1_kernel.cl",
+                                      build_options_);
+    } else {
+      context.cl_context()->AddKernel(
+          kernel_func_name_, "image/conv2d_1x1_kernel.cl", build_options_);
+    }
   }
 
   void Run() override {
@@ -135,7 +142,11 @@ class Conv2d1x1Image2DCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    if (input_dims[1] % 4 == 0) {
+      kernel_key << kernel_func_name_simple_ << build_options_;
+    } else {
+      kernel_key << kernel_func_name_ << build_options_;
+    }
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     int maped_w = maptofactor(w, 4);
 
@@ -215,6 +226,7 @@ class Conv2d1x1Image2DCompute : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"conv2d_1x1"};
+  std::string kernel_func_name_simple_{"conv2d_1x1_simple"};
   std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };

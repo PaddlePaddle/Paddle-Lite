@@ -22,9 +22,11 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 using paddle::lite::profile::Timer;
 
 DEFINE_int32(power_mode,
@@ -136,6 +138,12 @@ bool test_sgemm(bool tra,
                has_relu);
   }
   Timer t0;
+  ActivationParam act_param;
+  if (has_relu) {
+    act_param.has_active = true;
+    act_param.active_type =
+        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
+  }
 #ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m * n * k;
@@ -163,7 +171,7 @@ bool test_sgemm(bool tra,
                                            ldc,
                                            dbias,
                                            has_bias,
-                                           has_relu,
+                                           act_param,
                                            &ctx);
   }
 
@@ -184,7 +192,7 @@ bool test_sgemm(bool tra,
                                            ldc,
                                            dbias,
                                            has_bias,
-                                           has_relu,
+                                           act_param,
                                            &ctx);
     t0.Stop();
   }

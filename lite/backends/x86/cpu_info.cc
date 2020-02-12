@@ -32,26 +32,37 @@
 #include <gflags/gflags.h>
 #include <algorithm>
 
-DEFINE_double(fraction_of_cpu_memory_to_use,
-              1,
-              "Default use 100% of CPU memory for PaddlePaddle,"
-              "reserve the rest for page tables, etc");
-DEFINE_uint64(initial_cpu_memory_in_mb,
-              500ul,
-              "Initial CPU memory for PaddlePaddle, in MD unit.");
+#include "lite/utils/env.h"
 
-DEFINE_double(
-    fraction_of_cuda_pinned_memory_to_use,
-    0.5,
-    "Default use 50% of CPU memory as the pinned_memory for PaddlePaddle,"
-    "reserve the rest for page tables, etc");
+// DEFINE_double(fraction_of_cpu_memory_to_use,
+//               1,
+//               "Default use 100% of CPU memory for PaddlePaddle,"
+//               "reserve the rest for page tables, etc");
+double fraction_of_cpu_memory_to_use =
+    paddle::lite::GetDoubleFromEnv("fraction_of_cpu_memory_to_use", 1);
+
+// DEFINE_uint64(initial_cpu_memory_in_mb,
+//               500ul,
+//               "Initial CPU memory for PaddlePaddle, in MD unit.");
+uint64_t initial_cpu_memory_in_mb =
+    paddle::lite::GetUInt64FromEnv("initial_cpu_memory_in_mb", 500ul);
+
+// DEFINE_double(
+//     fraction_of_cuda_pinned_memory_to_use,
+//     0.5,
+//     "Default use 50% of CPU memory as the pinned_memory for PaddlePaddle,"
+//     "reserve the rest for page tables, etc");
+double fraction_of_cuda_pinned_memory_to_use = paddle::lite::GetDoubleFromEnv(
+    "fraction_of_cuda_pinned_memory_to_use", 0.5);
 
 // If use_pinned_memory is true, CPUAllocator calls mlock, which
 // returns pinned and locked memory as staging areas for data exchange
 // between host and device.  Allocates too much would reduce the amount
 // of memory available to the system for paging.  So, by default, we
 // should set false to use_pinned_memory.
-DEFINE_bool(use_pinned_memory, true, "If set, allocate cpu pinned memory.");
+// DEFINE_bool(use_pinned_memory, true, "If set, allocate cpu pinned memory.");
+bool use_pinned_memory =
+    paddle::lite::GetBoolFromEnv("use_pinned_memory", true);
 
 namespace paddle {
 namespace lite {
@@ -81,7 +92,7 @@ size_t CpuTotalPhysicalMemory() {
 size_t CpuMaxAllocSize() {
   // For distributed systems, it requires configuring and limiting
   // the fraction of memory to use.
-  return FLAGS_fraction_of_cpu_memory_to_use * CpuTotalPhysicalMemory();
+  return fraction_of_cpu_memory_to_use * CpuTotalPhysicalMemory();
 }
 
 size_t CpuMinChunkSize() {
@@ -92,15 +103,14 @@ size_t CpuMinChunkSize() {
 size_t CpuMaxChunkSize() {
   // Allow to allocate the maximum chunk size is roughly 3% of CPU memory,
   // or the initial_cpu_memory_in_mb.
-  return std::min(
-      static_cast<size_t>(CpuMaxAllocSize() / 32),
-      static_cast<size_t>(FLAGS_initial_cpu_memory_in_mb * 1 << 20));
+  return std::min(static_cast<size_t>(CpuMaxAllocSize() / 32),
+                  static_cast<size_t>(initial_cpu_memory_in_mb * 1 << 20));
 }
 
 size_t CUDAPinnedMaxAllocSize() {
   // For distributed systems, it requires configuring and limiting
   // the fraction of memory to use.
-  return FLAGS_fraction_of_cuda_pinned_memory_to_use * CpuTotalPhysicalMemory();
+  return fraction_of_cuda_pinned_memory_to_use * CpuTotalPhysicalMemory();
 }
 
 size_t CUDAPinnedMinChunkSize() {

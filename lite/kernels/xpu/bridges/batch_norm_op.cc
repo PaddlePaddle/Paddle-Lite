@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int BatchNormConverter(void* ctx, OpLite* op) {
+int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,35 +30,68 @@ int BatchNormConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // Get input vars and op attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto scale_var_name = op_info->Input("Scale").front();
-  auto* scale = scope->FindMutableTensor(scale_var_name);
-  auto bias_var_name = op_info->Input("Bias").front();
-  auto* bias = scope->FindMutableTensor(bias_var_name);
-  auto mean_var_name = op_info->Input("Mean").front();
-  auto* mean = scope->FindMutableTensor(mean_var_name);
-  auto variance_var_name = op_info->Input("Variance").front();
-  auto* variance = scope->FindMutableTensor(variance_var_name);
-  auto y_var_name = op_info->Output("Y").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+
+  auto scale_name = op_info->Input("Scale").front();
+  auto scale_type = kernel->GetInputDeclType("Scale");
+  CHECK(scale_type->precision() == PRECISION(kFloat));
+  CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
+  auto scale = scope->FindMutableTensor(scale_name);
+
+  auto bias_name = op_info->Input("Bias").front();
+  auto bias_type = kernel->GetInputDeclType("Bias");
+  CHECK(bias_type->precision() == PRECISION(kFloat));
+  CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+  auto bias = scope->FindMutableTensor(bias_name);
+
+  auto mean_name = op_info->Input("Mean").front();
+  auto mean_type = kernel->GetInputDeclType("Mean");
+  CHECK(mean_type->precision() == PRECISION(kFloat));
+  CHECK(mean_type->layout() == DATALAYOUT(kNCHW));
+  auto mean = scope->FindMutableTensor(mean_name);
+
+  auto variance_name = op_info->Input("Variance").front();
+  auto variance_type = kernel->GetInputDeclType("Variance");
+  CHECK(variance_type->precision() == PRECISION(kFloat));
+  CHECK(variance_type->layout() == DATALAYOUT(kNCHW));
+  auto variance = scope->FindMutableTensor(variance_name);
+
+  auto y_name = op_info->Output("Y").front();
+  auto y_type = kernel->GetOutputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
+
   auto epsilon = op_info->GetAttr<float>("epsilon");
 
-  // Create scale, bias, mean, variance nodes
-  auto scale_const_node = graph->AddNode(scale_var_name, *scale);
-  auto bias_const_node = graph->AddNode(bias_var_name, *bias);
-  auto mean_const_node = graph->AddNode(mean_var_name, *mean);
-  auto variance_const_node = graph->AddNode(variance_var_name, *variance);
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  // Create batch_norm node and set params from op
-  auto batch_norm_node =
-      graph->builder_.CreateBatchNorm(*graph->GetNode(x_var_name),
-                                      *scale_const_node,
-                                      *bias_const_node,
-                                      *mean_const_node,
-                                      *variance_const_node,
-                                      1,
-                                      epsilon);
-  graph->AddNode(y_var_name, graph->builder_.GetField(batch_norm_node, 0));
+  // Scale, Bias, Mean, Variance node
+  auto scale_node = graph->Add(scale_name, *scale);
+  auto bias_node = graph->Add(bias_name, *bias);
+  auto mean_node = graph->Add(mean_name, *mean);
+  auto variance_node = graph->Add(variance_name, *variance);
+
+  // Batch Norm node and extract the first field as the output node
+  auto batch_norm_data = graph->builder_.CreateBatchNorm(*x_node->data(),
+                                                         *scale_node->data(),
+                                                         *bias_node->data(),
+                                                         *mean_node->data(),
+                                                         *variance_node->data(),
+                                                         1,
+                                                         epsilon);
+  graph->Add(y_name, graph->builder_.GetField(batch_norm_data, 0));
   return SUCCESS;
 }
 
@@ -67,6 +100,6 @@ int BatchNormConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         batch_norm,
+REGISTER_SUBGRAPH_BRIDGE(batch_norm,
+                         kXPU,
                          paddle::lite::subgraph::xpu::BatchNormConverter);

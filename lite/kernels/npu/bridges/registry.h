@@ -33,20 +33,20 @@ inline bool CHECK_REBUILD_WHEN_SHAPE_CHANGED(int status) {
   return status & REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-using cvt_func_type = std::function<int(void* ctx, OpLite* op)>;
+using cvt_func_type =
+    std::function<int(void* ctx, OpLite* op, KernelBase* kernel)>;
 using cvt_map_type =
-    std::unordered_map<std::string,
-                       std::unordered_map<std::string, cvt_func_type>>;
+    std::unordered_map<int, std::unordered_map<std::string, cvt_func_type>>;
 class Registry {
  public:
   static Registry& Instance();
 
-  void Insert(const std::string& dev_type,
-              const std::string& op_type,
+  void Insert(const std::string& op_type,
+              const TargetType& target,
               const cvt_func_type& cvt_func_name);
-  const cvt_func_type& Select(const std::string& dev_type,
-                              const std::string& op_type) const;
-  bool Exists(const std::string& dev_type, const std::string& op_type) const;
+  const cvt_func_type& Select(const std::string& op_type,
+                              const TargetType& target) const;
+  bool Exists(const std::string& op_type, const TargetType& target) const;
   Registry() = default;
 
  private:
@@ -66,24 +66,24 @@ class Registry {
 #define UNUSED __attribute__((unused))
 #endif
 
-#define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(uniq_name, msg)              \
+#define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(uniq_name, msg)         \
   struct __test_global_namespace_##uniq_name##__ {};                          \
   static_assert(std::is_same<::__test_global_namespace_##uniq_name##__,       \
                              __test_global_namespace_##uniq_name##__>::value, \
                 msg)
 
-#define REGISTER_SUBGRAPH_BRIDGE(dev_type, op_type, cvt_func_name)        \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                               \
-      __reg_subgraph_bridge_##dev_type##_##op_type##__,                   \
+#define REGISTER_SUBGRAPH_BRIDGE(op_type__, target__, cvt_func_name)      \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                          \
+      __reg_subgraph_bridge_##op_type__##_##target__##__,                 \
       "REGISTER_SUBGRAPH_BRIDGE must be called in global namespace only " \
       "once!");                                                           \
-  int __reg_subgraph_bridge_##dev_type##_##op_type##_Insert() {           \
+  int __reg_subgraph_bridge_##op_type__##_##target__##_Insert() {         \
     paddle::lite::subgraph::Registry::Instance().Insert(                  \
-        #dev_type, #op_type, cvt_func_name);                              \
+        #op_type__, TARGET(target__), cvt_func_name);                     \
     return 0;                                                             \
   }
 
-#define USE_SUBGRAPH_BRIDGE(dev_type, op_type)                            \
-  extern int __reg_subgraph_bridge_##dev_type##_##op_type##_Insert();     \
-  static int __reg_subgraph_bridge_##dev_type##_##op_type##_Insert_return \
-      UNUSED = __reg_subgraph_bridge_##dev_type##_##op_type##_Insert();
+#define USE_SUBGRAPH_BRIDGE(op_type__, target__)                            \
+  extern int __reg_subgraph_bridge_##op_type__##_##target__##_Insert();     \
+  static int __reg_subgraph_bridge_##op_type__##_##target__##_Insert_return \
+      UNUSED = __reg_subgraph_bridge_##op_type__##_##target__##_Insert();

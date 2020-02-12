@@ -21,21 +21,43 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
-int ActConverter(void* ctx, OpLite* op) {
+int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto scope = op->scope();
   VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // Create act node and set params from op
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Output("Out").front();
-  CHECK(graph->HasNode(x_var_name));
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Act node
   if (op_type == "relu") {
-    graph->AddNode(out_var_name,
-                   graph->builder_.CreateRelu(*graph->GetNode(x_var_name)));
+    graph->Add(out_name, graph->builder_.CreateRelu(*x_node->data()));
+  } else if (op_type == "tanh") {
+    graph->Add(out_name,
+               graph->builder_.CreateUnaryOp("tanh", *x_node->data()));
+  } else if (op_type == "gelu") {
+    graph->Add(out_name, graph->builder_.CreateGelu(*x_node->data()));
   } else {
     // TODO(hong19860320) supports more activation ops
     LOG(WARNING) << "[XPU] Unsupported activation type " << op_type;
@@ -49,4 +71,6 @@ int ActConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU, relu, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu, kXPU, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(tanh, kXPU, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(gelu, kXPU, paddle::lite::subgraph::xpu::ActConverter);

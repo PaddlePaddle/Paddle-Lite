@@ -24,7 +24,7 @@
 //,
 REGISTER_LITE_KERNEL(lookup_table,
                      kX86,
-                     kInt64,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::x86::LookupTableCompute<float>,
                      def)
@@ -34,7 +34,7 @@ REGISTER_LITE_KERNEL(lookup_table,
     .Finalize();
 REGISTER_LITE_KERNEL(lookup_table_v2,
                      kX86,
-                     kInt64,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::x86::LookupTableCompute<float>,
                      def)

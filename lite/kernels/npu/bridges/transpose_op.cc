@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int TransposeConverter(void* ctx, OpLite* op) {
+int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,15 +30,31 @@ int TransposeConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Input("Out").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
-  auto transpose_node = graph->AddNode<ge::op::Permute>(out_var_name);
-  transpose_node->set_input_x(*graph->GetNode(x_var_name));
-  auto w_const_node = graph->AddNode(out_var_name + "/w", 1.0f);
-  transpose_node->set_input_w(*w_const_node);
-  transpose_node->set_attr_order(
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Transpose node
+  auto transpose_node = graph->Add<ge::op::Permute>(out_name);
+  auto transpose_op = transpose_node->data<ge::op::Permute>();
+  transpose_op->set_input_x(*x_node->data());
+  auto w_node = graph->Add(out_name + "/w", 1.0f);
+  transpose_op->set_input_w(*w_node->data());
+  transpose_op->set_attr_order(
       ge::AttrValue::LIST_INT(axis.begin(), axis.end()));
   return SUCCESS;
 }
@@ -48,9 +64,9 @@ int TransposeConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         transpose,
+REGISTER_SUBGRAPH_BRIDGE(transpose,
+                         kNPU,
                          paddle::lite::subgraph::npu::TransposeConverter);
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         transpose2,
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kNPU,
                          paddle::lite::subgraph::npu::TransposeConverter);

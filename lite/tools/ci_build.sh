@@ -610,6 +610,44 @@ function build_arm {
 
 }
 
+# $1: ARM_TARGET_OS in "ios", "ios64"
+# $2: ARM_TARGET_ARCH_ABI in "armv7", "armv8"
+function build_ios {
+    local os=$1
+    local abi=$2
+    build_dir=build.ios.${os}.${abi}
+    echo "building ios target into $build_dir"
+    echo "target os: $os"
+    echo "target abi: $abi"
+    mkdir -p ${build_dir}
+    cd ${build_dir}
+    GEN_CODE_PATH_PREFIX=lite/gen_code
+    mkdir -p ./${GEN_CODE_PATH_PREFIX}
+    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+
+    cmake .. \
+            -DWITH_GPU=OFF \
+            -DWITH_MKL=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_CUDA=OFF \
+            -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_ARM=ON \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_JAVA=OFF \
+            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_OPENMP=OFF \
+            -DWITH_ARM_DOTPROD=OFF \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DARM_TARGET_ARCH_ABI=$abi \
+            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DLITE_WITH_CV=$BUILD_CV \
+            -DARM_TARGET_OS=$os
+
+    make -j4 publish_inference
+    cd -
+}
+
 # $1: ARM_TARGET_OS in "android"
 # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7"
 # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -773,7 +811,22 @@ function build_test_arm_subtask_armlinux {
     echo "Done"
 }
 
-# sub-task-model
+# sub-task3
+# this task will test IOS compiling, which requires cmake_version>=3.15
+function build_test_arm_subtask_ios {
+    cur=$PWD
+    # job 8
+    build_ios "ios" "armv7"
+    cd $cur
+
+    # job 9
+    build_ios "ios64" "armv8"
+    cd $cur
+
+    echo "Done"
+}
+
+# this method need to invoke `build_test_arm_subtask_android` first.
 function build_test_arm_subtask_model {
     # We just test following single one environment to limit the CI time.
     local os=android
@@ -785,9 +838,7 @@ function build_test_arm_subtask_model {
 
     cur_dir=$(pwd)
     build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
-    mkdir -p $build_dir
     cd $build_dir
-    cmake_arm $os $abi $lang
     make $test_name -j$NUM_CORES_FOR_COMPILE
 
     # prepare adb devices
@@ -802,7 +853,6 @@ function build_test_arm_subtask_model {
     fi
     echo "Done"
     cd -
-    rm -rf $build_dir
 }
 
 
@@ -1034,27 +1084,19 @@ function main {
                 ;;
             build_test_arm_subtask_android)
                 build_test_arm_subtask_android
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
+                build_test_arm_subtask_model test_resnet50 resnet50
+                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
                 shift
                 ;;
             build_test_arm_subtask_armlinux)
                 build_test_arm_subtask_armlinux
                 shift
                 ;;
-            build_test_arm_model_mobilenetv1)
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
-                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
-                shift
-                ;;
-            build_test_arm_model_mobilenetv2)
-                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
-                shift
-                ;;
-            build_test_arm_model_resnet50)
-                build_test_arm_subtask_model test_resnet50 resnet50
-                shift
-                ;;
-            build_test_arm_model_inceptionv4)
-                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
+            build_test_arm_subtask_ios)
+                build_test_arm_subtask_ios
                 shift
                 ;;
             check_style)

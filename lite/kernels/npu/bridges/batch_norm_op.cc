@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int BatchNormConverter(void* ctx, OpLite* op) {
+int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,40 +30,72 @@ int BatchNormConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X").front();
-  auto y_var_name = op_info->Output("Y").front();
-  auto batch_norm_node = graph->AddNode<ge::op::BatchNormExt2>(y_var_name);
-  batch_norm_node->set_input_x(*graph->GetNode(x_var_name));
-
-  auto scale_var_name = op_info->Input("Scale").front();
-  auto scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
-  auto scale_const_node = graph->AddNode(scale_var_name, *scale);
-
-  auto bias_var_name = op_info->Input("Bias").front();
-  auto bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
-  auto bias_const_node = graph->AddNode(bias_var_name, *bias);
-
-  auto mean_var_name = op_info->Input("Mean").front();
-  auto mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
-  auto mean_const_node = graph->AddNode(mean_var_name, *mean);
-
-  auto variance_var_name = op_info->Input("Variance").front();
-  auto variance = scope->FindVar(variance_var_name)->GetMutable<Tensor>();
-  auto variance_const_node = graph->AddNode(variance_var_name, *variance);
-
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto scale_name = op_info->Input("Scale").front();
+  auto scale_type = kernel->GetInputDeclType("Scale");
+  CHECK(scale_type->precision() == PRECISION(kFloat));
+  CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
+  auto scale = scope->FindMutableTensor(scale_name);
+  auto bias_name = op_info->Input("Bias").front();
+  auto bias_type = kernel->GetInputDeclType("Bias");
+  CHECK(bias_type->precision() == PRECISION(kFloat));
+  CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+  auto bias = scope->FindMutableTensor(bias_name);
+  auto mean_name = op_info->Input("Mean").front();
+  auto mean_type = kernel->GetInputDeclType("Mean");
+  CHECK(mean_type->precision() == PRECISION(kFloat));
+  CHECK(mean_type->layout() == DATALAYOUT(kNCHW));
+  auto mean = scope->FindMutableTensor(mean_name);
+  auto variance_name = op_info->Input("Variance").front();
+  auto variance_type = kernel->GetInputDeclType("Variance");
+  CHECK(variance_type->precision() == PRECISION(kFloat));
+  CHECK(variance_type->layout() == DATALAYOUT(kNCHW));
+  auto variance = scope->FindMutableTensor(variance_name);
+  auto y_name = op_info->Output("Y").front();
+  auto y_type = kernel->GetOutputDeclType("Y");
+  CHECK(y_type->precision() == PRECISION(kFloat));
+  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   float momentum = op_info->GetAttr<float>("momentum");
   float epsilon = op_info->GetAttr<float>("epsilon");
   int mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
-  bool use_global_stats = op_info->GetAttr<bool>("use_global_stats");
+  bool use_global_stats = !op_info->HasAttr("use_global_stats") ||
+                          op_info->GetAttr<bool>("use_global_stats");
+  if (!use_global_stats) {
+    LOG(WARNING) << "[NPU] Only use_global_stats=true is supported by HiAI DDK";
+  }
 
-  batch_norm_node->set_input_scale(*scale_const_node);
-  batch_norm_node->set_input_offset(*bias_const_node);
-  batch_norm_node->set_input_mean(*mean_const_node);
-  batch_norm_node->set_input_variance(*variance_const_node);
-  batch_norm_node->set_attr_momentum(momentum);
-  batch_norm_node->set_attr_epsilon(epsilon);
-  batch_norm_node->set_attr_mode(mode);
-  batch_norm_node->set_attr_use_global_stats(use_global_stats);
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Scale, Bias, Mean, Variance node
+  auto scale_node = graph->Add(scale_name, *scale);
+  auto bias_node = graph->Add(bias_name, *bias);
+  auto mean_node = graph->Add(mean_name, *mean);
+  auto variance_node = graph->Add(variance_name, *variance);
+
+  // Batch Norm node
+  auto batch_norm_node = graph->Add<ge::op::BatchNormExt2>(y_name);
+  auto batch_norm_op = batch_norm_node->data<ge::op::BatchNormExt2>();
+  batch_norm_op->set_input_x(*x_node->data());
+  batch_norm_op->set_input_scale(*scale_node->data());
+  batch_norm_op->set_input_offset(*bias_node->data());
+  batch_norm_op->set_input_mean(*mean_node->data());
+  batch_norm_op->set_input_variance(*variance_node->data());
+  batch_norm_op->set_attr_momentum(momentum);
+  batch_norm_op->set_attr_epsilon(epsilon);
+  batch_norm_op->set_attr_mode(mode);
+  batch_norm_op->set_attr_use_global_stats(use_global_stats);
   return SUCCESS;
 }
 
@@ -72,6 +104,6 @@ int BatchNormConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         batch_norm,
+REGISTER_SUBGRAPH_BRIDGE(batch_norm,
+                         kNPU,
                          paddle::lite::subgraph::npu::BatchNormConverter);

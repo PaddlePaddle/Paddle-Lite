@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 
 #include <vector>
@@ -18,6 +19,7 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernels.h"
 #include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/parallel.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -57,34 +59,45 @@ class FCFunctor {
                   bool relu = false,
                   bool padding_weights = false) {
     auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
-    lite::Tensor Y1;
     T* Y1_data = nullptr;
-    if (N % 128 == 0 && K % 128 == 0) {
+
+    auto compute =
+        relu
+            ? jit::KernelFuncs<jit::VAddReluTuple<T>, fluid::CPUPlace>::Cache()
+                  .At(N)
+            : jit::KernelFuncs<jit::VAddTuple<T>, fluid::CPUPlace>::Cache().At(
+                  N);
+    auto parallel_compute = [&](int64_t begin, int64_t end) {
+      for (int64_t i = begin; i < end; i++) {
+        T* dst = Y + i * N;
+        T* src = Y1_data ? Y1_data + i * (N + 4) : dst;
+        compute(B, src, dst, N);
+      }
+    };
+
+    // Because of the overhead of memcpy, we only do padding for GEMM
+    //  when weights is already padded in fc_fuse_pass.
+    if (padding_weights) {
       const int NN = N + 4;
       const int KK = K + 4;
+
+      // NOTE: here need to mutable_data for temporary Tensor X1 and Y1,
+      //  the overhead is unmeasured.
       lite::Tensor X1;
       X1.Resize({M * KK});
-      Y1.Resize({M * (N + 4)});
       T* X1_data = X1.mutable_data<T>();
+
+      lite::Tensor Y1;
+      Y1.Resize({M * (N + 4)});
       Y1_data = Y1.mutable_data<T>();
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
-      for (int i = 0; i < M; i++) {
-        memcpy(X1_data + i * KK, X + i * K, K * sizeof(X[0]));
-      }
-      lite::Tensor W1;
-      T* W1_data = nullptr;
-      if (!padding_weights) {
-        W1.Resize({(K + 4) * (N + 4)});
-        W1_data = W1.mutable_data<T>();
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
-        for (int i = 0; i < K; i++) {
-          memcpy(W1_data + i * NN, W + i * N, N * sizeof(W[0]));
+
+      auto parallel_memcpy_x = [&](int64_t begin, int64_t end) {
+        for (int64_t i = begin; i < end; i++) {
+          memcpy(X1_data + i * KK, X + i * K, K * sizeof(T));
         }
-      }
+      };
+      lite::x86::RunParallelFor(0, M, parallel_memcpy_x);
+
       blas.GEMM(false,
                 false,
                 M,
@@ -93,48 +106,30 @@ class FCFunctor {
                 static_cast<T>(1.0),
                 X1_data,
                 KK,
-                (padding_weights ? W : W1_data),
+                W,
                 NN,
                 static_cast<T>(0.0),
                 Y1_data,
                 NN);
+
+      if (!B) {
+        auto parallel_memcpy_y = [&](int64_t begin, int64_t end) {
+          for (int64_t i = begin; i < end; i++) {
+            memcpy(Y + i * N, Y1_data + i * (N + 4), N * sizeof(T));
+          }
+        };
+        lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
+        return;
+      }
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
     } else {
       blas.MatMul(M, N, K, X, W, Y);
-    }
-    if (B == NULL) {
-      if (N % 128 == 0 && K % 128 == 0) {
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
-        for (int i = 0; i < M; i++) {
-          memcpy(Y + i * N, Y1_data + i * (N + 4), N * sizeof(Y[0]));
-        }
+      if (!B) {
+        return;
       }
-      return;
-    }
-    if (relu) {
-      auto compute =
-          paddle::lite::jit::KernelFuncs<paddle::lite::jit::VAddReluTuple<T>,
-                                         lite::fluid::CPUPlace>::Cache()
-              .At(N);
-      for (int i = 0; i < M; i++) {
-        T* dst = Y + i * N;
-        T* src = (N % 128 == 0 && K % 128 == 0) ? Y1_data + i * (N + 4) : dst;
-        compute(B, src, dst, N);
-      }
-    } else {
-      auto compute =
-          paddle::lite::jit::KernelFuncs<paddle::lite::jit::VAddTuple<T>,
-                                         lite::fluid::CPUPlace>::Cache()
-              .At(N);
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
-      for (int i = 0; i < M; i++) {
-        T* dst = Y + i * N;
-        T* src = (N % 128 == 0 && K % 128 == 0) ? Y1_data + i * (N + 4) : dst;
-        compute(B, src, dst, N);
-      }
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
     }
   }
 };

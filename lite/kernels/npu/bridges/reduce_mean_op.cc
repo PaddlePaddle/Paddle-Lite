@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int ReduceMeanConverter(void* ctx, OpLite* op) {
+int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,10 +30,17 @@ int ReduceMeanConverter(void* ctx, OpLite* op) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // Get input and op attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto out_var_name = op_info->Input("Out").front();
-  auto x_dims = scope->FindTensor(x_var_name)->dims();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Input("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto keep_dim = op_info->GetAttr<bool>("keep_dim");
   auto dim = op_info->GetAttr<std::vector<int>>("dim");
   CHECK(!dim.empty()) << "[NPU] \"dim\" of reduce_mean should not be empty.";
@@ -44,21 +51,37 @@ int ReduceMeanConverter(void* ctx, OpLite* op) {
   }
   std::sort(dim.begin(), dim.end());
 
-  // Create reduce_mean(using reduce_sum + scale) node and set input node from
-  // node map
-  auto reduce_sum_node =
-      graph->AddNode<ge::op::ReduceSum>(out_var_name + "/reducesum");
-  reduce_sum_node->set_input_x(*graph->GetNode(x_var_name));
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  auto dim_const_node = graph->AddNode(out_var_name + "/dim", dim);
-  reduce_sum_node->set_input_w(*dim_const_node);
-  reduce_sum_node->set_attr_keep_dims(keep_dim);
+  // Using ReduceSum + Scale to implement ReduceMean
 
+  // Dim node
+  auto dim_node = graph->Add(out_name + "/dim", dim);
+
+  // Reduce Sum node
+  auto reduce_sum_node = graph->Add<ge::op::ReduceSum>(out_name + "/reducesum");
+  auto reduce_sum_op = reduce_sum_node->data<ge::op::ReduceSum>();
+  reduce_sum_op->set_input_x(*x_node->data());
+  reduce_sum_op->set_input_w(*dim_node->data());
+  reduce_sum_op->set_attr_keep_dims(keep_dim);
+
+  // Scale node
+  auto scale_node = graph->Add<ge::op::Scale>(out_name);
+  auto scale_op = scale_node->data<ge::op::Scale>();
+  scale_op->set_input_x(*reduce_sum_node->data());
+  scale_op->set_attr_axis(1);
+
+  // Add filter node(fill with scale)
   float scale = 1;
   for (size_t i = 0; i < dim.size(); i++) {
     scale /= x_dims[dim[i]];
   }
-
   std::vector<int64_t> scale_bias_shape = x_dims.Vectorize();
   if (keep_dim) {
     for (size_t i = 0; i < dim.size(); i++) {
@@ -73,13 +96,8 @@ int ReduceMeanConverter(void* ctx, OpLite* op) {
         remove(scale_bias_shape.begin(), scale_bias_shape.end(), kDelFlag),
         scale_bias_shape.end());
   }
-
-  auto filter_const_node =
-      graph->AddNode(out_var_name + "/filter", scale, scale_bias_shape);
-  auto scale_node = graph->AddNode<ge::op::Scale>(out_var_name);
-  scale_node->set_input_x(*reduce_sum_node);
-  scale_node->set_input_filter(*filter_const_node);
-  scale_node->set_attr_axis(1);
+  auto filter_node = graph->Add(out_name + "/filter", scale, scale_bias_shape);
+  scale_op->set_input_filter(*filter_node->data());
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -88,6 +106,6 @@ int ReduceMeanConverter(void* ctx, OpLite* op) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         reduce_mean,
+REGISTER_SUBGRAPH_BRIDGE(reduce_mean,
+                         kNPU,
                          paddle::lite::subgraph::npu::ReduceMeanConverter);

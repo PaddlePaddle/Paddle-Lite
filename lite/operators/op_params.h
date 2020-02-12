@@ -288,6 +288,8 @@ struct ConvParam {
   ActivationParam activation_param;
   // support var_length or not
   bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -592,6 +594,7 @@ struct MulticlassNmsParam {
   const lite::Tensor* bboxes{};
   const lite::Tensor* scores{};
   lite::Tensor* out{};
+  lite::Tensor* index{};
   int background_label{0};
   float score_threshold{};
   int nms_top_k{};

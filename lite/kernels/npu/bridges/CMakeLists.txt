@@ -1,4 +1,4 @@
-if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XPU)
+if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XPU AND NOT LITE_WITH_BM)
   return()
 endif()
 
@@ -20,6 +20,7 @@ set(npu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_np
 
 lite_cc_library(subgraph_bridge_fc_op_npu SRCS fc_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_op_npu SRCS conv_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_matmul_op_npu SRCS matmul_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_mul_op_npu SRCS mul_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_act_op_npu SRCS act_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_scale_op_npu SRCS scale_op.cc DEPS ${npu_subgraph_bridge_deps})
@@ -40,6 +41,9 @@ lite_cc_library(subgraph_bridge_sqrt_op_npu SRCS sqrt_op.cc DEPS ${npu_subgraph_
 lite_cc_library(subgraph_bridge_reduce_mean_op_npu SRCS reduce_mean_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unsqueeze_op_npu SRCS unsqueeze_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_argmax_op_npu SRCS argmax_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_instance_norm_op_npu SRCS instance_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_dropout_op_npu SRCS dropout_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_layer_norm_op_npu SRCS layer_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
 
 set(npu_subgraph_bridges
         subgraph_bridge_registry
@@ -47,6 +51,7 @@ set(npu_subgraph_bridges
         subgraph_bridge_graph_npu
         subgraph_bridge_fc_op_npu
         subgraph_bridge_conv_op_npu
+        subgraph_bridge_matmul_op_npu
         subgraph_bridge_mul_op_npu
         subgraph_bridge_act_op_npu
         subgraph_bridge_scale_op_npu
@@ -67,6 +72,9 @@ set(npu_subgraph_bridges
         subgraph_bridge_reduce_mean_op_npu
         subgraph_bridge_unsqueeze_op_npu
         subgraph_bridge_argmax_op_npu
+        subgraph_bridge_instance_norm_op_npu
+        subgraph_bridge_dropout_op_npu
+        subgraph_bridge_layer_norm_op_npu
         CACHE INTERNAL "npu_subgraph_bridges")
 
 message(STATUS "+++++ npu_subgraph_bridges: ${npu_subgraph_bridges}")
