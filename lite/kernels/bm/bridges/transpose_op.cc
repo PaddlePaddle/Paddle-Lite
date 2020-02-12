@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <bmcompiler_defs.h>
 #include <bmcompiler_if.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -21,7 +22,7 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -45,23 +46,16 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  float alpha = 0.f;
-  if (op_type == "relu") {
-  } else if (op_type == "leaky_relu") {
-    alpha = op_info->GetAttr<float>("alpha");
-  } else {
-    LOG(FATAL) << "[BM] unsupport act type";
-    return FAILED;
-  }
-  add_relu_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_x_shape_data[0]),
-                 x_dims.size(),
-                 static_cast<const char*>(x_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 alpha,
-                 -1.f);
+  auto axis = op_info->GetAttr<std::vector<int>>("axis");
+  CHECK_EQ(axis.size(), x_dims.size());
+  add_transpose_layer_v2(graph->GetCompilerHandle(),
+                         static_cast<const char*>(x_var_name.c_str()),
+                         const_cast<const int*>(&i_x_shape_data[0]),
+                         x_dims.size(),
+                         DTYPE_FP32,
+                         static_cast<const char*>(output_var_name.c_str()),
+                         NULL,
+                         const_cast<const int*>(&axis[0]));
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -71,7 +65,9 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+REGISTER_SUBGRAPH_BRIDGE(transpose,
                          kBM,
-                         paddle::lite::subgraph::bm::ActConverter);
+                         paddle::lite::subgraph::bm::TransposeConverter);
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kBM,
+                         paddle::lite::subgraph::bm::TransposeConverter);
