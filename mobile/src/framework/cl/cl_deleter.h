@@ -15,45 +15,51 @@ limitations under the License. */
 #pragma once
 
 #include "CL/cl.h"
-
+#include "common/log.h"
 struct CLKernelDeleter {
   template <class T>
   void operator()(T *clKernelObj) {
-    clReleaseKernel(clKernelObj);
+    const cl_int status = clReleaseKernel(clKernelObj);
+    LOG(paddle_mobile::kNO_LOG) << "clReleaseKernel  status:     " << status;
   }
 };
 
 struct CLMemDeleter {
   template <class T>
   void operator()(T *clMemObj) {
-    clReleaseMemObject(clMemObj);
+    const cl_int status = clReleaseMemObject(clMemObj);
+    LOG(paddle_mobile::kNO_LOG) << "CLMemDeleter  status:     " << status;
   }
 };
 
 struct CLEventDeleter {
   template <class T>
   void operator()(T *clEventObj) {
-    clReleaseEvent(clEventObj);
+    const cl_int status = clReleaseEvent(clEventObj);
+    LOG(paddle_mobile::kNO_LOG) << "CLEventDeleter  status:     " << status;
   }
 };
 
 struct CLCommQueueDeleter {
   template <class T>
   void operator()(T *clQueueObj) {
-    clReleaseCommandQueue(clQueueObj);
+    const cl_int status = clReleaseCommandQueue(clQueueObj);
+    LOG(paddle_mobile::kNO_LOG) << "CLCommQueueDeleter  status:     " << status;
   }
 };
 
 struct CLContextDeleter {
   template <class T>
   void operator()(T *clContextObj) {
-    clReleaseContext(clContextObj);
+    const cl_int status = clReleaseContext(clContextObj);
+    LOG(paddle_mobile::kNO_LOG) << "CLContextDeleter  status:     " << status;
   }
 };
 
 struct CLProgramDeleter {
   template <class T>
   void operator()(T *clProgramObj) {
-    clReleaseProgram(clProgramObj);
+    const cl_int status = clReleaseProgram(clProgramObj);
+    LOG(paddle_mobile::kNO_LOG) << "CLProgramDeleter  status:   " << status;
   }
 };

@@ -132,13 +132,13 @@ class LayerNormComputeTest : public arena::TestCase {
       DDim scale_dims({scale_bias_size});
       std::vector<float> scale(scale_bias_size);
       fill_data_rand(scale.data(), -1.f, 1.f, scale_bias_size);
-      SetCommonTensor(scale_, scale_dims, scale.data());
+      SetCommonTensor(scale_, scale_dims, scale.data(), {}, true);
     }
     if (has_bias_) {
       DDim bias_dims({scale_bias_size});
       std::vector<float> bias(scale_bias_size);
       fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_size);
-      SetCommonTensor(bias_, bias_dims, bias.data());
+      SetCommonTensor(bias_, bias_dims, bias.data(), {}, true);
     }
   }
 };
@@ -149,6 +149,9 @@ TEST(LayerNorm, precision) {
   Place place;
 #if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
   abs_error = 6e-5;
@@ -157,7 +160,7 @@ TEST(LayerNorm, precision) {
 #endif
 
   for (auto dims :
-       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}}) {
+       std::vector<std::vector<int64_t>>{{2, 3, 4, 5}, {3, 4, 5}, {4, 5}}) {
     for (auto epsilon : {1e-5f}) {
       for (auto axis : {1, 2, 3}) {
         for (bool has_bias : {true, false}) {

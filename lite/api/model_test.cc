@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
@@ -33,10 +34,10 @@ using paddle::lite::profile::Timer;
 DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
-
 DEFINE_bool(use_optimize_nb,
             false,
             "optimized & naive buffer model for mobile devices");
+DEFINE_string(arg_name, "", "the arg name");
 
 namespace paddle {
 namespace lite_api {
@@ -86,6 +87,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     for (int i = 0; i < input_shapes[j].size(); ++i) {
       input_num *= input_shapes[j][i];
     }
+
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
     }
@@ -122,6 +124,28 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     output_num *= output_shape[i];
   }
   LOG(INFO) << "output_num: " << output_num;
+
+  // please turn off memory_optimize_pass to use this feature.
+  if (FLAGS_arg_name != "") {
+    auto arg_tensor = predictor->GetTensor(FLAGS_arg_name);
+    auto arg_shape = arg_tensor->shape();
+    int arg_num = 1;
+    std::ostringstream os;
+    os << "{";
+    for (int i = 0; i < arg_shape.size(); ++i) {
+      arg_num *= arg_shape[i];
+      os << arg_shape[i] << ",";
+    }
+    os << "}";
+    float sum = 0.;
+    std::ofstream out(FLAGS_arg_name + ".txt");
+    for (size_t i = 0; i < arg_num; ++i) {
+      sum += arg_tensor->data<float>()[i];
+      out << std::to_string(arg_tensor->data<float>()[i]) << "\n";
+    }
+    LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
+              << ", mean value is " << sum * 1. / arg_num;
+  }
 }
 #endif
 

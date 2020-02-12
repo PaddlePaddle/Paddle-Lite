@@ -50,7 +50,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias;
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
 
   const int threads = ctx->threads();
   int llc_size = ctx->llc_size() / 4;
@@ -477,7 +477,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias;
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
   const int threads = ctx->threads();
   //! set 1/4 l2 cache
   int llc_size = ctx->llc_size() / 4;

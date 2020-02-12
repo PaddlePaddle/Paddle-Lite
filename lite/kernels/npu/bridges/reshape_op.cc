@@ -34,14 +34,11 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+
   auto out_name = op_info->Output("Out").front();
   auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
@@ -52,7 +49,8 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Reshape node
-  auto reshape_node = graph->Add<ge::op::Reshape>(out_name);
+  auto reshape_node = graph->Add<ge::op::Reshape>(
+      out_name, x_node->precision(), x_node->layout());
   auto reshape_op = reshape_node->data<ge::op::Reshape>();
   reshape_op->set_input_tensor(*x_node->data());
 
@@ -81,6 +79,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
                         "but Shape has "
                      << out_shape.size();
+        return FAILED;
       }
       actual_shape_node =
           graph->Add(actual_shape_name,
@@ -95,34 +94,12 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
                       "but shape has "
                    << out_shape.size();
+      return FAILED;
     }
     reshape_op->set_attr_shape(
         ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
   }
 
-  // XShape node
-  if (op_type == "reshape2") {
-    // Append an extra reshape node to calc XShape
-    std::vector<int64_t> xshape_dims(x_dims.size() + 1, 1);
-    for (size_t i = 0; i < x_dims.size(); i++) {
-      xshape_dims[i + 1] = x_dims[i];
-    }
-    if (xshape_dims.size() > 4) {
-      LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
-                      "but XShape has "
-                   << xshape_dims.size();
-      return FAILED;
-    }
-    auto xshape_name = op_info->Output("XShape").front();
-    // auto xshape_type = kernel->GetOutputDeclType("XShape");
-    // CHECK(xshape_type->precision() == PRECISION(kFloat));
-    // CHECK(xshape_type->layout() == DATALAYOUT(kNCHW));
-    auto xshape_node = graph->Add<ge::op::Reshape>(xshape_name);
-    auto xshape_op = xshape_node->data<ge::op::Reshape>();
-    xshape_op->set_input_tensor(*x_node->data());
-    xshape_op->set_attr_shape(
-        ge::AttrValue::LIST_INT(xshape_dims.begin(), xshape_dims.end()));
-  }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

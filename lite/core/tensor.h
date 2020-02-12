@@ -85,7 +85,11 @@ class DDimLite {
   }
 
   friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    return !(a == b);
+    if (a.size() != b.size()) return true;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != b[i]) return true;
+    }
+    return false;
   }
 
  private:
@@ -118,7 +122,7 @@ class TensorLite {
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
-  void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
+  void Resize(const std::vector<int64_t> &x) { dims_.ConstructFrom(x); }
 
   const DDimLite &dims() const { return dims_; }
   int64_t numel() const { return dims_.production(); }
@@ -139,6 +143,7 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data() {
+    precision_ = lite_api::PrecisionTypeTrait<T>::Type();
     memory_size_ = dims_.production() * sizeof(T);
     buffer_->ResetLazy(target_, memory_size_);
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
@@ -163,10 +168,7 @@ class TensorLite {
   template <typename T, typename R = T>
   R *mutable_data(TargetType target) {
     target_ = target;
-    memory_size_ = dims_.production() * sizeof(T);
-    buffer_->ResetLazy(target, memory_size());
-    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
-                                 offset_);
+    return mutable_data<T, R>();
   }
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);

@@ -33,7 +33,7 @@ bool DropoutOp::InferShape() const {
     param_.mask->Resize(x_dims);
   }
   // share LoD
-  // param_.output->set_lod(param_.input->lod());
+  param_.output->set_lod(param_.x->lod());
   return true;
 }
 

@@ -57,9 +57,11 @@ int Engine::BuildOriginProgram() {
       VLOG(3) << "The attr '" << kKernelTypeAttr
               << "' not found, pick the first kernel for " << op_type;
 #if defined(LITE_WITH_ARM)
-      auto kernels = op->CreateKernels({Place{TARGET(kARM)}});
+      auto kernels =
+          op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
 #elif defined(LITE_WITH_X86)
-      auto kernels = op->CreateKernels({Place{TARGET(kX86)}});
+      auto kernels =
+          op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
 #endif
       CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
       picked_kernel = std::move(kernels.front());

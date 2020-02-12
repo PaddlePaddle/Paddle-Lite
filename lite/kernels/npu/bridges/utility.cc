@@ -103,8 +103,8 @@ std::vector<int64_t> CvtShape(const DDim& in_dims) {
 
 ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         std::vector<int64_t> out_shape,
-                        PrecisionType in_precision,
                         DataLayoutType in_layout) {
+  PrecisionType in_precision = in_tensor.precision();
   auto in_size = in_tensor.dims().production();
   auto in_shape = in_tensor.dims().Vectorize();
   if (out_shape.empty()) {

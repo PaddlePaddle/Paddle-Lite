@@ -193,7 +193,6 @@ void nv21_bgra_basic(const uint8_t* in_data,
 }
 
 /*
-/*
 采用CV_BGR2GRAY,转换公式Gray = 0.1140*B + 0.5870*G + 0.2989*R
 采用CV_RGB2GRAY,转换公式Gray = 0.1140*R + 0.5870*G + 0.2989*B
 b = 0.114 *128 = 14.529 = 15
@@ -217,6 +216,21 @@ void bgr_gray_basic(const uint8_t* in_data,
     }
   }
 }
+void bgra_gray_basic(const uint8_t* in_data,
+                     uint8_t* out_data,
+                     int srcw,
+                     int srch) {
+  for (int i = 0; i < srch; i++) {
+    const uint8_t* din_ptr = in_data + i * 4 * srcw;
+    uint8_t* dout_ptr = out_data + i * srcw;
+    for (int j = 0; j < srcw; j++) {
+      int sum = din_ptr[0] * 15 + din_ptr[1] * 75 + din_ptr[2] * 38;
+      sum = sum >> 7;
+      *dout_ptr++ = sum;
+      din_ptr += 4;
+    }
+  }
+}
 
 void gray_bgr_basic(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   for (int i = 0; i < srch; i++) {
@@ -224,6 +238,17 @@ void gray_bgr_basic(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       *dst++ = *src;
       *dst++ = *src;
       *dst++ = *src;
+      src++;
+    }
+  }
+}
+void gray_bgra_basic(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
+  for (int i = 0; i < srch; i++) {
+    for (int j = 0; j < srcw; j++) {
+      *dst++ = *src;
+      *dst++ = *src;
+      *dst++ = *src;
+      *dst++ = 255;
       src++;
     }
   }
@@ -340,6 +365,16 @@ void image_convert_basic(const uint8_t* in_data,
                (srcFormat == ImageFormat::GRAY &&
                 dstFormat == ImageFormat::BGR)) {
       gray_bgr_basic(in_data, out_data, srcw, srch);
+    } else if ((srcFormat == ImageFormat::RGBA &&
+                dstFormat == ImageFormat::GRAY) ||
+               (srcFormat == ImageFormat::BGRA &&
+                dstFormat == ImageFormat::GRAY)) {
+      bgra_gray_basic(in_data, out_data, srcw, srch);
+    } else if ((srcFormat == ImageFormat::GRAY &&
+                dstFormat == ImageFormat::RGBA) ||
+               (srcFormat == ImageFormat::GRAY &&
+                dstFormat == ImageFormat::BGRA)) {
+      gray_bgra_basic(in_data, out_data, srcw, srch);
     } else if ((srcFormat == ImageFormat::RGBA &&
                 dstFormat == ImageFormat::RGB) ||
                (srcFormat == ImageFormat::BGRA &&
@@ -525,6 +560,7 @@ void image_resize_basic(const uint8_t* in_data,
     int y_flag = 0;  // only one line
     if (y_in_start < 0) {
       y_flag = 1;
+      y_in_end = 0;
     }
     float b0 = ibeta[dy * 2];
     float b1 = ibeta[dy * 2 + 1];
@@ -750,6 +786,26 @@ void image_flip_basic(const uint8_t* in_data,
     flipxy_basic(in_data, srch, srcw, out_data, num);
   }
 }
+void gray_to_tensor_basic(const uint8_t* bgr,
+                          float* output,
+                          int width,
+                          int height,
+                          float* means,
+                          float* scales,
+                          int num) {
+  int size = width * height;
+  float mean_val = means[0];
+  float scale_val = scales[0];
+
+  for (int h = 0; h < height; h++) {
+    const uint8_t* ptr_bgr = bgr + h * width * num;
+    float* ptr_h = output + h * width;
+    for (int i = 0; i < width; i++) {
+      *ptr_h++ = (ptr_bgr[0] - mean_val) * scale_val;
+      ptr_bgr += num;
+    }
+  }
+}
 
 void bgr_to_tensor_chw_basic(const uint8_t* bgr,
                              float* output,
@@ -828,5 +884,8 @@ void image_to_tensor_basic(const uint8_t* in_data,
   } else if (layout == LayoutType::kNHWC && (srcFormat == ImageFormat::BGRA ||
                                              srcFormat == ImageFormat::RGBA)) {
     bgr_to_tensor_hwc_basic(in_data, output, srcw, srch, means, scales, 4);
+  } else if (srcFormat == ImageFormat::GRAY &&
+             (layout == LayoutType::kNHWC || layout == LayoutType::kNCHW)) {
+    gray_to_tensor_basic(in_data, output, srcw, srch, means, scales, 1);
   }
 }

@@ -35,6 +35,7 @@
 
 build/
 build_fpga/
+docs/_build/
 
 .idea/
 

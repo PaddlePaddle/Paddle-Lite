@@ -38,6 +38,15 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void ImageResize::choose(const uint8_t* src,
+                         uint8_t* dst,
+                         ImageFormat srcFormat,
+                         int srcw,
+                         int srch,
+                         int dstw,
+                         int dsth) {
+  resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
+}
 void compute_xy(int srcw,
                 int srch,
                 int dstw,

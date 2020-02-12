@@ -155,7 +155,6 @@ TEST(layer_norm_x86, run_test) {
       ref(&x, &Scale, &Bias, &out, &Mean, &Var, begin_norm_axis, epsilon);
   for (int j = 0; j < out.dims().production(); ++j) {
     EXPECT_NEAR(out_data[j], ref_data[j], 1e-5);
-    // LOG(INFO) << out_data[j];
   }
   LOG(INFO) << *mean_data;
   LOG(INFO) << *var_data;
