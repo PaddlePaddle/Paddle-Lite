@@ -1,7 +1,7 @@
 language: cpp
 cache: ccache
 sudo: required
-dist: xenial
+dist: bionic
 
 os:
   - linux
@@ -14,14 +14,13 @@ addons:
 #      - python2.7-dev
 #      - libc6-i386
 #      - curl
-      - python
-      - python-pip
+      - python3
       - clang-format-3.8
-      - python-setuptools
+      - python3-setuptools
         
 before_install:
-  - sudo python -m pip install cpplint
-  - sudo python -m pip install pre-commit
+  - sudo python3 -m pip install cpplint
+  - sudo python3 -m pip install pre-commit
   - sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format
   # Download and install recent cmake
 
