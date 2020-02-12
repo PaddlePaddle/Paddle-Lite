@@ -226,7 +226,13 @@ template <typename T>
 struct SoftsignFunctor : public BaseActivationFunctor<T> {
   template <typename Device, typename X, typename Out>
   void operator()(Device d, X x, Out out) {
-    out.device(d) = x / (static_cast<T>(1) + x.abs());
+    auto x_data = x.data();
+    auto out_data = out.data();
+    int n = std::min(x.size(), out.size());
+
+    for (int i = 0; i < n; i++) {
+      out_data[i] = x_data[i] / (static_cast<T>(1) + std::abs(x_data[i]));
+    }
   }
 };
 
