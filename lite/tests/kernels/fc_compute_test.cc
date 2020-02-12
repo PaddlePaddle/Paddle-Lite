@@ -244,7 +244,7 @@ void TestFCMain(Place place,
 
 TEST(FcOP, precision) {
   Place place;
-  float abs_error = 6e-5;
+  float abs_error = 1e-4;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 2e-1;  // Using fp16 in NPU
