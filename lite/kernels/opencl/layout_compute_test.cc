@@ -34,10 +34,10 @@ TEST(layout_ImageDefault, compute) {
       for (int h = 1; h <= 100; h += 13) {
         for (int w = 1; w <= 100; w += 17) {
 #else
-  const int n = 1;
-  const int c = 1;
-  const int h = 1;
-  const int w = 100;
+  const int n = 2;
+  const int c = 9;
+  const int h = 20;
+  const int w = 5;
 #endif  // LOOP_TEST
 
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
@@ -86,8 +86,7 @@ TEST(layout_ImageDefault, compute) {
           auto* mapped_y = static_cast<float*>(TargetWrapperCL::Map(
               y_data, 0, sizeof(float) * x_dim.production()));
           for (int i = 0; i < x_dim.production(); ++i) {
-            mapped_x[i] = static_cast<int>(i);
-            mapped_y[i] = static_cast<int>(0);
+            mapped_x[i] = static_cast<float>(i);
           }
 
           // set context and kernel args
@@ -116,7 +115,7 @@ TEST(layout_ImageDefault, compute) {
 // result
 #ifdef PRINT_RESULT
           LOG(INFO) << "---- print result ----";
-          for (int eidx = 0; i < x_dim.production(); ++eidx) {
+          for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
             std::cout << mapped_x[eidx] << " -> " << mapped_y[eidx]
                       << std::endl;
           }
@@ -251,7 +250,7 @@ TEST(layout_ImageNW, compute) {
 // result
 #ifdef PRINT_RESULT
           LOG(INFO) << "---- print result ----";
-          for (int eidx = 0; i < x_dim.production(); ++eidx) {
+          for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
             std::cout << mapped_x[eidx] << " -> " << mapped_y[eidx]
                       << std::endl;
           }

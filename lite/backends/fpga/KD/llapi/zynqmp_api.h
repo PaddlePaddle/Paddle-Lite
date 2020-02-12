@@ -28,7 +28,6 @@ namespace zynqmp {
 typedef int16_t half;
 
 #define IMAGE_ALIGNMENT 16           // Aligned to 16
-#define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
@@ -44,14 +43,11 @@ enum DLayoutType {
 };
 
 enum ActiveType {
-  TYPE_RELU = 0,
-  TYPE_RELU6 = 1,
-  TYPE_LEAK_RELU = 2,
-  TYPE_SIGMOID = 3,
-};
-
-struct VersionArgs {
-  void* buffer;
+  TYPE_NONE = 0,
+  TYPE_RELU = 1,
+  TYPE_RELU6 = 2,
+  TYPE_LEAKY_RELU = 3,
+  TYPE_SIGMOID = 4,
 };
 
 struct DeviceInfo {
@@ -67,6 +63,11 @@ struct DeviceInfo {
   uint32_t reserved6;
 };
 
+struct VersionArgs {
+  void* buffer;
+  size_t size;
+};
+
 struct MemoryCopyArgs {
   void* src;
   void* dest;
@@ -78,7 +79,9 @@ struct MemoryCacheArgs {
   size_t size;
 };
 
-struct MemoryBarrierArgs {};
+struct MemoryBarrierArgs {
+  uint16_t dummy;
+};
 
 struct BNArgs {
   bool enabled;
