@@ -122,8 +122,7 @@ void conv_compute_6x6_3x3(const float* input,
 
   // begin compute
   for (int ni = 0; ni < num; ++ni) {
-// trans input to c4
-#pragma omp parallel for num_threads(threads)
+    // trans input to c4
     for (int i = 0; i < ic_4; ++i) {
       prepack_input_nxwc4_dw(input + ni * in_n_stride,
                              input_c4 + i * new_c_stride,
@@ -410,8 +409,7 @@ void conv_compute_2x2_3x3(const float* input,
 
   // begin compute
   for (int ni = 0; ni < num; ++ni) {
-// trans input to c4
-#pragma omp parallel for num_threads(threads)
+    // trans input to c4
     for (int i = 0; i < ic_4; ++i) {
       prepack_input_nxwc4_dw(input + ni * in_n_stride,
                              input_c4 + i * new_c_stride,
@@ -672,9 +670,8 @@ void conv_compute_2x2_3x3_small(const float* input,
 
   // begin compute
   for (int ni = 0; ni < num; ++ni) {
-// trans input to c4
+    // trans input to c4
 
-#pragma omp parallel for num_threads(threads)
     for (int i = 0; i < ic_4; ++i) {
       prepack_input_nxwc4_dw(input + ni * in_n_stride,
                              input_c4 + i * new_c_stride,
