@@ -561,7 +561,7 @@ void SaveModelNaive(const std::string &model_dir,
   meta_version_table.SaveToFile(prog_path);
 
   // Save lite_version(char[16]) into file
-  const uint_8 paddle_version_length = 16 * sizeof(char);
+  const int paddle_version_length = 16 * sizeof(char);
   naive_buffer::BinaryTable paddle_version_table;
   paddle_version_table.Require(paddle_version_length);
   std::string paddle_version = version();
