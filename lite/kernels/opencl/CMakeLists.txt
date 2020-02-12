@@ -20,6 +20,7 @@ add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_compute.cc
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl OPENCL basic SRCS conv_compute.cc DEPS ${cl_kernel_deps} cl_image_converter)
 add_kernel(layout_opencl OPENCL basic SRCS layout_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(concat_opencl OPENCL basic SRCS concat_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(nearest_interp_opencl OPENCL basic SRCS nearest_interp_compute.cc DEPS ${cl_kernel_deps})
 
 lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
@@ -83,6 +84,11 @@ lite_cc_test(test_conv_image2d_opencl SRCS conv_image2d_compute_test.cc
 lite_cc_test(test_layout_opencl SRCS layout_compute_test.cc
         DEPS layout_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
+lite_cc_test(test_concat_opencl SRCS concat_compute_test.cc
+        DEPS concat_opencl layout_opencl op_registry program context
+         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+         
 lite_cc_test(test_nearest_interp_opencl SRCS nearest_interp_compute_test.cc
         DEPS nearest_interp_opencl layout_opencl op_registry program context cl_image_converter
         ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
