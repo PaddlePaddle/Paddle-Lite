@@ -21,19 +21,40 @@
 namespace paddle {
 namespace lite {
 
-int data_index(std::vector<int> pos, DDimLite dims) {
-  int d1 = dims[1];
-  int d2 = dims[2];
-  int d3 = dims[3];
-  return pos[0] * d1 * d2 * d3 + pos[1] * d2 * d3 + pos[2] * d3 + pos[3];
+std::vector<int> CalStrides(const DDim& dims) {
+  int dsize = dims.size();
+  std::vector<int> strides(dsize, 1);
+  for (int i = dsize - 2; i >= 0; i--) {
+    strides[i] = strides[i + 1] * dims[i + 1];
+  }
+  return strides;
 }
 
-std::vector<int> pos_trans(std::vector<int> in_pos, std::vector<int> axis) {
-  std::vector<int> out_pos(in_pos.size());
-  for (int i = 0; i < axis.size(); i++) {
-    out_pos[i] = in_pos[axis[i]];
+std::vector<int> CalIndex(const std::vector<int>& strides, int offset) {
+  int dsize = strides.size();
+  std::vector<int> index(dsize, 0);
+  for (int i = 0; i < dsize; i++) {
+    index[i] = offset / strides[i];
+    offset %= strides[i];
   }
-  return out_pos;
+  return index;
+}
+
+std::vector<int> TransIndex(const std::vector<int>& in_index,
+                            const std::vector<int>& axis) {
+  std::vector<int> out_index(in_index.size(), 0);
+  for (int i = 0; i < axis.size(); i++) {
+    out_index[i] = in_index[axis[i]];
+  }
+  return out_index;
+}
+
+int CalOffset(const std::vector<int>& strides, const std::vector<int>& index) {
+  int offset = 0;
+  for (int i = 0; i < index.size(); i++) {
+    offset += strides[i] * index[i];
+  }
+  return offset;
 }
 
 class TransposeComputeTester : public arena::TestCase {
@@ -64,29 +85,19 @@ class TransposeComputeTester : public arena::TestCase {
       out_shape[i] = dims_[axis_[i]];
     }
     out->Resize(out_shape);
+    auto out_dims = out->dims();
 
-    auto y_dims = out->dims();
+    std::vector<int> x_strides = CalStrides(dims_);
+    std::vector<int> out_strides = CalStrides(out_dims);
 
-    int input_n = dims_[0];
-    int input_c = dims_[1];
-    int input_h = dims_[2];
-    int input_w = dims_[3];
+    auto x_data = x->data<float>();
+    auto out_data = out->mutable_data<float>();
 
-    auto input_data = x->data<float>();
-    auto output_data = out->mutable_data<float>();
-
-    for (int n = 0; n < input_n; ++n) {
-      for (int c = 0; c < input_c; ++c) {
-        for (int h = 0; h < input_h; ++h) {
-          for (int w = 0; w < input_w; ++w) {
-            std::vector<int> in_pos{n, c, h, w};
-            std::vector<int> out_pos = pos_trans(in_pos, axis_);
-            int in_index = data_index(in_pos, dims_);
-            int out_index = data_index(out_pos, y_dims);
-            output_data[out_index] = input_data[in_index];
-          }
-        }
-      }
+    for (int i = 0; i < dims_.production(); i++) {
+      std::vector<int> x_index = CalIndex(x_strides, i);
+      std::vector<int> out_index = TransIndex(x_index, axis_);
+      int out_offset = CalOffset(out_strides, out_index);
+      out_data[out_offset] = x_data[i];
     }
 
     if (op_type_ == "transpose2") {
@@ -114,6 +125,41 @@ class TransposeComputeTester : public arena::TestCase {
   }
 };
 
+void TestTranspose2D(Place place, float abs_error) {
+  DDim x_dims{{4, 5}};
+  std::vector<std::vector<int>> axes{{0, 1}, {1, 0}};
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestTranspose3D(Place place, float abs_error) {
+  DDim x_dims{{3, 4, 5}};
+  std::vector<std::vector<int>> axes{
+      {0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {2, 1, 0}};
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestTranspose4D(Place place, float abs_error) {
+  DDim x_dims{{2, 3, 4, 5}};
+  std::vector<std::vector<int>> axes{
+      {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2}};
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
 TEST(Transpose, precision) {
   LOG(INFO) << "test Transpose op";
   float abs_error = 2e-5;
@@ -127,15 +173,9 @@ TEST(Transpose, precision) {
   return;
 #endif
 
-  DDim x_dims{{2, 3, 4, 5}};
-  std::vector<std::vector<int>> axes{
-      {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2}};
-  for (auto axis : axes) {
-    std::unique_ptr<arena::TestCase> tester(
-        new TransposeComputeTester(place, "def", x_dims, axis));
-    arena::Arena arena(std::move(tester), place, abs_error);
-    arena.TestPrecision({"xshape"});
-  }
+  TestTranspose2D(place, abs_error);
+  TestTranspose3D(place, abs_error);
+  TestTranspose4D(place, abs_error);
 }
 
 }  // namespace lite
