@@ -33,7 +33,8 @@ void ElementwiseAddCompute::PrepareForRun() {
   ew_param.inputs = {param.X->ZynqTensor(), param.Y->ZynqTensor()};
   ew_param.output = param.Out->ZynqTensor();
   ew_param.axis = param.axis;
-  ew_param.relu.enabled = false;
+
+  ew_param.activeParam.type = zynqmp::TYPE_NONE;
 
   pe_.init();
   pe_.apply();
@@ -56,7 +57,7 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   ew_param.inputs = {param.X->ZynqTensor(), param.Y->ZynqTensor()};
   ew_param.output = param.Out->ZynqTensor();
   ew_param.axis = param.axis;
-  ew_param.relu.enabled = true;
+  ew_param.activeParam.type = zynqmp::TYPE_RELU;
   pe_.init();
   pe_.apply();
 }
@@ -76,7 +77,7 @@ void ElementwiseMulCompute::PrepareForRun() {
   scale_param.input = param.X->ZynqTensor();
   scale_param.output = param.Out->ZynqTensor();
 
-  scale_param.relu.enabled = false;
+  scale_param.activeParam.type = zynqmp::TYPE_NONE;
 
   int channel = scale_param.input->shape().channel();
   zynqmp::Tensor* scale = new zynqmp::Tensor();
@@ -124,7 +125,10 @@ REGISTER_LITE_KERNEL(elementwise_add,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
