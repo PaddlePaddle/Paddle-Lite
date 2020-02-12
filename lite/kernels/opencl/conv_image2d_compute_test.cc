@@ -468,17 +468,32 @@ TEST(conv2d, compute_image2d_3x3) {
 #else
                 const int pad = 1;
                 const int dilation = 1;
+
+#if 0  // small scale with group, but result of cpu reference is wrong
                 const int stride = 2;
                 const int group = 2;
-
                 const int batch_size = 1;
                 const int ic = 1;
                 const int ih = 3;
                 const int iw = 3;
                 const int oc = 2;
+#else  // big scale with group
+                const int stride = 1;
+                const int group = 32;
+                const int batch_size = 1;
+                const int ic = 32;
+                const int ih = 112;
+                const int iw = 112;
+                const int oc = 32;
+#endif
+
                 const bool bias_flag = false;
                 const std::string relu_flag = "relu";
 #endif
+              int filter_channel = ic;
+              if (group > 1) {
+                filter_channel = 1;
+              }
 
               const int oh =
                   ConvOutputSize(ih, ksize, dilation, pad, pad, stride);
@@ -537,8 +552,8 @@ TEST(conv2d, compute_image2d_3x3) {
               const DDim& input_dim =
                   lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
-              const DDim& filter_dim =
-                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
+              const DDim& filter_dim = lite::DDim{
+                  std::vector<int64_t>({oc, filter_channel, ksize, ksize})};
               const DDim& out_dim =
                   lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
@@ -566,7 +581,7 @@ TEST(conv2d, compute_image2d_3x3) {
               size_t bias_image_width = ow * ((oc + 3) / 4);
               size_t bias_image_height = oh * batch_size;
 
-              size_t filter_image_width = ksize * ((ic + 3) / 4);
+              size_t filter_image_width = ksize * ((filter_channel + 3) / 4);
               size_t filter_image_height = oc * ksize;
 
               const size_t cl_image2d_row_pitch{0};
@@ -576,7 +591,7 @@ TEST(conv2d, compute_image2d_3x3) {
               std::uniform_real_distribution<float> gen(-5, 5);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
-              std::vector<float> filter_v(oc * ic * ksize * ksize);
+              std::vector<float> filter_v(oc * filter_channel * ksize * ksize);
               std::vector<float> output_v(batch_size * oc * oh * ow);
               std::vector<float> bias_v(oc);
 

@@ -639,11 +639,15 @@ void ConvImageCompute::Conv2d3x3() {
     new_groups = 1;
   } else if (!(filter_dims[0] == input_dims[1] && filter_dims[1] == 1)) {
     new_groups = input_channel / filter_channel;
-  } else {
-    LOG(FATAL) << "Not support conv3x3 case with"
-               << " input_dims:" << input_dims << " output_dims:" << output_dims
-               << " filter_dims:" << filter_dims;
   }
+  /* TODO(ysh329): mobile has no case below
+     else {
+      LOG(FATAL) << "Not support conv3x3 case with"
+                 << " input_dims:" << input_dims << " output_dims:" <<
+    output_dims
+                 << " filter_dims:" << filter_dims;
+    }
+  */
 
   const std::vector<size_t>& default_work_size =
       DefaultWorkSize(output_dims,
