@@ -35,14 +35,17 @@ class PoolingPE : public PE {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
 
-    uint32_t k_height = param_.kernelSize[0];
-    uint32_t k_width = param_.kernelSize[1];
+    uint32_t k_height = 1;
+    uint32_t k_width = 1;
 
     if (param_.globalPooling) {
       k_width = input->shape().width();
       k_height = input->shape().height();
       param_.kernelSize[0] = k_height;
       param_.kernelSize[1] = k_width;
+    } else {
+      k_height = param_.kernelSize[0];
+      k_width = param_.kernelSize[1];
     }
 
     PoolingArgs args = {0};
@@ -65,9 +68,12 @@ class PoolingPE : public PE {
     args.out_width = output->shape().width();
     param_.poolingArgs = args;
 
+    // use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1
+    // &&
+    //            (k_width > 7 || k_height > 7);
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
-               (k_width > 7 || k_height > 7);
-    use_cpu_ = param_.type == AVERAGE;
+               (k_width > 255 || k_height > 255);
+    // use_cpu_ = param_.type == AVERAGE;
   }
 
   void compute() {
@@ -76,6 +82,7 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
+    // Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -110,6 +117,8 @@ class PoolingPE : public PE {
         for (int c = 0; c < image_channels; ++c) {
           const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
           float sum = 0;
+          // const int index =
+          //     (hstart * image_width + wstart) * image_channels + c;
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
@@ -138,7 +147,9 @@ class PoolingPE : public PE {
     Tensor float_input;
     float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
+    // float_input.saveToFile("pool_float.txt");
     float16* data_out = output->data<float16>();
+
     int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
 
     float scale_max = 0;
@@ -155,6 +166,7 @@ class PoolingPE : public PE {
     output->scale()[0] = scale_max / 127.0f;
     output->scale()[1] = 127.0f / scale_max;
     output->flush();
+    // exit(-1);
   }
 
   void cpu_compute() {
@@ -184,11 +196,14 @@ class PoolingPE : public PE {
     output->scale()[0] = scale_max / 127.0f;
     output->scale()[1] = 127.0f / scale_max;
     output->flush();
+    // exit(-1);
   }
 
   bool dispatch() {
     if (use_cpu_) {
+      // cpu_compute();
       compute();
+      // exit(-1);
       return true;
     }
     param_.input->syncToDevice();
