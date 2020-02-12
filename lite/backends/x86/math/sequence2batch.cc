@@ -24,12 +24,12 @@ class CopyMatrixRowsFunctor<lite::TargetType::kX86, T> {
  public:
   void operator()(const lite::Context<lite::TargetType::kX86>& context,
                   const lite::Tensor& src,
-                  std::vector<size_t> index_lod,
+                  const std::vector<size_t>& index_lod,
                   lite::Tensor* dst,
                   bool is_src_index) {
-    size_t* index = index_lod.data();
-    auto src_dims = src.dims();
-    auto dst_dims = dst->dims();
+    const size_t* index = index_lod.data();
+    const auto& src_dims = src.dims();
+    const auto& dst_dims = dst->dims();
     PADDLE_ENFORCE_EQ(
         src_dims.size(), 2UL, "The src must be matrix with rank 2.");
     PADDLE_ENFORCE_EQ(

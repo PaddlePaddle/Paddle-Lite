@@ -89,7 +89,6 @@ class ScalePE : public PE {
           }
         }
       }
-
       float* scale_data_float = param_.scale->data<float>();
       for (int i = 0; i < repeat; i++) {
         for (int j = 0; j < length; j++) {
