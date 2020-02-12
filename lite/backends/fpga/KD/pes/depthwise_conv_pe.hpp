@@ -24,6 +24,17 @@ namespace zynqmp {
 
 class DepthwiseConvPE : public PE {
  public:
+  inline int gcd_(int a, int b) {
+    while (b) {
+      int temp = a;
+      a = b;
+      b = temp % b;
+    }
+    return a;
+  }
+
+  inline int lcm_(int a, int b) { return a * b / gcd_(a, b); }
+
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
@@ -37,17 +48,40 @@ class DepthwiseConvPE : public PE {
     Tensor* output = param.output;
     int channel = output->shape().channel();
 
-    float16* b_data = bias_.mutableData<float16>(FP16, param_.bias()->shape());
+    int repeat = 1;
+    int alignment = 16;
+    int length = channel;
+
+    if (channel % alignment != 0 || channel < alignment) {
+      int c_lcm = lcm_(channel, alignment);
+      repeat = c_lcm / (channel);
+    }
+    Shape shape(N, {channel * repeat});
+
+    float16* b_data = bias_.mutableData<float16>(FP16, shape);
     if (param_.bias()->dataType() == FP32) {
       float* new_bias_data = param_.bias()->data<float>();
       // bias从float转换成float16
-      for (int i = 0; i < channel; i++) {
-        b_data[i] = float_to_half(new_bias_data[i]);
+      // for (int i = 0; i < channel; i++) {
+      //   b_data[i] = float_to_half(new_bias_data[i]);
+      // }
+      // bias 按16对齐填充hw
+      for (int i = 0; i < repeat; i++) {
+        for (int j = 0; j < length; j++) {
+          float16 value = float_to_half(new_bias_data[j]);
+          b_data[i * length + j] = value;
+        }
       }
       bias_.flush();
     } else {
       float16* new_bias_data = param_.bias()->data<float16>();
-      memcpy(b_data, new_bias_data, channel * sizeof(float16));
+      // memcpy(b_data, new_bias_data, channel * sizeof(float16));
+      for (int i = 0; i < repeat; i++) {
+        for (int j = 0; j < length; j++) {
+          // float16 value = float_to_half(bias_data_float[j]);
+          b_data[i * length + j] = new_bias_data[j];
+        }
+      }
       bias_.flush();
     }
 
@@ -62,6 +96,8 @@ class DepthwiseConvPE : public PE {
       float16* scale_data = param_.scale()->data<float16>();
       float16* filter_data = param.quantizedFilter()->mutableData<float16>(
           FP16, param.filter->shape());
+
+      // memcpy(filter_data, scale_data, channel * sizeof(float16));
       memcpy(filter_data,
              scale_data,
              param.filter->shape().numel() * sizeof(float16));
@@ -89,20 +125,33 @@ class DepthwiseConvPE : public PE {
     args.sub_conv_num = 1;
     param.args = args;
 
-    inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
   }
 
   bool dispatch() {
     param_.input->syncToDevice();
-    if (param_.relu.enabled) {
-      inplace_.relu_enable = param_.relu.enabled;
+    if (param_.activeParam.type == TYPE_RELU) {
+      inplace_.relu_enable = true;
+    } else if (param_.activeParam.type == TYPE_RELU6) {
+      inplace_.relu6_enable = true;
+    } else if (param_.activeParam.type == TYPE_SIGMOID) {
+      inplace_.sigmoid_enable = true;
+    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
+      inplace_.leaky_relu_enable = true;
+    }
+
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
+        inplace_.relu6_enable || inplace_.sigmoid_enable) {
       config_inplace(inplace_);
     }
     bool ret = compute_fpga_dwconv(param_.args) == 0;
-    if (param_.relu.enabled) {
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
+        inplace_.relu6_enable || inplace_.sigmoid_enable) {
       inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
       config_inplace(inplace_);
     }
     return ret;

@@ -117,6 +117,40 @@ class ReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~ReluCompute() = default;
 };
 
+template <typename T>
+struct LeakyReluFunctor {
+  float alpha;
+  explicit LeakyReluFunctor(float alpha_) : alpha(alpha_) {}
+
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+    out.device(d) = x.cwiseMax(static_cast<T>(alpha) * x);
+  }
+};
+
+template <typename T>
+class LeakyReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+
+    param.Out->template mutable_data<T>();
+    auto X = param.X;
+    auto Out = param.Out;
+    auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+    CHECK(X);
+    CHECK(Out);
+    auto x = lite::fluid::EigenVector<T>::Flatten(*X);
+    auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
+    LeakyReluFunctor<T> functor(param.Leaky_relu_alpha);
+    functor(place, x, out);
+  }
+
+  virtual ~LeakyReluCompute() = default;
+};
+
 // tanh(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x))
 template <typename T>
 struct TanhFunctor : public BaseActivationFunctor<T> {

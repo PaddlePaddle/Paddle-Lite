@@ -56,7 +56,8 @@ class Reshape2Op : public ReshapeOp {
   std::string DebugString() const override { return "reshape2"; }
 };
 
-DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims);
+std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
+                                            const DDim &input_dims);
 
 }  // namespace operators
 }  // namespace lite
