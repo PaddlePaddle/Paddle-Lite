@@ -85,7 +85,11 @@ class DDimLite {
   }
 
   friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    return !(a == b);
+    if (a.size() != b.size()) return true;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != b[i]) return true;
+    }
+    return false;
   }
 
  private:
@@ -118,7 +122,7 @@ class TensorLite {
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
-  void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
+  void Resize(const std::vector<int64_t> &x) { dims_.ConstructFrom(x); }
 
   const DDimLite &dims() const { return dims_; }
   int64_t numel() const { return dims_.production(); }
