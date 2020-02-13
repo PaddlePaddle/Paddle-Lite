@@ -61,7 +61,7 @@ add_kernel(assign_compute_arm ARM extra SRCS assign_compute.cc DEPS ${lite_kerne
 ## 3. extra kernels
 add_kernel(lrn_compute_arm ARM extra SRCS lrn_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(decode_bboxes_compute_arm ARM extra SRCS decode_bboxes_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(density_prior_box_compute_arm ARM extra SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(density_prior_box_compute_arm ARM basic SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(axpy_compute_arm ARM extra SRCS axpy_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(shape_compute_arm ARM extra SRCS shape_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(reduce_max_compute_arm ARM extra SRCS reduce_max_compute.cc DEPS ${lite_kernel_deps} math_arm)
