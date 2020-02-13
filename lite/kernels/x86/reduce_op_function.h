@@ -65,7 +65,7 @@ void ReduceFunctor(const lite::Tensor& input,
   } else {
     auto te = strstr(typeid(Functor).name(), "SumFunctor");
     if (D == 3 && R_D == 1 && te != NULL) {
-      lite::DDim input_dims = input.dims();
+      const lite::DDim& input_dims = input.dims();
       const T* input_data = input.data<T>();
       T* output_data = output->mutable_data<T>();
       for (int i = 0; i < input_dims[0]; i++) {
