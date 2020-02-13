@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 #endif
 // "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
-// are created automatically during OPT's compiling period
+// are created automatically during opt's compiling period
 #include <iomanip>
 #include "all_kernel_faked.cc"  // NOLINT
 #include "kernel_src_map.h"     // NOLINT

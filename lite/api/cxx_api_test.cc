@@ -101,7 +101,7 @@ TEST(CXXApi, save_model) {
 TEST(CXXApi, load_model_naive) {
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
-  predictor.Build(FLAGS_optimized_model + ".naive",
+  predictor.Build(FLAGS_optimized_model + ".naive.nb",
                   "",
                   "",
                   valid_places,
