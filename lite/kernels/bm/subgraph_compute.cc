@@ -109,7 +109,6 @@ int SubgraphEngine::BuildDeviceProgram() {
                             net_info_->output_dtypes[i],
                             stage.output_shapes[i]);
   }
-
   return status;
 }
 
