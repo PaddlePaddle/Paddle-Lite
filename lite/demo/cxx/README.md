@@ -1,6 +1,9 @@
 # C++ Demo
+
+> 欢迎加入PaddleLite百度官方QQ群（696965088），会有专业同学解答您的疑问与困惑。
+
 1. 环境准备
-   - 保证Android NDK在/opt目录下
+   - 一台可以编译PaddleLite的电脑
    - 一台armv7或armv8架构的安卓手机
 
 2. 编译并运行mask_detection口罩检测的demo
@@ -13,7 +16,7 @@ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite
 ```
 
-进入PaddleLite根目录，执行下面命令，编译预测库。
+进入PaddleLite根目录，编译预测库。
 ```shell
 ./lite/tools/build.sh \
     --arm_os=android \
@@ -22,28 +25,39 @@ cd Paddle-Lite
     --android_stl=c++_static \
     --build_extra=ON \
     --shutdown_log=OFF \
-    full_publish
+    tiny_publish
 ```
 
-编译完成后，依次执行如下命令。
+进入编译目录，下载模型和图片的压缩包，编译可执行文件。
 ```shell
-cd inference_lite_lib.android.armv8/demo/cxx/mask_detection
+cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mask_detection
 wget https://paddle-inference-dist.bj.bcebos.com/mask_detection.tar.gz
 tar zxvf mask_detection.tar.gz
 make
+```
+
+电脑连接安卓手机，将可执行文件、测试图片、模型文件、预测库push到安卓手机上。
+```
 adb push mask_detection /data/local/tmp/
 adb push test.jpg /data/local/tmp/
 adb push face_detection /data/local/tmp
 adb push mask_classification /data/local/tmp
 adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
 adb shell chmod +x /data/local/tmp/mask_detection
-adb shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
-/data/local/tmp/mask_detection /data/local/tmp/face_detection \
-/data/local/tmp/mask_classification /data/local/tmp/test.jpg"
-adb pull /data/local/tmp/test_mask_detection_result.jpg ./
 ```
 
-运行成功将在mask_detection目录下看到生成的口罩检测结果图像test_mask_detection_result.jpg。举例来说，最终效果如下图。
+进入安卓手机，执行demo。
+```
+adb shell
+cd /data/local/tmp
+export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH 
+mask_detection face_detection mask_classification test.jpg
+```
+
+回到电脑端，将结果取出，查看如下效果图。
+```
+adb pull /data/local/tmp/test_mask_detection_result.jpg ./
+```
 
 ![test_mask_detection_result](https://user-images.githubusercontent.com/7383104/74279176-6200cd00-4d55-11ea-9fc0-83cfc2b3b37d.jpg)
 
