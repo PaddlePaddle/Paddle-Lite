@@ -735,6 +735,24 @@ void LoadModelNaive(const std::string &model_dir,
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 
+/*
+ * Binary structure of naive_buffer model: model.nb
+ * ----------------------------------------------------------
+ * |       |    PART         |   Precision |   Length(byte) |
+ * |   1   |  meta_version   |   uint16_t  |       2        |
+ * |   2   |  opt_version    |   char[16]  |      16        |
+ * |   3   |  topo_size      |   uint64_t  |       8        |
+ * |   4   |  topo_data      |   char[]    | topo_size byte |
+ * |   5   |  param_data     |   char[]    |                |
+ * ----------------------------------------------------------
+ *  meaning of each part:
+ *      meta_version: meata_version, 0 default.
+ *      opt_version:  lite_version of OPT tool that transformed this model.
+ *      topo_size:    length of `topo_data`.
+ *      topo_data:    contains model's topology data.
+ *      param_data:   contains model's params data.
+*/
+
 // usage: LoadModelNaiveFromFile is used for loading model from file.
 template <typename T>
 void ReadModelDataFromFile(T *data,
@@ -767,7 +785,9 @@ void LoadModelNaiveFromFile(const std::string &filename,
 
   // (2)get opt version
   char opt_version[16];
-  ReadModelDataFromFile<char>(opt_version, prog_path, &offset, 16);
+  const uint64_t paddle_version_length = 16 * sizeof(char);
+  ReadModelDataFromFile<char>(
+      opt_version, prog_path, &offset, paddle_version_length);
   VLOG(4) << "Opt_version:" << opt_version;
 
   // (3)get topo_size
@@ -850,7 +870,9 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   // (2)get opt version
   char opt_version[16];
-  ReadModelDataFromBuffer<char>(opt_version, model_buffer, &offset, 16);
+  const uint64_t paddle_version_length = 16 * sizeof(char);
+  ReadModelDataFromBuffer<char>(
+      opt_version, model_buffer, &offset, paddle_version_length);
   VLOG(4) << "Opt_version:" << opt_version;
 
   // (3)get topo_size and topo_data
