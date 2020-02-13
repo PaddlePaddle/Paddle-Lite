@@ -110,11 +110,7 @@ void set_constant(const lite::Context<Target>& context,
                   lite::Tensor* tensor,
                   float value) {
   TensorSetConstantWithTarget<Target> func(context, tensor, value);
-  // #ifdef PADDLE_WITH_CUDA
-  // tensor->target().apply_visitor(func);
-  // #else
   func();
-  // #endif
 }
 
 template <typename T>
