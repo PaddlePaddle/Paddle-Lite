@@ -747,7 +747,7 @@ void LoadModelNaive(const std::string &model_dir,
  * ----------------------------------------------------------
  *  Meaning of each part:
  *      meta_version: meata_version, 0 default.
- *      opt_version:  lite_version of OPT tool that transformed this model.
+ *      opt_version:  lite_version of opt tool that transformed this model.
  *      topo_size:    length of `topo_data`.
  *      topo_data:    contains model's topology data.
  *      param_data:   contains model's params data.
