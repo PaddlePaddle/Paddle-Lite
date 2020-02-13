@@ -48,6 +48,10 @@ inline void ReorderInitState(const lite::Context<TARGET(kX86)>& context,
   row_shuffle(context, src, index_lod, dst, indexed_src);
 }
 
+static inline int64_t CalculateSeqWidth(const DDim& dims) {
+  return dims.count(1, dims.size());
+}
+
 template <typename T>
 class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -101,8 +105,13 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     } else {
       gru_value.prev_out_value = nullptr;
     }
+
     const auto& batch_starts = batch_gate->lod()[0];
     size_t seq_len = batch_starts.size() - 1;
+    int64_t batch_gate_width = CalculateSeqWidth(batch_gate->dims());
+    int64_t batch_reset_hidden_prev_width =
+        CalculateSeqWidth(batch_reset_hidden_prev->dims());
+    int64_t batch_hidden_width = CalculateSeqWidth(batch_hidden->dims());
     auto active_node =
         lite::x86::math::detail::GetActivationType(param.activation);
     auto active_gate =
@@ -145,13 +154,10 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         int64_t bend = static_cast<int64_t>(batch_starts[n + 1]);
         int64_t cur_batch_size = bend - bstart;
 
-        Tensor gate_t = batch_gate->Slice<T>(bstart, bend);
-        Tensor reset_hidden_prev_t =
-            batch_reset_hidden_prev->Slice<T>(bstart, bend);
-        Tensor hidden_t = batch_hidden->Slice<T>(bstart, bend);
-        gru_value.output_value = hidden_t.mutable_data<T>();
-        gru_value.gate_value = gate_t.mutable_data<T>();
-        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
+        gru_value.output_value = batch_hidden_ptr + bstart * batch_hidden_width;
+        gru_value.gate_value = batch_gate_ptr + bstart * batch_gate_width;
+        gru_value.reset_output_value = batch_reset_hidden_prev_ptr +
+                                       bstart * batch_reset_hidden_prev_width;
 
         if (gru_value.prev_out_value) {
           blas.GEMM_COMPUTE(CblasNoTrans,
@@ -183,13 +189,6 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       blas.GEMM_FREE(packed_state);
     } else {
 #endif
-      int64_t batch_gate_width =
-          batch_gate->dims().count(1, batch_gate->dims().size());
-      int64_t batch_reset_hidden_prev_width =
-          batch_reset_hidden_prev->dims().count(
-              1, batch_reset_hidden_prev->dims().size());
-      int64_t batch_hidden_width =
-          batch_hidden->dims().count(1, batch_hidden->dims().size());
       for (size_t n = 0; n < seq_len; n++) {
         int64_t bstart = static_cast<int64_t>(batch_starts[n]);
         int64_t bend = static_cast<int64_t>(batch_starts[n + 1]);
