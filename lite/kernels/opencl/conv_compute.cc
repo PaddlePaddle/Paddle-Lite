@@ -1071,17 +1071,17 @@ void ConvImageCompute::Run() { (this->*impl_)(); }
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(conv2d,
-                     kOpenCL,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::ConvCompute,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(conv2d,
+//                      kOpenCL,
+//                      kFloat,
+//                      kNCHW,
+//                      paddle::lite::kernels::opencl::ConvCompute,
+//                      def)
+//     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .Finalize();
 
 REGISTER_LITE_KERNEL(conv2d,
                      kOpenCL,

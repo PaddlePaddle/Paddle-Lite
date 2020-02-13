@@ -90,6 +90,8 @@ void depth_conv(const T* input_data,
   }
 }
 
+// buffer
+#if 0
 TEST(depthwise_conv2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
@@ -176,6 +178,7 @@ TEST(depthwise_conv2d_buffer_fp32, compute) {
   TargetWrapperCL::Unmap(filter_data, mapped_filter);
   TargetWrapperCL::Unmap(input_data, mapped_input);
 }
+#endif
 
 TEST(depthwise_conv2d_image2d_fp16, compute) {
   LOG(INFO) << "to get kernel ...";
@@ -307,5 +310,5 @@ TEST(depthwise_conv2d_image2d_fp16, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(depthwise_conv2d, kOpenCL, kFP16, kImageDefault, image2d);
