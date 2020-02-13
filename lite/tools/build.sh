@@ -72,7 +72,7 @@ function build_opt {
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DWITH_MKL=OFF
-    make OPT -j$NUM_PROC
+    make opt -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
