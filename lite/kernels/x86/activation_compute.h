@@ -233,8 +233,7 @@ class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     const T* x_data = param.X->data<T>();
     T* out_data = param.Out->mutable_data<T>();
-    size_t n = std::min(param.X->numel(), param.Out->numel());
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < param.X->numel(); i++) {
       out_data[i] = x_data[i] / (static_cast<T>(1) + std::abs(x_data[i]));
     }
   }
