@@ -223,20 +223,6 @@ class GeluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
 // softsign(x) = x / (1 + |x|)
 template <typename T>
-struct SoftsignFunctor : public BaseActivationFunctor<T> {
-  template <typename Device, typename X, typename Out>
-  void operator()(Device d, X x, Out out) {
-    auto x_data = x.data();
-    auto out_data = out.data();
-    int n = std::min(x.size(), out.size());
-
-    for (int i = 0; i < n; i++) {
-      out_data[i] = x_data[i] / (static_cast<T>(1) + std::abs(x_data[i]));
-    }
-  }
-};
-
-template <typename T>
 class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
@@ -244,9 +230,13 @@ class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   void Run() override {
     // auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ActivationParam>();
-    param.Out->template mutable_data<T>();
 
-    Activate<SoftsignFunctor<T>>(param.X, param.Out);
+    const T* x_data = param.X->data<T>();
+    T* out_data = param.Out->mutable_data<T>();
+    size_t n = std::min(param.X->numel(), param.Out->numel());
+    for (int i = 0; i < n; i++) {
+      out_data[i] = x_data[i] / (static_cast<T>(1) + std::abs(x_data[i]));
+    }
   }
 
   virtual ~SoftsignCompute() = default;
