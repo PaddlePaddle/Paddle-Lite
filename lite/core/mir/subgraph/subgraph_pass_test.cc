@@ -157,7 +157,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
                                 lite_api::LiteModelType::kNaiveBuffer);
   // Load optimized model
   lite_api::MobileConfig mobile_config;
-  mobile_config.set_model_dir(optimized_model_dir);
+  mobile_config.set_model_from_file(optimized_model_dir + ".nb");
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
