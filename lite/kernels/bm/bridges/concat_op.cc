@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <bmcompiler_if.h>
 #include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
@@ -21,47 +21,59 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = x->dims();
+  // input
+  auto x_names = op_info->Input("X");
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  // output
   auto output_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
   auto output_dims = output->dims();
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
-  std::vector<int32_t> i_x_shape_data(x_dims.size());
   std::vector<int32_t> i_output_shape_data(output_dims.size());
-  for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
-  }
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  float alpha = 0.f;
-  if (op_type == "relu") {
-  } else if (op_type == "leaky_relu") {
-    alpha = op_info->GetAttr<float>("alpha");
-  } else {
-    LOG(FATAL) << "[BM] unsupport act type";
-    return FAILED;
+  const int32_t input_num = x_names.size();
+  int32_t** shape = new int32_t*[input_num];
+  int32_t* dim = new int32_t[input_num];
+  const char** name = new const char*[input_num];
+  for (size_t i = 0; i < x_names.size(); i++) {
+    auto x = scope->FindMutableTensor(x_names[i]);
+    name[i] = x_names[i].c_str();
+    auto x_dims = x->dims();
+    dim[i] = x_dims.size();
+    const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
+    shape[i] = new int32_t[x_dims.size()];
+    for (size_t j = 0; j < x_dims.size(); j++) {
+      shape[i][j] = static_cast<int32_t>(x_shape_data[j]);
+    }
   }
-  add_relu_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_x_shape_data[0]),
-                 x_dims.size(),
-                 static_cast<const char*>(x_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 alpha,
-                 -1.f);
+
+  auto axis = op_info->GetAttr<int>("axis");
+  add_concat_layer(graph->GetCompilerHandle(),
+                   input_num,
+                   shape,
+                   dim,
+                   name,
+                   const_cast<const int*>(&i_output_shape_data[0]),
+                   output_dims.size(),
+                   static_cast<const char*>(output_var_name.c_str()),
+                   axis);
+  for (size_t i = 0; i < x_names.size(); i++) {
+    delete[] shape[i];
+  }
+  delete[] shape;
+  delete[] name;
+  delete[] dim;
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -70,8 +82,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+REGISTER_SUBGRAPH_BRIDGE(concat,
                          kBM,
-                         paddle::lite::subgraph::bm::ActConverter);
+                         paddle::lite::subgraph::bm::ConcatConverter);
