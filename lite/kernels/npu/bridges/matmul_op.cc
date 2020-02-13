@@ -35,19 +35,23 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_type = kernel->GetInputDeclType("X");
   CHECK(x_type->precision() == PRECISION(kFloat));
   CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-  auto x = scope->FindMutableTensor(x_name);
+  auto x = scope->FindTensor(x_name);
   auto x_dims = x->dims();
 
   auto y_name = op_info->Input("Y").front();
   auto y_type = kernel->GetInputDeclType("Y");
   CHECK(y_type->precision() == PRECISION(kFloat));
   CHECK(y_type->layout() == DATALAYOUT(kNCHW));
-  auto y = scope->FindMutableTensor(y_name);
+  auto y = scope->FindTensor(y_name);
   auto y_dims = y->dims();
 
   if (x_dims.size() == 1 || x_dims.size() != y_dims.size()) {
     LOG(WARNING)
         << "[NPU] dims size of x and y must be same and greater than 1.";
+    return FAILED;
+  }
+  if (y_dims.size() == 2 && !y->persistable()) {
+    LOG(WARNING) << "[NPU] y must be const if y is 2-D";
     return FAILED;
   }
   if (x_dims.size() > 2 &&
@@ -61,7 +65,7 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
-  auto out = scope->FindMutableTensor(out_name);
+  auto out = scope->FindTensor(out_name);
   auto out_dims = out->dims();
 
   bool transpose_x = op_info->GetAttr<bool>("transpose_X");
@@ -80,7 +84,6 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Add(x_name, *x);
   }
 
-  // Y node which only supports 2-D persistable tensor
   std::shared_ptr<Node> y_node = nullptr;
   if (graph->Has(y_name)) {
     y_node = graph->Get(y_name);

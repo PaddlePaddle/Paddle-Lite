@@ -11,42 +11,44 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
 
+#include <memory>
 #include <string>
-#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/all.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace opencl {
 
-class FcOpLite : public OpLite {
+template <PrecisionType Ptype, DataLayoutType layout>
+class ConcatCompute : public KernelLite<TARGET(kOpenCL), Ptype, layout> {
  public:
-  FcOpLite() {}
+  using param_t = operators::ConcatParam;
 
-  explicit FcOpLite(const std::string &type) : OpLite(type) {}
+  void PrepareForRun() override;
 
-  bool CheckShape() const override;
+  void Run() override;
 
-  bool InferShape() const override;
+  std::string doc();  // override;
 
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+  // protected:
+  // void UpdateParams();
 
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "fc"; }
-
- private:
-  mutable FcParam param_;
+  int axis_size_ = 1;
+  int post_size_ = 1;
+  int pre_size_ = 1;
+  int axis_ = 1;
+  param_t* concat_param_{nullptr};
+  std::string kernel_func_name_{};
+  std::string build_options_{"-DCL_DTYPE_float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
-}  // namespace operators
+}  // namespace opencl
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
