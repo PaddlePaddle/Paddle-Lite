@@ -29,8 +29,6 @@ void LightPredictor::Build(const std::string& lite_model_file,
   PrepareFeedFetch();
 }
 
-// warning: this is old inference,and this inference will be abandened in
-// release/v3.0.0
 void LightPredictor::Build(const std::string& model_dir,
                            const std::string& model_buffer,
                            const std::string& param_buffer,

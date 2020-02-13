@@ -200,8 +200,6 @@ void MobileConfig::set_model_from_buffer(const std::string &x) {
   lite_model_file_ = x;
   model_from_memory_ = true;
 }
-// warning: set model data from memory buffer, which is in old format and will
-// be abandened in release/v3.0.0
 void MobileConfig::set_model_buffer(const char *model_buffer,
                                     size_t model_buffer_size,
                                     const char *param_buffer,

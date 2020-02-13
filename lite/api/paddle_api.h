@@ -175,8 +175,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // model data readed from file or memory buffer in combined format.
   std::string lite_model_file_;
 
-  // warning: model data from buffer or file, which is in old format and will be
-  // abandened in release/v3.0.0
+  // NOTE: This is a deprecated variable and will be removed in latter release.
   std::string model_buffer_;
   std::string param_buffer_;
 
@@ -193,16 +192,16 @@ class LITE_API MobileConfig : public ConfigBase {
   // memory buffer.
   bool model_from_memory() const { return model_from_memory_; }
 
-  // warning: set model data from memory buffer, which is in old format and will
-  // be abandened in release/v3.0.0
+  // NOTE: This is a deprecated API and will be removed in latter release.
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
                         size_t param_buffer_size);
 
-  // warning: return model data in old format, which will be abandened in
-  // release/v3.0.0
+  // NOTE: This is a deprecated API and will be removed in latter release.
   const std::string& model_buffer() const { return model_buffer_; }
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
   const std::string& param_buffer() const { return param_buffer_; }
 };
 

@@ -49,7 +49,7 @@ class LITE_API LightPredictor {
     Build(lite_model_file, model_from_memory);
   }
 
-  // warning: old inference and will be abandened in release/v3.0.0
+  // NOTE: This is a deprecated API and will be removed in latter release.
   LightPredictor(const std::string& model_dir,
                  const std::string& model_buffer = "",
                  const std::string& param_buffer = "",
@@ -83,7 +83,7 @@ class LITE_API LightPredictor {
   void Build(const std::string& lite_model_file,
              bool model_from_memory = false);
 
-  // warning: old inference and will be abandened in release/v3.0.0
+  // NOTE: This is a deprecated API and will be removed in latter release.
   void Build(
       const std::string& model_dir,
       const std::string& model_buffer,
