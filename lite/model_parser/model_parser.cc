@@ -46,6 +46,7 @@ int SizeOfType(framework::proto::VarType::Type type) {
     DO(FP16, float);
     DO(FP32, float);
     DO(INT8, int8_t);
+    DO(INT16, int16_t);
     DO(INT32, int);
     DO(INT64, int64_t);
 #undef DO

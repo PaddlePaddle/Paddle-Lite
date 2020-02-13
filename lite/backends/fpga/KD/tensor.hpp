@@ -300,14 +300,12 @@ class Tensor {
   }
 
   void flush() {
-    size_t memorySize =
-        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+    size_t memorySize = placeHolder_->memorySize();
     fpga_flush(placeHolder_->data(), memorySize);
   }
 
   void invalidate() {
-    size_t memorySize =
-        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+    size_t memorySize = placeHolder_->memorySize();
     fpga_invalidate(placeHolder_->data(), memorySize);
   }
 
@@ -385,6 +383,7 @@ class Tensor {
     invalidate();
     std::ofstream ofs;
     ofs.open(path);
+    ofs << scale()[0] << " / " << scale()[1] << std::endl;
 
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;

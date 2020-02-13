@@ -29,12 +29,15 @@ class SequenceTopkAvgPoolingCompute
 
   void Run() override;
 
+  void PrepareForRun() override;
+
   virtual ~SequenceTopkAvgPoolingCompute() = default;
 
  protected:
   lite::Tensor _height_offset;
   lite::Tensor _width_offset;
   lite::Tensor _top_ks;
+  int _shared_mem_size;
 };
 
 }  // namespace cuda

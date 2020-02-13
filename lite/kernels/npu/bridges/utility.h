@@ -94,6 +94,30 @@ REG_OP(Pad)
     .ATTR(epsilon, AttrValue::FLOAT{1e-7f})
     .OP_END()
 
+    /*
+     * Multiplies slices of two tensors in batches.
+     * <Input>
+     *      x : The input tensor
+     *      y : The input tensor
+     * <Output>
+     *      z : The output tensor
+     * <Attr>
+     *      adj_x : adj_x is true, the input tensor x  is  transposed, otherwise
+     * it will not be transposed. Default is false (The current version only
+     * supports false).
+     *      adj_y : adj_y is true, the input tensor y  is  transposed, otherwise
+     * it will not be transposed. Default is false.
+     * <Added in HiAI version>
+     *      100.320.010.010
+     */
+    REG_OP(BatchMatMul)
+    .INPUT(x, TensorType({DT_FLOAT}))
+    .INPUT(y, TensorType({DT_FLOAT}))
+    .OUTPUT(z, TensorType({DT_FLOAT}))
+    .ATTR(adj_x, AttrValue::BOOL{false})
+    .ATTR(adj_y, AttrValue::BOOL{false})
+    .OP_END()
+
 }  // namespace ge
 
 namespace paddle {
