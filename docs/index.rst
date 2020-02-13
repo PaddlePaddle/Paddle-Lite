@@ -34,6 +34,8 @@ Welcome to Paddle-Lite's documentation!
   :caption: 使用指南
   :name: sec-user-guides
 
+  user_guides/cuda
+
 .. toctree::
   :maxdepth: 1
   :caption: 进阶使用指南
