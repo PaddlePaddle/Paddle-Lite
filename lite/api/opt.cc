@@ -240,7 +240,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
 /// Print help information
 void PrintHelpInfo() {
   // at least one argument should be inputed
-  const std::string opt_version = version();
+  const std::string opt_version = lite::version();
   const char help_info[] =
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"

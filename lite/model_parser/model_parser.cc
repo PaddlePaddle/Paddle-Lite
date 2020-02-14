@@ -696,6 +696,13 @@ void LoadModelNaive(const std::string &model_dir,
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
+  LOG(WARNING)
+      << "WARNING: MobileConfig::set_model_dir and "
+         "MobileConfig::set_model_buffer are deprecated APIs "
+         "and will be removed in latter release. \n"
+         "    MobileConfig::set_model_from_file(const std::string& model_file)"
+         " and MobileConfig::set_model_from_buffer(const std::string& "
+         "model_buffer) are recommended.";
   // Load model
   const std::string prog_path = model_dir + "/__model__.nb";
   naive_buffer::BinaryTable table;
@@ -791,10 +798,11 @@ void LoadModelNaiveFromFile(const std::string &filename,
       opt_version, prog_path, &offset, opt_version_length);
   VLOG(4) << "Opt_version:" << opt_version;
 
-  // check version, opt's version should be consistent with current Paddle-Lite version.
+  // check version, opt's version should be consistent with current Paddle-Lite
+  // version.
   const std::string paddle_version = version();
   const std::string opt_version_str = opt_version;
-  if ( paddle_version == opt_version_str ) {
+  if (paddle_version == opt_version_str) {
     LOG(WARNING) << "warning: the version of opt that transformed this model "
                     "is not consistent with current Paddle-Lite version."
                     "\n      version of opt:"
