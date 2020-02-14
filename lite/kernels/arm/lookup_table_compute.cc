@@ -36,7 +36,7 @@ void LookupTableCompute::Run() {
 
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
-  auto ids_data = ids->data<int64_t>();
+  auto ids_data = ids->data<float>();
 
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
@@ -75,7 +75,6 @@ REGISTER_LITE_KERNEL(lookup_table,
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-
 REGISTER_LITE_KERNEL(lookup_table_v2,
                      kARM,
                      kFloat,

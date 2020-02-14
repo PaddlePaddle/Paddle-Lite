@@ -101,7 +101,6 @@ void TypeTargetTransformPass::AddIoCopyInst(
   auto io_copy_output_name =
       string_format("%s/target_trans", in->AsArg().name.c_str());
   // string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
-
   if (copied_nodes->count(in->AsArg().name)) {
     // Remove the old link
     RemoveDirectedLink(in, inst_node);
@@ -116,12 +115,14 @@ void TypeTargetTransformPass::AddIoCopyInst(
   } else {
     // TODO(MyPandaShaoxiang) should set same place with input?
     auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
-    // Set the place for io_copy_output_arg node, the target should be equal to
-    // to.target()
-    // The precision and layout should be equal to from.precision(),
-    // from.layout()
+// Set the place for io_copy_output_arg node, the target should be equal to
+// to.target()
+// The precision and layout should be equal to from.precision(),
+// from.layout()
+#ifndef LITE_WITH_FPGA
     io_copy_output_arg->AsArg().type =
         LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
+#endif
     auto* io_copy_inst = graph->NewInstructNode();
 
     bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
