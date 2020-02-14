@@ -27,10 +27,24 @@ namespace mir {
 void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // delete quant node
   std::vector<std::string> quant_op_types = {
-      "fake_quantize_range_abs_max", "fake_quantize_moving_average_abs_max"};
+      "fake_quantize_abs_max",
+      "fake_quantize_range_abs_max",
+      "fake_quantize_moving_average_abs_max"};
+  /*
+  for (auto& op_type : {"conv2d", "mul", "depthwise_conv2d"}) {
+    for (int i = 5; i >= 1; --i){
+      fusion::DynamicQuantDequantOpFuser fuser("fake_quantize_abs_max", op_type,
+  i);
+      fuser(graph.get());
+    }
+  }
+  */
+
   for (auto& op_type : quant_op_types) {
     fusion::DeleteQuantOpFuser fuser(op_type);
     fuser(graph.get());
+    fusion::DeleteDynamicQuantOpFuser dfuser(op_type);
+    dfuser(graph.get());
   }
 
   // fuse quantized node and dequant node

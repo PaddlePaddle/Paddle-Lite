@@ -77,6 +77,7 @@ class Optimizer {
 #endif
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
+           "kernel_place_correct_pass",
            // info(target/precision/layout/device)
            // using kernel info
            "argument_type_display_pass",  // debug pass: show arg-type-node's
@@ -108,7 +109,9 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+#ifndef LITE_WITH_FPGA
            "memory_optimize_pass",
+#endif
            "npu_subgraph_pass",
            "xpu_subgraph_pass"}};
       RunPasses(passes_local);
