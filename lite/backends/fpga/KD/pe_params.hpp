@@ -30,8 +30,13 @@ struct ReLUParam {
   float leaky_relu_factor = 0.0f;
 };
 
+struct ActiveParam {
+  enum ActiveType type = TYPE_NONE;
+  float leaky_relu_factor;
+};
+
 struct PEParam {
-  ReLUParam relu;
+  ActiveParam activeParam;
 };
 
 struct InputParam : PEParam {
@@ -100,24 +105,6 @@ struct DepthwiseConvParam : ConvParam {
   Tensor* quantizedFilter_ = new Tensor();
 };
 
-struct GRUParam : PEParam {
- public:
-  Tensor* input = nullptr;
-  Tensor* h0 = nullptr;
-  Tensor* weight = nullptr;
-  Tensor* bias = nullptr;
-
-  Tensor* batch_gate = nullptr;
-  Tensor* batch_reset_hidden_prev = nullptr;
-  Tensor* batch_hidden = nullptr;
-  Tensor* hidden = nullptr;
-
-  std::string gate_activation = "sigmoid";
-  std::string activation = "tanh";
-  bool is_reverse = false;
-  bool origin_mode = false;
-};
-
 enum PoolingType : int {
   MAX = 0,
   AVERAGE = 1,
@@ -155,7 +142,8 @@ struct ElementwiseAddParam : PEParam {
 
 struct ElementwiseMulParam : PEParam {
  public:
-  std::vector<Tensor*> inputs;
+  Tensor* input_x;
+  Tensor* input_y = nullptr;
   Tensor* output = nullptr;
 };
 
@@ -223,6 +211,17 @@ struct PriorBoxParam : PEParam {
   float offset;
 };
 
+struct YoloBoxParam : PEParam {
+  Tensor* input;
+  Tensor* imgSize;
+  Tensor* outputBoxes;
+  Tensor* outputScores;
+  int downsampleRatio;
+  std::vector<int> anchors;
+  int classNum;
+  float confThresh;
+};
+
 struct ScaleParam : PEParam {
  public:
   Tensor* input = nullptr;
@@ -255,5 +254,24 @@ struct CropParam : PEParam {
   std::vector<int> offsets;
   std::vector<int> shape;
 };
+
+struct GRUParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* h0 = nullptr;
+  Tensor* weight = nullptr;
+  Tensor* bias = nullptr;
+
+  Tensor* batch_gate = nullptr;
+  Tensor* batch_reset_hidden_prev = nullptr;
+  Tensor* batch_hidden = nullptr;
+  Tensor* hidden = nullptr;
+
+  std::string gate_activation = "sigmoid";
+  std::string activation = "tanh";
+  bool is_reverse = false;
+  bool origin_mode = false;
+};
+
 }  // namespace zynqmp
 }  // namespace paddle

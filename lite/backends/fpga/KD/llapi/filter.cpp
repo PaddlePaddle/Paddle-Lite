@@ -31,7 +31,7 @@ void saveToFile(std::string name, void* data_in, int size) {
   std::ofstream ofs;
   ofs.open(name);
 
-  int8_t* data = static_cast<int8_t*> data_in;
+  int8_t* data = static_cast<int8_t*>(data_in);
   for (int i = 0; i < size; i++) {
     float value = data[i];
     ofs << value << std::endl;
@@ -82,6 +82,14 @@ int calc_num_per_div(int num, int group_num, int division_capacity) {
   } else {
     return (num + group_num - 1) / group_num;
   }
+}
+
+int calc_pack_num(int num_per_group, int group, int division_capacity) {
+  auto n = 1;
+  while ((num_per_group * (group + n - 1) / n) > division_capacity) {
+    n++;
+  }
+  return (n);
 }
 
 void convert_to_hwc(int8_t* chw_data,
@@ -231,10 +239,9 @@ int8_t* format_filter(float* data_in,
 
   for (int n = 0; n < num; n++) {
     float* filter_start = data_in + n * chw;
-    float f_max = find_max(filter_start, chw);
     int8_t* quantized_start = quantized_data + n * chw;
     quantize(filter_start, quantized_start, chw, max);
-    filter_max.push_back(max);
+    filter_max.push_back(1);
   }
 
   int8_t* hwc_data =
@@ -256,6 +263,7 @@ int8_t* format_filter(float* data_in,
     int filter_num_alignment = get_filter_num_alignment();
     int num_per_div_after_alignment =
         align_to_x(num_per_div_before_alignment, filter_num_alignment);
+
     int num_element = div_num * num_per_div_after_alignment * chw_aligned;
     int8_t* num_aligned_data =
         reinterpret_cast<int8_t*>(fpga_malloc(num_element * sizeof(int8_t)));

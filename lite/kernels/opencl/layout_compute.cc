@@ -185,7 +185,7 @@ class LayoutComputeImageDefaultToBufferChw
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(size_ch));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_ch));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(size_block));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(size_batch));
     CL_CHECK_FATAL(status);

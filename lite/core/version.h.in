@@ -42,7 +42,7 @@ static std::string version() {
 
   std::string tag = paddlelite_tag();
   if (tag.empty()) {
-    ss << paddlelite_branch() << "(" << paddlelite_commit() << ")";
+    ss << paddlelite_commit();
   } else {
     ss << tag;
   }

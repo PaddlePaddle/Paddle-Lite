@@ -307,7 +307,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
 #endif  // LITE_WITH_ARM
 
 // TODO(chenjiaoAngel): fix multi-threds, diff: 3x3 depthwise conv
-#if 1  /// 3x3dw
+#if 1  // 3x3dw
 TEST(TestConv3x3DW, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
@@ -449,7 +449,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
-                    if (cin == 1 && cout ==1) {
+                    if (cin == 1 && cout == 1) {
                       continue;
                     }
                     const float leakey_relu_scale = 8.88;

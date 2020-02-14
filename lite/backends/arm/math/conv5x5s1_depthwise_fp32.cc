@@ -109,7 +109,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size);
         float* pre_out = pre_din + pre_in_size;
 #else
-        float pre_din = tmp_din;
+        float* pre_din = tmp_din;
         float* pre_out = pre_din + pre_in_size;
 #endif
         prepack_input_nxwc4_dw(
