@@ -29,7 +29,6 @@ class RuntimeContextAssignPass : public StmtPass {
       auto& inst = node.AsStmt();
 
       int stream_id = inst.stream_id_;
-      LOG(INFO) << inst.op_type();
 
       inst.picked_kernel().SetContext(
           ContextScheduler::Global().NewContext(inst.picked_kernel().target(), stream_id));

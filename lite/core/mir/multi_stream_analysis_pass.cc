@@ -29,6 +29,15 @@ namespace lite {
 namespace mir {
 
 void MultiStreamAnalysisPass::Init(SSAGraph* graph) {  
+  exec_ops_.clear();
+  wait_que_.clear();
+  std::queue<int> empty_queue;
+  while (!exec_que_.empty()) {
+    exec_que_.pop();
+  }
+  ops_in_streams_.clear();
+  resources_.clear();map_arg_to_lane_.clear();
+
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (op_node->IsStmt()) {
       // Set all outputs of op to inaccessible state.
@@ -64,6 +73,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
   // of the feed op to be accessible.
   int lane = 0;
   auto nodes = graph->inputs();
+  ops_in_streams_.resize(max_stream_);
 
   for (auto& node : nodes) {
     std::string::size_type idx = node->AsArg().name.find("feed");
@@ -71,7 +81,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
       for (auto& feed_ops : node->outlinks) {
         // feed op doesn't need to wait sync.
         feed_ops->AsStmt().need_sync_ = false;
-        CHECK_EQ(feed_ops->outlinks.size(), 1)
+        CHECK_EQ(static_cast<int>(feed_ops->outlinks.size()), 1)
             << "feed op must have one output.";
         for (auto& var : feed_ops->outlinks) {
           var->AsArg().lane = lane;
@@ -79,7 +89,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
           resources_[var->AsArg().name] = true;
         }
         feed_ops->AsStmt().stream_id_ = lane;
-        ops_in_streams_.push_back({feed_ops});
+        ops_in_streams_[lane].push_back(feed_ops);
         ++lane;
         if (lane >= max_stream_) {
           lane = 0;
@@ -212,6 +222,11 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     exec_ops_.push_back(node);
     LOG(INFO) << node->AsStmt().op_type() << " stream: " << node->AsStmt().stream_id_
             << ", sync: " << node->AsStmt().need_sync_;
+    if (node->AsStmt().need_sync_) {
+      for (size_t i = 0; i < node->AsStmt().sync_streams_.size(); ++i) {
+        LOG(INFO) << "\t\t" << node->AsStmt().sync_streams_[i];
+      }
+    }
     exec_que_.pop();
   }
 
