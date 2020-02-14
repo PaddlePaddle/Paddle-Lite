@@ -26,11 +26,6 @@ namespace x86 {
 
 struct SumFunctor {
   template <typename X, typename Y, typename Dim>
-  void operator()(X* x, Y* y, const Dim& dim) {
-    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->sum(dim);
-  }
-
-  template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim, size_t d, size_t r_d) {
     for (int i = 0; i < dim[0]; i++) {
       for (int k = 0; k < dim[2]; k++) {
@@ -43,7 +38,22 @@ struct SumFunctor {
       }
     }
   }
+
+  template <typename X, typename Y, typename Dim>
+  void operator()(X* x, Y* y, const Dim& dim) {
+    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->sum(dim);
+  }
 };
+
+#define HANDLE_DIMT(NDIM, RDIM)                                             \
+  if (ndim == NDIM && rdim == RDIM) {                                       \
+    paddle::lite::kernels::x86::ReduceFunctorTensor<lite::TargetType::kX86, \
+                                                    T,                      \
+                                                    NDIM,                   \
+                                                    RDIM,                   \
+                                                    SumFunctor>(            \
+        *input, output, dims, keep_dim);                                    \
+  }
 
 #define HANDLE_DIM(NDIM, RDIM)                                            \
   if (ndim == NDIM && rdim == RDIM) {                                     \
