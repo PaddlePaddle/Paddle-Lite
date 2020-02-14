@@ -23,7 +23,8 @@
 #include "lite/core/op_registry.h"
 
 DEFINE_string(optimized_model, "", "optimized_model");
-DEFINE_int32(N, 1, "input_batch") DEFINE_int32(C, 3, "input_channel");
+DEFINE_int32(N, 1, "input_batch");
+DEFINE_int32(C, 3, "input_channel");
 DEFINE_int32(H, 224, "input_height");
 DEFINE_int32(W, 224, "input_width");
 
