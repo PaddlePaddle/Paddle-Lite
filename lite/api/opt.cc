@@ -26,6 +26,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/version.h"
 #include "lite/model_parser/compatible_pb.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/utils/cp_logging.h"
@@ -239,6 +240,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
 /// Print help information
 void PrintHelpInfo() {
   // at least one argument should be inputed
+  const std::string opt_version = lite::version();
   const char help_info[] =
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"
@@ -260,7 +262,8 @@ void PrintHelpInfo() {
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|npu|xpu)`"
       "  Display operators in the input model\n";
-  std::cout << help_info << std::endl;
+  std::cout << "opt version:" << opt_version << std::endl
+            << help_info << std::endl;
   exit(1);
 }
 
