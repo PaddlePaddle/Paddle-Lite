@@ -55,24 +55,33 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& context = ctx_->As<X86Context>();
     CHECK(param.output);
     CHECK(param.x);
-    param.output->mutable_data<T>();
-    const int rank = param.x->dims().size();
+
+    auto* x = param.x;
+    auto* output = param.output;
+    output->mutable_data<T>();
+
+    const int rank = x->dims().size();
     const int axis = CanonicalAxis(param.axis, rank);
-    int axis_dim = param.x->dims()[axis];
-    const int n = SizeToAxis(axis, param.x->dims());
-    const int d = SizeFromAxis(axis, param.x->dims());
+    int axis_dim = x->dims()[axis];
+    if (rank == 2 && axis == 1) {
+      lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+          context, axis_dim, x, output);
+    } else {
+      const int n = SizeToAxis(axis, x->dims());
+      const int d = SizeFromAxis(axis, x->dims());
 
-    DDim shape(std::vector<DDim::value_type>{n, d});
+      DDim x_dims = x->dims();
+      DDim out_dims = output->dims();
 
-    Tensor input_2d;
-    Tensor out_2d;
-    input_2d.ShareDataWith(*param.x);
-    input_2d.Resize(shape);
-    out_2d.ShareDataWith(*param.output);
-    out_2d.Resize(shape);
+      DDim shape_2d(std::vector<DDim::value_type>{n, d});
+      x->Resize(shape_2d);
+      output->Resize(shape_2d);
 
-    lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
-        context, axis_dim, &input_2d, &out_2d);
+      lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+          context, axis_dim, x, output);
+      x->Resize(x_dims);
+      output->Resize(out_dims);
+    }
   }
 
   virtual ~SoftmaxCompute() = default;

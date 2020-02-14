@@ -110,11 +110,7 @@ void set_constant(const lite::Context<Target>& context,
                   lite::Tensor* tensor,
                   float value) {
   TensorSetConstantWithTarget<Target> func(context, tensor, value);
-  // #ifdef PADDLE_WITH_CUDA
-  // tensor->target().apply_visitor(func);
-  // #else
   func();
-  // #endif
 }
 
 template <typename T>
@@ -123,7 +119,7 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
                   const lite::Tensor& input,
                   const lite::Tensor& vector,
                   lite::Tensor* output) {
-    auto in_dims = input.dims();
+    const auto& in_dims = input.dims();
     auto size = input.numel() / in_dims[0];
     PADDLE_ENFORCE_EQ(vector.numel(), size);
     PADDLE_ENFORCE_EQ(output->dims(), in_dims);
