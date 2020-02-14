@@ -227,15 +227,15 @@ class SigmoidComputeFP16ImageDefault
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(sigmoid,
-                     kOpenCL,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::SigmoidCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(sigmoid,
+//                      kOpenCL,
+//                      kFloat,
+//                      kNCHW,
+//                      paddle::lite::kernels::opencl::SigmoidCompute,
+//                      def)
+//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .Finalize();
 
 REGISTER_LITE_KERNEL(
     sigmoid,

@@ -229,15 +229,15 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(pool2d,
-                     kOpenCL,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::PoolCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(pool2d,
+//                      kOpenCL,
+//                      kFloat,
+//                      kNCHW,
+//                      paddle::lite::kernels::opencl::PoolCompute,
+//                      def)
+//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+//     .Finalize();
 
 REGISTER_LITE_KERNEL(pool2d,
                      kOpenCL,
