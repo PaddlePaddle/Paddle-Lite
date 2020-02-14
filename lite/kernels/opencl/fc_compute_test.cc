@@ -66,6 +66,8 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
   }
 }
 
+// buffer
+#if 0  // fc_buffer
 // #define PRINT_RESULT
 #define LOOP_TEST
 TEST(fc, compute) {
@@ -193,8 +195,9 @@ TEST(fc, compute) {
   }      // m
 #endif
 }
+#endif  // fc_buffer
 
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(fc, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(fc, kOpenCL, kFloat, kNCHW, def);

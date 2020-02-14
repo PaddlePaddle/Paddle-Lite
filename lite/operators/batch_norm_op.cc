@@ -82,7 +82,20 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.variance =
       scope->FindVar(op_desc.Input("Variance").front())->GetMutable<Tensor>();
   param_.y = scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
-  param_.is_test = op_desc.GetAttr<int>("is_test");
+
+  auto is_test_type = op_desc.GetAttrType("is_test");
+  switch (is_test_type) {
+    case OpDescAPI::AttrType::INT:
+      param_.is_test = op_desc.GetAttr<int>("is_test");
+      break;
+    case OpDescAPI::AttrType::BOOLEAN:
+      param_.is_test = op_desc.GetAttr<bool>("is_test");
+      break;
+    default:
+      LOG(FATAL) << "Unsupported attribute type: the type of attribute "
+                    "`is_test` in BatchNormOP should be int or bool.";
+  }
+
   if (op_desc.HasAttr("use_global_stats")) {
     param_.use_global_stats = op_desc.GetAttr<bool>("use_global_stats");
   }
