@@ -786,10 +786,21 @@ void LoadModelNaiveFromFile(const std::string &filename,
 
   // (2)get opt version
   char opt_version[16];
-  const uint64_t paddle_version_length = 16 * sizeof(char);
+  const uint64_t opt_version_length = 16 * sizeof(char);
   ReadModelDataFromFile<char>(
-      opt_version, prog_path, &offset, paddle_version_length);
+      opt_version, prog_path, &offset, opt_version_length);
   VLOG(4) << "Opt_version:" << opt_version;
+
+  // check version, opt's version should be consistent with current Paddle-Lite version.
+  const std::string paddle_version = version();
+  const std::string opt_version_str = opt_version;
+  if ( paddle_version == opt_version_str ) {
+    LOG(WARNING) << "warning: the version of opt that transformed this model "
+                    "is not consistent with current Paddle-Lite version."
+                    "\n      version of opt:"
+                 << opt_version
+                 << "\n      version of current Paddle-Lite:" << paddle_version;
+  }
 
   // (3)get topo_size
   uint64_t topo_size;
