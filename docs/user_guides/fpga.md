@@ -1,13 +1,10 @@
----
-layout: post
-title: Lite基于FPGA的模型预测
----
+# Lite基于FPGA的模型预测
 
 Paddle Lite支持基于arm的FPGA zu3/zu5/zu9的模型预测，提供armv8的交叉编译
 
 Lite基于FPGA运行模型需要相应的FPGA驱动，目前只支持百度[Edgeboard开发板](https://ai.baidu.com/tech/hardware/deepkit)
 
-# Lite实现FPGA简介
+## Lite实现FPGA简介
 
 Lite支持FPGA作为后端硬件进行模型推理，其主要特性如下：
 
@@ -17,7 +14,7 @@ Lite支持FPGA作为后端硬件进行模型推理，其主要特性如下：
 
 - 目前FPGA成本功耗都较低，Lite基于FPGA的模型性能远远好于arm端，可作为边缘设备首选硬件
 
-# 编译
+## 编译
 
 需要提前准备带有FPGAdrv.ko的FPGA开发板（如edgeboard开发板）和Lite代码
 
@@ -44,7 +41,7 @@ CMAKE编译选项：
 ```
 Lite提供FPGA编译脚本，位于lite/tools/build_FPGA.sh，在Lite根目录执行该脚本即可编译
 
-# 运行示例
+## 运行示例
 
 - **运行文件准备**
 
@@ -80,7 +77,7 @@ chmod +x test_resnet50_FPGA
 ./test_resnet50_FPGA --model_dir=resnet50 --repeats=1000 --warmup=10
 ```
 
-# 如何在Code中使用
+## 如何在Code中使用
 
 在Lite中使用FPGA与ARM相似，具体的区别如下：
 
@@ -91,7 +88,7 @@ chmod +x test_resnet50_FPGA
 ```cpp
 lite::Predictor predictor;
 std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
+      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},Place{TARGET(kARM)});
 
 predictor.Build(model_dir, "", "", valid_places);
 

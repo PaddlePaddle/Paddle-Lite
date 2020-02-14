@@ -35,7 +35,7 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-user-guides
 
   user_guides/cuda
-
+  user_guides/fpga
 .. toctree::
   :maxdepth: 1
   :caption: 进阶使用指南
