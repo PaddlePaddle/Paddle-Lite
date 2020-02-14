@@ -356,17 +356,17 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, Concat_buffer, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, Concat_buffer, def)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFloat),
+//                                       DATALAYOUT(kNCHW))})
+//     .BindInput("AxisTensor",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kInt32),
+//                                       DATALAYOUT(kNCHW))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kNCHW))})
+//     .Finalize();
