@@ -1112,6 +1112,7 @@ void ConvImageCompute::DepthwiseConv2d3x3s1() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto dilations = *param.dilations;
+
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   auto* input_img = param.x->data<float, cl::Image2D>();
