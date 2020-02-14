@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -31,37 +31,25 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
   auto x_dims = x->dims();
+  std::vector<int32_t> i_x_shape_data(x_dims.size());
+  for (size_t i = 0; i < x_dims.size(); i++) {
+    i_x_shape_data[i] = static_cast<int32_t>(x_dims[i]);
+  }
   auto output_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
   auto output_dims = output->dims();
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
-  const int64_t* output_shape_data =
-      const_cast<const int64_t*>(&output_dims.data()[0]);
-  std::vector<int32_t> i_x_shape_data(x_dims.size());
   std::vector<int32_t> i_output_shape_data(output_dims.size());
-  for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
-  }
   for (size_t i = 0; i < output_dims.size(); i++) {
-    i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
+    i_output_shape_data[i] = static_cast<int32_t>(output_dims[i]);
   }
-  float alpha = 0.f;
-  if (op_type == "relu") {
-  } else if (op_type == "leaky_relu") {
-    alpha = op_info->GetAttr<float>("alpha");
-  } else {
-    LOG(FATAL) << "[BM] unsupport act type";
-    return FAILED;
-  }
-  add_relu_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_x_shape_data[0]),
-                 x_dims.size(),
-                 static_cast<const char*>(x_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 alpha,
-                 -1.f);
+  // auto axis = op_info->GetAttr<int>("axis");
+  add_reshape_layer_v2(graph->GetCompilerHandle(),
+                       static_cast<const char*>(x_var_name.c_str()),
+                       const_cast<const int*>(&i_x_shape_data[0]),
+                       x_dims.size(),
+                       static_cast<const char*>(output_var_name.c_str()),
+                       const_cast<const int*>(&i_output_shape_data[0]),
+                       output_dims.size());
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -71,7 +59,15 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+REGISTER_SUBGRAPH_BRIDGE(reshape,
                          kBM,
-                         paddle::lite::subgraph::bm::ActConverter);
+                         paddle::lite::subgraph::bm::ReshapeConverter);
+REGISTER_SUBGRAPH_BRIDGE(reshape2,
+                         kBM,
+                         paddle::lite::subgraph::bm::ReshapeConverter);
+REGISTER_SUBGRAPH_BRIDGE(flatten,
+                         kBM,
+                         paddle::lite::subgraph::bm::ReshapeConverter);
+REGISTER_SUBGRAPH_BRIDGE(flatten2,
+                         kBM,
+                         paddle::lite::subgraph::bm::ReshapeConverter);

@@ -14,6 +14,7 @@
 
 #include <bmcompiler_if.h>
 #include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
@@ -21,13 +22,14 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
+  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
   auto x_dims = x->dims();
@@ -45,23 +47,22 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  float alpha = 0.f;
-  if (op_type == "relu") {
-  } else if (op_type == "leaky_relu") {
-    alpha = op_info->GetAttr<float>("alpha");
-  } else {
-    LOG(FATAL) << "[BM] unsupport act type";
-    return FAILED;
-  }
-  add_relu_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_x_shape_data[0]),
-                 x_dims.size(),
-                 static_cast<const char*>(x_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 alpha,
-                 -1.f);
+
+  float one = 1.f;
+  auto epsilon = op_info->GetAttr<float>("epsilon");
+  add_normalize_layer(graph->GetCompilerHandle(),
+                      const_cast<const int*>(&i_x_shape_data[0]),
+                      x_dims.size(),
+                      static_cast<const char*>(x_var_name.c_str()),
+                      const_cast<const int*>(&i_output_shape_data[0]),
+                      output_dims.size(),
+                      static_cast<const char*>(output_var_name.c_str()),
+                      static_cast<const char*>(unique_op_name.c_str()),
+                      0,
+                      1,
+                      &one,
+                      epsilon);
+
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -71,7 +72,4 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
-                         kBM,
-                         paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(norm, kBM, paddle::lite::subgraph::bm::NormConverter);
