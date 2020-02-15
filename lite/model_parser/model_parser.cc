@@ -586,7 +586,8 @@ void SaveModelNaive(const std::string &model_dir,
   // Save Params
   SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
 
-  LOG(INFO) << "Save naive buffer model in '" << model_dir << "' successfully";
+  LOG(INFO) << "Save naive buffer model in '" << model_dir
+            << ".nb' successfully";
 }
 #endif
 
