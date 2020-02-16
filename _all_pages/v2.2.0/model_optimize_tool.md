@@ -13,7 +13,7 @@ Lite架构在预测过程中表现出来的高性能得益于其丰富的优化�
 1. 我们提供当前develop分支编译结果下载：[opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt)、[opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac)
 release/v2.2.0之前版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
 
-2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`    
+2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`
    (release/v2.2.0之前的转化工具为model_optimize_tool、release/v2.3.0之后为opt)
 
 3. 可以下载Paddle-Lite源码，从源码编译出opt工具
