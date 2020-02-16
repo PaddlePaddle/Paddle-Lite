@@ -233,7 +233,7 @@ predictor = create_paddle_predictor(config)
 返回类型：`int`
 
 
-## `set_cpu_math_library_num_threads(threads)`
+## `set_x86_math_library_num_threads(threads)`
 
 设置CPU Math库线程数，CPU核心数支持情况下可加速预测。默认为1，并且仅在x86下有效。
 
@@ -246,7 +246,7 @@ predictor = create_paddle_predictor(config)
 返回类型：`None`
 
 
-## `cpu_math_library_num_threads()`
+## `x86_math_library_num_threads()`
 
 返回CPU Math库线程数，CPU核心数支持情况下可加速预测。仅在x86下有效。
 
@@ -283,7 +283,21 @@ config.set_power_mode(LITE_POWER_HIGH);
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
 
+## `set_model_from_file(model_dir)`
+
+设置模型文件，当需要从磁盘加载模型时使用。
+
+参数：
+
+- `model_dir(std::string)` - 模型文件路径
+
+返回：`None`
+
+返回类型：`void`
+
 ## `set_model_dir(model_dir)`
+
+注意**：Lite模型格式在release/v2.3.0之后修改，本接口为加载老格式模型的接口，将在release/v3.0.0废弃。建议替换为`set_model_from_file`接口。
 
 设置模型文件夹路径，当需要从磁盘加载模型时使用。
 
@@ -309,9 +323,21 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 返回类型：`std::string`
 
+## `set_model_from_buffer(model_buffer)`
 
+设置模型的内存数据，当需要从内存加载模型时使用。
+
+参数：
+
+- `model_buffer(std::string)` - 内存中的模型数据
+
+返回：`None`
+
+返回类型：`void`
 
 ## `set_model_buffer(model_buffer, model_buffer_size, param_buffer, param_buffer_size)`
+
+**注意**：Lite模型格式在release/v2.3.0之后修改，本接口为加载老格式模型的接口，将在release/v3.0.0废弃。建议替换为`set_model_from_buffer`接口。
 
 设置模型、参数的内存地址，当需要从内存加载模型时使用。
 
