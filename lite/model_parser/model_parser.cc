@@ -544,7 +544,6 @@ void SaveModelNaive(const std::string &model_dir,
                     const Scope &exec_scope,
                     const cpp::ProgramDesc &cpp_prog,
                     bool combined) {
-  MkDirRecur(model_dir);
   // Save program
   const std::string prog_path = model_dir + ".nb";
   naive_buffer::BinaryTable table;
@@ -586,7 +585,8 @@ void SaveModelNaive(const std::string &model_dir,
   // Save Params
   SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
 
-  LOG(INFO) << "Save naive buffer model in '" << model_dir << "' successfully";
+  LOG(INFO) << "Save naive buffer model in '" << model_dir
+            << ".nb' successfully";
 }
 #endif
 
