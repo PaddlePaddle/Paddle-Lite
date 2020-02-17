@@ -203,10 +203,12 @@ class ReduceSumComputeTester : public arena::TestCase {
                          const std::string& alias,
                          std::vector<int> dim,
                          bool keep_dim,
+                         bool reduce_all,
                          DDim x_dims)
       : TestCase(place, alias),
         dim_(dim),
         keep_dim_(keep_dim),
+        reduce_all_(reduce_all),
         x_dims_(x_dims) {}
 
   void RunBaseline(Scope* scope) override {
@@ -223,9 +225,6 @@ class ReduceSumComputeTester : public arena::TestCase {
     }
 
     sort(dim_.begin(), dim_.end());
-    if (dim_.size() == 0) {
-      reduce_all_ = true;
-    }
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
       if (keep_dim_) {
@@ -259,7 +258,7 @@ class ReduceSumComputeTester : public arena::TestCase {
     int in_h = x_dims_[2];
     int in_w = x_dims_[3];
 
-    if (dim_.size() == 0 || dim_.size() == 4) {
+    if (reduce_all_) {
       reduce_sum_all(x_data, out_data, in_n, in_c, in_h, in_w);
     } else if (dim_.size() == 1) {
       switch (dim_[0]) {
@@ -317,13 +316,16 @@ void test_reduce_sum(Place place) {
       for (auto h : {1, 3}) {
         for (auto w : {1, 3}) {
           for (bool keep_dim : {false, true}) {
-            for (auto dim : reduce_dim) {
-              auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
-              std::unique_ptr<arena::TestCase> tester(
-                  new ReduceSumComputeTester(
-                      place, "def", dim, keep_dim, x_dims));
-              arena::Arena arena(std::move(tester), place, 2e-5);
-              arena.TestPrecision();
+            for (bool reduce_all : {false, true}) {
+              for (auto dim : reduce_dim) {
+                auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
+                LOG(INFO) << "reduce_all:" << reduce_all;
+                std::unique_ptr<arena::TestCase> tester(
+                    new ReduceSumComputeTester(
+                        place, "def", dim, keep_dim, reduce_all, x_dims));
+                arena::Arena arena(std::move(tester), place, 2e-5);
+                arena.TestPrecision();
+              }
             }
           }
         }
