@@ -142,7 +142,7 @@ __kernel void depth_conv2d_3x3(__private const int global_size_dim0,
 #endif
 
 #ifdef RELU
-    output = activation(output);
+    output = activation_type4(output);
 #endif
 
 
@@ -309,8 +309,8 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
 #endif
 
 #ifdef RELU
-    output[0] = activation(output[0]);
-    output[1] = activation(output[1]);
+    output[0] = activation_type4(output[0]);
+    output[1] = activation_type4(output[1]);
 #endif
 
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, (int2)(ou_x, ou_nh_id), output[0]);

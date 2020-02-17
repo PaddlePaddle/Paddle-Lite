@@ -14,6 +14,7 @@
 #include <bmcompiler_defs.h>
 #include <bmcompiler_if.h>
 #include <bmcompiler_if_lite.h>
+#include <bmcompiler_op_code.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -68,22 +69,66 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  if (y_is_const) {
-    CHECK_EQ(op_type, "elementwise_add");
-  }
+  auto axis = op_info->GetAttr<int>("axis");
   int op_code{-1};
+  int eltwise_if_code{-1};
   float coeff[2] = {1.f, 1.f};
   if (op_type == "elementwise_mul") {
-    op_code = 0;
+    op_code = BINARY_MUL;
+    eltwise_if_code = 0;
   } else if (op_type == "elementwise_add") {
-    op_code = 1;
+    op_code = BINARY_ADD;
+    eltwise_if_code = 1;
   } else if (op_type == "elementwise_sub") {
-    op_code = 1;
+    op_code = BINARY_SUB;
+    eltwise_if_code = 1;
     coeff[1] = -1.f;
   } else {
     LOG(FATAL) << "UNSUPPORTED ELTWISE OPERATION: " << op_type;
   }
-  if (!y_is_const) {
+  const float* y_data = const_cast<const float*>(y->mutable_data<float>());
+  const float* x_data = const_cast<const float*>(x->mutable_data<float>());
+  auto unique_op_name = lite::subgraph::bm::UniqueName("expand_ndims");
+  std::vector<int32_t> i_expand_shape_data(3);
+  if (y_is_const) {
+    if (dim[0] == dim[1] || 2 == dim[0]) {
+      bm_add_const_tensor(graph->GetCompilerHandle(),
+                          name[1],
+                          shape[1],
+                          dim[1],
+                          static_cast<bm_data_type_t>(DTYPE_FP32),
+                          static_cast<const void*>(y_data));
+    } else if (1 == dim[1] && 1 == axis) {
+      add_expand_ndims_layer(graph->GetCompilerHandle(),
+                             name[1],
+                             shape[1],
+                             dim[1],
+                             static_cast<const float*>(y_data),
+                             -1,
+                             2,
+                             static_cast<const char*>(unique_op_name.c_str()));
+      name[1] = static_cast<const char*>(unique_op_name.c_str());
+      dim[1] = 3;
+      i_expand_shape_data[0] = i_y_shape_data[0];
+      i_expand_shape_data[1] = 1;
+      i_expand_shape_data[2] = 1;
+      shape[1] = &i_expand_shape_data[0];
+      y_data = nullptr;
+    }
+    add_binary_layer_v2(graph->GetCompilerHandle(),
+                        name[0],
+                        shape[0],
+                        dim[0],
+                        0,
+                        static_cast<const float*>(x_data),
+                        name[1],
+                        shape[1],
+                        dim[1],
+                        0,
+                        static_cast<const float*>(y_data),
+                        static_cast<const char*>(output_var_name.c_str()),
+                        op_code);
+  } else {
     add_eltwise_layer(graph->GetCompilerHandle(),
                       input_num,
                       shape,
@@ -92,31 +137,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                       const_cast<const int*>(&i_output_shape_data[0]),
                       output_dims.size(),
                       static_cast<const char*>(output_var_name.c_str()),
-                      op_code,
+                      eltwise_if_code,
                       coeff);
-  } else {
-    const float* y_data = const_cast<const float*>(y->mutable_data<float>());
-    const float* x_data = const_cast<const float*>(x->mutable_data<float>());
-    bm_add_const_tensor(graph->GetCompilerHandle(),
-                        name[1],
-                        shape[0],
-                        dim[0],
-                        static_cast<bm_data_type_t>(DTYPE_FP32),
-                        static_cast<const void*>(y_data));
-
-    add_binary_layer_v2(graph->GetCompilerHandle(),
-                        name[0],
-                        shape[0],
-                        dim[0],
-                        0,
-                        static_cast<const float*>(x_data),
-                        name[1],
-                        shape[0],
-                        dim[0],
-                        0,
-                        static_cast<const float*>(y_data),
-                        static_cast<const char*>(output_var_name.c_str()),
-                        0);
   }
   delete[] shape;
   delete[] name;
@@ -131,5 +153,11 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
+                         kBM,
+                         paddle::lite::subgraph::bm::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
+                         kBM,
+                         paddle::lite::subgraph::bm::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
                          kBM,
                          paddle::lite::subgraph::bm::ElementwiseConverter);
