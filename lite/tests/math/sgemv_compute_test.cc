@@ -38,11 +38,19 @@ DEFINE_int32(K, 512, "sgemv: K");
 
 DEFINE_bool(traA, false, "gemv: A transpose");
 
-DEFINE_bool(flag_relu, false, "do relu");
+DEFINE_int32(flag_act, 0, "do act");
 DEFINE_bool(flag_bias, false, "with bias");
-
-bool test_sgemv(
-    bool tra, int m, int k, bool has_bias, bool has_relu, int cls, int ths) {
+DEFINE_double(leakey_relu_alpha, 1.0, "leakey relu alpha");
+DEFINE_double(clipped_coef, 6.0, "clipped relu coef");
+bool test_sgemv(bool tra,
+                int m,
+                int k,
+                bool has_bias,
+                int flag_act,
+                int cls,
+                int ths,
+                float six = 6.f,
+                float alpha = 1.f) {
   Tensor ta;
   Tensor tb;
   Tensor tc;
@@ -68,8 +76,7 @@ bool test_sgemv(
   fill_tensor_rand(tbias, -1.f, 1.f);
 
   LOG(INFO) << "sgemv M: " << m << ", K: " << k
-            << ", transA: " << (tra ? "true" : "false")
-            << ", relu: " << (has_relu ? "true" : "false")
+            << ", transA: " << (tra ? "true" : "false") << ", act: " << flag_act
             << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
 
@@ -78,10 +85,29 @@ bool test_sgemv(
   auto dc = tc.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
-
+  paddle::lite_api::ActivationType act =
+      paddle::lite_api::ActivationType::kIndentity;
+  if (flag_act == 1) {
+    act = paddle::lite_api::ActivationType::kRelu;
+  } else if (flag_act == 2) {
+    act = paddle::lite_api::ActivationType::kRelu6;
+  } else if (flag_act == 4) {
+    act = paddle::lite_api::ActivationType::kLeakyRelu;
+  }
   if (FLAGS_check_result) {
-    basic_gemv(
-        m, k, da, db, dbias, dc_basic, 1.f, 0.f, tra, has_bias, has_relu);
+    basic_gemv(m,
+               k,
+               da,
+               db,
+               dbias,
+               dc_basic,
+               1.f,
+               0.f,
+               tra,
+               has_bias,
+               flag_act,
+               six,
+               alpha);
   }
   paddle::lite::profile::Timer t0;
   //! compute
@@ -92,15 +118,37 @@ bool test_sgemv(
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::sgemv(
-        da, db, dc, tra, m, k, has_bias, dbias, has_relu, &ctx);
+    paddle::lite::arm::math::sgemv(da,
+                                   db,
+                                   dc,
+                                   tra,
+                                   m,
+                                   k,
+                                   has_bias,
+                                   dbias,
+                                   flag_act > 0,
+                                   act,
+                                   &ctx,
+                                   six,
+                                   alpha);
   }
 
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::sgemv(
-        da, db, dc, tra, m, k, has_bias, dbias, has_relu, &ctx);
+    paddle::lite::arm::math::sgemv(da,
+                                   db,
+                                   dc,
+                                   tra,
+                                   m,
+                                   k,
+                                   has_bias,
+                                   dbias,
+                                   flag_act > 0,
+                                   act,
+                                   &ctx,
+                                   six,
+                                   alpha);
     t0.Stop();
   }
   LOG(INFO) << "gemv output: M: " << m << ", K: " << k << ", cluster: " << cls
@@ -125,7 +173,7 @@ bool test_sgemv(
       tensor_diff(tc_basic, tc, tdiff);
       LOG(INFO) << "basic result: ";
       print_tensor(tc_basic);
-      LOG(INFO) << "saber result: ";
+      LOG(INFO) << "lite result: ";
       print_tensor(tc);
       LOG(INFO) << "diff result: ";
       print_tensor(tdiff);
@@ -144,22 +192,31 @@ TEST(TestLiteSgemv, Sgemv) {
     LOG(INFO) << "run basic sgemv test";
     for (auto& m : {1, 3, 8, 21, 32, 397}) {
       for (auto& k : {1, 3, 8, 17, 59, 234}) {
-        for (auto& tra : {true, false}) {
+        for (auto& tra : {false, true}) {
           for (auto& has_bias : {false, true}) {
-            for (auto& has_relu : {false, true}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
               for (auto& th : {1, 2, 4}) {
-                auto flag = test_sgemv(
-                    tra, m, k, has_bias, has_relu, FLAGS_cluster, th);
+                float six = 6.f;
+                float alpha = 8.88f;
+                auto flag = test_sgemv(tra,
+                                       m,
+                                       k,
+                                       has_bias,
+                                       flag_act,
+                                       FLAGS_cluster,
+                                       th,
+                                       six,
+                                       alpha);
                 if (flag) {
                   LOG(INFO) << "test m = " << m << ", k=" << k
                             << ", bias: " << (has_bias ? "true" : "false")
-                            << ", relu: " << (has_relu ? "true" : "false")
+                            << ", flag act: " << flag_act
                             << ", trans A: " << (tra ? "true" : "false")
                             << ", threads: " << th << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", k=" << k
                              << ", bias: " << (has_bias ? "true" : "false")
-                             << ", relu: " << (has_relu ? "true" : "false")
+                             << ", flag_act: " << flag_act
                              << ", trans A: " << (tra ? "true" : "false")
                              << ", threads: " << th << " failed\n";
                 }
@@ -180,15 +237,17 @@ TEST(TestSgemvCustom, Sgemv_custom) {
                          FLAGS_M,
                          FLAGS_K,
                          FLAGS_flag_bias,
-                         FLAGS_flag_relu,
+                         FLAGS_flag_act,
                          FLAGS_cluster,
-                         FLAGS_threads);
+                         FLAGS_threads,
+                         FLAGS_clipped_coef,
+                         FLAGS_leakey_relu_alpha);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", k=" << FLAGS_K
                << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias
-               << ", relu: " << FLAGS_flag_relu << " failed!!";
+               << ", act: " << FLAGS_flag_act << " failed!!";
   }
   LOG(INFO) << "test m = " << FLAGS_M << ", k=" << FLAGS_K
             << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias
-            << ", relu: " << FLAGS_flag_relu << " passed!!";
+            << ", act: " << FLAGS_flag_act << " passed!!";
 }

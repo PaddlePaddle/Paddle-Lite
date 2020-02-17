@@ -136,19 +136,19 @@ void fill_bias_relu<int>(int* tensor,
   "fmin v1.4s, v1.4s, %[vsix].4s   \n" /* vmaxq_f32() */ \
   "fmin v2.4s, v2.4s, %[vsix].4s   \n" /* vmaxq_f32() */ \
   "fmin v3.4s, v3.4s, %[vsix].4s   \n" /* vmaxq_f32() */
-#define FILL_LEAKY_RELU                                   \
-  "cmhs v4.4s, v0.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v5.4s, v0.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v6.4s, v1.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v7.4s, v1.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v8.4s, v2.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v9.4s, v2.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v10.4s, v3.4s,  %[vzero].4s  \n"  /* vcgeq_u32 */ \
-  "fmul v11.4s, v3.4s, %[vscale].4s \n"   /* vmulq_f32 */ \
-  "bif v0.16b, v5.16b, v4.16b       \n"   /* choose*/     \
-  "bif v1.16b, v7.16b, v6.16b       \n"   /* choose*/     \
-  "bif v2.16b, v9.16b, v8.16b       \n"   /* choose*/     \
-  "bif v3.16b, v11.16b, v10.16b       \n" /* choose*/
+#define FILL_LEAKY_RELU                                  \
+  "fcmge v4.4s, v0.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v5.4s, v0.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v6.4s, v1.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v7.4s, v1.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v8.4s, v2.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v9.4s, v2.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v10.4s, v3.4s,  %[vzero].4s \n" /* vcgeq_f32 */ \
+  "fmul v11.4s, v3.4s, %[vscale].4s  \n" /* vmulq_f32 */ \
+  "bif v0.16b, v5.16b, v4.16b        \n" /* choose*/     \
+  "bif v1.16b, v7.16b, v6.16b        \n" /* choose*/     \
+  "bif v2.16b, v9.16b, v8.16b        \n" /* choose*/     \
+  "bif v3.16b, v11.16b, v10.16b      \n" /* choose*/
 #define FILL_STORE                                       \
   "subs %w[cnt], %w[cnt], #1                    \n"      \
   "st1 {v0.4s}, [%[dout_ptr]], #16 \n" /* vst1q_f32() */ \

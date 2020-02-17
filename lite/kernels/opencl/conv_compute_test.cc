@@ -46,7 +46,7 @@ static void conv_basic(const Dtype1* din,
                        int pad_w,
                        int pad_h,
                        bool flag_bias,
-                       bool flag_relu) {
+                       std::string flag_relu) {
   Dtype2 beta = 0;
   auto src_data = din;
   auto dst_data_ref = dout;
@@ -96,10 +96,15 @@ static void conv_basic(const Dtype1* din,
                 }
               }
             }
-            if (flag_relu) {
+            if (flag_relu == "relu") {
               dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
                                           ? dst_data_ref[out_idx]
                                           : (Dtype2)0;
+            } else if (flag_relu == "relu6") {
+              auto dst_tmp = (dst_data_ref[out_idx] > (Dtype2)0)
+                                 ? dst_data_ref[out_idx]
+                                 : (Dtype2)0;
+              dst_data_ref[out_idx] = (dst_tmp < 6.f) ? dst_tmp : 6.f;
             }
           }
         }
@@ -161,6 +166,8 @@ void PrintData(std::string name,
   }
 }
 
+// buffer
+#if 0
 // #define PRINT_RESULT
 #define LOOP_TEST
 TEST(conv2d, compute_conv2d_1x1) {
@@ -186,7 +193,7 @@ TEST(conv2d, compute_conv2d_1x1) {
         /*int iw = ih;*/ for (int iw = 1; iw < 10; iw += 1) {  // iw
           for (int ic = 1; ic < 10; ic += 1) {                 // k
             for (bool bias_flag : {true /*, false*/}) {
-              for (bool relu_flag : {true /*, false*/}) {
+              for (std::string relu_flag : {"relu" /*, "relu6", "None"*/}) {
 #else
   // groups:1 stride_h:1 stride_w:1 pad_h:0 pad_w:0 kernel_h:1 kernel_h:1
   // x_dims:1 32 112 112
@@ -229,7 +236,16 @@ TEST(conv2d, compute_conv2d_1x1) {
                 std::vector<int> paddings = {pad, pad, pad, pad};
                 param.groups = group;
                 std::vector<int> dilations = {dilation, dilation};
-                param.fuse_relu = relu_flag;
+                if (relu_flag == "relu") {
+                  param.fuse_relu = true;
+                } else if (relu_flag == "None") {
+                  param.fuse_relu = false;
+                } else if (relu_flag == "relu6") {
+                  param.activation_param.Relu_clipped_coef = 6.f;
+                  param.activation_param.has_active = true;
+                  param.activation_param.active_type =
+                      lite_api::ActivationType::kRelu6;
+                }
                 param.paddings = std::make_shared<std::vector<int>>(paddings);
                 param.dilations = std::make_shared<std::vector<int>>(dilations);
 
@@ -390,7 +406,7 @@ TEST(conv2d, compute_conv2d_1x1) {
 #undef PRINT_RESULT
 
 // #define PRINT_RESULT
-#define LOOP_TEST
+// #define LOOP_TEST
 TEST(conv2d, compute_conv2d_gemm) {
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
@@ -411,7 +427,7 @@ TEST(conv2d, compute_conv2d_gemm) {
         for (int iw = 1; iw < 10; iw += 1) {    // iw
           for (int ic = 1; ic < 10; ic += 1) {  // k
             for (bool bias_flag : {true, false}) {
-              for (bool relu_flag : {true, false}) {
+              for (std::string relu_flag : {"relu", "relu6", "None"}) {
 #else
 
                 const int batch_size = 8;
@@ -420,7 +436,8 @@ TEST(conv2d, compute_conv2d_gemm) {
                 const int iw = 224;
                 const int ic = 3;
                 const bool bias_flag = true;
-                const bool relu_flag = true;
+                const std::string relu_flag =
+                    "relu6";  // "relu", "relu6", "None"
 
 #endif
                 const int oh = (ih + 2 * pad - ksize) / stride + 1;
@@ -458,7 +475,16 @@ TEST(conv2d, compute_conv2d_gemm) {
                 std::vector<int> paddings = {pad, pad, pad, pad};
                 param.groups = group;
                 std::vector<int> dilations = {dilation, dilation};
-                param.fuse_relu = relu_flag;
+                if (relu_flag == "relu") {
+                  param.fuse_relu = true;
+                } else if (relu_flag == "None") {
+                  param.fuse_relu = false;
+                } else if (relu_flag == "relu6") {
+                  param.activation_param.Relu_clipped_coef = 6.f;
+                  param.activation_param.has_active = true;
+                  param.activation_param.active_type =
+                      lite_api::ActivationType::kRelu6;
+                }
 
                 param.paddings = std::make_shared<std::vector<int>>(paddings);
                 param.dilations = std::make_shared<std::vector<int>>(dilations);
@@ -599,8 +625,9 @@ TEST(conv2d, compute_conv2d_gemm) {
   }              // batch_size
 #endif
 }
+#endif
 
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);

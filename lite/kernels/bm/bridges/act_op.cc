@@ -45,7 +45,14 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  CHECK_EQ(op_type, "relu");
+  float alpha = 0.f;
+  if (op_type == "relu") {
+  } else if (op_type == "leaky_relu") {
+    alpha = op_info->GetAttr<float>("alpha");
+  } else {
+    LOG(FATAL) << "[BM] unsupport act type";
+    return FAILED;
+  }
   add_relu_layer(graph->GetCompilerHandle(),
                  const_cast<const int*>(&i_x_shape_data[0]),
                  x_dims.size(),
@@ -53,7 +60,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                  const_cast<const int*>(&i_output_shape_data[0]),
                  output_dims.size(),
                  static_cast<const char*>(output_var_name.c_str()),
-                 0.f,
+                 alpha,
                  -1.f);
   graph->AddNode(output_var_name);
   return SUCCESS;
@@ -65,3 +72,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+                         kBM,
+                         paddle::lite::subgraph::bm::ActConverter);

@@ -1,7 +1,7 @@
 language: cpp
 cache: ccache
 sudo: required
-dist: trusty
+dist: xenial
 
 os:
   - linux
@@ -18,7 +18,7 @@ addons:
       - clang-format-3.8
         
 before_install:
-  - sudo pip install cpplint pre-commit
+  - sudo pip install cpplint pre-commit==1.10.3
   - sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format
   # Download and install recent cmake
 

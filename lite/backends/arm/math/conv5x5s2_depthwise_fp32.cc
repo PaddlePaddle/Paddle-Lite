@@ -198,24 +198,24 @@ namespace math {
   "fmin v20.4s, v20.4s, %[vsix].4s\n" \
   "fmin v21.4s, v21.4s, %[vsix].4s\n" \
   "fmin v22.4s, v22.4s, %[vsix].4s\n"
-#define LEAKY_RELU                      /* LeakyRelu */ \
-  "movi v0.4s, #0\n"                    /* for relu */  \
-  "cmhs v1.4s, v19.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v2.4s, v19.4s, %[vscale].4s \n" /* mul */       \
-  "cmhs v3.4s, v20.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v4.4s, v20.4s, %[vscale].4s \n" /* mul */       \
-  "cmhs v5.4s, v21.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v6.4s, v21.4s, %[vscale].4s \n" /* mul */       \
-  "cmhs v7.4s, v22.4s,  v0.4s \n"       /* vcgeq_u32 */ \
-  "fmul v8.4s, v22.4s, %[vscale].4s \n" /* mul */       \
-  "bif  v19.16b, v2.16b, v1.16b \n"     /* choose*/     \
-  "bif  v19.16b, v4.16b, v3.16b \n"     /* choose*/     \
-  "bif  v19.16b, v6.16b, v5.16b \n"     /* choose*/     \
-  "bif  v19.16b, v8.16b, v7.16b \n"     /* choose*/
-#define STORE                           /* save result */ \
-  "str q19, [%[outc0]], #16\n"                            \
-  "str q20, [%[outc1]], #16\n"                            \
-  "str q21, [%[outc2]], #16\n"                            \
+#define LEAKY_RELU                       /* LeakyRelu */ \
+  "movi v0.4s, #0\n"                     /* for relu */  \
+  "fcmge v1.4s, v19.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v2.4s, v19.4s, %[vscale].4s \n" /* mul */       \
+  "fcmge v3.4s, v20.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v4.4s, v20.4s, %[vscale].4s \n" /* mul */       \
+  "fcmge v5.4s, v21.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v6.4s, v21.4s, %[vscale].4s \n" /* mul */       \
+  "fcmge v7.4s, v22.4s,  v0.4s \n"       /* vcgeq_f32 */ \
+  "fmul  v8.4s, v22.4s, %[vscale].4s \n" /* mul */       \
+  "bif  v19.16b, v2.16b, v1.16b \n"      /* choose*/     \
+  "bif  v20.16b, v4.16b, v3.16b \n"      /* choose*/     \
+  "bif  v21.16b, v6.16b, v5.16b \n"      /* choose*/     \
+  "bif  v22.16b, v8.16b, v7.16b \n"      /* choose*/
+#define STORE                            /* save result */ \
+  "str q19, [%[outc0]], #16\n"                             \
+  "str q20, [%[outc1]], #16\n"                             \
+  "str q21, [%[outc2]], #16\n"                             \
   "str q22, [%[outc3]], #16\n"
 
 #else
