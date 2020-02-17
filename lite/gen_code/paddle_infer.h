@@ -46,7 +46,6 @@ class Tensor {
  */
 class PaddlePredictor {
  public:
-  void Init() {}
 
   std::unique_ptr<Tensor> GetTensor(const std::string &id) const;
   std::unique_ptr<Tensor> GetMutableTensor(const std::string &id);
