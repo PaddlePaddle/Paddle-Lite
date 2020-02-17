@@ -73,6 +73,8 @@ void pool_avg(const int padding_height,
   }
 }
 
+// buffer
+#if 0   // pool_buffer
 TEST(pool2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
@@ -141,6 +143,7 @@ TEST(pool2d_buffer_fp32, compute) {
   }
   TargetWrapperCL::Unmap(out_data, mapped_out);
 }
+#endif  // pool_buffer
 
 TEST(pool2d_image2d_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
@@ -239,5 +242,5 @@ TEST(pool2d_image2d_fp32, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kNCHW, def);
 USE_LITE_KERNEL(pool2d, kOpenCL, kFloat, kImageDefault, image2d);

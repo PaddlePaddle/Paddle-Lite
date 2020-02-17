@@ -157,7 +157,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
                                 lite_api::LiteModelType::kNaiveBuffer);
   // Load optimized model
   lite_api::MobileConfig mobile_config;
-  mobile_config.set_model_dir(optimized_model_dir);
+  mobile_config.set_model_from_file(optimized_model_dir + ".nb");
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
@@ -203,7 +203,7 @@ TEST(Subgraph, generate_model_and_check_precision) {
                                  valid_places,
                                  input_tensor_shape,
                                  input_tensor_type,
-                                 FLAGS_optimized_model_dir + "/ref_opt_model");
+                                 FLAGS_optimized_model_dir + "_ref_opt_model");
 // Generate and run optimized model on NPU/XPU as the target predictor
 #ifdef LITE_WITH_NPU
   valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
@@ -217,7 +217,7 @@ TEST(Subgraph, generate_model_and_check_precision) {
                                  valid_places,
                                  input_tensor_shape,
                                  input_tensor_type,
-                                 FLAGS_optimized_model_dir + "/tar_opt_model");
+                                 FLAGS_optimized_model_dir + "_tar_opt_model");
   // Check the difference of the output tensors between reference predictor and
   // target predictor
   CheckOutputTensors(tar_predictor, ref_predictor, output_tensor_type);

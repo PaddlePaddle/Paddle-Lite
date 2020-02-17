@@ -78,7 +78,11 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x, in_ptype);
+    CHECK(x->precision() == in_ptype)
+        << "The data type of input tensor X should be "
+        << PrecisionToStr(in_ptype) << ", but received "
+        << PrecisionToStr(x->precision());
+    x_node = graph->Add(x_name, *x);
   }
 
   // Cast node

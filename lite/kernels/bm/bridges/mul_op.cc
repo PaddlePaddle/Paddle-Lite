@@ -41,8 +41,10 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // add reshape layer
   int i_x_reshape_shape_data[2];
-  for (size_t i = 0; i < 2; i++) {
-    i_x_reshape_shape_data[i] = static_cast<int>(x_shape_data[i]);
+  i_x_reshape_shape_data[0] = static_cast<int>(x_shape_data[0]);
+  i_x_reshape_shape_data[1] = 1;
+  for (size_t i = 1; i < x_dims.size(); i++) {
+    i_x_reshape_shape_data[1] *= static_cast<int>(x_shape_data[i]);
   }
   int reshape_param[] = {0, -1};
   auto unique_op_reshape_name =
