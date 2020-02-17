@@ -80,32 +80,33 @@ void OutputOptModel(const std::string& load_model_dir,
   LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
 }
 
-void detect_choose(const float* dout, std::vector<int64_t> dims,const float thresh){
-   std::string name = FLAGS_out_txt + "_accu.txt";
-   FILE* fp = fopen(name.c_str(), "w");
-   for (int iw = 0; iw < dims[0]; iw++) {
-       const float* values = dout + iw * dims[1];
-       if (values[1]  > thresh){ // pro > 0.01
-           fprintf(fp, "%f \n", values[0]);
-           fprintf(fp, "%f \n", values[1]);
-           fprintf(fp, "%f \n", values[2]);
-           fprintf(fp, "%f \n", values[3]);
-           fprintf(fp, "%f \n", values[4]);
-          fprintf(fp, "%f \n", values[5]);
-       }
-   }
-   fclose(fp);
+void detect_choose(const float* dout,
+                   std::vector<int64_t> dims,
+                   const float thresh) {
+  std::string name = FLAGS_out_txt + "_accu.txt";
+  FILE* fp = fopen(name.c_str(), "w");
+  for (int iw = 0; iw < dims[0]; iw++) {
+    const float* values = dout + iw * dims[1];
+    if (values[1] > thresh) {  // pro > 0.01
+      fprintf(fp, "%f \n", values[0]);
+      fprintf(fp, "%f \n", values[1]);
+      fprintf(fp, "%f \n", values[2]);
+      fprintf(fp, "%f \n", values[3]);
+      fprintf(fp, "%f \n", values[4]);
+      fprintf(fp, "%f \n", values[5]);
+    }
+  }
+  fclose(fp);
 }
-void detect_object(const float* dout, std::vector<int64_t> dims, const float thresh, int orih, int oriw) {
+void detect_object(const float* dout,
+                   std::vector<int64_t> dims,
+                   const float thresh,
+                   int orih,
+                   int oriw) {
   std::vector<Object> objects;
-  /*printf("dims: \n");
-  for (int i = 0; i < dims.size(); i++){
-    printf("%d \n", dims[i]);
-  }*/
   for (int iw = 0; iw < dims[0]; iw++) {
     Object object;
     const float* values = dout + iw * dims[1];
-    //printf("values: %f, %f, %f, %f, %f, %f \n", values[0], values[1], values[2], values[3], values[4], values[5]);
     object.class_id = values[0];
     object.prob = values[1];
     object.x = values[2] * oriw;
@@ -114,26 +115,25 @@ void detect_object(const float* dout, std::vector<int64_t> dims, const float thr
     object.height = values[5] * orih - object.y;
     objects.push_back(object);
   }
-  printf("objects.size: %d \n", objects.size());
   std::string name = FLAGS_out_txt + "_accu.txt";
   FILE* fp = fopen(name.c_str(), "w");
   for (int i = 0; i < objects.size(); ++i) {
     Object object = objects.at(i);
-   // printf("prob: %f \n", object.prob);
-    if (object.prob > thresh && object.x > 0 && object.y > 0 && object.width > 0 && object.height > 0) {
-      if (object.x >= oriw || object.width >= oriw || object.y >= orih || object.height >= orih) continue;
+    if (object.prob > thresh && object.x > 0 && object.y > 0 &&
+        object.width > 0 && object.height > 0) {
+      if (object.x >= oriw || object.width >= oriw || object.y >= orih ||
+          object.height >= orih)
+        continue;
       fprintf(fp, "%f \n", object.x);
       fprintf(fp, "%f \n", object.y);
       fprintf(fp, "%f \n", object.width);
       fprintf(fp, "%f \n", object.height);
       fprintf(fp, "%f \n", object.prob);
       fprintf(fp, "%f \n", object.class_id);
-      LOG(INFO) << "object id: " << object.class_id 
-                << ", image size: " << oriw << ", " << orih
-                << ", detect object: " << object.prob
+      LOG(INFO) << "object id: " << object.class_id << ", image size: " << oriw
+                << ", " << orih << ", detect object: " << object.prob
                 << ", location: x=" << object.x << ", y=" << object.y
-                << ", width=" << object.width
-                << ", height=" << object.height;
+                << ", width=" << object.width << ", height=" << object.height;
     }
   }
   fclose(fp);
@@ -210,7 +210,8 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   auto out = output->data<float>();
   auto output_shape = output->shape();
   // detect
- //  detect_object(out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih, FLAGS_oriw);
+  //  detect_object(out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih,
+  //  FLAGS_oriw);
   detect_choose(out, output_shape, atof(FLAGS_threshold.data()));
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];

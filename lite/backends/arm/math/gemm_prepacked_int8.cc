@@ -572,7 +572,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
 #define GEMM_INT8_INT8_OUT                                         \
   GEMM_TRANS_INT32_TO_FP32                                         \
   GEMM_INT8_RELU                                                   \
-  "mov    v8.4s, #-127.f\n"       /* v8 = -127.f     */            \
+  "ld1    {v8.4s},   [%[vmax]] \n"          /* v8 = -127 */        \
   /* data >= -127 */                                               \
   "fcmge v0.4s, v16.4s, v8.4s\n"                                   \
   "fcmge v1.4s, v17.4s, v8.4s\n"                                   \
@@ -702,6 +702,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int k,
                              int rem) {
   // clang-format off
+  float[] vmax = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -713,7 +714,8 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                : [is_relu] "r"(is_relu),
                  [bias] "r"(bias),
                  [rem] "r"(rem),
-                 [scale] "r"(scale)
+                 [scale] "r"(scale),
+                 [vmax] "r"[vmax]
                : "v0","v1","v2","v3","v4","v5","v6","v7",
                  "v8","v9","v10","v11","v12",
                  "v13","v14","v15","v16","v17",
@@ -1216,7 +1218,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 #define GEMM_SDOT_INT8_OUT                                      \
   GEMM_SDOT_CVT_INT32_TO_FP32                                   \
   GEMM_SDOT_RELU                                                \
-  "mov    v26.4s, #-127.f\n"       /* v8 = -127.f     */            \
+  "ld1  {v26.4s}, [%[vmax]]\n"     /* v8 = -127.f     */            \
   /* data >= -127 */                                               \
   "fcmge v0.4s, v8.4s, v26.4s\n"                                   \
   "fcmge v1.4s, v9.4s, v26.4s\n"                                   \
@@ -1396,6 +1398,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   int k,
                                   int tail) {
   // clang-format off
+  float[] vmax = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -1409,7 +1412,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr5] "+r"(c_ptr5),
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
-               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax)
                : "cc","memory","v0","v1","v2","v3",
                  "v4","v5","v6","v7","v8","v9","v10",
                  "v11","v12","v13","v14","v15","v16","v17",
