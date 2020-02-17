@@ -9,7 +9,7 @@ Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环
 1. Docker 容器环境；
 2. Linux（推荐 Ubuntu 16.04）环境。
 
-详见[ **源码编译指南-环境准备** 章节](../source_compile)
+详见 **源码编译指南-环境准备** 章节。
 
 ### 编译选项
 
