@@ -702,7 +702,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int k,
                              int rem) {
   // clang-format off
-  float[] vmax = {-127.f, -127.f, -127.f, -127.f};
+  float vmax[] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -715,7 +715,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  [bias] "r"(bias),
                  [rem] "r"(rem),
                  [scale] "r"(scale),
-                 [vmax] "r"[vmax]
+                 [vmax] "r"(vmax)
                : "v0","v1","v2","v3","v4","v5","v6","v7",
                  "v8","v9","v10","v11","v12",
                  "v13","v14","v15","v16","v17",
@@ -1398,7 +1398,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   int k,
                                   int tail) {
   // clang-format off
-  float[] vmax = {-127.f, -127.f, -127.f, -127.f};
+  float vmax[] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -1695,25 +1695,24 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vadd.f32 q3, q11, q3\n"   /* r21, add offset */     \
   "vadd.f32 q4, q12, q4\n"   /* r30, add offset */     \
   "vadd.f32 q5, q13, q5\n"   /* r31, add offset */     \
-  /* data >= -127 */                                   \
-  "vmov.f32   q15, #-127.0\n"/* @ set q0 = -127 */     \
-  "vcge.f32 q6, q8, q15\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q7, q9, q15\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q10, q0, q15\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q11, q1, q15\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q12, q2, q15\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q13, q3, q15\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q14, q4, q15\n"   /* @ q8 >= -127 \n */     \
+  "vmov.f32 q6, #-127.0\n"   /* set q4 = -127 \n"*/   \
+  "vcge.f32 q7, q8, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q10, q9, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q11, q0, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q12, q1, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q13, q2, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q14, q3, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q15, q4, q6\n"   /* @ q8 >= -127 \n */     \
   /* choose data */                                    \
-  "vbif q8, q15, q6\n"       /* @ choose */            \
-  "vcge.f32 q6, q5, q15\n"   /* @ q8 >= -127 \n */     \
-  "vbif q9 q15, q7\n"       /* @ choose */             \
-  "vbif q0, q15, q10\n"       /* @ choose */           \
-  "vbif q1, q15, q11\n"       /* @ choose */           \
-  "vbif q2, q15, q12\n"       /* @ choose */           \
-  "vbif q3, q15, q13\n"       /* @ choose */           \
-  "vbif q4, q15, q14\n"       /* @ choose */           \
-  "vbif q5, q15, q6\n"       /* @ choose */           \
+  "vbif q8, q6, q7\n"       /* @ choose */            \
+  "vcge.f32 q7, q5, q6\n"   /* @ q8 >= -127 \n */     \
+  "vbif q9, q6, q10\n"       /* @ choose */             \
+  "vbif q0, q6, q11\n"       /* @ choose */           \
+  "vbif q1, q6, q12\n"       /* @ choose */           \
+  "vbif q2, q6, q13\n"       /* @ choose */           \
+  "vbif q3, q6, q14\n"       /* @ choose */           \
+  "vbif q4, q6, q15\n"       /* @ choose */           \
+  "vbif q5, q6, q7\n"       /* @ choose */           \
   "vcvt.s32.f32   q6, q8\n"  /* r00, fp32->int32 */    \
   "vcvt.s32.f32   q7, q9\n"  /* r01, fp32->int32 */    \
   "vcvt.s32.f32   q10, q0\n" /* r10, fp32->int32 */    \

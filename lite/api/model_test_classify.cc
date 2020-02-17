@@ -42,8 +42,8 @@ DEFINE_string(arg_name, "", "the arg name");
 DEFINE_string(threshold, "0.5", "threshold value default 0.5f");
 DEFINE_string(in_txt, "", "input text");
 DEFINE_string(out_txt, "", "output text");
-DEFINE_int32(orih, 1920, "input image height");
-DEFINE_int32(oriw, 1080, "input image width");
+DEFINE_string(label_file, "", "label file path");
+DEFINE_int32(topk, 1, "topk num");
 
 namespace paddle {
 namespace lite_api {
@@ -204,16 +204,16 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
   auto output_shape = output->shape();
-  // classify
-  std::vector<std::string> labels = load_labels(FLAGS_label_file);
-  print_topk(out, output_shape, atoi(FLAGS_topk.data()), labels);
-  LOG(INFO) << "out " << out[0];
-  LOG(INFO) << "out " << out[1];
   int output_num = 1;
   for (int i = 0; i < output_shape.size(); ++i) {
     output_num *= output_shape[i];
   }
+  // classify
+  std::vector<std::string> labels = load_labels(FLAGS_label_file);
+  print_topk(out, output_num, FLAGS_topk, labels);
   LOG(INFO) << "output_num: " << output_num;
+  LOG(INFO) << "out " << out[0];
+  LOG(INFO) << "out " << out[1];
   FILE* fp = nullptr;
   if (flag_out) {
     fp = fopen(FLAGS_out_txt.c_str(), "w");
