@@ -41,6 +41,7 @@ USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
 USE_MIR_PASS(memory_optimize_pass);
+USE_MIR_PASS(kernel_place_correct_pass)
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);

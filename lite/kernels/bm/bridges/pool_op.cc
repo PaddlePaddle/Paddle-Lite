@@ -65,6 +65,12 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (pooling_type == "avg") {
     average_exclusive = op_info->GetAttr<bool>("exclusive");
   }
+  if (global_pooling) {
+    paddings[0] = 0;
+    paddings[1] = 0;
+    ksize[0] = i_x_shape_data[2];
+    ksize[1] = i_x_shape_data[3];
+  }
   add_pooling_layer(
       graph->GetCompilerHandle(),
       const_cast<const int*>(&i_x_shape_data[0]),

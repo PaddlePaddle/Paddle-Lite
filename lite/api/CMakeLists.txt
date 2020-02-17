@@ -1,4 +1,4 @@
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
@@ -218,19 +218,10 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
             --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
-    lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc
+    lite_cc_test(test_ssd_fpga SRCS test_ssd_fpga.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels})
-
-    lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
-       DEPS ${lite_model_test_DEPS}
-       CL_DEPS ${opencl_kernels}
-       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
-            --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
-    add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
-   # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
-   #    DEPS ${lite_model_test_DEPS})
 
    # lite_cc_test(model_run_test_image SRCS model_run_test_image.cc
    #    DEPS ${lite_model_test_DEPS}
@@ -296,10 +287,10 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
-    message(STATUS "Compiling model_optimize_tool")
-    lite_cc_binary(model_optimize_tool SRCS model_optimize_tool.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+    message(STATUS "Compiling opt")
+    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS gflags kernel op optimizer mir_passes utils)
-    add_dependencies(model_optimize_tool op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
+    add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light

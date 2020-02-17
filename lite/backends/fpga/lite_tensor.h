@@ -151,6 +151,10 @@ class TensorLite {
   size_t offset() const { return offset_; }
 
   bool IsInitialized() const { return buffer_->data(); }
+  void clear() {
+    buffer_->Free();
+    offset_ = 0;
+  }
 
   // Other share data to this.
   void ShareDataWith(const TensorLite &other);
