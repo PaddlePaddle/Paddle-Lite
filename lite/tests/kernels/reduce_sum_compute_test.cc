@@ -235,7 +235,6 @@ class ReduceSumComputeTester : public arena::TestCase {
       } else {
         out_dims.push_back(1);
       }
-      out->Resize(DDim(out_dims));
     } else {
       for (int i = 0; i < x_dims_.size(); i++) {
         out_dims.push_back(x_dims_[i]);
@@ -252,8 +251,8 @@ class ReduceSumComputeTester : public arena::TestCase {
         out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
                        out_dims.end());
       }
-      out->Resize(DDim(out_dims));
     }
+    out->Resize(DDim(out_dims));
 
     auto* out_data = out->mutable_data<float>();
     int in_n = x_dims_[0];
