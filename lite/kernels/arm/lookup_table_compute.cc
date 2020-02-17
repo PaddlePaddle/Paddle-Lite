@@ -78,7 +78,7 @@ REGISTER_LITE_KERNEL(lookup_table,
 
 REGISTER_LITE_KERNEL(lookup_table_v2,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::LookupTableCompute,
                      def)
