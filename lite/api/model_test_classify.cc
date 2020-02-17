@@ -109,7 +109,7 @@ std::vector<std::string> load_labels(std::string label_path) {
 void print_topk(const float* scores,
                 const int size,
                 const int topk,
-                const std::vector<std::string>& labels) {
+                const std::vector<std::string> labels) {
   std::vector<std::pair<float, int>> vec;
   vec.resize(size);
   for (int i = 0; i < size; i++) {
