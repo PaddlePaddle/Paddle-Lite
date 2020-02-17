@@ -35,6 +35,7 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-user-guides
 
   user_guides/cuda
+  user_guides/opencl
 
 .. toctree::
   :maxdepth: 1
@@ -42,6 +43,7 @@ Welcome to Paddle-Lite's documentation!
 
   advanced_user_guides/support_operation_list
   advanced_user_guides/add_operation
+  advanced_user_guides/add_layout
   advanced_user_guides/model_quantization
   
 .. toctree::
