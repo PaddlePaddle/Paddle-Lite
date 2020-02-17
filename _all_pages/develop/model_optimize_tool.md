@@ -3,38 +3,42 @@ layout: post
 title: 模型转化方法
 ---
 
-Lite架构在预测过程中表现出来的高性能得益于其丰富的优化组件，其中包括量化、子图融合、混合调度、Kernel优选等等策略。为了使优化过程更加方便易用，我们提供了**model_optimize_tool**来自动完成优化步骤，输出一个轻量的、最优的可执行模型。具体使用方法介绍如下：
+Lite架构在预测过程中表现出来的高性能得益于其丰富的优化组件，其中包括量化、子图融合、混合调度、Kernel优选等等策略。为了使优化过程更加方便易用，我们提供了**opt**来自动完成优化步骤，输出一个轻量的、最优的可执行模型。具体使用方法介绍如下：
 
-## 准备model_optimize_tool
-当前获得model_optimize_tool方法有三种：
+**注意**：release/v2.2.0之前的模型转化工具名称为`model_optimize_tool`，从release/v2.3.0开始模型转化工具名称修改为`opt`
 
-1. 我们提供当前develop分支编译结果下载：[model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
+## 准备opt
+当前获得opt方法有三种：
 
-2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的model_optimize_tool
+1. 我们提供当前develop分支编译结果下载：[opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt)、[opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac)
+release/v2.2.0之前版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
 
-3. 可以下载Paddle-Lite源码，从源码编译出model_optimize_tool工具
+2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`
+   (release/v2.2.0之前的转化工具为model_optimize_tool、release/v2.3.0之后为opt)
+
+3. 可以下载Paddle-Lite源码，从源码编译出opt工具
 ```bash
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite
 git checkout <release-version-tag>
 ./lite/tools/build.sh build_optimize_tool
 ```
-编译结果位于`Paddle-Lite/build.model_optimize_tool/lite/api/model_optimize_tool`
-**注意**：从源码编译model_optimize_tool前需要先[安装Paddle-Lite的开发环境](../source_compile)。
+编译结果位于`Paddle-Lite/build.opt/lite/api/opt`
+**注意**：从源码编译opt前需要先[安装Paddle-Lite的开发环境](../source_compile)。
 
-## 使用model_optimize_tool
+## 使用opt
 
-model_optimize_tool是x86平台上的可执行文件，需要在PC端运行：包括Linux终端和Mac终端。
+opt是x86平台上的可执行文件，需要在PC端运行：包括Linux终端和Mac终端。
 
 ### 帮助信息
- 执行model_optimize_tool时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
+ 执行opt时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
 ```bash
- ./model_optimize_tool
+ ./opt
 ```
-![](https://paddlelite-data.bj.bcebos.com/doc_images%2Fhelp.png)
+![](https://paddlelite-data.bj.bcebos.com/doc_images/1.png)
 
 ### 功能一：转化模型为Paddle-Lite格式
-model_optimize_tool可以将PaddlePaddle支持的模型转化为Paddle-Lite支持的模型格式，期间执行的操作包括：将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积；执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等性能指标。
+opt可以将PaddlePaddle支持的模型转化为Paddle-Lite支持的模型格式，期间执行的操作包括：将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积；执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等性能指标。
 
 模型优化过程：
 
@@ -48,21 +52,21 @@ PaddlePaddle模型有两种保存格式：
    Seperated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
 ![opt_seperated_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fseperated_model.png)
 
-(2) 终端中执行`model_optimize_tool`优化模型
+(2) 终端中执行`opt`优化模型
 **使用示例**：转化`mobilenet_v1`模型
 
 ```
-./model_optimize_tool --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out_type=naive_buffer --optimize_out=mobilenet_v1_opt
+./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out_type=naive_buffer --optimize_out=mobilenet_v1_opt
 ```
-以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件位于`mobilenet_v1_opt`，转化结果如下图所示：
+以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件为`mobilenet_v1_opt.nb`，转化结果如下图所示：
 
-![opt_resulted_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fcombined_model.png)
+![opt_resulted_model](https://paddlelite-data.bj.bcebos.com/doc_images/2.png)
 
 
 (3) **更详尽的转化命令**总结：
 
 ```shell
-./model_optimize_tool \
+./opt \
     --model_dir=<model_param_dir> \
     --model_file=<model_path> \
     --param_file=<param_path> \
@@ -90,34 +94,34 @@ PaddlePaddle模型有两种保存格式：
 
 ### 功能二：统计模型算子信息、判断是否支持
 
-model_optimize_tool可以统计并打印出model中的算子信息、判断Paddle-Lite是否支持该模型。并可以打印出当前Paddle-Lite的算子支持情况。
+opt可以统计并打印出model中的算子信息、判断Paddle-Lite是否支持该模型。并可以打印出当前Paddle-Lite的算子支持情况。
 
-（1）使用model_optimize_tool统计模型中算子信息
+（1）使用opt统计模型中算子信息
 
 下面命令可以打印出mobilenet_v1模型中包含的所有算子，并判断在硬件平台`valid_targets`下Paddle-Lite是否支持该模型
 
-`./model_optimize_tool --print_model_ops=true  --model_dir=mobilenet_v1 --valid_targets=arm`
+`./opt --print_model_ops=true  --model_dir=mobilenet_v1 --valid_targets=arm`
 
-![opt_print_modelops](https://paddlelite-data.bj.bcebos.com/doc_images%2Fmodel_support.png)
+![opt_print_modelops](https://paddlelite-data.bj.bcebos.com/doc_images/3.png)
 
-（2）使用model_optimize_tool打印当前Paddle-Lite支持的算子信息
+（2）使用opt打印当前Paddle-Lite支持的算子信息
 
-`./model_optimize_tool --print_all_ops=true`
+`./opt --print_all_ops=true`
 
 以上命令可以打印出当前Paddle-Lite支持的所有算子信息，包括OP的数量和每个OP支持哪些硬件平台：
 
-![opt_print_allops](https://paddlelite-data.bj.bcebos.com/doc_images%2Fall_ops.png)
+![opt_print_allops](https://paddlelite-data.bj.bcebos.com/doc_images/4.png)
 
-`./model_optimize_tool ----print_supported_ops=true  --valid_targets=x86`
+`./opt ----print_supported_ops=true  --valid_targets=x86`
 
 以上命令可以打印出当`valid_targets=x86`时Paddle-Lite支持的所有OP：
 
-![opt_print_supportedops](https://paddlelite-data.bj.bcebos.com/doc_images%2Fx86_ops.png)
+![opt_print_supportedops](https://paddlelite-data.bj.bcebos.com/doc_images/5.png)
 
-## 其他功能：合并x2paddle和model_optimize_tool的一键脚本
+## 其他功能：合并x2paddle和opt的一键脚本
 
-**背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用model_optimize_tool将PaddlePaddle模型转化为Padde-Lite可支持格式。
-为了简化这一过程，我们提供一键脚本，将x2paddle转化和model_optimize_tool转化合并：
+**背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
+为了简化这一过程，我们提供一键脚本，将x2paddle转化和opt转化合并：
 
 **一键转化脚本**：[auto_transform.sh](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/auto_transform.sh)
 
@@ -132,7 +136,7 @@ model_optimize_tool可以统计并打印出model中的算子信息、判断Paddl
 
 ```bash
 USAGE:
-    auto_transform.sh combines the function of x2paddle and model_optimize_tool, it can 
+    auto_transform.sh combines the function of x2paddle and opt, it can 
     tranform model from tensorflow/caffe/onnx form into paddle-lite naive-buffer form.
 ----------------------------------------
 example:
@@ -151,7 +155,7 @@ Arguments about x2paddle:
  For ONNX
    --framework=onnx --model=onnx_model.onnx
 
-Arguments about model_optimize_tool:
+Arguments about opt:
     --valid_targets=(arm|opencl|x86|npu|xpu); valid targets on Paddle-Lite.
     --fluid_save_dir='path to outputed model after x2paddle'
     --optimize_out='path to outputed Paddle-Lite model'
