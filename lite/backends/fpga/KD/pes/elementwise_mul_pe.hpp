@@ -29,17 +29,17 @@ class ElementwiseMulPE : public PE {
   }
 
   void apply() {
-    Tensor* input = param_.inputs[0];
+    Tensor* input = param_.input_x;
     Tensor* output = param_.output;
 
-    int wc_aligned = align_to_x(param_.inputs[0]->shape().numel(), 32);
+    int wc_aligned = align_to_x(param_.input_x->shape().numel(), 32);
 
     Shape s(N, {wc_aligned});
     float16* bias_data = bias_tensor.mutableData<float16>(FP16, s);
     memset(bias_data, 0, wc_aligned * sizeof(float16));
 
     ScaleArgs& args = args_;
-    args.scale_address = param_.inputs[1]->data<void>();
+    args.scale_address = param_.input_y->data<void>();
     args.bias_address = bias_tensor.data<void>();
     args.wc_alignment = wc_aligned;
     args.channel_alignment = wc_aligned;

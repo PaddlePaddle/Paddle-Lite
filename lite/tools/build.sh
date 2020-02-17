@@ -62,17 +62,17 @@ function prepare_thirdparty {
     fi
 }
 
-function build_model_optimize_tool {
+function build_opt {
     cd $workspace
     prepare_thirdparty
-    mkdir -p build.model_optimize_tool
-    cd build.model_optimize_tool
+    mkdir -p build.opt
+    cd build.opt
     cmake .. -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DWITH_MKL=OFF
-    make model_optimize_tool -j$NUM_PROC
+    make opt -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
@@ -177,8 +177,8 @@ function make_all_tests {
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_PROFILE=ON \
-      -DLITE_WITH_PRECISION_PROFILE=ON \
+      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -397,7 +397,7 @@ function main {
                 shift
                 ;;
             build_optimize_tool)
-                build_model_optimize_tool
+                build_opt
                 shift
                 ;;
             cuda)

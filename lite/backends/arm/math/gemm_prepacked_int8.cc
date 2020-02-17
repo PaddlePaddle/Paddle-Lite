@@ -572,6 +572,25 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
 #define GEMM_INT8_INT8_OUT                                         \
   GEMM_TRANS_INT32_TO_FP32                                         \
   GEMM_INT8_RELU                                                   \
+  "mov    v8.4s, #-127.f\n"       /* v8 = -127.f     */            \
+  /* data >= -127 */                                               \
+  "fcmge v0.4s, v16.4s, v8.4s\n"                                   \
+  "fcmge v1.4s, v17.4s, v8.4s\n"                                   \
+  "fcmge v2.4s, v18.4s, v8.4s\n"                                   \
+  "fcmge v3.4s, v19.4s, v8.4s\n"                                   \
+  "fcmge v4.4s, v20.4s, v8.4s\n"                                   \
+  "fcmge v5.4s, v21.4s, v8.4s\n"                                   \
+  "fcmge v6.4s, v22.4s, v8.4s\n"                                   \
+  "fcmge v7.4s, v23.4s, v8.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v16.16b, v8.16b, v0.16b            \n"                      \
+  "bif v17.16b, v8.16b, v1.16b            \n"                      \
+  "bif v18.16b, v8.16b, v2.16b            \n"                      \
+  "bif v19.16b, v8.16b, v3.16b            \n"                      \
+  "bif v20.16b, v8.16b, v4.16b            \n"                      \
+  "bif v21.16b, v8.16b, v5.16b            \n"                      \
+  "bif v22.16b, v8.16b, v6.16b            \n"                      \
+  "bif v23.16b, v8.16b, v7.16b            \n"                      \
   "fcvtas v0.4s, v16.4s\n"        /*  00, cvt to int */            \
   "fcvtas v1.4s, v17.4s\n"        /*  01, cvt to int */            \
   "fcvtas v2.4s, v18.4s\n"        /*  02, cvt to int */            \
@@ -580,6 +599,24 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "fcvtas v5.4s, v21.4s\n"        /*  11, cvt to int */            \
   "fcvtas v6.4s, v22.4s\n"        /*  12, cvt to int */            \
   "fcvtas v7.4s, v23.4s\n"        /*  13, cvt to int */            \
+  /* data >= -127 */                                               \
+  "fcmge v16.4s, v24.4s, v8.4s\n"                                   \
+  "fcmge v17.4s, v25.4s, v8.4s\n"                                   \
+  "fcmge v18.4s, v26.4s, v8.4s\n"                                   \
+  "fcmge v19.4s, v27.4s, v8.4s\n"                                   \
+  "fcmge v20.4s, v28.4s, v8.4s\n"                                   \
+  "fcmge v21.4s, v29.4s, v8.4s\n"                                   \
+  "fcmge v22.4s, v30.4s, v8.4s\n"                                   \
+  "fcmge v23.4s, v31.4s, v8.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v24.16b, v8.16b, v16.16b\n"                                  \
+  "bif v25.16b, v8.16b, v17.16b\n"                                  \
+  "bif v26.16b, v8.16b, v18.16b\n"                                  \
+  "bif v27.16b, v8.16b, v19.16b\n"                                  \
+  "bif v28.16b, v8.16b, v20.16b\n"                                  \
+  "bif v29.16b, v8.16b, v21.16b\n"                                  \
+  "bif v30.16b, v8.16b, v22.16b\n"                                  \
+  "bif v31.16b, v8.16b, v23.16b\n"                                  \
   "sqxtn  v16.4h, v0.4s\n"        /*  00, cvt int32 to int16 */    \
   "fcvtas v8.4s, v24.4s\n"        /*  20, cvt to int */            \
   "sqxtn2 v16.8h, v1.4s\n"        /*  01, cvt int32 to int16 */    \
@@ -1179,6 +1216,25 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 #define GEMM_SDOT_INT8_OUT                                      \
   GEMM_SDOT_CVT_INT32_TO_FP32                                   \
   GEMM_SDOT_RELU                                                \
+  "mov    v26.4s, #-127.f\n"       /* v8 = -127.f     */            \
+  /* data >= -127 */                                               \
+  "fcmge v0.4s, v8.4s, v26.4s\n"                                   \
+  "fcmge v1.4s, v9.4s, v26.4s\n"                                   \
+  "fcmge v2.4s, v10.4s, v26.4s\n"                                   \
+  "fcmge v3.4s, v11.4s, v26.4s\n"                                   \
+  "fcmge v4.4s, v12.4s, v26.4s\n"                                   \
+  "fcmge v5.4s, v13.4s, v26.4s\n"                                   \
+  "fcmge v6.4s, v14.4s, v26.4s\n"                                   \
+  "fcmge v7.4s, v15.4s, v26.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v8.16b, v26.16b, v0.16b\n"                                  \
+  "bif v9.16b, v26.16b, v1.16b\n"                                  \
+  "bif v10.16b, v26.16b, v2.16b\n"                                 \
+  "bif v11.16b, v26.16b, v3.16b\n"                                  \
+  "bif v12.16b, v26.16b, v4.16b\n"                                  \
+  "bif v13.16b, v26.16b, v5.16b\n"                                  \
+  "bif v14.16b, v26.16b, v6.16b\n"                                  \
+  "bif v15.16b, v26.16b, v7.16b \n"                                 \
   "fcvtas v0.4s, v8.4s\n"         /*  00, cvt to int */         \
   "fcvtas v1.4s, v9.4s\n"         /*  01, cvt to int */         \
   "fcvtas v2.4s, v10.4s\n"        /*  02, cvt to int */         \
@@ -1195,6 +1251,28 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "sqxtn  v13.4h, v5.4s\n"        /*  12, cvt int32 to int16 */ \
   "sqxtn  v14.4h, v6.4s\n"        /*  20, cvt int32 to int16 */ \
   "sqxtn2 v14.8h, v7.4s\n"        /*  21, cvt int32 to int16 */ \
+  /* data >= -127 */                                               \
+  "fcmge v0.4s, v16.4s, v26.4s\n"                                   \
+  "fcmge v1.4s, v17.4s, v26.4s\n"                                   \
+  "fcmge v2.4s, v18.4s, v26.4s\n"                                   \
+  "fcmge v3.4s, v19.4s, v26.4s\n"                                   \
+  "fcmge v4.4s, v20.4s, v26.4s\n"                                   \
+  "fcmge v5.4s, v21.4s, v26.4s\n"                                   \
+  "fcmge v6.4s, v22.4s, v26.4s\n"                                   \
+  "fcmge v7.4s, v23.4s, v26.4s\n"                                   \
+  "fcmge v8.4s, v24.4s, v26.4s\n"                                   \
+  "fcmge v9.4s, v25.4s, v26.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v16.16b, v26.16b, v0.16b\n"                                  \
+  "bif v17.16b, v26.16b, v1.16b\n"                                  \
+  "bif v18.16b, v26.16b, v2.16b\n"                                  \
+  "bif v19.16b, v26.16b, v3.16b\n"                                  \
+  "bif v20.16b, v26.16b, v4.16b\n"                                  \
+  "bif v21.16b, v26.16b, v5.16b\n"                                  \
+  "bif v22.16b, v26.16b, v6.16b\n"                                  \
+  "bif v23.16b, v26.16b, v7.16b\n"                                  \
+  "bif v24.16b, v26.16b, v8.16b\n"                                  \
+  "bif v25.16b, v26.16b, v9.16b\n"                                  \
   "fcvtas v0.4s, v16.4s\n"        /*  22, cvt to int */         \
   "fcvtas v1.4s, v17.4s\n"        /*  30, cvt to int */         \
   "fcvtas v2.4s, v18.4s\n"        /*  31, cvt to int */         \
@@ -1614,6 +1692,25 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vadd.f32 q3, q11, q3\n"   /* r21, add offset */     \
   "vadd.f32 q4, q12, q4\n"   /* r30, add offset */     \
   "vadd.f32 q5, q13, q5\n"   /* r31, add offset */     \
+  /* data >= -127 */                                   \
+  "vmov.f32   q15, #-127.0\n"/* @ set q0 = -127 */     \
+  "vcge.f32 q6, q8, q15\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q7, q9, q15\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q10, q0, q15\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q11, q1, q15\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q12, q2, q15\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q13, q3, q15\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q14, q4, q15\n"   /* @ q8 >= -127 \n */     \
+  /* choose data */                                    \
+  "vbif q8, q15, q6\n"       /* @ choose */            \
+  "vcge.f32 q6, q5, q15\n"   /* @ q8 >= -127 \n */     \
+  "vbif q9 q15, q7\n"       /* @ choose */             \
+  "vbif q0, q15, q10\n"       /* @ choose */           \
+  "vbif q1, q15, q11\n"       /* @ choose */           \
+  "vbif q2, q15, q12\n"       /* @ choose */           \
+  "vbif q3, q15, q13\n"       /* @ choose */           \
+  "vbif q4, q15, q14\n"       /* @ choose */           \
+  "vbif q5, q15, q6\n"       /* @ choose */           \
   "vcvt.s32.f32   q6, q8\n"  /* r00, fp32->int32 */    \
   "vcvt.s32.f32   q7, q9\n"  /* r01, fp32->int32 */    \
   "vcvt.s32.f32   q10, q0\n" /* r10, fp32->int32 */    \

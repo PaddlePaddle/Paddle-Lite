@@ -121,17 +121,23 @@ TEST(ModelParser, SaveModelNaive) {
   SaveModelNaive(save_pb_model_path, scope, prog);
 }
 
+TEST(ModelParser, LoadModelNaiveFromFile) {
+  CHECK(!FLAGS_model_dir.empty());
+  cpp::ProgramDesc prog;
+  Scope scope;
+
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive.nb";
+  LoadModelNaiveFromFile(model_path, &scope, &prog);
+}
+
 TEST(ModelParser, LoadModelNaiveFromMemory) {
   CHECK(!FLAGS_model_dir.empty());
   cpp::ProgramDesc prog;
   Scope scope;
 
-  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive/__model__.nb";
-  auto params_path = std::string(FLAGS_model_dir) + ".saved.naive/param.nb";
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive.nb";
   std::string model_buffer = lite::ReadFile(model_path);
-  std::string params_buffer = lite::ReadFile(params_path);
-
-  LoadModelNaiveFromMemory(model_buffer, params_buffer, &scope, &prog);
+  LoadModelNaiveFromMemory(model_buffer, &scope, &prog);
 }
 
 }  // namespace lite

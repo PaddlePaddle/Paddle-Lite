@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -494,7 +494,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
 #if 1  /// 5x5dw
 TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
   if (FLAGS_basic_test) {
-    for (auto& stride : {1}) {
+    for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1, 2, 3, 4}) {
         for (auto& flag_bias : {false, true}) {
           for (auto& flag_relu : {false, true}) {

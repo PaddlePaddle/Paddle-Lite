@@ -53,6 +53,7 @@ class Node {
                  const std::vector<Place>& valid_places,
                  lite::Scope* scope = nullptr);
 
+    void ResetKernels(const std::vector<Place>& valid_places);
     std::string op_type() const { return op_info()->Type(); }
     const OpInfo* op_info() const;
     OpInfo* mutable_op_info();

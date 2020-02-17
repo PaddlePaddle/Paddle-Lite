@@ -80,6 +80,22 @@ void OutputOptModel(const std::string& load_model_dir,
   LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
 }
 
+void detect_choose(const float* dout, std::vector<int64_t> dims,const float thresh){
+   std::string name = FLAGS_out_txt + "_accu.txt";
+   FILE* fp = fopen(name.c_str(), "w");
+   for (int iw = 0; iw < dims[0]; iw++) {
+       const float* values = dout + iw * dims[1];
+       if (values[1]  > thresh){ // pro > 0.01
+           fprintf(fp, "%f \n", values[0]);
+           fprintf(fp, "%f \n", values[1]);
+           fprintf(fp, "%f \n", values[2]);
+           fprintf(fp, "%f \n", values[3]);
+           fprintf(fp, "%f \n", values[4]);
+          fprintf(fp, "%f \n", values[5]);
+       }
+   }
+   fclose(fp);
+}
 void detect_object(const float* dout, std::vector<int64_t> dims, const float thresh, int orih, int oriw) {
   std::vector<Object> objects;
   /*printf("dims: \n");
@@ -194,7 +210,8 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   auto out = output->data<float>();
   auto output_shape = output->shape();
   // detect
-  detect_object(out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih, FLAGS_oriw);
+ //  detect_object(out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih, FLAGS_oriw);
+  detect_choose(out, output_shape, atof(FLAGS_threshold.data()));
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];
   int output_num = 1;
