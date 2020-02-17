@@ -228,11 +228,14 @@ class ReduceSumComputeTester : public arena::TestCase {
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
       if (keep_dim_) {
-        out_dims.push_back(x_rank);
-        out_dims.push_back(1);
+        out_dims.resize(x_rank);
+        for (int i = 0; i < x_rank; ++i) {
+          out_dims[i] = 1;
+        }
       } else {
         out_dims.push_back(1);
       }
+      out->Resize(DDim(out_dims));
     } else {
       for (int i = 0; i < x_dims_.size(); i++) {
         out_dims.push_back(x_dims_[i]);
@@ -319,7 +322,6 @@ void test_reduce_sum(Place place) {
             for (bool reduce_all : {false, true}) {
               for (auto dim : reduce_dim) {
                 auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
-                LOG(INFO) << "reduce_all:" << reduce_all;
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceSumComputeTester(
                         place, "def", dim, keep_dim, reduce_all, x_dims));
