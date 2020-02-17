@@ -52,6 +52,19 @@ class DeleteQuantOpFuser : public FuseBase {
  private:
   std::string quant_op_type_{};
 };
+class DeleteDynamicQuantOpFuser : public FuseBase {
+ public:
+  explicit DeleteDynamicQuantOpFuser(const std::string& quant_op_type)
+      : quant_op_type_(quant_op_type) {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+
+ private:
+  std::string quant_op_type_{};
+};
 
 /* DequantOpFuser process conv2d/depthwise_conv2d/mul + fake_dequantize_max_abs.
 */
@@ -105,6 +118,24 @@ class DeleteQuantDequantOpFuser : public FuseBase {
 
  private:
   std::string quantized_op_type_{};
+};
+// dynamic quantdequant op fuser
+class DynamicQuantDequantOpFuser : public FuseBase {
+ public:
+  explicit DynamicQuantDequantOpFuser(const std::string& quantized_op_type,
+                                      const std::string& op_type,
+                                      int i)
+      : op_type_(op_type), quant_type_(quantized_op_type), times_(i) {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+
+ private:
+  std::string op_type_{};
+  std::string quant_type_{};
+  int times_{1};
 };
 
 }  // namespace fusion

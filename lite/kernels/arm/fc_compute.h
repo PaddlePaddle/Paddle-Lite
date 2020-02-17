@@ -95,7 +95,7 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
 
     CHECK_GE(x_dims.size(), 2UL);
     CHECK_EQ(w_dims.size(), 2UL);
-    CHECK_EQ(param.output->dims().size(), 2UL);
+    CHECK_GE(param.output->dims().size(), 2UL);
 
     m_ = x_dims.Slice(0, param.in_num_col_dims).production();
     k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();

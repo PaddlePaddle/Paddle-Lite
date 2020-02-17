@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/conv_op.h"
 #include <bmcompiler_if.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
@@ -58,10 +57,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int32_t> i_output_shape_data(output_dims.size());
 
   for (size_t i = 0; i < input_dims.size(); i++) {
-    i_input_shape_data[i] = static_cast<int>(input_shape_data[i]);
+    i_input_shape_data[i] = static_cast<int32_t>(input_shape_data[i]);
   }
   for (size_t i = 0; i < output_dims.size(); i++) {
-    i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
+    i_output_shape_data[i] = static_cast<int32_t>(output_shape_data[i]);
   }
   const float* filter_data =
       const_cast<const float*>(filter->mutable_data<float>());
@@ -69,7 +68,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
-
   add_conv_layer(graph->GetCompilerHandle(),
                  const_cast<const int*>(&i_input_shape_data[0]),
                  input_dims.size(),
@@ -102,5 +100,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d,
+                         kBM,
+                         paddle::lite::subgraph::bm::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
                          kBM,
                          paddle::lite::subgraph::bm::ConvConverter);
