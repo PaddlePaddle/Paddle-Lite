@@ -2744,8 +2744,18 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                                 float32x4_t bias,
                                 bool is_relu) {
 #ifdef __aarch64__
+  float32x4_t vmax = vdupq_n_f32(-127.f);
   asm volatile(NCHWC4_TRANS_INT32
                "subs   %w[cnt], %w[cnt], #1\n"
+               /* data >= -127 */
+               "fcmge v4.4s, v16.4s, %[vmax].4s             \n"
+               "fcmge v5.4s, v18.4s, %[vmax].4s             \n"
+               "fcmge v6.4s, v17.4s, %[vmax].4s            \n"
+               "fcmge v7.4s, v19.4s, %[vmax].4s            \n"
+               "bif v16.16b, %[vmax].16b, v4.16b            \n"
+               "bif v18.16b, %[vmax].16b, v5.16b            \n"
+               "bif v17.16b, %[vmax].16b, v6.16b            \n"
+               "bif v19.16b, %[vmax].16b, v7.16b            \n"
                /* fp32-int32 */
                "fcvtas  v4.4s, v16.4s\n"
                "fcvtas  v5.4s, v18.4s\n"
@@ -2773,7 +2783,10 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  [doutc3r0] "+r"(dout3),
                  [ptr_din] "+r"(din),
                  [cnt] "+r"(cnt)
-               : [scale] "w"(scale), [bias] "w"(bias), [relu] "r"(is_relu)
+               : [scale] "w"(scale),
+                 [vamx] "w"(vmax),
+                 [bias] "w"(bias),
+                 [relu] "r"(is_relu)
                : "cc",
                  "memory",
                  "v0",
@@ -2815,11 +2828,21 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                "vbif.f32   q3, q14, q7   @ get right offset\n"
                "vbif.f32   q4, q14, q8   @ get right offset\n"
                "vbif.f32   q5, q14, q9   @ get right offset\n"
+               "vmov.f32 q14, #-127.0\n"
                /* add offset */
                "vadd.f32   q10, q2, q10\n"
                "vadd.f32   q11, q3, q11\n"
                "vadd.f32   q12, q4, q12\n"
                "vadd.f32   q13, q5, q13\n"
+               /* data >= -127 */
+               "vcge.f32 q6, q10, q14     @ q10 >= vmax \n"
+               "vcge.f32 q7, q11, q14     @ q11 >= vmax \n"
+               "vcge.f32 q8, q12, q14     @ q12 >= vmax \n"
+               "vcge.f32 q9, q13, q14     @ q13 >= vmax \n"
+               "vbif q10, q14, q6         @ choose \n"
+               "vbif q11, q14, q7         @ choose \n"
+               "vbif q12, q14, q8         @ choose \n"
+               "vbif q13, q14, q9         @ choose \n"
                /* fp32 to int32 */
                "vcvt.s32.f32  q6, q10    @ cvt to int32\n"
                "vcvt.s32.f32  q7, q11    @ cvt to int32\n"
@@ -2987,10 +3010,13 @@ inline float cvt_kernel(int din, float scale, float bias, bool flag_relu) {
 
 template <>
 inline int8_t cvt_kernel(int din, float scale, float bias, bool flag_relu) {
+  auto tmp = 0;
   if (flag_relu) {
-    return saturate_cast<int8_t>(round(LITEMAX(din * scale + bias, 0)));
+    tmp = saturate_cast<int8_t>(round(LITEMAX(din * scale + bias, 0)));
+  } else {
+    tmp = saturate_cast<int8_t>(round(din * scale + bias));
   }
-  return saturate_cast<int8_t>(round(din * scale + bias));
+  return tmp < -127 ? -127 : tmp;
 }
 
 template <>
@@ -3362,7 +3388,27 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                                 float32x4_t bias1,
                                 bool is_relu) {
 #ifdef __aarch64__
+  float32x4_t vmax = vdupq_n_f32(-127.f);
   asm volatile(INT32_NCHWC8_TO_NCHW_FP32 /* fp32-int32 */
+               /* data >= -127 */
+               "fcmge v10.4s, v16.4s, %[vmax].4s             \n"
+               "fcmge v11.4s, v18.4s, %[vmax].4s             \n"
+               "fcmge v4.4s, v17.4s, %[vmax].4s            \n"
+               "fcmge v5.4s, v19.4s, %[vmax].4s            \n"
+               "fcmge v20.4s, v8.4s, %[vmax].4s             \n"
+               "fcmge v21.4s, v9.4s, %[vmax].4s             \n"
+               "fcmge v22.4s, v12.4s, %[vmax].4s            \n"
+               "fcmge v23.4s, v13.4s, %[vmax].4s            \n"
+               /* choose data */
+               "bif v16.16b, %[vmax].16b, v10.16b            \n"
+               "bif v18.16b, %[vmax].16b, v11.16b            \n"
+               "bif v17.16b, %[vmax].16b, v4.16b            \n"
+               "bif v19.16b, %[vmax].16b, v5.16b            \n"
+               "bif v8.16b, %[vmax].16b, v20.16b            \n"
+               "bif v9.16b, %[vmax].16b, v21.16b            \n"
+               "bif v12.16b, %[vmax].16b, v22.16b            \n"
+               "bif v13.16b, %[vmax].16b, v23.16b            \n"
+               /* fp32 - int32 */
                "fcvtas  v10.4s, v16.4s\n"
                "fcvtas  v11.4s, v17.4s\n"
                "fcvtas  v14.4s, v18.4s\n"
@@ -3413,6 +3459,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  [scale1] "w"(scale1),
                  [bias0] "w"(bias0),
                  [bias1] "w"(bias1),
+                 [vamx] "w"(vmax),
                  [relu] "r"(is_relu)
                : "cc",
                  "memory",
@@ -3475,7 +3522,18 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                "vmov.f32 q9, #0.5\n"
                "vcgt.f32   q11, q7, q8   @ get mask > 0, in0\n"
                "vbif.f32   q9, q10, q11   @ get right offset\n"
+               "vmov.f32 q11, #-127.0\n"
                "vadd.f32   q7, q7, q9\n"
+               /* data >= -127 */
+               "vcge.f32 q8, q0, q11     @ q10 >= vmax \n"
+               "vcge.f32 q9, q2, q11     @ q10 >= vmax \n"
+               "vcge.f32 q10, q4, q11     @ q10 >= vmax \n"
+               /* choose data */
+               "vbif q0, q11, q8    @ choose \n"
+               "vcge.f32 q8, q6, q11     @ q10 >= vmax \n"
+               "vbif q2, q11, q9    @ choose \n"
+               "vbif q4, q11, q10    @ choose \n"
+               "vbif q6, q11, q8    @ choose \n"
                /* fp32 to int32 */
                "vcvt.s32.f32  q8, q0    @ cvt to int32\n"
                "vcvt.s32.f32  q9, q2    @ cvt to int32\n"
@@ -3486,6 +3544,17 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                "vqmovn.s32 d4, q9       @ cnt to int16\n"
                "vqmovn.s32 d8, q10      @ cnt to int16\n"
                "vqmovn.s32 d12, q11      @ cnt to int16\n"
+               /* data >= -127 */
+               "vmov.f32 q11, #-127.0\n"
+               "vcge.f32 q8, q1, q11     @ q10 >= vmax \n"
+               "vcge.f32 q9, q3, q11     @ q10 >= vmax \n"
+               "vcge.f32 q10, q5, q11     @ q10 >= vmax \n"
+               /* choose data */
+               "vbif q1, q11, q8    @ choose \n"
+               "vcge.f32 q8, q7, q11     @ q10 >= vmax \n"
+               "vbif q3, q11, q9    @ choose \n"
+               "vbif q5, q11, q10    @ choose \n"
+               "vbif q7, q11, q8    @ choose \n"
                /* fp32 to int32 */
                "vcvt.s32.f32  q8, q1    @ cvt to int32\n"
                "vcvt.s32.f32  q9, q3    @ cvt to int32\n"
