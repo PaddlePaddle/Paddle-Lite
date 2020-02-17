@@ -37,6 +37,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/model_optimize_tool
   user_guides/library_tailoring
   user_guides/cuda
+  user_guides/opencl
 
 .. toctree::
   :maxdepth: 1
@@ -44,6 +45,7 @@ Welcome to Paddle-Lite's documentation!
 
   advanced_user_guides/support_operation_list
   advanced_user_guides/add_operation
+  advanced_user_guides/add_layout
   advanced_user_guides/model_quantization
   advanced_user_guides/add_new_pass
   advanced_user_guides/x86
