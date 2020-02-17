@@ -20,19 +20,17 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class SequencePoolCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType Ptype>
+class FetchCompute : public KernelLite<TARGET(kCUDA), Ptype> {
  public:
-  using param_t = operators::SequencePoolParam;
+  using param_t = operators::FetchParam;
+  using TargetW = TargetWrapper<TARGET(kCUDA)>;
 
   void Run() override;
-  virtual ~SequencePoolCompute() = default;
-
- private:
-  lite::Tensor seq_offset_D;
+  virtual ~FetchCompute() = default;
 };
 
-}  // namespace cuda
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

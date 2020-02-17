@@ -61,6 +61,9 @@ class TargetWrapper<TARGET(kCUDA)> {
   static void StreamSync(const stream_t& stream, const event_t& event) {
     cudaStreamWaitEvent(stream, event, 0);
   }
+  static void DeviceSync() {
+    cudaDeviceSynchronize();
+  }
 
   static void* Malloc(size_t size);
   static void Free(void* ptr);

@@ -28,7 +28,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void MultiStreamAnalysisPass::Init(SSAGraph* graph) {  
+void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
   exec_ops_.clear();
   wait_que_.clear();
   std::queue<int> empty_queue;
@@ -37,6 +37,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
   }
   ops_in_streams_.clear();
   resources_.clear();map_arg_to_lane_.clear();
+  io_copy_once_num_ = 0;
 
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (op_node->IsStmt()) {
@@ -59,9 +60,9 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
         }
       }
 
-      // feed op has no dependencies and can be launched directly.
+      // feed and io_copy_once op has no dependencies and can be launched directly.
       // Other ops are put into the waiting queue.
-      if (op_node->AsStmt().op_type() == "feed") {
+      if (op_node->AsStmt().op_type() == "feed" || op_node->AsStmt().op_type() == "io_copy_once") {
         exec_que_.push(op_node);
       } else {
         wait_que_.push_back(op_node);
@@ -79,21 +80,32 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
     std::string::size_type idx = node->AsArg().name.find("feed");
     if (idx != std::string::npos) {
       for (auto& feed_ops : node->outlinks) {
-        // feed op doesn't need to wait sync.
-        feed_ops->AsStmt().need_sync_ = false;
-        CHECK_EQ(static_cast<int>(feed_ops->outlinks.size()), 1)
-            << "feed op must have one output.";
-        for (auto& var : feed_ops->outlinks) {
-          var->AsArg().lane = lane;
-          map_arg_to_lane_[var->AsArg().name] = lane;
-          resources_[var->AsArg().name] = true;
+        if(feed_ops->AsStmt().op_type()== "feed") {
+          // feed op doesn't need to wait sync.
+          feed_ops->AsStmt().need_sync_ = false;
+          CHECK_EQ(static_cast<int>(feed_ops->outlinks.size()), 1)
+              << "feed op must have one output.";
+          for (auto& var : feed_ops->outlinks) {
+            var->AsArg().lane = lane;
+            map_arg_to_lane_[var->AsArg().name] = lane;
+            resources_[var->AsArg().name] = true;
+          }
+          feed_ops->AsStmt().stream_id_ = lane;
+          ops_in_streams_[lane].push_back(feed_ops);
+          ++lane;
+          if (lane >= max_stream_) {
+            lane = 0;
+          }
         }
-        feed_ops->AsStmt().stream_id_ = lane;
-        ops_in_streams_[lane].push_back(feed_ops);
-        ++lane;
-        if (lane >= max_stream_) {
-          lane = 0;
-        }
+      }
+    }
+    // set all io_copy_once op in the first stream
+    for (auto& io_copy_once_ops: node->outlinks) {
+      if (io_copy_once_ops->AsStmt().op_type() == "io_copy_once") {
+        ops_in_streams_[0].push_back(io_copy_once_ops);
+        io_copy_once_ops->AsStmt().stream_id_ = 0;
+        io_copy_once_ops->AsStmt().need_sync_ = false;
+        ++io_copy_once_num_;
       }
     }
   }
@@ -136,11 +148,13 @@ int MultiStreamAnalysisPass::SelectStreamId(
   }
 
   int res = lanes[0];
-  size_t min_num = ops_in_streams_[lanes[0]].size();
+  int exclude_io_copy_once_num = ops_in_streams_[0].size() - io_copy_once_num_;
+  size_t min_num = lanes[0] == 0 ? exclude_io_copy_once_num : ops_in_streams_[lanes[0]].size();
   for (size_t i = 1; i < lanes.size(); ++i) {
-    if (ops_in_streams_[lanes[i]].size() < min_num) {
+    int ith_num = lanes[i] == 0 ? exclude_io_copy_once_num : ops_in_streams_[lanes[i]].size();
+    if (ith_num < min_num) {
       res = lanes[i];
-      min_num = ops_in_streams_[lanes[i]].size();
+      min_num = ith_num;
     }
   }
 
@@ -232,7 +246,8 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   graph.get()->SetNodeInOrder(exec_ops_);
 
-  for (size_t i = 0; i < ops_in_streams_.size(); ++i) {
+  LOG(INFO) << "stream " << 0 << " has " << ops_in_streams_[0].size() - io_copy_once_num_ << " ops. (exclude io_copy_once).";
+  for (size_t i = 1; i < ops_in_streams_.size(); ++i) {
     LOG(INFO) << "stream " << i << " has " << ops_in_streams_[i].size()
             << " ops.";
   }
