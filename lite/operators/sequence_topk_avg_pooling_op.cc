@@ -54,8 +54,7 @@ bool SequenceTopkAvgPoolingOpLite::InferShape() const {
   vec_out_shape.push_back(channel_num * num_k);
 
   param_.Out->Resize(lite::DDim(vec_out_shape));
-  auto out_lod = param_.Out->mutable_lod();
-  *out_lod = param_.X->lod();
+  param_.Out->set_lod(param_.ROW->lod());
   return true;
 }
 
@@ -82,5 +81,5 @@ bool SequenceTopkAvgPoolingOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(SequenceTopkAvgPooling,
+REGISTER_LITE_OP(sequence_topk_avg_pooling,
                  paddle::lite::operators::SequenceTopkAvgPoolingOpLite);

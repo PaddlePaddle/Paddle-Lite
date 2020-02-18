@@ -79,4 +79,4 @@ TEST(lookup_table_x86, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(lookup_table, kX86, kInt64, kNCHW, def);
+USE_LITE_KERNEL(lookup_table, kX86, kFloat, kNCHW, def);

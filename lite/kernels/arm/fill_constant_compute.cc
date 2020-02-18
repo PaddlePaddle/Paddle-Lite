@@ -20,10 +20,41 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T>
-class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::FillConstantParam;
+
+  inline DDimLite GetShape(const param_t& param) {
+    // 1. shape is a Tensor
+    if (param.shape_tensor != nullptr) {
+      auto* shape_tensor = param.shape_tensor;
+      auto* shape_data = shape_tensor->data<int>();
+      auto vec_shape =
+          std::vector<int64_t>(shape_data, shape_data + shape_tensor->numel());
+      return DDimLite(vec_shape);
+    }
+
+    // 2. shape is a list/tuple containing Tensor
+    auto shape_tensor_list = param.shape_tensor_list;
+    if (shape_tensor_list.size() > 0) {
+      std::vector<int64_t> vec_shape;
+      for (size_t i = 0; i < shape_tensor_list.size(); ++i) {
+        auto tensor = shape_tensor_list[i];
+        vec_shape.push_back(*tensor->data<int>());
+      }
+      return DDimLite(vec_shape);
+    }
+
+    // 3. shape is a list/tuple without containing Tensor
+    auto vec_shape = param.shape;
+    return DDimLite(vec_shape);
+  }
+
+  void PrepareForRun() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto outdims = GetShape(param);
+    param.Out->Resize(outdims);
+  }
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
@@ -54,9 +85,8 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~FillConstantCompute() = default;
 };
 
-template <typename T>
 class FillConstantBatchLikeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::FillConstantBatchLikeParam;
 
@@ -103,19 +133,23 @@ class FillConstantBatchLikeCompute
 // float
 REGISTER_LITE_KERNEL(fill_constant,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::FillConstantCompute<float>,
+                     paddle::lite::kernels::arm::FillConstantCompute,
                      def)
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("ShapeTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
-REGISTER_LITE_KERNEL(
-    fill_constant_batch_size_like,
-    kARM,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::arm::FillConstantBatchLikeCompute<float>,
-    def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+REGISTER_LITE_KERNEL(fill_constant_batch_size_like,
+                     kARM,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::arm::FillConstantBatchLikeCompute,
+                     def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -20,6 +20,7 @@ endif()
 
 include(ExternalProject)
 
+SET(XBYAK_SOURCECODE_DIR ${CMAKE_SOURCE_DIR}/third-party/xbyak)
 set(XBYAK_PROJECT       extern_xbyak)
 set(XBYAK_PREFIX_DIR    ${THIRD_PARTY_PATH}/xbyak)
 set(XBYAK_INSTALL_ROOT  ${THIRD_PARTY_PATH}/install/xbyak)
@@ -38,8 +39,11 @@ ExternalProject_Add(
     ${XBYAK_PROJECT}
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DEPENDS             ""
-    GIT_REPOSITORY      "https://github.com/herumi/xbyak.git"
     GIT_TAG             "v5.661"  # Jul 26th
+    URL                 http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fxbyak-5.66.zip
+    DOWNLOAD_DIR        ${XBYAK_SOURCECODE_DIR}
+    DOWNLOAD_NAME   "xbyak-5.66.zip"
+    DOWNLOAD_NO_PROGRESS 1
     PREFIX              ${XBYAK_PREFIX_DIR}
     UPDATE_COMMAND      ""
     CMAKE_ARGS          -DCMAKE_INSTALL_PREFIX=${XBYAK_INSTALL_ROOT}

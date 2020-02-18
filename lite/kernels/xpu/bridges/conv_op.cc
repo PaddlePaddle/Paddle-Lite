@@ -12,31 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/operators/conv_op.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace xpu {
-namespace bridges {
 
-node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
-                            graph_ctx_type* graph_ctx,
-                            const node_map_type& input_nodes) {
-  auto scope = op->scope();
+int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "[XPU] Converting " << op_type << "... ";
+  auto scope = op->scope();
+  VLOG(3) << "[XPU] Converting " << op_type << "... ";
 
-  // get input, filter and op attributes
-  auto input_var_name = op_info->Input("Input").front();
-  auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  // Get input and output vars and op attributes
+  auto input_name = op_info->Input("Input").front();
+  auto input_type = kernel->GetInputDeclType("Input");
+  CHECK(input_type->precision() == PRECISION(kFloat));
+  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
+  auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
-  auto filter_var_name = op_info->Input("Filter").front();
-  auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
+  auto filter_name = op_info->Input("Filter").front();
+  auto filter_type = kernel->GetInputDeclType("Filter");
+  CHECK(filter_type->precision() == PRECISION(kFloat));
+  CHECK(filter_type->layout() == DATALAYOUT(kNCHW));
+  auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
+  auto output_name = op_info->Output("Output").front();
+  auto output_type = kernel->GetOutputDeclType("Output");
+  CHECK(output_type->precision() == PRECISION(kFloat));
+  CHECK(output_type->layout() == DATALAYOUT(kNCHW));
   auto bs = input_dims[0];
   auto oc = filter_dims[0];
   CHECK_EQ(input_dims.size(), 4);
@@ -46,37 +57,55 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
   auto groups = op_info->GetAttr<int>("groups");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
-  CHECK_EQ(strides.size(), 2);
-  CHECK_EQ(paddings.size(), 2);
-  CHECK_EQ(dilations.size(), 2);
+  CHECK_EQ(strides.size(), 2L);
+  CHECK_EQ(dilations.size(), 2L);
+
+  // Input node
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    input_node = graph->Get(input_name);
+  } else {
+    input_node = graph->Add(input_name, *input);
+  }
+
+  if (paddings.size() == 2L) {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int copy_pad = *(paddings.begin() + 2 * i);
+      paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+    }
+  }
+  CHECK_EQ(paddings.size(), 4L)
+      << "Paddings size should be the same or twice as the input size.";
+
+  std::string padding_algorithm("");
+  if (op_info->HasAttr("padding_algorithm")) {
+    padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
+  }
+  operators::UpdatePaddingAndDilation(&paddings,
+                                      &dilations,
+                                      strides,
+                                      padding_algorithm,
+                                      input_dims,
+                                      filter_dims);
+
   std::vector<int64_t> output_shape({bs, oc});
   for (size_t i = 0; i < 2; i++) {
     const int dkernel = dilations[i] * (filter_dims[2 + i] - 1) + 1;
     output_shape.push_back(
-        (input_dims[i + 2] + 2 * paddings[i] - dkernel) / strides[i] + 1);
+        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] - dkernel) /
+            strides[i] +
+        1);
   }
   DDim output_dims(output_shape);
 
-  // check context
-  CHECK(graph_ctx != nullptr);
-  CHECK(graph_ctx->builder != nullptr);
-  CHECK(graph_ctx->params != nullptr);
+  // Filter node
+  auto filter_node = graph->Add(filter_name, *filter);
 
-  // create filter node
-  CHECK(!input_nodes.count(filter_var_name));
-  auto filter_const_node = std::make_shared<xtcl::xExpr>(
-      graph_ctx->builder->CreateTensor(filter_var_name,
-                                       lite::xpu::CvtShape(filter_dims),
-                                       ::xtcl::Float(32)));
-  auto filter_const_tensor = lite::xpu::CvtTensor(filter);
-  graph_ctx->params->emplace(
-      std::make_pair(filter_var_name, *filter_const_tensor));
-
-  // create conv node and set input, filter, bias nodes and attributes
+  // Conv node
   auto conv_attrs = xtcl::make_node<xtcl::network::Conv2DAttrs>();
-  conv_attrs->strides = std::move(lite::xpu::CvtShape(strides));
-  conv_attrs->padding = std::move(lite::xpu::CvtShape(paddings));
-  conv_attrs->dilation = std::move(lite::xpu::CvtShape(dilations));
+  conv_attrs->strides = std::move(CvtShape<xtcl::xIndexExpr>(strides));
+  conv_attrs->padding = std::move(CvtShape<xtcl::xIndexExpr>(paddings));
+  conv_attrs->dilation = std::move(CvtShape<xtcl::xIndexExpr>(dilations));
   conv_attrs->groups = groups;
   // conv_attrs->channels = nullptr;
   conv_attrs->kernel_size = std::move(xtcl::Array<xtcl::xIndexExpr>(nullptr));
@@ -84,20 +113,22 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
   conv_attrs->kernel_layout = "OIHW";
   conv_attrs->out_layout = "";
   // conv_attrs->out_dtype = "";
-  CHECK(input_nodes.count(input_var_name));
   auto conv_node =
-      std::make_shared<xtcl::xExpr>(graph_ctx->builder->CreateConv2D(
-          *input_nodes.at(input_var_name), *filter_const_node, conv_attrs));
-  graph_ctx->builder->SetLayer(unique_op_type);
+      graph->Add(output_name,
+                 graph->builder_.CreateConv2D(
+                     *input_node->data(), *filter_node->data(), conv_attrs));
 
-  // create bias node if has bias
+  // Add bias node if exists bias
   // supports the bias nodes with the following dimensions
   // 0: {oc}
   // 1: {1, oc, oh, ow}
   // 2: {n, oc, oh, ow}
-  if (lite::xpu::HasInputArg(op_info, scope, "Bias")) {
-    auto bias_var_name = op_info->Input("Bias").front();
-    auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+  if (HasInputArg(op_info, scope, "Bias")) {
+    auto bias_name = op_info->Input("Bias").front();
+    auto bias_type = kernel->GetInputDeclType("Bias");
+    CHECK(bias_type->precision() == PRECISION(kFloat));
+    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
+    auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
     auto bias_data_size = bias_dims.production();
     auto output_data_size = output_dims.production();
@@ -114,57 +145,43 @@ node_map_type ConvConverter(const std::shared_ptr<lite::OpLite> op,
       // 2: {n, oc, oh, ow}
       bias_shape = output_dims.Vectorize();
     } else {
-      LOG(ERROR) << "bias dimension " << bias_dims
+      LOG(ERROR) << "[XPU] Bias dimension " << bias_dims
                  << " isn't supported in conv2d Op when output dimension is "
                  << output_dims;
     }
-    std::shared_ptr<xtcl::xExpr> bias_node = nullptr;
-    if (input_nodes.count(bias_var_name)) {
-      // bias node from input node
-      bias_node = input_nodes.at(bias_var_name);
+    std::shared_ptr<Node> bias_node = nullptr;
+    if (graph->Has(bias_name)) {
+      bias_node = graph->Get(bias_name);
     } else {
-      // bias node with const tensor
-      auto bias_const_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateTensor(bias_var_name,
-                                           lite::xpu::CvtShape(bias_shape),
-                                           ::xtcl::Float(32)));
-      auto bias_const_tensor = lite::xpu::CvtTensor(bias, bias_shape);
-      graph_ctx->params->emplace(
-          std::make_pair(bias_var_name, *bias_const_tensor));
-      bias_node = bias_const_node;
+      bias_node = graph->Add(bias_name, *bias, bias_shape);
     }
-    std::shared_ptr<xtcl::xExpr> add_node = nullptr;
     if (is_channel_bias) {
-      add_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateBiasAdd(*conv_node, 1, *bias_node));
+      conv_node = graph->Add(output_name,
+                             graph->builder_.CreateBiasAdd(
+                                 *conv_node->data(), 1, *bias_node->data()));
     } else {
-      add_node = std::make_shared<xtcl::xExpr>(
-          graph_ctx->builder->CreateBinaryOp("add", *conv_node, *bias_node));
+      conv_node =
+          graph->Add(output_name,
+                     graph->builder_.CreateBinaryOp(
+                         "add", *conv_node->data(), *bias_node->data()));
     }
-    graph_ctx->builder->SetLayer(unique_op_type + "/add");
-    conv_node = add_node;
   }
 
-  // output converted nodes
-  node_map_type output_nodes;
   if (fuse_relu) {
-    // append relu node if fuse_relu is true
-    auto relu_node = std::make_shared<xtcl::xExpr>(
-        graph_ctx->builder->CreateRelu(*conv_node));
-    graph_ctx->builder->SetLayer(unique_op_type + "/relu");
-    output_nodes[op_info->Output("Output").front()] = relu_node;
-  } else {
-    output_nodes[op_info->Output("Output").front()] = conv_node;
+    // Append relu node if fuse_relu is true
+    graph->Add(output_name, graph->builder_.CreateRelu(*conv_node->data()));
   }
-  return output_nodes;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(conv2d, paddle::lite::kernels::xpu::bridges::ConvConverter);
-REGISTER_XPU_BRIDGE(depthwise_conv2d,
-                    paddle::lite::kernels::xpu::bridges::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(conv2d,
+                         kXPU,
+                         paddle::lite::subgraph::xpu::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
+                         kXPU,
+                         paddle::lite::subgraph::xpu::ConvConverter);

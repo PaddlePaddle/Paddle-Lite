@@ -76,24 +76,34 @@ void Conv2DTransposeCompute::Run() {
   bool fuse_relu = param.fuse_relu;
   bool flag_bias = (param.bias != nullptr);
 
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
   int m = chout * kw * kh / group;
   int n = hin * win;
   int k = chin / group;
+
+  bool pads_equal =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+
   int group_size_in = win * hin * chin / group;
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
+
+  bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
   int hblock = lite::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
-                      (param.strides[1] == 1) && (param.paddings[0] == 0) &&
-                      (param.paddings[1] == 0) && (param.dilations[0] == 1) &&
-                      (param.dilations[1] == 1);
+                      (param.strides[1] == 1) && pads_all_qual &&
+                      (paddings[0] == 0) && (dilations[0] == 1) &&
+                      (dilations[1] == 1);
   ctx.ExtendWorkspace(sizeof(float) * group * m * n);
 
   auto din = param.x->data<float>();
   auto dout = param.output->mutable_data<float>();
   auto weights = param.filter->data<float>();
+  auto act_param = param.activation_param;
   for (int i = 0; i < num; i++) {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
@@ -106,7 +116,9 @@ void Conv2DTransposeCompute::Run() {
       const float* din_group = din_batch + g * group_size_in;
       const float* weights_group = weights + g * group_size_weights;
       float* coldata_group = col_data + g * group_size_coldata;
-
+      if (flag_bias) {
+        act_param.has_active = false;
+      }
       lite::arm::math::sgemm_prepack(false,
                                      m,
                                      n,
@@ -119,7 +131,7 @@ void Conv2DTransposeCompute::Run() {
                                      n,
                                      nullptr,
                                      false,
-                                     fuse_relu && (!flag_bias),
+                                     act_param,
                                      &ctx);
     }
     if (!flag_1x1s1p1) {
@@ -129,12 +141,14 @@ void Conv2DTransposeCompute::Run() {
                                      wout,
                                      kh,
                                      kw,
-                                     param.paddings[0],
-                                     param.paddings[1],
+                                     paddings[0],
+                                     paddings[1],
+                                     paddings[2],
+                                     paddings[3],
                                      param.strides[0],
                                      param.strides[1],
-                                     param.dilations[0],
-                                     param.dilations[1],
+                                     dilations[0],
+                                     dilations[1],
                                      dout_batch);
     }
     if (flag_bias) {

@@ -39,16 +39,19 @@
 #include "lite/backends/arm/math/im2sequence.h"
 #include "lite/backends/arm/math/increment.h"
 #include "lite/backends/arm/math/interpolate.h"
+#include "lite/backends/arm/math/layout.h"
 #include "lite/backends/arm/math/lrn.h"
 #include "lite/backends/arm/math/negative.h"
 #include "lite/backends/arm/math/norm.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/packed_sgemm_c4.h"
 #include "lite/backends/arm/math/pad2d.h"
 #include "lite/backends/arm/math/pooling.h"
 #include "lite/backends/arm/math/power.h"
 #include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"
+#include "lite/backends/arm/math/reduce_prod.h"
 #include "lite/backends/arm/math/scale.h"
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
@@ -59,6 +62,7 @@
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split.h"
+#include "lite/backends/arm/math/split_merge_lod_tenosr.h"
 #include "lite/backends/arm/math/stack.h"
 #include "lite/backends/arm/math/topk.h"
 #include "lite/backends/arm/math/yolo_box.h"
@@ -352,7 +356,8 @@ inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
 }
 
 template <typename T>
-void fill_bias_fc(T* tensor, const T* bias, int num, int channel);
+void fill_bias_fc(
+    T* tensor, const T* bias, int num, int channel, bool flag_relu);
 
 template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
 inline float32x4_t vactive_f32(const float32x4_t& x) {

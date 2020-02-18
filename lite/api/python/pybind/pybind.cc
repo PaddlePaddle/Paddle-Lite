@@ -116,6 +116,8 @@ void BindLiteMobileConfig(py::module *m) {
   py::class_<MobileConfig> mobile_config(*m, "MobileConfig");
 
   mobile_config.def(py::init<>())
+      .def("set_model_from_file", &MobileConfig::set_model_from_file)
+      .def("set_model_from_buffer", &MobileConfig::set_model_from_buffer)
       .def("set_model_dir", &MobileConfig::set_model_dir)
       .def("model_dir", &MobileConfig::model_dir)
       .def("set_model_buffer", &MobileConfig::set_model_buffer)
@@ -165,6 +167,9 @@ void BindLitePlace(py::module *m) {
   py::enum_<DataLayoutType>(*m, "DataLayoutType")
       .value("NCHW", DataLayoutType::kNCHW)
       .value("NHWC", DataLayoutType::kNHWC)
+      .value("ImageDefault", DataLayoutType::kImageDefault)
+      .value("ImageFolder", DataLayoutType::kImageFolder)
+      .value("ImageNW", DataLayoutType::kImageNW)
       .value("Any", DataLayoutType::kAny);
 
   // Place

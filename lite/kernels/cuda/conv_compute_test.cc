@@ -15,6 +15,7 @@
 #include "lite/kernels/cuda/conv_compute.h"
 #include <gtest/gtest.h>
 #include <memory>
+#include <random>
 #include <utility>
 #include <vector>
 
@@ -41,7 +42,10 @@ TEST(conv_compute, fp32) {
   act_param.Leaky_relu_alpha = 0.1;
   operators::ConvParam param;
   param.activation_param = act_param;
-  param.paddings = {1, 1};
+  std::vector<int> pads = {1, 1, 1, 1};
+  std::vector<int> dilations = {1, 1, 1, 1};
+  param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.dilations = std::make_shared<std::vector<int>>(dilations);
   param.groups = 1;
 
   Tensor x, filter, bias, y, x_cpu, filter_cpu, bias_cpu, y_cpu;
@@ -148,6 +152,10 @@ TEST(conv_compute, int8) {
   bias.Assign<float, lite::DDim, TARGET(kCUDA)>(bias_cpu_data,
                                                 filter_cpu.dims());
 
+  std::vector<int> pads = {0, 0, 0, 0};
+  std::vector<int> dilations = {1, 1, 1, 1};
+  param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.dilations = std::make_shared<std::vector<int>>(dilations);
   param.x = &x;
   param.filter = &filter;
   param.output = &y;
@@ -202,12 +210,10 @@ TEST(conv_compute, int8_int8_out) {
   std::cout << "input" << std::endl;
   for (int i = 0; i < x_cpu.numel(); i++) {
     x_cpu_data[i] = static_cast<int8_t>(random(-36, 36));
-    std::cout << float(x_cpu_data[i]) << std::endl;
   }
   std::cout << "filter" << std::endl;
   for (int i = 0; i < filter_cpu.numel(); i++) {
     filter_cpu_data[i] = static_cast<int8_t>(random(-10, 10));
-    std::cout << float(filter_cpu_data[i]) << std::endl;
   }
   for (int i = 0; i < bias_cpu.numel(); i++) {
     bias_cpu_data[i] = i + 1.0;
@@ -220,6 +226,10 @@ TEST(conv_compute, int8_int8_out) {
   bias.Assign<float, lite::DDim, TARGET(kCUDA)>(bias_cpu_data,
                                                 filter_cpu.dims());
 
+  std::vector<int> pads = {0, 0, 0, 0};
+  std::vector<int> dilations = {1, 1, 1, 1};
+  param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.dilations = std::make_shared<std::vector<int>>(dilations);
   param.x = &x;
   param.filter = &filter;
   param.output = &y;

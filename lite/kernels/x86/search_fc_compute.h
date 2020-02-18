@@ -31,6 +31,7 @@ class SearchFcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<param_t>();
 
+    param.Out->Resize({param.X->dims()[0], param.out_size});
     lite::x86::math::SearchFcFunctor<lite::TargetType::kX86, T> search_fc;
     search_fc(context, *param.X, *param.W, *param.b, param.Out, param.out_size);
   }

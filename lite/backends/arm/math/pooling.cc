@@ -46,7 +46,7 @@ void pooling_basic(const float* din,
   int stride_h = strides[0];
   int stride_w = strides[1];
   int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
   int size_channel_in = win * hin;
   int size_channel_out = wout * hout;
   if (global_pooling) {
@@ -125,18 +125,22 @@ void pooling_basic(const float* din,
                 int bh = kernel_h;
                 int bw = kernel_w;
                 if (ew == win) {
-                  bw = sw + kernel_w >= win + pad_w ? win + pad_w
-                                                    : sw + kernel_w;
+                  bw = (sw + kernel_w) >= (win + paddings[3])
+                           ? (win + paddings[3])
+                           : (sw + kernel_w);
                   bw -= sw;
-                  if (sw - pad_w < 0 && sw + kernel_w > win + pad_w) {
+                  if ((sw - pad_w) < 0 &&
+                      (sw + kernel_w) > (win + paddings[3])) {
                     bw += pad_w;
                   }
                 }
                 if (eh == hin) {
-                  bh = sh + kernel_h >= hin + pad_h ? hin + pad_h
-                                                    : sh + kernel_h;
+                  bh = (sh + kernel_h) >= (hin + paddings[1])
+                           ? (hin + paddings[1])
+                           : (sh + kernel_h);
                   bh -= sh;
-                  if (sh - pad_h < 0 && sh + kernel_h > hin + pad_h) {
+                  if ((sh - pad_h) < 0 &&
+                      (sh + kernel_h) > (hin + paddings[1])) {
                     bh += pad_h;
                   }
                 }
@@ -163,7 +167,7 @@ void pooling_basic(const float* din,
   "ld1 {v2.4s-v3.4s}, [%[data_in_channel]], #32    \n" \
   "fmax v6.4s, v4.4s, v5.4s \n"                        \
   "subs %w[cnt], %w[cnt], #1 \n"                       \
-  "fmax %w[vmax].4s, %w[vmax].4s, v6.4s \n"            \
+  "fmax %[vmax].4s, %[vmax].4s, v6.4s \n"              \
   "bne 1b \n"
 #define GLOBAL_AVG                                  \
   "1: \n"                                           \
@@ -172,7 +176,7 @@ void pooling_basic(const float* din,
   "ld1 {v0.4s-v1.4s}, [%[data_in_channel]], #32 \n" \
   "fadd %[vsum].4s, %[vsum].4s, v3.4s \n"           \
   "subs %w[cnt], %w[cnt], #1 \n"                    \
-  "fadd %w[vsum].4s, %w[vsum].4s, v4.4s \n"         \
+  "fadd %[vsum].4s, %[vsum].4s, v4.4s \n"           \
   "ld1 {v2.4s-v3.4s}, [%[data_in_channel]], #32 \n" \
   "bne 1b \n"
 
@@ -892,6 +896,121 @@ void pooling_global_avg(const float* din,
       data_out_batch[c] = sum / size_channel_in;
     }
   }
+}
+
+void pooling1x1s2p0_max(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win) {
+  int size_channel_out = wout * hout;
+  int size_channel_in = win * hin;
+  auto data_out = static_cast<float*>(dout);
+  auto data_in = static_cast<const float*>(din);
+
+  int w_unroll_size = wout / 4;
+  int w_unroll_remian = wout - w_unroll_size * 4;
+  int win_ext = w_unroll_size * 8;
+  auto zero_ptr =
+      static_cast<float*>(TargetMalloc(TARGET(kARM), win * sizeof(float)));
+  memset(zero_ptr, 0, win * sizeof(float));
+  auto write_ptr =
+      static_cast<float*>(TargetMalloc(TARGET(kARM), wout * sizeof(float)));
+
+  for (int n = 0; n < num; ++n) {
+    float* data_out_batch = data_out + n * chout * size_channel_out;
+    const float* data_in_batch = data_in + n * chin * size_channel_in;
+#pragma omp parallel for
+    for (int c = 0; c < chout; c++) {
+      float* data_out_channel = data_out_batch + c * size_channel_out;
+      const float* data_in_channel = data_in_batch + c * size_channel_in;
+      for (int h = 0; h < hout; h += 4) {
+        const float* din0_ptr = data_in_channel + h * 2 * win;
+        const float* din1_ptr = din0_ptr + 2 * win;
+        const float* din2_ptr = din1_ptr + 2 * win;
+        const float* din3_ptr = din2_ptr + 2 * win;
+
+        float* doutr0 = data_out_channel + h * wout;
+        float* doutr1 = doutr0 + wout;
+        float* doutr2 = doutr1 + wout;
+        float* doutr3 = doutr2 + wout;
+        if (h + 4 > hout) {
+          switch (h + 4 - hout) {
+            case 3:
+              doutr1 = write_ptr;
+            case 2:
+              doutr2 = write_ptr;
+            case 1:
+              doutr3 = write_ptr;
+            default:
+              break;
+          }
+        }
+        if (h * 2 + 7 > hin) {
+          switch (h * 2 + 7 - hin) {
+            case 7:
+              din0_ptr = zero_ptr;
+            case 6:
+            case 5:
+              din1_ptr = zero_ptr;
+            case 4:
+            case 3:
+              din2_ptr = zero_ptr;
+            case 2:
+            case 1:
+              din3_ptr = zero_ptr;
+            default:
+              break;
+          }
+        }
+        for (int i = 0; i < w_unroll_size; i++) {
+          float32x4x2_t din0 = vld2q_f32(din0_ptr);
+          float32x4x2_t din1 = vld2q_f32(din1_ptr);
+          float32x4x2_t din2 = vld2q_f32(din2_ptr);
+          float32x4x2_t din3 = vld2q_f32(din3_ptr);
+          din0_ptr += 8;
+          din1_ptr += 8;
+          din2_ptr += 8;
+          din3_ptr += 8;
+
+          vst1q_f32(doutr0, din0.val[0]);
+          vst1q_f32(doutr1, din1.val[0]);
+          vst1q_f32(doutr2, din2.val[0]);
+          vst1q_f32(doutr3, din3.val[0]);
+
+          doutr0 += 4;
+          doutr1 += 4;
+          doutr2 += 4;
+          doutr3 += 4;
+        }
+        int j = win_ext;
+        for (int i = 0; i < w_unroll_remian; i++) {
+          if (j >= win) {
+            *doutr0++ = 0.f;
+            *doutr1++ = 0.f;
+            *doutr2++ = 0.f;
+            *doutr3++ = 0.f;
+          } else {
+            *doutr0++ = *din0_ptr;
+            *doutr1++ = *din1_ptr;
+            *doutr2++ = *din2_ptr;
+            *doutr3++ = *din3_ptr;
+            din0_ptr += 2;
+            din1_ptr += 2;
+            din2_ptr += 2;
+            din3_ptr += 2;
+          }
+          j += 2;
+        }
+      }
+    }
+  }
+  TargetFree(TARGET(kARM), zero_ptr);
+  TargetFree(TARGET(kARM), write_ptr);
 }
 
 void pooling2x2s2_max(const float* din,

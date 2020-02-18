@@ -16,6 +16,8 @@
 
 #include <limits>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/types.h"
@@ -48,8 +50,14 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(const lite::KernelBase& kernel,
-                     const std::vector<Place>& places) {
+  size_t KernelGrade(
+      const lite::mir::Node::Stmt& instruct,
+      const lite::KernelBase& kernel,
+      const std::vector<Place>& places,
+      const std::unordered_map<std::string, PrecisionType>& in_types,
+      const std::unordered_map<std::string, PrecisionType>& out_types,
+      const std::vector<std::string>& in_names,
+      const std::vector<std::string>& out_names) {
     CHECK_GT(places.size(), 0) << "valid_places is empty.";
     float final_score{-1.};
     Place winner_place{places[0]};
@@ -66,7 +74,7 @@ class StaticKernelPickPass : public mir::StmtPass {
     // valid_places.size() as default.
     //         where i is the place's index in valid_places array.
     // score:  score is the weighted sum of target、percision and layout
-    for (int i = 0; i < place_size; ++i) {
+    for (size_t i = 0; i < place_size; ++i) {
       const auto& place = places[i];
       float weight = static_cast<float>(place_size - i) / place_size;
       size_t score{};
@@ -83,8 +91,12 @@ class StaticKernelPickPass : public mir::StmtPass {
           (place.precision == kernel.precision() ||
            kernel.precision() == PRECISION(kAny) ||
            place.precision == PRECISION(kAny))) {
-        score += kMax / static_cast<int>(
-                            core::KernelPickFactor::Factor::PrecisionFirst);
+        // score skipped, if kernel is int8, but op is not int8
+        if (!(kernel.precision() == PRECISION(kInt8) &&
+              !instruct.op_info()->HasAttr("enable_int8"))) {
+          score += kMax / static_cast<int>(
+                              core::KernelPickFactor::Factor::PrecisionFirst);
+        }
       }
       VLOG(4) << "[score s2]:" << score;
       if (kernel_pick_factors_.IsDataLayoutConsidered() &&
@@ -95,6 +107,37 @@ class StaticKernelPickPass : public mir::StmtPass {
                             core::KernelPickFactor::Factor::DataLayoutFirst);
       }
       VLOG(4) << "[score s3]:" << score;
+
+      // add new rules for precision: When the input types are consistent with
+      // kernel's input types  and the output types are consistent with kernel's
+      // output types. Select the kernel of the precision. Note that this
+      // strategy is not compatible with quantization, so skip quantization op.
+      if (!instruct.op_info()->HasAttr("enable_int8")) {
+        bool type_match = true;
+        for (size_t i = 0; i < in_names.size(); ++i) {
+          std::string tmp;
+          CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+          if (in_types.count(in_names[i]) &&
+              in_types.at(in_names[i]) !=
+                  kernel.GetInputDeclType(tmp)->precision()) {
+            type_match = false;
+          }
+        }
+        for (size_t i = 0; i < out_names.size(); ++i) {
+          std::string tmp;
+          CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+          if (out_types.count(out_names[i]) &&
+              out_types.at(out_names[i]) !=
+                  kernel.GetOutputDeclType(tmp)->precision()) {
+            type_match = false;
+          }
+        }
+        if (type_match) {
+          score *= 2;
+        }
+        VLOG(4) << "[score s4]:" << score;
+      }
+
       if (weight * score > final_score) {
         final_score = weight * score;
         winner_place = place;

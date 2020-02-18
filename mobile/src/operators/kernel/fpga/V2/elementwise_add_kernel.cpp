@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #ifdef ELEMENTWISEADD_OP
-#include <math.h>
 #include "operators/kernel/elementwise_add_kernel.h"
+#include <math.h>
 
 namespace paddle_mobile {
 namespace operators {
@@ -33,8 +33,8 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   float C1 = Si_1 / So;
   float C2 = Si_2 / So;
   fpga::EWAddArgs ewaddArgs = {0};
-  ewaddArgs.const0 = fpga::fp32_2_fp16(C1);
-  ewaddArgs.const1 = fpga::fp32_2_fp16(C2);
+  ewaddArgs.const0 = 1;
+  ewaddArgs.const1 = 1;
   ewaddArgs.relu_enabled = 0;
   ewaddArgs.image0.address = input_x_ptr;
   ewaddArgs.image0.channels = (uint32_t)input_x->dims()[1];
@@ -62,14 +62,14 @@ void ComputeCPUEWAdd(fpga::EWAddArgs ewaddArgs) {
   int inputh = ewaddArgs.image0.height;
   int inputw = ewaddArgs.image0.width;
   float inScale0 =
-          (reinterpret_cast<float*>(ewaddArgs.image0.scale_address))[0];
+      (reinterpret_cast<float *>(ewaddArgs.image0.scale_address))[0];
   float inScale1 =
-          (reinterpret_cast<float*>(ewaddArgs.image1.scale_address))[0];
+      (reinterpret_cast<float *>(ewaddArgs.image1.scale_address))[0];
   float outScale =
-          (reinterpret_cast<float*>(ewaddArgs.output.scale_address))[0];
-  int8_t* inPtr0 = reinterpret_cast<int8_t*>(ewaddArgs.image0.address);
-  int8_t* inPtr1 = reinterpret_cast<int8_t*>(ewaddArgs.image1.address);
-  int8_t* outPtr = reinterpret_cast<int8_t*>(ewaddArgs.output.address);
+      (reinterpret_cast<float *>(ewaddArgs.output.scale_address))[0];
+  int8_t *inPtr0 = reinterpret_cast<int8_t *>(ewaddArgs.image0.address);
+  int8_t *inPtr1 = reinterpret_cast<int8_t *>(ewaddArgs.image1.address);
+  int8_t *outPtr = reinterpret_cast<int8_t *>(ewaddArgs.output.address);
   int datasize = inputc * inputh * inputw;
   float const0 = inScale0 / outScale;
   float const1 = inScale1 / outScale;

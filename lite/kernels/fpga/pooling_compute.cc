@@ -18,6 +18,8 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
+#include "lite/backends/fpga/KD/debugger.hpp"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -26,26 +28,34 @@ namespace fpga {
 using float16 = zynqmp::float16;
 
 void PoolCompute::PrepareForRun() {
-  zynqmp::PoolingParam& pool_param = pe_.param();
   auto& param = Param<operators::PoolParam>();
-
   param.output->mutable_data<float16>();
 
+  zynqmp::PoolingParam& pool_param = pe_.param();
   pool_param.input = param.x->ZynqTensor();
   pool_param.output = param.output->ZynqTensor();
-  pool_param.relu.enabled = false;
+
+  pool_param.activeParam.type = zynqmp::TYPE_RELU;
 
   pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
                                                 : zynqmp::PoolingType::AVERAGE;
   pool_param.globalPooling = param.global_pooling;
   pool_param.kernelSize = param.ksize;
   pool_param.strides = param.strides;
-  pool_param.paddings = param.paddings;
+  int pad_h = (*param.paddings)[0];
+  int pad_w = (*param.paddings)[2];
+  pool_param.paddings = std::vector<int>({pad_h, pad_w});
   pe_.init();
   pe_.apply();
 }
 
-void PoolCompute::Run() { pe_.dispatch(); }
+void PoolCompute::Run() {
+  pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::PoolingParam& pool_param = pe_.param();
+  Debugger::get_instance().registerOutput("pooling", pool_param.output);
+#endif
+}
 
 }  // namespace fpga
 }  // namespace kernels

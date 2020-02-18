@@ -24,13 +24,6 @@
 namespace paddle {
 namespace lite {
 
-static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
-    ".tailored_ops_source_list";
-static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
-static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
-    ".tailored_kernels_source_list";
-static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
-
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
                           bool record_info) {
@@ -50,6 +43,7 @@ void Predictor::SaveModel(const std::string &dir,
       LOG(FATAL) << "Unknown model type";
   }
   if (record_info) {
+    MkDirRecur(dir);
     SaveOpKernelInfo(dir);
   }
 }
@@ -128,6 +122,7 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
             << kpf_path;
 }
 
+#ifndef LITE_WITH_FPGA
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -137,6 +132,17 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
+#else
+lite::Tensor *Predictor::GetInput(size_t offset) {
+  auto *_feed_list = exec_scope_->FindVar("feed");
+  CHECK(_feed_list) << "no feed variable in exec_scope";
+  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  if (offset >= feed_list->size()) {
+    feed_list->resize(offset + 1);
+  }
+  return &feed_list->at(offset);
+}
+#endif
 
 // get inputs names
 std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
@@ -149,10 +155,10 @@ void Predictor::PrepareFeedFetch() {
   if (!program_) {
     GenRuntimeProgram();
   }
+
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
   const auto &insts = program_->instructions();
-
   for (size_t i = 0; i < program_->num_instructions(); i++) {
     const auto &op = insts[i].op()->op_info();
     if (op->Type() == "feed") {
@@ -174,6 +180,8 @@ void Predictor::PrepareFeedFetch() {
   }
 }
 
+#ifndef LITE_WITH_FPGA
+
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -193,6 +201,29 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   }
   return outputs;
 }
+#else
+
+const lite::Tensor *Predictor::GetOutput(size_t offset) const {
+  auto *_fetch_list = exec_scope_->FindVar("fetch");
+  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
+  return &fetch_list.at(offset);
+}
+
+std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
+  auto *_fetch_list = exec_scope_->FindVar("fetch");
+  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+
+  std::vector<const lite::Tensor *> outputs;
+  for (auto out : fetch_list) {
+    outputs.push_back(&out);
+  }
+  return outputs;
+}
+
+#endif
 
 const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
@@ -208,7 +239,11 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
   const bool model_from_memory = config.model_from_memory();
-  LOG(INFO) << "load from memory " << model_from_memory;
+  if (model_from_memory) {
+    LOG(INFO) << "Load model from memory.";
+  } else {
+    LOG(INFO) << "Load model from file.";
+  }
 
   Build(model_path,
         model_file,
@@ -242,7 +277,7 @@ void Predictor::Build(const std::string &model_path,
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())
           << "NaiveBuffer backend only supported combined param";
-      LoadModelNaive(model_path, scope_.get(), &program_desc_);
+      LoadModelNaiveFromFile(model_path, scope_.get(), &program_desc_);
       break;
     default:
       LOG(FATAL) << "Unknown model type";

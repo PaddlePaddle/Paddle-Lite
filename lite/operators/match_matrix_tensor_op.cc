@@ -35,6 +35,7 @@ bool MatchMatrixTensorOpLite::CheckShape() const {
   CHECK_OR_FALSE(x_dims.size() == 2);
   CHECK_OR_FALSE(y_dims.size() == 2);
   CHECK_OR_FALSE(w_dims.size() == 3);
+
   CHECK_OR_FALSE(x_dims[1] == w_dims[0] && y_dims[1] == w_dims[2] &&
                  w_dims[1] == dim_t);
 
@@ -90,6 +91,8 @@ bool MatchMatrixTensorOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   param_.y = scope->FindVar(y)->GetMutable<lite::Tensor>();
   param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.tmp = scope->FindVar(tmp)->GetMutable<lite::Tensor>();
+
+  param_.dim_t = op_desc.GetAttr<int32_t>("dim_t");
 
   return true;
 }

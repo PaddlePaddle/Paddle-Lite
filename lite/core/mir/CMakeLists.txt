@@ -16,10 +16,13 @@ lite_cc_library(mir_passes
       fusion/interpolate_fuse_pass.cc
       fusion/conv_elementwise_fuse_pass.cc
       fusion/conv_activation_fuse_pass.cc
+      fusion/var_conv_2d_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
+      fusion/sequence_pool_concat_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
+      elimination/elementwise_mul_constant_eliminate_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
@@ -32,7 +35,8 @@ lite_cc_library(mir_passes
       demo_pass.cc
       runtime_context_assign_pass.cc
       memory_optimize_pass.cc
-  DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
+      weight_quantization_preprocess_pass.cc
+  DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
         #mir_ssa_graph scope op

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include <vector>
+
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 
@@ -29,10 +31,17 @@ class DepthwiseConv2dCompute
  public:
   using param_t = operators::ConvParam;
 
+  std::string doc() const override {
+    return "DepthwiseConv2d using cl::Buffer, kFloat";
+  }
+
   void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
     if (param.fuse_relu) {
       build_options_ += " -DRELU";
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_ += " -DRELU6";
     }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
@@ -44,7 +53,7 @@ class DepthwiseConv2dCompute
     auto x_dims = param.x->dims();
     auto filter_dims = param.filter->dims();
     auto output_dims = param.output->dims();
-    auto paddings = param.paddings;
+    auto paddings = *param.paddings;
     auto strides = param.strides;
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -110,7 +119,7 @@ class DepthwiseConv2dCompute
 
  private:
   std::string kernel_func_name_{"depthwise_conv2d"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

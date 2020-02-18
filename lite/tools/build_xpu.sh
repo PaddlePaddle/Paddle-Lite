@@ -3,7 +3,7 @@ set -ex
 
 # global variables with default value
 XPU_SDK_ROOT="$(pwd)/../XPU_SDK"    # XPU SDK
-TARGET_NAME="lite_compile_deps"     # default target
+TARGET_NAME="test_subgraph_pass"    # default target
 BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF
 
@@ -73,8 +73,8 @@ function build_xpu {
         -DWITH_MKLDNN=OFF \
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
+        -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
         -DXPU_SDK_ROOT=${XPU_SDK_ROOT}
 
@@ -101,6 +101,11 @@ function main {
                 shift
                 ;;
             build)
+                build_xpu
+                shift
+                ;;
+            full_publish)
+                TARGET_NAME=publish_inference
                 build_xpu
                 shift
                 ;;

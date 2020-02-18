@@ -12,50 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/xpu/builder.h"
-#include "lite/kernels/xpu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/xpu/bridges/graph.h"
+#include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace xpu {
-namespace bridges {
 
-node_map_type SoftmaxConverter(const std::shared_ptr<lite::OpLite> op,
-                               graph_ctx_type* graph_ctx,
-                               const node_map_type& input_nodes) {
+int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::xpu::UniqueName(op_type);
-  LOG(INFO) << "[XPU] Converting " + op_type + "...";
+  auto scope = op->scope();
+  VLOG(3) << "[XPU] Converting " + op_type + "...";
 
-  // check context
-  CHECK(graph_ctx != nullptr);
-  CHECK(graph_ctx->builder != nullptr);
-  CHECK(graph_ctx->params != nullptr);
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  int axis = op_info->HasAttr("axis") ? op_info->GetAttr<int>("axis") : -1;
 
-  // get op's attributes
-  auto x_var_name = op_info->Input("X").front();
-  auto axis = op_info->GetAttr<int>("axis");
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
 
-  // create softmax node and set params from ops
-  CHECK(input_nodes.count(x_var_name));
-  std::shared_ptr<xtcl::xExpr> softmax_node = nullptr;
-  softmax_node = std::make_shared<xtcl::xExpr>(
-      graph_ctx->builder->CreateSoftmax(*input_nodes.at(x_var_name), axis));
-  graph_ctx->builder->SetLayer(unique_op_type);
-
-  // output converted nodes
-  node_map_type output_nodes;
-  output_nodes[op_info->Output("Out").front()] = softmax_node;
-  return output_nodes;
+  // Softmax node
+  graph->Add(out_name, graph->builder_.CreateSoftmax(*x_node->data(), axis));
+  return SUCCESS;
 }
 
-}  // namespace bridges
 }  // namespace xpu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_XPU_BRIDGE(softmax,
-                    paddle::lite::kernels::xpu::bridges::SoftmaxConverter);
+REGISTER_SUBGRAPH_BRIDGE(softmax,
+                         kXPU,
+                         paddle::lite::subgraph::xpu::SoftmaxConverter);

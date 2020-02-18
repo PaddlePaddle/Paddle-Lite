@@ -40,7 +40,7 @@ static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
 }
 
 TEST(sequence_reverse_cuda, normal) {
-  SequenceReverseCompute seq_kernel;
+  SequenceReverseCompute<float, PRECISION(kFloat)> seq_kernel;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
 

@@ -49,7 +49,7 @@ struct LITE_API Tensor {
   void CopyFromCpu(const T* data);
 
   template <typename T>
-  void CopyToCpu(T* data);
+  void CopyToCpu(T* data) const;
   /// Shape of the tensor.
   shape_t shape() const;
   TargetType target() const;
@@ -133,6 +133,9 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string model_file_;
   std::string param_file_;
   bool model_from_memory_{false};
+#ifdef LITE_WITH_X86
+  int x86_math_library_math_threads_ = 1;
+#endif
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -151,27 +154,54 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
   bool model_from_memory() const { return model_from_memory_; }
+
+#ifdef LITE_WITH_X86
+  void set_x86_math_library_num_threads(int threads) {
+    x86_math_library_math_threads_ = threads;
+  }
+  int x86_math_library_num_threads() const {
+    return x86_math_library_math_threads_;
+  }
+#endif
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip
 /// IR optimization or other unnecessary stages.
 class LITE_API MobileConfig : public ConfigBase {
-  std::string model_buffer_;
-  std::string param_buffer_;
+  // whether to load data from memory. Model data will be loaded from memory
+  // buffer if model_from_memory_ is true.
   bool model_from_memory_{false};
 
+  // model data readed from file or memory buffer in combined format.
+  std::string lite_model_file_;
+
+  // NOTE: This is a deprecated variable and will be removed in latter release.
+  std::string model_buffer_;
+  std::string param_buffer_;
+
  public:
+  // set model data in combined format, `set_model_from_file` refers to loading
+  // model from file, set_model_from_buffer refers to loading model from memory
+  // buffer
+  void set_model_from_file(const std::string& x);
+  void set_model_from_buffer(const std::string& x);
+  // return model data in lite_model_file_, which is in combined format.
+  const std::string& lite_model_file() const { return lite_model_file_; }
+
+  // return model_from_memory_, which indicates whether to load model from
+  // memory buffer.
+  bool model_from_memory() const { return model_from_memory_; }
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
-                        size_t param_buffer_size) {
-    model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
-    param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
-    model_from_memory_ = true;
-  }
+                        size_t param_buffer_size);
 
-  bool model_from_memory() const { return model_from_memory_; }
+  // NOTE: This is a deprecated API and will be removed in latter release.
   const std::string& model_buffer() const { return model_buffer_; }
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
   const std::string& param_buffer() const { return param_buffer_; }
 };
 

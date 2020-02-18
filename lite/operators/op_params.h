@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,10 +70,14 @@ struct CalibParam {
   float scale;
 };
 
-struct GraphParam {
-  std::vector<std::pair<std::string, const lite::Tensor*>> inputs{};
-  lite::Tensor* weight{};
-  std::vector<std::pair<std::string, lite::Tensor*>> outputs{};
+struct SubgraphParam {
+  std::vector<std::string> input_names{};
+  std::vector<std::string> output_names{};
+  std::vector<std::string> input_data_names{};
+  std::vector<std::string> output_data_names{};
+  int sub_block_idx{-1};
+  cpp::BlockDesc* sub_block_desc{nullptr};
+  Scope* scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -85,6 +90,7 @@ struct FcParam {
   lite::DDim in_mat_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
+  bool padding_weights{false};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -253,9 +259,19 @@ struct ConvParam {
   lite::Tensor* residualData{nullptr};
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
-  std::vector<int> paddings{0, 0};
+  /* paddings type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
-  std::vector<int> dilations{1, 1};
+  /* dilations type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
   bool fuse_relu{false};  // only used in mkldnn kernel
@@ -270,6 +286,10 @@ struct ConvParam {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -302,7 +322,12 @@ struct PoolParam {
   bool global_pooling{
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
-  std::vector<int> paddings{0, 0};
+  /* paddings type change
+  * from std::vector<int> to std::shared_ptr<std::vector<int>>
+  * to support dynamically modify padding
+  * let kernel param and operator param Synchronous update
+  */
+  std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
   bool ceil_mode{false};
@@ -328,6 +353,9 @@ struct DropoutParam {
 struct SplitParam {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
+  lite::Tensor* axis_tensor;
+  std::vector<lite::Tensor*> sections_tensor_list{};
+
   int axis{-1};
   int num{0};
   std::vector<int> sections;
@@ -389,6 +417,9 @@ struct MeanGradParam {
 struct FillConstantParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
+  lite::Tensor* shape_tensor;
+  std::vector<lite::Tensor*> shape_tensor_list{};
+
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
@@ -563,6 +594,7 @@ struct MulticlassNmsParam {
   const lite::Tensor* bboxes{};
   const lite::Tensor* scores{};
   lite::Tensor* out{};
+  lite::Tensor* index{};
   int background_label{0};
   float score_threshold{};
   int nms_top_k{};
@@ -740,6 +772,12 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SequencePoolConcatParam {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  std::vector<std::string> pool_type{};
+};
+
 struct SearchGroupPaddingParam {
   lite::Tensor* x{};
   lite::Tensor* out_emb_padding{};
@@ -835,6 +873,8 @@ struct VarConv2DParam {
   int stride_w;
   int kernel_h;
   int kernel_w;
+
+  bool fuse_relu{false};
 };
 
 /// ----------------------- shape operators ----------------------
@@ -1032,6 +1072,66 @@ struct SearchGrnnParam {
   lite::Tensor* tmp_buffer{};
   lite::Tensor* idx_sorted_by_width{};
   lite::Tensor* layout_input{};
+};
+
+struct SplitLodTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* mask{};
+  lite::Tensor* out_true{};
+  lite::Tensor* out_false{};
+  int level{};
+};
+
+struct MergeLodTensorParam {
+  const lite::Tensor* x{};
+  const lite::Tensor* mask{};
+  const lite::Tensor* in_true{};
+  const lite::Tensor* in_false{};
+  lite::Tensor* out{};
+  int level{};
+};
+
+struct ConditionalBlockParam {
+  const lite::Tensor* cond{};
+  std::vector<lite::Tensor*> x{};
+  std::vector<lite::Tensor*> outs{};
+  cpp::BlockDesc* sub_block{};
+  Scope* scope{};
+  bool is_scalar_condition{};
+};
+
+struct CollectFpnProposalsParam {
+  std::vector<lite::Tensor*> multi_level_rois{};
+  std::vector<lite::Tensor*> multi_level_scores{};
+  lite::Tensor* fpn_rois{};
+  int post_nms_topN{};
+};
+
+struct DistributeFpnProposalsParam {
+  const lite::Tensor* fpn_rois{};
+  std::vector<lite::Tensor*> multi_fpn_rois{};
+  lite::Tensor* restore_index{};
+  int min_level{};
+  int max_level{};
+  int refer_level{};
+  int refer_scale{};
+};
+
+/// --------------------- instance_norm operators --------------------
+struct InstanceNormParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
+};
+/// --------------------- grid sampler operators --------------------
+struct GridSamplerParam {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* grid{};
 };
 
 }  // namespace operators

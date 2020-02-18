@@ -35,30 +35,27 @@ namespace framework {
 
 class CLScope {
  public:
-  CLScope() {
-    CLEngine *engine = CLEngine::Instance();
-    context_ = engine->getContext();
-    command_queue_ = engine->getClCommandQueue();
-    localWorkSizeInfo_ = engine->getLocalWorkSizeInfo();
-  }
+  CLScope() {}
 
-  cl_command_queue CommandQueue() { return command_queue_; }
+  cl_command_queue CommandQueue() {
+    return CLEngine::Instance()->getClCommandQueue();
+  }
 
   std::unique_ptr<_cl_kernel, CLKernelDeleter> GetKernel(
       const std::string &kernel_name, const std::string &file_name,
       const std::string &options) {
-    DLOG << " to get program " << file_name;
+    LOG(kLOG_DEBUG2) << " to get program " << file_name;
     auto program = Program(file_name, kernel_name, options);
-    DLOG << " end get program ~ ";
-    DLOG << " to create kernel: " << kernel_name;
+    LOG(kLOG_DEBUG2) << " end get program ~ ";
+    LOG(kLOG_DEBUG2) << " to create kernel: " << kernel_name;
     std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(
         clCreateKernel(program, kernel_name.c_str(), &status_));
     CL_CHECK_ERRORS(status_);
-    DLOG << " end create kernel ~ ";
+    LOG(kLOG_DEBUG2) << " end create kernel ~ ";
     return std::move(kernel);
   }
 
-  cl_context Context() { return context_; }
+  cl_context Context() { return CLEngine::Instance()->getContext(); }
 
   cl_program Program(const std::string &file_name,
                      const std::string &kernel_name,
@@ -79,11 +76,13 @@ class CLScope {
       std::string header(header_it->second.begin(), header_it->second.end());
       source = header + "\n" + source;
       auto program = CLEngine::Instance()->CreateProgramWithSource(
-          context_, source.c_str());
+          CLEngine::Instance()->getContext(), source.c_str());
 
-      DLOG << " --- begin build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- begin build program -> " << program_key
+                       << " --- ";
       CLEngine::Instance()->BuildProgram(program.get(), options);
-      DLOG << " --- end build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- end build program -> " << program_key
+                       << " --- ";
 
       programs_[program_key] = std::move(program);
       return programs_[program_key].get();
@@ -97,19 +96,23 @@ class CLScope {
         return it->second.get();
       }
       auto program = CLEngine::Instance()->CreateProgramWith(
-          context_,
+          CLEngine::Instance()->getContext(),
           CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
 
-      DLOG << " --- begin build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- begin build program ele-> " << program_key
+                       << " --- ";
       CLEngine::Instance()->BuildProgram(program.get(), options);
-      DLOG << " --- end build program -> " << program_key << " --- ";
+      LOG(kLOG_DEBUG3) << " --- end build program ele-> " << program_key
+                       << " --- ";
 
       programs_[program_key] = std::move(program);
       return programs_[program_key].get();
     }
   }
 
-  CLLocalWorkSizeInfo LocalWorkSizeInfo() { return localWorkSizeInfo_; }
+  CLLocalWorkSizeInfo LocalWorkSizeInfo() {
+    return CLEngine::Instance()->getLocalWorkSizeInfo();
+  }
   size_t KernelWorkSize(cl_kernel kernel) {
     size_t kernel_work_size = CLEngine::Instance()->GetKernelWorkSize(kernel);
     return kernel_work_size;
@@ -117,12 +120,9 @@ class CLScope {
 
  private:
   cl_int status_;
-  cl_context context_;
-  cl_command_queue command_queue_;
   std::unordered_map<std::string,
                      std::unique_ptr<_cl_program, CLProgramDeleter>>
       programs_;
-  CLLocalWorkSizeInfo localWorkSizeInfo_;
 };
 
 }  // namespace framework

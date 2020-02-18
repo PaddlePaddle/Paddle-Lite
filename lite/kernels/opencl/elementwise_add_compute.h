@@ -33,6 +33,10 @@ class ElementwiseAddCompute
 
   void Run() override;
 
+  std::string doc() const override {
+    return "ElementwiseAdd using cl::Buffer, kFloat";
+  }
+
  protected:
   void UpdateParams();
 
@@ -41,7 +45,29 @@ class ElementwiseAddCompute
   size_t num_{1};
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float"};
+  std::shared_ptr<cl::Event> event_{new cl::Event};
+};
+
+class ElementwiseAddImageCompute
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kImageDefault)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  std::string doc() const override {
+    return "ElementwiseAdd using cl::Image2D, kFloat";
+  }
+
+ protected:
+  param_t* ele_param_{nullptr};
+  std::string kernel_func_name_{"elementwise_add"};
+  std::string build_options_{" -DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

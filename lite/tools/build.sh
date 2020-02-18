@@ -14,7 +14,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 
 # global variables
 BUILD_EXTRA=OFF
-BUILD_JAVA=ON
+BUILD_JAVA=OFF
 BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
@@ -25,6 +25,12 @@ SHUTDOWN_LOG=ON
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 readonly workspace=$PWD
+
+# if operating in mac env, we should expand the maximum file num
+os_nmae=`uname -s`
+if [ ${os_nmae} == "Darwin" ]; then
+   ulimit -n 1024
+fi
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -56,17 +62,17 @@ function prepare_thirdparty {
     fi
 }
 
-function build_model_optimize_tool {
+function build_opt {
     cd $workspace
     prepare_thirdparty
-    mkdir -p build.model_optimize_tool
-    cd build.model_optimize_tool
+    mkdir -p build.opt
+    cd build.opt
     cmake .. -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DWITH_MKL=OFF
-    make model_optimize_tool -j$NUM_PROC
+    make opt -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
@@ -389,7 +395,7 @@ function main {
                 shift
                 ;;
             build_optimize_tool)
-                build_model_optimize_tool
+                build_opt
                 shift
                 ;;
             cuda)

@@ -14,8 +14,6 @@ limitations under the License. */
 
 #include "lite/backends/fpga/KD/pes/crop_pe.hpp"
 
-#include <vector>
-
 namespace paddle {
 namespace zynqmp {
 

@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 #include <random>
+#include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -89,7 +90,7 @@ void depth_conv(const T* input_data,
   }
 }
 
-TEST(depthwise_conv2d, compute) {
+TEST(depthwise_conv2d_buffer_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
                                                  TARGET(kOpenCL),
@@ -105,7 +106,8 @@ TEST(depthwise_conv2d, compute) {
   param.x = &input;
   param.filter = &filter;
   param.output = &output;
-  param.paddings = std::vector<int>{0, 0};
+  std::vector<int> paddings = {0, 0};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
   param.strides = std::vector<int>{1, 1};
 
   std::unique_ptr<KernelContext> context(new KernelContext);

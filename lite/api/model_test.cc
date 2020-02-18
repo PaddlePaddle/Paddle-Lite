@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
@@ -21,22 +22,22 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
-#include "lite/tests/utils/timer.h"
+#include "lite/core/profile/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
 
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
-
 DEFINE_bool(use_optimize_nb,
             false,
             "optimized & naive buffer model for mobile devices");
+DEFINE_string(arg_name, "", "the arg name");
 
 namespace paddle {
 namespace lite_api {
@@ -47,7 +48,6 @@ void OutputOptModel(const std::string& load_model_dir,
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
   config.set_valid_places({
-      Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
@@ -72,12 +72,8 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int thread_num,
          const int repeat,
          const int warmup_times = 0) {
-#ifdef LITE_WITH_PROFILE
-  lite::profile::BasicProfiler<lite::profile::BasicTimer>::Global().SetWarmup(
-      warmup_times);
-#endif
   lite_api::MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
@@ -91,6 +87,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     for (int i = 0; i < input_shapes[j].size(); ++i) {
       input_num *= input_shapes[j][i];
     }
+
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
     }
@@ -102,20 +99,20 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
 
   Timer ti;
   for (int j = 0; j < repeat; ++j) {
-    ti.start();
+    ti.Start();
     predictor->Run();
-    ti.end();
-    LOG(INFO) << "iter: " << j << ", time: " << ti.latest_time() << " ms";
+    float t = ti.Stop();
+    LOG(INFO) << "iter: " << j << ", time: " << t << " ms";
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir
             << ", power_mode: " << static_cast<int>(power_mode)
             << ", threads num " << thread_num << ", warmup: " << warmup_times
-            << ", repeats: " << repeat << ", avg time: " << ti.get_average_ms()
+            << ", repeats: " << repeat << ", avg time: " << ti.LapTimes().Avg()
             << " ms"
-            << ", min time: " << ti.get_min_time() << " ms"
-            << ", max time: " << ti.get_max_time() << " ms.";
+            << ", min time: " << ti.LapTimes().Min() << " ms"
+            << ", max time: " << ti.LapTimes().Max() << " ms.";
 
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
@@ -127,6 +124,28 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     output_num *= output_shape[i];
   }
   LOG(INFO) << "output_num: " << output_num;
+
+  // please turn off memory_optimize_pass to use this feature.
+  if (FLAGS_arg_name != "") {
+    auto arg_tensor = predictor->GetTensor(FLAGS_arg_name);
+    auto arg_shape = arg_tensor->shape();
+    int arg_num = 1;
+    std::ostringstream os;
+    os << "{";
+    for (int i = 0; i < arg_shape.size(); ++i) {
+      arg_num *= arg_shape[i];
+      os << arg_shape[i] << ",";
+    }
+    os << "}";
+    float sum = 0.;
+    std::ofstream out(FLAGS_arg_name + ".txt");
+    for (size_t i = 0; i < arg_num; ++i) {
+      sum += arg_tensor->data<float>()[i];
+      out << std::to_string(arg_tensor->data<float>()[i]) << "\n";
+    }
+    LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
+              << ", mean value is " << sum * 1. / arg_num;
+  }
 }
 #endif
 

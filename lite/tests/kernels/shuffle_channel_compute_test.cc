@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(FrostML): shaffle_channel cannot pass on CI, but ok in local machine.
-// Open this.
-/*#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -40,28 +39,29 @@ class ShuffleChannelComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(dims_);
-    auto* outputs = out->mutable_data<float>();
+    auto* out_data = out->mutable_data<float>();
+
     auto* x = scope->FindTensor(input_);
-    const auto* inputs = x->data<float>();
-    DDim x_dims = x->dims();
-    int num = x->dims()[0];
-    int channel = x->dims()[1];
-    int height = x->dims()[2];
-    int width = x->dims()[3];
-    int fea_size = channel * height * width;
+    const auto* in_data = x->data<float>();
+
+    int num = dims_[0];
+    int channel = dims_[1];
+    int height = dims_[2];
+    int width = dims_[3];
+    int feather_size = channel * height * width;
     int spatial_size = height * width;
-    int group_row = group_;
-    int group_col = channel / group_;
-    for (int k = 0; k < num; ++k) {
-      inputs += k * fea_size;
-      outputs += k * fea_size;
-      for (int i = 0; i < group_row; ++i) {
-        for (int j = 0; j < group_col; ++j) {
-          const float* p_i = inputs + (i * group_col + j) * spatial_size;
-          float* p_o = outputs + (j * group_row + i) * spatial_size;
+    int group_num = group_;
+    int group_size = channel / group_;
+    for (int n = 0; n < num; n++) {
+      for (int i = 0; i < group_num; ++i) {
+        for (int j = 0; j < group_size; ++j) {
+          const float* p_i = in_data + (i * group_size + j) * spatial_size;
+          float* p_o = out_data + (j * group_num + i) * spatial_size;
           memcpy(p_o, p_i, spatial_size * sizeof(float));
         }
       }
+      in_data += feather_size;
+      out_data += feather_size;
     }
   }
 
@@ -73,35 +73,33 @@ class ShuffleChannelComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(input_, dims_, data.data());
+    std::vector<float> din(dims_.production());
+    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(input_, dims_, din.data());
   }
 };
 
-void test_shuffle_channel(Place place) {
-  for (int group : {4}) {
+void test_shuffle_channel(Place place, float abs_error = 2e-5) {
+  for (int group : {2, 4, 8}) {
     std::unique_ptr<arena::TestCase> tester(
         new ShuffleChannelComputeTester(place, "def", group));
-    arena::Arena arena(std::move(tester), place, 2e-5);
+    arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
 }
 
 TEST(ShuffleChannel, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_shuffle_channel(place);
+  Place place;
+  float abs_error = 2e-5;
+#ifdef LITE_WITH_NPU
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#else
+  return;
 #endif
+
+  test_shuffle_channel(place, abs_error);
 }
 
 }  // namespace lite
 }  // namespace paddle
-*/

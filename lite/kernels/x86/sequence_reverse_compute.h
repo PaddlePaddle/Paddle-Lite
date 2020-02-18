@@ -22,18 +22,17 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <typename T>
-class SequenceReverseCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <typename T, PrecisionType Ptype>
+class SequenceReverseCompute : public KernelLite<TARGET(kX86), Ptype> {
  public:
   using param_t = operators::SequenceReverseParam;
 
   void Run() override {
-    auto& param = *param_.get_mutable<operators::SequenceReverseParam>();
+    auto& param = this->template Param<param_t>();
     auto* output = param.Out;
-    const auto* din = param.X->data<T>();
+    const auto* din = param.X->template data<T>();
 
-    T* dout = output->mutable_data<T>();
+    T* dout = output->template mutable_data<T>();
     CHECK_NE(din, dout)
         << "SequenceReverse Op does not support in-place operation";
     const auto lod = param.X->lod()[param.X->lod().size() - 1];

@@ -19,6 +19,7 @@
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_place.h"
+
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -37,9 +38,9 @@ enum ImageFormat {
 };
 // flip enum
 enum FlipParam {
-  X = 0,  // flip along the X axis
-  Y,      // flip along the Y axis
-  XY      // flip along the XY axis
+  XY = -1,  // flip along the XY axis
+  X = 0,    // flip along the X axis
+  Y         // flip along the Y axis
 };
 // transform param
 typedef struct {
@@ -69,11 +70,12 @@ class ImagePreprocess {
   * BGR(RGB)and BGRA(RGBA) transform,
   * BGR(RGB)and RGB(BGR) transform,
   * BGR(RGB)and RGBA(BGRA) transform,
-  * BGR(RGB)and GRAY transform,
+  * BGR(RGB) and GRAY transform,
+  * BGRA(RGBA) and GRAY transform,
   * param src: input image data
   * param dst: output image data
   */
-  void imageCovert(const uint8_t* src, uint8_t* dst);
+  void imageConvert(const uint8_t* src, uint8_t* dst);
   /*
   * image color convert
   * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
@@ -81,6 +83,7 @@ class ImagePreprocess {
   * BGR(RGB)and RGB(BGR) transform,
   * BGR(RGB)and RGBA(BGRA) transform,
   * BGR(RGB)and GRAY transform,
+  * BGRA(RGBA) and GRAY transform,
   * param src: input image data
   * param dst: output image data
   * param srcFormat: input image image format support: GRAY, NV12(NV21),
@@ -88,10 +91,10 @@ class ImagePreprocess {
   * param dstFormat: output image image format, support GRAY, BGR(RGB) and
   * BGRA(RGBA)
   */
-  void imageCovert(const uint8_t* src,
-                   uint8_t* dst,
-                   ImageFormat srcFormat,
-                   ImageFormat dstFormat);
+  void imageConvert(const uint8_t* src,
+                    uint8_t* dst,
+                    ImageFormat srcFormat,
+                    ImageFormat dstFormat);
   /*
   * image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
@@ -133,7 +136,7 @@ class ImagePreprocess {
   * color format support 1-channel image, 3-channel image and 4-channel image
   * param src: input image data
   * param dst: output image data
-  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support GRAY, BGR(RGB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param degree: Rotate degree, support 90, 180 and 270
@@ -158,7 +161,7 @@ class ImagePreprocess {
   * color format support 1-channel image, 3-channel image and 4-channel image
   * param src: input image data
   * param dst: output image data
-  * param srcFormat: input image format, support GRAY, BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support GRAY, BGR(RGB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param flip_param: flip parameter, support X, Y and XY
@@ -171,7 +174,8 @@ class ImagePreprocess {
                  FlipParam flip_param);
   /*
   * change image data to tensor data
-  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+  * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
+  * and
   * NCHW
   * param src: input image data
   * param dstTensor: output tensor data
@@ -186,11 +190,12 @@ class ImagePreprocess {
                     float* scales);
   /*
    * change image data to tensor data
-  * support image format is BGR(RGB) and BGRA(RGBA), Data layout is NHWC and
+  * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
+  * and
   * NCHW
   * param src: input image data
   * param dstTensor: output tensor data
-  * param srcFormat: input image format, support BGR(GRB) and BGRA(RGBA)
+  * param srcFormat: input image format, support BGR(RGB) and BGRA(RGBA)
   * param srcw: input image width
   * param srch: input image height
   * param layout: output tensor layout，support NHWC and NCHW

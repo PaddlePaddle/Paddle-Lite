@@ -29,8 +29,13 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       act_types.push_back("leaky_relu");
       break;
     }
+    if (place.target == TARGET(kARM) && place.precision == PRECISION(kFloat)) {
+      act_types.push_back("relu6");
+      act_types.push_back("leaky_relu");
+      break;
+    }
   }
-  for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
+  for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
     for (auto act_type : act_types) {
       for (auto has_bias : {true, false}) {
         fusion::ConvActivationFuser fuser(conv_type, act_type, has_bias);
@@ -47,4 +52,5 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
                   paddle::lite::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)})
     .BindKernel("conv2d");

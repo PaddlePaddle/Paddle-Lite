@@ -13,27 +13,19 @@
 // limitations under the License.
 
 #include <vector>
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/kernels/cuda/sequence_pool_compute.h"
-
-const int CUDA_NUM_THREADS = 512;
-#define CUDA_KERNEL_LOOP(i, n)                                 \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
-       i += blockDim.x * gridDim.x)
-
-/// CUDA: number of blocks for threads.
-inline int CUDA_GET_BLOCKS(const int N) {
-  return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
-}
-inline int CUDA_GET_BLOCKS(const int N, const int base) {
-  return (N + base - 1) / base;
-}
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
+
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
 
 template <typename Dtype>
 __global__ void seq_pool_average_kernel(Dtype* dst,
@@ -262,4 +254,5 @@ REGISTER_LITE_KERNEL(sequence_pool,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

@@ -12,70 +12,79 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/npu/builder.h"
+#include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
+namespace subgraph {
 namespace npu {
-namespace bridges {
 
-node_map_type SplitConverter(const std::shared_ptr<lite::OpLite> split_op,
-                             const node_map_type& inputs_map) {
-  lite::Scope* scope = split_op->scope();
-  const lite::OpInfo* op_info = split_op->op_info();
+int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_type = lite::npu::UniqueName(op_type);
-  LOG(INFO) << "[NPU] Converting " << op_type << " ... ";
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " << op_type << " ... ";
 
-  auto x_var_name = op_info->Input("X").front();
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
+  CHECK(x_type->precision() == PRECISION(kFloat));
+  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_names = op_info->Output("Out");
+  auto out_type = kernel->GetOutputDeclType("Out");
+  CHECK(out_type->precision() == PRECISION(kFloat));
+  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
   auto num = op_info->GetAttr<int>("num");
   auto sections = op_info->GetAttr<std::vector<int>>("sections");
   int64_t sections_num = static_cast<int64_t>(sections.size());
 
-  std::shared_ptr<ge::op::Split> output_node =
-      std::make_shared<ge::op::Split>(unique_op_type);
-  CHECK(inputs_map.count(x_var_name));
-  output_node->set_input_x(*inputs_map.at(x_var_name));
-  lite::npu::OpList::Global().add(inputs_map.at(x_var_name));
-
-  output_node->set_attr_axis(static_cast<int64_t>(axis));
-  if (num > 0) {
-    output_node->set_attr_output_num(static_cast<int64_t>(num));
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    output_node->set_attr_output_num(sections_num);
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Split node
+  auto split_node = graph->Add<ge::op::Split>(op_type + "/" + x_name);
+  auto split_op = split_node->data<ge::op::Split>();
+  split_op->set_input_x(*x_node->data());
+  split_op->set_attr_axis(static_cast<int64_t>(axis));
+  if (num > 0) {
+    split_op->set_attr_output_num(static_cast<int64_t>(num));
+  } else {
+    split_op->set_attr_output_num(sections_num);
     auto size_split = ge::AttrValue::LIST_INT(sections.begin(), sections.end());
-    output_node->set_attr_size_split(size_split);
+    split_op->set_attr_size_split(size_split);
   }
 
-  node_map_type outputs_map;
-  auto out_var_names = op_info->Output("Out");
-  output_node->create_dynamic_output_y(out_var_names.size());
-  int index = 1;
-  for (auto out_var_name : out_var_names) {
-    auto const_node = std::make_shared<ge::op::Const>(
-        unique_op_type + "/const_zero" + std::to_string(index));
-    const_node->set_attr_value(lite::npu::CreateTensorAndFillData(0));
-    lite::npu::OpList::Global().add(const_node);
-    auto add_node = std::make_shared<ge::op::Add>(unique_op_type + "/add" +
-                                                  std::to_string(index));
-    add_node->set_input_x1(*output_node, "y" + std::to_string(index));
-    add_node->set_input_x2(*const_node);
-    outputs_map[out_var_name] = add_node;
-    lite::npu::OpList::Global().add(add_node);
-    index++;
+  split_op->create_dynamic_output_y(out_names.size());
+  int idx = 1;
+  for (auto& out_name : out_names) {
+    auto zero_node = graph->Add(out_name + "/zero" + std::to_string(idx), 0);
+    auto add_node = graph->Add<ge::op::Add>(out_name);
+    auto add_op = add_node->data<ge::op::Add>();
+    add_op->set_input_x1(*split_node->data(), "y" + std::to_string(idx));
+    add_op->set_input_x2(*zero_node->data());
+    idx++;
   }
-
-  lite::npu::OpList::Global().add(output_node);
-  return outputs_map;
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace bridges
 }  // namespace npu
-}  // namespace kernels
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_NPU_BRIDGE(split, paddle::lite::kernels::npu::bridges::SplitConverter);
+REGISTER_SUBGRAPH_BRIDGE(split,
+                         kNPU,
+                         paddle::lite::subgraph::npu::SplitConverter);
