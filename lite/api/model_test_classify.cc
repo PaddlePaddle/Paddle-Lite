@@ -87,20 +87,10 @@ std::vector<std::string> load_labels(std::string label_path) {
     LOG(FATAL) << "load label file failed! " << label_path;
   }
   std::vector<std::string> labels;
-  while (!feof(fp)) {
-    char str[1024];
-    fgets(str, 1024, fp);
-    std::string str_s(str);
-
-    if (str_s.length() > 0) {
-      for (int i = 0; i < str_s.length(); i++) {
-        if (str_s[i] == ' ') {
-          std::string strr = str_s.substr(i, str_s.length() - i - 1);
-          labels.push_back(strr);
-          i = str_s.length();
-        }
-      }
-    }
+  while(!feof(fp)){
+    std::string str;
+    fscanf(fp, "%s\n", str.c_str());
+    labels.push_back(str);
   }
   fclose(fp);
   return labels;
@@ -209,7 +199,9 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     output_num *= output_shape[i];
   }
   // classify
+  printf("load_labels \n");
   std::vector<std::string> labels = load_labels(FLAGS_label_file);
+  printf("print_topk \n");
   print_topk(out, output_num, FLAGS_topk, labels);
   LOG(INFO) << "output_num: " << output_num;
   LOG(INFO) << "out " << out[0];
