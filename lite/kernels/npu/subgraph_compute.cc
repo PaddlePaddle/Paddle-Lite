@@ -27,6 +27,22 @@ namespace lite {
 namespace kernels {
 namespace npu {
 
+bool CheckDims(DDim origin_dims, hiai::TensorDimension device_dims) {
+  auto origin_shape = origin_dims.Vectorize();
+  if (origin_shape.size() < 3) {
+    origin_shape.insert(origin_shape.end(), 4 - origin_shape.size(), 1);
+  }
+  if (origin_shape.size() == 3) {
+    origin_shape.insert(origin_shape.begin(), 1);
+  }
+  CHECK_EQ(origin_shape.size(), 4);
+  CHECK_EQ(origin_shape[0], device_dims.GetNumber());
+  CHECK_EQ(origin_shape[1], device_dims.GetChannel());
+  CHECK_EQ(origin_shape[2], device_dims.GetHeight());
+  CHECK_EQ(origin_shape[3], device_dims.GetWidth());
+  return true;
+}
+
 int SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   // Convert all of ops and their input vars and weights and added into the NPU
@@ -123,9 +139,7 @@ int SubgraphEngine::BuildDeviceProgram() {
             << device_idims[i].GetHeight() << "," << device_idims[i].GetWidth()
             << "}";
     // Prepare the device input tensors
-    CHECK_EQ(origin_idims_[i].production(),
-             device_idims[i].GetNumber() * device_idims[i].GetChannel() *
-                 device_idims[i].GetHeight() * device_idims[i].GetWidth());
+    CheckDims(origin_idims_[i], device_idims[i]);
     device_itensors_[i].reset(new hiai::AiTensor);
     device_itensors_[i]->Init(&(device_idims[i]));
   }
@@ -166,9 +180,7 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
-    CHECK_EQ(origin_odims_[i].production(),
-             device_odims[i].GetNumber() * device_odims[i].GetChannel() *
-                 device_odims[i].GetHeight() * device_odims[i].GetWidth());
+    CheckDims(origin_odims_[i], device_odims[i]);
     device_otensors_[i].reset(new hiai::AiTensor);
     device_otensors_[i]->Init(&(device_odims[i]));
   }
