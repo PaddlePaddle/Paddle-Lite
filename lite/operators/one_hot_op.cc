@@ -15,8 +15,6 @@
 #include "lite/operators/one_hot_op.h"
 #include "lite/core/op_registry.h"
 
-#include "lite/backends/fpga/KD/debugger.hpp"
-
 namespace paddle {
 namespace lite {
 namespace operators {

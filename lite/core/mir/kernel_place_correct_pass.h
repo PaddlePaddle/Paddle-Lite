@@ -86,7 +86,6 @@ class KernelPlaceCorrectPass : public DebugPass {
                                    << node_name;
         VLOG(4) << "-- input arg_name:" << arg_name << " "
                 << "-- node name:" << node_name;
-        auto type = inst.picked_kernel().GetInputDeclType(arg_name);
         if (!x_in->AsArg().type) {
           need_correct_place &= false;
         } else {
@@ -108,7 +107,6 @@ class KernelPlaceCorrectPass : public DebugPass {
                                    << node_name << " in Inst "
                                    << inst.op_type();
         VLOG(4) << "-- output arg_name " << arg_name;
-        auto type = inst.picked_kernel().GetOutputDeclType(arg_name);
         if (!x_out->AsArg().type) {
           need_correct_place &= false;
         } else {
