@@ -1695,7 +1695,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vadd.f32 q3, q11, q3\n"   /* r21, add offset */     \
   "vadd.f32 q4, q12, q4\n"   /* r30, add offset */     \
   "vadd.f32 q5, q13, q5\n"   /* r31, add offset */     \
-  /*"vmov.f32 q6, #-127.0\n"*/   /* set q4 = -127 \n"*/   \
+  "vld1.32 {d12-d13}, [%[vmax]]\n" /* set q4 = -127 \n"*/   \
   "vcge.f32 q7, q8, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q10, q9, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q11, q0, q6\n"   /* @ q8 >= -127 \n */     \
@@ -1796,6 +1796,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              bool is_relu,
                              int k,
                              int rem) {
+  float vmax[] = {-127.f, -127.f, -127.f, --127.f};
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -1807,6 +1808,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                : [is_relu] "r"(is_relu),
                  [bias] "r"(bias),
                  [rem] "r"(rem),
+                 [vmax] "r"(vmax),
                  [scale] "r"(scale)
                : "q0",
                  "q1",

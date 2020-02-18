@@ -105,6 +105,7 @@ void fp32_to_int8(const float* din,
             "v10",
             "v11");
 #else
+      float vmax[] = {-127.f, -127.f, -127.f, -127.f};
       asm volatile(
           "vld1.32 {d0-d3},    [%[din]]!                  @ load in0~in7\n"
           "vld1.32    {d4-d7},    [%[din]]!       @ load in8~in16\n"
@@ -122,7 +123,7 @@ void fp32_to_int8(const float* din,
           "vbif.f32   q6, %q[vnoff], q10          @ get right offset\n"
           "vbif.f32   q7, %q[vnoff], q11          @ get right offset\n"
           "vmla.f32   q4, q0, %q[vscale]          @ mul scale\n"
-          "vmov.f32   q0, #-127.0                 @ set q0 = -127 \n"
+          "vld1.32    {d0-d1}, [%[vmax]]          @ set q0 = -127 \n"
           "vmla.f32   q5, q1, %q[vscale]          @ mul scale\n"
           "vmla.f32   q6, q2, %q[vscale]          @ mul scale\n"
           "vmla.f32   q7, q3, %q[vscale]          @ mul scale\n"
@@ -157,6 +158,7 @@ void fp32_to_int8(const float* din,
           : [vscale] "w"(vscale),
             [vpoff] "w"(vpoff),
             [vnoff] "w"(vnoff),
+            [vmax] "r"(vmax),
             [vzero] "w"(vzero)
           : "q0",
             "q1",
@@ -614,6 +616,7 @@ void int32_to_int8(const int* din,
           : [scale] "w"(vscale), [vmax] "w"(vmax)
           : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 #else
+      float vmax[] = {-127.f, -127.f, -127.f, -127.f};
       asm volatile(
           "vld1.32 {d0-d3},    [%[din]]!                  @ load in0~in7\n"
           "vld1.32    {d4-d7},    [%[din]]!       @ load in8~in16\n"
@@ -635,7 +638,7 @@ void int32_to_int8(const int* din,
           "vbif.f32   q2, %q[vnoff], q10          @ get right offset\n"
           "vbif.f32   q3, %q[vnoff], q11          @ get right offset\n"
           "vmla.f32   q0, q4, %q[vscale]          @ mul scale\n"
-          "vmov.f32   q4, #-127.0                 @ set q4 = -127 \n"
+          "vld1.32    {d8-d9}, [%[vmax]]          @ set q4 = -127 \n"
           "vmla.f32   q1, q5, %q[vscale]          @ mul scale\n"
           "vmla.f32   q2, q6, %q[vscale]          @ mul scale\n"
           "vmla.f32   q3, q7, %q[vscale]          @ mul scale\n"
@@ -668,6 +671,7 @@ void int32_to_int8(const int* din,
           : [loop] "+r"(loop), [din] "+r"(din_ptr), [dout] "+r"(dout_ptr)
           : [vscale] "w"(vscale),
             [vzero] "w"(vzero),
+            [vmax] "r"(vmax),
             [vnoff] "w"(vnoff),
             [vpoff] "w"(vpoff)
           : "q0",

@@ -2812,6 +2812,7 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  "v20",
                  "v31");
 #else
+  float vmax[] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(NCHWC4_TRANS_INT32
                /* set 0.5 offset */
                "vmov.f32 q2, #0.5\n"
@@ -2829,6 +2830,7 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                "vbif.f32   q4, q14, q8   @ get right offset\n"
                "vbif.f32   q5, q14, q9   @ get right offset\n"
                "vmov.f32 q14, #-127.0\n"
+               "vld1.32 {d28-d29}, [%[vmax]] \n"
                /* add offset */
                "vadd.f32   q10, q2, q10\n"
                "vadd.f32   q11, q3, q11\n"
@@ -2873,7 +2875,10 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  [doutc3r0] "+r"(dout3),
                  [ptr_din] "+r"(din),
                  [cnt] "+r"(cnt)
-               : [scale] "w"(scale), [bias] "w"(bias), [relu] "r"(is_relu)
+               : [scale] "w"(scale),
+                 [bias] "w"(bias),
+                 [relu] "r"(is_relu),
+                 [vmax] "r"(vmax)
                : "cc",
                  "memory",
                  "q2",
@@ -3010,13 +3015,12 @@ inline float cvt_kernel(int din, float scale, float bias, bool flag_relu) {
 
 template <>
 inline int8_t cvt_kernel(int din, float scale, float bias, bool flag_relu) {
-  auto tmp = 0;
   if (flag_relu) {
-    tmp = saturate_cast<int8_t>(round(LITEMAX(din * scale + bias, 0)));
+    return saturate_cast<int8_t>(round(LITEMAX(din * scale + bias, 0)));
   } else {
-    tmp = saturate_cast<int8_t>(round(din * scale + bias));
+    auto tmp = saturate_cast<int8_t>(round(din * scale + bias));
+    return tmp < -127 ? -127 : tmp;
   }
-  return tmp < -127 ? -127 : tmp;
 }
 
 template <>
@@ -3489,6 +3493,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  "v23",
                  "v31");
 #else
+  float vmax[] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(INT32_NCHWC8_TO_NCHW_FP32 /* set +-0.5 offset */
                "vmov.f32 q10, #-0.5\n"
                "vmov.f32 q9, #0.5\n"
@@ -3522,7 +3527,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                "vmov.f32 q9, #0.5\n"
                "vcgt.f32   q11, q7, q8   @ get mask > 0, in0\n"
                "vbif.f32   q9, q10, q11   @ get right offset\n"
-               "vmov.f32 q11, #-127.0\n"
+               "vld1.32 {d22-d23}, [%[vmax]] \n"
                "vadd.f32   q7, q7, q9\n"
                /* data >= -127 */
                "vcge.f32 q8, q0, q11     @ q10 >= vmax \n"
@@ -3598,7 +3603,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  [scale1] "w"(scale1),
                  [bias0] "w"(bias0),
                  [bias1] "w"(bias1),
-                 [relu] "r"(is_relu)
+                 [vmax] "r"(vmax)[relu] "r"(is_relu)
                : "cc",
                  "memory",
                  "q0",
