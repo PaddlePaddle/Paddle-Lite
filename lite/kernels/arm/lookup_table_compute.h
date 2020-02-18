@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class LookupTableCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class LookupTableCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::LookupTableParam;
 
