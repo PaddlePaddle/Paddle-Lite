@@ -519,7 +519,7 @@ function test_model_optimize_tool_compile {
     cd $workspace
     cd build
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    make OPT -j$NUM_CORES_FOR_COMPILE
+    make opt -j$NUM_CORES_FOR_COMPILE
 }
 
 function _test_paddle_code_generator {

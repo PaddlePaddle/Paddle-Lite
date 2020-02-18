@@ -559,9 +559,11 @@ TEST(conv2d, compute_image2d_3x3) {
               // element wise bias
               const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
 
-              LOG(INFO) << "input_dim:" << input_dim
-                        << " filter_dim:" << filter_dim
-                        << " out_dim:" << out_dim;
+              VLOG(2) << "input_dim:" << input_dim
+                      << " filter_dim:" << filter_dim << " out_dim:" << out_dim
+                      << " bias_flag:" << bias_flag << " bias_dim:" << bias_dim
+                      << " group:" << group << " stride:" << stride
+                      << " pad:" << pad << " dilation:" << dilation;
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);
@@ -901,6 +903,12 @@ TEST(conv2d, compute_image2d_5x5) {
                   lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
               const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+
+              VLOG(2) << "input_dim:" << input_dim
+                      << " filter_dim:" << filter_dim << " out_dim:" << out_dim
+                      << " bias_flag:" << bias_flag << " bias_dim:" << bias_dim
+                      << " group:" << group << " stride:" << stride
+                      << " pad:" << pad << " dilation:" << dilation;
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);

@@ -74,6 +74,9 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void Conv2d3x3();
   void Conv2d5x5();
   void Conv2d7x7();
+  void DepthwiseConv2d3x3s1();
+  void DepthwiseConv2d3x3();
+  void DepthwiseConv2d();
 
   kernel_t impl_;
   std::vector<std::string> kernel_func_names_{};
