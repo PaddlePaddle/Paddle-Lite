@@ -922,7 +922,7 @@ void sgemv_trans(const int M,
   /* end */                                                 \
   "4:                           \n" /* end */               \
   "fmov   s1, %w[alpha]         \n" /* mov alpha to s1  */  \
-  "fcmp   s8, #0                \n" /* cmp with zero*/      \
+  "fcmp   s8, #0.0              \n" /* cmp with zero*/      \
   "bge    5f                    \n" /* if ge zero */        \
   "fmul   s8, s8, s1            \n" /* out * alpha */       \
   "5:                           \n" /* leakey relu label */ \
