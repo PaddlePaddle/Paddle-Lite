@@ -544,7 +544,6 @@ void SaveModelNaive(const std::string &model_dir,
                     const Scope &exec_scope,
                     const cpp::ProgramDesc &cpp_prog,
                     bool combined) {
-  MkDirRecur(model_dir);
   // Save program
   const std::string prog_path = model_dir + ".nb";
   naive_buffer::BinaryTable table;
@@ -571,7 +570,7 @@ void SaveModelNaive(const std::string &model_dir,
          paddle_version_length);
   paddle_version_table.Consume(paddle_version_length);
   paddle_version_table.AppendToFile(prog_path);
-  VLOG(4) << "paddle_version:" << paddle_version << std::endl;
+  VLOG(4) << "paddle_version:" << paddle_version;
 
   // Save topology_size(uint64) into file
   naive_buffer::BinaryTable topology_size_table;
@@ -586,7 +585,8 @@ void SaveModelNaive(const std::string &model_dir,
   // Save Params
   SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
 
-  LOG(INFO) << "Save naive buffer model in '" << model_dir << "' successfully";
+  LOG(INFO) << "Save naive buffer model in '" << model_dir
+            << ".nb' successfully";
 }
 #endif
 
@@ -802,7 +802,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
   // version.
   const std::string paddle_version = version();
   const std::string opt_version_str = opt_version;
-  if (paddle_version == opt_version_str) {
+  if (paddle_version != opt_version_str) {
     LOG(WARNING) << "warning: the version of opt that transformed this model "
                     "is not consistent with current Paddle-Lite version."
                     "\n      version of opt:"
