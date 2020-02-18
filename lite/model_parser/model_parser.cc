@@ -571,7 +571,7 @@ void SaveModelNaive(const std::string &model_dir,
          paddle_version_length);
   paddle_version_table.Consume(paddle_version_length);
   paddle_version_table.AppendToFile(prog_path);
-  VLOG(4) << "paddle_version:" << paddle_version << std::endl;
+  VLOG(4) << "paddle_version:" << paddle_version;
 
   // Save topology_size(uint64) into file
   naive_buffer::BinaryTable topology_size_table;
