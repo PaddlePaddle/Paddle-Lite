@@ -210,9 +210,9 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   auto out = output->data<float>();
   auto output_shape = output->shape();
   // detect
-    detect_object(out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih,
-    FLAGS_oriw);
-  //detect_choose(out, output_shape, atof(FLAGS_threshold.data()));
+  detect_object(
+      out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih, FLAGS_oriw);
+  // detect_choose(out, output_shape, atof(FLAGS_threshold.data()));
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];
   int output_num = 1;
@@ -234,6 +234,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   if (flag_out) {
     fclose(fp);
   }
+
   printf("out mean: %f \n", sum1 / output_num);
 
   FILE* fp_w = fopen("time.txt", "a+");

@@ -28,16 +28,8 @@ void CalibComputeFp32ToInt8::Run() {
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->data<float>();
   auto* dout = param.output->mutable_data<signed char>();
-  printf("scale: %f \n", scale[0]);
-  printf("din: %f \n", din[0]);
-  FILE* fp = fopen("calib_out_int8.txt", "a+");
-  fprintf(fp, "tensor size: %d \n", param.input->numel());
   lite::arm::math::fp32_to_int8(
       din, dout, scale.data(), 1, 1, param.input->numel());
-  for (int i = 0; i < param.input->numel(); i++){
-     fprintf(fp, "%d \n", dout[i]);
-  }
-  fclose(fp);
   return;
 }
 

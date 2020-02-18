@@ -48,15 +48,6 @@ DEFINE_int32(topk, 1, "topk num");
 namespace paddle {
 namespace lite_api {
 
-struct Object {
-  float x;
-  float y;
-  float width;
-  float height;
-  float class_id;
-  float prob;
-};
-
 void OutputOptModel(const std::string& load_model_dir,
                     const std::string& save_optimized_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
@@ -87,19 +78,19 @@ std::vector<std::string> load_labels(std::string label_path) {
     LOG(FATAL) << "load label file failed! " << label_path;
   }
   std::vector<std::string> labels;
-  while(!feof(fp)){
-     char str[1024];
-     fgets(str, 1024, fp);
-     std::string str_s(str);
+  while (!feof(fp)) {
+    char str[1024];
+    fgets(str, 1024, fp);
+    std::string str_s(str);
 
-     if (str_s.length() > 0) {
-        for (int i = 0; i < str_s.length(); i++) {
-            if (str_s[i] == ' ') {
-               std::string strr = str_s.substr(i, str_s.length() - i - 1);
-               labels.push_back(strr);
-               i = str_s.length();
-            }
-       }
+    if (str_s.length() > 0) {
+      for (int i = 0; i < str_s.length(); i++) {
+        if (str_s[i] == ' ') {
+          std::string strr = str_s.substr(i, str_s.length() - i - 1);
+          labels.push_back(strr);
+          i = str_s.length();
+        }
+      }
     }
   }
   fclose(fp);

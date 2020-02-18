@@ -703,9 +703,6 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int rem) {
   // clang-format off
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
-  printf("vmax: %f \n", vmax[0]);
-  float32x4_t v = vld1q_f32(vmax);
-  printf("vv: %f \n", v[0]);
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -1230,7 +1227,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fcmge v4.4s, v12.4s, v6.4s\n"                                   \
   "fcmge v5.4s, v13.4s, v6.4s\n"                                   \
   "fcmge v7.4s, v14.4s, v6.4s\n"                                   \
-   /* choose data */                                                \
+  /* choose data */                                                \
   "bif v8.16b, v6.16b, v0.16b\n"                                  \
   "fcmge v0.4s, v15.4s, v6.4s\n"                                   \
   "bif v9.16b, v6.16b, v1.16b\n"                                  \
@@ -1418,7 +1415,6 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   int tail) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
-  //printf("vmax: %f \n", vmax[0]); 
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -1849,7 +1845,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  "q15",
                  "r0",
                  "cc",
-		 "memory");
+                 "memory");
 }
 #endif  // __aarch64__ // NOLINT
 
