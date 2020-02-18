@@ -223,14 +223,6 @@ class GeluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
 // softsign(x) = x / (1 + |x|)
 template <typename T>
-struct SoftsignFunctor : public BaseActivationFunctor<T> {
-  template <typename Device, typename X, typename Out>
-  void operator()(Device d, X x, Out out) {
-    out.device(d) = x / (static_cast<T>(1) + x.abs());
-  }
-};
-
-template <typename T>
 class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
@@ -238,9 +230,13 @@ class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   void Run() override {
     // auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ActivationParam>();
-    param.Out->template mutable_data<T>();
 
-    Activate<SoftsignFunctor<T>>(param.X, param.Out);
+    const T* x_data = param.X->data<T>();
+    T* out_data = param.Out->mutable_data<T>();
+    size_t x_size = param.X->numel();
+    for (size_t i = 0; i < x_size; i++) {
+      out_data[i] = x_data[i] / (static_cast<T>(1) + std::abs(x_data[i]));
+    }
   }
 
   virtual ~SoftsignCompute() = default;
