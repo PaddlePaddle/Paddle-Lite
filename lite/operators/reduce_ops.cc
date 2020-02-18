@@ -50,20 +50,18 @@ bool ReduceOp::InferShape() const {
   } else {
     size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
     std::vector<DDim::value_type> out_dims(out_rank);
-    if (keep_dim) {
-      for (size_t i = 0; i < dims.size(); ++i) {
-        out_dims[dims[i]] = 1;
-      }
-    } else {
-      sort(dims.begin(), dims.end());
-      int dim_index = 0;
-      int out_index = 0;
-      for (size_t i = 0; i < x_rank; ++i) {
-        if (dims[dim_index] == static_cast<DDim::value_type>(i)) {
-          dim_index++;
-        } else {
-          out_dims[out_index++] = x_dims[i];
+    sort(dims.begin(), dims.end());
+    int dim_index = 0;
+    int out_index = 0;
+    for (size_t i = 0; i < x_rank; ++i) {
+      if (dim_index < dims.size() &&
+          dims[dim_index] == static_cast<DDim::value_type>(i)) {
+        if (keep_dim) {
+          out_dims[out_index++] = 1;
         }
+        dim_index++;
+      } else {
+        out_dims[out_index++] = x_dims[i];
       }
     }
     param_.output->Resize(out_dims);

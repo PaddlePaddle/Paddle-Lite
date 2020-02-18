@@ -63,7 +63,19 @@ void ReduceFunctor(const lite::Tensor& input,
     auto out = EigenScalar<T>::From(output);
     functor(&x, &out, reduce_dim);
   } else {
-    auto out = EigenTensor<T, (D - R_D)>::From(*output, output->dims());
+    std::vector<DDim::value_type> out_dims;
+    if (keep_dim) {
+      // Construct the squeezed dims.
+      const int kDelFlag = -2;
+      out_dims = output->dims().Vectorize();
+      for (size_t i = 0; i < dims.size(); ++i) {
+        out_dims[reduce_dim[i]] = kDelFlag;
+      }
+      out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
+                     out_dims.end());
+    }
+    auto out = EigenTensor<T, (D - R_D)>::From(
+        *output, keep_dim ? DDim(out_dims) : output->dims());
     functor(&x, &out, reduce_dim);
   }
 }

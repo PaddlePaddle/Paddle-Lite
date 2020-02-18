@@ -52,12 +52,12 @@ inline int ConvOutputSize(int input_size,
   return output_size;
 }
 
-void UpdatePaddingAndDilation(std::vector<int>* paddings,
-                              std::vector<int>* dilations,
-                              const std::vector<int>& strides,
-                              const std::string padding_algorithm,
-                              const lite::DDim data_dims,
-                              const lite::DDim& ksize) {
+inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                                     std::vector<int>* dilations,
+                                     const std::vector<int>& strides,
+                                     const std::string padding_algorithm,
+                                     const lite::DDim data_dims,
+                                     const lite::DDim& ksize) {
   // when padding_desc is "VALID" or "SAME"
   if (padding_algorithm == "SAME") {
     for (size_t i = 0; i < strides.size(); ++i) {
