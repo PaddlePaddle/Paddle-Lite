@@ -50,6 +50,7 @@ Welcome to Paddle-Lite's documentation!
   advanced_user_guides/model_quantization
   advanced_user_guides/add_new_pass
   advanced_user_guides/x86
+  advanced_user_guides/cv
   
 .. toctree::
   :maxdepth: 1
