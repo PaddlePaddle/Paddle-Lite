@@ -30,6 +30,7 @@
 #include "lite/model_parser/compatible_pb.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/io.h"
 #include "lite/utils/string.h"
 #include "supported_kernel_op_info.h"  // NOLINT
 
@@ -400,6 +401,7 @@ void Main() {
     return;
   }
 
+  lite::MkDirRecur(FLAGS_optimize_out);
   auto model_dirs = lite::ListDir(FLAGS_model_set_dir, true);
   if (model_dirs.size() == 0) {
     LOG(FATAL) << "[" << FLAGS_model_set_dir << "] does not contain any model";
@@ -454,7 +456,9 @@ int main(int argc, char** argv) {
   }
   google::ParseCommandLineFlags(&argc, &argv, false);
   paddle::lite_api::ParseInputCommand();
-  paddle::lite_api::CheckIfModelSupported();
+  if (FLAGS_model_set_dir == "") {
+    paddle::lite_api::CheckIfModelSupported();
+  }
   paddle::lite_api::Main();
   return 0;
 }
