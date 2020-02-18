@@ -25,7 +25,7 @@ cd Paddle-Lite
     --android_stl=c++_static \
     --build_extra=ON \
     --shutdown_log=OFF \
-    tiny_publish
+    full_publish
 ```
 
 进入编译目录，下载模型和图片的压缩包，编译可执行文件。
