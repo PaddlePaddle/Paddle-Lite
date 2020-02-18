@@ -112,4 +112,4 @@ TEST(lookup_table_arm, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(lookup_table, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(lookup_table, kARM, kAny, kNCHW, def);
