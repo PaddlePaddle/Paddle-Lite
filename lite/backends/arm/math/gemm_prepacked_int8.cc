@@ -1695,7 +1695,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vadd.f32 q3, q11, q3\n"   /* r21, add offset */     \
   "vadd.f32 q4, q12, q4\n"   /* r30, add offset */     \
   "vadd.f32 q5, q13, q5\n"   /* r31, add offset */     \
-  "vmov.f32 q6, #-127.0\n"   /* set q4 = -127 \n"*/   \
+  /*"vmov.f32 q6, #-127.0\n"*/   /* set q4 = -127 \n"*/   \
   "vcge.f32 q7, q8, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q10, q9, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q11, q0, q6\n"   /* @ q8 >= -127 \n */     \
