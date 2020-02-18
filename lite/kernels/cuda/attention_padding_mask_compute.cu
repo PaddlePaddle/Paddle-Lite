@@ -63,6 +63,21 @@ __global__ void ker_attention_padding_mask(T* out_data,
   }
 }
 
+template <typename Dtype>
+__global__ void ker_find_begin_data(int count,
+                                    Dtype* out,
+                                    const Dtype* src,
+                                    const Dtype pad_data,
+                                    const int offset_len) {
+  CUDA_KERNEL_LOOP(tid, count) {
+    int index = offset_len - 1;
+    const Dtype* src_data = src + offset_len * tid;
+    for (; index >= 0 && pad_data == src_data[index]; --index) {
+    }
+    out[tid] = index + 1;
+  }
+}
+
 void AttentionPaddingMaskCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
@@ -85,34 +100,16 @@ void AttentionPaddingMaskCompute::Run() {
   auto attn_data = attn->data<float>();
   auto out_data = out->mutable_data<float>(TARGET(kCUDA));
 
-  std::vector<float> src_cpu(src->numel(), 0);
-  TargetWrapperCuda::MemcpyAsync(src_cpu.data(),
-                                 src->data<float>(),
-                                 sizeof(float) * src->numel(),
-                                 IoDirection::DtoH,
-                                 stream);
-  cudaStreamSynchronize(stream);
-
-  std::vector<float> pad_begin(src_seq_num, 0);
-  auto src_len = static_cast<int64_t>(src->lod()[0][1]);
-  int _pad_id = param.pad_id;
-  for (int i = 0; i < src_seq_num; ++i) {
-    const auto* src_data = src_cpu.data() + src_len * i;
-    int index = src_len - 1;
-    for (; index >= 0 && _pad_id == static_cast<int>(src_data[index]);
-         --index) {
-    }
-    pad_begin[i] = static_cast<float>(index + 1);
-  }
-
   param.pad_begin->Resize({static_cast<int64_t>(src_seq_num)});
   auto pad_begin_cuda_data =
       param.pad_begin->mutable_data<float>(TARGET(kCUDA));
-  TargetWrapperCuda::MemcpyAsync(pad_begin_cuda_data,
-                                 pad_begin.data(),
-                                 sizeof(float) * src_seq_num,
-                                 IoDirection::HtoD,
-                                 stream);
+  ker_find_begin_data<
+      float><<<CUDA_GET_BLOCKS(src_seq_num), CUDA_NUM_THREADS, 0, stream>>>(
+      src_seq_num,
+      pad_begin_cuda_data,
+      src->data<float>(),
+      static_cast<float>(param.pad_id),
+      static_cast<int>(src->lod()[0][1]));
 
   std::vector<int> src_offset_cpu(src_offset.size(), 0);
   for (int i = 0; i < src_offset.size(); i++) {

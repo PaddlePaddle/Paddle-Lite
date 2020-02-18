@@ -137,18 +137,17 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
-#ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
-#endif
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
-#ifndef LITE_WITH_FPGA
-    LITE_PRECISION_PROFILE(inst)
-#endif
+    LITE_PRECISION_PROFILE(inst, inst.kernel()->context())
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
   }
+#ifdef LITE_WITH_CUDA
+  TargetWrapperCuda::DeviceSync();
+#endif
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 0);
 #endif  // LITE_WITH_PROFILE
