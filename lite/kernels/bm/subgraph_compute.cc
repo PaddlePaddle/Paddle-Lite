@@ -54,7 +54,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   }
   std::string net_name = "paddle_bitmain";
   __bmcompile_opt(
-      graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 2);
+      graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 1);
   void* bmodel_data = nullptr;
   unsigned int data_size = 0;
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
@@ -109,7 +109,6 @@ int SubgraphEngine::BuildDeviceProgram() {
                             net_info_->output_dtypes[i],
                             stage.output_shapes[i]);
   }
-
   return status;
 }
 

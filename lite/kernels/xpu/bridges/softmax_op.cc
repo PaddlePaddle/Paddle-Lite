@@ -41,7 +41,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_type = kernel->GetOutputDeclType("Out");
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
-  auto axis = op_info->GetAttr<int>("axis");
+  int axis = op_info->HasAttr("axis") ? op_info->GetAttr<int>("axis") : -1;
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;

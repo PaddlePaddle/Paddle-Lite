@@ -137,7 +137,9 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 
 void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
+#ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
+#endif
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
       inst.sync();
@@ -146,7 +148,9 @@ void RuntimeProgram::Run() {
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
+#ifndef LITE_WITH_FPGA
     LITE_PRECISION_PROFILE(inst, inst.kernel()->context())
+#endif
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
   }
