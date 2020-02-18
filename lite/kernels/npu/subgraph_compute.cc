@@ -21,27 +21,12 @@
 #include "lite/core/op_registry.h"
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace npu {
-
-bool CheckDims(DDim origin_dims, hiai::TensorDimension device_dims) {
-  auto origin_shape = origin_dims.Vectorize();
-  if (origin_shape.size() < 3) {
-    origin_shape.insert(origin_shape.end(), 4 - origin_shape.size(), 1);
-  }
-  if (origin_shape.size() == 3) {
-    origin_shape.insert(origin_shape.begin(), 1);
-  }
-  CHECK_EQ(origin_shape.size(), 4);
-  CHECK_EQ(origin_shape[0], device_dims.GetNumber());
-  CHECK_EQ(origin_shape[1], device_dims.GetChannel());
-  CHECK_EQ(origin_shape[2], device_dims.GetHeight());
-  CHECK_EQ(origin_shape[3], device_dims.GetWidth());
-  return true;
-}
 
 int SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
@@ -139,7 +124,19 @@ int SubgraphEngine::BuildDeviceProgram() {
             << device_idims[i].GetHeight() << "," << device_idims[i].GetWidth()
             << "}";
     // Prepare the device input tensors
-    CheckDims(origin_idims_[i], device_idims[i]);
+    if (!subgraph::npu::CheckShape(origin_idims_[i], device_idims[i])) {
+      LOG(WARNING) << "origin and device input's dims are mismatched.";
+      for (int j = 0; j < origin_idims_[i].size(); j++) {
+        LOG(WARNING) << "origin_idims_[" << i << "][" << j
+                     << "]: " << origin_idims_[i][j];
+      }
+      LOG(WARNING) << "device_idims[" << i << "]: {"
+                   << device_idims[i].GetNumber() << ", "
+                   << device_idims[i].GetChannel() << ", "
+                   << device_idims[i].GetHeight() << ", "
+                   << device_idims[i].GetWidth() << "}";
+      return subgraph::FAILED;
+    }
     device_itensors_[i].reset(new hiai::AiTensor);
     device_itensors_[i]->Init(&(device_idims[i]));
   }
@@ -180,7 +177,19 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
-    CheckDims(origin_odims_[i], device_odims[i]);
+    if (!subgraph::npu::CheckShape(origin_odims_[i], device_odims[i])) {
+      LOG(WARNING) << "origin and device output's dims are mismatched.";
+      for (int j = 0; j < origin_odims_[i].size(); j++) {
+        LOG(WARNING) << "origin_odims_[" << i << "][" << j
+                     << "]: " << origin_odims_[i][j];
+      }
+      LOG(WARNING) << "device_odims[" << i << "]: {"
+                   << device_odims[i].GetNumber() << ", "
+                   << device_odims[i].GetChannel() << ", "
+                   << device_odims[i].GetHeight() << ", "
+                   << device_odims[i].GetWidth() << "}";
+      return subgraph::FAILED;
+    }
     device_otensors_[i].reset(new hiai::AiTensor);
     device_otensors_[i]->Init(&(device_odims[i]));
   }
