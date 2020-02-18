@@ -88,9 +88,19 @@ std::vector<std::string> load_labels(std::string label_path) {
   }
   std::vector<std::string> labels;
   while(!feof(fp)){
-    std::string str;
-    fscanf(fp, "%s\n", str.c_str());
-    labels.push_back(str);
+     char str[1024];
+     fgets(str, 1024, fp);
+     std::string str_s(str);
+
+     if (str_s.length() > 0) {
+        for (int i = 0; i < str_s.length(); i++) {
+            if (str_s[i] == ' ') {
+               std::string strr = str_s.substr(i, str_s.length() - i - 1);
+               labels.push_back(strr);
+               i = str_s.length();
+            }
+       }
+    }
   }
   fclose(fp);
   return labels;

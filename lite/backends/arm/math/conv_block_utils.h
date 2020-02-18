@@ -703,7 +703,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     :"cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -722,7 +724,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -734,7 +736,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -753,7 +757,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -765,7 +769,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -785,7 +791,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                      "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -812,14 +820,14 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0", "v1", "v2", "v3", "v20");
+                 : "cc", "memory", "v0", "v1", "v2", "v3", "v20");
 #else
     asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_STORE
                  : [doutc0r0] "+r"(doutc0_ptr),
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q15");
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
 }
@@ -1006,7 +1014,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     :"cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1026,7 +1036,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -1039,7 +1049,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1059,7 +1071,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -1072,7 +1084,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1092,7 +1106,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                      "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -1120,7 +1136,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0", "v1", "v2", "v3", "v4", "v5", "v20");
+                 : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v20");
 #else
     asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_STORE
                  : [doutc0r0] "+r"(doutc0_ptr),
@@ -1128,7 +1144,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q15");
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
 }
@@ -1373,7 +1389,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1403,7 +1421,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -1418,7 +1436,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1448,7 +1468,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -1463,7 +1483,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1493,7 +1515,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                      "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -1523,7 +1547,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0",
+                 : "cc",
+                   "memory",
+                   "v0",
                    "v1",
                    "v2",
                    "v3",
@@ -1544,7 +1570,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q15");
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
 }
@@ -1929,7 +1955,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1963,7 +1991,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -1982,7 +2010,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -2012,7 +2042,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -2031,7 +2061,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                      "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -2076,7 +2108,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                      "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -2112,7 +2146,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0",
+                 : "cc",
+                   "memory",
+                   "v0",
                    "v1",
                    "v2",
                    "v3",
@@ -2146,7 +2182,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
+                 : "cc", "meemory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
 #endif
   }
 }
@@ -2812,7 +2848,7 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  "v20",
                  "v31");
 #else
-  float vmax[] = {-127.f, -127.f, -127.f, -127.f};
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(NCHWC4_TRANS_INT32
                /* set 0.5 offset */
                "vmov.f32 q2, #0.5\n"
@@ -2829,7 +2865,6 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                "vbif.f32   q3, q14, q7   @ get right offset\n"
                "vbif.f32   q4, q14, q8   @ get right offset\n"
                "vbif.f32   q5, q14, q9   @ get right offset\n"
-               "vmov.f32 q14, #-127.0\n"
                "vld1.32 {d28-d29}, [%[vmax]] \n"
                /* add offset */
                "vadd.f32   q10, q2, q10\n"
@@ -3493,7 +3528,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  "v23",
                  "v31");
 #else
-  float vmax[] = {-127.f, -127.f, -127.f, -127.f};
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(INT32_NCHWC8_TO_NCHW_FP32 /* set +-0.5 offset */
                "vmov.f32 q10, #-0.5\n"
                "vmov.f32 q9, #0.5\n"
@@ -3550,7 +3585,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                "vqmovn.s32 d8, q10      @ cnt to int16\n"
                "vqmovn.s32 d12, q11      @ cnt to int16\n"
                /* data >= -127 */
-               "vmov.f32 q11, #-127.0\n"
+               "vld1.32 {d22-d23}, [%[vmax]] \n"
                "vcge.f32 q8, q1, q11     @ q10 >= vmax \n"
                "vcge.f32 q9, q3, q11     @ q10 >= vmax \n"
                "vcge.f32 q10, q5, q11     @ q10 >= vmax \n"
@@ -3603,7 +3638,8 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  [scale1] "w"(scale1),
                  [bias0] "w"(bias0),
                  [bias1] "w"(bias1),
-                 [vmax] "r"(vmax)[relu] "r"(is_relu)
+                 [vmax] "r"(vmax),
+                 [relu] "r"(is_relu)
                : "cc",
                  "memory",
                  "q0",
