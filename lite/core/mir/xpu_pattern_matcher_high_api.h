@@ -13,33 +13,27 @@
 // limitations under the License.
 
 #pragma once
-#include <map>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-#include "lite/core/mir/node.h"
-#include "lite/core/mir/pattern_matcher.h"
-#include "lite/core/mir/ssa_graph.h"
+
+#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/mir/xpu_pattern_matcher.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
+namespace xpu {
 
-class FuseBase {
+class XPUFuseBase {
  public:
   using key2nodes_t = std::map<std::string, Node*>;
 
-  virtual ~FuseBase() = default;
+  virtual ~XPUFuseBase() = default;
 
   void operator()(SSAGraph* graph) {
     BuildPattern();
     PerformPatternMatcher(graph);
 
-    for (const auto& matched : key2nodes_) {
-      InsertNewNode(graph, matched);
+    for (size_t i = 0; i < key2nodes_.size(); ++i) {
+      InsertNewNode(graph, key2nodes_[i], matcher_.extra_input_vars_[i]);
     }
 
     DeleteInterNodes(graph);
@@ -62,7 +56,8 @@ class FuseBase {
   PMNode* VarNode(const std::string& key);
 
  protected:
-  virtual void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) = 0;
+  virtual void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched,
+      const std::vector<Node *>& extra_input_vars) = 0;
 
   void PerformPatternMatcher(SSAGraph* graph);
 
@@ -72,11 +67,12 @@ class FuseBase {
   PMNode* GetOrCreateNode(const std::string& key);
 
  protected:
-  PatternMatcher matcher_;
+  XPUPatternMatcher matcher_;
   std::map<std::string, PMNode*> nodes_;
   std::vector<key2nodes_t> key2nodes_;
 };
 
+}  // namespace xpu
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

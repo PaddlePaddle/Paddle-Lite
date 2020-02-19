@@ -50,6 +50,42 @@ class SubgraphOp : public OpLite {
   mutable SubgraphParam param_;
 };
 
+class ResNet50Op : public OpLite {
+ public:
+  ResNet50Op() {}
+  explicit ResNet50Op(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "ResNet50"; }
+
+ private:
+  mutable ResNet50Param param_;
+};
+
+class MultiEncoderOp : public OpLite {
+ public:
+  MultiEncoderOp() {}
+  explicit MultiEncoderOp(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "MultiEncoder"; }
+
+ private:
+  mutable MultiEncoderParam param_;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

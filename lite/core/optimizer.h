@@ -27,6 +27,7 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
+#include "lite/core/mir/graph_visualize_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -75,6 +76,8 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
+           "xpu_resnet_fuse_pass",
+           "xpu_encoder_fuse_pass",
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and
@@ -135,6 +138,8 @@ class Optimizer {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);
+    std::string debug_str = Visualize(graph_.get());
+    printf("debug_str %s\n", debug_str.c_str());
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
@@ -187,6 +192,8 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
+        //Visualize(graph_.get());
+        //abort();
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
       }

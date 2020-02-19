@@ -32,7 +32,7 @@ class IoCopyHostToXPUCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kX86));
     auto mem_size = param.x->memory_size();
-    VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "host to xpu, copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kXPU), mem_size);
     TargetWrapperXPU::MemcpySync(data, param.x->raw_data(), mem_size, IoDirection::HtoD);
   }
@@ -70,7 +70,7 @@ class IoCopyXPUToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kXPU));
     auto mem_size = param.x->memory_size();
-    VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "xpu to host, copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     TargetWrapperXPU::MemcpySync(data, param.x->raw_data(), mem_size, IoDirection::DtoH);
   }

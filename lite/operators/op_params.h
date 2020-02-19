@@ -1167,6 +1167,30 @@ struct CrfDecodingParam {
   lite::Tensor* viterbi_path{};
 };
 
+struct ResNet50Param {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> filters;
+  std::vector<lite::Tensor*> biases;
+  std::vector<lite::Tensor*> max_filters;
+  lite::Tensor* output{};
+};
+
+struct MultiEncoderParam {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  lite::Tensor* fc_weight_max{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+
+  int n_layers{};
+  int head_num{};
+  int size_per_head{};
+  std::string act_type{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

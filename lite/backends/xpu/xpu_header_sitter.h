@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma GCC system_header
 #include <xpu/runtime.h>
 #include <xpu/api.h>
+#include <xpu/golden.h>
 
 namespace paddle {
 namespace lite {
