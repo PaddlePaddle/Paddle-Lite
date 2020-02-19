@@ -42,7 +42,7 @@ class CxxConfig;
 ```c++
 config = CxxConfig()
 # 设置模型目录，加载非combined模型时使用
-config.set_model_(<your_model_dir_path>)
+config.set_model_dir(<your_model_dir_path>)
 # 设置工作线程数
 config.set_threads(4);
 # 设置能耗模式
