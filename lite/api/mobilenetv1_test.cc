@@ -23,6 +23,10 @@
 #include "lite/core/op_registry.h"
 
 DEFINE_string(optimized_model, "", "optimized_model");
+DEFINE_int32(N, 1, "input_batch");
+DEFINE_int32(C, 3, "input_channel");
+DEFINE_int32(H, 224, "input_height");
+DEFINE_int32(W, 224, "input_width");
 
 namespace paddle {
 namespace lite {
@@ -37,7 +41,8 @@ void TestModel(const std::vector<Place>& valid_places,
   predictor.Build(model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(
+      std::vector<DDim::value_type>({FLAGS_N, FLAGS_C, FLAGS_H, FLAGS_W})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
@@ -58,6 +63,8 @@ void TestModel(const std::vector<Place>& valid_places,
     predictor.SaveModel(FLAGS_optimized_model);
   }
 
+  LOG(INFO) << "input shape(NCHW):" << FLAGS_N << " " << FLAGS_C << " "
+            << FLAGS_H << " " << FLAGS_W;
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
@@ -123,10 +130,10 @@ TEST(MobileNetV1, test_arm) {
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
-      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)},
-      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNHWC)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault)},
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
       TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
   });
 

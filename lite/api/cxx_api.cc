@@ -43,6 +43,7 @@ void Predictor::SaveModel(const std::string &dir,
       LOG(FATAL) << "Unknown model type";
   }
   if (record_info) {
+    MkDirRecur(dir);
     SaveOpKernelInfo(dir);
   }
 }

@@ -103,12 +103,6 @@ void DeleteDynamicQuantOpFuser::InsertNewNode(SSAGraph* graph,
 
   // obtain values, save values and relink node
   int bit_length = quant_node->stmt()->op_info()->GetAttr<int>("bit_length");
-  int range = ((1 << (bit_length - 1)) - 1);
-  auto* scope = quant_node->stmt()->op()->scope();
-  auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
-                           ->GetMutable<lite::Tensor>();
-  float scale_value = scale_tensor->data<float>()[0] / range;
-
   auto outlinks = output_act_node->outlinks;
   for (auto* quantized_node : outlinks) {
     auto* op_desc = quantized_node->stmt()->mutable_op_info();

@@ -73,7 +73,7 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
     }
   }
 }
-#if 1  // concat_buffer
+#if 0   // concat_buffer
 TEST(opencl_concat_buffer, compute) {
   // prepare data
   const DDim x0_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
@@ -382,7 +382,7 @@ TEST(concat_image2d_fp32, compute) {
 }  // namespace paddle
 
 // concat buffer
-USE_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, def);
 
 // concat image2d fp32
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
