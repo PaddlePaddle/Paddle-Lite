@@ -13,6 +13,7 @@ Welcome to Paddle-Lite's documentation!
 
   introduction/tech_highlights
   introduction/architecture
+  introduction/support_hardware
 
 .. toctree::
   :maxdepth: 1
