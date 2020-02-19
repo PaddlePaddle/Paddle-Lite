@@ -44,19 +44,15 @@ class MultiEncoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
     std::vector<const float*> arg_ln_bias;
 
     for (auto* fc_weight : param.fc_weight) {
-      printf("fc_weight %p\n", (void*)fc_weight->data<float>());
       arg_fc_weight.push_back((int16_t*)fc_weight->data<float>());
     }
     for (auto* fc_bias : param.fc_bias) {
-      printf("fc_bias %p\n", (void*)fc_bias->data<float>());
       arg_fc_bias.push_back(fc_bias->data<float>());
     }
     for (auto* ln_scale : param.ln_scale) {
-      printf("ln_scale %p\n", (void*)ln_scale->data<float>());
       arg_ln_scale.push_back(ln_scale->data<float>());
     }
     for (auto* ln_bias : param.ln_bias) {
-      printf("ln_bias %p\n", (void*)ln_bias->data<float>());
       arg_ln_bias.push_back(ln_bias->data<float>());
     }
 
@@ -70,7 +66,7 @@ class MultiEncoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
     if (param.act_type == "relu") {
       act_type = xdnn::Activation_t::RELU;
     }
-    xdnn::bert_encoder_transformer_int16<int16_t>(
+    int r = xdnn::bert_encoder_transformer_int16<int16_t>(
         ctx.GetRawContext(),
         batch_size,
         seq_len,
@@ -91,6 +87,7 @@ class MultiEncoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
         true,
         act_type
     );
+    CHECK(r == 0);
   }
 
   virtual ~MultiEncoderCompute() = default;
@@ -682,6 +679,7 @@ class XPUMultiEncoderFuser {
 class XPUMultiEncoderFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    // TODO(miaotianxiang): backup graph, recover from failed match
     std::vector<std::string> act_types{"gelu", "relu"};
     for (auto& act_type : act_types) {
       fusion::XPUSingleEncoderFuser single_encoder_fuser(act_type);

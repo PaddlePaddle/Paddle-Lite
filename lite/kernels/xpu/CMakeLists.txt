@@ -11,3 +11,7 @@ add_kernel(elementwise_compute_xpu XPU basic SRCS elementwise_compute.cc DEPS ${
 add_kernel(mul_compute_xpu XPU basic SRCS mul_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(softmax_compute_xpu XPU basic SRCS softmax_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scale_compute_xpu XPU basic SRCS scale_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(lookup_table_compute_xpu XPU basic SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(layer_norm_compute_xpu XPU basic SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(dropout_compute_xpu XPU basic SRCS dropout_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(matmul_compute_xpu XPU basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps})
