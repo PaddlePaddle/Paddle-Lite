@@ -40,7 +40,6 @@ void fp32_to_int8(const float* din,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = outer_size * axis_size;
-
 #pragma omp parallel for
   for (int j = 0; j < loop_size; ++j) {
     float inv_scale = 1.f / scale[j % axis_size];
@@ -360,16 +359,7 @@ void int8_to_fp32(const int8_t* in,
           "bne           0b                     \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "cc",
-            "memory", 
-            "q0", 
-            "q1", 
-            "q2", 
-            "q3", 
-            "q4", 
-            "q5", 
-            "q6", 
-            "q7");
+          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
 #endif  // __aarch64__
     }
     const signed char* din_r = din_c + 16 * cnt;
