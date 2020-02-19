@@ -25,16 +25,49 @@ namespace kernels {
 namespace x86 {
 
 struct SumFunctor {
-  template <typename X, typename Y, typename Dim>
-  void operator()(X* x, Y* y, const Dim& dim, size_t d, size_t r_d) {
-    for (int i = 0; i < dim[0]; i++) {
-      for (int k = 0; k < dim[2]; k++) {
-        auto output_temp = x[i * dim[1] * dim[2] + k];
-        for (int j = 1; j < dim[1]; j++) {
-          int input_d = i * dim[1] * dim[2] + j * dim[2] + k;
-          output_temp = output_temp + x[input_d];
+  template <typename X, typename Y, typename XDim, typename Dim>
+  void operator()(X* x, Y* y, const XDim& x_dim, const Dim& dims) {
+    if (dims[0] == 0) {
+      size_t h_size = x_dim[2];
+      size_t w_size = x_dim[1] * x_dim[2];
+      for (int i = 0; i < x_dim[1]; i++) {
+        for (int k = 0; k < x_dim[2]; k++) {
+          auto input_size = i * h_size + k;
+          auto output_temp = x[input_size];
+          for (int j = 1; j < x_dim[0]; j++) {
+            int input_d = input_size + j * w_size;
+            output_temp = output_temp + x[input_d];
+          }
+          y[i * h_size + k] = output_temp;
         }
-        y[i * dim[2] + k] = output_temp;
+      }
+    } else if (dims[0] == 1) {
+      size_t h_size = x_dim[1] * x_dim[2];
+      size_t w_size = x_dim[2];
+      for (int i = 0; i < x_dim[0]; i++) {
+        for (int k = 0; k < x_dim[2]; k++) {
+          auto input_size = i * h_size + k;
+          auto output_temp = x[input_size];
+          for (int j = 1; j < x_dim[1]; j++) {
+            int input_d = input_size + j * w_size;
+            output_temp = output_temp + x[input_d];
+          }
+          y[i * w_size + k] = output_temp;
+        }
+      }
+    } else {
+      size_t h_size = x_dim[1] * x_dim[2];
+      size_t w_size = x_dim[2];
+      for (int i = 0; i < x_dim[0]; i++) {
+        for (int k = 0; k < x_dim[1]; k++) {
+          auto input_size = i * h_size + k * w_size;
+          auto output_temp = x[input_size];
+          for (int j = 1; j < x_dim[2]; j++) {
+            int input_d = input_size + j;
+            output_temp = output_temp + x[input_d];
+          }
+          y[i * x_dim[1] + k] = output_temp;
+        }
       }
     }
   }

@@ -92,7 +92,7 @@ void ReduceFunctorTensor(const lite::Tensor& input,
   Functor functor;
   const T* input_data = input.data<T>();
   T* output_data = output->mutable_data<T>();
-  functor(input_data, output_data, input.dims(), D, R_D);
+  functor(input_data, output_data, input.dims(), dims);
 }
 
 }  // namespace x86
