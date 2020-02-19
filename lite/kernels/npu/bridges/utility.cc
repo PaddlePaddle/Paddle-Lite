@@ -152,13 +152,7 @@ int CvtActMode(std::string act_type) {
 }
 
 bool CheckShape(DDim origin_dims, hiai::TensorDimension device_dims) {
-  auto origin_shape = origin_dims.Vectorize();
-  if (origin_shape.size() < 3) {
-    origin_shape.insert(origin_shape.end(), 4 - origin_shape.size(), 1);
-  }
-  if (origin_shape.size() == 3) {
-    origin_shape.insert(origin_shape.begin(), 1);
-  }
+  auto origin_shape = CvtShape(origin_dims);
   CHECK_EQ(origin_shape.size(), 4);
   return origin_shape[0] == device_dims.GetNumber() &&
          origin_shape[1] == device_dims.GetChannel() &&

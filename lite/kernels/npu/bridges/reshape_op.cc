@@ -88,6 +88,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
     auto out_shape = lite::operators::ValidateShape(shape, x_dims);
+    out_shape = CvtShape(out_shape);
     if (out_shape.size() > 4) {
       LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
                       "but shape has "
