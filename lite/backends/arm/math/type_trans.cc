@@ -360,7 +360,16 @@ void int8_to_fp32(const int8_t* in,
           "bne           0b                     \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+          : "cc",
+            "memory", 
+            "q0", 
+            "q1", 
+            "q2", 
+            "q3", 
+            "q4", 
+            "q5", 
+            "q6", 
+            "q7");
 #endif  // __aarch64__
     }
     const signed char* din_r = din_c + 16 * cnt;
