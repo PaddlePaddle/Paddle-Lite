@@ -544,7 +544,6 @@ void SaveModelNaive(const std::string &model_dir,
                     const Scope &exec_scope,
                     const cpp::ProgramDesc &cpp_prog,
                     bool combined) {
-  MkDirRecur(model_dir);
   // Save program
   const std::string prog_path = model_dir + ".nb";
   naive_buffer::BinaryTable table;
@@ -571,7 +570,7 @@ void SaveModelNaive(const std::string &model_dir,
          paddle_version_length);
   paddle_version_table.Consume(paddle_version_length);
   paddle_version_table.AppendToFile(prog_path);
-  VLOG(4) << "paddle_version:" << paddle_version << std::endl;
+  VLOG(4) << "paddle_version:" << paddle_version;
 
   // Save topology_size(uint64) into file
   naive_buffer::BinaryTable topology_size_table;
@@ -586,7 +585,8 @@ void SaveModelNaive(const std::string &model_dir,
   // Save Params
   SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
 
-  LOG(INFO) << "Save naive buffer model in '" << model_dir << "' successfully";
+  LOG(INFO) << "Save naive buffer model in '" << model_dir
+            << ".nb' successfully";
 }
 #endif
 
@@ -696,6 +696,13 @@ void LoadModelNaive(const std::string &model_dir,
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
+  LOG(WARNING)
+      << "WARNING: MobileConfig::set_model_dir and "
+         "MobileConfig::set_model_buffer are deprecated APIs "
+         "and will be removed in latter release. \n"
+         "    MobileConfig::set_model_from_file(const std::string& model_file)"
+         " and MobileConfig::set_model_from_buffer(const std::string& "
+         "model_buffer) are recommended.";
   // Load model
   const std::string prog_path = model_dir + "/__model__.nb";
   naive_buffer::BinaryTable table;
@@ -786,10 +793,22 @@ void LoadModelNaiveFromFile(const std::string &filename,
 
   // (2)get opt version
   char opt_version[16];
-  const uint64_t paddle_version_length = 16 * sizeof(char);
+  const uint64_t opt_version_length = 16 * sizeof(char);
   ReadModelDataFromFile<char>(
-      opt_version, prog_path, &offset, paddle_version_length);
+      opt_version, prog_path, &offset, opt_version_length);
   VLOG(4) << "Opt_version:" << opt_version;
+
+  // check version, opt's version should be consistent with current Paddle-Lite
+  // version.
+  const std::string paddle_version = version();
+  const std::string opt_version_str = opt_version;
+  if (paddle_version != opt_version_str) {
+    LOG(WARNING) << "warning: the version of opt that transformed this model "
+                    "is not consistent with current Paddle-Lite version."
+                    "\n      version of opt:"
+                 << opt_version
+                 << "\n      version of current Paddle-Lite:" << paddle_version;
+  }
 
   // (3)get topo_size
   uint64_t topo_size;
