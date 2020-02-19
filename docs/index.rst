@@ -39,6 +39,8 @@ Welcome to Paddle-Lite's documentation!
   user_guides/cuda
   user_guides/fpga
   user_guides/opencl
+  user_guides/cpp_demo
+  user_guides/java_demo
 
 .. toctree::
   :maxdepth: 1
