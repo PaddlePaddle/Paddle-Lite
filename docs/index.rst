@@ -65,6 +65,8 @@ Welcome to Paddle-Lite's documentation!
   :caption: API文档
 
   api_reference/cxx_api_doc
+  api_reference/java_api_doc
+  api_reference/python_api_doc
 
 .. toctree::
   :maxdepth: 1
