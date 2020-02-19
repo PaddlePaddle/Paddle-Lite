@@ -25,6 +25,8 @@ void LightPredictor::Build(const std::string& lite_model_file,
   } else {
     LoadModelNaiveFromFile(lite_model_file, scope_.get(), &cpp_program_desc_);
   }
+
+  DequantizeWeight();
   BuildRuntimeProgram(cpp_program_desc_);
   PrepareFeedFetch();
 }

@@ -32,7 +32,8 @@ void sigmoid_compute_ref(const dtype *x_data,
   }
 }
 
-#if 1  // sigmoid_buffer
+// buffer
+#if 0   // sigmoid_buffer
 TEST(opencl_sigmoid_buffer, compute) {
   // prepare data
   const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
@@ -414,7 +415,7 @@ TEST(sigmoid_image2d_fp16, compute) {
 }  // namespace paddle
 
 // sigmoid buffer
-USE_LITE_KERNEL(sigmoid, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(sigmoid, kOpenCL, kFloat, kNCHW, def);
 
 // sigmoid image2d fp32
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
