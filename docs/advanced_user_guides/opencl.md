@@ -1,4 +1,4 @@
-# Lite基于OpenCL的ARM GPU预测
+# Lite基于OpenCL的模型预测
 
 Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环境下armv8、armv7的交叉编译。
 
@@ -230,7 +230,7 @@ adb shell /data/local/tmp/opencl/test_layout_opencl
 ```
 
 
-# 如何在Code中使用
+### 如何在Code中使用
 
 见运行示例1的demo代码:
 
