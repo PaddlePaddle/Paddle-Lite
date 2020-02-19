@@ -13,6 +13,7 @@ Welcome to Paddle-Lite's documentation!
 
   introduction/tech_highlights
   introduction/architecture
+  introduction/support_hardware
 
 .. toctree::
   :maxdepth: 1
@@ -37,7 +38,10 @@ Welcome to Paddle-Lite's documentation!
   user_guides/model_optimize_tool
   user_guides/library_tailoring
   user_guides/cuda
+  user_guides/fpga
   user_guides/opencl
+  user_guides/cpp_demo
+  user_guides/java_demo
 
 .. toctree::
   :maxdepth: 1
@@ -48,7 +52,9 @@ Welcome to Paddle-Lite's documentation!
   advanced_user_guides/add_layout
   advanced_user_guides/model_quantization
   advanced_user_guides/add_new_pass
+  advanced_user_guides/npu
   advanced_user_guides/x86
+  advanced_user_guides/cv
   
 .. toctree::
   :maxdepth: 1
