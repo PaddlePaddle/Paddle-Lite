@@ -277,6 +277,7 @@ git checkout <release-version-tag>
   --arm_abi=armv8 \
   --build_extra=OFF \
   --arm_lang=gcc \
+  --build_java=ON \
   --android_stl=c++_static \
   --build_extra=OFF \
   tiny_publish
@@ -303,6 +304,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```shell
 ./lite/tools/build.sh \
   --build_extra=OFF \
+  --build_java=ON \
   --arm_os=armlinux \
   --arm_abi=armv7hf \
   --arm_lang=gcc \
@@ -320,6 +322,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_abi=armv8 \
   --build_extra=OFF \
   --arm_lang=gcc \
+  --build_java=ON \
   --android_stl=c++_static \
   --build_extra=OFF \
   full_publish
@@ -330,6 +333,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   --arm_os=armlinux \
   --arm_abi=armv7hf \
   --arm_lang=gcc \
+  --build_java=ON \
   --build_extra=OFF \
   full_publish
 ```
