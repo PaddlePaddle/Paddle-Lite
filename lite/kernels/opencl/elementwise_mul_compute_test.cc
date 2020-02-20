@@ -60,7 +60,23 @@ void elementwise_compute_ref(const dtype *x_data,
     num *= x_dims[i];
   }
 
-  if (x_dims == y_dims || y_dims.size() == 2 || y_dims.size() == 1) {
+  if (x_dims.size() == 4 && y_dims.size() == 2 && x_dims[0] == y_dims[0] &&
+      y_dims[1] == y_dims[1]) {
+    int n = x_dims[0];
+    int c = x_dims[1];
+    int h = x_dims[2];
+    int w = x_dims[3];
+    // case for x_dims: n,c,h,w
+    //          y_dims: n,c
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < c; ++j) {
+        for (int k = 0; k < h * w; ++k) {
+          out_data[i * c * h * w + j * h * w + k] =
+              x_data[i * c * h * w + j * h * w + k] * y_data[j];
+        }
+      }
+    }
+  } else if (x_dims == y_dims || y_dims.size() == 2 || y_dims.size() == 1) {
     for (int i = 0; i < batch; ++i) {
       for (int j = 0; j < channels; ++j) {
         int offset = (i * channels + j) * num;
@@ -103,7 +119,7 @@ TEST(elemul_image2d_fp32, compute_kernel_elemenwise_mul) {
 
   // dims
   const int n = 1;
-  const int c = 3;
+  const int c = 7;
   const int h = 2;
   const int w = 2;
 
@@ -112,6 +128,7 @@ TEST(elemul_image2d_fp32, compute_kernel_elemenwise_mul) {
   std::vector<DDim> y_dim_v{DDim(std::vector<DDim::value_type>{n, c, 1, 1}),
                             DDim(std::vector<DDim::value_type>{n, c, h, w}),
                             DDim(std::vector<DDim::value_type>{h, w}),
+                            DDim(std::vector<DDim::value_type>{n, c}),
                             DDim(std::vector<DDim::value_type>{w})};
   for (auto y_dim : y_dim_v) {
     LOG(INFO) << "================== elementwise_mul ===================";
@@ -217,14 +234,14 @@ TEST(elemul_image2d_fp32, compute_kernel_elemenwise_mul) {
                                    elemulParam.axis,
                                    "mul");
 
-#if 0  // enable to check value of x and y
+#ifdef PRINT_RESULT  // enable to check value of x and y
     for (int eidx = 0; eidx < out_dim.production(); eidx++) {
       auto value = out_v[eidx];
       auto ref_value = out_ref.get()[eidx];
-        LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx << " / "
-                  << out_dim.production() << ", x_v[" << eidx << "]:"
-                  << x_v[eidx] << ", value[" << eidx << "]:" << value
-                  << ", ref_value[" << eidx << "]:" << ref_value;
+      LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx << " / "
+                << out_dim.production() << ", x_v[" << eidx << "]:" << x_v[eidx]
+                << ", value[" << eidx << "]:" << value << ", ref_value[" << eidx
+                << "]:" << ref_value;
     }
 
     for (int i = 0; i < y_v.size(); i++) {
