@@ -65,6 +65,6 @@ REGISTER_LITE_KERNEL(write_to_array,
                      paddle::lite::kernels::arm::WriteToArrayCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
     .Finalize();
