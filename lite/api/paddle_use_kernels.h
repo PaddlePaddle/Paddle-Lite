@@ -68,6 +68,7 @@ USE_LITE_KERNEL(matmul, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(multiclass_nms, kHost, kFloat, kNCHW, def);
 USE_LITE_KERNEL(layer_norm, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_pool, kX86, kFloat, kNCHW, def);
+USE_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, def);
 USE_LITE_KERNEL(concat, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(batch_norm, kXPU, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_arithmetic, kX86, kFloat, kNCHW, def);
