@@ -103,13 +103,13 @@ void AttentionPaddingMaskCompute::Run() {
   param.pad_begin->Resize({static_cast<int64_t>(src_seq_num)});
   auto pad_begin_cuda_data =
       param.pad_begin->mutable_data<float>(TARGET(kCUDA));
-  ker_find_begin_data<float>
-      <<<CUDA_GET_BLOCKS(src_seq_num), CUDA_NUM_THREADS, 0, stream>>>(
-          src_seq_num,
-          pad_begin_cuda_data,
-          src->data<float>(),
-          static_cast<float>(param.pad_id),
-          static_cast<int>(src->lod()[0][1]));
+  ker_find_begin_data<
+      float><<<CUDA_GET_BLOCKS(src_seq_num), CUDA_NUM_THREADS, 0, stream>>>(
+      src_seq_num,
+      pad_begin_cuda_data,
+      src->data<float>(),
+      static_cast<float>(param.pad_id),
+      static_cast<int>(src->lod()[0][1]));
 
   std::vector<int> src_offset_cpu(src_offset.size(), 0);
   for (int i = 0; i < src_offset.size(); i++) {

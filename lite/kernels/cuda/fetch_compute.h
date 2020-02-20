@@ -30,7 +30,7 @@ class FetchCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~FetchCompute() = default;
 };
 
-}  // namespace host
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

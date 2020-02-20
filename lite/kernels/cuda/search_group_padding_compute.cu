@@ -113,7 +113,8 @@ void SearchGroupPaddingCompute::Run() {
   TargetWrapperCuda::MemsetAsync(
       out_padding_data,
       0,
-      out_padding->dims()[0] * out_padding->dims()[1] * sizeof(float), cuda_stream);
+      out_padding->dims()[0] * out_padding->dims()[1] * sizeof(float),
+      cuda_stream);
 
   ker_search_group_padding<
       float><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, cuda_stream>>>(
