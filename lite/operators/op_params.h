@@ -1169,9 +1169,9 @@ struct CrfDecodingParam {
 
 struct ResNet50Param {
   lite::Tensor* input{};
-  std::vector<lite::Tensor*> filters;
-  std::vector<lite::Tensor*> biases;
-  std::vector<lite::Tensor*> max_filters;
+  std::vector<lite::Tensor*> filter;
+  std::vector<lite::Tensor*> bias;
+  std::vector<lite::Tensor*> max_filter;
   lite::Tensor* output{};
 };
 

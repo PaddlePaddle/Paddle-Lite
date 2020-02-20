@@ -59,28 +59,27 @@ bool ResNet50Op::InferShape() const {
 
 bool ResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.input = const_cast<lite::Tensor *>(
-      &scope->FindVar(op_desc.Input("Inputs").front())->Get<lite::Tensor>());
+      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
   param_.output =
-      scope->FindVar(op_desc.Output("Outputs").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<lite::Tensor>();
 
-  param_.filters.clear();
-  for (auto& filter_name : op_desc.Input("Filter")) {
-    auto filter = const_cast<lite::Tensor *>(
-        &scope->FindVar(filter_name)->Get<lite::Tensor>());
-    param_.filters.push_back(filter);
-    printf("%s %s\n", __func__, filter_name.c_str());
+  param_.filter.clear();
+  for (auto& name : op_desc.Input("Filter")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.filter.push_back(t);
   }
-  param_.biases.clear();
-  for (auto& bias_name : op_desc.Input("Bias")) {
-    auto bias = const_cast<lite::Tensor *>(
-        &scope->FindVar(bias_name)->Get<lite::Tensor>());
-    param_.biases.push_back(bias);
+  param_.bias.clear();
+  for (auto& name : op_desc.Input("Bias")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.bias.push_back(t);
   }
-  param_.max_filters.clear();
-  for (auto& max_filter_name : op_desc.Input("MaxFilter")) {
-    auto max_filter = const_cast<lite::Tensor *>(
-        &scope->FindVar(max_filter_name)->Get<lite::Tensor>());
-    param_.max_filters.push_back(max_filter);
+  param_.max_filter.clear();
+  for (auto& name : op_desc.Input("MaxFilter")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.max_filter.push_back(t);
   }
   return true;
 }

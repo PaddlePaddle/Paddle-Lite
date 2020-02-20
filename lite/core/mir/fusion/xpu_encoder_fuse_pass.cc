@@ -17,7 +17,6 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
-#include "lite/core/mir/graph_visualize_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -504,10 +503,11 @@ class XPUSingleEncoderFuser : public FuseBase {
     });
     op_desc.SetOutput("Outputs", {matched.at("qkv_ln_5_out")->arg()->name});
     // XXX: keep these to fool SubgraphOp::AttachImpl()
-    op_desc.SetAttr<int32_t>("sub_block", 0);
+    op_desc.SetAttr<int>("sub_block", 0);
     op_desc.SetAttr<std::vector<std::string>>("input_data_names", {});
     op_desc.SetAttr<std::vector<std::string>>("output_data_names", {});
 
+    // extra traits to distill
     auto* reshape_op_info = matched.at("q_reshape2")->stmt()->op_info();
     auto reshape_dim = reshape_op_info->GetAttr<std::vector<int>>("shape");
     op_desc.SetAttr<int>("head_num", reshape_dim[2]);
