@@ -40,13 +40,11 @@ void fp32_to_int8(const float* din,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = outer_size * axis_size;
-
 #pragma omp parallel for
   for (int j = 0; j < loop_size; ++j) {
     float inv_scale = 1.f / scale[j % axis_size];
     float32x4_t vzero = vdupq_n_f32(0.f);
     float32x4_t vscale = vdupq_n_f32(inv_scale);
-    float32x4_t vmax = vdupq_n_f32(-127.f);
     float32x4_t vpoff = vdupq_n_f32(0.5f);
     float32x4_t vnoff = vdupq_n_f32(-0.5f);
     const float* din_c = din + j * inner_size;
@@ -56,6 +54,7 @@ void fp32_to_int8(const float* din,
       const float* din_ptr = din_c;
       signed char* dout_ptr = dout_c;
 #ifdef __aarch64__
+      float32x4_t vmax = vdupq_n_f32(-127.0);
       asm volatile(
           "ldp q0, q1, [%[in]], #32                           \n"
           "ldp q2, q3, [%[in]], #32                   \n"
@@ -64,16 +63,19 @@ void fp32_to_int8(const float* din,
           "fmul v5.4s, v1.4s, %[scale].4s             \n"
           "fmul v6.4s, v2.4s, %[scale].4s             \n"
           "fmul v7.4s, v3.4s, %[scale].4s             \n"
+          /* data >= -127 */
           "fcmge v8.4s, v4.4s, %[vmax].4s             \n"
           "fcmge v9.4s, v5.4s, %[vmax].4s             \n"
           "fcmge v10.4s, v6.4s, %[vmax].4s            \n"
           "fcmge v11.4s, v7.4s, %[vmax].4s            \n"
+          /* choose data */
           "bif v4.16b, %[vmax].16b, v8.16b            \n"
           "bif v5.16b, %[vmax].16b, v9.16b            \n"
           "bif v6.16b, %[vmax].16b, v10.16b            \n"
           "bif v7.16b, %[vmax].16b, v11.16b            \n"
           "ldp q0, q1, [%[in]], #32                   \n"
           "subs %[cnt], %[cnt], #1                    \n"
+          /* fp32 - int32 */
           "FCVTAS v8.4s, v4.4s                        \n"
           "FCVTAS v9.4s, v5.4s                        \n"
           "FCVTAS v10.4s, v6.4s                       \n"
@@ -89,7 +91,9 @@ void fp32_to_int8(const float* din,
           "bne    0b                                  \n"
           : [in] "+r"(din_ptr), [out] "+r"(dout_ptr), [cnt] "+r"(cnt_loop)
           : [scale] "w"(vscale), [vmax] "w"(vmax)
-          : "v0",
+          : "cc",
+            "memory",
+            "v0",
             "v1",
             "v2",
             "v3",
@@ -102,6 +106,7 @@ void fp32_to_int8(const float* din,
             "v10",
             "v11");
 #else
+      float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
       asm volatile(
           "vld1.32 {d0-d3},    [%[din]]!                  @ load in0~in7\n"
           "vld1.32    {d4-d7},    [%[din]]!       @ load in8~in16\n"
@@ -113,23 +118,27 @@ void fp32_to_int8(const float* din,
           "vcgt.f32   q8, q0, %q[vzero]           @ get mask > 0, in0\n"
           "vcgt.f32   q9, q1, %q[vzero]           @ get mask > 0, in1\n"
           "vcgt.f32   q10, q2, %q[vzero]          @ get mask > 0, in2\n"
+          "vcgt.f32   q11, q3, %q[vzero]          @ get mask > 0, in3\n"
           "vbif.f32   q4, %q[vnoff], q8           @ get right offset\n"
-          "vcgt.f32   q8, q3, %q[vzero]          @ get mask > 0, in3\n"
           "vbif.f32   q5, %q[vnoff], q9           @ get right offset\n"
           "vbif.f32   q6, %q[vnoff], q10          @ get right offset\n"
-          "vbif.f32   q7, %q[vnoff], q8          @ get right offset\n"
+          "vbif.f32   q7, %q[vnoff], q11          @ get right offset\n"
           "vmla.f32   q4, q0, %q[vscale]          @ mul scale\n"
+          "vld1.32    {d0-d1}, [%[vmax]]          @ set q0 = -127 \n"
           "vmla.f32   q5, q1, %q[vscale]          @ mul scale\n"
           "vmla.f32   q6, q2, %q[vscale]          @ mul scale\n"
           "vmla.f32   q7, q3, %q[vscale]          @ mul scale\n"
-          "vcge.f32 q8, q4, %q[vmax]              @ q4 >= vmax \n"
-          "vcge.f32 q9, q5, %q[vmax]              @ q4 >= vmax \n"
-          "vcge.f32 q10, q6, %q[vmax]             @ q4 >= vmax \n"
-          "vbif q4, %q[vmax], q8                  @ choose \n"
-          "vcge.f32 q8, q7, %q[vmax]             @ q4 >= vmax \n"
-          "vbif q5, %q[vmax], q9                  @ choose \n"
-          "vbif q6, %q[vmax], q10                  @ choose \n"
-          "vbif q7, %q[vmax], q8                  @ choose \n"
+          /* data >= -127 */
+          "vcge.f32 q8, q4, q0                    @ q4 >= -127 \n"
+          "vcge.f32 q9, q5, q0                    @ q4 >= -127 \n"
+          "vcge.f32 q10, q6, q0                   @ q4 >= -127 \n"
+          "vcge.f32 q11, q7, q0                   @ q4 >= -127 \n"
+          /* choose data */
+          "vbif q4, q0, q8                        @ choose \n"
+          "vbif q5, q0, q9                        @ choose \n"
+          "vbif q6, q0, q10                       @ choose \n"
+          "vbif q7, q0, q11                       @ choose \n"
+          /* fp32 - int32 */
           "vcvt.s32.f32  q0, q4                   @ cvt to int32\n"
           "vcvt.s32.f32  q1, q5                   @ cvt to int32\n"
           "vcvt.s32.f32  q2, q6                   @ cvt to int32\n"
@@ -150,9 +159,22 @@ void fp32_to_int8(const float* din,
           : [vscale] "w"(vscale),
             [vpoff] "w"(vpoff),
             [vnoff] "w"(vnoff),
-            [vzero] "w"(vzero),
-            [vmax] "w"(vmax)
-          : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10");
+            [vmax] "r"(vmax),
+            [vzero] "w"(vzero)
+          : "cc",
+            "memory",
+            "q0",
+            "q1",
+            "q2",
+            "q3",
+            "q4",
+            "q5",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11");
 #endif
     }
     const float* din_r = din_c + 16 * cnt;
@@ -203,7 +225,7 @@ void fp32_to_int16(const float* din,
           "bne    0b                                  \n"
           : [in] "+r"(din_ptr), [out] "+r"(dout_ptr), [cnt] "+r"(cnt_loop)
           : [scale] "w"(vscale)
-          : "v0", "v1", "v4", "v5", "v8", "v9");
+          : "cc", "memory", "v0", "v1", "v4", "v5", "v8", "v9");
 #else
       asm volatile(
           "vld1.32 {d0-d3}, [%[din]]!             @ load in0~in7\n"
@@ -232,7 +254,7 @@ void fp32_to_int16(const float* din,
             [vpoff] "w"(vpoff),
             [vnoff] "w"(vnoff),
             [vzero] "w"(vzero)
-          : "q0", "q1", "q4", "q5", "q6", "q7", "q8", "q9");
+          : "cc", "memory", "q0", "q1", "q4", "q5", "q6", "q7", "q8", "q9");
 #endif
     }
     const float* din_r = din_c + 8 * cnt;
@@ -294,7 +316,9 @@ void int8_to_fp32(const int8_t* in,
           "bne     0b                         \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "v0",
+          : "cc",
+            "memory",
+            "v0",
             "v1",
             "v2",
             "v3",
@@ -335,7 +359,7 @@ void int8_to_fp32(const int8_t* in,
           "bne           0b                     \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
 #endif  // __aarch64__
     }
     const signed char* din_r = din_c + 16 * cnt;
@@ -394,7 +418,18 @@ void int16_to_fp32(const int16_t* in,
           "bne     0b                         \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11");
 #else
       asm volatile(
           "vld1.32    {d0-d3},    [%[in]]!            @ load 16 int16\n"
@@ -422,7 +457,7 @@ void int16_to_fp32(const int16_t* in,
           "bne           0b                     \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
 #endif  // __aarch64__
     }
     const int16_t* din_r = din_c + 16 * cnt;
@@ -473,7 +508,9 @@ void int32_to_fp32(const int* din,
           "bne     0b                         \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "v0",
+          : "cc",
+            "memory",
+            "v0",
             "v1",
             "v2",
             "v3",
@@ -506,7 +543,9 @@ void int32_to_fp32(const int* din,
           "bne            0b                      \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
           : [scale] "w"(vscale)
-          : "q0",
+          : "cc",
+            "memory",
+            "q0",
             "q1",
             "q2",
             "q3",
@@ -551,41 +590,53 @@ void int32_to_int8(const int* din,
       const int* din_ptr = din_c;
       int8_t* dout_ptr = dout_c;
 #ifdef __aarch64__
+      float32x4_t vmax = vdupq_n_f32(-127.0);
       asm volatile(
           "0:                                        \n"
           "ld1     {v0.4s, v1.4s}, [%[in]], #32      \n"
           "ld1     {v2.4s, v3.4s}, [%[in]], #32      \n"
-
+          /* int32 - fp32 */
           "scvtf   v4.4s, v0.4s                      \n"
           "scvtf   v5.4s, v1.4s                      \n"
           "scvtf   v6.4s, v2.4s                      \n"
           "scvtf   v7.4s, v3.4s                      \n"
-
+          /* mul scale */
           "fmul    v0.4s, v4.4s, %[scale].4s         \n"
           "fmul    v1.4s, v5.4s, %[scale].4s         \n"
           "fmul    v2.4s, v6.4s, %[scale].4s         \n"
           "fmul    v3.4s, v7.4s, %[scale].4s         \n"
-
+          /* data >= -127 */
+          "fcmge v4.4s, v0.4s, %[vmax].4s             \n"
+          "fcmge v5.4s, v1.4s, %[vmax].4s             \n"
+          "fcmge v6.4s, v2.4s, %[vmax].4s            \n"
+          "fcmge v7.4s, v3.4s, %[vmax].4s            \n"
+          /* choose data */
+          "bif v0.16b, %[vmax].16b, v4.16b            \n"
+          "bif v1.16b, %[vmax].16b, v5.16b            \n"
+          "bif v2.16b, %[vmax].16b, v6.16b            \n"
+          "bif v3.16b, %[vmax].16b, v7.16b            \n"
+          /* fp32 - int32 */
           "fcvtas  v4.4s, v0.4s                      \n"
           "fcvtas  v5.4s, v1.4s                      \n"
           "fcvtas  v6.4s, v2.4s                      \n"
           "fcvtas  v7.4s, v3.4s                      \n"
-
+          /* int32 - int16 */
           "sqxtn   v0.4h, v4.4s                      \n"
           "sqxtn2  v0.8h, v5.4s                      \n"
           "sqxtn   v1.4h, v6.4s                      \n"
           "sqxtn2  v1.8h, v7.4s                      \n"
-
+          /* int16 - int8 */
           "sqxtn   v2.8b, v0.8h                      \n"
           "sqxtn2  v2.16b, v1.8h                     \n"
-
+          /* store */
           "st1     {v2.16b}, [%[out]], #16           \n"
           "subs    %[loop], %[loop], #1              \n"
           "bne     0b                                \n"
           : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
-          : [scale] "w"(vscale)
-          : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+          : [scale] "w"(vscale), [vmax] "w"(vmax)
+          : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 #else
+      float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
       asm volatile(
           "vld1.32 {d0-d3},    [%[din]]!                  @ load in0~in7\n"
           "vld1.32    {d4-d7},    [%[din]]!       @ load in8~in16\n"
@@ -607,9 +658,21 @@ void int32_to_int8(const int* din,
           "vbif.f32   q2, %q[vnoff], q10          @ get right offset\n"
           "vbif.f32   q3, %q[vnoff], q11          @ get right offset\n"
           "vmla.f32   q0, q4, %q[vscale]          @ mul scale\n"
+          "vld1.32    {d8-d9}, [%[vmax]]          @ set q4 = -127 \n"
           "vmla.f32   q1, q5, %q[vscale]          @ mul scale\n"
           "vmla.f32   q2, q6, %q[vscale]          @ mul scale\n"
           "vmla.f32   q3, q7, %q[vscale]          @ mul scale\n"
+          /* data >= -127 */
+          "vcge.f32 q8, q0, q4                    @ q0 >= -127 \n"
+          "vcge.f32 q9, q1, q4                    @ q1 >= -127 \n"
+          "vcge.f32 q10, q2, q4                   @ q2 >= -127 \n"
+          "vcge.f32 q11, q3, q4                   @ q3 >= -127 \n"
+          /* choose data */
+          "vbif q0, q4, q8                        @ choose \n"
+          "vbif q1, q4, q9                        @ choose \n"
+          "vbif q2, q4, q10                       @ choose \n"
+          "vbif q3, q4, q11                       @ choose \n"
+          /* fp32 - int32 */
           "vcvt.s32.f32  q4, q0                   @ cvt to int32\n"
           "vcvt.s32.f32  q5, q1                   @ cvt to int32\n"
           "vcvt.s32.f32  q6, q2                   @ cvt to int32\n"
@@ -628,9 +691,12 @@ void int32_to_int8(const int* din,
           : [loop] "+r"(loop), [din] "+r"(din_ptr), [dout] "+r"(dout_ptr)
           : [vscale] "w"(vscale),
             [vzero] "w"(vzero),
+            [vmax] "r"(vmax),
             [vnoff] "w"(vnoff),
             [vpoff] "w"(vpoff)
-          : "q0",
+          : "cc",
+            "memory",
+            "q0",
             "q1",
             "q2",
             "q3",
@@ -648,6 +714,7 @@ void int32_to_int8(const int* din,
     int8_t* dout_r = dout_c + 16 * cnt;
     for (int i = 0; i < remain; ++i) {
       dout_r[i] = saturate_cast<int8_t>(roundf(in_scale * din_r[i]));
+      dout_r[i] = dout_r[i] < -127 ? -127 : dout_r[i];
     }
   }
 }
@@ -682,7 +749,7 @@ float compute_max_kernel(const float* din, int64_t size) {
         "bne    0b                                 \n"
         : [in] "+r"(ptr_in), [cnt] "+r"(loop_cnt), [max_val] "+w"(vmax_val)
         :
-        : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+        : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 #else
     asm volatile(
         "vld1.32   {d0-d3}, [%[in]]!                        @ load 8 float\n"
@@ -703,7 +770,7 @@ float compute_max_kernel(const float* din, int64_t size) {
 
         : [in] "+r"(ptr_in), [cnt] "+r"(loop_cnt), [max_val] "+w"(vmax_val)
         :
-        : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+        : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
 #endif
     float32x2_t vmax_p =
         vpmax_f32(vget_high_f32(vmax_val), vget_low_f32(vmax_val));
