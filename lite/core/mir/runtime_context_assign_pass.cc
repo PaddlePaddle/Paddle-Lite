@@ -30,8 +30,8 @@ class RuntimeContextAssignPass : public StmtPass {
 
       int stream_id = inst.stream_id_;
 
-      inst.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(inst.picked_kernel().target(), stream_id));
+      inst.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+          inst.picked_kernel().target(), stream_id));
     }
   }
 };

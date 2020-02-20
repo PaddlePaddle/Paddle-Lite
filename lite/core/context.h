@@ -253,7 +253,8 @@ class Context<TargetType::kCUDA> {
     sync_streams_.clear();
     std::vector<cudaStream_t> exec_streams = all_exec_streams();
     for (size_t i = 0; i < nums.size(); ++i) {
-      CHECK(nums[i] >=0 && nums[i] < static_cast<int>(exec_streams.size())) << "streams id is not valid";
+      CHECK(nums[i] >= 0 && nums[i] < static_cast<int>(exec_streams.size()))
+          << "streams id is not valid";
       sync_streams_.push_back(exec_streams[nums[i]]);
     }
     init_sync_events(nums.size());

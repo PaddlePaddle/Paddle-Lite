@@ -38,8 +38,16 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       VLOG(4) << stmt;
 #ifdef LITE_WITH_CUDA
       if (stmt.kernels().front()->target() == TargetType::kCUDA) {
-        stmt.kernels().front()->mutable_context()->As<CUDAContext>().set_need_sync(stmt.need_sync_);
-        stmt.kernels().front()->mutable_context()->As<CUDAContext>().set_sync_streams(stmt.sync_streams_);
+        stmt.kernels()
+            .front()
+            ->mutable_context()
+            ->As<CUDAContext>()
+            .set_need_sync(stmt.need_sync_);
+        stmt.kernels()
+            .front()
+            ->mutable_context()
+            ->As<CUDAContext>()
+            .set_sync_streams(stmt.sync_streams_);
       }
       insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
 #else

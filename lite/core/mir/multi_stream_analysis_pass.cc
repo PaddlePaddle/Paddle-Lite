@@ -19,10 +19,10 @@
 #include <utility>
 #include <vector>
 
+#include "lite/core/device_info.h"
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite {
@@ -36,7 +36,8 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
     exec_que_.pop();
   }
   ops_in_streams_.clear();
-  resources_.clear();map_arg_to_lane_.clear();
+  resources_.clear();
+  map_arg_to_lane_.clear();
   io_copy_once_num_ = 0;
 
   for (auto& op_node : graph->StmtTopologicalOrder()) {
@@ -60,9 +61,11 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
         }
       }
 
-      // feed and io_copy_once op has no dependencies and can be launched directly.
+      // feed and io_copy_once op has no dependencies and can be launched
+      // directly.
       // Other ops are put into the waiting queue.
-      if (op_node->AsStmt().op_type() == "feed" || op_node->AsStmt().op_type() == "io_copy_once") {
+      if (op_node->AsStmt().op_type() == "feed" ||
+          op_node->AsStmt().op_type() == "io_copy_once") {
         exec_que_.push(op_node);
       } else {
         wait_que_.push_back(op_node);
@@ -80,7 +83,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
     std::string::size_type idx = node->AsArg().name.find("feed");
     if (idx != std::string::npos) {
       for (auto& feed_ops : node->outlinks) {
-        if(feed_ops->AsStmt().op_type()== "feed") {
+        if (feed_ops->AsStmt().op_type() == "feed") {
           // feed op doesn't need to wait sync.
           feed_ops->AsStmt().need_sync_ = false;
           CHECK_EQ(static_cast<int>(feed_ops->outlinks.size()), 1)
@@ -100,7 +103,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
       }
     }
     // set all io_copy_once op in the first stream
-    for (auto& io_copy_once_ops: node->outlinks) {
+    for (auto& io_copy_once_ops : node->outlinks) {
       if (io_copy_once_ops->AsStmt().op_type() == "io_copy_once") {
         ops_in_streams_[0].push_back(io_copy_once_ops);
         io_copy_once_ops->AsStmt().stream_id_ = 0;
@@ -141,17 +144,18 @@ bool MultiStreamAnalysisPass::CheckAccess(
   return true;
 }
 
-int MultiStreamAnalysisPass::SelectStreamId(
-    const std::vector<int>& lanes) {
+int MultiStreamAnalysisPass::SelectStreamId(const std::vector<int>& lanes) {
   if (lanes.size() == 0) {
     return 0;
   }
 
   int res = lanes[0];
   int exclude_io_copy_once_num = ops_in_streams_[0].size() - io_copy_once_num_;
-  size_t min_num = lanes[0] == 0 ? exclude_io_copy_once_num : ops_in_streams_[lanes[0]].size();
+  size_t min_num = lanes[0] == 0 ? exclude_io_copy_once_num
+                                 : ops_in_streams_[lanes[0]].size();
   for (size_t i = 1; i < lanes.size(); ++i) {
-    int ith_num = lanes[i] == 0 ? exclude_io_copy_once_num : ops_in_streams_[lanes[i]].size();
+    int ith_num = lanes[i] == 0 ? exclude_io_copy_once_num
+                                : ops_in_streams_[lanes[i]].size();
     if (ith_num < min_num) {
       res = lanes[i];
       min_num = ith_num;
@@ -234,8 +238,9 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   while (!exec_que_.empty()) {
     auto* node = exec_que_.front();
     exec_ops_.push_back(node);
-    LOG(INFO) << node->AsStmt().op_type() << " stream: " << node->AsStmt().stream_id_
-            << ", sync: " << node->AsStmt().need_sync_;
+    LOG(INFO) << node->AsStmt().op_type()
+              << " stream: " << node->AsStmt().stream_id_
+              << ", sync: " << node->AsStmt().need_sync_;
     if (node->AsStmt().need_sync_) {
       for (size_t i = 0; i < node->AsStmt().sync_streams_.size(); ++i) {
         LOG(INFO) << "\t\t" << node->AsStmt().sync_streams_[i];
@@ -246,10 +251,12 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   graph.get()->SetNodeInOrder(exec_ops_);
 
-  LOG(INFO) << "stream " << 0 << " has " << ops_in_streams_[0].size() - io_copy_once_num_ << " ops. (exclude io_copy_once).";
+  LOG(INFO) << "stream " << 0 << " has "
+            << ops_in_streams_[0].size() - io_copy_once_num_
+            << " ops. (exclude io_copy_once).";
   for (size_t i = 1; i < ops_in_streams_.size(); ++i) {
     LOG(INFO) << "stream " << i << " has " << ops_in_streams_[i].size()
-            << " ops.";
+              << " ops.";
   }
 
   // VLOG(4) << Visualize(graph.get());

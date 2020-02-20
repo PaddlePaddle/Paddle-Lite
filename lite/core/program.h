@@ -113,10 +113,10 @@ struct Instruction {
   bool is_feed_fetch_op() const { return is_feed_fetch_op_; }
 
 #ifdef LITE_WITH_CUDA
-  bool need_sync() const { return kernel_->mutable_context()->As<CUDAContext>().need_sync(); }
-  void sync() const {
-    kernel_->mutable_context()->As<CUDAContext>().sync();
+  bool need_sync() const {
+    return kernel_->mutable_context()->As<CUDAContext>().need_sync();
   }
+  void sync() const { kernel_->mutable_context()->As<CUDAContext>().sync(); }
 #endif
 
 #ifdef LITE_WITH_PROFILE

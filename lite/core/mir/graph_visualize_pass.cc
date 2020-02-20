@@ -47,7 +47,8 @@ std::string Visualize(mir::SSAGraph* graph) {
       key = string_format("%s%d, sync=%d, stream=%d",
                           node.AsStmt().op_type().c_str(),
                           id++,
-                          node.AsStmt().need_sync_, node.AsStmt().stream_id_);
+                          node.AsStmt().need_sync_,
+                          node.AsStmt().stream_id_);
     }
     if (node.IsStmt()) {
       dot.AddNode(key,
