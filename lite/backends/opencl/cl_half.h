@@ -12,19 +12,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <cl_common.h>
+#pragma once
+#include <cstdint>
 
-__kernel void relu(__read_only image2d_t input,
-                   __write_only image2d_t output) {
+namespace paddle {
+namespace lite {
 
-  const int x = get_global_id(0); // image_width
-  const int y = get_global_id(1); // image_height
+typedef uint16_t half_t;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
+half_t Float2Half(float f);
 
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
-  in = max((CL_DTYPE4)(0.0f), in);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
-}
+float Half2Float(half_t h);
+
+void FloatArray2HalfArray(float *f_array, half_t *h_array, int count);
+
+void HalfArray2FloatArray(half_t *h_array, float *f_array, int count);
+
+}  // namespace lite
+}  // namespace paddle

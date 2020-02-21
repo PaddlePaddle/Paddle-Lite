@@ -4,6 +4,7 @@ endif()
 
 set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
 
+# image
 add_kernel(fc_opencl OPENCL basic SRCS fc_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(mul_opencl OPENCL basic SRCS mul_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_compute.cc DEPS ${cl_kernel_deps})
@@ -13,8 +14,7 @@ add_kernel(fusion_elementwise_add_activation_opencl
            DEPS elementwise_add_opencl ${cl_kernel_deps})
 add_kernel(pool_opencl OPENCL basic SRCS pool_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(io_copy_compute_opencl OPENCL basic SRCS io_copy_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
-add_kernel(relu_opencl OPENCL basic SRCS relu_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(sigmoid_opencl OPENCL basic SRCS sigmoid_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(activation_opencl OPENCL basic SRCS activation_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl OPENCL basic SRCS conv_compute.cc DEPS ${cl_kernel_deps} cl_image_converter)
@@ -22,6 +22,20 @@ add_kernel(layout_opencl OPENCL basic SRCS layout_compute.cc DEPS ${cl_kernel_de
 add_kernel(concat_opencl OPENCL basic SRCS concat_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(nearest_interp_opencl OPENCL basic SRCS nearest_interp_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(scale_opencl OPENCL basic SRCS scale_compute.cc DEPS ${cl_kernel_deps})
+
+# image test
+lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
+             DEPS activation_opencl layout_opencl op_registry program context
+             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
+# buffer
+#add_kernel(activation_opencl OPENCL basic SRCS activation_buffer_compute.cc DEPS ${cl_kernel_deps})
+
+# buffer test
+#lite_cc_test(test_activation_buffer_opencl SRCS activation_buffer_compute_test.cc
+#             DEPS activation_opencl op_registry program context
+#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
 
 lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
              DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context
@@ -48,14 +62,6 @@ lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
              DEPS io_copy_compute_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
-#TODO(ysh329): comment buffer-impl relu
-lite_cc_test(test_relu_opencl SRCS relu_compute_test.cc
-             DEPS relu_opencl layout_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
-
-lite_cc_test(test_sigmoid_opencl SRCS sigmoid_compute_test.cc
-        DEPS sigmoid_opencl layout_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_depthwise_conv2d_opencl SRCS depthwise_conv2d_compute_test.cc
              DEPS depthwise_conv2d_opencl op_registry program context

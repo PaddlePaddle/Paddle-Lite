@@ -14,6 +14,23 @@ limitations under the License. */
 
 #include <cl_common.h>
 
+
+__kernel void relu(__read_only image2d_t input,
+                   __write_only image2d_t output) {
+
+  const int x = get_global_id(0); // image_width
+  const int y = get_global_id(1); // image_height
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  in = max((CL_DTYPE4)(0.0f), in);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+
 __kernel void relu6(__read_only image2d_t input,
                     __write_only image2d_t output,
                     __private const float threshold){
@@ -29,4 +46,20 @@ __kernel void relu6(__read_only image2d_t input,
   in = max((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
   in = min((CL_DTYPE4)(threshold, threshold, threshold, threshold), in);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+
+__kernel void sigmoid(__read_only image2d_t input,
+                      __write_only image2d_t output) {
+
+  const int x = get_global_id(0); // image_width
+  const int y = get_global_id(1); // image_height
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 out = 1 / (1 + exp(-in));
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
