@@ -32,22 +32,13 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto ids_name = op_info->Input("Ids").front();
-  auto ids_type = kernel->GetInputDeclType("Ids");
-  CHECK(ids_type->precision() == PRECISION(kInt64));
-  CHECK(ids_type->layout() == DATALAYOUT(kNCHW));
   auto ids = scope->FindMutableTensor(ids_name);
   auto ids_dims = ids->dims();
   auto w_name = op_info->Input("W").front();
-  auto w_type = kernel->GetInputDeclType("W");
-  CHECK(w_type->precision() == PRECISION(kFloat));
-  CHECK(w_type->layout() == DATALAYOUT(kNCHW));
   auto w = scope->FindMutableTensor(w_name);
   auto w_dims = w->dims();
   CHECK_EQ(w_dims.size(), 2);
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
   auto padding_idx = op_info->GetAttr<int64_t>("padding_idx");
