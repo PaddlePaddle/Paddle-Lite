@@ -29,10 +29,12 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       act_types.push_back("leaky_relu");
       break;
     }
-    if (place.target == TARGET(kARM) && place.precision == PRECISION(kFloat)) {
-      act_types.push_back("relu6");
-      act_types.push_back("leaky_relu");
-      break;
+    if (place.target == TARGET(kARM)) {
+      if (place.precision != PRECISION(kInt8)) {
+        act_types.push_back("relu6");
+        act_types.push_back("leaky_relu");
+        break;
+      }
     }
   }
   for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
