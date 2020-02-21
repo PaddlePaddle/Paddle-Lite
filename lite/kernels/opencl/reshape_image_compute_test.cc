@@ -17,8 +17,11 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/test_helper.h"
 #include "lite/operators/reshape_op.h"
 #include "lite/utils/logging.h"
+
+#define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
 namespace lite {
@@ -81,7 +84,7 @@ static DDim ValidateShape(const std::vector<int>& shape,
 TEST(reshape_opencl, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
-      "reshape", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault));
+      "reshape", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -149,13 +152,13 @@ TEST(reshape_opencl, compute) {
   }
   paddle::lite::CLImageConverterDefault default_convertor;
 
-  std::vector<float> x_image_data(input_image_width * input_image_height *
-                                  4);  // 4 : RGBA
+  std::vector<uint16_t> x_image_data(input_image_width * input_image_height *
+                                     4);  // 4 : RGBA
 
   LOG(INFO) << "set mapped input  ...";
   default_convertor.NCHWToImage(input_v_data, x_image_data.data(), input_dim);
 
-  auto* input_image = input.mutable_data<float, cl::Image2D>(
+  auto* input_image = input.mutable_data<uint16_t, cl::Image2D>(
       input_image_width, input_image_height, x_image_data.data());
 
   LOG(INFO) << "prepare kernel ready";
@@ -165,8 +168,8 @@ TEST(reshape_opencl, compute) {
   DDim out_image_shape = default_converter.InitImageDimInfoWith(output_dim);
   LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
             << out_image_shape[1];
-  auto* out_image = output.mutable_data<float, cl::Image2D>(out_image_shape[0],
-                                                            out_image_shape[1]);
+  auto* out_image = output.mutable_data<uint16_t, cl::Image2D>(
+      out_image_shape[0], out_image_shape[1]);
   VLOG(4) << "out_dims= " << output_dim;
 
   LOG(INFO) << "kernel context ...";
@@ -182,7 +185,7 @@ TEST(reshape_opencl, compute) {
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<float, cl::Image2D>();
+  auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
   auto it = wait_list->find(out_image);
 
   if (it != wait_list->end()) {
@@ -193,9 +196,9 @@ TEST(reshape_opencl, compute) {
     LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
   }
 
-  float* out_image_data = new float[out_image_shape.production() * 4];
+  uint16_t* out_image_data = new uint16_t[out_image_shape.production() * 4];
   TargetWrapperCL::ImgcpySync(out_image_data,
-                              output.data<float, cl::Image2D>(),
+                              output.data<uint16_t, cl::Image2D>(),
                               out_image_shape[0],
                               out_image_shape[1],
                               cl_image2d_row_pitch,
@@ -211,9 +214,17 @@ TEST(reshape_opencl, compute) {
 
   // check output data
   for (int i = 0; i < output.numel(); i++) {
-    EXPECT_NEAR(out_data[i], input_v_data[i], 1e-3);
-    if (abs(out_data[i] - input_v_data[i]) > 1e-3) {
-      LOG(INFO) << "error idx:" << i;
+    auto abs_diff = abs(out_data[i] - input_v_data[i]);
+    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_data[i], input_v_data[i]);
+    EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+              true);
+    if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+      LOG(ERROR) << "error idx:" << i << " out_data[" << i
+                 << "]:" << out_data[i] << " "
+                                           "input_v_data["
+                 << i << "]:" << input_v_data[i] << " abs_diff:" << abs_diff
+                 << " relative_diff:" << relative_diff
+                 << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
     }
   }
 }
@@ -223,5 +234,5 @@ TEST(reshape_opencl, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(reshape, kOpenCL, kFloat, kImageDefault, image2d);
-USE_LITE_KERNEL(reshape2, kOpenCL, kFloat, kImageDefault, image2d);
+USE_LITE_KERNEL(reshape, kOpenCL, kFP16, kImageDefault, image2d);
+USE_LITE_KERNEL(reshape2, kOpenCL, kFP16, kImageDefault, image2d);

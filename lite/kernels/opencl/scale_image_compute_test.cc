@@ -18,6 +18,9 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/test_helper.h"
+
+#define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
 namespace lite {
@@ -35,7 +38,7 @@ void scale(const float* input_data,
 TEST(scale_image2d_fp32, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
-      "scale", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault));
+      "scale", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   ASSERT_FALSE(kernels.empty());
 
   auto kernel = std::move(kernels.front());
@@ -74,19 +77,19 @@ TEST(scale_image2d_fp32, compute) {
   CLImageConverterDefault* default_converter = new CLImageConverterDefault();
   DDim image_shape = default_converter->InitImageDimInfoWith(in_dim);
   LOG(INFO) << "image_shape = " << image_shape[0] << " " << image_shape[1];
-  std::vector<float> x_image_data(image_shape.production() * 4);  // 4 : RGBA
+  std::vector<uint16_t> x_image_data(image_shape.production() * 4);  // 4 : RGBA
   default_converter->NCHWToImage(input_v.data(), x_image_data.data(), in_dim);
-  auto* x_image = x.mutable_data<float, cl::Image2D>(
+  auto* x_image = x.mutable_data<uint16_t, cl::Image2D>(
       image_shape[0], image_shape[1], x_image_data.data());
   LOG(INFO) << "x_image:" << x_image;
 
   auto* out_image =
-      out.mutable_data<float, cl::Image2D>(image_shape[0], image_shape[1]);
+      out.mutable_data<uint16_t, cl::Image2D>(image_shape[0], image_shape[1]);
   LOG(INFO) << "out_image:" << out_image;
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<float, cl::Image2D>();
+  auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
   auto it = wait_list->find(out_ptr);
   if (it != wait_list->end()) {
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
@@ -101,7 +104,7 @@ TEST(scale_image2d_fp32, compute) {
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
-  float* out_image_data = new float[image_shape.production() * 4];
+  uint16_t* out_image_data = new uint16_t[image_shape.production() * 4];
   TargetWrapperCL::ImgcpySync(out_image_data,
                               out_image,
                               image_shape[0],
@@ -114,11 +117,22 @@ TEST(scale_image2d_fp32, compute) {
       out_image_data, out_data, image_shape, out_dim);
 
   for (int i = 0; i < out_dim.production(); i++) {
-    EXPECT_NEAR(out_data[i], out_ref[i], 1e-6);
+    auto abs_diff = abs(out_data[i] - out_ref[i]);
+    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_data[i], out_ref[i]);
+    EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+              true);
+    if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+      LOG(ERROR) << "error idx:" << i << " out_data[" << i
+                 << "]:" << out_data[i] << " "
+                                           "out_ref["
+                 << i << "]:" << out_ref[i] << " abs_diff:" << abs_diff
+                 << " relative_diff:" << relative_diff
+                 << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+    }
   }
 }
 
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(scale, kOpenCL, kFloat, kImageDefault, image2d);
+USE_LITE_KERNEL(scale, kOpenCL, kFP16, kImageDefault, image2d);

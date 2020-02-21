@@ -27,7 +27,7 @@ namespace opencl {
 
 // reshape operator
 class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
-                                                   PRECISION(kFloat),
+                                                   PRECISION(kFP16),
                                                    DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ReshapeParam;
@@ -51,7 +51,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     const int64_t& input_image_width = input_image_shape.at("width");
     const int64_t& input_image_height = input_image_shape.at("height");
 
-    const cl::Image2D* const x_image = x->data<float, cl::Image2D>();
+    const cl::Image2D* const x_image = x->data<uint16_t, cl::Image2D>();
 
     const std::vector<int>& shape_vct = param.shape_vct;
     Tensor* const output = param.output;
@@ -60,7 +60,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
     const std::map<std::string, size_t>& out_image_shape =
         InitImageDimInfoWith(out_dims);
-    cl::Image2D* const out_image = output->mutable_data<float, cl::Image2D>(
+    cl::Image2D* const out_image = output->mutable_data<uint16_t, cl::Image2D>(
         out_image_shape.at("width"), out_image_shape.at("height"));
     LOG(INFO) << "out_dims=   " << out_dims;
 
@@ -159,7 +159,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"reshape"};
-  std::string build_options_{"-DCL_DTYPE_float "};
+  std::string build_options_{"-DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
@@ -170,37 +170,37 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
 REGISTER_LITE_KERNEL(reshape,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reshape2,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();

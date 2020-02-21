@@ -27,12 +27,12 @@ namespace kernels {
 namespace opencl {
 
 class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
-                                              PRECISION(kFloat),
+                                              PRECISION(kFP16),
                                               DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ScaleParam;
 
-  std::string doc() const override { return "Scale using cl::Image2D, kFloat"; }
+  std::string doc() const override { return "Scale using cl::Image2D, kFP16"; }
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
@@ -43,7 +43,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.x->dims();
-    auto* x_img = param.x->data<float, cl::Image2D>();
+    auto* x_img = param.x->data<uint16_t, cl::Image2D>();
     const float scale = param.scale;
     const float bias = param.bias;
 
@@ -51,7 +51,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto out_image_shape = InitImageDimInfoWith(in_dims);
     LOG(INFO) << "out_image_shape = " << out_image_shape["width"] << " "
               << out_image_shape["height"];
-    auto* out_img = param.output->mutable_data<float, cl::Image2D>(
+    auto* out_img = param.output->mutable_data<uint16_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
     LOG(INFO) << "out_image" << out_img;
 
@@ -89,7 +89,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"scale"};
-  std::string build_options_{"-DCL_DTYPE_float"};
+  std::string build_options_{"-DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
@@ -100,16 +100,16 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
 REGISTER_LITE_KERNEL(scale,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ScaleComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
