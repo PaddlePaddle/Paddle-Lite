@@ -25,7 +25,7 @@ cd Paddle-Lite
     --android_stl=c++_static \
     --build_extra=ON \
     --shutdown_log=OFF \
-    tiny_publish
+    full_publish
 ```
 
 进入编译目录，下载模型和图片的压缩包，编译可执行文件。
@@ -40,10 +40,11 @@ make
 ```
 # 下载paddlehub以后，通过python执行以下代码
 import paddlehub as hub
-pyramidbox_lite_mask = hub.Module(name="pyramidbox_lite_mask")
+pyramidbox_lite_mobile_mask = hub.Module(name="pyramidbox_lite_mobile_mask")
 # 将模型保存在test_program文件夹之中
-pyramidbox_lite_mask.processor.save_inference_model(dirname="test_program") 
-通过以上命令，可以获得人脸检测和口罩佩戴判断模型，分别存储在pyramidbox_lite和mask_detector之中。文件夹中的__model__是模型结构文件，__param__文件是权重文件。
+pyramidbox_lite_mobile_mask.processor.save_inference_model(dirname="test_program") 
+# 通过以上命令，可以获得人脸检测和口罩佩戴判断模型，分别存储在pyramidbox_lite和mask_detector之中。文件夹中的__model__是模型结构文件，__param__文件是权重文件。
+# 从PaddleHub下载的是预测模型，需要使用PaddleLite提供的model_optimize_tools对预测模型进行转换，请参考[模型转换文档](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/model_optimize_tool/)。
 ```
 
 电脑连接安卓手机，将可执行文件、测试图片、模型文件、预测库push到安卓手机上。
