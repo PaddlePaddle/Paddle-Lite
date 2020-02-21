@@ -85,6 +85,13 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 
+void TensorLite::CopyDataFromDevice(const TensorLite &other) {
+  dims_ = other.dims_;
+  lod_ = other.lod_;
+  memory_size_ = other.memory_size_;
+  buffer_->CopyDataFromDevices(*other.buffer_, memory_size_);
+}
+
 void *TensorLite::mutable_data(size_t memory_size) {
   memory_size_ = memory_size;
   buffer_->ResetLazy(target_, memory_size_);

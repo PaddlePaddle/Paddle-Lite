@@ -197,6 +197,9 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
+  // Copy other device's data to host
+  void CopyDataFromDevice(const TensorLite &other);
+
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
 

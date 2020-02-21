@@ -149,7 +149,7 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-    LITE_PRECISION_PROFILE(inst, inst.kernel()->context())
+    LITE_PRECISION_PROFILE(inst)
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
 #endif  // LITE_WITH_PROFILE
