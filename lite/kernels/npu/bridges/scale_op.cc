@@ -32,17 +32,11 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto x_rank = x_dims.size();
   CHECK_GE(x_rank, 2);
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   // HiAI only support [n, c, 1, 1] for the shape of scale and bias
   std::vector<int64_t> scale_bias_shape = {
       1, x_rank < 3 ? 1 : x_dims[x_rank - 3], 1, 1};

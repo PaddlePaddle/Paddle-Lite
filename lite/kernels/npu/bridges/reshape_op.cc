@@ -33,12 +33,10 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
