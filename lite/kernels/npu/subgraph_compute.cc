@@ -177,6 +177,7 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
+    /*
     if (!subgraph::npu::CheckShape(origin_odims_[i], device_odims[i])) {
       LOG(WARNING) << "origin and device output's dims are mismatched.";
       for (int j = 0; j < origin_odims_[i].size(); j++) {
@@ -190,6 +191,7 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << device_odims[i].GetWidth() << "}";
       return subgraph::FAILED;
     }
+    */
     device_otensors_[i].reset(new hiai::AiTensor);
     device_otensors_[i]->Init(&(device_odims[i]));
   }
