@@ -1776,7 +1776,8 @@ void pooling3x3s1p0_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K - win == 2) {
+            auto ww = (wout - 1) * S + K - P;
+            if (!exclusive && wstart + K - ww == 2) {
               coef = coef_h / 2;
             }
           }
