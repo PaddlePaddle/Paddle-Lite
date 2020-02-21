@@ -906,7 +906,9 @@ void pooling1x1s2p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win) {
+                        int win,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1021,7 +1023,9 @@ void pooling2x2s2_max(const float* din,
                       int wout,
                       int chin,
                       int hin,
-                      int win) {
+                      int win,
+                      int pad_bottom,
+                      int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1104,7 +1108,9 @@ void pooling2x2s2_avg(const float* din,
                       int chin,
                       int hin,
                       int win,
-                      bool exclusive) {
+                      bool exclusive,
+                      int pad_bottom,
+                      int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1117,6 +1123,9 @@ void pooling2x2s2_avg(const float* din,
   int w_unroll_size = wout / 4;
   int w_unroll_remian = wout - w_unroll_size * 4;
   float32x4_t vcoef = vdupq_n_f32(0.25f);  // divided by 4
+  auto zero_ptr =
+      static_cast<float*>(TargetMalloc(TARGET(kARM), win * sizeof(float)));
+  memset(zero_ptr, 0, win * sizeof(float));
 
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
@@ -1132,7 +1141,7 @@ void pooling2x2s2_avg(const float* din,
         auto dr0 = r0;
         auto dr1 = r1;
         if (h * S + K - P > hin) {
-          dr1 = r0;
+          dr1 = zero_ptr;
         }
         int cnt_num = w_unroll_size;
         if (w_unroll_size > 0) {
@@ -1188,7 +1197,9 @@ void pooling3x3s1p1_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win) {
+                        int win,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1320,6 +1331,7 @@ void pooling3x3s1p1_max(const float* din,
       }
     }
   }
+  TargetFree(TARGET(kARM), zero_ptr);
 }
 
 void pooling3x3s1p1_avg(const float* din,
@@ -1331,7 +1343,9 @@ void pooling3x3s1p1_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive) {
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1389,7 +1403,11 @@ void pooling3x3s1p1_avg(const float* din,
               if (exclusive) {
                 coef_h = 1.f;
               } else {
-                coef_h = 0.5f;
+                if (pad_bottom > 1) {
+                  coef_h = 1.f / 3;
+                } else {
+                  coef_h = 0.5f;
+                }
               }
               break;
             case 1:
@@ -1477,7 +1495,7 @@ void pooling3x3s1p1_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K - win == 2) {
+            if (!exclusive && wstart + K + pad_right - win == 1) {
               coef = coef_h / 2;
             }
           }
@@ -1509,7 +1527,9 @@ void pooling3x3s1p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win) {
+                        int win,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1646,7 +1666,9 @@ void pooling3x3s1p0_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive) {
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1692,7 +1714,13 @@ void pooling3x3s1p0_avg(const float* din,
               if (exclusive) {
                 coef_h = 1.f;
               } else {
-                coef_h = 0.5f;
+                if (pad_bottom > 1) {
+                  coef_h = 1.f / 3;
+                } else if (pad_bottom = 1) {
+                  coef_h = 0.5f;
+                } else {
+                  coef_h = 1.f;
+                }
               }
               break;
             case 1:
@@ -1704,7 +1732,11 @@ void pooling3x3s1p0_avg(const float* din,
                   coef_h = 0.5f;
                 }
               } else {
-                coef_h = 1.f / 3;
+                if (pad_bottom >= 1) {
+                  coef_h = 1.f / 3;
+                } else {
+                  coef_h = 0.5f;
+                }
               }
             default:
               break;
@@ -1776,8 +1808,7 @@ void pooling3x3s1p0_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           if (wstart + K > win) {
             wend = win;
-            auto ww = (wout - 1) * S + K - P;
-            if (!exclusive && wstart + K - ww == 2) {
+            if (!exclusive && wstart + K + pad_right - win == 1) {
               coef = coef_h / 2;
             }
           }
@@ -1812,7 +1843,9 @@ void pooling3x3s2p1_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win) {
+                        int win,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -1956,7 +1989,9 @@ void pooling3x3s2p1_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive) {
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right) {
   int size_channel_out = wout * hout;
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
@@ -2016,7 +2051,11 @@ void pooling3x3s2p1_avg(const float* din,
               if (exclusive) {
                 coef_h = 1.f;
               } else {
-                coef_h = 0.5f;
+                if (pad_bottom > 1) {
+                  coef_h = 1.f / 3;
+                } else {
+                  coef_h = 0.5f;
+                }
               }
               break;
             case 1:
@@ -2103,7 +2142,7 @@ void pooling3x3s2p1_avg(const float* din,
           float coef = coef_h / 3.f;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K - win == 2) {
+            if (!exclusive && wstart + K + pad_right - win == 1) {
               coef = coef_h / 2;
             }
           }
@@ -2136,7 +2175,9 @@ void pooling3x3s2p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win) {
+                        int win,
+                        int pad_bottom,
+                        int pad_right) {
   const int K = 3;
   const int P = 0;
   const int S = 2;
@@ -2262,7 +2303,9 @@ void pooling3x3s2p0_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive) {
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right) {
   const int K = 3;
   const int P = 0;
   const int S = 2;
@@ -2304,11 +2347,33 @@ void pooling3x3s2p0_avg(const float* din,
             case 2:
               dr1 = zero_ptr;
               dr2 = zero_ptr;
-              coef_h = 1.f;
+              if (exclusive) {
+                coef_h = 1.f;
+              } else {
+                if (pad_bottom >= 2) {
+                  coef_h = 1.f / 3;
+                } else if (pad_bottom == 1) {
+                  coef_h = 0.5f;
+                } else {
+                  coef_h = 1.0f;
+                }
+              }
               break;
             case 1:
               dr2 = zero_ptr;
-              coef_h = 0.5f;
+              if (exclusive) {
+                if (fabsf(coef_h - 0.5f) < 1e-6f) {
+                  coef_h = 1.f;
+                } else {
+                  coef_h = 0.5f;
+                }
+              } else {
+                if (pad_bottom >= 1) {
+                  coef_h = 1.0f / 3;
+                } else {
+                  coef_h = 0.5f;
+                }
+              }
               break;
             default:
               break;
@@ -2367,21 +2432,31 @@ void pooling3x3s2p0_avg(const float* din,
           dr2 -= 8;
         }
         // deal with right pad
-        int rem = win - (w_unroll_size * 4) * S;
-        int wstart = 0;
+        int wstart = w_unroll_size * 4 * S - P;
         for (int j = 0; j < w_unroll_remian; ++j) {
-          int wend = std::min(wstart + K, rem);
-          float coef = coef_h / (wend - wstart);
-          float tmp = 0.f;
-          for (int i = wstart; i < wend; i++) {
-            tmp += dr0[i];
-            tmp += dr1[i];
-            tmp += dr2[i];
+          int wend = wstart + K;  // std::min(wstart + K, win);
+          float coef = coef_h / 3.f;
+          if (wstart + K > win) {
+            wend = win;
+            if (!exclusive && wstart + K + pad_right - win == 1) {
+              coef = coef_h / 2;
+            }
           }
-          tmp *= coef;
-          *(dr_out++) = tmp;
+          int st = wstart > 0 ? wstart : 0;
+          if (exclusive) {
+            coef = coef_h / (wend - st);
+          }
+          float tmp = 0.f;
+          for (int i = 0; i < wend - st; i++) {
+            tmp += dr0[i] + dr1[i] + dr2[i];
+          }
+          *(dr_out++) = tmp * coef;
+          dr0 += S - (st - wstart);
+          dr1 += S - (st - wstart);
+          dr2 += S - (st - wstart);
           wstart += S;
         }
+        data_out_channel += wout;
 
         r0 = r2;
         r1 = r0 + win;
