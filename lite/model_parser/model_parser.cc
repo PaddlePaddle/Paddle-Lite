@@ -796,7 +796,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
   const uint64_t opt_version_length = 16 * sizeof(char);
   ReadModelDataFromFile<char>(
       opt_version, prog_path, &offset, opt_version_length);
-  VLOG(4) << "Opt_version:" << opt_version;
+  VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // check version, opt's version should be consistent with current Paddle-Lite
   // version.
@@ -806,7 +806,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
     LOG(WARNING) << "warning: the version of opt that transformed this model "
                     "is not consistent with current Paddle-Lite version."
                     "\n      version of opt:"
-                 << opt_version
+                 << static_cast<const char *>(opt_version)
                  << "\n      version of current Paddle-Lite:" << paddle_version;
   }
 
@@ -893,7 +893,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   const uint64_t paddle_version_length = 16 * sizeof(char);
   ReadModelDataFromBuffer<char>(
       opt_version, model_buffer, &offset, paddle_version_length);
-  VLOG(4) << "Opt_version:" << opt_version;
+  VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // (3)get topo_size and topo_data
   uint64_t topo_size;
