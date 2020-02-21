@@ -60,7 +60,7 @@ void nearest_interp_compute_ref(const dtype *src,
 }
 // #define LOOP_TEST
 // #define PRINT_RESULT
-TEST(nearest_interp_image2d_fp32, compute) {
+TEST(nearest_interp_image2d, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> "
                "nearest_interp(img) -> "
                "layout(img2buf) "
@@ -105,7 +105,7 @@ TEST(nearest_interp_image2d_fp32, compute) {
               auto nearest_interp_img_kernels =
                   KernelRegistry::Global().Create("nearest_interp",
                                                   TARGET(kOpenCL),
-                                                  PRECISION(kFloat),
+                                                  PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(buf_to_img_kernels.empty());
               ASSERT_FALSE(buf_to_img_kernels.empty());
@@ -166,12 +166,12 @@ TEST(nearest_interp_image2d_fp32, compute) {
                 mapped_y[i] = static_cast<int>(0);
               }
               auto *nearest_interp_in_data =
-                  nearest_interp_in.mutable_data<float, cl::Image2D>(
+                  nearest_interp_in.mutable_data<uint16_t, cl::Image2D>(
                       nearest_interp_image2d_shape["width"],
                       nearest_interp_image2d_shape["height"]);
               auto *nearest_interp_out_data =
-                  nearest_interp_out.mutable_data<float, cl::Image2D>(y_dim[3],
-                                                                      y_dim[2]);
+                  nearest_interp_out.mutable_data<uint16_t, cl::Image2D>(
+                      y_dim[3], y_dim[2]);
 
               // set context and kernel args
               LOG(INFO) << "set context and kernel args";
@@ -273,13 +273,9 @@ TEST(nearest_interp_image2d_fp32, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-// nearest_interp buffer
-// USE_LITE_KERNEL(nearest_interp, kOpenCL, kFloat, kNCHW, def);
-
 // nearest_interp image2d fp32
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
-USE_LITE_KERNEL(nearest_interp, kOpenCL, kFloat, kImageDefault, ImageDefault);
 
 // nearest_interp image2d fp16
 USE_LITE_KERNEL(nearest_interp, kOpenCL, kFP16, kImageDefault, ImageDefault);

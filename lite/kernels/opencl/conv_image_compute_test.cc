@@ -15,18 +15,16 @@
 #include <gtest/gtest.h>
 
 #include <random>
-
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/test_helper.h"
 
 namespace paddle {
 namespace lite {
 // #define SHADOW_LOG LOG(INFO)
 #define SHADOW_LOG VLOG(4)
-#define COMPUTE_RELATIVE_DIFF(gpu_res, cpu_res) \
-  abs(abs(gpu_res - cpu_res) / (cpu_res + 1e-5))
 #define FP16_MAX_DIFF (1e0)
 
 template <typename Dtype1, typename Dtype2>
