@@ -1187,6 +1187,7 @@ void pooling2x2s2_avg(const float* din,
       }
     }
   }
+  TargetFree(TARGET(kARM), zero_ptr);
 }
 
 void pooling3x3s1p1_max(const float* din,
@@ -1331,7 +1332,6 @@ void pooling3x3s1p1_max(const float* din,
       }
     }
   }
-  TargetFree(TARGET(kARM), zero_ptr);
 }
 
 void pooling3x3s1p1_avg(const float* din,
@@ -1405,8 +1405,10 @@ void pooling3x3s1p1_avg(const float* din,
               } else {
                 if (pad_bottom > 1) {
                   coef_h = 1.f / 3;
-                } else {
+                } else if (pad_bottom == 1){
                   coef_h = 0.5f;
+                }else{
+                  coef_h = 1.f;
                 }
               }
               break;
@@ -1419,8 +1421,12 @@ void pooling3x3s1p1_avg(const float* din,
                   coef_h = 0.5f;
                 }
               } else {
-                coef_h = 1.f / 3;
-              }
+                if (pad_bottom >= 1){
+                   coef_h = 1.f / 3;
+                }else{
+                   coef_h = 0.5f;
+                } 
+             }
             default:
               break;
           }
@@ -1495,8 +1501,12 @@ void pooling3x3s1p1_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K + pad_right - win == 1) {
-              coef = coef_h / 2;
+            if (!exclusive){
+              if (wstart + K - pad_right - win == 1) {
+                  coef = coef_h / 2;
+              }else if (wstart + K - pad_right - win == 2){
+                 coef = coef_h; 
+             }
             }
           }
           if (exclusive) {
@@ -1808,8 +1818,12 @@ void pooling3x3s1p0_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K + pad_right - win == 1) {
-              coef = coef_h / 2;
+            if (!exclusive){
+              if (wstart + K - pad_right - win == 1) {
+                  coef = coef_h / 2;
+              }else if (wstart + K - pad_right - win == 2){
+                 coef = coef_h;
+             }
             }
           }
           if (exclusive) {
@@ -2053,8 +2067,10 @@ void pooling3x3s2p1_avg(const float* din,
               } else {
                 if (pad_bottom > 1) {
                   coef_h = 1.f / 3;
-                } else {
+                } else if (pad_bottom == 1){
                   coef_h = 0.5f;
+                }else{
+                  coef_h = 1.f;
                 }
               }
               break;
@@ -2067,7 +2083,11 @@ void pooling3x3s2p1_avg(const float* din,
                   coef_h = 0.5f;
                 }
               } else {
-                coef_h = 1.f / 3;
+                if (pad_bottom == 0){
+                    coef_h = 1.f / 2;
+                 }else{
+                   coef_h = 1.f / 3;
+                }
               }
             default:
               break;
@@ -2142,8 +2162,12 @@ void pooling3x3s2p1_avg(const float* din,
           float coef = coef_h / 3.f;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K + pad_right - win == 1) {
-              coef = coef_h / 2;
+            if (!exclusive){
+              if (wstart + K - pad_right - win == 1) {
+                  coef = coef_h / 2;
+              }else if (wstart + K - pad_right - win == 2){
+                 coef = coef_h;
+             }
             }
           }
           int st = wstart > 0 ? wstart : 0;
@@ -2438,8 +2462,12 @@ void pooling3x3s2p0_avg(const float* din,
           float coef = coef_h / 3.f;
           if (wstart + K > win) {
             wend = win;
-            if (!exclusive && wstart + K + pad_right - win == 1) {
-              coef = coef_h / 2;
+            if (!exclusive){
+               if (wstart + K - pad_right - win == 1) {
+                  coef = coef_h / 2;
+               }else if (wstart + K - pad_right - win == 2){
+                  coef = coef_h;
+               }
             }
           }
           int st = wstart > 0 ? wstart : 0;
@@ -2456,8 +2484,6 @@ void pooling3x3s2p0_avg(const float* din,
           dr2 += S - (st - wstart);
           wstart += S;
         }
-        data_out_channel += wout;
-
         r0 = r2;
         r1 = r0 + win;
         r2 = r1 + win;
