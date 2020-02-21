@@ -25,6 +25,9 @@ namespace paddle {
 namespace lite {
 // #define SHADOW_LOG LOG(INFO)
 #define SHADOW_LOG VLOG(4)
+#define COMPUTE_RELATIVE_DIFF(gpu_res, cpu_res) \
+  abs(abs(gpu_res - cpu_res) / (cpu_res + 1e-5))
+#define FP16_MAX_DIFF (1e0)
 
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
@@ -162,7 +165,7 @@ TEST(conv2d, compute_image2d_1x1) {
                 auto kernels =
                     KernelRegistry::Global().Create("conv2d",
                                                     TARGET(kOpenCL),
-                                                    PRECISION(kFloat),
+                                                    PRECISION(kFP16),
                                                     DATALAYOUT(kImageDefault));
                 ASSERT_FALSE(kernels.empty());
 
@@ -283,13 +286,13 @@ TEST(conv2d, compute_image2d_1x1) {
 
                 paddle::lite::CLImageConverterDefault default_convertor;
                 SHADOW_LOG << "set mapped input  ...";
-                std::vector<float> x_image_v(
+                std::vector<uint16_t> x_image_v(
                     input_image_width * input_image_height * 4);  // 4 : RGBA
-                std::vector<float> filter_image_v(
+                std::vector<uint16_t> filter_image_v(
                     filter_image_width * filter_image_height * 4);  // 4 :RGBA
-                std::vector<float> bias_image_v(
+                std::vector<uint16_t> bias_image_v(
                     bias_image_width * bias_image_height * 4);  // 4 : RGBA
-                std::vector<float> out_image_v(
+                std::vector<uint16_t> out_image_v(
                     out_image_width * out_image_height * 4);  // 4 : RGBA
 
                 default_convertor.NCHWToImage(
@@ -300,13 +303,13 @@ TEST(conv2d, compute_image2d_1x1) {
                 nw_convertor.NCHWToImage(
                     filter_v.data(), filter_image_v.data(), filter_dim);
 
-                auto* input_image2d = input.mutable_data<float, cl::Image2D>(
+                auto* input_image2d = input.mutable_data<uint16_t, cl::Image2D>(
                     input_image_width, input_image_height, x_image_v.data());
                 // assign filter as target arm
                 filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                                filter_dim);
                 //                auto* filter_image2d =
-                //                filter.mutable_data<float, cl::Image2D>(
+                //                filter.mutable_data<uint16_t, cl::Image2D>(
                 //                    filter_image_width,
                 //                    filter_image_height,
                 //                    filter_image_v.data());
@@ -356,11 +359,12 @@ TEST(conv2d, compute_image2d_1x1) {
                 SHADOW_LOG << "kernel launch ...";
                 kernel->Launch();
                 SHADOW_LOG << "mutable output ...";
-                auto* output_image2d = output.mutable_data<float, cl::Image2D>(
-                    out_image_width, out_image_height);
+                auto* output_image2d =
+                    output.mutable_data<uint16_t, cl::Image2D>(
+                        out_image_width, out_image_height);
 
                 auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-                auto* out_ptr = param.output->data<float, cl::Image2D>();
+                auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
                 auto it = wait_list->find(out_ptr);
 
                 if (it != wait_list->end()) {
@@ -373,13 +377,14 @@ TEST(conv2d, compute_image2d_1x1) {
                                 "cl tensor.";
                 }
 
-                TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                            output.data<float, cl::Image2D>(),
-                                            out_image_width,
-                                            out_image_height,
-                                            cl_image2d_row_pitch,
-                                            cl_image2d_slice_pitch,
-                                            IoDirection::DtoH);
+                TargetWrapperCL::ImgcpySync(
+                    out_image_v.data(),
+                    output.data<uint16_t, cl::Image2D>(),
+                    out_image_width,
+                    out_image_height,
+                    cl_image2d_row_pitch,
+                    cl_image2d_slice_pitch,
+                    IoDirection::DtoH);
 
                 DDim out_image_shape =
                     default_convertor.InitImageDimInfoWith(output.dims());
@@ -425,12 +430,16 @@ TEST(conv2d, compute_image2d_1x1) {
                      static_cast<int64_t>(out_image_height)})};
 
                 for (int i = 0; i < out_dim.production(); i++) {
-                  EXPECT_NEAR(output_v[i], out_ref_data[i], 1e-2);
-                  if (abs(output_v[i] - out_ref_data[i]) > 1e-2) {
-                    LOG(FATAL) << "error idx:" << i;
+                  auto relative_diff =
+                      COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+                  EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                  if (relative_diff > FP16_MAX_DIFF) {
+                    LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                               << "]:" << output_v[i] << " "
+                                                         "out_ref_data["
+                               << i << "]:" << out_ref_data[i];
                   }
                 }
-
 #ifdef LOOP_TEST
               }
             }
@@ -479,12 +488,12 @@ TEST(conv2d, compute_image2d_3x3) {
                 const int oc = 2;
 #else  // big scale with group
                 const int stride = 1;
-                const int group = 32;
+                const int group = 32 / 1;
                 const int batch_size = 1;
-                const int ic = 32;
-                const int ih = 112;
-                const int iw = 112;
-                const int oc = 32;
+                const int ic = 32 / 1;
+                const int ih = 112 / 1;
+                const int iw = 112 / 1;
+                const int oc = 32 / 1;
 #endif
 
                 const bool bias_flag = false;
@@ -503,7 +512,7 @@ TEST(conv2d, compute_image2d_3x3) {
               auto kernels =
                   KernelRegistry::Global().Create("conv2d",
                                                   TARGET(kOpenCL),
-                                                  PRECISION(kFloat),
+                                                  PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
               CHECK(batch_size == 1) << "conv3x3 only supprt batch_size == 1";
@@ -599,10 +608,10 @@ TEST(conv2d, compute_image2d_3x3) {
 
               SHADOW_LOG << "gen input and filter ...";
               for (int i = 0; i < input_v.size(); ++i) {
-                input_v[i] = i;  // gen(engine);
+                input_v[i] = i * 0.001;  // gen(engine);
               }
               for (int i = 0; i < filter_v.size(); ++i) {
-                filter_v[i] = 1;  // gen(engine);
+                filter_v[i] = 1 * 0.001;  // gen(engine);
               }
 
               SHADOW_LOG << "after gen input and filter ...";
@@ -634,14 +643,14 @@ TEST(conv2d, compute_image2d_3x3) {
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<float> x_image_v(input_image_width *
-                                           input_image_height * 4);  // 4 :RGBA
-              std::vector<float> filter_image_v(
+              std::vector<uint16_t> x_image_v(
+                  input_image_width * input_image_height * 4);  // 4 :RGBA
+              std::vector<uint16_t> filter_image_v(
                   filter_image_width * filter_image_height * 4);  // 4 : RGBA
-              std::vector<float> bias_image_v(
+              std::vector<uint16_t> bias_image_v(
                   bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<float> out_image_v(out_image_width *
-                                             out_image_height * 4);  // 4 :RGBA
+              std::vector<uint16_t> out_image_v(
+                  out_image_width * out_image_height * 4);  // 4 :RGBA
 
               default_convertor.NCHWToImage(
                   input_v.data(), x_image_v.data(), input_dim);
@@ -666,7 +675,7 @@ TEST(conv2d, compute_image2d_3x3) {
               for (int i = 0; i < filter_image_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_image_v[i];
               }
-              auto* input_image2d = input.mutable_data<float, cl::Image2D>(
+              auto* input_image2d = input.mutable_data<uint16_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
@@ -707,11 +716,11 @@ TEST(conv2d, compute_image2d_3x3) {
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<float, cl::Image2D>(
+              auto* output_image2d = output.mutable_data<uint16_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
               auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<float, cl::Image2D>();
+              auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
               auto it = wait_list->find(out_ptr);
 
               if (it != wait_list->end()) {
@@ -725,7 +734,7 @@ TEST(conv2d, compute_image2d_3x3) {
               }
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<float, cl::Image2D>(),
+                                          output.data<uint16_t, cl::Image2D>(),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -793,9 +802,14 @@ TEST(conv2d, compute_image2d_3x3) {
 #endif
 
               for (int i = 0; i < out_dim.production(); i++) {
-                EXPECT_NEAR(output_v[i], out_ref_data[i], 1e-2);
-                if (abs(output_v[i] - out_ref_data[i]) > 1e-2) {
-                  LOG(FATAL) << "error idx:" << i;
+                auto relative_diff =
+                    COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                if (relative_diff > FP16_MAX_DIFF) {
+                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                             << "]:" << output_v[i] << " "
+                                                       "out_ref_data["
+                             << i << "]:" << out_ref_data[i];
                 }
               }
 
@@ -850,7 +864,7 @@ TEST(conv2d, compute_image2d_5x5) {
               auto kernels =
                   KernelRegistry::Global().Create("conv2d",
                                                   TARGET(kOpenCL),
-                                                  PRECISION(kFloat),
+                                                  PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
 
@@ -944,10 +958,10 @@ TEST(conv2d, compute_image2d_5x5) {
 
               SHADOW_LOG << "gen input and filter ...";
               for (auto& i : input_v) {
-                i = gen(engine);
+                i = 0.01 * gen(engine);
               }
               for (auto& f : filter_v) {
-                f = gen(engine);
+                f = 0.01 * gen(engine);
               }
 
               SHADOW_LOG << "after gen input and filter ...";
@@ -975,14 +989,14 @@ TEST(conv2d, compute_image2d_5x5) {
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<float> x_image_v(input_image_width *
-                                           input_image_height * 4);  // 4 :RGBA
-              std::vector<float> filter_image_v(
+              std::vector<uint16_t> x_image_v(
+                  input_image_width * input_image_height * 4);  // 4 :RGBA
+              std::vector<uint16_t> filter_image_v(
                   filter_image_width * filter_image_height * 4);  // 4 : RGBA
-              std::vector<float> bias_image_v(
+              std::vector<uint16_t> bias_image_v(
                   bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<float> out_image_v(out_image_width *
-                                             out_image_height * 4);  // 4 :RGBA
+              std::vector<uint16_t> out_image_v(
+                  out_image_width * out_image_height * 4);  // 4 :RGBA
 
               default_convertor.NCHWToImage(
                   input_v.data(), x_image_v.data(), input_dim);
@@ -1007,7 +1021,7 @@ TEST(conv2d, compute_image2d_5x5) {
               for (int i = 0; i < filter_image_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_image_v[i];
               }
-              auto* input_image2d = input.mutable_data<float, cl::Image2D>(
+              auto* input_image2d = input.mutable_data<uint16_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
@@ -1048,11 +1062,11 @@ TEST(conv2d, compute_image2d_5x5) {
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<float, cl::Image2D>(
+              auto* output_image2d = output.mutable_data<uint16_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
               auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<float, cl::Image2D>();
+              auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
               auto it = wait_list->find(out_ptr);
 
               if (it != wait_list->end()) {
@@ -1066,7 +1080,7 @@ TEST(conv2d, compute_image2d_5x5) {
               }
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<float, cl::Image2D>(),
+                                          output.data<uint16_t, cl::Image2D>(),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -1127,9 +1141,14 @@ TEST(conv2d, compute_image2d_5x5) {
                    static_cast<int64_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
-                EXPECT_NEAR(output_v[i], out_ref_data[i], 1e-2);
-                if (abs(output_v[i] - out_ref_data[i]) > 1e-2) {
-                  LOG(FATAL) << "error idx:" << i;
+                auto relative_diff =
+                    COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                if (relative_diff > FP16_MAX_DIFF) {
+                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                             << "]:" << output_v[i] << " "
+                                                       "out_ref_data["
+                             << i << "]:" << out_ref_data[i];
                 }
               }
 
@@ -1183,7 +1202,7 @@ TEST(conv2d, compute_image2d_7x7) {
               auto kernels =
                   KernelRegistry::Global().Create("conv2d",
                                                   TARGET(kOpenCL),
-                                                  PRECISION(kFloat),
+                                                  PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
 
@@ -1308,14 +1327,14 @@ TEST(conv2d, compute_image2d_7x7) {
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<float> x_image_v(input_image_width *
-                                           input_image_height * 4);  // 4 : RGBA
-              std::vector<float> filter_image_v(
+              std::vector<uint16_t> x_image_v(
+                  input_image_width * input_image_height * 4);  // 4 : RGBA
+              std::vector<uint16_t> filter_image_v(
                   filter_image_width * filter_image_height * 4);  // 4 : RGBA
-              std::vector<float> bias_image_v(
+              std::vector<uint16_t> bias_image_v(
                   bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<float> out_image_v(out_image_width *
-                                             out_image_height * 4);  // 4 : RGBA
+              std::vector<uint16_t> out_image_v(
+                  out_image_width * out_image_height * 4);  // 4 : RGBA
 
               default_convertor.NCHWToImage(
                   input_v.data(), x_image_v.data(), input_dim);
@@ -1340,7 +1359,7 @@ TEST(conv2d, compute_image2d_7x7) {
               for (int i = 0; i < filter_image_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_image_v[i];
               }
-              auto* input_image2d = input.mutable_data<float, cl::Image2D>(
+              auto* input_image2d = input.mutable_data<uint16_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
 
               // assign filter as target arm
@@ -1382,11 +1401,11 @@ TEST(conv2d, compute_image2d_7x7) {
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<float, cl::Image2D>(
+              auto* output_image2d = output.mutable_data<uint16_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
               auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<float, cl::Image2D>();
+              auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
               auto it = wait_list->find(out_ptr);
 
               if (it != wait_list->end()) {
@@ -1400,7 +1419,7 @@ TEST(conv2d, compute_image2d_7x7) {
               }
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<float, cl::Image2D>(),
+                                          output.data<uint16_t, cl::Image2D>(),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -1461,9 +1480,14 @@ TEST(conv2d, compute_image2d_7x7) {
                    static_cast<int64_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
-                EXPECT_NEAR(output_v[i], out_ref_data[i], 1e-2);
-                if (abs(output_v[i] - out_ref_data[i]) > 1e-2) {
-                  LOG(FATAL) << "error idx:" << i;
+                auto relative_diff =
+                    COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                if (relative_diff > FP16_MAX_DIFF) {
+                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                             << "]:" << output_v[i] << " "
+                                                       "out_ref_data["
+                             << i << "]:" << out_ref_data[i];
                 }
               }
 
@@ -1485,4 +1509,4 @@ TEST(conv2d, compute_image2d_7x7) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kImageDefault, image2d);
+USE_LITE_KERNEL(conv2d, kOpenCL, kFP16, kImageDefault, image2d);

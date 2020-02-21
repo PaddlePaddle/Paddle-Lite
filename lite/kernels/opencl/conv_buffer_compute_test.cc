@@ -167,7 +167,6 @@ void PrintData(std::string name,
 }
 
 // buffer
-#if 0
 // #define PRINT_RESULT
 #define LOOP_TEST
 TEST(conv2d, compute_conv2d_1x1) {
@@ -625,9 +624,8 @@ TEST(conv2d, compute_conv2d_gemm) {
   }              // batch_size
 #endif
 }
-#endif
 
 }  // namespace lite
 }  // namespace paddle
 
-// USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(conv2d, kOpenCL, kFloat, kNCHW, def);
