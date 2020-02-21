@@ -27,10 +27,10 @@ int64_t ShapeProduction(const shape_t& shape) {
 void RunModel(std::string model_dir) {
   // 1. Set MobileConfig
   MobileConfig config;
-  config.set_model_dir(model_dir);
-  // To load model transformed by opt after release/v2.3.0, plese use
-  // `set_model_from_file` listed below.
-  // config.set_model_from_file(model_dir);
+  config.set_model_from_file(model_dir);
+  // NOTE: To load model transformed by model_optimize_tool before
+  // release/v2.3.0, plese use `set_model_dir` API as listed below.
+  // config.set_model_dir(model_dir);
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
