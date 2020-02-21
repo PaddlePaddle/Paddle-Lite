@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/activation_compute.h"
+#include "lite/kernels/xpu/slice_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,29 +21,38 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void ReluCompute::Run() {
+void SliceCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto x_dims = param.X->dims();
+  x_shape_.reserve(x_dims.size());
+  x_dim_begin_.reserve(x_dims.size());
+  x_dim_end_.reserve(x_dims.size());
 
-  int r = xdnn::activation_forward(
-    ctx.GetRawContext(), /* context */
-    xdnn::Activation_t::RELU, /* type */
-    param.X->numel(), /* len */
-    param.X->data<float>(), /* x */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
-  CHECK(r == 0);
+  for (size_t i = 0; i < x_dims.size(); ++i) {
+    x_shape_[i] = x_dims[i];
+    x_dim_begin_[i] = 0;
+    x_dim_end_[i] = x_dims[i];
+  }
+  for (size_t i = 0; i < param.axes.size(); ++i) {
+    int axis = param.axes[i];
+    x_dim_begin_[axis] = param.starts[i];
+    x_dim_end_[axis] = param.ends[i];
+  }
 }
 
-void TanhCompute::Run() {
+void SliceCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
+  int ndim = param.X->dims().size();
+  int r = xdnn::slice_forward(
     ctx.GetRawContext(), /* context */
-    xdnn::Activation_t::TANH, /* type */
-    param.X->numel(), /* len */
-    param.X->data<float>(), /* x */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+    &x_shape_[0], /* shape */
+    &x_dim_begin_[0], /* starts */
+    &x_dim_end_[0], /* ends */
+    ndim, /* n */
+    param.X->data<float>(), /* in */
+    param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
   CHECK(r == 0);
 }
 
@@ -52,22 +61,12 @@ void TanhCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(relu,
+REGISTER_LITE_KERNEL(slice,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReluCompute,
+                     paddle::lite::kernels::xpu::SliceCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(tanh,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::TanhCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

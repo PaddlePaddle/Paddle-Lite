@@ -20,22 +20,20 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class SliceCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ActivationParam;
+  using param_t = operators::SliceParam;
+
+  virtual void PrepareForRun() override;
 
   virtual void Run() override;
 
-  virtual ~ReluCompute() = default;
-};
+  virtual ~SliceCompute() = default;
 
-class TanhCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  virtual void Run() override;
-
-  virtual ~TanhCompute() = default;
+ private:
+  std::vector<int> x_shape_;
+  std::vector<int> x_dim_begin_;
+  std::vector<int> x_dim_end_;
 };
 
 }  // namespace xpu
