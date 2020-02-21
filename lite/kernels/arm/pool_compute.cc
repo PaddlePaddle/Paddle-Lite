@@ -48,8 +48,8 @@ void PoolCompute::Run() {
   std::string& data_format = param.data_format;
 
   bool pads_less =
-      (paddings[0] == paddings[2]) &&
-      (paddings[1] < 2) && (paddings[3] < 2);
+      (paddings[0] == paddings[2]) && (paddings[1] < 2) && (paddings[3] < 2);
+
   bool pads_equal = (paddings[0] == paddings[2]) &&
                     (paddings[0] == paddings[1]) &&
                     (paddings[2] == paddings[3]);
