@@ -45,17 +45,14 @@ static void write_tensorfile(const Tensor* tensor, const std::string& locate) {
 
 class PrecisionProfiler {
  public:
-  using TargetW = TargetWrapper<TARGET(kCUDA)>;
-
   explicit PrecisionProfiler(const Instruction* inst) : inst_(inst) {}
   ~PrecisionProfiler() {
     LOG(INFO) << ">> Running kernel: " << inst_->op()->op_info()->Repr()
               << " on Target " << TargetToStr(inst_->kernel()->target()) << " "
               << PrecisionToStr(inst_->kernel()->precision());
-    auto tensor_mean = [this](const Tensor* ts,
-                              PrecisionType ptype,
-                              int64_t skip_num = 1,
-                              std::string name = "inst") -> double {
+    auto tensor_mean = [](const Tensor* ts,
+                          PrecisionType ptype,
+                          std::string name = "inst") -> double {
       Tensor in;
       in.CopyDataFromDevice(*ts);
       if (!in.data<int8_t>()) {
@@ -121,7 +118,7 @@ class PrecisionProfiler {
 
         if (type->IsTensor()) {
           auto tout = op_scope->FindVar(out_name)->GetMutable<Tensor>();
-          double mean = tensor_mean(tout, type->precision(), 1, out_name);
+          double mean = tensor_mean(tout, type->precision(), out_name);
           LOG(INFO) << "output name: " << out_name << ", dims: " << tout->dims()
                     << ", precision: " << PrecisionToStr(type->precision())
                     << ", mean value: " << mean << " shape:" << tout->dims();
@@ -129,7 +126,7 @@ class PrecisionProfiler {
           auto tout =
               op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
           for (auto& t : *tout) {
-            double mean = tensor_mean(&t, type->precision(), 1, out_name);
+            double mean = tensor_mean(&t, type->precision(), out_name);
             LOG(INFO) << "output name: " << out_name << ", dims: " << t.dims()
                       << ", precision: " << PrecisionToStr(type->precision())
                       << ", mean value: " << mean;
