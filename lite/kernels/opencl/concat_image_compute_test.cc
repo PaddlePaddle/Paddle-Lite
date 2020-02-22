@@ -18,6 +18,9 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
+#include "lite/kernels/opencl/test_helper.h"
+
+#define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
 namespace lite {
@@ -73,106 +76,10 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
     }
   }
 }
-#if 0   // concat_buffer
-TEST(opencl_concat_buffer, compute) {
-  // prepare data
-  const DDim x0_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
-  const DDim x1_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
-  const DDim x2_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
-  const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 6, 3, 4});
-  lite::Tensor x0, x1, x2, out, out_ref;
-  x0.Resize(x0_dim);
-  x1.Resize(x1_dim);
-  x2.Resize(x2_dim);
-  out.Resize(out_dim);
-  out_ref.Resize(out_dim);
-
-  auto *x0_data = x0.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-  auto *x1_data = x1.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-  auto *x2_data = x2.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-  std::default_random_engine engine;
-  std::uniform_real_distribution<float> dist(-10, 10);
-  auto *mapped_x0 = static_cast<float *>(
-      TargetWrapperCL::Map(x0_data, 0, sizeof(float) * x0_dim.production()));
-  auto *mapped_x1 = static_cast<float *>(
-      TargetWrapperCL::Map(x1_data, 0, sizeof(float) * x1_dim.production()));
-  auto *mapped_x2 = static_cast<float *>(
-      TargetWrapperCL::Map(x2_data, 0, sizeof(float) * x2_dim.production()));
-  for (int i = 0; i < x0_dim.production(); i++) {
-    mapped_x0[i] = dist(engine);
-  }
-  for (int i = 0; i < x1_dim.production(); i++) {
-    mapped_x1[i] = dist(engine);
-  }
-  for (int i = 0; i < x2_dim.production(); i++) {
-    mapped_x2[i] = dist(engine);
-  }
-
-  // set param and kernel, then run
-  operators::ConcatParam param;
-  std::vector<lite::Tensor *> ins;
-  ins.push_back(&x0);
-  ins.push_back(&x1);
-  ins.push_back(&x2);
-  auto axis = 1;
-  param.x = ins;
-  param.output = &out;
-  param.axis = axis;
-
-  std::vector<const float *> ins_data;
-  std::vector<const DDim> ins_dim;
-
-  ins_data.push_back(mapped_x0);
-  ins_data.push_back(mapped_x1);
-  ins_data.push_back(mapped_x2);
-  ins_dim.push_back(x0_dim);
-  ins_dim.push_back(x1_dim);
-  ins_dim.push_back(x2_dim);
-
-  std::unique_ptr<KernelContext> context(new KernelContext);
-  context->As<OpenCLContext>().InitOnce();
-  auto kernels = KernelRegistry::Global().Create(
-      "concat", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
-  ASSERT_FALSE(kernels.empty());
-  auto kernel = std::move(kernels.front());
-  kernel->SetParam(param);
-  std::unique_ptr<KernelContext> concat_context(new KernelContext);
-  context->As<OpenCLContext>().CopySharedTo(
-      &(concat_context->As<OpenCLContext>()));
-  kernel->SetContext(std::move(concat_context));
-  kernel->Launch();
-
-  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto *out_ptr = param.output->data<float, cl::Buffer>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto &event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
-
-  // run compute ref and check
-  auto *out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-  concat_mul_compute_ref<float>(ins_data, ins_dim, axis, out_dim, out_ref_data);
-
-  auto *out_data = out.mutable_data<float, cl::Buffer>();
-  auto *mapped_out = static_cast<float *>(
-      TargetWrapperCL::Map(out_data, 0, sizeof(float) * out_dim.production()));
-  for (int i = 0; i < out_dim.production(); i++) {
-    EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
-  }
-  TargetWrapperCL::Unmap(out_data, mapped_out);
-  TargetWrapperCL::Unmap(x0_data, mapped_x0);
-  TargetWrapperCL::Unmap(x1_data, mapped_x1);
-  TargetWrapperCL::Unmap(x2_data, mapped_x2);
-}
-#endif  // concat_buffer
 
 // #define LOOP_TEST
-// #define PRINT_RESULT
-TEST(concat_image2d_fp32, compute) {
+#define PRINT_RESULT
+TEST(concat_image2d, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> concat(img) -> "
                "layout(img2buf) "
                "-> host";
@@ -209,7 +116,7 @@ TEST(concat_image2d_fp32, compute) {
             auto concat_img_kernels =
                 KernelRegistry::Global().Create("concat",
                                                 TARGET(kOpenCL),
-                                                PRECISION(kFloat),
+                                                PRECISION(kFP16),
                                                 DATALAYOUT(kImageDefault));
             ASSERT_FALSE(buf_to_img_kernels.empty());
             ASSERT_FALSE(buf_to_img_kernels1.empty());
@@ -284,14 +191,18 @@ TEST(concat_image2d_fp32, compute) {
             for (int i = 0; i < out_dim.production(); ++i) {
               mapped_y[i] = static_cast<int>(0);
             }
-            auto *concat_in_data0 = concat_in0.mutable_data<float, cl::Image2D>(
-                concat_image2d_shape_in0["width"],
-                concat_image2d_shape_in0["height"]);
-            auto *concat_in_data1 = concat_in1.mutable_data<float, cl::Image2D>(
-                concat_image2d_shape_in1["width"],
-                concat_image2d_shape_in1["height"]);
-            auto *concat_out_data = concat_out.mutable_data<float, cl::Image2D>(
-                concat_image2d_shape["width"], concat_image2d_shape["height"]);
+            auto *concat_in_data0 =
+                concat_in0.mutable_data<uint16_t, cl::Image2D>(
+                    concat_image2d_shape_in0["width"],
+                    concat_image2d_shape_in0["height"]);
+            auto *concat_in_data1 =
+                concat_in1.mutable_data<uint16_t, cl::Image2D>(
+                    concat_image2d_shape_in1["width"],
+                    concat_image2d_shape_in1["height"]);
+            auto *concat_out_data =
+                concat_out.mutable_data<uint16_t, cl::Image2D>(
+                    concat_image2d_shape["width"],
+                    concat_image2d_shape["height"]);
 
             // set context and kernel args
             LOG(INFO) << "set context and kernel args";
@@ -347,22 +258,35 @@ TEST(concat_image2d_fp32, compute) {
 #ifdef PRINT_RESULT
             LOG(INFO) << "---- print kernel result (input -> output) ----";
             for (int eidx = 0; eidx < out_dim.production(); ++eidx) {
-              std::cout << mapped_x0[eidx] << ", " << mapped_x1[eidx] << " -> "
-                        << mapped_y[eidx] << std::endl;
+              std::cout << "x0[" << eidx << "]:" << mapped_x0[eidx] << ",\t x1["
+                        << eidx << "]:" << mapped_x1[eidx] << " -> y[" << eidx
+                        << "]:" << mapped_y[eidx] << "\t, y_ref[" << eidx
+                        << "]:" << y_data_ref[eidx] << ",\t IS_DIFF_PASSED:"
+                        << IS_DIFF_PASSED(
+                               y_data_ref[eidx], mapped_y[eidx], FP16_MAX_DIFF)
+                        << std::endl;
             }
 #endif  // PRINT_RESULT
 
             // check result: compare kernel output and cpu output(y_data_ref)
-            for (int eidx = 0; eidx < out_dim.production(); eidx++) {
-              EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], 1e-6);
-              if (abs(y_data_ref[eidx] - mapped_y[eidx]) > 1e-6) {
-                LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx
-                          << " / " << x0_dim.production() << ", y_data_ref["
-                          << eidx << "]:" << y_data_ref[eidx] << ", mapped_y["
-                          << eidx << "]:" << mapped_y[eidx];
+            for (int i = 0; i < out_dim.production(); i++) {
+              auto abs_diff = abs(y_data_ref[i] - mapped_y[i]);
+              auto relative_diff =
+                  COMPUTE_RELATIVE_DIFF(y_data_ref[i], mapped_y[i]);
+              EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
+                            (abs_diff <= FP16_MAX_DIFF),
+                        true);
+              if ((relative_diff > FP16_MAX_DIFF) &&
+                  (abs_diff > FP16_MAX_DIFF)) {
+                LOG(ERROR) << "error idx:" << i << " mapped_y[" << i
+                           << "]:" << mapped_y[i] << " y_data_ref[" << i
+                           << "]:" << y_data_ref[i] << " abs_diff:" << abs_diff
+                           << " relative_diff:" << relative_diff
+                           << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
                 break;
               }
             }
+
             // free
             LOG(INFO) << "free: unmap x, y";
             TargetWrapperCL::Unmap(x_data0, mapped_x0);
@@ -382,9 +306,9 @@ TEST(concat_image2d_fp32, compute) {
 }  // namespace paddle
 
 // concat buffer
-// USE_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, def);
+// USE_LITE_KERNEL(concat, kOpenCL, kFP16, kNCHW, def);
 
 // concat image2d fp32
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
-USE_LITE_KERNEL(concat, kOpenCL, kFloat, kImageDefault, ImageDefault);
+USE_LITE_KERNEL(concat, kOpenCL, kFP16, kImageDefault, ImageDefault);

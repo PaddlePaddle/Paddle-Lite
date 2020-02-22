@@ -14,5 +14,12 @@
 
 #pragma once
 
-#define COMPUTE_RELATIVE_DIFF(gpu_res, cpu_res) \
-  abs(abs(gpu_res - cpu_res) / (cpu_res + 1e-5))
+#define COMPTUE_ABS_DIFF(res0, res1) abs(res0 - res1)
+
+#define COMPUTE_RELATIVE_DIFF(res0, res1) abs(abs(res0 - res1) / (res1 + 1e-5))
+
+#define IS_DIFF_PASSED(res0, res1, threshold)        \
+  (((COMPTUE_ABS_DIFF(res0, res1) < threshold) ||    \
+    (COMPUTE_RELATIVE_DIFF(res0, res1) < threshold)) \
+       ? true                                        \
+       : false)
