@@ -14,34 +14,12 @@
 
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/opencl/elementwise_add_compute.h"
+#include "lite/kernels/opencl/elementwise_add_image_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-
-/* Buffer */
-#if 0
-class FusionElementwiseAddActivationCompute : public ElementwiseAddCompute {
- public:
-  using param_t = operators::FusionElementwiseActivationParam;
-
-  void PrepareForRun() override {
-    build_options_ += " -DRELU";
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
-    ele_param_ = param_.get_mutable<param_t>();
-    UpdateParams();
-    auto act_t = static_cast<param_t*>(ele_param_)->act_type;
-    VLOG(4) << "act: " << act_t;
-    if (act_t != "relu") {
-      LOG(FATAL) << "Unsupported Activation type: " << act_t;
-    }
-  }
-};
-#endif
 
 class FusionElementwiseAddActivationImageCompute
     : public ElementwiseAddImageCompute {
@@ -68,33 +46,23 @@ class FusionElementwiseAddActivationImageCompute
 }  // namespace paddle
 
 namespace ocl = paddle::lite::kernels::opencl;
-// REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
-//                     kOpenCL,
-//                     kFloat,
-//                     kNCHW,
-//                     ocl::FusionElementwiseAddActivationCompute,
-//                     def)
-//    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-//    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-//    .Finalize();
 
 REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kImageDefault,
                      ocl::FusionElementwiseAddActivationImageCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Y",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();

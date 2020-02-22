@@ -78,7 +78,7 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
 }
 
 // #define LOOP_TEST
-#define PRINT_RESULT
+// #define PRINT_RESULT
 TEST(concat_image2d, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> concat(img) -> "
                "layout(img2buf) "

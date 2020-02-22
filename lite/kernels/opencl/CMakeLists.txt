@@ -3,14 +3,15 @@ if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_OPENCL))
 endif()
 
 set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
+
 #####################
 # image kernel      #
 #####################
 # basic
-add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_mul_opencl OPENCL basic SRCS elementwise_mul_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fusion_elementwise_add_activation_opencl
-           OPENCL basic SRCS fusion_elementwise_add_activation_compute.cc
+           OPENCL basic SRCS fusion_elementwise_add_activation_image_compute.cc
            DEPS elementwise_add_opencl ${cl_kernel_deps})
 add_kernel(pool_opencl OPENCL basic SRCS pool_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(io_copy_compute_opencl OPENCL basic SRCS io_copy_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
@@ -65,6 +66,13 @@ lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_comput
              DEPS elementwise_mul_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+lite_cc_test(test_layout_opencl SRCS layout_compute_test.cc
+             DEPS layout_opencl op_registry program context
+             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
+lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
+             DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context
+             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 
 ######################
@@ -78,6 +86,10 @@ lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_comput
 #add_kernel(concat_opencl OPENCL basic SRCS concat_buffer_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fc_opencl OPENCL basic SRCS fc_buffer_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(mul_opencl OPENCL basic SRCS mul_buffer_compute.cc DEPS ${cl_kernel_deps})
+#add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_buffer_compute.cc DEPS ${cl_kernel_deps})
+#add_kernel(fusion_elementwise_add_activation_opencl
+#           OPENCL basic SRCS fusion_elementwise_add_activation_buffer_compute.cc
+#           DEPS elementwise_add_opencl ${cl_kernel_deps})
 
 # extra
 # wait to add ...
@@ -114,20 +126,14 @@ lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
              DEPS mul_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+ #lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
+ #    DEPS elementwise_add_opencl op_registry program context
+ #   ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 
 
-
-
-lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
-             DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 
 lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
              DEPS io_copy_compute_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
-
-lite_cc_test(test_layout_opencl SRCS layout_compute_test.cc
-        DEPS layout_opencl op_registry program context
-        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)

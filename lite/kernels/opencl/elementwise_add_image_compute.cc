@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/opencl/elementwise_add_compute.h"
+#include "lite/kernels/opencl/elementwise_add_image_compute.h"
 #include <memory>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
@@ -23,80 +23,6 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-/* Buffer */
-#if 0
-void ElementwiseAddCompute::PrepareForRun() {
-  auto& context = ctx_->As<OpenCLContext>();
-  context.cl_context()->AddKernel(
-      kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
-  ele_param_ = param_.get_mutable<param_t>();
-  UpdateParams();
-}
-
-void ElementwiseAddCompute::Run() {
-  auto& context = ctx_->As<OpenCLContext>();
-  CHECK(context.cl_context() != nullptr);
-  auto* x_buf = ele_param_->X->template data<float, cl::Buffer>();
-  auto* y_buf = ele_param_->Y->template data<float, cl::Buffer>();
-  auto* out_buf = ele_param_->Out->template mutable_data<float, cl::Buffer>(
-      TARGET(kOpenCL));
-  STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
-  auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-  VLOG(4) << TargetToStr(ele_param_->X->target());
-  VLOG(4) << TargetToStr(ele_param_->Y->target());
-  VLOG(4) << TargetToStr(ele_param_->Out->target());
-  int arg_idx = 0;
-  cl_int status = kernel.setArg(arg_idx, *x_buf);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *y_buf);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *out_buf);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (const int)batch_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (const int)channels_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (const int)num_);
-  CL_CHECK_FATAL(status);
-
-  auto global_work_size = cl::NDRange{channels_, batch_};
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size,
-      cl::NullRange,
-      nullptr,
-      event_.get());
-  CL_CHECK_FATAL(status);
-  context.cl_wait_list()->emplace(out_buf, event_);
-}
-
-void ElementwiseAddCompute::UpdateParams() {
-  auto axis = ele_param_->axis;
-  const auto& x_dims = ele_param_->X->dims();
-  const auto& y_dims = ele_param_->Y->dims();
-  const auto& out_dims = ele_param_->Out->dims();
-  if (axis < 0) {
-    axis = static_cast<int>(x_dims.size() - y_dims.size());
-  }
-  for (int i = 0; i < axis; ++i) {
-    batch_ *= x_dims[i];
-  }
-  for (int i = 0; i < y_dims.size(); ++i) {
-    channels_ *= y_dims[i];
-  }
-  for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size(); ++i) {
-    num_ *= x_dims[i];
-  }
-  VLOG(4) << "axis: " << axis;
-  VLOG(4) << "batch: " << batch_;
-  VLOG(4) << "channels: " << channels_;
-  VLOG(4) << "num: " << num_;
-}
-#endif
-
-/* Image2D */
 void ElementwiseAddImageCompute::PrepareForRun() {
   ele_param_ = param_.get_mutable<param_t>();
   auto* x = ele_param_->X;
@@ -152,10 +78,10 @@ void ElementwiseAddImageCompute::Run() {
       default_convertor.InitImageDimInfoWith(out->dims());  // w, h
   auto y_img_shape = default_convertor.InitImageDimInfoWith(y->dims());
 
-  auto* x_img = x->data<float, cl::Image2D>();
-  auto* y_img = y->data<float, cl::Image2D>();
-  auto* out_img =
-      out->mutable_data<float, cl::Image2D>(out_img_shape[0], out_img_shape[1]);
+  auto* x_img = x->data<uint16_t, cl::Image2D>();
+  auto* y_img = y->data<uint16_t, cl::Image2D>();
+  auto* out_img = out->mutable_data<uint16_t, cl::Image2D>(out_img_shape[0],
+                                                           out_img_shape[1]);
 
   VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;
   VLOG(4) << "y_img_shape[w,h]:" << y_img_shape[0] << " " << y_img_shape[1];
@@ -220,14 +146,7 @@ void ElementwiseAddImageCompute::Run() {
 
 namespace ocl = paddle::lite::kernels::opencl;
 
-// REGISTER_LITE_KERNEL(
-//    elementwise_add, kOpenCL, kFloat, kNCHW, ocl::ElementwiseAddCompute, def)
-//    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-//    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-//    .Finalize();
-
-// TODO(ysh329): Not fix.
+// TODO(ysh329): May need fix.
 // "Y" may from constant value like conv bias (kARM, need do cl_image_converter
 // on CPU);
 //     may from anther branch like "X" (kOpenCL, nothing to do).
@@ -235,20 +154,20 @@ namespace ocl = paddle::lite::kernels::opencl;
 //     set target of "Y" as kOpenCL temporarily.
 REGISTER_LITE_KERNEL(elementwise_add,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kImageDefault,
                      ocl::ElementwiseAddImageCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Y",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
