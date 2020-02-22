@@ -5,7 +5,7 @@ Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中�
 
 具体使用方法介绍如下：
 
-**注意**：release/v2.2.0之前的模型转化工具名称为`model_optimize_tool`，从release/v2.3开始模型转化工具名称修改为`opt`
+**注意**：`v2.2.0` 之前的模型转化工具名称为`model_optimize_tool`，从 `v2.3` 开始模型转化工具名称修改为 `opt`
 
 ## 准备opt
 当前获得opt方法有三种：
