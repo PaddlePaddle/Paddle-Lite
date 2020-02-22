@@ -19,6 +19,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "HiAiModelManagerService.h"
 #include "graph/buffer.h"
 #include "graph/graph.h"
 #include "graph/model.h"
@@ -144,6 +145,8 @@ ge::TensorPtr CvtTensor(const Tensor& in_tensor,
                         DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
 int CvtActMode(std::string act_type);
+
+bool CheckShape(DDim origin_dims, hiai::TensorDimension device_dims);
 
 }  // namespace npu
 }  // namespace subgraph
