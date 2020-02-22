@@ -5,7 +5,6 @@ endif()
 set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
 
 # image
-add_kernel(fc_opencl OPENCL basic SRCS fc_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(mul_opencl OPENCL basic SRCS mul_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_mul_opencl OPENCL basic SRCS elementwise_mul_compute.cc DEPS ${cl_kernel_deps})
@@ -58,12 +57,17 @@ lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
              DEPS concat_opencl layout_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+
+
+
+
 # buffer
 #add_kernel(activation_opencl OPENCL basic SRCS activation_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(conv_opencl OPENCL basic SRCS conv_buffer_compute.cc DEPS ${cl_kernel_deps} cl_image_converter)
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(pool_opencl OPENCL basic SRCS pool_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(concat_opencl OPENCL basic SRCS concat_buffer_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(fc_opencl OPENCL basic SRCS fc_buffer_compute.cc DEPS ${cl_kernel_deps})
 
 
 # buffer test
@@ -87,16 +91,22 @@ lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
 #             DEPS concat_opencl op_registry program context
 #             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
+             DEPS fc_opencl op_registry program context
+             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+
+
+
+
+
+
+
 lite_cc_test(test_elementwise_add_opencl SRCS elementwise_add_compute_test.cc
              DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_elementwise_mul_opencl SRCS elementwise_mul_compute_test.cc
              DEPS elementwise_mul_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
-
-lite_cc_test(test_fc_opencl SRCS fc_compute_test.cc
-             DEPS fc_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 # TODO(ysh329): comment for buffer-impl mul
