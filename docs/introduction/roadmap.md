@@ -30,4 +30,3 @@
 ## 2.6
 
 [v2.6 project](https://github.com/PaddlePaddle/Paddle-Lite/milestones/v2.6)
-
