@@ -95,7 +95,7 @@ void elementwise_compute_ref(const dtype *x_data,
 }
 
 // #define PRINT_RESULT
-TEST(elemul_image2d_fp32, compute_kernel_elemenwise_mul) {
+TEST(elementwise_mul_image, compute) {
   LOG(INFO)
       << "main steps of test: host -> layout(buf2img on cpu) -> elemul(img) -> "
          "layout(img2buf on cpu) "
@@ -159,7 +159,7 @@ TEST(elemul_image2d_fp32, compute_kernel_elemenwise_mul) {
     elemul_out.mutable_data<uint16_t, cl::Image2D>(out_img_w, out_img_h);
 
     std::vector<uint16_t> out_img_v(out_img_w * out_img_h * 4);
-    fill_data<float>(
+    fill_data<uint16_t>(
         out_img_v.data(), out_img_v.size(), 0);  // fill with zero value
 
     std::vector<float> out_v(out_dim.production());
