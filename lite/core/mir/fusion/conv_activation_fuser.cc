@@ -53,14 +53,6 @@ void ConvActivationFuser::BuildPattern() {
 
 void ConvActivationFuser::InsertNewNode(SSAGraph* graph,
                                         const key2nodes_t& matched) {
-  // not fuse quantized conv2d + relu6 for now
-  auto conv2d_op_desc = matched.at("conv2d")->stmt()->op_info();
-  bool is_conv2d_quantized = conv2d_op_desc->HasAttr("enable_int8") &&
-                             conv2d_op_desc->GetAttr<bool>("enable_int8");
-  if (act_type_ == "relu6" && is_conv2d_quantized) {
-    return;
-  }
-
   auto op_desc = GenOpDesc(matched);
   auto conv_op = LiteOpRegistry::Global().Create(conv_type_);
   auto conv_old = matched.at("conv2d")->stmt()->op();
