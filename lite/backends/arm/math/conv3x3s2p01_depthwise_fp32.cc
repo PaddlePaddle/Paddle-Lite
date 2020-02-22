@@ -92,7 +92,7 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                const operators::ActivationParam act_param,
                                ARMContext* ctx) {
   if (pad == 0) {
-    if (w_in > 7) {
+    if (w_in > 8) {
       conv_depthwise_3x3s2p0_bias(dout,
                                   din,
                                   weights,
@@ -476,7 +476,7 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                           \
   "st1 {v16.4s}, [%[outptr0]], #16              \n"       \
   "fcmge v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
-  "fmul v12.4s, v16.4s, v22.4s                  \n"       \
+  "fmul v12.4s, v17.4s, v22.4s                  \n"       \
                                                           \
   "ld1 {v20.4s}, [%[inptr3]]                 \n"          \
   "ld1 {v21.4s}, [%[inptr4]]                 \n"          \
@@ -552,6 +552,7 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "ld1 {v20.4s}, [%[inptr3]]                 \n"          \
   "ld1 {v21.4s}, [%[inptr4]]                 \n"          \
                                                           \
+  "fadd v17.4s, v17.4s, v14.4s                  \n"       \
   "bif  v16.16b, v12.16b, v11.16b \n" /* choose*/         \
   "ext  v10.16b, v0.16b, v15.16b, #4     \n"              \
   "fcmge v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
