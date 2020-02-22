@@ -1,20 +1,23 @@
 
 # 模型转化方法
 
-Lite架构在预测过程中表现出来的高性能得益于其丰富的优化组件，其中包括量化、子图融合、混合调度、Kernel优选等等策略。为了使优化过程更加方便易用，我们提供了**opt**来自动完成优化步骤，输出一个轻量的、最优的可执行模型。具体使用方法介绍如下：
+Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中包括量化、子图融合、混合调度、Kernel优选等等方法。为了使优化过程更加方便易用，我们提供了**opt** 工具来自动完成优化步骤，输出一个轻量的、最优的可执行模型。
+
+具体使用方法介绍如下：
 
 **注意**：release/v2.2.0之前的模型转化工具名称为`model_optimize_tool`，从release/v2.3开始模型转化工具名称修改为`opt`
 
 ## 准备opt
 当前获得opt方法有三种：
 
-1. 我们提供当前develop分支编译结果下载：[opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt)、[opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac)
-release/v2.2.0之前版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
-
-2. 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`    
+1. **推荐！** 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`    
    (release/v2.2.0之前的转化工具为model_optimize_tool、release/v2.3.0之后为opt)
 
-3. 可以下载Paddle-Lite源码，从源码编译出opt工具
+2. 我们提供当前develop分支编译结果下载：[opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt)、[opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac)
+release/v2.2.0之前版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
+
+
+3. 如果 release 列表里的工具不符合您的环境，可以下载Paddle-Lite 源码，源码编译出opt工具
 ```bash
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite
@@ -26,7 +29,7 @@ git checkout <release-version-tag>
 
 ## 使用opt
 
-opt是x86平台上的可执行文件，需要在PC端运行：包括Linux终端和Mac终端。
+opt是 x86 平台上的可执行文件，需要在PC端运行：支持Linux终端和Mac终端。
 
 ### 帮助信息
  执行opt时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
@@ -36,7 +39,10 @@ opt是x86平台上的可执行文件，需要在PC端运行：包括Linux终端�
 ![](https://paddlelite-data.bj.bcebos.com/doc_images/1.png)
 
 ### 功能一：转化模型为Paddle-Lite格式
-opt可以将PaddlePaddle支持的模型转化为Paddle-Lite支持的模型格式，期间执行的操作包括：将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积；执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等性能指标。
+opt可以将PaddlePaddle的部署模型格式转化为Paddle-Lite 支持的模型格式，期间执行的操作包括：
+
+- 将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积
+- 执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等效果
 
 模型优化过程：
 
@@ -54,7 +60,10 @@ PaddlePaddle模型有两种保存格式：
 **使用示例**：转化`mobilenet_v1`模型
 
 ```
-./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out_type=naive_buffer --optimize_out=mobilenet_v1_opt
+./opt --model_dir=./mobilenet_v1 \
+      --valid_targets=arm \
+      --optimize_out_type=naive_buffer \
+      --optimize_out=mobilenet_v1_opt
 ```
 以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件为`mobilenet_v1_opt.nb`，转化结果如下图所示：
 
