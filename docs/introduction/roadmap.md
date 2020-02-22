@@ -23,5 +23,11 @@
 - 增加 INT8 量化，从 PaddleSlim 训练到 PaddleLite 部署完整案例
 - 支持内存中加载模型，以支持 APP 的简易加密
 
-## 2.0.0-rc ?
-预计发布 *2019-9-16~7days*
+## 2.3
+
+[v2.3 project](https://github.com/PaddlePaddle/Paddle-Lite/milestone/3?closed=1)
+
+## 2.6
+
+[v2.6 project](https://github.com/PaddlePaddle/Paddle-Lite/milestones/v2.6)
+
