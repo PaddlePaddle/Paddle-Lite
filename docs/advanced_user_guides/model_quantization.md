@@ -1,21 +1,38 @@
-# 模型量化
+# 模型量化-量化训练
 
-本文主要介绍使用Paddle-Lite加载PaddlePaddle产出的量化模型，并进行推理执行。我们以MobileNetV1模型为示例，首先介绍准备量化模型，然后介绍部署执行。
+本文主要介绍使用Paddle-Lite加载PaddlePaddle产出的量化模型，并进行推理执行。我们以MobileNetV1模型为示例，首先说明产出量化模型，然后说明预测部署。
 
-## 准备量化模型
+## 1 简介
 
-PaddlePaddle使用量化训练和训练后量化两种方法将FP32模型量化成Int8模型，下面分别介绍两种方法如何产出量化模型。
+量化训练是基于大量训练数据，对训练好的预测模型进行量化。该方法使用模拟量化的思想，在训练阶段更新权重，实现减小量化误差。
 
-### 量化训练
+使用条件：
+* 有预训练模型
+* 有较多训练数据
+
+使用步骤：
+* 产出量化模型：使用PaddlePaddle调用量化训练接口，产出量化模型
+* 量化模型预测：使用PaddleLite加载量化模型进行预测推理
+
+优点：
+* 减小计算量、降低计算内存、减小模型大小
+* 模型精度受量化影响小
+
+缺点：
+* 使用条件较苛刻，使用门槛稍高
+
+建议首先使用“有校准数据训练后量化”对模型进行量化，然后使用使用量化模型进行预测。如果该量化模型的精度达不到要求，再使用“量化训练”。
+
+
+## 2 产出量化模型
 
 目前，PaddlePaddle框架的量化训练主要针对卷积层（包括二维卷积和Depthwise卷积）、和全连接层，对应算子是conv2d、depthwise_conv2d和mul，更多量化训练的原理请参考[文档](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/docs/tutorial.md#1-quantization-aware-training%E9%87%8F%E5%8C%96%E4%BB%8B%E7%BB%8D)。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
 
 温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/user_guides/index_cn.html)。
 
-
 您可以选择下载训练好的量化模型，或者使用PaddleSlim模型压缩工具训练得到量化模型。
 
-#### 下载量化模型
+### 下载量化模型
 
 官方发布了[MobileNetV1量化模型](https://paddle-inference-dist.bj.bcebos.com/int8%2Fpretrain%2Fmobilenet_v1_quant%2Ffloat.zip)，直接下载到本地。
 
@@ -23,9 +40,9 @@ PaddlePaddle使用量化训练和训练后量化两种方法将FP32模型量化�
 wget https://paddle-inference-dist.bj.bcebos.com/int8%2Fpretrain%2Fmobilenet_v1_quant%2Ffloat.zip
 ```
 
-#### 使用PaddleSlim模型压缩工具训练量化模型
+### 使用PaddleSlim模型压缩工具训练量化模型
 
-##### 安装PaddlePaddle
+#### 安装PaddlePaddle
 
 根据操作系统、安装方式、Python版本和CUDA版本，按照[官方说明](https://paddlepaddle.org.cn/start)安装PaddlePaddle。例如：
 
@@ -39,7 +56,7 @@ Ubuntu 16.04.4 LTS操作系统，CPU版本安装:
 pip install paddlepaddle==1.6.0 -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
-##### 克隆量化训练所需的代码库
+#### 克隆量化训练所需的代码库
 
 克隆[PaddlePaddle/models](https://github.com/PaddlePaddle/models)到本地，并进入models/PaddleSlim路径。
 
@@ -48,12 +65,13 @@ git clone https://github.com/PaddlePaddle/models.git
 cd models/PaddleSlim
 ```
 
-##### 数据准备
-###### 训练数据准备
+#### 准备数据和模型
+
+##### 训练数据准备
 
 参考[models/PaddleCV/image_classification](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/image_classification#data-preparation)中的数据准备教程，下载训练数据，并且保存到PaddleSlim/data路径下。
 
-###### 预训练模型准备
+##### 预训练模型准备
 
 参考/models/PaddleSlim/run.sh脚本， 从[models/PaddleCV/image_classification](https://github.com/PaddlePaddle/models/tree/develop/fluid/PaddleCV/image_classification#supported-models-and-performances)下载MobileNetV1的预训练模型，并保存到PaddleSlim/pretrain路径下。
 
@@ -84,8 +102,7 @@ cd models/PaddleSlim
 
 在`compress.py`中定义了执行压缩任务需要的所有模型相关的信息，这里对几个关键的步骤进行简要介绍：
 
-###### 目标网络的定义
-
+**目标网络的定义**
 compress.py的以下代码片段定义了train program, 这里train program只有前向计算操作。
 ```python
 out = model.net(input=image, class_dim=args.class_dim)
@@ -103,7 +120,7 @@ val_program = fluid.default_main_program().clone()
 
 定义完目标网络结构，需要对其初始化，并根据需要加载预训练模型。
 
-###### 定义feed_list和fetch_list
+**定义feed_list和fetch_list**
 对于train program, 定义train_feed_list用于指定从train data reader中取的数据feed给哪些variable。定义train_fetch_list用于指定在训练时，需要在log中展示的结果。如果需要在训练过程中在log中打印accuracy信心，则将('acc_top1', acc_top1.name)添加到train_fetch_list中即可。
 ```python
 train_feed_list = [('image', image.name), ('label', label.name)]
@@ -119,7 +136,7 @@ val_feed_list = [('image', image.name), ('label', label.name)]
 val_fetch_list = [('acc_top1', acc_top1.name), ('acc_top5', acc_top5.name)]
 ```
 
-###### Compressor和量化配置文件
+**Compressor和量化配置文件**
 `compress.py`主要使用Compressor和yaml文件完成对模型的量化训练工作。Compressor类的定义如下：
 ```python
 class Compressor(object):
@@ -192,7 +209,7 @@ compressor:
 > 
 > 3）**目前，Paddle-Lite仅支持运行weight量化方式使用`abs_max`且activation量化方式使用`moving_average_abs_max`或`range_abs_max`产出的量化模型**。
 
-##### 执行int8量化训练
+#### 执行量化训练
 
 修改run.sh，即注释掉`# enable GC strategy`与`# for sensitivity filter pruning`之间的内容并打开`#for quantization`相关的脚本命令（所需打开注释的命令如下所示）。
 
@@ -214,52 +231,9 @@ python compress.py \
 * int8目录: 参数范围为int8范围且参数数据类型为int8的量化模型。
 * mobile目录：参数特点与int8目录相同且兼容paddle-mobile的量化模型（目前paddle-mobile已升级为Paddle-Lite）。
 
-### 训练后量化
+## 3 使用Paddle-Lite运行量化模型推理
 
-下面以MobileNetV1为例，介绍使用训练后量化方法产出量化模型。关于训练后量化的原理和详细使用方法，请参考[文档](https://github.com/PaddlePaddle/models/tree/develop/PaddleSlim/quant_low_level_api)。
-
-> 该示例的代码放在[models/PaddleSlim/quant_low_level_api/](https://github.com/PaddlePaddle/models/tree/develop/PaddleSlim/quant_low_level_api)目录下。如果需要执行该示例，首先clone下来[models](https://github.com/PaddlePaddle/models.git)，安装具有训练后量化功能的PaddlePaddle。因为目前Lite支持支持对conv2d、depthwise_conv2d和mul量化，所以修改[run_post_training_quanzation.sh](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/quant_low_level_api/run_post_training_quanzation.sh) 脚本，设置is_full_quantize=False，然后执行该脚本；执行结束后，量化模型保存在`mobilenetv1_int8_model`目录下。下面介绍详细步骤。
-
-1）**准备模型和校准数据**
-
-安装PaddlePaddle的develop分支编译的whl包，准备已经训练好的FP32预测模型。
-
-准备校准数据，文件结构如下。val文件夹中有100张图片，val_list.txt文件中包含图片的label。
-```bash
-samples_100
-└──val
-└──val_list.txt
-```
-
-2）**配置校准数据生成器**
-
-MobileNetV1的输入是图片和标签，所以配置读取校准数据的sample_generator，每次返回一张图片和一个标签。详细代码在[models/PaddleSlim/reader.py](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/reader.py)。
-
-3）**调用训练后量化**
-
-调用训练后量化的核心代码如下，详细代码在[post_training_quantization.py](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/quant_low_level_api/post_training_quantization.py)。
-``` python
-place = fluid.CUDAPlace(0) if args.use_gpu == "True" else fluid.CPUPlace()
-exe = fluid.Executor(place)
-sample_generator = reader.val(data_dir=args.data_path)
-
-ptq = PostTrainingQuantization(
-    executor=exe,
-    sample_generator=sample_generator,
-    model_dir=args.model_dir,
-    model_filename=args.model_filename,
-    params_filename=args.params_filename,
-    batch_size=args.batch_size,
-    batch_nums=args.batch_nums,
-    algo=args.algo,
-    is_full_quantize=args.is_full_quantize == "True")
-quantized_program = ptq.quantize()
-ptq.save_quantized_model(args.save_model_path)
-```
-
-## 使用Paddle-Lite运行量化模型推理
-
-#### 使用模型优化工具对量化模型进行优化
+### 使用模型优化工具对量化模型进行优化
 
 接下来，使用原始的量化模型生成适合在移动端直接部署的模型。
 
@@ -276,7 +250,7 @@ ptq.save_quantized_model(args.save_model_path)
 
 如前所述，量化训练后，float目录下的模型参数范围为int8，但参数数据类型仍为float32类型，这样确实没有起到模型参数压缩的效果。但是，经过model\_optimize\_tool工具优化后对应的量化参数均会以int8类型重新存储达到参数压缩的效果，且模型结构也被优化（如进行了各种operator fuse操作）。
 
-#### 在手机端准备量化模型文件
+### 在手机端准备量化模型文件
 
 使用如下命令将mobilenet_v1_quant_opt目录下的量化模型文件导入到手机端：
 
@@ -284,7 +258,7 @@ ptq.save_quantized_model(args.save_model_path)
 adb push mobilenet_v1_quant_opt /data/local/tmp
 ```
 
-#### 使用mobilenetv1\_light\_api运行优化后的量化模型
+### 使用mobilenetv1\_light\_api运行优化后的量化模型
 
 参考[源码编译](../source_compile)配置编译环境后，在Paddle-Lite执行如下命令获取轻量级API的demo：
 
@@ -316,7 +290,7 @@ Output[900]: 0.000969
 ```
 在C++中使用Paddle-Lite API的方法请猛戳[此处](../cpp_demo)，用户也可参考[mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)的代码示例。
 
-### FAQ
+## FAQ
 
 **问题**：Compiled with WITH_GPU, but no GPU found in runtime
 
