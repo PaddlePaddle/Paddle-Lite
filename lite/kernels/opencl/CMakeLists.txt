@@ -13,8 +13,8 @@ add_kernel(elementwise_mul_opencl OPENCL basic SRCS elementwise_mul_image_comput
 add_kernel(fusion_elementwise_add_activation_opencl
            OPENCL basic SRCS fusion_elementwise_add_activation_image_compute.cc
            DEPS elementwise_add_opencl ${cl_kernel_deps})
+
 add_kernel(pool_opencl OPENCL basic SRCS pool_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(io_copy_compute_opencl OPENCL basic SRCS io_copy_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 add_kernel(activation_opencl OPENCL basic SRCS activation_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
@@ -25,6 +25,8 @@ add_kernel(scale_opencl OPENCL basic SRCS scale_image_compute.cc DEPS ${cl_kerne
 
 # extra
 # wait to add ...
+
+
 
 
 ######################
@@ -90,9 +92,11 @@ add_kernel(mul_opencl OPENCL basic SRCS mul_buffer_compute.cc DEPS ${cl_kernel_d
 #add_kernel(fusion_elementwise_add_activation_opencl
 #           OPENCL basic SRCS fusion_elementwise_add_activation_buffer_compute.cc
 #           DEPS elementwise_add_opencl ${cl_kernel_deps})
+add_kernel(io_copy_opencl OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 
 # extra
 # wait to add ...
+
 
 
 ######################
@@ -126,14 +130,10 @@ lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
              DEPS mul_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
- #lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
- #    DEPS elementwise_add_opencl op_registry program context
- #   ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
+#    DEPS elementwise_add_opencl op_registry program context
+#   ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
-
-
-
-
-lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
-             DEPS io_copy_compute_opencl op_registry program context
+lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
+             DEPS io_copy_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
