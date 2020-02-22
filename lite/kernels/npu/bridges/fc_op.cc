@@ -31,24 +31,15 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
   auto input_name = op_info->Input("Input").front();
-  auto input_type = kernel->GetInputDeclType("Input");
-  CHECK(input_type->precision() == PRECISION(kFloat));
-  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindTensor(input_name);
   auto input_dims = input->dims();
 
   auto w_name = op_info->Input("W").front();
-  auto w_type = kernel->GetInputDeclType("W");
-  CHECK(w_type->precision() == PRECISION(kFloat));
-  CHECK(w_type->layout() == DATALAYOUT(kNCHW));
   auto w = scope->FindTensor(w_name);
   auto w_dims = w->dims();
   CHECK_EQ(w_dims.size(), 2UL);
 
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out = scope->FindTensor(out_name);
   auto out_dims = out->dims();
 
@@ -99,9 +90,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (graph->Has(bias_name)) {
       bias_node = graph->Get(bias_name);
     } else {
-      auto bias_type = kernel->GetInputDeclType("Bias");
-      CHECK(bias_type->precision() == PRECISION(kFloat));
-      CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
       auto bias = scope->FindTensor(bias_name);
       auto bias_dims = bias->dims();
       CHECK_EQ(bias_dims.production(), n);

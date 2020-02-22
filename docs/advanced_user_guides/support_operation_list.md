@@ -39,6 +39,7 @@
 - expand
 - fake_channel_wise_dequantize_max_abs
 - fake_dequantize_max_abs
+- fake_quantize_abs_max
 - fake_quantize_dequantize_moving_average_abs_max
 - fake_quantize_moving_average_abs_max
 - fake_quantize_range_abs_max
@@ -56,10 +57,11 @@
 - fusion_elementwise_mul_activation
 - fusion_elementwise_sub_activation
 - gather
+- gelu
 - generate_proposals
-- graph_op
 - greater_equal
 - greater_than
+- grid_sampler
 - gru
 - gru_unit
 - hard_sigmoid
@@ -93,7 +95,7 @@
 - nearest_interp
 - negative
 - norm
-- notequal
+- not_equal
 - pad2d
 - pool2d
 - power
@@ -127,6 +129,7 @@
 - sequence_expand
 - sequence_expand_as
 - sequence_pool
+- sequence_pool_concat
 - sequence_reshape
 - sequence_reverse
 - sequence_softmax
@@ -144,6 +147,7 @@
 - squeeze
 - squeeze2
 - stack
+- subgraph
 - swish
 - tanh
 - top_k
@@ -216,6 +220,7 @@
 - generate_proposals
 - greater_equal
 - greater_than
+- grid_sampler
 - gru
 - gru_unit
 - hard_sigmoid
@@ -301,6 +306,9 @@
 - gelu
 - gru
 - layer_norm
+- leaky_relu
+- lookup_table
+- lookup_table_v2
 - match_matrix_tensor
 - matmul
 - mul
@@ -378,9 +386,11 @@
 - yolo_box
 
 ### OpenCL kernels
+- concat
 - conv2d
 - depthwise_conv2d
 - elementwise_add
+- elementwise_mul
 - fc
 - fusion_elementwise_add_activation
 - layout
@@ -388,5 +398,10 @@
 - io_copy
 - io_copy_once
 - mul
+- nearest_interp
 - pool2d
 - relu
+- reshape
+- reshape2
+- scale
+- sigmoid
