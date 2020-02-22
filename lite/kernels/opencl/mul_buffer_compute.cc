@@ -102,7 +102,7 @@ class MulCompute
  private:
   int m_, n_, k_;
   std::string kernel_func_name_{"mat_mul"};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

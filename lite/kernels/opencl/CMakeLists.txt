@@ -5,7 +5,6 @@ endif()
 set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
 
 # image
-add_kernel(mul_opencl OPENCL basic SRCS mul_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_mul_opencl OPENCL basic SRCS elementwise_mul_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fusion_elementwise_add_activation_opencl
@@ -68,6 +67,7 @@ lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
 #add_kernel(pool_opencl OPENCL basic SRCS pool_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(concat_opencl OPENCL basic SRCS concat_buffer_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fc_opencl OPENCL basic SRCS fc_buffer_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(mul_opencl OPENCL basic SRCS mul_buffer_compute.cc DEPS ${cl_kernel_deps})
 
 
 # buffer test
@@ -95,6 +95,9 @@ lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
              DEPS fc_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
+lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
+             DEPS mul_opencl op_registry program context
+             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 
 
@@ -109,10 +112,6 @@ lite_cc_test(test_elementwise_mul_opencl SRCS elementwise_mul_compute_test.cc
              DEPS elementwise_mul_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
-# TODO(ysh329): comment for buffer-impl mul
-#lite_cc_test(test_mul_opencl SRCS mul_compute_test.cc
-#        DEPS mul_opencl op_registry program context
-#        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_io_copy_compute_opencl SRCS io_copy_compute_test.cc
              DEPS io_copy_compute_opencl op_registry program context
