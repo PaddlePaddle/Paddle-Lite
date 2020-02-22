@@ -49,6 +49,8 @@ Welcome to Paddle-Lite's documentation!
 
   advanced_user_guides/x2paddle
   advanced_user_guides/x2paddle_models_doc
+  advanced_user_guides/post_quant_with_data
+  advanced_user_guides/post_quant_no_data
   advanced_user_guides/model_quantization
   advanced_user_guides/support_operation_list
   advanced_user_guides/add_operation
