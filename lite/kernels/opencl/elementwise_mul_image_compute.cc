@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/opencl/elementwise_mul_compute.h"
 #include <memory>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
