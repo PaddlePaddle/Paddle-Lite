@@ -75,6 +75,7 @@ DEFINE_bool(print_all_ops,
             false,
             "Print all the valid operators of Paddle-Lite");
 DEFINE_bool(print_model_ops, false, "Print operators in the input model");
+DEFINE_bool(pre_process_type, false, "Set pre_process_type of layout op");
 
 namespace paddle {
 namespace lite_api {
@@ -157,6 +158,15 @@ void RunOptimize(const std::string& model_dir,
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
   predictor->SaveOptimizedModel(
       optimize_out, model_type, record_tailoring_info);
+
+  std::string nb_model = optimize_out + ".nb";
+  if (FLAGS_pre_process_type) {
+    uint16_t meta_version = 10;
+    FILE* fp = fopen(nb_model.c_str(), "rb+");
+    fseek(fp, 0, SEEK_SET);
+    fwrite(&meta_version, sizeof(uint16_t), 1, fp);
+  }
+
   if (record_tailoring_info) {
     LOG(INFO) << "Record the information of tailored model into :"
               << optimize_out;

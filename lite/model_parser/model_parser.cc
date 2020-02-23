@@ -789,7 +789,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
   uint16_t meta_version;
   ReadModelDataFromFile<uint16_t>(
       &meta_version, prog_path, &offset, sizeof(uint16_t));
-  VLOG(4) << "Meta_version:" << meta_version;
+  std::cout << "Meta_version:" << meta_version << std::endl;
 
   // (2)get opt version
   char opt_version[16];
@@ -827,6 +827,15 @@ void LoadModelNaiveFromFile(const std::string &filename,
 
   // (5)Load Params
   LoadCombinedParamsNaive(prog_path, offset, scope, *cpp_prog, false);
+
+  // (6) layoutparam form
+  if (meta_version == 10) {
+    auto *pre_process_type_tensor =
+        scope->Var("pre_process_type")->GetMutable<lite::Tensor>();
+    pre_process_type_tensor->Resize({1});
+    auto pre_process_type = pre_process_type_tensor->mutable_data<int>();
+    pre_process_type[0] = 1;
+  }
 
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }

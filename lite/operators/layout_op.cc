@@ -33,6 +33,9 @@ bool LayoutOp::AttachImpl(const cpp::OpDesc &opdesc,
                           paddle::lite::Scope *scope) {
   auto x = opdesc.Input("Input").front();
   auto out = opdesc.Output("Out").front();
+  if (scope->FindVar("pre_process_type") != nullptr) {
+    param_.pre_process_type = 1;
+  }
   param_.x = GetTensor(scope, x);
   param_.y = GetMutableTensor(scope, out);
   return true;
