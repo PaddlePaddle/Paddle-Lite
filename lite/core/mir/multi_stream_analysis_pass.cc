@@ -151,8 +151,8 @@ int MultiStreamAnalysisPass::SelectStreamId(const std::vector<int>& lanes) {
 
   int res = lanes[0];
   int exclude_io_copy_once_num = ops_in_streams_[0].size() - io_copy_once_num_;
-  size_t min_num = lanes[0] == 0 ? exclude_io_copy_once_num
-                                 : ops_in_streams_[lanes[0]].size();
+  int min_num = lanes[0] == 0 ? exclude_io_copy_once_num
+                              : ops_in_streams_[lanes[0]].size();
   for (size_t i = 1; i < lanes.size(); ++i) {
     int ith_num = lanes[i] == 0 ? exclude_io_copy_once_num
                                 : ops_in_streams_[lanes[i]].size();
