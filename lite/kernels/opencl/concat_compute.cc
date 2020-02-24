@@ -37,7 +37,6 @@ void ConcatCompute<PRECISION(kFloat),
   }
   context.cl_context()->AddKernel(
       kernel_func_name_, "image/concat_kernel.cl", build_options_);
-  // UpdateParams<kFloat, kImageDefault>();
   auto axis = concat_param_->axis;
   auto inputs = concat_param_->x;
   auto out_dims = concat_param_->output->dims();
@@ -54,16 +53,16 @@ void ConcatCompute<PRECISION(kFloat),
       width_ = out_dims[2];  // h
       flag_ = 0;
       break;
-    case 1:                // channel
+    case 1:                  // channel
       width_ = out_dims[3];  // w
       flag_ = 1;
       break;
-    case 2:                // height
+    case 2:                  // height
       width_ = out_dims[0];  // n
       flag_ = 2;
       break;
     case 3:
-    case -1:               // width
+    case -1:                 // width
       width_ = out_dims[1];  // c
       flag_ = 3;
       break;
@@ -158,7 +157,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       auto* x_buf = inputs[i]->data<float, cl::Image2D>();
       auto in_W = in_dims[-1];
       VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-          << image_shape["height"];
+              << image_shape["height"];
       global_work_size = cl::NDRange{
           static_cast<cl::size_type>(in_dims[-1]),
           static_cast<cl::size_type>(image_shape["width"] / in_dims[-1]),

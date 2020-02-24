@@ -73,7 +73,7 @@ __kernel void concat2(__read_only image2d_t input0,
       }
     }
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
-  }else if (flag == 2){ // by height  width == n
+  }else if (flag == 2){ // by height,  width == n
     int2 input_pos;
     input_pos.x = out_c * out_W + out_w;
     int h = out_nh / width; 
@@ -89,7 +89,7 @@ __kernel void concat2(__read_only image2d_t input0,
     output_pos.x = out_c * out_W + out_w;
     output_pos.y = out_nh;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input);
-  }else if (flag == 3){ // by width width == C
+  }else if (flag == 3){ // by width, width == C
     int2 input_pos;
     input_pos.y = out_nh;
     CL_DTYPE4 input;
@@ -153,12 +153,12 @@ __kernel void concat_mul(__read_only image2d_t input,
      }
       WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
     }
-  }else if (flag == 2){ // by height  width == n
+  }else if (flag == 2){ // by height, width == n
     int2 output_pos;
     output_pos.x = in_c * in_W + in_w;
     output_pos.y = in_nh + C_0 * width;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input_data);
-  }else if (flag == 3){ // by width width == C
+  }else if (flag == 3){ // by width, width == C
     int2 output_pos;
     output_pos.y = in_nh;
     output_pos.x = in_c * in_W + (in_w + C_0);
