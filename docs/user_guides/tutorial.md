@@ -9,16 +9,16 @@ Lite框架目前支持的模型结构为[PaddlePaddle](https://github.com/Paddle
 
 ## 二. 模型优化
 
-Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量化、子图融合、Kernel优选等等优化手段，为了方便您使用这些优化策略，我们提供了[Model Optimize Tool](model_optimize_tool)帮助您轻松进行模型优化。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
+Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量化、子图融合、Kernel优选等等优化手段，为了方便您使用这些优化策略，我们提供了[opt](model_optimize_tool)帮助您轻松进行模型优化。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
 
-Model Optimize Tool的详细介绍，请您参考 [模型优化方法](model_optimize_tool) 。
+opt的详细介绍，请您参考 [模型优化方法](model_optimize_tool) 。
 
-使用Model Optimize Tool，您只需编译后在开发机上执行以下代码：
+使用opt，您只需编译后在开发机上执行以下代码：
 
 ``` shell
 $ cd <PaddleLite_base_path>
-$ cd build.model_optimize_tool/lite/api/
-$ ./model_optimize_tool \
+$ cd build.opt/lite/api/
+$ ./opt \
     --model_dir=<model_param_dir> \
     --model_file=<model_path> \
     --param_file=<param_path> \
@@ -32,11 +32,11 @@ $ ./model_optimize_tool \
 
 ## 三. 使用Lite框架执行预测
 
-在上一节中，我们已经通过Model Optimize Tool获取到了优化后的模型，使用优化模型进行预测也十分的简单。为了方便您的使用，Lite进行了良好的API设计，隐藏了大量您不需要投入时间研究的细节。您只需要简单的五步即可使用Lite在移动端完成预测（以C++ API进行说明）：
+在上一节中，我们已经通过`opt`获取到了优化后的模型，使用优化模型进行预测也十分的简单。为了方便您的使用，Lite进行了良好的API设计，隐藏了大量您不需要投入时间研究的细节。您只需要简单的五步即可使用Lite在移动端完成预测（以C++ API进行说明）：
 
 
-1. 声明MobileConfig。在config中可以设置**从文件加载模型**也可以设置**从memory加载模型**。从文件加载模型需要声明模型文件路径，如 `config.set_model_dir(FLAGS_model_dir)` ；从memory加载模型方法现只支持加载优化后模型的naive buffer，实现方法为：
-`void set_model_buffer(model_buffer,model_buffer_size,param_buffer,param_buffer_size) `
+1. 声明MobileConfig。在config中可以设置**从文件加载模型**也可以设置**从memory加载模型**。从文件加载模型需要声明模型文件路径，如 `config.set_model_from_file(FLAGS_model_file)` ；从memory加载模型方法现只支持加载优化后模型的naive buffer，实现方法为：
+`void set_model_from_buffer(model_buffer) `
 
 2. 创建Predictor。Predictor即为Lite框架的预测引擎，为了方便您的使用我们提供了 `CreatePaddlePredictor` 接口，你只需要简单的执行一行代码即可完成预测引擎的初始化，`std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor(config)` 。
 3. 准备输入。执行predictor->GetInput(0)您将会获得输入的第0个field，同样的，如果您的模型有多个输入，那您可以执行 `predictor->GetInput(i)` 来获取相应的输入变量。得到输入变量后您可以使用Resize方法指定其具体大小，并填入输入值。
