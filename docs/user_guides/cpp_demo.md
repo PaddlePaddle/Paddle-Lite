@@ -2,7 +2,7 @@
 
 ## 编译
 
-首先按照[PaddleLite 源码编译](https://github.com/PaddlePaddle/Paddle-Lite/wiki/source_compile)准备交叉编译环境，之后拉取最新[PaddleLite release发布版代码](https://github.com/PaddlePaddle/Paddle-Lite)。下面以Android-ARMv8架构为例，介绍编译过程，并最终在手机上跑通MobilNetv1模型。
+首先按照[PaddleLite 源码编译](../installation/source_compile)准备交叉编译环境，之后拉取最新[PaddleLite release发布版代码](https://github.com/PaddlePaddle/Paddle-Lite)。下面以Android-ARMv8架构为例，介绍编译过程，并最终在手机上跑通MobilNetv1模型。
 
 进入 Paddle-Lite 目录，运行以下命令编译代码（**需加编译选项`--build_extra=ON`确保完整编译**）：
 
