@@ -35,7 +35,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   Env<TARGET(kCUDA)>::Init();
 #endif
   auto places = config.valid_places();
-  raw_predictor_.Build(config, places);
+  raw_predictor_.Build(config, places, {}, config_.skip_passes());
 
   mode_ = config.power_mode();
   threads_ = config.threads();
