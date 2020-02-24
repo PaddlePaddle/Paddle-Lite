@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <string>
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/cp_logging.h"

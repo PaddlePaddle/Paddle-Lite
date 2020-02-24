@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
@@ -95,10 +96,10 @@ class ElementwiseMulImageCompute
         default_convertor.InitImageDimInfoWith(out->dims());  // w, h
     auto y_img_shape = default_convertor.InitImageDimInfoWith(y->dims());
 
-    auto* x_img = x->data<uint16_t, cl::Image2D>();
-    auto* y_img = y->data<uint16_t, cl::Image2D>();
-    auto* out_img = out->mutable_data<uint16_t, cl::Image2D>(out_img_shape[0],
-                                                             out_img_shape[1]);
+    auto* x_img = x->data<half_t, cl::Image2D>();
+    auto* y_img = y->data<half_t, cl::Image2D>();
+    auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape[0],
+                                                           out_img_shape[1]);
 
     VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;
     VLOG(4) << "y_img_shape[w,h]:" << y_img_shape[0] << " " << y_img_shape[1];

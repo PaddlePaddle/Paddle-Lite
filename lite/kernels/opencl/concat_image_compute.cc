@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -80,7 +81,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.output->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.output->mutable_data<uint16_t, cl::Image2D>(
+    auto* out_buf = param.output->mutable_data<half_t, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     const auto& y_dims = param.output->dims();  // useless: check dim only
 
@@ -124,8 +125,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         printf("this axis: %d does not support \n", axis_);
     }
     if (inputs.size() == 2) {
-      auto* x_buf0 = inputs[0]->data<uint16_t, cl::Image2D>();
-      auto* x_buf1 = inputs[1]->data<uint16_t, cl::Image2D>();
+      auto* x_buf0 = inputs[0]->data<half_t, cl::Image2D>();
+      auto* x_buf1 = inputs[1]->data<half_t, cl::Image2D>();
       cl_int status = kernel.setArg(arg_idx, *x_buf0);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *x_buf1);
@@ -152,7 +153,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       auto start = 0;
       for (int i = 0; i < inputs.size(); i++) {
         arg_idx = 0;
-        auto* x_buf = inputs[i]->data<uint16_t, cl::Image2D>();
+        auto* x_buf = inputs[i]->data<half_t, cl::Image2D>();
         cl_int status = kernel.setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, *out_buf);

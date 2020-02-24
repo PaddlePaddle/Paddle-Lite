@@ -151,9 +151,9 @@ TEST(elementwise_mul_image, compute) {
     auto x_img_shape = default_convertor.InitImageDimInfoWith(x_dim);  // w, h
     auto x_img_w = x_img_shape[0];
     auto x_img_h = x_img_shape[1];
-    std::vector<uint16_t> x_img_v(x_img_w * x_img_h * 4);  // 4: RGBA
+    std::vector<half_t> x_img_v(x_img_w * x_img_h * 4);  // 4: RGBA
     default_convertor.NCHWToImage(x_v.data(), x_img_v.data(), x_dim);
-    elemul_x.mutable_data<uint16_t, cl::Image2D>(
+    elemul_x.mutable_data<half_t, cl::Image2D>(
         x_img_w, x_img_h, x_img_v.data());
 
     // y
@@ -162,10 +162,10 @@ TEST(elementwise_mul_image, compute) {
     auto y_img_shape = default_convertor.InitImageDimInfoWith(y_dim);  // w, h
     auto y_img_w = y_img_shape[0];
     auto y_img_h = y_img_shape[1];
-    std::vector<uint16_t> y_img_v(y_img_shape[0] * y_img_shape[1] *
-                                  4);  // 4: RGBA
+    std::vector<half_t> y_img_v(y_img_shape[0] * y_img_shape[1] *
+                                4);  // 4: RGBA
     default_convertor.NCHWToImage(y_v.data(), y_img_v.data(), y_dim);
-    elemul_y.mutable_data<uint16_t, cl::Image2D>(
+    elemul_y.mutable_data<half_t, cl::Image2D>(
         y_img_w, y_img_h, y_img_v.data());
 
     // out
@@ -173,10 +173,10 @@ TEST(elementwise_mul_image, compute) {
         default_convertor.InitImageDimInfoWith(out_dim);  // w, h
     auto out_img_w = out_img_shape[0];
     auto out_img_h = out_img_shape[1];
-    elemul_out.mutable_data<uint16_t, cl::Image2D>(out_img_w, out_img_h);
+    elemul_out.mutable_data<half_t, cl::Image2D>(out_img_w, out_img_h);
 
-    std::vector<uint16_t> out_img_v(out_img_w * out_img_h * 4);
-    fill_data<uint16_t>(
+    std::vector<half_t> out_img_v(out_img_w * out_img_h * 4);
+    fill_data<half_t>(
         out_img_v.data(), out_img_v.size(), 0);  // fill with zero value
 
     std::vector<float> out_v(out_dim.production());
@@ -218,7 +218,7 @@ TEST(elementwise_mul_image, compute) {
     const size_t cl_image2d_row_pitch{0};
     const size_t cl_image2d_slice_pitch{0};
     TargetWrapperCL::ImgcpySync(out_img_v.data(),
-                                elemul_out.data<uint16_t, cl::Image2D>(),
+                                elemul_out.data<half_t, cl::Image2D>(),
                                 out_img_w,
                                 out_img_h,
                                 cl_image2d_row_pitch,

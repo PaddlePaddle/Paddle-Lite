@@ -192,15 +192,15 @@ TEST(concat_image2d, compute) {
               mapped_y[i] = static_cast<int>(0);
             }
             auto *concat_in_data0 =
-                concat_in0.mutable_data<uint16_t, cl::Image2D>(
+                concat_in0.mutable_data<half_t, cl::Image2D>(
                     concat_image2d_shape_in0["width"],
                     concat_image2d_shape_in0["height"]);
             auto *concat_in_data1 =
-                concat_in1.mutable_data<uint16_t, cl::Image2D>(
+                concat_in1.mutable_data<half_t, cl::Image2D>(
                     concat_image2d_shape_in1["width"],
                     concat_image2d_shape_in1["height"]);
             auto *concat_out_data =
-                concat_out.mutable_data<uint16_t, cl::Image2D>(
+                concat_out.mutable_data<half_t, cl::Image2D>(
                     concat_image2d_shape["width"],
                     concat_image2d_shape["height"]);
 

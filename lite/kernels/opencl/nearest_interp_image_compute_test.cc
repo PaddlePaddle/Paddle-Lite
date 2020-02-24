@@ -166,11 +166,11 @@ TEST(nearest_interp_image2d, compute) {
                 mapped_y[i] = static_cast<int>(0);
               }
               auto *nearest_interp_in_data =
-                  nearest_interp_in.mutable_data<uint16_t, cl::Image2D>(
+                  nearest_interp_in.mutable_data<half_t, cl::Image2D>(
                       nearest_interp_image2d_shape["width"],
                       nearest_interp_image2d_shape["height"]);
               auto *nearest_interp_out_data =
-                  nearest_interp_out.mutable_data<uint16_t, cl::Image2D>(
+                  nearest_interp_out.mutable_data<half_t, cl::Image2D>(
                       y_dim[3], y_dim[2]);
 
               // set context and kernel args

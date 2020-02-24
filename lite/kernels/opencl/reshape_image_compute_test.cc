@@ -152,13 +152,13 @@ TEST(reshape_opencl, compute) {
   }
   paddle::lite::CLImageConverterDefault default_convertor;
 
-  std::vector<uint16_t> x_image_data(input_image_width * input_image_height *
-                                     4);  // 4 : RGBA
+  std::vector<half_t> x_image_data(input_image_width * input_image_height *
+                                   4);  // 4 : RGBA
 
   LOG(INFO) << "set mapped input  ...";
   default_convertor.NCHWToImage(input_v_data, x_image_data.data(), input_dim);
 
-  auto* input_image = input.mutable_data<uint16_t, cl::Image2D>(
+  auto* input_image = input.mutable_data<half_t, cl::Image2D>(
       input_image_width, input_image_height, x_image_data.data());
 
   LOG(INFO) << "prepare kernel ready";
@@ -168,7 +168,7 @@ TEST(reshape_opencl, compute) {
   DDim out_image_shape = default_converter.InitImageDimInfoWith(output_dim);
   LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
             << out_image_shape[1];
-  auto* out_image = output.mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = output.mutable_data<half_t, cl::Image2D>(
       out_image_shape[0], out_image_shape[1]);
   VLOG(4) << "out_dims= " << output_dim;
 
@@ -185,7 +185,7 @@ TEST(reshape_opencl, compute) {
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
+  auto* out_ptr = param.output->data<half_t, cl::Image2D>();
   auto it = wait_list->find(out_image);
 
   if (it != wait_list->end()) {
@@ -196,9 +196,9 @@ TEST(reshape_opencl, compute) {
     LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
   }
 
-  uint16_t* out_image_data = new uint16_t[out_image_shape.production() * 4];
+  half_t* out_image_data = new half_t[out_image_shape.production() * 4];
   TargetWrapperCL::ImgcpySync(out_image_data,
-                              output.data<uint16_t, cl::Image2D>(),
+                              output.data<half_t, cl::Image2D>(),
                               out_image_shape[0],
                               out_image_shape[1],
                               cl_image2d_row_pitch,
