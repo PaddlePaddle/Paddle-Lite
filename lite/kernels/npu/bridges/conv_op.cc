@@ -33,23 +33,14 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
-  auto input_type = kernel->GetInputDeclType("Input");
-  CHECK(input_type->precision() == PRECISION(kFloat));
-  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
 
   auto filter_name = op_info->Input("Filter").front();
-  auto filter_type = kernel->GetInputDeclType("Filter");
-  CHECK(filter_type->precision() == PRECISION(kFloat));
-  CHECK(filter_type->layout() == DATALAYOUT(kNCHW));
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
 
   auto output_name = op_info->Output("Output").front();
-  auto output_type = kernel->GetOutputDeclType("Output");
-  CHECK(output_type->precision() == PRECISION(kFloat));
-  CHECK(output_type->layout() == DATALAYOUT(kNCHW));
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
 
@@ -132,9 +123,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (graph->Has(bias_name)) {
       bias_node = graph->Get(bias_name);
     } else {
-      auto bias_type = kernel->GetInputDeclType("Bias");
-      CHECK(bias_type->precision() == PRECISION(kFloat));
-      CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
       auto bias = scope->FindMutableTensor(bias_name);
       auto bias_dims = bias->dims();
       auto bias_data_size = bias_dims.production();

@@ -32,24 +32,14 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto index_name = op_info->Input("Index").front();
-  auto index_type = kernel->GetInputDeclType("Index");
-  CHECK(index_type->precision() == PRECISION(kInt32) ||
-        index_type->precision() == PRECISION(kInt64));
-  CHECK(index_type->layout() == DATALAYOUT(kNCHW));
   auto index = scope->FindMutableTensor(index_name);
   auto index_dims = index->dims();
   CHECK(index_dims.size() == 1 ||
         (index_dims.size() == 2 && index_dims[1] == 1));
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 

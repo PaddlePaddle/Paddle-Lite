@@ -76,6 +76,9 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
+           "npu_subgraph_pass",
+           "xpu_subgraph_pass",
+           "bm_subgraph_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
@@ -112,10 +115,8 @@ class Optimizer {
 #endif
            "runtime_context_assign_pass",
            "argument_type_display_pass",
-           "memory_optimize_pass",
-           "npu_subgraph_pass",
-           "xpu_subgraph_pass"}};
-      RunPasses(passes_local, skip_passes);
+           "memory_optimize_pass"}};
+      RunPasses(passes_local);
     } else {
       RunPasses(passes, skip_passes);
     }
