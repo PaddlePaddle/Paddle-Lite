@@ -11,42 +11,42 @@
 
 ## Android
 
-|ARM Version|build_extra|arm_stl|target|下载|编译命令|
-|:-------:|:-----:|:-----:|:-----:|:-------:|:---------:|
-|armv7|OFF|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.tiny_publish.tar.gz)|[编译命令](compile_command/android1.html)|
-|armv7|OFF|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.full_publish.tar.gz)|[编译命令](compile_command/android2.html)|
-|armv7|OFF|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.tiny_publish.tar.gz)|[编译命令](compile_command/android3.html)|
-|armv7|OFF|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.full_publish.tar.gz)|[编译命令](compile_command/android4.html)|
-|armv7|ON|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.tiny_publish.tar.gz)|[编译命令](compile_command/android5.html)|
-|armv7|ON|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.full_publish.tar.gz)|[编译命令](compile_command/android6.html)|
-|armv7|ON|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.tiny_publish.tar.gz)|[编译命令](compile_command/android7.html)|
-|armv7|ON|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.full_publish.tar.gz)|[编译命令](compile_command/android8.html)|
-|armv8|OFF|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.tiny_publish.tar.gz)|[编译命令](compile_command/android9.html)|
-|armv8|OFF|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.full_publish.tar.gz)|[编译命令](compile_command/android10.html)|
-|armv8|OFF|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.tiny_publish.tar.gz)|[编译命令](compile_command/android11.html)|
-|armv8|OFF|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.full_publish.tar.gz)|[编译命令](compile_command/android12.html)|
-|armv8|ON|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.tiny_publish.tar.gz)|[编译命令](compile_command/android13.html)|
-|armv8|ON|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.full_publish.tar.gz)|[编译命令](compile_command/android14.html)|
-|armv8|ON|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.tiny_publish.tar.gz)|[编译命令](compile_command/android15.html)|
-|armv8|ON|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.full_publish.tar.gz)|[编译命令](compile_command/android16.html)|
+|ARM Version|build_extra|arm_stl|target|下载|
+|:-------:|:-----:|:-----:|:-----:|:-------:|
+|armv7|OFF|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.tiny_publish.tar.gz)|
+|armv7|OFF|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.full_publish.tar.gz)|
+|armv7|OFF|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.tiny_publish.tar.gz)|
+|armv7|OFF|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.full_publish.tar.gz)|
+|armv7|ON|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.tiny_publish.tar.gz)|
+|armv7|ON|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.full_publish.tar.gz)|
+|armv7|ON|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.tiny_publish.tar.gz)|
+|armv7|ON|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.full_publish.tar.gz)|
+|armv8|OFF|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.tiny_publish.tar.gz)|
+|armv8|OFF|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.full_publish.tar.gz)|
+|armv8|OFF|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.tiny_publish.tar.gz)|
+|armv8|OFF|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.full_publish.tar.gz)|
+|armv8|ON|c++_static|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.tiny_publish.tar.gz)|
+|armv8|ON|c++_static|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.full_publish.tar.gz)|
+|armv8|ON|c++_shared|tiny_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.tiny_publish.tar.gz)|
+|armv8|ON|c++_shared|full_publish|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.full_publish.tar.gz)|
 
 
 ## iOS
 
-|ARM Version|arm_os|with_extra|下载|编译命令|
-|:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv7|Ios|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.tar.gz)|[编译命令](compile_command/ios1.html)|
-|armv7|ios|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.with_extra.tar.gz)|[编译命令](compile_command/ios2.html)|
-|armv8|Ios64|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.tar.gz)|[编译命令](compile_command/ios3.html)|
-|armv8|Ios64|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.with_extra.tar.gz)|[编译命令](compile_command/ios4.html)|
+|ARM Version|arm_os|with_extra|下载|
+|:-------:|:-----:|:-----:|:-----:|
+|armv7|Ios|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.tar.gz)|
+|armv7|ios|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.with_extra.tar.gz)|
+|armv8|Ios64|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.tar.gz)|
+|armv8|Ios64|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.with_extra.tar.gz)|
 
 
 ## opt 工具
 
-| 运行系统 |      下载       |编译命令|
-| :---------: |  :--------------: |  :--------------: |
-|    Linux    |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt) |[编译命令](compile_command/opt.html)|
-|    MacOs   |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt_mac) |[编译命令](compile_command/opt.html)|
+| 运行系统 |      下载       |
+| :---------: |  :--------------: | 
+|    Linux    |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt) |
+|    MacOs   |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt_mac) |
 
 
 
