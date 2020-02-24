@@ -146,6 +146,7 @@ class Env {
     } else {
       LOG(INFO) << "Found " << count << " device(s)";
     }
+    CHECK_GT(max_stream, 0) << "max_stream must be greater than 0.";
     // create all device
     for (int i = 0; i < count; i++) {
       auto dev = Device<Type>(i, max_stream);
