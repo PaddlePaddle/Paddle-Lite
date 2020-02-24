@@ -109,7 +109,7 @@ __kernel void concat2(__read_only image2d_t input0,
 
 __kernel void concat_mul(__read_only image2d_t input,
                     __write_only image2d_t output,
-                    int flag, int C_0, int out_C, int out_W, int width) {
+                    int flag, int C_0, int out_C, int in_W, int width) {
   const int in_w = get_global_id(0); // image_width cxw/4
   const int in_c = get_global_id(1); // image_width cxw/4
   const int in_nh = get_global_id(2); // image_height nxh
@@ -118,39 +118,50 @@ __kernel void concat_mul(__read_only image2d_t input,
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
   int2 input_pos;
+  int2 output_pos;
   input_pos.x = in_c * in_W + in_w;
   input_pos.y = in_nh;
   CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
   if (flag == 1){ // by channel
     CL_DTYPE4 output_data;
     for (int i = 0; i < 4; i++) {
-        int c_out =C_0 + in_c * 4 + i;
+        int c_out = C_0 + in_c * 4 + i;
         if (c_out >= out_C) {
           break;
         }
         int2 output_pos;
-        output_pos.x = (c_out / 4) * out_W + out_w;
-        output_pos.y = out_nh;
+        output_pos.x = (c_out / 4) * in_W + in_w;
+        output_pos.y = in_nh;
+        float val;
         if (i == 0) {
-          output_data.x = input_data.x;
+          val = input_data.x;
         } else if (i == 1) {
-          output_data.y = input_data.y;
+          val = input_data.y;
         } else if (i == 2) {
-          output_data.z = input_data.z;
+          val = input_data.z;
         } else if (i == 3) {
-          output_data.w = input_data.w;
+          val = input_data.w;
       }
+      if (c_out % 4 == 0){
+         output_data.x = val;
+      }else if (c_out % 4 == 1){
+         output_data.y = val;
+     }else if (c_out % 4 == 2){
+         output_data.z = val;
+     }else if (c_out % 4 == 3){
+         output_data.w = val;
+     }
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
     }
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
   }else if (flag == 2){ // by height  width == n
     int2 output_pos;
-    output_pos.x = in_c * out_W + in_w;
+    output_pos.x = in_c * in_W + in_w;
     output_pos.y = in_nh + C_0 * width;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input_data);
   }else if (flag == 3){ // by width width == C
     int2 output_pos;
     output_pos.y = in_nh;
-    output_pos.x = in_c * out_W + (in_w + C_0);
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input);
+    output_pos.x = in_c * in_W + (in_w + C_0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input_data);
   }
 }

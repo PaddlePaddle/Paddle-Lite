@@ -51,20 +51,20 @@ void ConcatCompute<PRECISION(kFloat),
   axis_ = axis;
   switch (axis_) {
     case 0:
-      width_ = x_dims[2];  // h
+      width_ = out_dims[2];  // h
       flag_ = 0;
       break;
     case 1:                // channel
-      width_ = x_dims[3];  // w
+      width_ = out_dims[3];  // w
       flag_ = 1;
       break;
     case 2:                // height
-      width_ = x_dims[0];  // n
+      width_ = out_dims[0];  // n
       flag_ = 2;
       break;
     case 3:
     case -1:               // width
-      width_ = x_dims[1];  // c
+      width_ = out_dims[1];  // c
       flag_ = 3;
       break;
     default:
@@ -116,7 +116,10 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
           << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+  VLOG(4) << "width_: " << width_ << ", flag_: " << flag_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+  int out_w = x_dims[-1];
+  int out_c = x_dims[1];
   if (inputs.size() == 2) {
     auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
     auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
@@ -131,9 +134,9 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     status =
         kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, x_dims[1]);
+    status = kernel.setArg(++arg_idx, out_c);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, x_dims[3]);
+    status = kernel.setArg(++arg_idx, out_w);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, width_);
     CL_CHECK_FATAL(status);
@@ -153,6 +156,9 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       auto in_dims = inputs[i]->dims();
       image_shape = InitImageDimInfoWith(in_dims);
       auto* x_buf = inputs[i]->data<float, cl::Image2D>();
+      auto in_W = in_dims[-1];
+      VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
+          << image_shape["height"];
       global_work_size = cl::NDRange{
           static_cast<cl::size_type>(in_dims[-1]),
           static_cast<cl::size_type>(image_shape["width"] / in_dims[-1]),
@@ -165,9 +171,9 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, start);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, x_dims[1]);
+      status = kernel.setArg(++arg_idx, out_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, x_dims[3]);
+      status = kernel.setArg(++arg_idx, in_W);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
