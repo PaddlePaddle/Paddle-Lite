@@ -116,7 +116,7 @@ class Optimizer {
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "memory_optimize_pass"}};
-      RunPasses(passes_local);
+      RunPasses(passes_local, skip_passes);
     } else {
       RunPasses(passes, skip_passes);
     }
