@@ -30,7 +30,7 @@ tar zxf mobilenet_v1.tar.gz
 
 **如下图所示:**
 
-![image](https://paddlelite-data.bj.bcebos.com/doc_images/cxx_demo/2opt_model.png)
+![image](https://paddlelite-data.bj.bcebos.com/doc_images/cxx_demo/3inference_model.png)
 
 （2）下载[opt工具](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt)。放入同一文件夹，终端输入命令转化模型：
 
@@ -42,7 +42,7 @@ chmod +x opt
 
 **结果如下图所示：**
 
-![image](https://paddlelite-data.bj.bcebos.com/doc_images/cxx_demo/3inference_model.png)
+![image](https://paddlelite-data.bj.bcebos.com/doc_images/cxx_demo/2opt_model.png)
 
 
 
