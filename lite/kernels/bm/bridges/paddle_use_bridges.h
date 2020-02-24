@@ -36,3 +36,5 @@ USE_SUBGRAPH_BRIDGE(flatten, kBM);
 USE_SUBGRAPH_BRIDGE(flatten2, kBM);
 USE_SUBGRAPH_BRIDGE(norm, kBM);
 USE_SUBGRAPH_BRIDGE(prior_box, kBM);
+USE_SUBGRAPH_BRIDGE(box_coder, kBM);
+USE_SUBGRAPH_BRIDGE(multiclass_nms, kBM);
