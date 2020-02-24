@@ -4,7 +4,7 @@ Basic profiler 用于 CPU 上kernel 耗时的统计。
 
 ## 开启方法:
 
-参照 [编译安装](../source_compile) 中的**full_publish**部分进行环境配置，在 cmake 时添加 `-DLITE_WITH_PROFILER=ON` ，就可以开启相应支持。
+参照 [编译安装](../installation/source_compile) 中的**full_publish**部分进行环境配置，在 cmake 时添加 `-DLITE_WITH_PROFILER=ON` ，就可以开启相应支持。
 
 ## 使用示例：
 
