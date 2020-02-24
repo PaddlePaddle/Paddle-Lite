@@ -59,7 +59,7 @@ void argmax_compute_ref(const operators::ArgmaxParam& param) {
                         std::greater<std::pair<dtype, int>>());
 
       // out
-      dtype* out_ptr = output_data + n * out_channel + k;
+      auto* out_ptr = output_data + n * out_channel + k;
       *out_ptr = vec[0].second;
     }
   }
