@@ -429,6 +429,17 @@ REGISTER_LITE_KERNEL(multiclass_nms,
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(multiclass_nms2,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

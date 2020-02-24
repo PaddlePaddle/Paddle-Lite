@@ -17,7 +17,7 @@ limitations under the License. */
 __kernel void concat2(__read_only image2d_t input0,
                     __read_only image2d_t input1,
                     __write_only image2d_t output,
-                    int axis_size, int width) {
+                    int axis_size, int flag, int width) {
   const int x = get_global_id(0); // image_width cxw/4
   const int y = get_global_id(1); // image_height nxh
 
@@ -25,19 +25,24 @@ __kernel void concat2(__read_only image2d_t input0,
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
   int xx = x / width;
-  
+  if (flag == 0){
+    xx = y / width;
+  }
   if (xx < axis_size){
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(x, y));
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
   }else{
     int new_val = xx - axis_size;
+    new_val *= width;
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(new_val, y));
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
   }
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+  // WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
 __kernel void concat_mul(__read_only image2d_t input0,
                     __write_only image2d_t output,
-                    int axis_size, int width, int start) {
+                    int axis_size, int flag, int width, int start) {
   const int x = get_global_id(0); // image_width cxw/4
   const int y = get_global_id(1); // image_height nxh
 
@@ -45,9 +50,13 @@ __kernel void concat_mul(__read_only image2d_t input0,
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
   int xx = x / width;
+  if (flag == 0){
+    xx = y / width;
+  }
   
   if (xx < axis_size && xx >= start){
     xx -= start;
+   xx *= width;
     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, (int2)(xx, y));
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
   }

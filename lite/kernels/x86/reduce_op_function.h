@@ -47,33 +47,35 @@ void ReduceFunctor(const lite::Tensor& input,
                    const std::vector<int>& dims,
                    bool keep_dim) {
   auto x = EigenTensor<T, D>::From(input);
-  auto x_rank = static_cast<int>(x.dimensions().size());
-  auto reduce_dim = Eigen::array<int, R_D>();
-  std::vector<int> dims_ref = dims;
-  for (size_t i = 0; i < dims_ref.size(); ++i) {
-    if (dims_ref[i] < 0) dims_ref[i] = x_rank + dims_ref[i];
-    reduce_dim[i] = dims_ref[i];
-  }
-  // construct the squeezed output tensor
-  lite::DDim out_dims = output->dims();
-  if (keep_dim && x_rank > 1) {
-    const int kDelFlag = -2;
-    auto dims_vector = out_dims.Vectorize();
-    for (size_t i = 0; i < dims_ref.size(); ++i) {
-      dims_vector[dims_ref[i]] = kDelFlag;
-    }
-    dims_vector.erase(remove(dims_vector.begin(), dims_vector.end(), kDelFlag),
-                      dims_vector.end());
-    out_dims = lite::DDim(dims_vector);
-  }
-  // auto& place = *context.eigen_device();
-  Functor functor;
 
+  auto reduce_dim = Eigen::array<int, R_D>();
+  auto x_rank = static_cast<int>(x.dimensions().size());
+  for (size_t i = 0; i < dims.size(); ++i) {
+    if (dims[i] < 0) {
+      reduce_dim[i] = x_rank + dims[i];
+    } else {
+      reduce_dim[i] = dims[i];
+    }
+  }
+
+  Functor functor;
   if (D == 1) {
     auto out = EigenScalar<T>::From(output);
     functor(&x, &out, reduce_dim);
   } else {
-    auto out = EigenTensor<T, (D - R_D)>::From(*output, out_dims);
+    std::vector<DDim::value_type> out_dims;
+    if (keep_dim) {
+      // Construct the squeezed dims.
+      const int kDelFlag = -2;
+      out_dims = output->dims().Vectorize();
+      for (size_t i = 0; i < dims.size(); ++i) {
+        out_dims[reduce_dim[i]] = kDelFlag;
+      }
+      out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
+                     out_dims.end());
+    }
+    auto out = EigenTensor<T, (D - R_D)>::From(
+        *output, keep_dim ? DDim(out_dims) : output->dims());
     functor(&x, &out, reduce_dim);
   }
 }

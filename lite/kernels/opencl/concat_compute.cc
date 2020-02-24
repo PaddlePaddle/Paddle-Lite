@@ -101,7 +101,27 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-  if (inputs.size() == 2 && axis_ == 1) {
+  int flag = 1;  // cxw
+  switch (axis_) {
+    case 0:
+      width = x_dims[2];  // n
+      flag = 0;
+      break;
+    case 1:
+      width = x_dims[3];  // c
+      break;
+    case 2:
+      width = x_dims[0];  // h
+      flag = 0;
+      break;
+    case 3:
+    case -1:
+      width = x_dims[1];  // w
+      break;
+    default:
+      printf("this axis: %d does not support \n", axis_);
+  }
+  if (inputs.size() == 2) {
     auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
     auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
     cl_int status = kernel.setArg(arg_idx, *x_buf0);
@@ -112,6 +132,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     CL_CHECK_FATAL(status);
     status =
         kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, flag);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, width);
     CL_CHECK_FATAL(status);
@@ -136,6 +158,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       status = kernel.setArg(++arg_idx, axis_size_);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, start);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, flag);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width);
       CL_CHECK_FATAL(status);
@@ -264,15 +288,15 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kNCHW)>::Run() {
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
       arg_idx = 0;
-      auto size = inputs[i]->dims()[axis_];
+      int size = inputs[i]->dims()[axis_];
       auto* x_buf = inputs[i]->data<float, cl::Buffer>();
       global_work_size = cl::NDRange{static_cast<size_t>(size)};
-      auto total0 = size * post_size_;
+      int total0 = size * post_size_;
       cl_int status = kernel.setArg(arg_idx, *x_buf);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, size);
+      status = kernel.setArg(++arg_idx, static_cast<int>(size));
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, pre_size_);
       CL_CHECK_FATAL(status);
@@ -332,17 +356,17 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, Concat_buffer, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, Concat_buffer, def)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFloat),
+//                                       DATALAYOUT(kNCHW))})
+//     .BindInput("AxisTensor",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kInt32),
+//                                       DATALAYOUT(kNCHW))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kNCHW))})
+//     .Finalize();

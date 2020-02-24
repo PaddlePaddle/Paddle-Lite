@@ -32,9 +32,6 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   CHECK_EQ(x_dims.size(), 4L);
@@ -43,9 +40,6 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto spatial_size = x_dims[2] * x_dims[3];
   DDim scale_bias_dims({1, channel_size, 1, 1});
   auto y_name = op_info->Output("Y").front();
-  auto y_type = kernel->GetOutputDeclType("Y");
-  CHECK(y_type->precision() == PRECISION(kFloat));
-  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   float epsilon = op_info->GetAttr<float>("epsilon");
 
   // X node
@@ -60,9 +54,6 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> bias_node = nullptr;
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
-    auto bias_type = kernel->GetInputDeclType("Bias");
-    CHECK(bias_type->precision() == PRECISION(kFloat));
-    CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
     auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
     CHECK_EQ(channel_size, bias_dims.production());
@@ -100,9 +91,6 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> scale_node = nullptr;
   if (HasInputArg(op_info, scope, "Scale")) {
     auto scale_name = op_info->Input("Scale").front();
-    auto scale_type = kernel->GetInputDeclType("Scale");
-    CHECK(scale_type->precision() == PRECISION(kFloat));
-    CHECK(scale_type->layout() == DATALAYOUT(kNCHW));
     auto scale = scope->FindMutableTensor(scale_name);
     auto scale_dims = scale->dims();
     CHECK_EQ(channel_size, scale_dims.production());
