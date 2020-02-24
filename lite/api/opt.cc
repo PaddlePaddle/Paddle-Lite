@@ -91,7 +91,7 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(TARGET(kARM));
     } else if (target_repr == "opencl") {
       valid_places.emplace_back(
-          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault)});
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
       valid_places.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
