@@ -52,6 +52,7 @@ class LITE_API Predictor {
       const lite_api::CxxConfig& config,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
+      const std::vector<std::string>& skip_passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
 
   void Build(
@@ -60,12 +61,14 @@ class LITE_API Predictor {
       const std::string& param_file_path,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
+      const std::vector<std::string>& skip_passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
   void Build(const cpp::ProgramDesc& desc,
              const std::vector<Place>& valid_places,
-             const std::vector<std::string>& passes = {});
+             const std::vector<std::string>& passes = {},
+             const std::vector<std::string>& skip_passes = {});
 
   void GenRuntimeProgram();
 

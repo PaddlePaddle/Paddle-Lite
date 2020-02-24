@@ -83,7 +83,7 @@ class Node {
 
     // for cuda multi stream
     bool need_sync_{false};
-    int stream_id_{-1};
+    int stream_id_{0};
     // streams which need to be sync. exclude stream_id_
     std::vector<int> sync_streams_{};
   };

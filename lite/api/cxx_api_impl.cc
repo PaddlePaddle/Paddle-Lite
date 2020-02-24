@@ -32,10 +32,13 @@ namespace lite {
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
 #ifdef LITE_WITH_CUDA
-  Env<TARGET(kCUDA)>::Init();
+  Env<TARGET(kCUDA)>::Init(config_.cuda_max_stream());
 #endif
   auto places = config.valid_places();
-  raw_predictor_.Build(config, places);
+  if (!config_.multi_stream()) {
+    config_.delete_pass("multi_stream_analysis_pass");
+  }
+  raw_predictor_.Build(config, places, {}, config_.skip_passes());
 
   mode_ = config.power_mode();
   threads_ = config.threads();

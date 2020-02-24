@@ -74,7 +74,13 @@ class SSAGraph : GraphBase {
     nodes_in_order_.clear();
     nodes_in_order_.assign(nodes.begin(), nodes.end());
   }
-  std::vector<mir::Node *> GetNodesInOrder() { return nodes_in_order_; }
+  std::vector<mir::Node *> GetNodesInOrder() {
+    if (!nodes_in_order_.empty()) {
+      return nodes_in_order_;
+    } else {
+      return StmtTopologicalOrder();
+    }
+  }
 
  private:
   mir::Node *Argument(const std::string &name);

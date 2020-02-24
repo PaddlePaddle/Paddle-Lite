@@ -234,6 +234,7 @@ const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
+                      const std::vector<std::string> &skip_passes,
                       lite_api::LiteModelType model_type) {
   const std::string &model_path = config.model_dir();
   const std::string &model_file = config.model_file();
@@ -250,6 +251,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
         param_file,
         valid_places,
         passes,
+        skip_passes,
         model_type,
         model_from_memory);
 }
@@ -258,6 +260,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::string &param_file,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
+                      const std::vector<std::string> &skip_passes,
                       lite_api::LiteModelType model_type,
                       bool model_from_memory) {
   switch (model_type) {
@@ -282,12 +285,13 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  Build(program_desc_, valid_places, passes);
+  Build(program_desc_, valid_places, passes, skip_passes);
 }
 
 void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<Place> &valid_places,
-                      const std::vector<std::string> &passes) {
+                      const std::vector<std::string> &passes,
+                      const std::vector<std::string> &skip_passes) {
   program_desc_ = desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
@@ -301,7 +305,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
 
-  optimizer_.Run(std::move(program), inner_places, factor, passes);
+  optimizer_.Run(std::move(program), inner_places, factor, passes, skip_passes);
   exec_scope_ = optimizer_.exec_scope();
   PrepareFeedFetch();
 }

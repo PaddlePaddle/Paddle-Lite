@@ -113,6 +113,7 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
+  std::vector<std::string> skip_passes_;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -125,6 +126,9 @@ class LITE_API ConfigBase {
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
+  // skip passes
+  void delete_pass(const std::string& pass) { skip_passes_.push_back(pass); }
+  std::vector<std::string> skip_passes() const { return skip_passes_; }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
@@ -135,6 +139,10 @@ class LITE_API CxxConfig : public ConfigBase {
   bool model_from_memory_{false};
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
+#endif
+#ifdef LITE_WITH_CUDA
+  int cuda_max_stream_ = 4;
+  bool multi_stream_{false};
 #endif
 
  public:
@@ -162,6 +170,12 @@ class LITE_API CxxConfig : public ConfigBase {
   int x86_math_library_num_threads() const {
     return x86_math_library_math_threads_;
   }
+#endif
+#ifdef LITE_WITH_CUDA
+  void set_cuda_max_stream(int max_stream) { cuda_max_stream_ = max_stream; }
+  int cuda_max_stream() const { return cuda_max_stream_; }
+  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
+  int multi_stream() const { return multi_stream_; }
 #endif
 };
 
