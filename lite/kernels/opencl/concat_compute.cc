@@ -49,11 +49,26 @@ void ConcatCompute<PRECISION(kFloat),
   auto in_dims = inputs[0]->dims();
   axis_size_ = out_dims[axis];
   axis_ = axis;
-  for (int i = 0; i < axis; i++) {
-    pre_size_ *= in_dims[i];
-  }
-  for (int i = axis + 1; i < in_dims.size(); i++) {
-    post_size_ *= in_dims[i];
+  switch (axis_) {
+    case 0:
+      width_ = x_dims[2];  // h
+      flag_ = 0;
+      break;
+    case 1:                // channel
+      width_ = x_dims[3];  // w
+      flag_ = 1;
+      break;
+    case 2:                // height
+      width_ = x_dims[0];  // n
+      flag_ = 2;
+      break;
+    case 3:
+    case -1:               // width
+      width_ = x_dims[1];  // c
+      flag_ = 3;
+      break;
+    default:
+      printf("this axis: %d does not support \n", axis_);
   }
   for (int i = 1; i < inputs.size(); i++) {
     auto dims = inputs[i]->dims();
@@ -91,7 +106,8 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   int arg_idx = 0;
   int width = inputs[0]->dims()[-1];
   auto global_work_size =
-      cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
+      cl::NDRange{static_cast<cl::size_type>(x_dims[-1]),
+                  static_cast<cl::size_type>(image_shape["width"] / x_dims[-1]),
                   static_cast<cl::size_type>(image_shape["height"])};
   VLOG(4) << TargetToStr(param.output->target());
   VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
@@ -101,26 +117,6 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
   VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
           << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-  int flag = 1;  // cxw
-  switch (axis_) {
-    case 0:
-      width = x_dims[2];  // n
-      flag = 0;
-      break;
-    case 1:
-      width = x_dims[3];  // c
-      break;
-    case 2:
-      width = x_dims[0];  // h
-      flag = 0;
-      break;
-    case 3:
-    case -1:
-      width = x_dims[1];  // w
-      break;
-    default:
-      printf("this axis: %d does not support \n", axis_);
-  }
   if (inputs.size() == 2) {
     auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
     auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
@@ -130,12 +126,16 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, flag_);
+    CL_CHECK_FATAL(status);
     status =
         kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, flag);
+    status = kernel.setArg(++arg_idx, x_dims[1]);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, width);
+    status = kernel.setArg(++arg_idx, x_dims[3]);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, width_);
     CL_CHECK_FATAL(status);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
@@ -150,18 +150,26 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
     auto start = 0;
     for (int i = 0; i < inputs.size(); i++) {
       arg_idx = 0;
+      auto in_dims = inputs[i]->dims();
+      image_shape = InitImageDimInfoWith(in_dims);
       auto* x_buf = inputs[i]->data<float, cl::Image2D>();
+      global_work_size = cl::NDRange{
+          static_cast<cl::size_type>(in_dims[-1]),
+          static_cast<cl::size_type>(image_shape["width"] / in_dims[-1]),
+          static_cast<cl::size_type>(image_shape["height"])};
       cl_int status = kernel.setArg(arg_idx, *x_buf);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, axis_size_);
+      status = kernel.setArg(++arg_idx, flag_);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, start);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, flag);
+      status = kernel.setArg(++arg_idx, x_dims[1]);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, width);
+      status = kernel.setArg(++arg_idx, x_dims[3]);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
       CL_CHECK_FATAL(status);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
