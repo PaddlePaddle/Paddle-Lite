@@ -36,7 +36,9 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
   auto places = config.valid_places();
   std::vector<std::string> passes{};
-  if (config.model_dir() == "OPENCL_PRE_PRECESS") {
+  auto use_layout_preprocess_pass =
+      config.model_dir().find("OPENCL_PRE_PRECESS");
+  if (use_layout_preprocess_pass != std::string::npos) {
     passes = {"type_layout_cast_preprocess_pass"};
   }
   raw_predictor_.Build(config, places, passes);
