@@ -113,7 +113,7 @@ class Optimizer {
            "argument_type_display_pass",
            "memory_optimize_pass"}};
       if (passes.size() == 1) {
-        passes_local.apend(passes[0]);
+        passes_local.push_back(passes[0]);
       }
       RunPasses(passes_local);
     } else {

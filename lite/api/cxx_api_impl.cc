@@ -35,8 +35,9 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   Env<TARGET(kCUDA)>::Init();
 #endif
   auto places = config.valid_places();
+  std::vector<std::string> passes{};
   if (config.model_dir() == "OPENCL_PRE_PRECESS") {
-    std::vector<std::string> passes{"type_layout_cast_preprocess_pass"};
+    passes = {"type_layout_cast_preprocess_pass"};
   }
   raw_predictor_.Build(config, places, passes);
 
