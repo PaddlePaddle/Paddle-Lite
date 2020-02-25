@@ -30,3 +30,16 @@ Paddle Lite支持移动端GPU和Nvidia端上GPU设备，支持列表如下：
 - ARM Mali G 系列
 - Qualcomm Adreno 系列
 - Nvida tegra系列: tx1, tx2, nano, xavier
+
+## NPU
+Paddle Lite支持NPU，支持列表如下：
+- 华为达芬奇架构NPU
+
+## FPGA
+Paddle Lite支持FPGA，支持列表如下：
+- 百度Edgeboard系列：ZU9, ZU5, ZU3
+
+## XPU
+Paddle Lite支持XPU，支持列表如下：
+- 百度昆仑818-100芯片
+- 百度昆仑818-300芯片
