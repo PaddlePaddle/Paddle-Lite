@@ -351,7 +351,7 @@ TEST(conv2d, compute_image2d_1x1) {
                 SHADOW_LOG << "(" << i << ")" << *filter_p;
                 filter_p++;
               }
-              SHADOW_LOG << "卷积核2: ----  ";
+              SHADOW_LOG << "卷积核2:  ----  ";
               const float* filter_p2 = filter.mutable_data<float>();
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << *filter_p2;
