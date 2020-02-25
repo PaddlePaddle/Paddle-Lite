@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <random>
+
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
@@ -224,14 +225,14 @@ TEST(conv2d, compute_image2d_1x1) {
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, ic, ih, iw})};
+                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim =
-                  lite::DDim{std::vector<half_t>({oc, ic, ksize, ksize})};
+                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, oc, ih, iw})};
+                  lite::DDim{std::vector<int64_t>({batch_size, oc, ih, iw})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<half_t>({oc})};
+              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);
@@ -463,9 +464,9 @@ TEST(conv2d, compute_image2d_1x1) {
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{
-                  std::vector<half_t>({static_cast<half_t>(out_image_width),
-                                       static_cast<half_t>(out_image_height)})};
+              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+                  {static_cast<int64_t>(out_image_width),
+                   static_cast<int64_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
@@ -601,14 +602,14 @@ const int stride = 2;
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, ic, ih, iw})};
+                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim = lite::DDim{
-                  std::vector<half_t>({oc, filter_channel, ksize, ksize})};
+                  std::vector<int64_t>({oc, filter_channel, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, oc, oh, ow})};
+                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<half_t>({oc})};
+              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
 
               VLOG(2) << "input_dim:" << input_dim
                       << " filter_dim:" << filter_dim << " out_dim:" << out_dim
@@ -832,9 +833,9 @@ const int stride = 2;
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{
-                  std::vector<half_t>({static_cast<half_t>(out_image_width),
-                                       static_cast<half_t>(out_image_height)})};
+              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+                  {static_cast<int64_t>(out_image_width),
+                   static_cast<int64_t>(out_image_height)})};
 
 #ifdef PRINT_RESULT
               for (int i = 0; i < out_dim.production(); i++) {
@@ -956,14 +957,14 @@ TEST(conv2d, compute_image2d_5x5) {
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, ic, ih, iw})};
+                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim =
-                  lite::DDim{std::vector<half_t>({oc, ic, ksize, ksize})};
+                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, oc, oh, ow})};
+                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<half_t>({oc})};
+              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
 
               VLOG(2) << "input_dim:" << input_dim
                       << " filter_dim:" << filter_dim << " out_dim:" << out_dim
@@ -1183,9 +1184,9 @@ TEST(conv2d, compute_image2d_5x5) {
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{
-                  std::vector<half_t>({static_cast<half_t>(out_image_width),
-                                       static_cast<half_t>(out_image_height)})};
+              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+                  {static_cast<half_t>(out_image_width),
+                   static_cast<half_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
@@ -1299,14 +1300,14 @@ TEST(conv2d, compute_image2d_7x7) {
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, ic, ih, iw})};
+                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim =
-                  lite::DDim{std::vector<half_t>({oc, ic, ksize, ksize})};
+                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<half_t>({batch_size, oc, oh, ow})};
+                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<half_t>({oc})};
+              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);
@@ -1532,9 +1533,9 @@ TEST(conv2d, compute_image2d_7x7) {
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{
-                  std::vector<half_t>({static_cast<half_t>(out_image_width),
-                                       static_cast<half_t>(out_image_height)})};
+              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+                  {static_cast<half_t>(out_image_width),
+                   static_cast<half_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
