@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -45,14 +46,13 @@ class NearestInterpComputeImageDefault
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
     auto* x_buf =
-        param.X->data<uint16_t,
-                      cl::Image2D>();  // use uint16_t represents half float
+        param.X->data<half_t,
+                      cl::Image2D>();  // use half_t represents half float
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf =
-        param.Out->mutable_data<uint16_t, cl::Image2D>(  // use uint16_t
-            // represents half float
-            image_shape["width"],
-            image_shape["height"]);
+    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
+        // represents half float
+        image_shape["width"],
+        image_shape["height"]);
     const auto& y_dims = param.Out->dims();  // useless: check dim only
     float scale_h = y_dims[2] / x_dims[2];
     float scale_w = y_dims[3] / x_dims[3];

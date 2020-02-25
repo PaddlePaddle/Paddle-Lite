@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -67,13 +68,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
-    auto* x_img = param.x->data<uint16_t, cl::Image2D>();
+    auto* x_img = param.x->data<half_t, cl::Image2D>();
     LOG(INFO) << "x_image" << x_img;
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
     LOG(INFO) << "out_image_shape = " << out_image_shape["width"] << " "
               << out_image_shape["height"];
-    auto* out_img = param.output->mutable_data<uint16_t, cl::Image2D>(
+    auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
     LOG(INFO) << "out_image" << out_img;
 

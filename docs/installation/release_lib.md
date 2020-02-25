@@ -3,10 +3,17 @@
 
 ## 编译版本介绍
 
-- ARM_Version=`armv7/armv8`               编译时选择的arm版本，v7或者v8
-- build_extra=`ON/OFF`                                是否编译全量算子，OFF时只编译CV相关基础算子
-- arm_stl=`c++_static/c++_shared`       选择动态或者静态链接NDK STL库
-- target:  `tiny_publish/full_publish` 是否编译full_api预测库，`tiny_publish`时只编译light_api预测库
+- ARM_Version=`armv7/armv8`                        arm版本，可选择armv7或者armv8
+
+- arm_os=`android\ios\ios64\armlinux`   安装平台，支持的arm端移动平台包括 `ios\ios64`、`armlinux`和`android`
+
+- arm_lang=`gcc/clang`                                  源码编译时的编译器，默认为`gcc`编译器
+
+- arm_stl=`c++_static/c++_shared`             Lite预测库链接STL库的方式，支持静态或动态链接
+
+- build_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](./library.html)
+
+-  `tiny_publish/full_publish`                   编译模式，`tiny_publish`编译移动端部署库、`full_publish`编译部署库的同时编译第三方依赖库
 
 
 ## Android
@@ -35,16 +42,16 @@
 
 |ARM Version|arm_os|with_extra|下载|
 |:-------:|:-----:|:-----:|:-----:|
-|armv7|Ios|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.tar.gz)|
+|armv7|ios|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.tar.gz)|
 |armv7|ios|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios.armv7.with_extra.tar.gz)|
-|armv8|Ios64|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.tar.gz)|
-|armv8|Ios64|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.with_extra.tar.gz)|
+|armv8|ios64|OFF|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.tar.gz)|
+|armv8|ios64|ON|[release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/inference_lite_lib.ios64.armv8.with_extra.tar.gz)|
 
 
 ## opt 工具
 
 | 运行系统 |      下载       |
-| :---------: |  :--------------: | 
+| :---------: |  :--------------: |
 |    Linux    |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt) |
 |    MacOs   |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt_mac) |
 

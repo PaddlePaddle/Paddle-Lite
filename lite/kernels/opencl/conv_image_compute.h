@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
