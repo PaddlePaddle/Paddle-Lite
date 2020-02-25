@@ -53,11 +53,26 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto in_dims = inputs[0]->dims();
     axis_size_ = out_dims[axis];
     axis_ = axis;
-    for (int i = 0; i < axis; i++) {
-      pre_size_ *= in_dims[i];
-    }
-    for (int i = axis + 1; i < in_dims.size(); i++) {
-      post_size_ *= in_dims[i];
+    switch (axis_) {
+      case 0:
+        width_ = out_dims[2];  // h
+        flag_ = 0;
+        break;
+      case 1:                  // channel
+        width_ = out_dims[3];  // w
+        flag_ = 1;
+        break;
+      case 2:                  // height
+        width_ = out_dims[0];  // n
+        flag_ = 2;
+        break;
+      case 3:
+      case -1:                 // width
+        width_ = out_dims[1];  // c
+        flag_ = 3;
+        break;
+      default:
+        printf("this axis: %d does not support \n", axis_);
     }
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
@@ -81,7 +96,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.output->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.output->mutable_data<half_t, cl::Image2D>(
+    auto* out_buf = param.output->mutable_data<float, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     const auto& y_dims = param.output->dims();  // useless: check dim only
 
@@ -93,9 +108,10 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto inputs = param.x;
     int arg_idx = 0;
     int width = inputs[0]->dims()[-1];
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
-                    static_cast<cl::size_type>(image_shape["height"])};
+    auto global_work_size = cl::NDRange{
+        static_cast<cl::size_type>(x_dims[-1]),
+        static_cast<cl::size_type>(image_shape["width"] / x_dims[-1]),
+        static_cast<cl::size_type>(image_shape["height"])};
     VLOG(4) << TargetToStr(param.output->target());
     VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
             << image_shape["height"];
@@ -103,42 +119,29 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+    VLOG(4) << "width_: " << width_ << ", flag_: " << flag_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    int flag = 1;  // cxw
-    switch (axis_) {
-      case 0:
-        width = x_dims[2];  // n
-        flag = 0;
-        break;
-      case 1:
-        width = x_dims[3];  // c
-        break;
-      case 2:
-        width = x_dims[0];  // h
-        flag = 0;
-        break;
-      case 3:
-      case -1:
-        width = x_dims[1];  // w
-        break;
-      default:
-        printf("this axis: %d does not support \n", axis_);
-    }
+    int out_w = x_dims[-1];
+    int out_c = x_dims[1];
     if (inputs.size() == 2) {
-      auto* x_buf0 = inputs[0]->data<half_t, cl::Image2D>();
-      auto* x_buf1 = inputs[1]->data<half_t, cl::Image2D>();
+      auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
+      auto* x_buf1 = inputs[1]->data<float, cl::Image2D>();
       cl_int status = kernel.setArg(arg_idx, *x_buf0);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *x_buf1);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, flag_);
+      CL_CHECK_FATAL(status);
       status =
           kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, flag);
+      status = kernel.setArg(++arg_idx, out_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, width);
+      status = kernel.setArg(++arg_idx, out_w);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
@@ -153,18 +156,31 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       auto start = 0;
       for (int i = 0; i < inputs.size(); i++) {
         arg_idx = 0;
-        auto* x_buf = inputs[i]->data<half_t, cl::Image2D>();
+        auto in_dims = inputs[i]->dims();
+        image_shape = InitImageDimInfoWith(in_dims);
+        auto* x_buf = inputs[i]->data<float, cl::Image2D>();
+        auto in_w = in_dims[-1];
+        VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
+                << image_shape["height"];
+        global_work_size = cl::NDRange{
+            static_cast<cl::size_type>(in_dims[-1]),
+            static_cast<cl::size_type>(image_shape["width"] / in_dims[-1]),
+            static_cast<cl::size_type>(image_shape["height"])};
         cl_int status = kernel.setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, *out_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, axis_size_);
+        status = kernel.setArg(++arg_idx, flag_);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, start);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, flag);
+        status = kernel.setArg(++arg_idx, out_c);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, width);
+        status = kernel.setArg(++arg_idx, out_w);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(++arg_idx, in_w);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(++arg_idx, width_);
         CL_CHECK_FATAL(status);
         CL_CHECK_FATAL(status);
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -184,9 +200,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string doc() { return "Concat using cl::Image, kFP16"; }
 
   int axis_size_ = 1;
-  int post_size_ = 1;
-  int pre_size_ = 1;
   int axis_ = 1;
+  int flag_ = 1;
+  int width_ = 1;
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_half"};
