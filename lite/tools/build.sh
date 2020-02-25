@@ -11,7 +11,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 
-
+# test_ci
 # global variables
 BUILD_EXTRA=OFF
 BUILD_JAVA=ON
