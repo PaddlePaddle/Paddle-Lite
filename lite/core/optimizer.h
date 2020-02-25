@@ -53,7 +53,7 @@ class Optimizer {
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
 
-    if (passes.empty()) {
+    if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
           {"lite_quant_dequant_fuse_pass",         //
            "weight_quantization_preprocess_pass",  //
@@ -112,6 +112,9 @@ class Optimizer {
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "memory_optimize_pass"}};
+      if (passes.size() == 1) {
+        passes_local.apend(passes[0]);
+      }
       RunPasses(passes_local);
     } else {
       RunPasses(passes);
