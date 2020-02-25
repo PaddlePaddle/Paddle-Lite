@@ -18,6 +18,9 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
+#include "lite/kernels/opencl/test_helper.h"
+
+#define FP16_MAX_DIFF (1e0)
 
 namespace paddle {
 namespace lite {
@@ -86,7 +89,7 @@ TEST(layout_ImageDefault, compute) {
           auto* mapped_y = static_cast<float*>(TargetWrapperCL::Map(
               y_data, 0, sizeof(float) * x_dim.production()));
           for (int i = 0; i < x_dim.production(); ++i) {
-            mapped_x[i] = static_cast<float>(i) * 2;
+            mapped_x[i] = static_cast<float>(i) * 0.01;
           }
 
           // set context and kernel args
@@ -122,14 +125,19 @@ TEST(layout_ImageDefault, compute) {
 #endif  // PRINT_RESULT
 
           // check result: compare input and output
-          float MAX_PASS_DIFF = 1e-4;
-          for (int eidx = 0; eidx < x_dim.production(); eidx++) {
-            EXPECT_NEAR(mapped_x[eidx], mapped_y[eidx], MAX_PASS_DIFF);
-            if (abs(mapped_x[eidx] - mapped_y[eidx]) > MAX_PASS_DIFF) {
-              LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx
-                        << " / " << x_dim.production() << ", mapped_x[" << eidx
-                        << "]:" << mapped_x[eidx] << ", mapped_y[" << eidx
-                        << "]:" << mapped_y[eidx];
+          for (int i = 0; i < x_dim.production(); i++) {
+            auto abs_diff = COMPUTE_ABS_DIFF(mapped_x[i], mapped_y[i]);
+            auto relative_diff =
+                COMPUTE_RELATIVE_DIFF(mapped_x[i], mapped_y[i]);
+            EXPECT_EQ(
+                (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+                true);
+            if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+              LOG(ERROR) << "error idx:" << i << " mapped_x[" << i
+                         << "]:" << mapped_x[i] << " mapped_y[" << i
+                         << "]:" << mapped_y[i] << " abs_diff:" << abs_diff
+                         << " relative_diff:" << relative_diff
+                         << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
               break;
             }
           }

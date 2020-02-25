@@ -18,6 +18,9 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
+#include "lite/kernels/opencl/test_helper.h"
+
+#define FP16_MAX_DIFF (1e0)
 
 namespace paddle {
 namespace lite {
@@ -58,7 +61,7 @@ TEST(relu_image2d_fp16, compute) {
                "-> host";
 
 #ifdef RELU_FP16_LOOP_TEST
-  for (int n = 1; n <= 100; n += 33) {
+  for (int n = 1; n <= 2; n += 1) {
     for (auto c : {1, 3}) {
       for (int h = 12; h <= 100; h += 13) {
         for (int w = 12; w <= 100; w += 25) {
@@ -181,13 +184,19 @@ TEST(relu_image2d_fp16, compute) {
 #endif  // RELU_FP16_PRINT_RESULT
 
           // check result: compare kernel output and cpu output(y_data_ref)
-          for (int eidx = 0; eidx < x_dim.production(); eidx++) {
-            EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], 1e-6);
-            if (abs(y_data_ref[eidx] - mapped_y[eidx]) > 1e-6) {
-              LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx
-                        << " / " << x_dim.production() << ", y_data_ref["
-                        << eidx << "]:" << y_data_ref[eidx] << ", mapped_y["
-                        << eidx << "]:" << mapped_y[eidx];
+          for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
+            auto abs_diff = COMPUTE_ABS_DIFF(y_data_ref[eidx], mapped_y[eidx]);
+            auto relative_diff =
+                COMPUTE_RELATIVE_DIFF(y_data_ref[eidx], mapped_y[eidx]);
+            EXPECT_EQ(
+                (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+                true);
+            if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+              LOG(ERROR) << "error idx:" << eidx << ", y_data_ref[" << eidx
+                         << "]:" << y_data_ref[eidx] << ", mapped_y[" << eidx
+                         << "]:" << mapped_y[eidx] << " abs_diff:" << abs_diff
+                         << " relative_diff:" << relative_diff
+                         << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
               break;
             }
           }
@@ -206,7 +215,7 @@ TEST(relu_image2d_fp16, compute) {
 #endif
 }
 
-// #define RELU6_FP16_LOOP_TEST
+//  #define RELU6_FP16_LOOP_TEST
 // #define RELU6_FP16_PRINT_RESULT
 TEST(relu6_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu6(img) -> "
@@ -287,7 +296,7 @@ TEST(relu6_image2d_fp16, compute) {
           auto *mapped_y = static_cast<float *>(TargetWrapperCL::Map(
               y_data, 0, sizeof(float) * x_dim.production()));
           for (int i = 0; i < x_dim.production(); ++i) {
-            mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2;
+            mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2 * 0.1;
             mapped_y[i] = static_cast<int>(0);
           }
           auto *relu_in_data = relu_in.mutable_data<half_t, cl::Image2D>(
@@ -339,8 +348,8 @@ TEST(relu6_image2d_fp16, compute) {
 
           // check result: compare kernel output and cpu output(y_data_ref)
           for (int eidx = 0; eidx < x_dim.production(); eidx++) {
-            EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], 1e-6);
-            if (abs(y_data_ref[eidx] - mapped_y[eidx]) > 1e-6) {
+            EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], FP16_MAX_DIFF);
+            if (abs(y_data_ref[eidx] - mapped_y[eidx]) > FP16_MAX_DIFF) {
               LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx
                         << " / " << x_dim.production() << ", y_data_ref["
                         << eidx << "]:" << y_data_ref[eidx] << ", mapped_y["
@@ -498,8 +507,8 @@ TEST(sigmoid_image2d_fp16, compute) {
 
           // check result: compare kernel output and cpu output(y_data_ref)
           for (int eidx = 0; eidx < x_dim.production(); eidx++) {
-            EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], 1e-3);
-            if (abs(y_data_ref[eidx] - mapped_y[eidx]) > 1e-3) {
+            EXPECT_NEAR(y_data_ref[eidx], mapped_y[eidx], FP16_MAX_DIFF);
+            if (abs(y_data_ref[eidx] - mapped_y[eidx]) > FP16_MAX_DIFF) {
               LOG(INFO) << "1st diff in this case at eidx[from 0]:" << eidx
                         << " / " << x_dim.production() << ", y_data_ref["
                         << eidx << "]: " << y_data_ref[eidx] << ", mapped_y["
