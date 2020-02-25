@@ -133,9 +133,9 @@ TEST(relu_image2d_fp16, compute) {
             mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2;
             mapped_y[i] = static_cast<int>(0);
           }
-          auto *relu_in_data = relu_in.mutable_data<uint16_t, cl::Image2D>(
+          auto *relu_in_data = relu_in.mutable_data<half_t, cl::Image2D>(
               relu_image2d_shape["width"], relu_image2d_shape["height"]);
-          auto *relu_out_data = relu_out.mutable_data<uint16_t, cl::Image2D>(
+          auto *relu_out_data = relu_out.mutable_data<half_t, cl::Image2D>(
               relu_image2d_shape["width"], relu_image2d_shape["height"]);
 
           // set context and kernel args
@@ -290,9 +290,9 @@ TEST(relu6_image2d_fp16, compute) {
             mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2;
             mapped_y[i] = static_cast<int>(0);
           }
-          auto *relu_in_data = relu_in.mutable_data<uint16_t, cl::Image2D>(
+          auto *relu_in_data = relu_in.mutable_data<half_t, cl::Image2D>(
               relu_image2d_shape["width"], relu_image2d_shape["height"]);
-          auto *relu_out_data = relu_out.mutable_data<uint16_t, cl::Image2D>(
+          auto *relu_out_data = relu_out.mutable_data<half_t, cl::Image2D>(
               relu_image2d_shape["width"], relu_image2d_shape["height"]);
 
           // set context and kernel args
@@ -447,12 +447,10 @@ TEST(sigmoid_image2d_fp16, compute) {
           for (int i = 0; i < x_dim.production(); ++i) {
             mapped_x[i] = static_cast<float>(dist(engine));
           }
-          auto *sigmoid_in_data =
-              sigmoid_in.mutable_data<uint16_t, cl::Image2D>(
-                  sigmoid_image2d_shape["width"],
-                  sigmoid_image2d_shape["height"]);
+          auto *sigmoid_in_data = sigmoid_in.mutable_data<half_t, cl::Image2D>(
+              sigmoid_image2d_shape["width"], sigmoid_image2d_shape["height"]);
           auto *sigmoid_out_data =
-              sigmoid_out.mutable_data<uint16_t, cl::Image2D>(
+              sigmoid_out.mutable_data<half_t, cl::Image2D>(
                   sigmoid_image2d_shape["width"],
                   sigmoid_image2d_shape["height"]);
 

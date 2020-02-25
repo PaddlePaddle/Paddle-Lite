@@ -123,23 +123,22 @@ TEST(pool2d_image2d, compute) {
   DDim x_image_shape = default_converter->InitImageDimInfoWith(in_dim);
   LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
             << x_image_shape[1];
-  std::vector<uint16_t> x_image_data(x_image_shape.production() *
-                                     4);  // 4 : RGBA
+  std::vector<half_t> x_image_data(x_image_shape.production() * 4);  // 4 : RGBA
   default_converter->NCHWToImage(input_v.data(), x_image_data.data(), in_dim);
-  auto* x_image = x.mutable_data<uint16_t, cl::Image2D>(
+  auto* x_image = x.mutable_data<half_t, cl::Image2D>(
       x_image_shape[0], x_image_shape[1], x_image_data.data());
   LOG(INFO) << "x_image:" << x_image;
 
   DDim out_image_shape = default_converter->InitImageDimInfoWith(out_dim);
   LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
             << out_image_shape[1];
-  auto* out_image = out.mutable_data<uint16_t, cl::Image2D>(out_image_shape[0],
-                                                            out_image_shape[1]);
+  auto* out_image = out.mutable_data<half_t, cl::Image2D>(out_image_shape[0],
+                                                          out_image_shape[1]);
   LOG(INFO) << "out_image:" << out_image;
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
+  auto* out_ptr = param.output->data<half_t, cl::Image2D>();
   auto it = wait_list->find(out_ptr);
   if (it != wait_list->end()) {
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
@@ -154,7 +153,7 @@ TEST(pool2d_image2d, compute) {
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
-  uint16_t* out_image_data = new uint16_t[out_image_shape.production() * 4];
+  half_t* out_image_data = new half_t[out_image_shape.production() * 4];
   TargetWrapperCL::ImgcpySync(out_image_data,
                               out_image,
                               out_image_shape[0],

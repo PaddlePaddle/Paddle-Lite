@@ -253,14 +253,14 @@ TEST(depthwise_conv2d_basic, compute) {
 
           paddle::lite::CLImageConverterDefault default_convertor;
           VLOG(4) << "set mapped input  ...";
-          std::vector<uint16_t> x_image_v(input_image_width *
-                                          input_image_height * 4);  // 4 : RGBA
-          std::vector<uint16_t> filter_image_v(
+          std::vector<half_t> x_image_v(input_image_width * input_image_height *
+                                        4);  // 4 : RGBA
+          std::vector<half_t> filter_image_v(
               filter_image_width * filter_image_height * 4);  // 4 : RGBA
-          std::vector<uint16_t> bias_image_v(
-              bias_image_width * bias_image_height * 4);  // 4 : RGBA
-          std::vector<uint16_t> out_image_v(out_image_width * out_image_height *
-                                            4);  // 4 : RGBA
+          std::vector<half_t> bias_image_v(bias_image_width *
+                                           bias_image_height * 4);  // 4 : RGBA
+          std::vector<half_t> out_image_v(out_image_width * out_image_height *
+                                          4);  // 4 : RGBA
 
           default_convertor.NCHWToImage(
               input_v.data(), x_image_v.data(), input_dim);
@@ -270,9 +270,9 @@ TEST(depthwise_conv2d_basic, compute) {
           nw_convertor.NCHWToImage(
               filter_v.data(), filter_image_v.data(), filter_dim);
 
-          auto* input_image2d = input.mutable_data<uint16_t, cl::Image2D>(
+          auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
               input_image_width, input_image_height, x_image_v.data());
-          auto* filter_image2d = filter.mutable_data<uint16_t, cl::Image2D>(
+          auto* filter_image2d = filter.mutable_data<half_t, cl::Image2D>(
               filter_image_width, filter_image_height, filter_image_v.data());
 
           if (bias_flag) {
@@ -285,7 +285,7 @@ TEST(depthwise_conv2d_basic, compute) {
             CLImageConverterFolder folder_convertor;
             folder_convertor.NCHWToImage(
                 bias_v.data(), bias_image_v.data(), bias_dim);
-            auto* bias_data = bias.mutable_data<uint16_t, cl::Image2D>(
+            auto* bias_data = bias.mutable_data<half_t, cl::Image2D>(
                 bias_image_width, bias_image_height, bias_image_v.data());
           }
 
@@ -301,11 +301,11 @@ TEST(depthwise_conv2d_basic, compute) {
           VLOG(4) << "kernel launch ...";
           kernel->Launch();
           VLOG(4) << "mutable output ...";
-          auto* output_image2d = output.mutable_data<uint16_t, cl::Image2D>(
+          auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
               out_image_width, out_image_height);
 
           auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-          auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
+          auto* out_ptr = param.output->data<half_t, cl::Image2D>();
           auto it = wait_list->find(out_ptr);
 
           if (it != wait_list->end()) {
@@ -319,7 +319,7 @@ TEST(depthwise_conv2d_basic, compute) {
           }
 
           TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                      output.data<uint16_t, cl::Image2D>(),
+                                      output.data<half_t, cl::Image2D>(),
                                       out_image_width,
                                       out_image_height,
                                       cl_image2d_row_pitch,
@@ -434,11 +434,11 @@ TEST(depthwise_conv2d_image2d_fp16, compute) {
       default_converter->InitImageDimInfoWith(input.dims());
   LOG(INFO) << "input_image_shape = " << input_image_shape[0] << " "
             << input_image_shape[1];
-  std::vector<uint16_t> input_image_data(input_image_shape.production() *
-                                         4);  // 4 : RGBA
+  std::vector<half_t> input_image_data(input_image_shape.production() *
+                                       4);  // 4 : RGBA
   default_converter->NCHWToImage(
       input_v.data(), input_image_data.data(), input.dims());
-  auto* input_image = input.mutable_data<uint16_t, cl::Image2D>(
+  auto* input_image = input.mutable_data<half_t, cl::Image2D>(
       input_image_shape[0], input_image_shape[1], input_image_data.data());
 
   LOG(INFO) << "prepare kernel";
@@ -447,11 +447,11 @@ TEST(depthwise_conv2d_image2d_fp16, compute) {
   DDim filter_image_shape = nw_converter->InitImageDimInfoWith(filter.dims());
   LOG(INFO) << "filter_image_shape = " << filter_image_shape[0] << " "
             << filter_image_shape[1];
-  std::vector<uint16_t> filter_image_data(filter_image_shape.production() *
-                                          4);  // 4 : RGBA
+  std::vector<half_t> filter_image_data(filter_image_shape.production() *
+                                        4);  // 4 : RGBA
   nw_converter->NCHWToImage(
       filter_v.data(), filter_image_data.data(), filter.dims());
-  auto* filter_image = filter.mutable_data<uint16_t, cl::Image2D>(
+  auto* filter_image = filter.mutable_data<half_t, cl::Image2D>(
       filter_image_shape[0], filter_image_shape[1], filter_image_data.data());
 
   LOG(INFO) << "launch";
@@ -460,13 +460,13 @@ TEST(depthwise_conv2d_image2d_fp16, compute) {
       default_converter->InitImageDimInfoWith(output.dims());
   LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
             << output_image_shape[1];
-  auto* output_image = output.mutable_data<uint16_t, cl::Image2D>(
+  auto* output_image = output.mutable_data<half_t, cl::Image2D>(
       output_image_shape[0], output_image_shape[1]);
 
   kernel->Launch();
 
   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<uint16_t, cl::Image2D>();
+  auto* out_ptr = param.output->data<half_t, cl::Image2D>();
   auto it = wait_list->find(out_ptr);
   if (it != wait_list->end()) {
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
@@ -491,8 +491,7 @@ TEST(depthwise_conv2d_image2d_fp16, compute) {
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
 
-  uint16_t* output_image_data =
-      new uint16_t[output_image_shape.production() * 4];
+  half_t* output_image_data = new half_t[output_image_shape.production() * 4];
   TargetWrapperCL::ImgcpySync(output_image_data,
                               output_image,
                               output_image_shape[0],
