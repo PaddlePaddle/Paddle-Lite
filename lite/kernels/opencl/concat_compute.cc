@@ -155,7 +155,7 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       auto in_dims = inputs[i]->dims();
       image_shape = InitImageDimInfoWith(in_dims);
       auto* x_buf = inputs[i]->data<float, cl::Image2D>();
-      auto in_W = in_dims[-1];
+      auto in_w = in_dims[-1];
       VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
               << image_shape["height"];
       global_work_size = cl::NDRange{
@@ -172,7 +172,9 @@ void ConcatCompute<PRECISION(kFloat), DATALAYOUT(kImageDefault)>::Run() {
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, out_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, in_W);
+      status = kernel.setArg(++arg_idx, out_w);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, in_w);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);

@@ -109,7 +109,7 @@ __kernel void concat2(__read_only image2d_t input0,
 
 __kernel void concat_mul(__read_only image2d_t input,
                     __write_only image2d_t output,
-                    int flag, int C_0, int out_C, int in_W, int width) {
+                    int flag, int C_0, int out_C, int out_W, int in_W, int width) {
   const int in_w = get_global_id(0); // image_width cxw/4
   const int in_c = get_global_id(1); // image_width cxw/4
   const int in_nh = get_global_id(2); // image_height nxh
@@ -161,7 +161,7 @@ __kernel void concat_mul(__read_only image2d_t input,
   }else if (flag == 3){ // by width, width == C
     int2 output_pos;
     output_pos.y = in_nh;
-    output_pos.x = in_c * in_W + (in_w + C_0);
+    output_pos.x = in_c * out_W + (in_w + C_0);
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input_data);
   }
 }
