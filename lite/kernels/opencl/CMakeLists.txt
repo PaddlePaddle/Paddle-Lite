@@ -131,8 +131,8 @@ lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 #lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
-#    DEPS elementwise_add_opencl op_registry program context
-#   ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS elementwise_add_opencl op_registry program context
+#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
 lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
              DEPS io_copy_opencl op_registry program context

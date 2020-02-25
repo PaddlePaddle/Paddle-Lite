@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include "lite/api/paddle_place.h"
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
@@ -47,7 +48,7 @@ class LayoutComputeBufferChwToImageDefault
     auto* x_data = param.x->data<float, cl::Buffer>();
     auto x_dims = param.x->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* y_data = param.y->mutable_data<uint16_t, cl::Image2D>(
+    auto* y_data = param.y->mutable_data<half_t, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     auto y_dims = param.y->dims();
 
@@ -146,7 +147,7 @@ class LayoutComputeImageDefaultToBufferChw
 
   void Run() override {
     auto& param = Param<param_t>();
-    auto* x_data = param.x->data<uint16_t, cl::Image2D>();
+    auto* x_data = param.x->data<half_t, cl::Image2D>();
     auto x_dims = param.x->dims();
     auto* y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto y_dims = param.y->dims();

@@ -85,10 +85,10 @@ void ConvImageCompute::PrepareForRun() {
 
     CLImageConverterNWBlock converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    std::vector<uint16_t> filter_image_v(filter_image_dims[0] *
-                                         filter_image_dims[1] * 4);  // 4 : RGBA
+    std::vector<half_t> filter_image_v(filter_image_dims[0] *
+                                       filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1;
@@ -109,10 +109,10 @@ void ConvImageCompute::PrepareForRun() {
 
     CLImageConverterNWBlock converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    std::vector<uint16_t> filter_image_v(filter_image_dims[0] *
-                                         filter_image_dims[1] * 4);  // 4 : RGBA
+    std::vector<half_t> filter_image_v(filter_image_dims[0] *
+                                       filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h != 3) {
@@ -123,10 +123,10 @@ void ConvImageCompute::PrepareForRun() {
 
     CLImageConverterNWBlock converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    std::vector<uint16_t> filter_image_v(filter_image_dims[0] *
-                                         filter_image_dims[1] * 4);  // 4 : RGBA
+    std::vector<half_t> filter_image_v(filter_image_dims[0] *
+                                       filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::DepthwiseConv2d;
@@ -137,10 +137,10 @@ void ConvImageCompute::PrepareForRun() {
 
     CLImageConverterFolder converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    std::vector<uint16_t> filter_image_v(filter_image_dims[0] *
-                                         filter_image_dims[1] * 4);  // 4 : RGBA
+    std::vector<half_t> filter_image_v(filter_image_dims[0] *
+                                       filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d3x3;
@@ -151,10 +151,10 @@ void ConvImageCompute::PrepareForRun() {
 
     CLImageConverterFolder converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    std::vector<uint16_t> filter_image_v(filter_image_dims[0] *
-                                         filter_image_dims[1] * 4);  // 4 : RGBA
+    std::vector<half_t> filter_image_v(filter_image_dims[0] *
+                                       filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d5x5;
@@ -165,10 +165,10 @@ void ConvImageCompute::PrepareForRun() {
 
     CLImageConverterFolder converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    std::vector<uint16_t> filter_image_v(filter_image_dims[0] *
-                                         filter_image_dims[1] * 4);  // 4 : RGBA
+    std::vector<half_t> filter_image_v(filter_image_dims[0] *
+                                       filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    this->filter_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    this->filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d7x7;
@@ -200,12 +200,12 @@ void ConvImageCompute::PrepareForRun() {
     CLImageConverterFolder bias_converter;
     const DDim& bias_image_dims =
         bias_converter.InitImageDimInfoWith(param.bias->dims());
-    std::vector<uint16_t> bias_image_v(bias_image_dims[0] * bias_image_dims[1] *
-                                       4);
+    std::vector<half_t> bias_image_v(bias_image_dims[0] * bias_image_dims[1] *
+                                     4);
     float* bias_cpu_data = param.bias->mutable_data<float>();
     bias_converter.NCHWToImage(
         bias_cpu_data, bias_image_v.data(), param.bias->dims());
-    this->bias_gpu_image_.mutable_data<uint16_t, cl::Image2D>(
+    this->bias_gpu_image_.mutable_data<half_t, cl::Image2D>(
         bias_image_dims[0], bias_image_dims[1], bias_image_v.data());
     // convert cpu buffer bias --> gpu image --- end ----
   }
@@ -223,8 +223,8 @@ void ConvImageCompute::Conv2d1x1() {
   auto input_dims = param.x->dims();
   auto paddings = *param.paddings;
   auto strides = param.strides;
-  auto* input_image = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_image = param.x->data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -233,7 +233,7 @@ void ConvImageCompute::Conv2d1x1() {
   int output_width = output_dims[3];
   int output_height = output_dims[2];
   auto out_image_shape = InitImageDimInfoWith(output_dims);
-  auto* out_image = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = param.output->mutable_data<half_t, cl::Image2D>(
       out_image_shape["width"], out_image_shape["height"]);
 
   const bool has_bias = param.bias != nullptr;
@@ -292,7 +292,7 @@ void ConvImageCompute::Conv2d1x1() {
   const cl::Buffer* bias_buf = nullptr;
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -373,8 +373,8 @@ void ConvImageCompute::Conv2d3x3() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
 
-  auto* input_image = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_image = param.x->data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -388,7 +388,7 @@ void ConvImageCompute::Conv2d3x3() {
   int filter_height = filter_dims[2];
   int filter_channel = filter_dims[1];
   auto out_image_shape = InitImageDimInfoWith(output_dims);
-  auto* out_image = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = param.output->mutable_data<half_t, cl::Image2D>(
       out_image_shape["width"], out_image_shape["height"]);
 
   const bool has_bias = param.bias != nullptr;
@@ -464,7 +464,7 @@ void ConvImageCompute::Conv2d3x3() {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -549,8 +549,8 @@ void ConvImageCompute::Conv2d5x5() {
   auto input_dims = param.x->dims();
   auto paddings = *param.paddings;
   auto strides = param.strides;
-  auto* input_image = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_image = param.x->data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -561,7 +561,7 @@ void ConvImageCompute::Conv2d5x5() {
   int filter_width = filter_dims[3];
   int filter_height = filter_dims[2];
   auto out_image_shape = InitImageDimInfoWith(output_dims);
-  auto* out_image = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = param.output->mutable_data<half_t, cl::Image2D>(
       out_image_shape["width"], out_image_shape["height"]);
 
   const bool has_bias = param.bias != nullptr;
@@ -619,7 +619,7 @@ void ConvImageCompute::Conv2d5x5() {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -694,8 +694,8 @@ void ConvImageCompute::Conv2d7x7() {
   auto input_dims = param.x->dims();
   auto paddings = *param.paddings;
   auto strides = param.strides;
-  auto* input_image = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_image = param.x->data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -706,7 +706,7 @@ void ConvImageCompute::Conv2d7x7() {
   int filter_width = filter_dims[3];
   int filter_height = filter_dims[2];
   auto out_image_shape = InitImageDimInfoWith(output_dims);
-  auto* out_image = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = param.output->mutable_data<half_t, cl::Image2D>(
       out_image_shape["width"], out_image_shape["height"]);
 
   const bool has_bias = param.bias != nullptr;
@@ -764,7 +764,7 @@ void ConvImageCompute::Conv2d7x7() {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -845,17 +845,17 @@ void ConvImageCompute::DepthwiseConv2d3x3s1() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  auto* input_img = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_img = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_img = param.x->data<half_t, cl::Image2D>();
+  auto* filter_img = filter_gpu_image_.data<half_t, cl::Image2D>();
 
   const cl::Image2D* bias_img = nullptr;
   if (param.bias) {
-    bias_img = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_img = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto image_shape = InitImageDimInfoWith(output_dims);
 
-  auto* output_img = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* output_img = param.output->mutable_data<half_t, cl::Image2D>(
       image_shape["width"], image_shape["height"]);
 
   STL::stringstream kernel_key;
@@ -926,17 +926,17 @@ void ConvImageCompute::DepthwiseConv2d3x3() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  auto* input_img = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_img = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_img = param.x->data<half_t, cl::Image2D>();
+  auto* filter_img = filter_gpu_image_.data<half_t, cl::Image2D>();
 
   const cl::Image2D* bias_img = nullptr;
   if (param.bias) {
-    bias_img = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_img = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto image_shape = InitImageDimInfoWith(output_dims);
 
-  auto* output_img = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* output_img = param.output->mutable_data<half_t, cl::Image2D>(
       image_shape["width"], image_shape["height"]);
 
   STL::stringstream kernel_key;
@@ -1009,8 +1009,8 @@ void ConvImageCompute::DepthwiseConv2d() {
   auto input_dims = param.x->dims();
   auto paddings = *param.paddings;
   auto strides = param.strides;
-  auto* input_image = param.x->data<uint16_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<uint16_t, cl::Image2D>();
+  auto* input_image = param.x->data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -1021,7 +1021,7 @@ void ConvImageCompute::DepthwiseConv2d() {
   int filter_width = filter_dims[3];
   int filter_height = filter_dims[2];
   auto out_image_shape = InitImageDimInfoWith(output_dims);
-  auto* out_image = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = param.output->mutable_data<half_t, cl::Image2D>(
       out_image_shape["width"], out_image_shape["height"]);
 
   const bool has_bias = param.bias != nullptr;
@@ -1080,7 +1080,7 @@ void ConvImageCompute::DepthwiseConv2d() {
   const cl::Buffer* bias_buf = nullptr;
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<uint16_t, cl::Image2D>();
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();
