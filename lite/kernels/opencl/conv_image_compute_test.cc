@@ -1185,8 +1185,8 @@ TEST(conv2d, compute_image2d_5x5) {
 
               SHADOW_LOG << " out_dim: " << out_dim;
               const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
-                  {static_cast<half_t>(out_image_width),
-                   static_cast<half_t>(out_image_height)})};
+                  {static_cast<int64_t>(out_image_width),
+                   static_cast<int64_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
@@ -1534,8 +1534,8 @@ TEST(conv2d, compute_image2d_7x7) {
 
               SHADOW_LOG << " out_dim: " << out_dim;
               const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
-                  {static_cast<half_t>(out_image_width),
-                   static_cast<half_t>(out_image_height)})};
+                  {static_cast<int64_t>(out_image_width),
+                   static_cast<int64_t>(out_image_height)})};
 
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
