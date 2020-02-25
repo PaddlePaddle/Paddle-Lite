@@ -58,7 +58,7 @@ class StaticKernelPickPass : public mir::StmtPass {
       const std::unordered_map<std::string, PrecisionType>& out_types,
       const std::vector<std::string>& in_names,
       const std::vector<std::string>& out_names) {
-    CHECK_GT(places.size(), 0) << "valid_places is empty.";
+    CHECK_GT(places.size(), static_cast<size_t>(0)) << "valid_places is empty.";
     float final_score{-1.};
     Place winner_place{places[0]};
     const int kMax =

@@ -30,8 +30,6 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   // input
   auto x_names = op_info->Input("X");
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   // output
   auto output_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();

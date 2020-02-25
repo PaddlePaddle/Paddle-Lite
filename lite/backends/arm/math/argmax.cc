@@ -53,7 +53,7 @@ void argmax_func(const lite::Tensor *input,
                         std::greater<std::pair<float, int>>());
 
       // out
-      float *out_ptr = output->mutable_data<float>() + n * out_channel + k;
+      int64_t *out_ptr = output->mutable_data<int64_t>() + n * out_channel + k;
       *out_ptr = vec[0].second;
     }
   }
