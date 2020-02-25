@@ -54,9 +54,13 @@ void TestModel(const std::vector<Place>& valid_places,
     predictor.Run();
   }
 
-  auto start = GetCurrentUS();
+  double sum_duration = 0.0;  // millisecond;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start = GetCurrentUS();
     predictor.Run();
+    auto duration = (GetCurrentUS() - start) / 1000.0;
+    sum_duration += duration;
+    VLOG(1) << "run_idx:" << i << " " << duration << " ms";
   }
 
   if (save_model) {
@@ -69,8 +73,7 @@ void TestModel(const std::vector<Place>& valid_places,
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+            << ", spend " << sum_duration / FLAGS_repeats << " ms in average.";
 
   std::vector<std::vector<float>> ref;
   // i = 1
