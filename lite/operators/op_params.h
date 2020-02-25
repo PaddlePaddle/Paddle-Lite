@@ -417,35 +417,26 @@ struct MeanGradParam {
 struct FillConstantParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
-  lite::Tensor* shape_tensor;
+  lite::Tensor* shape_tensor{nullptr};
   std::vector<lite::Tensor*> shape_tensor_list{};
 
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
-  lite::Tensor* Out{};
-};
-struct FillConstantBatchLikeParam {
-  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
-  std::vector<int64_t> shape{};
-  float value{0.0f};
-  // useless for x86, keep it for compatibility
-  bool force_cpu{false};
   lite::Tensor* out{};
-  const lite::Tensor* input{};
-  int input_dim_idx{0};
-  int output_dim_idx{0};
 };
 
 struct FillConstantBatchSizeLikeParam {
-  lite::Tensor* Input;
-  lite::Tensor* Out;
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* out{nullptr};
 
-  std::vector<int> shape;
+  std::vector<int> shape{};
   int input_dim_idx{0};
   int output_dim_idx{0};
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   float value{0.0f};
+  // useless for x86, keep it for compatibility
+  bool force_cpu{false};
 };
 
 //
