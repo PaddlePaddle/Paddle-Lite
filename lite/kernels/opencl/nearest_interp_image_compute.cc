@@ -45,15 +45,16 @@ class NearestInterpComputeImageDefault
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
+    const auto& y_dims = param.Out->dims();
     auto* x_buf =
         param.X->data<half_t,
                       cl::Image2D>();  // use half_t represents half float
-    auto image_shape = InitImageDimInfoWith(x_dims);
+    auto out_image_shape = InitImageDimInfoWith(y_dims);
     auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
         // represents half float
-        image_shape["width"],
-        image_shape["height"]);
-    const auto& y_dims = param.Out->dims();  // useless: check dim only
+        out_image_shape["width"],
+        out_image_shape["height"]);
+
     float scale_h = y_dims[2] / x_dims[2];
     float scale_w = y_dims[3] / x_dims[3];
     int in_dims_h = x_dims[2];
@@ -87,16 +88,22 @@ class NearestInterpComputeImageDefault
 
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
-    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-            << image_shape["height"];
+    VLOG(4) << "out_image_shape(w,h):" << out_image_shape["width"] << " "
+            << out_image_shape["height"];
     VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
 
+    const std::vector<size_t>& default_work_size =
+        DefaultWorkSize(y_dims,
+                        DDim(std::vector<DDim::value_type>{
+                            static_cast<int64_t>(out_image_shape["width"]),
+                            static_cast<int64_t>(out_image_shape["height"])}));
     auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
-                    static_cast<cl::size_type>(image_shape["height"])};
+        cl::NDRange{static_cast<cl::size_type>(default_work_size.data()[0]),
+                    static_cast<cl::size_type>(default_work_size.data()[1]),
+                    static_cast<cl::size_type>(default_work_size.data()[2])};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -112,7 +119,7 @@ class NearestInterpComputeImageDefault
 
  private:
   std::string kernel_func_name_{"nearest_interp"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{" -DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
