@@ -40,7 +40,7 @@ class LayoutComputeBufferChwToImageDefault
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+        kernel_func_name_, "image/layout_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -142,7 +142,7 @@ class LayoutComputeImageDefaultToBufferChw
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+        kernel_func_name_, "image/layout_kernel.cl", build_options_);
   }
 
   void Run() override {
