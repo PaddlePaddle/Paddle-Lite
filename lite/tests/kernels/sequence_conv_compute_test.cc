@@ -91,6 +91,7 @@ class SequenceConvComputeTester : public arena::TestCase {
         output_data[i * output_shape[0] + j] = res[i][j];
       }
     }
+    (out->mutable_lod())->push_back(lod_[0]);
   }
 
  protected:
