@@ -22,7 +22,10 @@ namespace lite {
 namespace arm {
 namespace math {
 
-void add_bias_rowwise(Tensor* input, Tensor* bias, int start_w, int end_w);
+void add_bias_rowwise(Tensor* input,
+                      const Tensor* bias,
+                      int start_w,
+                      int end_w);
 
 inline float* row_offset(Tensor& input, int start) {  // NOLINT
   auto in_dim = input.dims();
@@ -51,18 +54,22 @@ void activation(
     act_tanh(din, dout, size, threads);
   } else if (act_str == "relu") {
     act_relu(din, dout, size, threads);
+  } else {
+    LOG(FATAL) << "unsupport activation " << act_str;
   }
 }
 
-template <typename T>
-void vector_dot(
-    T* out, const T* in, const T* v1, int size, float* v2 = nullptr) {
+void vector_dot(float* out,
+                const float* in,
+                const float* v1,
+                int size,
+                const float* v2 = nullptr) {
   int loop = size >> 2;
   int remain = size & 3;
   const float* in_ptr = in;
   float* out_ptr = out;
   const float* v1_ptr = v1;
-  float* v2_ptr = v2;
+  const float* v2_ptr = v2;
   for (int i = 0; i < loop; ++i) {
     float32x4_t in = vld1q_f32(in_ptr);
     float32x4_t data1 = vld1q_f32(v1_ptr);
@@ -116,7 +123,6 @@ struct LstmUnitFunctor {
       memset(zero_ptr, 0, sizeof(float) * temp_len);
 
       T* value_in = value.gate_value;
-      print_float(value_in, frame_size);
       T* value_ig = value_in + frame_size;
       T* value_fg = value_ig + frame_size;
       T* value_og = value_fg + frame_size;

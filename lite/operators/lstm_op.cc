@@ -86,7 +86,6 @@ bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.Input("C0").size()) {
     param_.C0 =
         scope->FindVar(opdesc.Input("C0").front())->GetMutable<lite::Tensor>();
-    LOG(INFO) << opdesc.Input("C0").size();
   }
   if (opdesc.Input("H0").size()) {
     param_.H0 =

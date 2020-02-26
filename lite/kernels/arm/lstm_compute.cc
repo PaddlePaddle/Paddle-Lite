@@ -94,15 +94,6 @@ void LstmCompute<T>::Run() {
   std::string cell_act = param.cell_activation;
   std::string cand_act = param.candidate_activation;
 
-  /*
-  auto gate_act = math::detail::GetActivationType(
-      ctx.Attr<std::string>("gate_activation"));
-  auto cell_act = math::detail::GetActivationType(
-      ctx.Attr<std::string>("cell_activation"));
-  auto cand_act = math::detail::GetActivationType(
-      ctx.Attr<std::string>("candidate_activation"));
-  */
-
   int matrix_width = batch_gate->numel() / in_dims[0];
   auto& ctx = this->ctx_->template As<ARMContext>();
   for (size_t n = 0; n < num_batch; n++) {

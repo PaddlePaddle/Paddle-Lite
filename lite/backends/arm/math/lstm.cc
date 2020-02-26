@@ -20,7 +20,10 @@ namespace lite {
 namespace arm {
 namespace math {
 
-void add_bias_rowwise(Tensor* input, Tensor* bias, int start_w, int end_w) {
+void add_bias_rowwise(Tensor* input,
+                      const Tensor* bias,
+                      int start_w,
+                      int end_w) {
   auto in_dim = input->dims();
   int width = input->numel() / in_dim[0];
   int w_adds = width < end_w ? width : end_w;
