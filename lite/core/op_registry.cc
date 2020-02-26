@@ -19,6 +19,10 @@
 namespace paddle {
 namespace lite {
 
+const std::map<std::string, std::string> &GetOp2PathDict() {
+  return OpKernelInfoCollector::Global().GetOp2PathDict();
+}
+
 std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     const std::string &op_type,
     TargetType target,
