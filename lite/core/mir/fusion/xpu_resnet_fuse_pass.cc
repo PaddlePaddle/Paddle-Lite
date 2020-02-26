@@ -15,60 +15,13 @@
 #include <memory>
 #include <vector>
 #include "lite/core/mir/pass_registry.h"
-#include "lite/operators/subgraph_op.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/operators/subgraph_op.h"
+#include "lite/kernels/xpu/resnet50_compute.h"
+#include "lite/backends/xpu/math.h"
 
 namespace paddle {
 namespace lite {
-
-namespace kernels {
-namespace xpu {
-
-class ResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  ResNet50Compute() {
-    set_op_type("ResNet50");
-    set_alias("def");
-  }
-
-  using param_t = operators::ResNet50Param;
-
-  virtual void Run() override {
-    auto& param = this->Param<param_t>();
-    auto& ctx = this->ctx_->As<XPUContext>();
-
-    std::vector<const int16_t*> arg_filter;
-    std::vector<const float*> arg_max_filter;
-    std::vector<const float*> arg_bias;
-
-    for (auto* filter : param.filter) {
-      arg_filter.push_back((int16_t*)filter->data<float>());
-    }
-    for (auto* bias : param.bias) {
-      arg_bias.push_back((float*)bias->data<float>());
-    }
-    for (auto* max_filter : param.max_filter) {
-      arg_max_filter.push_back((float*)max_filter->data<float>());
-    }
-
-    int batch_size = param.input->dims()[0];
-    int r = xdnn::conv2d_int16_resnet<float, int16_t>(ctx.GetRawContext(),
-        batch_size,
-        param.input->data<float>(),
-        &arg_filter[0],
-        param.output->mutable_data<float>(TARGET(kXPU)),
-        &arg_bias[0],
-        &arg_max_filter[0]
-    );
-    CHECK(r == 0);
-  }
-
-  virtual ~ResNet50Compute() = default;
-};
-
-} // namespace xpu
-} // namespace kernels
-
 namespace mir {
 namespace fusion {
 
@@ -895,14 +848,7 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
         bias_on_host[i] += -mean_on_host[i] * scale_on_host[i];
       }
 
-      float max_f = 0.0f;
-      for (int i = 0; i < filter_len; ++i) {
-        float max = std::abs(filter_on_host[i]);
-        if (max > max_f) {
-          max_f = max;
-        }
-      }
-
+      float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
       std::unique_ptr<int16_t[]> filter_int16(new int16_t[filter_len]);
       xpuapi_fp32_to_int16(filter_on_host, filter_int16.get(), max_f, filter_len);
       memcpy(filter_on_host, filter_int16.get(), filter_len * sizeof(int16_t));
@@ -963,16 +909,3 @@ REGISTER_MIR_PASS(xpu_resnet_fuse_pass,
                   paddle::lite::mir::XPUResNet50FusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("conv2d");
-
-REGISTER_LITE_KERNEL(ResNet50,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ResNet50Compute,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("MaxFilter", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();

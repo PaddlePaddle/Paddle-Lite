@@ -15,87 +15,15 @@
 #include <memory>
 #include <vector>
 #include "lite/core/mir/pass_registry.h"
-#include "lite/operators/subgraph_op.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/operators/subgraph_op.h"
+#include "lite/kernels/xpu/multi_encoder_compute.h"
+#include "lite/backends/xpu/math.h"
 
 namespace paddle {
 namespace lite {
-
-namespace kernels {
-namespace xpu {
-
-class MultiEncoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  MultiEncoderCompute() {
-    set_op_type("MultiEncoder");
-    set_alias("def");
-  }
-
-  using param_t = operators::MultiEncoderParam;
-
-  virtual void Run() override {
-    auto& param = this->Param<param_t>();
-    auto& ctx = this->ctx_->As<XPUContext>();
-
-    std::vector<const int16_t*> arg_fc_weight;
-    std::vector<const float*> arg_fc_bias;
-    std::vector<const float*> arg_ln_scale;
-    std::vector<const float*> arg_ln_bias;
-
-    for (auto* fc_weight : param.fc_weight) {
-      arg_fc_weight.push_back((int16_t*)fc_weight->data<float>());
-    }
-    for (auto* fc_bias : param.fc_bias) {
-      arg_fc_bias.push_back(fc_bias->data<float>());
-    }
-    for (auto* ln_scale : param.ln_scale) {
-      arg_ln_scale.push_back(ln_scale->data<float>());
-    }
-    for (auto* ln_bias : param.ln_bias) {
-      arg_ln_bias.push_back(ln_bias->data<float>());
-    }
-
-    int batch_size = param.input->dims()[0];
-    int seq_len = param.input->dims()[1];
-    //std::unordered_map<std::string, xdnn::Activation_t> act_map = {
-      //{ "relu", xdnn::Activation_t::RELU },
-      //{ "gelu", xdnn::Activation_t::GELU },
-    //};
-    xdnn::Activation_t act_type = xdnn::Activation_t::GELU;
-    if (param.act_type == "relu") {
-      act_type = xdnn::Activation_t::RELU;
-    }
-    int r = xdnn::bert_encoder_transformer_int16<int16_t>(
-        ctx.GetRawContext(),
-        batch_size,
-        seq_len,
-        seq_len,
-        param.head_num,
-        param.size_per_head,
-        param.n_layers,
-        param.input->data<float>(),
-        param.input->data<float>(),
-        param.mask->data<float>(),
-        &arg_fc_weight[0],
-        &arg_fc_bias[0],
-        &arg_ln_scale[0],
-        &arg_ln_bias[0],
-        param.output->mutable_data<float>(TARGET(kXPU)),
-        param.fc_weight_max->data<float>(),
-        false,
-        true,
-        act_type
-    );
-    CHECK(r == 0);
-  }
-
-  virtual ~MultiEncoderCompute() = default;
-};
-
-} // namespace xpu
-} // namespace kernels
-
 namespace mir {
+
 namespace fusion {
 
 class XPUSingleEncoderFuser : public FuseBase {
@@ -635,20 +563,17 @@ class XPUMultiEncoderFuser {
     auto& fc_weight_names = arg_map["FCWeight"];
     for (size_t i = 0; i < fc_weight_names.size(); ++i) {
       auto* weight_t = scope->FindMutableTensor(fc_weight_names[i]);
+      auto weight_dims = weight_t->dims();
       int weight_len = weight_t->numel();
       float* weight_on_host = weight_t->mutable_data<float>();
-
-      float max_f = 0.0f;
-      for (int i = 0; i < weight_len; ++i) {
-        float max = std::abs(weight_on_host[i]);
-        if (max > max_f) {
-          max_f = max;
-        }
-      }
+      float max_f = paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
 
       std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
+      std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
       xpuapi_fp32_to_int16(weight_on_host, weight_int16.get(), max_f, weight_len);
-      memcpy(weight_on_host, weight_int16.get(), weight_len * sizeof(int16_t));
+      paddle::lite::xpu::math::Transpose(weight_int16.get(), weight_trans_int16.get(),
+          weight_dims[0], weight_dims[1]);
+      memcpy(weight_on_host, weight_trans_int16.get(), weight_len * sizeof(int16_t));
       fc_weight_max[i] = max_f;
     }
 
@@ -698,19 +623,3 @@ REGISTER_MIR_PASS(xpu_encoder_fuse_pass,
                   paddle::lite::mir::XPUMultiEncoderFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("matmul");
-
-REGISTER_LITE_KERNEL(MultiEncoder,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::MultiEncoderCompute,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("LNScale", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("LNBias", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("FCWeightMax", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();

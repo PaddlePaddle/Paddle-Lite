@@ -17,3 +17,5 @@ add_kernel(dropout_compute_xpu XPU basic SRCS dropout_compute.cc DEPS ${lite_ker
 add_kernel(matmul_compute_xpu XPU basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(stack_compute_xpu XPU basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(slice_compute_xpu XPU basic SRCS slice_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(resnet50_compute_xpu XPU basic SRCS resnet50_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(multi_encoder_compute_xpu XPU basic SRCS multi_encoder_compute.cc DEPS ${lite_kernel_deps})
