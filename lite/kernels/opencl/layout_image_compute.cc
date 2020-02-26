@@ -38,6 +38,10 @@ class LayoutComputeBufferChwToImageDefault
   using param_t = operators::LayoutParam;
 
   void PrepareForRun() override {
+    auto& param = Param<param_t>();
+    if (param.process_type == 1) {
+      kernel_func_name_ = "buffer_to_image2d_with_pre255";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/layout_kernel.cl", build_options_);
@@ -45,7 +49,12 @@ class LayoutComputeBufferChwToImageDefault
 
   void Run() override {
     auto& param = Param<param_t>();
-    auto* x_data = param.x->data<float, cl::Buffer>();
+    const cl::Buffer* x_data;
+    if (param.process_type == 1) {
+      x_data = param.x->data<uint8_t, cl::Buffer>();
+    } else {
+      x_data = param.x->data<float, cl::Buffer>();
+    }
     auto x_dims = param.x->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
     auto* y_data = param.y->mutable_data<half_t, cl::Image2D>(
@@ -138,6 +147,10 @@ class LayoutComputeImageDefaultToBufferChw
   using param_t = operators::LayoutParam;
 
   void PrepareForRun() override {
+    auto& param = Param<param_t>();
+    if (param.process_type == 1) {
+      kernel_func_name_ = "image2d_to_buffer_with_post255";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/layout_kernel.cl", build_options_);
@@ -145,9 +158,14 @@ class LayoutComputeImageDefaultToBufferChw
 
   void Run() override {
     auto& param = Param<param_t>();
+    const cl::Buffer* y_data;
+    if (param.process_type == 1) {
+      y_data = param.y->mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
+    } else {
+      y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    }
     auto* x_data = param.x->data<half_t, cl::Image2D>();
     auto x_dims = param.x->dims();
-    auto* y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto y_dims = param.y->dims();
     auto x_image_shape = InitImageDimInfoWith(x_dims);
 

@@ -204,12 +204,40 @@ void TypeLayoutTransformPass::SetValidPlaces(
   valid_places_ = valid_places;
 }
 
+void OpenCLTypeLayoutTransformPass::Apply(
+    const std::unique_ptr<SSAGraph>& graph) {
+  // Start from inputs of the graph, those should have place set.
+  VLOG(4) << "\n" << Visualize(graph.get());
+  std::list<Node*> nodes;
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    nodes.push_back(node);
+  }
+
+  VLOG(4) << "nodes.size():" << nodes.size();
+  for (auto& node : nodes) {
+    VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
+    if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
+    if (node->AsStmt().op_type() == "layout") {
+      auto new_op = node->AsStmt().mutable_op_info();
+      int process_type = 1;
+      new_op->SetAttr("process_type", process_type);
+    }
+  }
+  VLOG(4) << "\n" << Visualize(graph.get());
+}
+
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_layout_cast_pass,
                   paddle::lite::mir::TypeLayoutTransformPass)
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("layout_once")
+    .BindKernel("layout");
+
+REGISTER_MIR_PASS(type_layout_cast_preprocess_pass,
+                  paddle::lite::mir::OpenCLTypeLayoutTransformPass)
     .BindTargets({TARGET(kAny)})
     .BindKernel("layout_once")
     .BindKernel("layout");

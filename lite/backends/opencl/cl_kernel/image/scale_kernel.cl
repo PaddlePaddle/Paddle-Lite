@@ -27,6 +27,6 @@ __kernel void scale(__read_only image2d_t input,
                             CLK_FILTER_NEAREST;
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
-  in = convert_float(scale) * in + convert_float(bias);
+  in = CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
