@@ -17,6 +17,61 @@
 
 namespace paddle {
 namespace lite {
+
+namespace operators {
+
+bool MultiEncoderOp::CheckShape() const { return true; }
+
+bool MultiEncoderOp::InferShape() const {
+  auto input_shape = param_.input->dims();
+  param_.output->Resize(input_shape);
+  return true;
+}
+
+bool MultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+  param_.input = const_cast<lite::Tensor *>(
+      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
+  param_.mask = const_cast<lite::Tensor *>(
+      &scope->FindVar(op_desc.Input("Mask").front())->Get<lite::Tensor>());
+  param_.fc_weight_max = const_cast<lite::Tensor *>(
+      &scope->FindVar(op_desc.Input("FCWeightMax").front())->Get<lite::Tensor>());
+  param_.output =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<lite::Tensor>();
+
+  param_.fc_weight.clear();
+  for (auto& name : op_desc.Input("FCWeight")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.fc_weight.push_back(t);
+  }
+  param_.fc_bias.clear();
+  for (auto& name : op_desc.Input("FCBias")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.fc_bias.push_back(t);
+  }
+  param_.ln_scale.clear();
+  for (auto& name : op_desc.Input("LNScale")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.ln_scale.push_back(t);
+  }
+  param_.ln_bias.clear();
+  for (auto& name : op_desc.Input("LNBias")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.ln_bias.push_back(t);
+  }
+
+  param_.n_layers = op_desc.GetAttr<int>("n_layers");
+  param_.head_num = op_desc.GetAttr<int>("head_num");
+  param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
+  param_.act_type = op_desc.GetAttr<std::string>("act_type");
+  return true;
+}
+
+}  // namespace operators
+
 namespace kernels {
 namespace xpu {
 
@@ -78,6 +133,8 @@ void MultiEncoderCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(MultiEncoder, paddle::lite::operators::MultiEncoderOp);
 
 REGISTER_LITE_KERNEL(MultiEncoder,
                      kXPU,

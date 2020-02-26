@@ -17,6 +17,49 @@
 
 namespace paddle {
 namespace lite {
+
+namespace operators {
+
+bool ResNet50Op::CheckShape() const { return true; }
+
+bool ResNet50Op::InferShape() const {
+  auto input_shape = param_.input->dims();
+  input_shape[1] = 2048;
+  input_shape[2] = 1;
+  input_shape[3] = 1;
+  param_.output->Resize(input_shape);
+  return true;
+}
+
+bool ResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+  param_.input = const_cast<lite::Tensor *>(
+      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
+  param_.output =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<lite::Tensor>();
+
+  param_.filter.clear();
+  for (auto& name : op_desc.Input("Filter")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.filter.push_back(t);
+  }
+  param_.bias.clear();
+  for (auto& name : op_desc.Input("Bias")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.bias.push_back(t);
+  }
+  param_.max_filter.clear();
+  for (auto& name : op_desc.Input("MaxFilter")) {
+    auto t = const_cast<lite::Tensor *>(
+        &scope->FindVar(name)->Get<lite::Tensor>());
+    param_.max_filter.push_back(t);
+  }
+  return true;
+}
+
+}  // namespace operators
+
 namespace kernels {
 namespace xpu {
 
@@ -59,6 +102,8 @@ void ResNet50Compute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(ResNet50, paddle::lite::operators::ResNet50Op);
 
 REGISTER_LITE_KERNEL(ResNet50,
                      kXPU,

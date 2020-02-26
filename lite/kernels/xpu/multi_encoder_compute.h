@@ -14,10 +14,35 @@
 
 #pragma once
 #include "lite/core/kernel.h"
+#include "lite/core/op_lite.h"
+#include "lite/operators/op_params.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 
 namespace paddle {
 namespace lite {
+
+namespace operators {
+
+class MultiEncoderOp : public OpLite {
+ public:
+  MultiEncoderOp() {}
+  explicit MultiEncoderOp(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShape() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "MultiEncoder"; }
+
+ private:
+  mutable MultiEncoderParam param_;
+};
+
+}  // namespace operators
+
 namespace kernels {
 namespace xpu {
 

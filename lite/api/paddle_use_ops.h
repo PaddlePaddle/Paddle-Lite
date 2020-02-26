@@ -4,8 +4,6 @@
 USE_LITE_OP(box_coder);
 USE_LITE_OP(sequence_reshape);
 USE_LITE_OP(subgraph);
-USE_LITE_OP(ResNet50);
-USE_LITE_OP(MultiEncoder);
 USE_LITE_OP(grid_sampler);
 USE_LITE_OP(unsqueeze);
 USE_LITE_OP(unsqueeze2);
