@@ -573,6 +573,23 @@ template void conv_im2col_gemm_int8<float>(const int8_t* i_data,
                                            ARMContext* ctx,
                                            const float* scale);
 
+template void im2col<float>(const float* data_im,
+            int channels,
+            int height,
+            int width,
+            int kernel_h,
+            int kernel_w,
+            int pad_top,
+            int pad_bottom,
+            int pad_left,
+            int pad_right,
+            int stride_h,
+            int stride_w,
+            int dilation_h,
+            int dilation_w,
+            float* data_col);
+
+ 
 void conv_depthwise_3x3_fp32(const void* din,
                              void* dout,
                              int num,
