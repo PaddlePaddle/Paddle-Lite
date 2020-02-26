@@ -62,7 +62,7 @@ TEST(relu_image2d_fp16, compute) {
 
 #ifdef RELU_FP16_LOOP_TEST
   for (int n = 1; n <= 2; n += 1) {
-    for (auto c : {1, 3}) {
+    for (auto c : {1}) {
       for (int h = 12; h <= 100; h += 13) {
         for (int w = 12; w <= 100; w += 25) {
 #else
@@ -194,7 +194,7 @@ TEST(relu_image2d_fp16, compute) {
           LOG(INFO) << "---- print kernel result (input -> output) ----";
           for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
             std::cout << mapped_x[eidx] << " -> " << mapped_y[eidx]
-                      << std::endl;
+                      << ", ref: " << y_data_ref[eidx] << std::endl;
           }
 #endif  // RELU_FP16_PRINT_RESULT
 
@@ -372,7 +372,7 @@ TEST(relu6_image2d_fp16, compute) {
           LOG(INFO) << "---- print kernel result (input -> output) ----";
           for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
             std::cout << mapped_x[eidx] << " -> " << mapped_y[eidx]
-                      << std::endl;
+                      << ", ref: " << y_data_ref[eidx] << std::endl;
           }
 #endif  // RELU6_FP16_PRINT_RESULT
 
@@ -546,7 +546,7 @@ TEST(sigmoid_image2d_fp16, compute) {
           LOG(INFO) << "---- print kernel result (input -> output) ----";
           for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
             std::cout << mapped_x[eidx] << " -> " << mapped_y[eidx]
-                      << std::endl;
+                      << ", ref:" << y_data_ref[eidx] << std::endl;
           }
 #endif  // SIGMOID_FP16_PRINT_RESULT
 
