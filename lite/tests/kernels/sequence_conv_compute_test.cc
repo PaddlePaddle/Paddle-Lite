@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <stdio.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -54,6 +55,7 @@ class SequenceConvComputeTester : public arena::TestCase {
       for (int j = 0; j < dims_[1]; j++) {
         din[i * dims_[0] + j] =
             (2.0 * i + 3.0 * j) / (2.0 * dims_[0] + 3.0 * dims_[1]) - 0.5;
+        fprintf(stderr, "%f", din[i * dims_[0] + j]);
       }
     }
     SetCommonTensor(input_name_, dims_, din.data(), lod_);
@@ -67,6 +69,7 @@ class SequenceConvComputeTester : public arena::TestCase {
             (1.5 * i + 2.0 * j) /
                 (1.5 * filter_dims[0] + 2.0 * filter_dims[1]) -
             0.5;
+        fprintf(stderr, "%f", dfilter[i * filter_dims[0] + j]);
       }
     }
     SetCommonTensor(filter_name_, filter_dims, dfilter.data(), lod_);
