@@ -17,6 +17,8 @@
 #include <arm_neon.h>
 #include <string>
 #include "lite/backends/arm/math/activation.h"
+#include "lite/core/tensor.h"
+#include "lite/utils/logging.h"
 namespace paddle {
 namespace lite {
 namespace arm {
