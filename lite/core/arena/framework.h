@@ -246,6 +246,8 @@ class Arena {
         return tester_->CheckPrecision<int8_t>(var_name, abs_error_);
       case PRECISION(kInt32):
         return tester_->CheckPrecision<int32_t>(var_name, abs_error_);
+      case PRECISION(kInt64):
+        return tester_->CheckPrecision<int64_t>(var_name, abs_error_);
       case PRECISION(kBool):
         return tester_->CheckPrecision<bool>(var_name, abs_error_);
       default:

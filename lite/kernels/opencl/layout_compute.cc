@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include "lite/api/paddle_place.h"
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
@@ -47,7 +48,7 @@ class LayoutComputeBufferChwToImageDefault
     auto* x_data = param.x->data<float, cl::Buffer>();
     auto x_dims = param.x->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* y_data = param.y->mutable_data<float, cl::Image2D>(
+    auto* y_data = param.y->mutable_data<half_t, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     auto y_dims = param.y->dims();
 
@@ -63,6 +64,8 @@ class LayoutComputeBufferChwToImageDefault
     const int Stride1 = out_H * out_W;
     const int Stride0 = out_W;
 
+    VLOG(4) << "y image_shape(w,h):" << image_shape["width"] << " "
+            << image_shape["height"];
     VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
@@ -121,12 +124,12 @@ class LayoutComputeBufferChwToImageDefault
 
   std::string doc() const override {
     return "Trans Layout from cl::Buffer(NCHW) to "
-           "cl::Image2D(ImageDefault/RGBA)";
+           "cl::Image2D(ImageDefault/RGBA), Float ---> FP16";
   }
 
  private:
   std::string kernel_func_name_{"buffer_to_image2d"};
-  std::string build_options_{"-DCL_DTYPE_float "};
+  std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
@@ -144,16 +147,19 @@ class LayoutComputeImageDefaultToBufferChw
 
   void Run() override {
     auto& param = Param<param_t>();
+    auto* x_data = param.x->data<half_t, cl::Image2D>();
+    auto x_dims = param.x->dims();
     auto* y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto y_dims = param.y->dims();
-    auto* x_data = param.x->data<float, cl::Image2D>();
-    auto x_dims = param.x->dims();
+    auto x_image_shape = InitImageDimInfoWith(x_dims);
 
     std::vector<size_t> new_dims = {1, 1, 1, 1};
     for (int j = 0; j < x_dims.size(); ++j) {
       new_dims[4 - x_dims.size() + j] = x_dims[j];
     }
 
+    VLOG(4) << "x_image_shape(w,h):" << x_image_shape["width"] << " "
+            << x_image_shape["height"];
     VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
@@ -212,7 +218,7 @@ class LayoutComputeImageDefaultToBufferChw
 
   std::string doc() const override {
     return "Trans Layout from cl::Image2D(ImageDefault/RGBA) to "
-           "cl::Buffer(NCHW)";
+           "cl::Buffer(NCHW), FP16 ---> Float";
   }
 
  private:
@@ -340,23 +346,6 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    layout_once,
-    kOpenCL,
-    kAny,
-    kImageDefault,
-    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImageDefault,
-    NCHW_to_ImageDefault)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
-
 // [ImageDefault] -> [NCHW]
 REGISTER_LITE_KERNEL(
     layout,
@@ -373,39 +362,4 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    layout_once,
-    kOpenCL,
-    kAny,
-    kNCHW,
-    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
-    ImageDefault_to_NCHW)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-// [NCHW] -> [ImageNW]
-REGISTER_LITE_KERNEL(
-    layout_once,
-    kOpenCL,
-    kFloat,
-    kImageNW,
-    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImage2DNw,
-    NCHW_to_ImageNW)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kImageNW))})
     .Finalize();

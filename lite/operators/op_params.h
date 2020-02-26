@@ -62,6 +62,7 @@ struct IoCopyParam {
 struct LayoutParam {
   const lite::Tensor* x{};
   lite::Tensor* y{};
+  int process_type{0};
 };
 
 struct CalibParam {

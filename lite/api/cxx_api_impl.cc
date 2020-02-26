@@ -35,7 +35,14 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   Env<TARGET(kCUDA)>::Init();
 #endif
   auto places = config.valid_places();
-  raw_predictor_.Build(config, places, {}, config_.skip_passes());
+  std::vector<std::string> passes{};
+  auto use_layout_preprocess_pass =
+      config.model_dir().find("OPENCL_PRE_PRECESS");
+  if (use_layout_preprocess_pass != std::string::npos) {
+    passes = {"type_layout_cast_preprocess_pass"};
+  }
+  raw_predictor_.Build(config, places, passes);
+  raw_predictor_.Build(config, places, passes, config_.skip_passes());
 
   mode_ = config.power_mode();
   threads_ = config.threads();
