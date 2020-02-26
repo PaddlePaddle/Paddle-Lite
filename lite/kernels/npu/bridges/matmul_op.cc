@@ -32,16 +32,10 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindTensor(x_name);
   auto x_dims = x->dims();
 
   auto y_name = op_info->Input("Y").front();
-  auto y_type = kernel->GetInputDeclType("Y");
-  CHECK(y_type->precision() == PRECISION(kFloat));
-  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   auto y = scope->FindTensor(y_name);
   auto y_dims = y->dims();
 
@@ -62,9 +56,6 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out = scope->FindTensor(out_name);
   auto out_dims = out->dims();
 

@@ -151,6 +151,15 @@ int CvtActMode(std::string act_type) {
   return act_mode;
 }
 
+bool CheckShape(DDim origin_dims, hiai::TensorDimension device_dims) {
+  auto origin_shape = CvtShape(origin_dims);
+  CHECK_EQ(origin_shape.size(), 4);
+  return origin_shape[0] == device_dims.GetNumber() &&
+         origin_shape[1] == device_dims.GetChannel() &&
+         origin_shape[2] == device_dims.GetHeight() &&
+         origin_shape[3] == device_dims.GetWidth();
+}
+
 }  // namespace npu
 }  // namespace subgraph
 }  // namespace lite

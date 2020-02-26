@@ -81,29 +81,65 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* out = predictor.GetOutput(0);
   const auto* pdata = out->data<float>();
   int step = 50;
-#ifdef LITE_WITH_NPU
-  ASSERT_EQ(out->dims().production(), 1000);
-  double eps = 0.1;
-  for (int i = 0; i < ref.size(); ++i) {
-    for (int j = 0; j < ref[i].size(); ++j) {
-      auto result = pdata[j * step + (out->dims()[1] * i)];
-      auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
-      VLOG(3) << diff;
-      EXPECT_LT(diff, eps);
+
+  // Get target and check result
+  VLOG(1) << "valid_places.size():" << valid_places.size();
+  for (int i = 0; i < valid_places.size(); ++i) {
+    auto p = valid_places[i];
+    VLOG(1) << "valid_places[" << i << "]:" << p.DebugString();
+  }
+  auto first_target = valid_places[0].target;
+
+  if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
+    ASSERT_EQ(out->dims().production(), 1000);
+    double eps = 0.1;
+    for (int i = 0; i < ref.size(); ++i) {
+      for (int j = 0; j < ref[i].size(); ++j) {
+        auto result = pdata[j * step + (out->dims()[1] * i)];
+        auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
+        VLOG(3) << diff;
+        EXPECT_LT(diff, eps);
+      }
+    }
+  } else {
+    ASSERT_EQ(out->dims().size(), 2);
+    ASSERT_EQ(out->dims()[0], 1);
+    ASSERT_EQ(out->dims()[1], 1000);
+    double eps = 1e-6;
+    for (int i = 0; i < ref.size(); ++i) {
+      for (int j = 0; j < ref[i].size(); ++j) {
+        auto result = pdata[j * step + (out->dims()[1] * i)];
+        EXPECT_NEAR(result, ref[i][j], eps);
+      }
     }
   }
-#else
-  ASSERT_EQ(out->dims().size(), 2);
-  ASSERT_EQ(out->dims()[0], 1);
-  ASSERT_EQ(out->dims()[1], 1000);
-  double eps = 1e-6;
-  for (int i = 0; i < ref.size(); ++i) {
-    for (int j = 0; j < ref[i].size(); ++j) {
-      auto result = pdata[j * step + (out->dims()[1] * i)];
-      EXPECT_NEAR(result, ref[i][j], eps);
+
+  // Get detailed result
+  auto* pred = &predictor;
+  size_t output_tensor_num = pred->GetOutputNames().size();
+  VLOG(1) << "output tesnor num:" << output_tensor_num;
+
+  for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
+    std::unique_ptr<const Tensor> output_tensor(
+        std::move(pred->GetOutput(tidx)));
+    VLOG(1) << "============= output tensor " << tidx << " =============\n";
+    auto out_dims = output_tensor->dims();
+    VLOG(1) << "out_dims:" << out_dims;
+
+    float sum = 0.f;
+    for (int i = 0; i < out_dims.production(); ++i) {
+      sum += output_tensor->data<float>()[i];
+    }
+    VLOG(1) << "out_dims.production():" << out_dims.production();
+    VLOG(1) << "output tensor sum value:" << sum;
+    VLOG(1) << "output tensor mean value:" << sum / out_dims.production();
+
+    // print result
+    for (int i = 0; i < out_dims.production(); ++i) {
+      VLOG(2) << "output_tensor->data<float>()[" << i
+              << "]:" << output_tensor->data<float>()[i];
     }
   }
-#endif
 }
 
 #ifdef LITE_WITH_NPU
@@ -130,7 +166,7 @@ TEST(MobileNetV1, test_arm) {
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},

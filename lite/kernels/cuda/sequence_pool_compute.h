@@ -27,6 +27,9 @@ class SequencePoolCompute
 
   void Run() override;
   virtual ~SequencePoolCompute() = default;
+
+ private:
+  lite::Tensor seq_offset_D;
 };
 
 }  // namespace cuda

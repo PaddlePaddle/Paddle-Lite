@@ -29,6 +29,7 @@ Welcome to Paddle-Lite's documentation!
   :caption: 安装
   :name: sec-install
 
+  installation/release_lib
   installation/source_compile
 
 .. toctree::
@@ -49,6 +50,8 @@ Welcome to Paddle-Lite's documentation!
 
   advanced_user_guides/x2paddle
   advanced_user_guides/x2paddle_models_doc
+  advanced_user_guides/post_quant_with_data
+  advanced_user_guides/post_quant_no_data
   advanced_user_guides/model_quantization
   advanced_user_guides/support_operation_list
   advanced_user_guides/add_operation

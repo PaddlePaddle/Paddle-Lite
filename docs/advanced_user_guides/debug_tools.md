@@ -4,7 +4,7 @@
 
 ## 编译方法:
 
-1. 参照 [编译安装](../source_compile) 中的**full_publish**部分进行环境配置和编译。
+1. 参照 [编译安装](../installation/source_compile) 中的**full_publish**部分进行环境配置和编译。
 2. 在生成的`build`目录下，执行`make lite_model_debug_tool`，`lite_model_debug_tool`产出在编译目录的`lite/tools/debug`目录下。
 
 ## 工作流程:
