@@ -15,7 +15,7 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
                          __write_only image2d_t output_image,
                          __private const int stride,
                          __private const int offset,
-                         __private const int input_c,
+                         __private const int input_c_block,
                          __private const int input_c_origin,
                          __private const int dilation,
                          __private const int input_width,  /* of one block */
@@ -79,14 +79,14 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
   CL_DTYPE4 output3 = 0.0f;
 #endif
 
-  int max_w_bound = input_c * input_width;
-  int burndary_index = input_c * 4 - input_c_origin;
+  int max_w_bound = input_c_block * input_width;
+  int burndary_index = input_c_block * 4 - input_c_origin;
   bool burndary_index_w =
       burndary_index == 1 || burndary_index == 2 || burndary_index == 3;
   bool burndary_index_z = burndary_index == 2 || burndary_index == 3;
   bool burndary_index_y = burndary_index == 3;
 
-  for (int i = 0; i < input_c; ++i) {
+  for (int i = 0; i < input_c_block; ++i) {
     // ------------0---------------
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
                          in_pos_in_one_block0.y);
@@ -107,11 +107,81 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
     input0.w = select(input0.w, zero, outof_bound && burndary_index_w);
     input0.z = select(input0.z, zero, outof_bound && burndary_index_z);
     input0.y = select(input0.y, zero, outof_bound && burndary_index_y);
-
+#ifdef DEBUG
+    if (output_pos0.x == 0 && output_pos0.y == 0) {
+      printf("i ={ %d, }\n", i);
+      printf("in={ %f , %f , %f , %f } \n",
+             convert_float(input0.x),
+             convert_float(input0.y),
+             convert_float(input0.z),
+             convert_float(input0.w));
+      printf("filter0={ %f , %f , %f , %f } \n",
+             convert_float(weight0.x),
+             convert_float(weight0.y),
+             convert_float(weight0.z),
+             convert_float(weight0.w));
+      printf("filter1={ %f , %f , %f , %f } \n",
+             convert_float(weight1.x),
+             convert_float(weight1.y),
+             convert_float(weight1.z),
+             convert_float(weight1.w));
+      printf("filter2={ %f , %f , %f , %f } \n",
+             convert_float(weight2.x),
+             convert_float(weight2.y),
+             convert_float(weight2.z),
+             convert_float(weight2.w));
+      printf("filter3={ %f , %f , %f , %f } \n",
+             convert_float(weight3.x),
+             convert_float(weight3.y),
+             convert_float(weight3.z),
+             convert_float(weight3.w));
+      printf("000---- output={ %f , %f , %f , %f } \n",
+             convert_float(output0.x),
+             convert_float(output0.y),
+             convert_float(output0.z),
+             convert_float(output0.w));
+    }
+#endif
     output0 = mad(input0.x, weight0, output0);
+#ifdef DEBUG
+    if (output_pos0.x == 0 && output_pos0.y == 0) {
+      printf("111---- output={ %f , %f , %f , %f } \n",
+             convert_float(output0.x),
+             convert_float(output0.y),
+             convert_float(output0.z),
+             convert_float(output0.w));
+    }
+#endif
     output0 = mad(input0.y, weight1, output0);
+#ifdef DEBUG
+    if (output_pos0.x == 0 && output_pos0.y == 0) {
+      printf("222---- output={ %f , %f , %f , %f } \n",
+             convert_float(output0.x),
+             convert_float(output0.y),
+             convert_float(output0.z),
+             convert_float(output0.w));
+    }
+#endif
     output0 = mad(input0.z, weight2, output0);
+#ifdef DEBUG
+    if (output_pos0.x == 0 && output_pos0.y == 0) {
+      printf("333---- output={ %f , %f , %f , %f } \n",
+             convert_float(output0.x),
+             convert_float(output0.y),
+             convert_float(output0.z),
+             convert_float(output0.w));
+    }
+#endif
     output0 = mad(input0.w, weight3, output0);
+#ifdef DEBUG
+    if (output_pos0.x == 0 && output_pos0.y == 0) {
+      printf("444---- output={ %f , %f , %f , %f } \n",
+             convert_float(output0.x),
+             convert_float(output0.y),
+             convert_float(output0.z),
+             convert_float(output0.w));
+    }
+#endif
     // -------------1--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
@@ -171,6 +241,43 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
     output3 = mad(input3.y, weight1, output3);
     output3 = mad(input3.z, weight2, output3);
     output3 = mad(input3.w, weight3, output3);
+
+#ifdef DEBUG
+    if (output_pos0.x == 0 && output_pos0.y == 0) {
+      //  printf("i,j,k ={ %d, %d , %d }\n", i,j,k);
+      printf("i ={ %d, }\n", i);
+      printf("in={ %f , %f , %f , %f } \n",
+             convert_float(input0.x),
+             convert_float(input0.y),
+             convert_float(input0.z),
+             convert_float(input0.w));
+      printf("filter0={ %f , %f , %f , %f } \n",
+             convert_float(weight0.x),
+             convert_float(weight0.y),
+             convert_float(weight0.z),
+             convert_float(weight0.w));
+      printf("filter1={ %f , %f , %f , %f } \n",
+             convert_float(weight1.x),
+             convert_float(weight1.y),
+             convert_float(weight1.z),
+             convert_float(weight1.w));
+      printf("filter2={ %f , %f , %f , %f } \n",
+             convert_float(weight2.x),
+             convert_float(weight2.y),
+             convert_float(weight2.z),
+             convert_float(weight2.w));
+      printf("filter3={ %f , %f , %f , %f } \n",
+             convert_float(weight3.x),
+             convert_float(weight3.y),
+             convert_float(weight3.z),
+             convert_float(weight3.w));
+      printf("output={ %f , %f , %f , %f } \n",
+             convert_float(output0.x),
+             convert_float(output0.y),
+             convert_float(output0.z),
+             convert_float(output0.w));
+    }
+#endif
   }
 
 #ifdef BATCH_NORM
@@ -191,13 +298,10 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
             READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-#ifdef RELU
   output0 = activation_type4(output0);
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
-#endif
-
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
@@ -215,29 +319,30 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
   }
 }
 
-__kernel void conv2d_1x1_simple(__private const int global_size_dim0,
-                         __private const int global_size_dim1,
-                         __private const int global_size_dim2,
-                         __read_only image2d_t input_image,
-                         __read_only image2d_t filter,
+__kernel void conv2d_1x1_simple(
+    __private const int global_size_dim0,
+    __private const int global_size_dim1,
+    __private const int global_size_dim2,
+    __read_only image2d_t input_image,
+    __read_only image2d_t filter,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
     __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
-__read_only image2d_t new_scale,
-                         __read_only image2d_t new_biase,
+    __read_only image2d_t new_scale,
+    __read_only image2d_t new_biase,
 #endif
-                         __write_only image2d_t output_image,
-                         __private const int stride,
-                         __private const int offset,
-                         __private const int input_c,
-                         __private const int input_c_origin,
-                         __private const int dilation,
-                         __private const int input_width,  /* of one block */
-                         __private const int input_height, /* of one block */
-                         __private const int output_width,
-                         __private const int output_height,
-                         __private const int old_w) {
+    __write_only image2d_t output_image,
+    __private const int stride,
+    __private const int offset,
+    __private const int input_c,
+    __private const int input_c_origin,
+    __private const int dilation,
+    __private const int input_width,  /* of one block */
+    __private const int input_height, /* of one block */
+    __private const int output_width,
+    __private const int output_height,
+    __private const int old_w) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -360,12 +465,10 @@ __read_only image2d_t new_scale,
             READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-
   output0 = activation_type4(output0);
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
-
 
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);

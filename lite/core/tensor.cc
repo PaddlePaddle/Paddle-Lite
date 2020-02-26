@@ -110,8 +110,8 @@ const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
   return static_cast<const cl::Image2D *>(buffer_->data());
 }
 
-template <>  // use int16_t represent half float
-const cl::Image2D *TensorLite::data<int16_t, cl::Image2D>() const {
+template <>  // use uint16_t represent half float
+const cl::Image2D *TensorLite::data<uint16_t, cl::Image2D>() const {
   if (nullptr == buffer_->data()) return nullptr;
   return static_cast<const cl::Image2D *>(buffer_->data());
 }
