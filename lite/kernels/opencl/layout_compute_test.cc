@@ -158,10 +158,10 @@ TEST(layout_ImageDefault_With_Pre_Post, compute) {
       for (int h = 1; h <= 10; h += 1) {
         for (int w = 1; w <= 10; w += 1) {
 #else
-  const int n = 1;
-  const int c = 2;
-  const int h = 3;
-  const int w = 4;
+          const int n = 1;
+          const int c = 2;
+          const int h = 3;
+          const int w = 4;
 #endif  // LOOP_TEST
 
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
