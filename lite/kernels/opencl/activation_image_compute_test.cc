@@ -172,6 +172,21 @@ TEST(relu_image2d_fp16, compute) {
           LOG(INFO) << "run kernel: img_to_buf_kernel";
           img_to_buf_kernel->Launch();
 
+          // wait for opencl
+          auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
+          auto *out_ptr = ImageToBufferParam.y->data<float, cl::Buffer>();
+          auto it = wait_list->find(out_ptr);
+
+          if (it != wait_list->end()) {
+            VLOG(4) << "--- Find the sync event for the target cl "
+                       "tensor. ---";
+            auto &event = *(it->second);
+            event.wait();
+          } else {
+            LOG(FATAL) << "Could not find the sync event for the target "
+                          "cl tensor.";
+          }
+
           // compute ref cpu
           relu_compute_ref<float>(mapped_x, x_dim, y_data_ref);
 // result
@@ -335,6 +350,21 @@ TEST(relu6_image2d_fp16, compute) {
           LOG(INFO) << "run kernel: img_to_buf_kernel";
           img_to_buf_kernel->Launch();
 
+          // wait for opencl
+          auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
+          auto *out_ptr = ImageToBufferParam.y->data<float, cl::Buffer>();
+          auto it = wait_list->find(out_ptr);
+
+          if (it != wait_list->end()) {
+            VLOG(4) << "--- Find the sync event for the target cl "
+                       "tensor. ---";
+            auto &event = *(it->second);
+            event.wait();
+          } else {
+            LOG(FATAL) << "Could not find the sync event for the target "
+                          "cl tensor.";
+          }
+
           // compute ref cpu
           relu_compute_ref<float>(mapped_x, x_dim, y_data_ref, 6.f);
 // result
@@ -493,6 +523,21 @@ TEST(sigmoid_image2d_fp16, compute) {
           sigmoid_img_kernel->Launch();
           LOG(INFO) << "run kernel: img_to_buf_kernel";
           img_to_buf_kernel->Launch();
+
+          // wait for opencl
+          auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
+          auto *out_ptr = ImageToBufferParam.y->data<float, cl::Buffer>();
+          auto it = wait_list->find(out_ptr);
+
+          if (it != wait_list->end()) {
+            VLOG(4) << "--- Find the sync event for the target cl "
+                       "tensor. ---";
+            auto &event = *(it->second);
+            event.wait();
+          } else {
+            LOG(FATAL) << "Could not find the sync event for the target "
+                          "cl tensor.";
+          }
 
           // compute ref cpu
           sigmoid_compute_ref<float>(mapped_x, x_dim, y_data_ref);

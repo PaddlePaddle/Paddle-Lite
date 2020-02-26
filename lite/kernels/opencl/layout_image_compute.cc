@@ -117,9 +117,7 @@ class LayoutComputeBufferChwToImageDefault
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(y_data, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -211,9 +209,7 @@ class LayoutComputeImageDefaultToBufferChw
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(y_data, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -307,10 +303,7 @@ class LayoutComputeBufferChwToImage2DNw
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(y_data, event_);
-    context.cl_context()->GetCommandQueue().finish();
-    //    auto image_shape = InitImageDimInfoWith(x_dims);
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
