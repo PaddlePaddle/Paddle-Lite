@@ -23,11 +23,12 @@ bool SequenceConvOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Filter);
   CHECK_OR_FALSE(param_.Out);
-  // TODO(mapingshuo)
+  // currently we only support the case that
+  // the contextStride is equal to 1
   CHECK_EQ_OR_FALSE(param_.contextStride, 1UL);
   const auto *filter = param_.Filter;
   auto lod = param_.X->lod();
-  auto filter_dims =filter -> dims();
+  auto filter_dims = filter->dims();
   auto in_dims = param_.X->dims();
   int context_length = param_.contextLength;
   CHECK_EQ_OR_FALSE(in_dims.size(), 2UL);
@@ -41,8 +42,8 @@ bool SequenceConvOp::CheckShape() const {
 bool SequenceConvOp::InferShape() const {
   const auto *input = param_.X;
   const auto *filter = param_.Filter;
-  auto in_dims = input -> dims();
-  auto filter_dims = filter -> dims();
+  auto in_dims = input->dims();
+  auto filter_dims = filter->dims();
   in_dims[1] = filter_dims[1];
   auto out_dims = in_dims;
   param_.Out->Resize(out_dims);
@@ -55,7 +56,7 @@ bool SequenceConvOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   param_.Filter = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("Filter").front())->Get<lite::Tensor>());  
+      &scope->FindVar(opdesc.Input("Filter").front())->Get<lite::Tensor>());
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   param_.contextStart = opdesc.GetAttr<int>("contextStart");
