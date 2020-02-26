@@ -52,7 +52,7 @@ class SequenceConvComputeTester : public arena::TestCase {
     std::vector<float> din(dims_.production());
     for (int i = 0; i < dims_[0]; i++) {
       for (int j = 0; j < dims_[1]; j++) {
-        din[i * dims_[1] + j] =
+        din[i * dims_[0] + j] =
             (2.0 * i + 3.0 * j) / (2.0 * dims_[0] + 3.0 * dims_[1]) - 0.5;
       }
     }
@@ -64,7 +64,8 @@ class SequenceConvComputeTester : public arena::TestCase {
     for (int i = 0; i < filter_dims[0]; i++) {
       for (int j = 0; j < filter_dims[1]; j++) {
         dfilter[i * filter_dims[0] + j] =
-            (1.5 * i + 2.0 * j) / (1.5 * filter_dims[0] + 2 * filter_dims[1]) -
+            (1.5 * i + 2.0 * j) /
+                (1.5 * filter_dims[0] + 2.0 * filter_dims[1]) -
             0.5;
       }
     }
