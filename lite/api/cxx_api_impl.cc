@@ -41,7 +41,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   if (use_layout_preprocess_pass != std::string::npos) {
     passes = {"type_layout_cast_preprocess_pass"};
   }
-  raw_predictor_.Build(config, places, passes);
   raw_predictor_.Build(config, places, passes, config_.skip_passes());
 
   mode_ = config.power_mode();
