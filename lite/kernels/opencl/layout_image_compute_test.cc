@@ -246,12 +246,27 @@ TEST(layout_ImageDefault_With_Pre_Post, compute) {
           LOG(INFO) << "run kernel: image2d_to_buffer_with_post255";
           img_to_buf_kernel->Launch();
 
+          // wait for opencl
+          auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+          auto* out_ptr = ImageToBufferParam.y->data<float, cl::Buffer>();
+          auto it = wait_list->find(out_ptr);
+
+          if (it != wait_list->end()) {
+            VLOG(4) << "--- Find the sync event for the target cl "
+                       "tensor. ---";
+            auto& event = *(it->second);
+            event.wait();
+          } else {
+            LOG(FATAL) << "Could not find the sync event for the target "
+                          "cl tensor.";
+          }
+
 // result
 #ifdef PRINT_RESULT
           LOG(INFO) << "---- print result ----";
           for (int eidx = 0; eidx < x_dim.production(); ++eidx) {
-            std::cout << mapped_x[eidx] << " -> "
-                      << static_cast<uint8_t>(mapped_y[eidx]) << std::endl;
+            std::cout << +mapped_x[eidx] << " -> "
+                      << +static_cast<uint8_t>(mapped_y[eidx]) << std::endl;
           }
 #endif  // PRINT_RESULT
 
