@@ -22,10 +22,10 @@ namespace lite {
 
 class SequenceConvComputeTester: public arena::TestCase{
 public:
-  SequencePoolComputeTester(const Place& place,
+  SequenceConvComputeTester(const Place& place,
                             const std::string& alias,
                             LoD lod,
-                            DDim dims_,
+                            DDim dims,
                             const int& contextStart,
                             const int& contextStride,
                             const int& contextLength,
@@ -36,9 +36,9 @@ public:
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc -> SetType("sequence_conv");
-    op_desc -> SetInput("X", {input_});
-    op_desc -> SetInput("Filter", {filter_});
-    op_desc -> SetOutput("Out", {output_});
+    op_desc -> SetInput("X", {input_name_});
+    op_desc -> SetInput("Filter", {filter_name_});
+    op_desc -> SetOutput("Out", {output_name_});
     op_desc -> SetAttr("contextStart", contextStart_);
     op_desc -> SetAttr("contextStride", contextStride_);
     op_desc -> SetAttr("contextLength", contextLength_);
@@ -89,7 +89,7 @@ public:
 protected:
   std::string input_name_ = "x";
   std::string filter_name_ = "filter";
-  std::string out_name_ = "out";
+  std::string output_name_ = "out";
   int contextStart_;
   int contextStride_;
   int contextLength_;
