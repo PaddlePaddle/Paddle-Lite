@@ -24,10 +24,6 @@
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/cpp/program_desc.h"
 
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/target_wrapper.h"
-#endif
-
 namespace paddle {
 namespace lite {
 

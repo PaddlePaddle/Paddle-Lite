@@ -238,12 +238,12 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   while (!exec_que_.empty()) {
     auto* node = exec_que_.front();
     exec_ops_.push_back(node);
-    LOG(INFO) << node->AsStmt().op_type()
-              << " stream: " << node->AsStmt().stream_id_
-              << ", sync: " << node->AsStmt().need_sync_;
+    VLOG(4) << node->AsStmt().op_type()
+            << " stream: " << node->AsStmt().stream_id_
+            << ", sync: " << node->AsStmt().need_sync_;
     if (node->AsStmt().need_sync_) {
       for (size_t i = 0; i < node->AsStmt().sync_streams_.size(); ++i) {
-        LOG(INFO) << "\t\t" << node->AsStmt().sync_streams_[i];
+        VLOG(4) << "        " << node->AsStmt().sync_streams_[i];
       }
     }
     exec_que_.pop();
@@ -258,8 +258,6 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     LOG(INFO) << "stream " << i << " has " << ops_in_streams_[i].size()
               << " ops.";
   }
-
-  // VLOG(4) << Visualize(graph.get());
 }
 
 }  // namespace mir

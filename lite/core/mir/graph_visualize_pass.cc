@@ -39,16 +39,29 @@ std::string Visualize(mir::SSAGraph* graph) {
   for (auto& node : graph->mutable_nodes()) {
     std::string key;
     if (node.IsArg()) {
-      // key = node.AsArg().name + " lane: " + node.AsArg().lane;
-      key = string_format("%s, lane=%d",
-                          node.AsArg().name.c_str(),
-                          static_cast<int>(node.AsArg().lane));
+      if (node.AsArg().lane == -1) {
+        key = node.AsArg().name;
+      } else {
+        key = string_format(
+            "%s, lane=%d", node.AsArg().name.c_str(), node.AsArg().lane);
+      }
     } else {
-      key = string_format("%s%d, sync=%d, stream=%d",
-                          node.AsStmt().op_type().c_str(),
-                          id++,
-                          node.AsStmt().need_sync_,
-                          node.AsStmt().stream_id_);
+      if (node.AsStmt().need_sync_) {
+        std::ostringstream os;
+        for (size_t i = 0; i < node.AsStmt().sync_streams_.size(); ++i) {
+          os << std::to_string(node.AsStmt().sync_streams_[i]);
+          if (i != node.AsStmt().sync_streams_.size() - 1) {
+            os << ",";
+          }
+        }
+        key = string_format("%s%d, stream=%d, sync_streams={%s}",
+                            node.AsStmt().op_type().c_str(),
+                            id++,
+                            node.AsStmt().stream_id_,
+                            os.str().c_str());
+      } else {
+        key = string_format("%s%d", node.AsStmt().op_type().c_str(), id++);
+      }
     }
     if (node.IsStmt()) {
       dot.AddNode(key,
@@ -57,8 +70,13 @@ std::string Visualize(mir::SSAGraph* graph) {
                    Dot::Attr("color", "black"),
                    Dot::Attr("fillcolor", "yellow")});
       for (auto& x : node.inlinks) {
-        auto name =
-            x->AsArg().name + ", lane: " + std::to_string(x->AsArg().lane);
+        std::string name;
+        if (x->AsArg().lane != -1) {
+          name = string_format(
+              "%s, lane=%d", x->AsArg().name.c_str(), x->AsArg().lane);
+        } else {
+          name = x->AsArg().name;
+        }
         if (!exists_args.count(name)) {
           dot.AddNode(name, {});
         }
@@ -66,8 +84,13 @@ std::string Visualize(mir::SSAGraph* graph) {
         exists_args.insert(name);
       }
       for (auto& x : node.outlinks) {
-        auto name =
-            x->AsArg().name + ", lane: " + std::to_string(x->AsArg().lane);
+        std::string name;
+        if (x->AsArg().lane != -1) {
+          name = string_format(
+              "%s, lane=%d", x->AsArg().name.c_str(), x->AsArg().lane);
+        } else {
+          name = x->AsArg().name;
+        }
         if (!exists_args.count(name)) {
           dot.AddNode(name, {});
         }
