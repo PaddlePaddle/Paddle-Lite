@@ -50,50 +50,28 @@ class SequenceConvComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    /*
+    DDim filter_dims(
+        std::vector<int64_t>{contextLength_ * dims_[1], kernel_num_});
+
     std::vector<float> din(dims_.production());
     for (int i = 0; i < dims_[0]; i++) {
       for (int j = 0; j < dims_[1]; j++) {
-        din[i * dims_[0] + j] =
+        din[i * dims_[1] + j] =
             (2.0 * i + 3.0 * j) / (2.0 * dims_[0] + 3.0 * dims_[1]) - 0.5;
-        fprintf(stderr, "%f", din[i * dims_[0] + j]);
       }
     }
     SetCommonTensor(input_name_, dims_, din.data(), lod_);
 
-    DDim filter_dims(
-        std::vector<int64_t>{contextLength_ * dims_[1], kernel_num_});
     std::vector<float> dfilter(filter_dims.production());
     for (int i = 0; i < filter_dims[0]; i++) {
       for (int j = 0; j < filter_dims[1]; j++) {
-        dfilter[i * filter_dims[0] + j] =
+        dfilter[i * filter_dims[1] + j] =
             (1.5 * i + 2.0 * j) /
                 (1.5 * filter_dims[0] + 2.0 * filter_dims[1]) -
             0.5;
-        fprintf(stderr, "%f", dfilter[i * filter_dims[0] + j]);
       }
     }
     SetCommonTensor(filter_name_, filter_dims, dfilter.data(), lod_);
-    */
-    std::vector<float> din{-0.5,        -0.36956522, -0.23913044, -0.10869565,
-                           0.02173913,  -0.41304347, -0.2826087,  -0.1521739,
-                           -0.02173913, 0.10869565,  -0.32608697, -0.19565217,
-                           -0.06521739, 0.06521739,  0.19565217,  -0.23913044,
-                           -0.10869565, 0.02173913,  0.1521739,   0.2826087};
-
-    SetCommonTensor(input_name_, DDim({4, 5}), din.data(), LoD({{0, 4}}));
-
-    std::vector<float> dfilter{
-        -0.5,        -0.42982456, -0.35964912, -0.4473684,  -0.37719297,
-        -0.30701753, -0.39473686, -0.32456142, -0.25438598, -0.34210527,
-        -0.27192983, -0.20175439, -0.28947368, -0.21929824, -0.1491228,
-        -0.23684211, -0.16666667, -0.09649123, -0.18421052, -0.11403508,
-        -0.04385965, -0.13157895, -0.06140351, 0.00877193,  -0.07894737,
-        -0.00877193, 0.06140351,  -0.02631579, 0.04385965,  0.11403508,
-        0.02631579,  0.09649123,  0.16666667,  0.07894737,  0.1491228,
-        0.21929824,  0.13157895,  0.20175439,  0.27192983,  0.18421052,
-        0.25438598,  0.32456142,  0.23684211,  0.30701753,  0.37719297};
-    SetCommonTensor(filter_name_, DDim({15, 3}), dfilter.data(), LoD({{0, 4}}));
   }
 
   void RunBaseline(Scope* scope) override {
@@ -106,11 +84,23 @@ class SequenceConvComputeTester : public arena::TestCase {
     output->Resize(DDim(output_shape));
     auto output_dims = output->dims();
     auto output_data = output->mutable_data<float>();
-    std::vector<std::vector<float>> res{{0.194508, 0.05720823, -0.08009153},
-                                        {0.73512584, 0.5749428, 0.41475973},
-                                        {0.5635012, 0.49485126, 0.42620137},
-                                        {0.2517162, 0.23646072, 0.22120519}};
-
+    std::vector<std::vector<float>> res;
+    if (contextStart_ == -2) {
+      res = {{-0.08867277, -0.17257819, -0.2564836},
+             {0.194508, 0.05720823, -0.08009153},
+             {0.73512584, 0.5749428, 0.41475973},
+             {0.5635012, 0.49485126, 0.42620137}};
+    } else if (contextStart_ == -1) {
+      res = {{0.194508, 0.05720823, -0.08009153},
+             {0.73512584, 0.5749428, 0.41475973},
+             {0.5635012, 0.49485126, 0.42620137},
+             {0.2517162, 0.23646072, 0.22120519}};
+    } else if (contextStart_ == 0) {
+      res = {{0.73512584, 0.5749428, 0.41475973},
+             {0.5635012, 0.49485126, 0.42620137},
+             {0.2517162, 0.23646072, 0.22120519},
+             {0.02574372, 0.03337148, 0.04099924}};
+    }
     for (int i = 0; i < output_shape[0]; i++) {
       for (int j = 0; j < output_shape[1]; j++) {
         output_data[i * output_shape[0] + j] = res[i][j];
@@ -134,10 +124,13 @@ class SequenceConvComputeTester : public arena::TestCase {
 void TestNormalCase(Place place, float abs_error = 2e-5) {
   std::vector<std::vector<uint64_t>> lod{{0, 4}};
   std::vector<int64_t> dims{4, 5};
-  std::unique_ptr<arena::TestCase> tester(new SequenceConvComputeTester(
-      place, "def", lod, DDim(dims), -1, 1, 3, 3));
-  arena::Arena arena(std::move(tester), place, abs_error);
-  arena.TestPrecision();
+  std::vector<int> candidate_pad_idx{-2, -1, 0};
+  for (int pad_idx : candidate_pad_idx) {
+    std::unique_ptr<arena::TestCase> tester(new SequenceConvComputeTester(
+        place, "def", lod, DDim(dims), pad_idx, 1, 3, 3));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
 }
 
 TEST(sequence_conv, precision) {

@@ -72,7 +72,7 @@ bool SequenceConvOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     CHECK_EQ_OR_FALSE(padding_data_arguments.size(), 0);
   }
 
-  // paddingTrainable == True is not supported for now
+  // paddingTrainable == True is not supported for now.
   if (opdesc.HasAttr("paddingTrainable")) {
     CHECK_OR_FALSE(!opdesc.GetAttr<bool>("paddingTrainable"));
   }

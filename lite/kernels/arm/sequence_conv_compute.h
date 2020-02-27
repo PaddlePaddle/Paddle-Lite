@@ -14,7 +14,6 @@
 
 #pragma once
 #include <stdint.h>
-//#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -39,7 +38,8 @@ class SequenceConvCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   void Run() override;
 
-  virtual ~SequenceConvCompute() = default;   
+  virtual ~SequenceConvCompute() = default;
+
  private:
 };
 
