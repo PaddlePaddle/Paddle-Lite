@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <random>
+
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
@@ -26,7 +27,12 @@ namespace lite {
 // #define SHADOW_LOG LOG(INFO)
 #define SHADOW_LOG VLOG(4)
 #define FP16_MAX_DIFF (1e0)
-
+#define FP16_ABS_DIFF (1e-1)
+// #define TEST_CONV_IMAGE_ALL_1
+#define TEST_CONV_IMAGE_1x1
+#define TEST_CONV_IMAGE_3x3
+#define TEST_CONV_IMAGE_5x5
+#define TEST_CONV_IMAGE_7x7
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -127,6 +133,8 @@ int ConvOutputSize(int input_size,
 
   return output_size;
 }
+
+#ifdef TEST_CONV_IMAGE_1x1
 // #define PRINT_RESULT
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_1x1) {
@@ -140,304 +148,341 @@ TEST(conv2d, compute_image2d_1x1) {
 
 #ifdef LOOP_TEST
   for (int batch_size = 1; batch_size < 4; ++batch_size) {
-    for (int oc = 4; oc < 10; oc += 1) {   // oc
-      for (int ih = 4; ih < 9; ih += 1) {  // ih
+    for (int oc = 2; oc < 10; oc += 1) {   // oc
+      for (int ih = 2; ih < 9; ih += 1) {  // ih
         int iw = ih;
-        for (int iw = 4; iw < 10; iw += 1) {    // iw
-          for (int ic = 4; ic < 10; ic += 1) {  // ic
-            for (bool bias_flag : {true, false}) {
-              for (std::string relu_flag : {"relu"}) {
+        for (int ic = 2; ic < 10; ic += 1) {  // ic
+          for (bool bias_flag : {true, false}) {
+            for (std::string relu_flag : {""}) {
 #else
   const int batch_size = 1;
-  const int oc = 4;
-  const int ih = 8;
-  const int iw = 8;
-  const int ic = 4;
-  const bool bias_flag = true;
-  const std::string relu_flag = "relu";
+  const int oc = 2;
+  const int ih = 3;
+  const int iw = 3;
+  const int ic = 2;
+  const bool bias_flag = false;
+  const std::string relu_flag = "";
 #endif
-                const int oh = ih;
-                const int ow = iw;
+              LOG(INFO) << "---------------------------- "
+                           "conv1x1----------------------- "
+                           "run---------------";
+              const int oh = ih;
+              const int ow = iw;
+              LOG(INFO) << "batch_size:  " << batch_size;
+              LOG(INFO) << "ic:  " << ic;
+              LOG(INFO) << "ih:  " << ih;
+              LOG(INFO) << "iw:  " << iw;
+              LOG(INFO) << "oc:  " << oc;
+              LOG(INFO) << "bias_flag:  " << bias_flag;
+              LOG(INFO) << "relu_flag:  " << relu_flag;
 
-                SHADOW_LOG << "to get kernel ...";
-                auto kernels =
-                    KernelRegistry::Global().Create("conv2d",
-                                                    TARGET(kOpenCL),
-                                                    PRECISION(kFP16),
-                                                    DATALAYOUT(kImageDefault));
-                ASSERT_FALSE(kernels.empty());
+              SHADOW_LOG << "to get kernel ...";
+              auto kernels =
+                  KernelRegistry::Global().Create("conv2d",
+                                                  TARGET(kOpenCL),
+                                                  PRECISION(kFP16),
+                                                  DATALAYOUT(kImageDefault));
+              ASSERT_FALSE(kernels.empty());
 
-                auto kernel = std::move(kernels.front());
-                SHADOW_LOG << "created conv2d_1x1 kernel";
+              auto kernel = std::move(kernels.front());
+              SHADOW_LOG << "created conv2d_1x1 kernel";
 
-                SHADOW_LOG << "prepare kernel ------";
+              SHADOW_LOG << "prepare kernel ------";
 
-                lite::Tensor input, filter, bias, output;
-                operators::ConvParam param;
-                param.x = &input;
-                param.filter = &filter;
-                param.output = &output;
-                if (bias_flag) {
-                  param.bias = &bias;
-                }
-                if (relu_flag == "relu") {
-                  param.fuse_relu = true;
-                } else if (relu_flag == "None") {
-                  param.fuse_relu = false;
-                } else if (relu_flag == "relu6") {
-                  param.activation_param.Relu_clipped_coef = 6.f;
-                  param.activation_param.has_active = true;
-                  param.activation_param.active_type =
-                      lite_api::ActivationType::kRelu6;
-                }
-
-                std::vector<int> paddings = {pad, pad, pad, pad};
-                std::vector<int> dilations = {dilation, dilation};
-
-                param.paddings = std::make_shared<std::vector<int>>(paddings);
-                param.dilations = std::make_shared<std::vector<int>>(dilations);
-                param.strides = std::vector<int>{stride, stride};
-
-                std::unique_ptr<KernelContext> context(new KernelContext);
-                context->As<OpenCLContext>().InitOnce();
-
-                std::unique_ptr<KernelContext> conv_1x1_context(
-                    new KernelContext);
-                context->As<OpenCLContext>().CopySharedTo(
-                    &(conv_1x1_context->As<OpenCLContext>()));
-                kernel->SetContext(std::move(conv_1x1_context));
-
-                const DDim& input_dim =
-                    lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
-
-                const DDim& filter_dim =
-                    lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
-                const DDim& out_dim =
-                    lite::DDim{std::vector<int64_t>({batch_size, oc, ih, iw})};
-                // element wise bias
-                const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
-
-                param.x->Resize(input_dim);
-                param.filter->Resize(filter_dim);
-                param.output->Resize(out_dim);
-                if (bias_flag) {
-                  param.bias->Resize(bias_dim);
-                }
-
-                kernel->SetParam(param);
-
-                size_t input_image_width = iw * ((ic + 3) / 4);
-                size_t input_image_height = ih * batch_size;
-
-                size_t out_image_width = ow * ((oc + 3) / 4);
-                size_t out_image_height = oh * batch_size;
-
-                size_t bias_image_width = ow * ((oc + 3) / 4);
-                size_t bias_image_height = oh * batch_size;
-
-                size_t filter_image_width = ksize * ((oc + 3) / 4);
-                size_t filter_image_height = ic * ksize;
-
-                const size_t cl_image2d_row_pitch{0};
-                const size_t cl_image2d_slice_pitch{0};
-
-                std::default_random_engine engine;
-                std::uniform_real_distribution<float> gen(-5, 5);
-
-                std::vector<float> input_v(batch_size * ic * ih * iw);
-                std::vector<float> filter_v(oc * ic * ksize * ksize);
-                std::vector<float> output_v(batch_size * oc * ih * iw);
-                std::vector<float> bias_v(oc);
-
-                SHADOW_LOG << "gen input and filter ...";
-
-                for (auto& i : input_v) {
-                  i = gen(engine);
-                }
-                for (auto& f : filter_v) {
-                  f = gen(engine);
-                }
-
-                SHADOW_LOG << "after gen input and filter ...";
-                SHADOW_LOG << "input_v.size(): " << input_v.size();
-                SHADOW_LOG << "filter_v.size(): " << filter_v.size();
-                SHADOW_LOG << "output_v.size(): " << output_v.size();
-                SHADOW_LOG << "bias_v.size(): " << bias_v.size();
-                SHADOW_LOG << "input_dim.production(): "
-                           << input_dim.production();
-                SHADOW_LOG << "filter_dim.production(): "
-                           << filter_dim.production();
-                SHADOW_LOG << "out_dim.production(): " << out_dim.production();
-                SHADOW_LOG << "bias_dim.production(): "
-                           << bias_dim.production();
-                SHADOW_LOG << "4 * input_image_height * input_image_width: "
-                           << 4 * input_image_height * input_image_width;
-                SHADOW_LOG << "4 * filter_image_width * filter_image_height: "
-                           << 4 * filter_image_width * filter_image_height;
-
-                CHECK(input_dim.production() == input_v.size());
-                CHECK_LE(input_dim.production(),
-                         4 * input_image_height * input_image_width);
-                CHECK(filter_dim.production() == filter_v.size());
-                CHECK_LE(filter_dim.production(),
-                         4 * filter_image_width * filter_image_height);
-
-                paddle::lite::CLImageConverterDefault default_convertor;
-                SHADOW_LOG << "set mapped input  ...";
-                std::vector<half_t> x_image_v(
-                    input_image_width * input_image_height * 4);  // 4 : RGBA
-                std::vector<half_t> filter_image_v(
-                    filter_image_width * filter_image_height * 4);  // 4 :RGBA
-                std::vector<half_t> bias_image_v(
-                    bias_image_width * bias_image_height * 4);  // 4 : RGBA
-                std::vector<half_t> out_image_v(
-                    out_image_width * out_image_height * 4);  // 4 : RGBA
-
-                default_convertor.NCHWToImage(
-                    input_v.data(), x_image_v.data(), input_dim);
-
-                SHADOW_LOG << "set mapped filter  ...";
-                paddle::lite::CLImageConverterNWBlock nw_convertor;
-                nw_convertor.NCHWToImage(
-                    filter_v.data(), filter_image_v.data(), filter_dim);
-
-                auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
-                    input_image_width, input_image_height, x_image_v.data());
-                // assign filter as target arm
-                filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
-                                                               filter_dim);
-                //                auto* filter_image2d =
-                //                filter.mutable_data<half_t, cl::Image2D>(
-                //                    filter_image_width,
-                //                    filter_image_height,
-                //                    filter_image_v.data());
-                SHADOW_LOG << "卷积核: ----  ";
-                for (int i = 0; i < filter_v.size(); i++) {
-                  SHADOW_LOG << "(" << i << ")" << filter_v[i];
-                }
-
-                SHADOW_LOG << "卷积核1: ----  ";
-                const float* filter_p = filter.data<float>();
-                for (int i = 0; i < filter_v.size(); i++) {
-                  SHADOW_LOG << "(" << i << ")" << *filter_p;
-                  filter_p++;
-                }
-                SHADOW_LOG << "卷积核2: ----  ";
-                const float* filter_p2 = filter.mutable_data<float>();
-                for (int i = 0; i < filter_v.size(); i++) {
-                  SHADOW_LOG << "(" << i << ")" << *filter_p2;
-                  filter_p2++;
-                }
-                if (bias_flag) {
-                  for (int i = 0; i < bias_dim.production(); ++i) {
-                    bias_v[i] = static_cast<int>(gen(engine));
-                  }
-                  bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
-                                                               bias_dim);
-                  //                CLImageConverterFolder folder_convertor;
-                  //                folder_convertor.NCHWToImage(
-                  //                    bias_v.data(), bias_image_v.data(),
-                  //                    bias_dim);
-                  //
-                  //                auto* bias_data = bias.mutable_data<float,
-                  //                cl::Image2D>(
-                  //                    bias_image_width, bias_image_height,
-                  //                    bias_image_v.data());
-                }
-
-                SHADOW_LOG << "resize output  ...";
-                output.Resize(out_dim);
-
-                // cpu conv basic calc
-                lite::Tensor out_ref;
-                out_ref.Resize(out_dim);
-
-                SHADOW_LOG << "prepare kernel ready";
-
-                SHADOW_LOG << "kernel launch ...";
-                kernel->Launch();
-                SHADOW_LOG << "mutable output ...";
-                auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
-                    out_image_width, out_image_height);
-
-                auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-                auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-                auto it = wait_list->find(out_ptr);
-
-                if (it != wait_list->end()) {
-                  SHADOW_LOG << "--- Find the sync event for the target cl "
-                                "tensor. ---";
-                  auto& event = *(it->second);
-                  event.wait();
-                } else {
-                  LOG(FATAL) << "Could not find the sync event for the target"
-                                "cl tensor.";
-                }
-
-                TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                            output.data<half_t, cl::Image2D>(),
-                                            out_image_width,
-                                            out_image_height,
-                                            cl_image2d_row_pitch,
-                                            cl_image2d_slice_pitch,
-                                            IoDirection::DtoH);
-
-                DDim out_image_shape =
-                    default_convertor.InitImageDimInfoWith(output.dims());
-
-                default_convertor.ImageToNCHW(out_image_v.data(),
-                                              output_v.data(),
-                                              out_image_shape,
-                                              output.dims());
-                SHADOW_LOG << "mutable_data out_ref_data: ";
-
-                // run cpu ref
-                auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-
-                SHADOW_LOG << " conv_basic beigin ..... ";
-
-                conv_basic<float, float>(input_v.data(),
-                                         out_ref_data,
-                                         batch_size,
-                                         oc,
-                                         oh,
-                                         ow,
-                                         ic,
-                                         ih,
-                                         iw,
-                                         filter_v.data(),
-                                         bias_v.data(),  // mapped_bias,
-                                         group,
-                                         ksize,
-                                         ksize,
-                                         stride,
-                                         stride,
-                                         dilation,
-                                         dilation,
-                                         pad,
-                                         pad,
-                                         bias_flag,
-                                         relu_flag);
-                SHADOW_LOG << " conv_basic end ..... ";
-
-                SHADOW_LOG << " out_dim: " << out_dim;
-                const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
-                    {static_cast<int64_t>(out_image_width),
-                     static_cast<int64_t>(out_image_height)})};
-
-                for (int i = 0; i < out_dim.production(); i++) {
-                  auto relative_diff =
-                      COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                  EXPECT_LT(relative_diff, FP16_MAX_DIFF);
-                  if (relative_diff > FP16_MAX_DIFF) {
-                    LOG(FATAL) << "error idx:" << i << "output_v[" << i
-                               << "]:" << output_v[i] << " "
-                                                         "out_ref_data["
-                               << i << "]:" << out_ref_data[i];
-                  }
-                }
-#ifdef LOOP_TEST
+              lite::Tensor input, filter, bias, output;
+              operators::ConvParam param;
+              param.x = &input;
+              param.filter = &filter;
+              param.output = &output;
+              if (bias_flag) {
+                param.bias = &bias;
               }
+              if (relu_flag == "relu") {
+                param.fuse_relu = true;
+              } else if (relu_flag == "None") {
+                param.fuse_relu = false;
+              } else if (relu_flag == "relu6") {
+                param.activation_param.Relu_clipped_coef = 6.f;
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu6;
+              }
+
+              std::vector<int> paddings = {pad, pad, pad, pad};
+              std::vector<int> dilations = {dilation, dilation};
+
+              param.paddings = std::make_shared<std::vector<int>>(paddings);
+              param.dilations = std::make_shared<std::vector<int>>(dilations);
+              param.strides = std::vector<int>{stride, stride};
+
+              std::unique_ptr<KernelContext> context(new KernelContext);
+              context->As<OpenCLContext>().InitOnce();
+
+              std::unique_ptr<KernelContext> conv_1x1_context(
+                  new KernelContext);
+              context->As<OpenCLContext>().CopySharedTo(
+                  &(conv_1x1_context->As<OpenCLContext>()));
+              kernel->SetContext(std::move(conv_1x1_context));
+
+              const DDim& input_dim =
+                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+
+              const DDim& filter_dim =
+                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
+              const DDim& out_dim =
+                  lite::DDim{std::vector<int64_t>({batch_size, oc, ih, iw})};
+              // element wise bias
+              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+
+              param.x->Resize(input_dim);
+              param.filter->Resize(filter_dim);
+              param.output->Resize(out_dim);
+              if (bias_flag) {
+                param.bias->Resize(bias_dim);
+              }
+
+              kernel->SetParam(param);
+
+              size_t input_image_width = iw * ((ic + 3) / 4);
+              size_t input_image_height = ih * batch_size;
+
+              size_t out_image_width = ow * ((oc + 3) / 4);
+              size_t out_image_height = oh * batch_size;
+
+              size_t bias_image_width = ow * ((oc + 3) / 4);
+              size_t bias_image_height = oh * batch_size;
+
+              size_t filter_image_width = ksize * ((oc + 3) / 4);
+              size_t filter_image_height = ic * ksize;
+
+              const size_t cl_image2d_row_pitch{0};
+              const size_t cl_image2d_slice_pitch{0};
+
+              std::default_random_engine engine;
+              std::uniform_real_distribution<float> gen(-5, 5);
+
+              std::vector<float> input_v(batch_size * ic * ih * iw);
+              std::vector<float> filter_v(oc * ic * ksize * ksize);
+              std::vector<float> output_v(batch_size * oc * ih * iw);
+              std::vector<float> bias_v(oc);
+
+              SHADOW_LOG << "gen input and filter ...";
+
+              for (auto& i : input_v) {
+                i = gen(engine);
+#ifdef TEST_CONV_IMAGE_ALL_1
+                i = 0.01;
+#endif
+              }
+              for (auto& f : filter_v) {
+                f = gen(engine);
+#ifdef TEST_CONV_IMAGE_ALL_1
+                f = 0.01;
+#endif
+              }
+
+              SHADOW_LOG << "after gen input and filter ...";
+              SHADOW_LOG << "input_v.size(): " << input_v.size();
+              SHADOW_LOG << "filter_v.size(): " << filter_v.size();
+              SHADOW_LOG << "output_v.size(): " << output_v.size();
+              SHADOW_LOG << "bias_v.size(): " << bias_v.size();
+              SHADOW_LOG << "input_dim.production(): "
+                         << input_dim.production();
+              SHADOW_LOG << "filter_dim.production(): "
+                         << filter_dim.production();
+              SHADOW_LOG << "out_dim.production(): " << out_dim.production();
+              SHADOW_LOG << "bias_dim.production(): " << bias_dim.production();
+              SHADOW_LOG << "4 * input_image_height * input_image_width: "
+                         << 4 * input_image_height * input_image_width;
+              SHADOW_LOG << "4 * filter_image_width * filter_image_height: "
+                         << 4 * filter_image_width * filter_image_height;
+
+              CHECK(input_dim.production() == input_v.size());
+              CHECK_LE(input_dim.production(),
+                       4 * input_image_height * input_image_width);
+              CHECK(filter_dim.production() == filter_v.size());
+              CHECK_LE(filter_dim.production(),
+                       4 * filter_image_width * filter_image_height);
+
+              paddle::lite::CLImageConverterDefault default_convertor;
+              SHADOW_LOG << "set mapped input  ...";
+              std::vector<half_t> x_image_v(
+                  input_image_width * input_image_height * 4);  // 4 : RGBA
+              std::vector<half_t> filter_image_v(
+                  filter_image_width * filter_image_height * 4);  // 4 :RGBA
+              std::vector<half_t> bias_image_v(
+                  bias_image_width * bias_image_height * 4);  // 4 : RGBA
+              std::vector<half_t> out_image_v(
+                  out_image_width * out_image_height * 4);  // 4 : RGBA
+
+              default_convertor.NCHWToImage(
+                  input_v.data(), x_image_v.data(), input_dim);
+
+              SHADOW_LOG << "set mapped filter  ...";
+              paddle::lite::CLImageConverterNWBlock nw_convertor;
+              nw_convertor.NCHWToImage(
+                  filter_v.data(), filter_image_v.data(), filter_dim);
+
+              auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
+                  input_image_width, input_image_height, x_image_v.data());
+              // assign filter as target arm
+              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+                                                             filter_dim);
+              SHADOW_LOG << " lite输入 input_v ..... ";
+              for (int i = 0; i < input_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << input_v[i];
+              }
+              SHADOW_LOG << " lite输入 input_image2d ..... ";
+              for (int i = 0; i < x_image_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
+              }
+              //                auto* filter_image2d =
+              //                filter.mutable_data<uint16_t, cl::Image2D>(
+              //                    filter_image_width,
+              //                    filter_image_height,
+              //                    filter_image_v.data());
+              SHADOW_LOG << "卷积核 : ----  ";
+              for (int i = 0; i < filter_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << filter_v[i];
+              }
+
+              SHADOW_LOG << "卷积核1: ----  ";
+              const float* filter_p = filter.data<float>();
+              for (int i = 0; i < filter_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << *filter_p;
+                filter_p++;
+              }
+              SHADOW_LOG << "卷积核2:  ----  ";
+              const float* filter_p2 = filter.mutable_data<float>();
+              for (int i = 0; i < filter_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << *filter_p2;
+                filter_p2++;
+              }
+
+              SHADOW_LOG << "卷积核 image : ----  ";
+              for (int i = 0; i < filter_image_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << Half2Float(filter_image_v[i]);
+              }
+              if (bias_flag) {
+                for (int i = 0; i < bias_dim.production(); ++i) {
+                  bias_v[i] = static_cast<int>(gen(engine));
+                }
+                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                                                             bias_dim);
+                //                CLImageConverterFolder folder_convertor;
+                //                folder_convertor.NCHWToImage(
+                //                    bias_v.data(), bias_image_v.data(),
+                //                    bias_dim);
+                //
+                //                auto* bias_data = bias.mutable_data<float,
+                //                cl::Image2D>(
+                //                    bias_image_width, bias_image_height,
+                //                    bias_image_v.data());
+              }
+
+              SHADOW_LOG << "resize output  ...";
+              output.Resize(out_dim);
+
+              // cpu conv basic calc
+              lite::Tensor out_ref;
+              out_ref.Resize(out_dim);
+
+              SHADOW_LOG << "prepare kernel ready";
+
+              SHADOW_LOG << "kernel launch ...";
+              kernel->Launch();
+              SHADOW_LOG << "mutable output ...";
+              auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
+                  out_image_width, out_image_height);
+
+              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
+              auto it = wait_list->find(out_ptr);
+
+              if (it != wait_list->end()) {
+                SHADOW_LOG << "--- Find the sync event for the target cl "
+                              "tensor. ---";
+                auto& event = *(it->second);
+                event.wait();
+              } else {
+                LOG(FATAL) << "Could not find the sync event for the target"
+                              "cl tensor.";
+              }
+
+              TargetWrapperCL::ImgcpySync(out_image_v.data(),
+                                          output.data<half_t, cl::Image2D>(),
+                                          out_image_width,
+                                          out_image_height,
+                                          cl_image2d_row_pitch,
+                                          cl_image2d_slice_pitch,
+                                          IoDirection::DtoH);
+
+              DDim out_image_shape =
+                  default_convertor.InitImageDimInfoWith(output.dims());
+
+              default_convertor.ImageToNCHW(out_image_v.data(),
+                                            output_v.data(),
+                                            out_image_shape,
+                                            output.dims());
+              SHADOW_LOG << " lite输出 out_image_v ..... ";
+              for (int i = 0; i < out_image_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << Half2Float(out_image_v[i]);
+              }
+              SHADOW_LOG << " lite输出 output_v ..... ";
+              for (int i = 0; i < output_v.size(); i++) {
+                SHADOW_LOG << "(" << i << ")" << output_v[i];
+              }
+              SHADOW_LOG << "mutable_data out_ref_data: ";
+
+              // run cpu ref
+              auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
+
+              SHADOW_LOG << " conv_basic beigin ..... ";
+
+              conv_basic<float, float>(input_v.data(),
+                                       out_ref_data,
+                                       batch_size,
+                                       oc,
+                                       oh,
+                                       ow,
+                                       ic,
+                                       ih,
+                                       iw,
+                                       filter_v.data(),
+                                       bias_v.data(),  // mapped_bias,
+                                       group,
+                                       ksize,
+                                       ksize,
+                                       stride,
+                                       stride,
+                                       dilation,
+                                       dilation,
+                                       pad,
+                                       pad,
+                                       bias_flag,
+                                       relu_flag);
+              SHADOW_LOG << " conv_basic end ..... ";
+
+              SHADOW_LOG << " out_dim: " << out_dim;
+              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+                  {static_cast<int64_t>(out_image_width),
+                   static_cast<int64_t>(out_image_height)})};
+
+              for (int i = 0; i < out_dim.production(); i++) {
+                auto relative_diff =
+                    COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+                auto abs_diff = COMPTUE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                // EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+                             abs_diff > FP16_ABS_DIFF);
+                if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
+                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                             << "]:" << output_v[i] << " "
+                                                       "out_ref_data["
+                             << i << "]:" << out_ref_data[i];
+                }
+              }
+#ifdef LOOP_TEST
             }
           }
         }
@@ -450,7 +495,9 @@ TEST(conv2d, compute_image2d_1x1) {
 }
 #undef LOOP_TEST
 #undef PRINT_RESULT
+#endif
 
+#ifdef TEST_CONV_IMAGE_3x3
 // #define PRINT_RESULT
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_3x3) {
@@ -471,11 +518,11 @@ TEST(conv2d, compute_image2d_3x3) {
           for (bool bias_flag : {true, false}) {
             for (std::string relu_flag : {/*true,*/ "relu"}) {
 #else
-                const int pad = 1;
-                const int dilation = 1;
+  const int pad = 1;
+  const int dilation = 1;
 
 #if 0  // small scale with group, but result of cpu reference is wrong
-                const int stride = 2;
+const int stride = 2;
                 const int group = 2;
                 const int batch_size = 1;
                 const int ic = 1;
@@ -483,17 +530,17 @@ TEST(conv2d, compute_image2d_3x3) {
                 const int iw = 3;
                 const int oc = 2;
 #else  // big scale with group
-                const int stride = 1;
-                const int group = 32 / 1;
-                const int batch_size = 1;
-                const int ic = 32 / 1;
-                const int ih = 112 / 1;
-                const int iw = 112 / 1;
-                const int oc = 32 / 1;
+  const int stride = 1;
+  const int group = 32 / 1;
+  const int batch_size = 1;
+  const int ic = 32 / 1;
+  const int ih = 112 / 1;
+  const int iw = 112 / 1;
+  const int oc = 32 / 1;
 #endif
 
-                const bool bias_flag = false;
-                const std::string relu_flag = "relu";
+  const bool bias_flag = false;
+  const std::string relu_flag = "relu";
 #endif
               int filter_channel = ic;
               if (group > 1) {
@@ -823,6 +870,10 @@ TEST(conv2d, compute_image2d_3x3) {
 #undef LOOP_TEST
 #undef PRINT_RESULT
 
+#endif
+
+#ifdef TEST_CONV_IMAGE_5x5
+
 // #define PRINT_RESULT
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_5x5) {
@@ -839,17 +890,18 @@ TEST(conv2d, compute_image2d_5x5) {
     for (int oc = 1; oc < 10; oc += 1) {   // oc
       for (int ih = 5; ih < 9; ih += 1) {  // ih
         int iw = ih;
-        for (int ic = 1; ic < 10; ic += 1) {  // ic
+        for (int ic = 2; ic < 10; ic += 1) {  // ic
           for (bool bias_flag : {true, false}) {
             for (std::string relu_flag : {/*true,*/ "relu"}) {
 #else
-                const int batch_size = 2;
-                const int oc = 1;
-                const int ih = 5;
-                const int iw = 5;
-                const int ic = 1;
-                const bool bias_flag = true;
-                const std::string relu_flag = "relu";
+  const int batch_size = 2;
+  const int oc = 1;
+  const int ih = 5;
+  const int iw = 5;
+  // ic = 1 会进入depthwise的路由 .
+  const int ic = 2;
+  const bool bias_flag = true;
+  const std::string relu_flag = "relu";
 #endif
 
               const int oh =
@@ -1139,8 +1191,10 @@ TEST(conv2d, compute_image2d_5x5) {
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
-                if (relative_diff > FP16_MAX_DIFF) {
+                auto abs_diff = COMPTUE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+                             abs_diff > FP16_ABS_DIFF);
+                if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
                   LOG(FATAL) << "error idx:" << i << "output_v[" << i
                              << "]:" << output_v[i] << " "
                                                        "out_ref_data["
@@ -1161,13 +1215,16 @@ TEST(conv2d, compute_image2d_5x5) {
 }
 #undef LOOP_TEST
 #undef PRINT_RESULT
-
+#endif
+#ifdef TEST_CONV_IMAGE_7x7
+#undef FP16_ABS_DIFF
+#define FP16_ABS_DIFF (1e0)
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_7x7) {
   // conv infos
   const int ksize = 7;
   const int stride = 1;
-  const int pad = 2;
+  const int pad = 3;
   const int group = 1;
   const int dilation = 1;
 //  int loop_cnt = 0;
@@ -1177,17 +1234,18 @@ TEST(conv2d, compute_image2d_7x7) {
     for (int oc = 1; oc < 10; oc += 1) {    // oc
       for (int ih = 7; ih < 15; ih += 1) {  // ih
         int iw = ih;
-        for (int ic = 1; ic < 10; ic += 1) {  // ic
+        for (int ic = 2; ic < 10; ic += 1) {  // ic
           for (bool bias_flag : {true, false}) {
             for (std::string relu_flag : {"relu"}) {
 #else
-                const int batch_size = 2;
-                const int oc = 1;
-                const int ih = 7;
-                const int iw = 7;
-                const int ic = 1;
-                const bool bias_flag = false;
-                const std::string relu_flag = "";
+  const int batch_size = 2;
+  const int oc = 1;
+  const int ih = 7;
+  const int iw = 7;
+  // ic = 1会进入 depthwise路由
+  const int ic = 2;
+  const bool bias_flag = false;
+  const std::string relu_flag = "";
 #endif
 
               const int oh =
@@ -1286,11 +1344,15 @@ TEST(conv2d, compute_image2d_7x7) {
               SHADOW_LOG << "gen input and filter ...";
               for (auto& i : input_v) {
                 i = gen(engine);
-                //                i = 1;
+#ifdef TEST_CONV_IMAGE_ALL_1
+                i = 1;
+#endif
               }
               for (auto& f : filter_v) {
                 f = gen(engine);
-                //                f = 1;
+#ifdef TEST_CONV_IMAGE_ALL_1
+                f = 1;
+#endif
               }
               LOG(INFO) << "bias: " << bias_flag;
               LOG(INFO) << "relu: " << relu_flag;
@@ -1340,7 +1402,7 @@ TEST(conv2d, compute_image2d_7x7) {
               }
               SHADOW_LOG << "输入image : ----  ";
               for (int i = 0; i < x_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << x_image_v[i];
+                SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
               }
               SHADOW_LOG << "set mapped filter  ...";
               CLImageConverterFolder folder_convertor;
@@ -1353,7 +1415,7 @@ TEST(conv2d, compute_image2d_7x7) {
               }
               SHADOW_LOG << "卷积核image: ----  ";
               for (int i = 0; i < filter_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << filter_image_v[i];
+                SHADOW_LOG << "(" << i << ")" << Half2Float(filter_image_v[i]);
               }
               auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
@@ -1437,7 +1499,7 @@ TEST(conv2d, compute_image2d_7x7) {
 
               SHADOW_LOG << "输出image: ----  ";
               for (int i = 0; i < out_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << out_image_v[i];
+                SHADOW_LOG << "(" << i << ")" << Half2Float(out_image_v[i]);
               }
               SHADOW_LOG << "mutable_data out_ref_data: ";
 
@@ -1478,8 +1540,10 @@ TEST(conv2d, compute_image2d_7x7) {
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
-                if (relative_diff > FP16_MAX_DIFF) {
+                auto abs_diff = COMPTUE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+                             abs_diff > FP16_ABS_DIFF);
+                if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
                   LOG(FATAL) << "error idx:" << i << "output_v[" << i
                              << "]:" << output_v[i] << " "
                                                        "out_ref_data["
@@ -1500,7 +1564,14 @@ TEST(conv2d, compute_image2d_7x7) {
 }
 #undef LOOP_TEST
 #undef PRINT_RESULT
+#endif
+
 #undef SHADOW_LOG
+#undef TEST_CONV_IMAGE_1x1
+#undef TEST_CONV_IMAGE_3x3
+#undef TEST_CONV_IMAGE_5x5
+#undef TEST_CONV_IMAGE_7x7
+#undef TEST_CONV_IMAGE_ALL_1
 
 }  // namespace lite
 }  // namespace paddle

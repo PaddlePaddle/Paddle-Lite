@@ -107,21 +107,41 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
     auto inputs = param.x;
     int arg_idx = 0;
-    int width = inputs[0]->dims()[-1];
-    auto global_work_size = cl::NDRange{
-        static_cast<cl::size_type>(x_dims[-1]),
-        static_cast<cl::size_type>(image_shape["width"] / x_dims[-1]),
-        static_cast<cl::size_type>(image_shape["height"])};
+    int width = inputs[0]->dims()[inputs[0]->dims().size() - 1];
+
+    LOG(INFO) << "concat 输入尺寸:  ";
+    for (size_t i = 0; i < inputs.size(); i++) {
+      LOG(INFO) << "inputs [" << i << "]"
+                << "[" << inputs[i]->dims().size() << "D]:"
+                << "   dims:" << inputs[i]->dims()[0] << " "
+                << inputs[i]->dims()[1] << " " << inputs[i]->dims()[2] << " "
+                << inputs[i]->dims()[3];
+    }
+    LOG(INFO) << "concat 输出尺寸:  ";
+    LOG(INFO) << " out  dims:  "
+              << "[" << x_dims.size() << "D]:" << x_dims[0] << " " << x_dims[1]
+              << " " << x_dims[2] << " " << x_dims[3];
+    LOG(INFO) << "axis_: " << axis_;
+    LOG(INFO) << "flag_: " << flag_;
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>(x_dims[x_dims.size() - 1]),
+                    static_cast<cl::size_type>(image_shape["width"] /
+                                               x_dims[x_dims.size() - 1]),
+                    static_cast<cl::size_type>(image_shape["height"])};
     VLOG(4) << TargetToStr(param.output->target());
     VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
             << image_shape["height"];
     VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
+            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3]
+            << "x_dims[x_dims.size() - 1]" << x_dims[x_dims.size() - 1];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "width_: " << width_ << ", flag_: " << flag_;
+    LOG(INFO) << "width_: " << width_ << ", flag_: " << flag_;
+    VLOG(4) << "global_work_size: " << x_dims[x_dims.size() - 1] << "  "
+            << (image_shape["width"] / x_dims[x_dims.size() - 1]) << "  "
+            << (image_shape["height"]);
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    int out_w = x_dims[-1];
+    int out_w = x_dims[x_dims.size() - 1];
     int out_c = x_dims[1];
     if (inputs.size() == 2) {
       auto* x_buf0 = inputs[0]->data<float, cl::Image2D>();
@@ -159,13 +179,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         auto in_dims = inputs[i]->dims();
         image_shape = InitImageDimInfoWith(in_dims);
         auto* x_buf = inputs[i]->data<float, cl::Image2D>();
-        auto in_w = in_dims[-1];
+        int in_w = in_dims[in_dims.size() - 1];
         VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
                 << image_shape["height"];
-        global_work_size = cl::NDRange{
-            static_cast<cl::size_type>(in_dims[-1]),
-            static_cast<cl::size_type>(image_shape["width"] / in_dims[-1]),
-            static_cast<cl::size_type>(image_shape["height"])};
+        global_work_size =
+            cl::NDRange{static_cast<cl::size_type>(in_dims[in_dims.size() - 1]),
+                        static_cast<cl::size_type>(image_shape["width"] /
+                                                   in_dims[in_dims.size() - 1]),
+                        static_cast<cl::size_type>(image_shape["height"])};
         cl_int status = kernel.setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, *out_buf);
@@ -205,7 +226,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   int width_ = 1;
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{" -DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
