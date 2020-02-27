@@ -138,8 +138,6 @@ class Optimizer {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     pass->Apply(graph_);
-    std::string debug_str = Visualize(graph_.get());
-    printf("debug_str %s\n", debug_str.c_str());
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);

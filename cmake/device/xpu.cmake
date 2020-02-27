@@ -82,10 +82,6 @@ else()
   set_property(TARGET xpu_sdk_xpu_rt PROPERTY IMPORTED_LOCATION ${XPU_SDK_XPU_RT_FILE})
 endif()
 
-find_library(XPU_SDK_XPU_JITC_FILE NAMES xpujitc
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib
-  NO_DEFAULT_PATH)
-
 find_library(XPU_SDK_LLVM_FILE NAMES LLVM-8
   PATHS ${XPU_SDK_ROOT}/XTDK/shlib
   NO_DEFAULT_PATH)
@@ -98,7 +94,7 @@ else()
   set_property(TARGET xpu_sdk_llvm PROPERTY IMPORTED_LOCATION ${XPU_SDK_LLVM_FILE})
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
 
 set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu runtime libs")
 set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu builder libs")
