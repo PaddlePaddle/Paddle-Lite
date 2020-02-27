@@ -53,27 +53,40 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto in_dims = inputs[0]->dims();
     axis_size_ = out_dims[axis];
     axis_ = axis;
-    switch (axis_) {
-      case 0:
-        width_ = out_dims[2];  // h
-        flag_ = 0;
-        break;
-      case 1:                  // channel
-        width_ = out_dims[3];  // w
-        flag_ = 1;
-        break;
-      case 2:                  // height
-        width_ = out_dims[0];  // n
-        flag_ = 2;
-        break;
-      case 3:
-      case -1:                 // width
+    if (out_dims.size() < 4) {
+      if (out_dims.size() - axis == 1) {
+        // width
         width_ = out_dims[1];  // c
         flag_ = 3;
-        break;
-      default:
-        printf("this axis: %d does not support \n", axis_);
+      } else {
+        // height
+        width_ = out_dims[0];  // n
+        flag_ = 2;
+      }
+    } else {
+      switch (axis_) {
+        case 0:
+          width_ = out_dims[2];  // h
+          flag_ = 0;
+          break;
+        case 1:                  // channel
+          width_ = out_dims[3];  // w
+          flag_ = 1;
+          break;
+        case 2:                  // height
+          width_ = out_dims[0];  // n
+          flag_ = 2;
+          break;
+        case 3:
+        case -1:                 // width
+          width_ = out_dims[1];  // c
+          flag_ = 3;
+          break;
+        default:
+          printf("this axis: %d does not support \n", axis_);
+      }
     }
+
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
       // auto flag = CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
