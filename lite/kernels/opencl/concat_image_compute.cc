@@ -53,27 +53,40 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto in_dims = inputs[0]->dims();
     axis_size_ = out_dims[axis];
     axis_ = axis;
-    switch (axis_) {
-      case 0:
-        width_ = out_dims[2];  // h
-        flag_ = 0;
-        break;
-      case 1:                  // channel
-        width_ = out_dims[3];  // w
-        flag_ = 1;
-        break;
-      case 2:                  // height
-        width_ = out_dims[0];  // n
-        flag_ = 2;
-        break;
-      case 3:
-      case -1:                 // width
+    if (out_dims.size() < 4) {
+      if (out_dims.size() - axis == 1) {
+        // width
         width_ = out_dims[1];  // c
         flag_ = 3;
-        break;
-      default:
-        printf("this axis: %d does not support \n", axis_);
+      } else {
+        // height
+        width_ = out_dims[0];  // n
+        flag_ = 2;
+      }
+    } else {
+      switch (axis_) {
+        case 0:
+          width_ = out_dims[2];  // h
+          flag_ = 0;
+          break;
+        case 1:                  // channel
+          width_ = out_dims[3];  // w
+          flag_ = 1;
+          break;
+        case 2:                  // height
+          width_ = out_dims[0];  // n
+          flag_ = 2;
+          break;
+        case 3:
+        case -1:                 // width
+          width_ = out_dims[1];  // c
+          flag_ = 3;
+          break;
+        default:
+          printf("this axis: %d does not support \n", axis_);
+      }
     }
+
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
       // auto flag = CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
@@ -216,10 +229,68 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
             nullptr,
             event_.get());
         CL_CHECK_FATAL(status);
-        context.cl_wait_list()->emplace(out_buf, event_);
+        // context.cl_wait_list()->emplace(out_buf, event_);
+        context.cl_context()->GetCommandQueue().finish();
         start += inputs[i]->dims()[axis_];
       }
     }
+
+    auto tensor_mean_cl = [](const Tensor* in,
+                             PrecisionType ptype,
+                             std::string name = "inst") -> double {
+      if (!in->data<int8_t>()) {
+        return -99999;
+      }
+      double sum = 0.;
+      // profile opencl
+      switch (ptype) {
+        case PRECISION(kFloat): {
+          paddle::lite::CLImageConverterDefault default_convertor;
+          DDim out_image_shape =
+              default_convertor.InitImageDimInfoWith(in->dims());
+          int out_image_width = out_image_shape[0];
+          int out_image_height = out_image_shape[1];
+
+          const size_t cl_image2d_row_pitch{0};
+          const size_t cl_image2d_slice_pitch{0};
+          VLOG(4) << "out_image_shape: " << out_image_shape[0] << "  "
+                  << out_image_shape[1];
+          std::vector<uint16_t> out_image_v(out_image_shape.production() *
+                                            4);  // 4 :RGBA
+          std::vector<float> output_v(in->dims().production());
+          auto* indata = in->data<float, cl::Image2D>();
+          VLOG(4) << "indata addr: " << indata;
+          if (indata == nullptr) {
+            return -1;
+          }
+          TargetWrapperCL::ImgcpySync(out_image_v.data(),
+                                      in->data<uint16_t, cl::Image2D>(),
+                                      out_image_width,
+                                      out_image_height,
+                                      cl_image2d_row_pitch,
+                                      cl_image2d_slice_pitch,
+                                      IoDirection::DtoH);
+          // LOG(INFO) << "out_image_v: ";
+          // stride_print(out_image_v.size(), out_image_v.data());
+          default_convertor.ImageToNCHW(
+              out_image_v.data(), output_v.data(), out_image_shape, in->dims());
+          // LOG(INFO) << "output_v: ";
+          // stride_print(output_v.size(), output_v.data());
+          for (size_t i = 0; i < output_v.size(); i++) {
+            sum += output_v[i];
+            // LOG(INFO) << i << "   " << output_v[i];
+          }
+
+          return sum / in->numel();
+        }
+
+        default:
+          LOG(INFO) << "opencl unsupport data type: " << PrecisionToStr(ptype);
+          return 0.;
+      }
+    };
+    double mean = tensor_mean_cl(param.output, PrecisionType::kFloat, "concat");
+    LOG(INFO) << "concat out mean: " << mean;
   }
 
   std::string doc() { return "Concat using cl::Image, kFP16"; }
