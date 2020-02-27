@@ -109,21 +109,21 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     int arg_idx = 0;
     int width = inputs[0]->dims()[inputs[0]->dims().size() - 1];
 
-    LOG(INFO) << "concat 输入尺寸:  ";
+    VLOG(4) << "concat 输入尺寸:  ";
     for (size_t i = 0; i < inputs.size(); i++) {
-      LOG(INFO) << "inputs [" << i << "]"
-                << "[" << inputs[i]->dims().size() << "D]:"
-                << "   dims:" << inputs[i]->dims()[0] << " "
-                << inputs[i]->dims()[1] << " " << inputs[i]->dims()[2] << " "
-                << inputs[i]->dims()[3];
+      VLOG(4) << "inputs [" << i << "]"
+              << "[" << inputs[i]->dims().size() << "D]:"
+              << "   dims:" << inputs[i]->dims()[0] << " "
+              << inputs[i]->dims()[1] << " " << inputs[i]->dims()[2] << " "
+              << inputs[i]->dims()[3];
     }
 
-    LOG(INFO) << "concat 输出尺寸:  ";
-    LOG(INFO) << " out  dims:  "
-              << "[" << x_dims.size() << "D]:" << x_dims[0] << " " << x_dims[1]
-              << " " << x_dims[2] << " " << x_dims[3];
-    LOG(INFO) << "axis_: " << axis_;
-    LOG(INFO) << "flag_: " << flag_;
+    VLOG(4) << "concat 输出尺寸:  ";
+    VLOG(4) << " out  dims:  "
+            << "[" << x_dims.size() << "D]:" << x_dims[0] << " " << x_dims[1]
+            << " " << x_dims[2] << " " << x_dims[3];
+    VLOG(4) << "axis_: " << axis_;
+    VLOG(4) << "flag_: " << flag_;
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(x_dims[x_dims.size() - 1]),
@@ -139,7 +139,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
             << "x_dims[x_dims.size() - 1]" << x_dims[x_dims.size() - 1];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    LOG(INFO) << "width_: " << width_ << ", flag_: " << flag_;
+    VLOG(4) << "width_: " << width_ << ", flag_: " << flag_;
     VLOG(4) << "global_work_size: " << x_dims[x_dims.size() - 1] << "  "
             << (image_shape["width"] / x_dims[x_dims.size() - 1]) << "  "
             << (image_shape["height"]);
