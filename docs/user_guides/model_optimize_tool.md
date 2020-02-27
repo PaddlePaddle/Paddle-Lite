@@ -13,8 +13,8 @@ Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中�
 1. **推荐！** 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`    
    (release/v2.2.0之前的转化工具为model_optimize_tool、release/v2.3.0之后为opt)
 
-2. 我们提供当前develop分支编译结果下载：[opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt)、[opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac)
-release/v2.2.0之前版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
+2. 我们提供`release/v2.3`编译结果下载：[opt](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt)、[opt_mac](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt_mac)
+`release/v2.2.0`版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
 
 
 3. 如果 release 列表里的工具不符合您的环境，可以下载Paddle-Lite 源码，源码编译出opt工具
@@ -97,7 +97,7 @@ PaddlePaddle模型有两种保存格式：
 
 * 如果待优化的fluid模型是非combined形式，请设置`--model_dir`，忽略`--model_file`和`--param_file`。
 * 如果待优化的fluid模型是combined形式，请设置`--model_file`和`--param_file`，忽略`--model_dir`。
-* 优化后的模型包括__model__.nb和param.nb文件。
+* 优化后的模型为以`.nb`名称结尾的单个文件。
 
 ### 功能二：统计模型算子信息、判断是否支持
 
