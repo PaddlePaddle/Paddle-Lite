@@ -23,14 +23,19 @@ bool SequenceConvOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Filter);
   CHECK_OR_FALSE(param_.Out);
+
   // currently we only support the case that
   // the contextStride is equal to 1
+  int context_length = param_.contextLength;
+  int context_start = param_.contextStart;
   CHECK_EQ_OR_FALSE(param_.contextStride, 1UL);
+  CHECK_GT_OR_FALSE(context_start, -context_length);
+  CHECK_GE_OR_FALSE(0, context_start);
+
   const auto *filter = param_.Filter;
   auto lod = param_.X->lod();
   auto filter_dims = filter->dims();
   auto in_dims = param_.X->dims();
-  int context_length = param_.contextLength;
   CHECK_EQ_OR_FALSE(in_dims.size(), 2UL);
   CHECK_EQ_OR_FALSE(filter_dims.size(), 2UL);
   CHECK_EQ_OR_FALSE(lod.size(), 1UL);

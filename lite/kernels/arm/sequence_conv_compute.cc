@@ -30,7 +30,7 @@ namespace kernels {
 namespace arm {
 
 template <typename Dtype>
-void my_naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
+void local_naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
   int k = 0;
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < m; ++j) {
@@ -55,7 +55,6 @@ void SequenceConvCompute::Run() {
   int pad_start = param.contextStart;
   int kernel_size = param.contextLength;
   int kernel_num = param.Filter->dims()[1];
-  CHECK(pad_start > -kernel_num && pad_start <= 0);
   int up_pad = std::max(0, -pad_start);
   int down_pad = std::max(0, pad_start + kernel_size - 1);
   auto hidden_dim = static_cast<int64_t>(param.X->dims()[1]);
@@ -102,10 +101,10 @@ void SequenceConvCompute::Run() {
           1,
           1,  // stride_h, stride_w, dilation_h, dilation_w
           tmp_data);
-      my_naive_transpose(tmp_data,
-                         sub_col_data,
-                         kernel_size * hidden_dim,
-                         input_row_end - input_row_begin);
+      local_naive_transpose(tmp_data,
+                            sub_col_data,
+                            kernel_size * hidden_dim,
+                            input_row_end - input_row_begin);
     }
   }
 

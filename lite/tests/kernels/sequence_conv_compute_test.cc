@@ -100,6 +100,9 @@ class SequenceConvComputeTester : public arena::TestCase {
              {0.5635012, 0.49485126, 0.42620137},
              {0.2517162, 0.23646072, 0.22120519},
              {0.02574372, 0.03337148, 0.04099924}};
+    } else {
+      fprintf(stderr, "not supported contextStart_\n");
+      exit(-1);
     }
     for (int i = 0; i < output_shape[0]; i++) {
       for (int j = 0; j < output_shape[1]; j++) {
