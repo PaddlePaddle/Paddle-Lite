@@ -35,6 +35,50 @@ void add_bias_rowwise(Tensor* input,
     }
   }
 }
+void vector_dot(
+    float* out, const float* in, const float* v1, int size, const float* v2) {
+  int loop = size >> 2;
+  int remain = size & 3;
+  const float* in_ptr = in;
+  float* out_ptr = out;
+  const float* v1_ptr = v1;
+  const float* v2_ptr = v2;
+  for (int i = 0; i < loop; ++i) {
+    float32x4_t in = vld1q_f32(in_ptr);
+    float32x4_t data1 = vld1q_f32(v1_ptr);
+    if (!v2) {
+      // in_out * v1
+      float32x4_t out = vmulq_f32(in, data1);
+      vst1q_f32(out_ptr, out);
+      in_ptr += 4;
+      v1_ptr += 4;
+      out_ptr += 4;
+    } else {
+      // in_out + v1 * v2
+      float32x4_t data2 = vld1q_f32(v2_ptr);
+      float32x4_t out = vmlaq_f32(in, data1, data2);
+      vst1q_f32(out_ptr, out);
+      in_ptr += 4;
+      v1_ptr += 4;
+      out_ptr += 4;
+      v2_ptr += 4;
+    }
+  }
+  for (int i = 0; i < remain; ++i) {
+    if (!v2) {
+      out_ptr[i] = in_ptr[i] * v1_ptr[i];
+      ++out_ptr;
+      ++in_ptr;
+      ++v1_ptr;
+    } else {
+      out_ptr[i] = in_ptr[i] + v1_ptr[i] * v2_ptr[i];
+      ++out_ptr;
+      ++in_ptr;
+      ++v1_ptr;
+      ++v2_ptr;
+    }
+  }
+}
 
 }  // namespace math
 }  // namespace arm
