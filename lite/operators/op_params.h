@@ -1134,6 +1134,22 @@ struct GridSamplerParam {
   lite::Tensor* out{};
   lite::Tensor* grid{};
 };
+struct LstmParam {
+  lite::Tensor* Input{};
+  lite::Tensor* Weight{};
+  lite::Tensor* Bias{};
+  lite::Tensor* Hidden{};
+  lite::Tensor* Cell{};
+  lite::Tensor* BatchGate{};
+  lite::Tensor* BatchCellPreAct{};
+  lite::Tensor* H0{nullptr};
+  lite::Tensor* C0{nullptr};
+  bool use_peepholes;
+  bool is_reverse;
+  std::string gate_activation;
+  std::string cell_activation;
+  std::string candidate_activation;
+};
 
 }  // namespace operators
 }  // namespace lite
