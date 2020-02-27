@@ -81,7 +81,7 @@ class SequenceConvComputeTester : public arena::TestCase {
                            -0.06521739, 0.06521739,  0.19565217,  -0.23913044,
                            -0.10869565, 0.02173913,  0.1521739,   0.2826087};
 
-    SetCommonTensor(input_name_, DDim({4, 5}), din.data(), LoD{0, 4});
+    SetCommonTensor(input_name_, DDim({4, 5}), din.data(), LoD({0, 4}));
 
     std::vector<float> dfilter{
         -0.5,        -0.42982456, -0.35964912, -0.4473684,  -0.37719297,
@@ -93,7 +93,7 @@ class SequenceConvComputeTester : public arena::TestCase {
         0.02631579,  0.09649123,  0.16666667,  0.07894737,  0.1491228,
         0.21929824,  0.13157895,  0.20175439,  0.27192983,  0.18421052,
         0.25438598,  0.32456142,  0.23684211,  0.30701753,  0.37719297};
-    SetCommonTensor(filter_name_, DDim({15, 3}), dfilter.data(), LoD{0, 4});
+    SetCommonTensor(filter_name_, DDim({15, 3}), dfilter.data(), LoD({0, 4}));
   }
 
   void RunBaseline(Scope* scope) override {
