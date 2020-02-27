@@ -69,14 +69,14 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CHECK(context.cl_context() != nullptr);
 
     auto* x_img = param.x->data<half_t, cl::Image2D>();
-    LOG(INFO) << "x_image" << x_img;
+    VLOG(4) << "x_image" << x_img;
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-    LOG(INFO) << "out_image_shape = " << out_image_shape["width"] << " "
-              << out_image_shape["height"];
+    VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
+            << out_image_shape["height"];
     auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
-    LOG(INFO) << "out_image" << out_img;
+    VLOG(4) << "out_image" << out_img;
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
