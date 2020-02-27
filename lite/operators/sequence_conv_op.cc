@@ -63,7 +63,19 @@ bool SequenceConvOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.contextStride = opdesc.GetAttr<int>("contextStride");
   param_.contextLength = opdesc.GetAttr<int>("contextLength");
 
-  // TODO(mapingshuo) optional params: PaddingData, paddingTrainable
+  // PaddingData is not supported for now
+  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(),
+                input_arg_names.end(),
+                "PaddingData") != input_arg_names.end()) {
+    auto padding_data_arguments = opdesc.Input("PaddingData");
+    CHECK_EQ_OR_FALSE(padding_data_arguments.size(), 0);
+  }
+
+  // paddingTrainable == True is not supported for now
+  if (opdesc.HasAttr("paddingTrainable")) {
+    CHECK_OR_FALSE(!opdesc.GetAttr<bool>("paddingTrainable"));
+  }
   CHECK(param_.X);
   CHECK(param_.Filter);
   CHECK(param_.Out);

@@ -50,6 +50,7 @@ class SequenceConvComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
+    /*
     std::vector<float> din(dims_.production());
     for (int i = 0; i < dims_[0]; i++) {
       for (int j = 0; j < dims_[1]; j++) {
@@ -73,6 +74,26 @@ class SequenceConvComputeTester : public arena::TestCase {
       }
     }
     SetCommonTensor(filter_name_, filter_dims, dfilter.data(), lod_);
+    */
+    std::vector<vector<float>> din{
+        -0.5,        -0.36956522, -0.23913044, -0.10869565, 0.02173913,
+        -0.41304347, -0.2826087,  -0.1521739,  -0.02173913, 0.10869565,
+        -0.32608697, -0.19565217, -0.06521739, 0.06521739,  0.19565217,
+        -0.23913044, -0.10869565, 0.02173913,  0.1521739,   0.2826087};
+
+    SetCommonTensor(input_name_, DDim({4, 5}), din.data(), LoD{0, 4});
+
+    std::vector<float> dfilter{
+        -0.5,        -0.42982456, -0.35964912, -0.4473684,  -0.37719297,
+        -0.30701753, -0.39473686, -0.32456142, -0.25438598, -0.34210527,
+        -0.27192983, -0.20175439, -0.28947368, -0.21929824, -0.1491228,
+        -0.23684211, -0.16666667, -0.09649123, -0.18421052, -0.11403508,
+        -0.04385965, -0.13157895, -0.06140351, 0.00877193,  -0.07894737,
+        -0.00877193, 0.06140351,  -0.02631579, 0.04385965,  0.11403508,
+        0.02631579,  0.09649123,  0.16666667,  0.07894737,  0.1491228,
+        0.21929824,  0.13157895,  0.20175439,  0.27192983,  0.18421052,
+        0.25438598,  0.32456142,  0.23684211,  0.30701753,  0.37719297};
+    SetCommonTensor(filter_name_, DDim({15, 3}), dfilter.data(), LoD{0, 4});
   }
 
   void RunBaseline(Scope* scope) override {
@@ -85,10 +106,10 @@ class SequenceConvComputeTester : public arena::TestCase {
     output->Resize(DDim(output_shape));
     auto output_dims = output->dims();
     auto output_data = output->mutable_data<float>();
-    std::vector<std::vector<float>> res({{0.194508, 0.05720823, -0.08009153},
-                                         {0.73512584, 0.5749428, 0.41475973},
-                                         {0.5635012, 0.49485126, 0.42620137},
-                                         {0.2517162, 0.23646072, 0.22120519}});
+    std::vector<std::vector<float>> res{{0.194508, 0.05720823, -0.08009153},
+                                        {0.73512584, 0.5749428, 0.41475973},
+                                        {0.5635012, 0.49485126, 0.42620137},
+                                        {0.2517162, 0.23646072, 0.22120519}};
 
     for (int i = 0; i < output_shape[0]; i++) {
       for (int j = 0; j < output_shape[1]; j++) {
