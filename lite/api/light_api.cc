@@ -13,10 +13,29 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
+#include "paddle_use_kernels.h"  // NOLINT
+#include "paddle_use_ops.h"      // NOLINT
+#ifndef LITE_ON_TINY_PUBLISH
+#include "lite/api/paddle_use_passes.h"
+#endif
+
 #include <algorithm>
 
 namespace paddle {
 namespace lite {
+
+void LightPredictor::Build(const std::string& lite_model_file,
+                           bool model_from_memory) {
+  if (model_from_memory) {
+    LoadModelNaiveFromMemory(lite_model_file, scope_.get(), &cpp_program_desc_);
+  } else {
+    LoadModelNaiveFromFile(lite_model_file, scope_.get(), &cpp_program_desc_);
+  }
+
+  DequantizeWeight();
+  BuildRuntimeProgram(cpp_program_desc_);
+  PrepareFeedFetch();
+}
 
 void LightPredictor::Build(const std::string& model_dir,
                            const std::string& model_buffer,

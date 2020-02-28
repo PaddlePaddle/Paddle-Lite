@@ -33,7 +33,6 @@ namespace lite {
 void TestModel(const std::vector<Place>& valid_places) {
   lite::Predictor predictor;
   std::vector<std::string> passes;
-  passes.push_back("bm_subgraph_pass");
   predictor.Build(FLAGS_model_dir, "", "", valid_places, passes);
 
   auto* input_tensor = predictor.GetInput(0);

@@ -29,11 +29,15 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#define CL_COMPUTE_DTYPE half
+#define CL_COMPUTE_DTYPE_CHAR h
 #endif
 
 #ifdef CL_DTYPE_half
 #define CL_DTYPE half
 #define CL_DTYPE_CHAR h
+#define CL_COMPUTE_DTYPE half
+#define CL_COMPUTE_DTYPE_CHAR h
 #endif
 
 /////////////////////////////////
@@ -43,6 +47,7 @@ limitations under the License. */
 #define GET_VEC_TYPE(type__, size__) type__##size__
 #define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
 #define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+#define CL_COMPUTE_DTYPE4 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 4)
 
 /////////////////////////////////
 // CONVERT_TYPE_TO

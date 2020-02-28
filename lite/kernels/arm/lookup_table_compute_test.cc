@@ -53,7 +53,7 @@ void lookup_table_compute_ref(const operators::LookupTableParam &param) {
 
 TEST(lookup_table_arm, retrieve_op) {
   auto lookup_table =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
+      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kAny)>(
           "lookup_table");
   ASSERT_FALSE(lookup_table.empty());
   ASSERT_TRUE(lookup_table.front());
@@ -61,7 +61,7 @@ TEST(lookup_table_arm, retrieve_op) {
 
 TEST(lookup_table_arm, init) {
   LookupTableCompute lookup_table;
-  ASSERT_EQ(lookup_table.precision(), PRECISION(kFloat));
+  ASSERT_EQ(lookup_table.precision(), PRECISION(kAny));
   ASSERT_EQ(lookup_table.target(), TARGET(kARM));
 }
 
@@ -112,4 +112,4 @@ TEST(lookup_table_arm, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(lookup_table, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(lookup_table, kARM, kAny, kNCHW, def);

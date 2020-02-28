@@ -15,6 +15,14 @@ lite_cc_library(subgraph_bridge_softmax_op_bm SRCS softmax_op.cc DEPS ${subgraph
 lite_cc_library(subgraph_bridge_mul_op_bm SRCS mul_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_batch_norm_op_bm SRCS batch_norm_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_scale_op_bm SRCS scale_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_concat_op_bm SRCS concat_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_dropout_op_bm SRCS dropout_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_transpose_op_bm SRCS transpose_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reshape_op_bm SRCS reshape_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_norm_op_bm SRCS norm_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_prior_box_op_bm SRCS prior_box_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_box_coder_op_bm SRCS box_coder_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_multiclass_nms_op_bm SRCS multiclass_nms_op.cc DEPS ${bm_subgraph_bridge_deps})
 
 set(bm_subgraph_bridges
         subgraph_bridge_registry
@@ -28,4 +36,12 @@ set(bm_subgraph_bridges
         subgraph_bridge_mul_op_bm
         subgraph_bridge_batch_norm_op_bm
         subgraph_bridge_scale_op_bm
+        subgraph_bridge_concat_op_bm
+        subgraph_bridge_dropout_op_bm
+        subgraph_bridge_transpose_op_bm
+        subgraph_bridge_reshape_op_bm
+        subgraph_bridge_norm_op_bm
+        subgraph_bridge_prior_box_op_bm
+        subgraph_bridge_box_coder_op_bm
+        subgraph_bridge_multiclass_nms_op_bm
         CACHE INTERNAL "bm_subgraph_bridges")

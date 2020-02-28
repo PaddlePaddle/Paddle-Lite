@@ -94,13 +94,20 @@ void LoadParamNaive(const std::string& path,
                     lite::Scope* scope,
                     const std::string& name);
 
+// warning:this old inference will be abandened in release/v3.0.0
+// and LoadModelNaiveFromFile is suggested.
 void LoadModelNaive(const std::string& model_dir,
                     lite::Scope* scope,
                     cpp::ProgramDesc* prog,
                     bool combined = true);
-
+void LoadModelNaiveFromFile(const std::string& filename,
+                            lite::Scope* scope,
+                            cpp::ProgramDesc* prog);
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               const std::string& param_buffer,
+                              lite::Scope* scope,
+                              cpp::ProgramDesc* cpp_prog);
+void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
 

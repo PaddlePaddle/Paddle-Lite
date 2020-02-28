@@ -155,6 +155,47 @@ class ReshapeComputeTester : public arena::TestCase {
   }
 };
 
+void TestReshape4D(Place place, float abs_error) {
+  DDim dims{{2, 3, 4, 5}};
+  std::vector<std::vector<int>> shapes{{5, 4, 3, 2},
+                                       {2, 3, 20},
+                                       {2, 60},
+                                       {120},
+                                       {2, 3, -1},
+                                       {0, 0, 20},
+                                       {0, 0, -1}};
+  for (auto shape : shapes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ReshapeComputeTester(place, "def", dims, shape));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestReshape3D(Place place, float abs_error) {
+  DDim dims{{2, 3, 20}};
+  std::vector<std::vector<int>> shapes{
+      {5, 4, 3, 2}, {2, 3, 20}, {2, 60}, {120}, {2, 3, -1}, {0, 60}, {0, -1}};
+  for (auto shape : shapes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ReshapeComputeTester(place, "def", dims, shape));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestReshape2D(Place place, float abs_error) {
+  DDim dims{{6, 20}};
+  std::vector<std::vector<int>> shapes{
+      {5, 4, 3, 2}, {2, 3, 20}, {2, 60}, {120}, {-1}};
+  for (auto shape : shapes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ReshapeComputeTester(place, "def", dims, shape));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
 TEST(Reshape, precision) {
   LOG(INFO) << "test Reshape op";
   float abs_error = 2e-5;
@@ -168,23 +209,9 @@ TEST(Reshape, precision) {
   return;
 #endif
 
-  DDim dims{{2, 3, 4, 5}};
-  std::vector<std::vector<int>> shapes{{5, 4, 3, 2},
-                                       {2, 3, 20},
-                                       {2, 60},
-                                       {120},
-                                       {2, 3, -1},
-                                       {0, 0, 20},
-                                       {0, 0, -1}};
-  for (auto shape : shapes) {
-#ifdef LITE_WITH_NPU
-    if (dims.size() > 4 || shape.size() > 4) continue;
-#endif
-    std::unique_ptr<arena::TestCase> tester(
-        new ReshapeComputeTester(place, "def", dims, shape));
-    arena::Arena arena(std::move(tester), place, abs_error);
-    arena.TestPrecision({"xshape"});
-  }
+  TestReshape4D(place, abs_error);
+  TestReshape3D(place, abs_error);
+  TestReshape2D(place, abs_error);
 }
 
 }  // namespace lite

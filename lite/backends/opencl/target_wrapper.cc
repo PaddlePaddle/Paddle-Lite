@@ -81,10 +81,10 @@ void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
   return cl_image;
 }
 
-template <>  // use int16_t represents half float
-void *TargetWrapperCL::MallocImage<int16_t>(const size_t cl_image2d_width,
-                                            const size_t cl_image2d_height,
-                                            void *host_ptr) {
+template <>  // use uint16_t represents half float
+void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
+                                             const size_t cl_image2d_height,
+                                             void *host_ptr) {
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFP16)));
   cl_int status;
   cl::Image2D *cl_image =
