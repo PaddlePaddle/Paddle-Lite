@@ -31,7 +31,7 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
   int out_h = this->param_.OutH();
   int out_w = this->param_.OutW();
   if (out_h > 0 && out_w > 0) {
-      ignore_scale = true;
+    ignore_scale = true;
   }
   PADDLE_MOBILE_ENFORCE(dim_x.size() == 4, "X's dimension must be 4");
 

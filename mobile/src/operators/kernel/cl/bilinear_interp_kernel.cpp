@@ -28,8 +28,8 @@ bool BilinearInterpKernel<GPU_CL, float>::Init(
 
 template <>
 void BilinearInterpKernel<GPU_CL, float>::Compute(
-    const paddle_mobile::operators::BilinearInterpParam<
-        paddle_mobile::GPU_CL> &param) {
+    const paddle_mobile::operators::BilinearInterpParam<paddle_mobile::GPU_CL>
+        &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
   auto input = param.InputX();
@@ -38,15 +38,15 @@ void BilinearInterpKernel<GPU_CL, float>::Compute(
   cl_mem output_image = output->GetCLImage();
   float scale_h, scale_w;
   if (param.AlignCorners()) {
-      scale_h = (input->dims()[2] - 1.0f) / (output->dims()[2] - 1.0f);
-      scale_w = (input->dims()[3] - 1.0f) / (output->dims()[3] - 1.0f);
+    scale_h = (input->dims()[2] - 1.0f) / (output->dims()[2] - 1.0f);
+    scale_w = (input->dims()[3] - 1.0f) / (output->dims()[3] - 1.0f);
   } else {
-      scale_h = input->dims()[2] / (float)output->dims()[2];
-      scale_w = input->dims()[3] / (float)output->dims()[3];
+    scale_h = input->dims()[2] / static_cast<float> output->dims()[2];
+    scale_w = input->dims()[3] / static_cast<float> output->dims()[3];
   }
   float align_delta = 0.0f;
   if (!param.AlignCorners() && param.AlignMode() == 0) {
-      align_delta = 0.5f;
+    align_delta = 0.5f;
   }
   int in_dims_h = input->dims()[2];
   int out_dims_h = output->dims()[2];

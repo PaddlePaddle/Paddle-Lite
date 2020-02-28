@@ -3091,7 +3091,7 @@ class BilinearInterpParam : public OpParam {
   int OutW() const { return out_w_; }
   bool AlignCorners() const { return align_corners; }
   int AlignMode() const { return align_mode; }
-    
+
  private:
   GType *input_x_;
   GType *input_outsize_;
