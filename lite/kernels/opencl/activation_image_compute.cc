@@ -46,9 +46,11 @@ class ActivationComputeImageDefault
         break;
       case 2:
         kernel_func_name_ = "relu6";
+        threshold_ = act_param_->Relu_clipped_coef;
         break;
       case 4:
         kernel_func_name_ = "leakyRelu";
+        scale_ = act_param_->Leaky_relu_alpha;
         break;
       case 5:
         kernel_func_name_ = "sigmoid";
@@ -60,8 +62,6 @@ class ActivationComputeImageDefault
         printf("This act type: %d doesn't support \n", act_type);
         return;
     }
-    threshold_ = act_param_->Relu_clipped_coef;
-    scale_ = act_param_->Leaky_relu_alpha;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/activation_kernel.cl", build_options_);
   }
@@ -120,8 +120,8 @@ class ActivationComputeImageDefault
  private:
   param_t* act_param_{nullptr};
   std::string kernel_func_name_{};
-  float threshold_;
-  float scale_;
+  float threshold_{6.f};
+  float scale_{1.f};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
