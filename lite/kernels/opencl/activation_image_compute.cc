@@ -366,7 +366,6 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 // Relu
-/*
 REGISTER_LITE_KERNEL(relu,
                      kOpenCL,
                      kFP16,
@@ -382,7 +381,7 @@ REGISTER_LITE_KERNEL(relu,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
-*/
+
 // Relu6
 REGISTER_LITE_KERNEL(relu6,
                      kOpenCL,
