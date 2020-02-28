@@ -15,7 +15,9 @@ limitations under the License. */
 #include <cl_common.h>
 
 // #define DEBUG
+////////////////////////////////////////////////////////
 // buffer -> image2d
+////////////////////////////////////////////////////////
 __kernel void buffer_to_image2d(__global CL_DTYPE *in,
                                 __write_only image2d_t output_image,
                                 __private const int out_H,
@@ -80,8 +82,9 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *in,
   WRITE_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, output_image, output_pos, output);
 }
 
-
+////////////////////////////////////////////////////////
 // image2d -> buffer
+////////////////////////////////////////////////////////
 __kernel void image2d_to_buffer(__read_only image2d_t input,
                                 __private const int in_width,
                                 __private const int in_height,
@@ -125,8 +128,10 @@ __kernel void image2d_to_buffer(__read_only image2d_t input,
 }
 
 
-#if 0
+#if 0 // NOTE(ysh329): keep, un-used from paddle-mobile
+////////////////////////////////////////////////////////
 // buffer -> image2d_nw
+////////////////////////////////////////////////////////
 __kernel void buffer_to_image2d_nw(__global CL_DTYPE* in,
                                    __write_only image2d_t output_image,
                                    __private const int out_H,
@@ -178,7 +183,7 @@ __kernel void buffer_to_image2d_nw(__global CL_DTYPE* in,
 #endif
 
 
-#if 0
+#if 0 // NOTE(ysh329): keep, un-used from paddle-mobile
 // image2d -> buffer
 __kernel void image2d_to_buffer_2d(__private const int in_height,
                                    __private const int in_width,
@@ -200,7 +205,9 @@ __kernel void image2d_to_buffer_2d(__private const int in_height,
 }
 #endif
 
+////////////////////////////////////////////////////////
 // buffer -> image2d (divide by 255 to normalize)
+////////////////////////////////////////////////////////
 __kernel void buffer_to_image2d_with_pre255(__global uchar *in,
                                             __write_only image2d_t output_image,
                                             __private const int out_H,
@@ -248,7 +255,10 @@ __kernel void buffer_to_image2d_with_pre255(__global uchar *in,
   WRITE_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, output_image, output_pos, output);
 }
 
+
+////////////////////////////////////////////////////////
 // image2d -> buffer (multiply by 255 to de-normalize)
+////////////////////////////////////////////////////////
 __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
                                             __private const int in_width,
                                             __private const int in_height,
@@ -268,6 +278,11 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
 
   const int pos_x = mad24(in_c, in_width, in_w);
   CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh));
+
+#if DEBUG
+  printf("in_c:%d, in_w:%d, in_nh:%d ===> in(%d,%d): %.2f %.2f %.2f %.2f\n",
+          in_c, in_w, in_nh, pos_x, in_nh, in.x, in.y, in.z, in.w);
+#endif
 
   const int index = in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
   out[index] = convert_uchar_sat(in.x * 255);
