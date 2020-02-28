@@ -81,17 +81,18 @@ __kernel void leakyRelu(__read_only image2d_t input,
                             CLK_FILTER_NEAREST;
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 s_val = CONVERT_TYPE_TO(scale, CL_DTYPE) * in;
   if (in.x < 0.0f){
-    in.x = in.x * scale;
+    in.x = s_val.x;
   }
   if (in.y < 0.0f){
-    in.y = in.y * scale;
+    in.y = s_val.y;
   }
   if (in.z < 0.0f){
-    in.z = in.z * scale;
+    in.z = s_val.z;
   }
   if (in.w < 0.0f){
-    in.w = in.w * scale;
+    in.w = s_val.w;
   }
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
