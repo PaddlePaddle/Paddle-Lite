@@ -110,6 +110,7 @@
 - equal
 - gather
 - generate_proposals
+- graph_op
 - greater_equal
 - greater_than
 - gru
@@ -153,7 +154,6 @@
 - sequence_expand
 - sequence_expand_as
 - sequence_pool
-- sequence_pool_concat
 - sequence_reshape
 - sequence_reverse
 - sequence_softmax
@@ -226,7 +226,6 @@
 - generate_proposals
 - greater_equal
 - greater_than
-- grid_sampler
 - gru
 - gru_unit
 - hard_sigmoid
@@ -312,9 +311,6 @@
 - gelu
 - gru
 - layer_norm
-- leaky_relu
-- lookup_table
-- lookup_table_v2
 - match_matrix_tensor
 - matmul
 - mul
@@ -392,11 +388,9 @@
 - yolo_box
 
 ### OpenCL kernels
-- concat
 - conv2d
 - depthwise_conv2d
 - elementwise_add
-- elementwise_mul
 - fc
 - fusion_elementwise_add_activation
 - layout
@@ -404,10 +398,5 @@
 - io_copy
 - io_copy_once
 - mul
-- nearest_interp
 - pool2d
 - relu
-- reshape
-- reshape2
-- scale
-- sigmoid

@@ -63,7 +63,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
         InitImageDimInfoWith(out_dims);
     cl::Image2D* const out_image = output->mutable_data<half_t, cl::Image2D>(
         out_image_shape.at("width"), out_image_shape.at("height"));
-    LOG(INFO) << "out_dims=   " << out_dims;
+    VLOG(4) << "out_dims=   " << out_dims;
 
     const std::vector<size_t>& default_work_size = DefaultWorkSize(
         out_dims,
