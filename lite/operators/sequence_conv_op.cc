@@ -49,8 +49,8 @@ bool SequenceConvOp::InferShape() const {
   const auto *filter = param_.Filter;
   auto in_dims = input->dims();
   auto filter_dims = filter->dims();
-  in_dims[1] = filter_dims[1];
   auto out_dims = in_dims;
+  out_dims[1] = filter_dims[1];
   param_.Out->Resize(out_dims);
   param_.Out->set_lod(param_.X->lod());
   return true;

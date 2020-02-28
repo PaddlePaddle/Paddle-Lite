@@ -22,16 +22,6 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename Dtype>
-void naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
-  int k = 0;
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < m; ++j) {
-      dout[k++] = din[j * n + i];
-    }
-  }
-}
-
 class SequenceConvCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void PrepareForRun() override;
