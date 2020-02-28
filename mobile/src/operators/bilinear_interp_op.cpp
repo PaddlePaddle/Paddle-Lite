@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef BILINEAR_INTERP_OP
 
 #include "operators/bilinear_interp_op.h"
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {
