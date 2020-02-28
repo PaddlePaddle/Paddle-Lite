@@ -43,6 +43,16 @@ void CalibComputeInt8ToFp32::Run() {
   return;
 }
 
+void CalibComputeInt8ToFp32NHWC::Run() {
+  auto& param = this->Param<operators::CalibParam>();
+  const auto* din = param.input->data<signed char>();
+  std::vector<float> scale = {param.scale};
+  auto* dout = param.output->mutable_data<float>();
+  lite::arm::math::int8_to_fp32(
+      din, dout, scale.data(), 1, 1, param.input->numel());
+  return;
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -68,6 +78,23 @@ REGISTER_LITE_KERNEL(calib,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt8,
+                     kNHWC,
+                     paddle::lite::kernels::arm::CalibComputeInt8ToFp32NHWC,
+                     int8_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(calib_once,
                      kARM,
                      kInt8,
@@ -87,4 +114,20 @@ REGISTER_LITE_KERNEL(calib_once,
                      int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kInt8,
+                     kNHWC,
+                     paddle::lite::kernels::arm::CalibComputeInt8ToFp32NHWC,
+                     int8_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

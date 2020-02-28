@@ -59,6 +59,7 @@ void PrecisionCastPass::ComplementInputs(SSAGraph* graph,
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   VLOG(4) << inst.picked_kernel().name();
+  LOG(INFO) << in_arg_name << " xxxxxxxxxx: " << *in->AsArg().type;
   // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
   // *decl_arg_type)) {
   if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {

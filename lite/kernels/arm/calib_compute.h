@@ -45,6 +45,18 @@ class CalibComputeInt8ToFp32
  private:
 };
 
+class CalibComputeInt8ToFp32NHWC
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt8ToFp32NHWC() override{};
+
+ private:
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
