@@ -68,6 +68,7 @@ add_kernel(reduce_max_compute_arm ARM extra SRCS reduce_max_compute.cc DEPS ${li
 add_kernel(sequence_expand_compute_arm ARM extra SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(im2sequence_compute_arm ARM extra SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(sequence_pool_compute_arm ARM extra SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(sequence_conv_compute_arm ARM extra SRCS sequence_conv_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(layer_norm_compute_arm ARM extra SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(gather_compute_arm ARM extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(reduce_prod_compute_arm ARM extra SRCS reduce_prod_compute.cc DEPS ${lite_kernel_deps} math_arm)
