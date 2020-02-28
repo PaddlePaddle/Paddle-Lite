@@ -277,7 +277,7 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
   const int pos_x = mad24(in_c, in_width, in_w);
-  CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh));
+  CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh)) * 255;
 
 #if DEBUG
   printf("in_c:%d, in_w:%d, in_nh:%d ===> in(%d,%d): %.2f %.2f %.2f %.2f\n",
@@ -285,14 +285,14 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
 #endif
 
   const int index = in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
-  out[index] = convert_uchar_sat(in.x * 255);
+  out[index] = convert_uchar_sat(in.x);
   if(C - 4 * in_c>=2){
-    out[index + size_ch] = convert_uchar_sat(in.y * 255);
+    out[index + size_ch] = convert_uchar_sat(in.y);
   }
   if(C - 4 * in_c>=3){
-    out[index + size_ch * 2] = convert_uchar_sat(in.z * 255);
+    out[index + size_ch * 2] = convert_uchar_sat(in.z);
   }
   if(C - 4 * in_c>=4){
-    out[index + size_ch * 3] = convert_uchar_sat(in.w * 255);
+    out[index + size_ch * 3] = convert_uchar_sat(in.w);
   }
 }
