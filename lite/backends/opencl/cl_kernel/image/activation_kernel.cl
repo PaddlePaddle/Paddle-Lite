@@ -16,7 +16,9 @@ limitations under the License. */
 
 
 __kernel void relu(__read_only image2d_t input,
-                   __write_only image2d_t output) {
+                   __write_only image2d_t output,
+                   __private const float threshold,
+                   __private const float scale) {
 
   const int x = get_global_id(0); // image_width
   const int y = get_global_id(1); // image_height
@@ -33,7 +35,8 @@ __kernel void relu(__read_only image2d_t input,
 
 __kernel void relu6(__read_only image2d_t input,
                     __write_only image2d_t output,
-                    __private const float threshold){
+                    __private const float threshold,
+                    __private const float scale){
 
   const int x = get_global_id(0);
   const int y = get_global_id(1);
@@ -50,7 +53,9 @@ __kernel void relu6(__read_only image2d_t input,
 
 
 __kernel void sigmoid(__read_only image2d_t input,
-                      __write_only image2d_t output) {
+                      __write_only image2d_t output,
+                      __private const float threshold,
+                      __private const float scale) {
 
   const int x = get_global_id(0); // image_width
   const int y = get_global_id(1); // image_height
@@ -63,3 +68,47 @@ __kernel void sigmoid(__read_only image2d_t input,
   CL_DTYPE4 out = 1 / (1 + exp(-in));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
+__kernel void leakyRelu(__read_only image2d_t input,
+                      __write_only image2d_t output,
+                      __private const float threshold,
+                      __private const float scale) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  if (in.x < 0.0f){
+    in.x = in.x * scale;
+  }
+  if (in.y < 0.0f){
+    in.y = in.y * scale;
+  }
+  if (in.z < 0.0f){
+    in.z = in.z * scale;
+  }
+  if (in.w < 0.0f){
+    in.w = in.w * scale;
+  }
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void tanhAct(__read_only image2d_t input,
+                      __write_only image2d_t output,
+                      __private const float threshold,
+                      __private const float scale) {
+
+  const int x = get_global_id(0); // image_width
+  const int y = get_global_id(1); // image_height
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 out= (exp(in) - exp(-in))/ (exp(in) + exp(-in));
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
+}
+
