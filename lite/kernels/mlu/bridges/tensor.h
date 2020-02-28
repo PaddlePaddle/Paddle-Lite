@@ -59,7 +59,6 @@ class MLUTensor {
   cnmlDataType_t mlu_dtype_;
   int dim_{0};
   cnmlDataOrder_t data_order_;
-  void Destroy();
   void* mlu_ptr_;
 };
 

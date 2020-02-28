@@ -257,20 +257,16 @@ void MLUTensor::Create() {
   }
 }
 
-void MLUTensor::Destroy() {
-  if (mlu_tensor_ != nullptr) {
-    CNML_CALL(cnmlDestroyTensor(&mlu_tensor_));
-    mlu_tensor_ = nullptr;
-  }
-}
-
 cnmlTensor_t MLUTensor::mlu_tensor() {
   Create();
   return mlu_tensor_;
 }
 
 MLUTensor::~MLUTensor() {
-  Destroy();
+  if (mlu_tensor_ != nullptr) {
+    CNML_CALL(cnmlDestroyTensor(&mlu_tensor_));
+    mlu_tensor_ = nullptr;
+  }
 }
 
 }  // namespace mlu
