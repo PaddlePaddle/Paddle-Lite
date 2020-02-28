@@ -49,6 +49,10 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(bilinear_interp, ops::BilinearOp);
 #endif
 
+#if PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(bilinear_interp, ops::BilinearOp)
+#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 

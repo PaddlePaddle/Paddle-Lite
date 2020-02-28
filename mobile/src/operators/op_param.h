@@ -3081,19 +3081,25 @@ class BilinearInterpParam : public OpParam {
     out_ = OutFrom<GType>(outputs, *scope);
     out_h_ = GetAttr<int>("out_h", attrs);
     out_w_ = GetAttr<int>("out_w", attrs);
+    align_corners = GetAttr<bool>("align_corners", attrs);
+    align_mode = GetAttr<int>("align_mode", attrs);
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
   GType *Out() const { return out_; }
   int OutH() const { return out_h_; }
   int OutW() const { return out_w_; }
-
+  bool AlignCorners() const { return align_corners; }
+  int AlignMode() const { return align_mode; }
+    
  private:
   GType *input_x_;
   GType *input_outsize_;
   GType *out_;
   int out_h_;
   int out_w_;
+  bool align_corners;
+  int align_mode;
 };
 #endif
 
