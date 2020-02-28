@@ -773,6 +773,15 @@ struct SequencePoolParam {
 #endif
 };
 
+struct SequenceConvParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Filter{};
+  lite::Tensor* Out{};
+  int contextStart{0};
+  int contextStride{1};
+  int contextLength;
+};
+
 struct SequencePoolConcatParam {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
