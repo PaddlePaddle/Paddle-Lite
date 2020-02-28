@@ -279,7 +279,7 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
   const int pos_x = mad24(in_c, in_width, in_w);
   CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh)) * 255;
 
-#if DEBUG
+#ifdef DEBUG
   printf("in_c:%d, in_w:%d, in_nh:%d ===> in(%d,%d): %.2f %.2f %.2f %.2f\n",
           in_c, in_w, in_nh, pos_x, in_nh, in.x, in.y, in.z, in.w);
 #endif
