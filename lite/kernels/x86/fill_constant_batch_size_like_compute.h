@@ -34,8 +34,8 @@ class FillConstantBatchSizeLikeCompute
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     auto& ctx = ctx_->As<X86Context>();
-    auto* out = param.Out;
-    auto* in = param.Input;
+    auto* out = param.out;
+    auto* in = param.input;
     if (in->lod().size() && param.input_dim_idx == 0) {
       // set the correct batch size for the LoDTensor.
       auto odims = out->dims();
