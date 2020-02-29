@@ -93,8 +93,20 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
     param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
+    // std::cout << " input dim " << param->Input()->dims()[0] << "  "
+    //           << param->Input()->dims()[1] << "  " <<
+    //           param->Input()->dims()[2]
+    //           << "  " << param->Input()->dims()[3] << "  " << std::endl;
+    // std::cout << " output dim " << param->Output()->dims()[0] << " "
+    //           << param->Output()->dims()[1] << " " <<
+    //           param->Output()->dims()[2]
+    //           << " " << param->Output()->dims()[3] << " " << std::endl;
+    // std::cout << " filter dim " << param->Filter()->dims()[0] << " "
+    //           << param->Filter()->dims()[1] << " " <<
+    //           param->Filter()->dims()[2]
+    //           << " " << param->Filter()->dims()[3] << " " << std::endl;
 
-    this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file);
+    this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file);
     //    }
     DLOG << "conv 3x3";
   } else if (param->Filter()->dims()[2] == 7 &&
@@ -120,7 +132,7 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
       WinogradConv3x3<4, 3>(&this->cl_helper_, param);
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
-    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+    // case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW7x7_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:
@@ -128,6 +140,9 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
       DWConvAddBnRelu(&this->cl_helper_, param);
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+      SWConvAddBnRelu(&this->cl_helper_, param);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
