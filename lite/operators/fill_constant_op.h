@@ -23,12 +23,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class FillConstantBatchSizeLikeOp : public OpLite {
+class FillConstantOp : public OpLite {
  public:
-  FillConstantBatchSizeLikeOp() {}
+  FillConstantOp() {}
 
-  explicit FillConstantBatchSizeLikeOp(const std::string &op_type)
-      : OpLite(op_type) {}
+  explicit FillConstantOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -37,12 +36,10 @@ class FillConstantBatchSizeLikeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override {
-    return "fill_constant_batch_size_like";
-  }
+  std::string DebugString() const override { return "fill_constant"; }
 
  private:
-  mutable FillConstantBatchSizeLikeParam param_;
+  mutable FillConstantParam param_;
 };
 
 }  // namespace operators

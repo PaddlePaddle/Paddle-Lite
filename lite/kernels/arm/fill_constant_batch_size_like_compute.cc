@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/fill_constant_compute.h"
+#include "lite/kernels/arm/fill_constant_batch_size_like_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void FillConstantCompute::Run() {
+void FillConstantBatchSizeLikeCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
   auto& context = ctx_->As<ARMContext>();
 
@@ -49,16 +49,13 @@ void FillConstantCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-// float
-REGISTER_LITE_KERNEL(fill_constant,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::FillConstantCompute,
-                     def)
-    .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("ShapeTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+REGISTER_LITE_KERNEL(
+    fill_constant_batch_size_like,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::FillConstantBatchSizeLikeCompute,
+    def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
