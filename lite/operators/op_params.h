@@ -57,6 +57,7 @@ struct FetchParam {
 struct IoCopyParam {
   const lite::Tensor* x{};
   lite::Tensor* y{};
+  int process_type{0};
 };
 
 struct LayoutParam {
