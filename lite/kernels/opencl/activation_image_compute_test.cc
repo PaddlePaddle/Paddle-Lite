@@ -84,7 +84,7 @@ void act_compute_ref(const dtype *x_data,
   }
 }
 
-#define ACT_FP16_LOOP_TEST
+// #define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
@@ -279,7 +279,7 @@ TEST(act_image2d_fp16, compute) {
                       COMPUTE_ABS_DIFF(y_data_ref[eidx], mapped_y[eidx]);
                   auto relative_diff =
                       COMPUTE_RELATIVE_DIFF(y_data_ref[eidx], mapped_y[eidx]);
-                  //EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
+                  // EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
                   //              (abs_diff <= FP16_MAX_DIFF),
                   //          true);
                   if ((relative_diff > FP16_MAX_DIFF) &&
