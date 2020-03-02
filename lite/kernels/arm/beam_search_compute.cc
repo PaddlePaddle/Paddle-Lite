@@ -37,8 +37,6 @@ void BeamSearchCompute::Run() {
                                param.end_id,
                                param.is_accumulated,
                                &ctx);
-  LOG(INFO) << param.selected_ids->dims();
-  LOG(INFO) << param.selected_scores->dims();
 }
 
 }  // namespace arm

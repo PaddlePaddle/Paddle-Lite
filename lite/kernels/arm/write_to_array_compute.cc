@@ -30,7 +30,6 @@ void WriteToArrayCompute::Run() {
   case type__: {                                                    \
     const auto* x_data = param.X->data<T>();                        \
     int id = param.I->data<int64_t>()[0];                           \
-    LOG(INFO) << "write_to_array:" << id;                           \
     if (id >= param.Out->size()) {                                  \
       for (int i = param.Out->size(); i < id + 1; i++) {            \
         lite::Tensor tmp;                                           \

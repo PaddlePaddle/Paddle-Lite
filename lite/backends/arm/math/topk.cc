@@ -43,7 +43,6 @@ void topk(const float* in_data,
     for (int q = 0; q < k; q++) {
       out_val_tmp[q] = vec[q].first;
       out_ind_tmp[q] = vec[q].second;
-      LOG(INFO) << out_ind_tmp[q] << " -->" << vec[q].second;
     }
   }
 }

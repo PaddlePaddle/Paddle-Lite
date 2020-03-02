@@ -91,9 +91,6 @@ void ElementwiseAddCompute::Run() {
     lite::arm::math::elementwise_add(
         x_data, y_data, out_data, x_dims.production());
   }
-  LOG(INFO) << param.Y->dims();
-  LOG(INFO) << param.X->dims();
-  LOG(INFO) << param.Out->dims();
 }
 
 void ElementwiseAddActivationCompute::Run() {

@@ -32,10 +32,6 @@ void TopkCompute::Run() {
   int m = x_dims.production() / x_dims[dim_size - 1];
   int n = x_dims[dim_size - 1];
   lite::arm::math::topk(x_data, out_val, out_ind, m, n, K, &ctx);
-  LOG(INFO) << *param.Out;
-  for (int i = 0; i < param.Out->numel() / 2 * 2; i += 2) {
-    LOG(INFO) << out_ind[i] << " " << out_ind[i + 1];
-  }
 }
 
 }  // namespace arm

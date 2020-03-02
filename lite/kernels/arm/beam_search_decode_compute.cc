@@ -170,7 +170,6 @@ struct BeamSearchDecoder {
               prefix_idx_vector.push_back(prefix_idx);
               size_t idx = prefix_idx_vector.size() - 1;
               auto cur_id = cur_ids.data<int64_t>()[candidate_idx];
-              LOG(INFO) << "cur_id:" << cur_id;
               auto cur_score = cur_scores.data<T>()[candidate_idx];
               sentence_vector.at(idx).word_ids.push_back(cur_id);
               sentence_vector.at(idx).scores.push_back(cur_score);
@@ -186,7 +185,6 @@ struct BeamSearchDecoder {
           for (size_t idx = 0; idx < prefix_idx_vector.size(); ++idx) {
             auto candidate_idx = prefix_idx_vector.at(idx);
             auto cur_id = cur_ids.data<int64_t>()[candidate_idx];
-            LOG(INFO) << "cur_id:" << cur_id;
             auto cur_score = cur_scores.data<T>()[candidate_idx];
             if (cur_id != end_id_ || sentence_vector.at(idx).word_ids.empty()) {
               // to skip redundant end tokens

@@ -29,17 +29,12 @@ void PoolCompute::PrepareForRun() {
 }
 
 void PoolCompute::Run() {
-  LOG(INFO) << "running pool";
   auto& param = Param<operators::PoolParam>();
   auto& in_dims = param.x->dims();
   auto& out_dims = param.output->dims();
-  LOG(INFO) << "running pool: " << &in_dims << "," << &out_dims;
 
-  LOG(INFO) << param.x;
-  LOG(INFO) << param.output;
   const float* din = param.x->data<float>();
   float* dout = param.output->mutable_data<float>();
-  LOG(INFO) << "running pool";
 
   std::vector<int>& ksize = param.ksize;
   std::vector<int>& strides = param.strides;
@@ -51,7 +46,6 @@ void PoolCompute::Run() {
   bool ceil_mode = param.ceil_mode;
   bool use_quantizer = param.use_quantizer;
   std::string& data_format = param.data_format;
-  LOG(INFO) << "running pool";
 
   bool pads_less =
       (paddings[0] == paddings[2]) && (paddings[1] < 2) && (paddings[3] < 2);
@@ -97,7 +91,6 @@ void PoolCompute::Run() {
     if (ksize[0] == 1 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
       auto& ctx = this->ctx_->template As<ARMContext>();
       if (pooling_type == "max") {
-        LOG(INFO) << "running pool max";
         lite::arm::math::pooling1x1s2p0_max(din,
                                             dout,
                                             out_dims[0],
@@ -114,7 +107,6 @@ void PoolCompute::Run() {
     } else if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 &&
                kps_equal) {
       if (pooling_type == "max") {
-        LOG(INFO) << "running pool max";
         lite::arm::math::pooling2x2s2_max(din,
                                           dout,
                                           out_dims[0],

@@ -32,7 +32,6 @@ bool ConcatOpLite::InferShape() const {
   CHECK_GT_OR_FALSE(n, 0);
 
   int axis = 0;
-  LOG(INFO) << param_.axis;
   if (param_.axis_tensor == nullptr) {
     axis = param_.axis;
   } else {
@@ -47,7 +46,6 @@ bool ConcatOpLite::InferShape() const {
   size_t in_zero_dims_size = out_dims.size();
   for (int i = 0; i < n; ++i) {
     const auto &input_dims_i = inputs[i]->dims();
-    LOG(INFO) << input_dims_i;
   }
   for (size_t i = 1; i < n; i++) {
     const auto &input_dims_i = inputs[i]->dims();

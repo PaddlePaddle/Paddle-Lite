@@ -24,26 +24,25 @@ void FillConstantCompute::Run() {
   auto& context = ctx_->As<ARMContext>();
 
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
-    auto data = param.Out->template mutable_data<float>();
-    for (int i = 0; i < param.Out->numel(); i++) {
+    auto data = param.out->template mutable_data<float>();
+    for (int i = 0; i < param.out->numel(); i++) {
       data[i] = param.value;
     }
   } else if (param.dtype ==
              static_cast<int32_t>(lite::core::FluidType::INT32)) {
-    auto data = param.Out->template mutable_data<int32_t>();
-    LOG(INFO) << "fill const int32:" << data[0];
-    for (int i = 0; i < param.Out->numel(); i++) {
+    auto data = param.out->template mutable_data<int32_t>();
+    for (int i = 0; i < param.out->numel(); i++) {
       data[i] = param.value;
     }
   } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT8)) {
-    auto data = param.Out->template mutable_data<int8_t>();
-    for (int i = 0; i < param.Out->numel(); i++) {
+    auto data = param.out->template mutable_data<int8_t>();
+    for (int i = 0; i < param.out->numel(); i++) {
       data[i] = param.value;
     }
   } else if (param.dtype ==
              static_cast<int32_t>(lite::core::FluidType::INT64)) {
-    auto data = param.Out->template mutable_data<int64_t>();
-    for (int i = 0; i < param.Out->numel(); i++) {
+    auto data = param.out->template mutable_data<int64_t>();
+    for (int i = 0; i < param.out->numel(); i++) {
       data[i] = param.value;
     }
   } else {

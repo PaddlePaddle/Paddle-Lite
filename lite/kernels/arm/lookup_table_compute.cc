@@ -34,9 +34,6 @@ void LookupTableCompute::Run() {
   // outputs
   auto out = param.Out;
 
-  LOG(INFO) << w->dims();
-  LOG(INFO) << ids->dims();
-  LOG(INFO) << out->dims();
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
   auto ids_data = ids->data<int64_t>();

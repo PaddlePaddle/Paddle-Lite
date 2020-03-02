@@ -140,7 +140,6 @@ void RuntimeProgram::Run() {
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
 #endif
-    LOG(INFO) << inst.op()->op_info()->Repr();
     inst.Run();
 #ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE

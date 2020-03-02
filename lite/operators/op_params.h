@@ -384,10 +384,6 @@ struct ElementwiseParam {
   WITH_INT8_CONFIG
   float x_input_scale{1.0};
   float y_input_scale{1.0};
-  std::vector<int64_t> x_real_dim;
-  std::vector<int64_t> y_real_dim;
-  std::vector<int64_t> out_real_dim;
-  int max_dim;
 };
 
 struct ElementwiseGradParam {
