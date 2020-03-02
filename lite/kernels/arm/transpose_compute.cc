@@ -130,6 +130,11 @@ void TransposeCompute::Run() {
   auto *input = param.x;
   auto *output = param.output;
   const std::vector<int> axis = param.axis;
+  LOG(INFO) << input->dims();
+  LOG(INFO) << output->dims();
+  for (int i = 0; i < axis.size(); ++i) {
+    LOG(INFO) << "info:" << axis[i];
+  }
 
   bool shuffle_channel = IsShuffleChannel(axis);
   if (shuffle_channel) {
@@ -147,6 +152,11 @@ void Transpose2Compute::Run() {
   auto *output = param.output;
   const std::vector<int> axis = param.axis;
 
+  LOG(INFO) << input->dims();
+  LOG(INFO) << output->dims();
+  for (int i = 0; i < axis.size(); ++i) {
+    LOG(INFO) << "info:" << axis[i];
+  }
   bool shuffle_channel = IsShuffleChannel(axis);
   if (shuffle_channel) {
     ShuffleChannelCompute<float>(axis, input, output);

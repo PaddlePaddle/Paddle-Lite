@@ -32,6 +32,8 @@ void DropoutCompute::Run() {
   } else {
     lite::arm::math::dropout_down(x_data, out_data, num, prob_data);
   }
+  // LOG(INFO) << *param.x;
+  // LOG(INFO) << *param.output;
 }
 
 }  // namespace arm

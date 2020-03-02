@@ -28,7 +28,8 @@ void ReadFromArrayCompute::Run() {
 
   int in_num = param.X->size();
   CHECK_EQ(param.I->numel(), 1) << "I should have only one element";
-  int id = param.I->data<float>()[0];
+  int id = param.I->data<int64_t>()[0];
+  LOG(INFO) << "read from array:" << id;
   CHECK_LE(id, in_num) << "id is not valid";
   int input_size = (*param.X)[id].numel();
 

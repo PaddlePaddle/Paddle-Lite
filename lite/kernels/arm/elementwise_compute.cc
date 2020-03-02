@@ -80,13 +80,20 @@ void ElementwiseAddCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_add_broadcast(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_add_broadcast(
         x_data, y_data, out_data, pre, n, post);
   } else {
     lite::arm::math::elementwise_add(
         x_data, y_data, out_data, x_dims.production());
   }
+  LOG(INFO) << param.Y->dims();
+  LOG(INFO) << param.X->dims();
+  LOG(INFO) << param.Out->dims();
 }
 
 void ElementwiseAddActivationCompute::Run() {
@@ -99,7 +106,15 @@ void ElementwiseAddActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_add_relu_broadcast(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_add_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -164,19 +179,23 @@ void ElementwiseSubActivationCompute::Run() {
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ElementwiseParam>();
-  auto* x_data = param.X->template data<T>();
-  auto* y_data = param.Y->template data<T>();
-  auto* out_data = param.Out->template mutable_data<T>();
-  int axis = param.axis;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_mul_broadcast<T>(
-        x_data, y_data, out_data, pre, n, post);
-  } else {
-    lite::arm::math::elementwise_mul<T>(
-        x_data, y_data, out_data, x_dims.production());
+  if (param.X->precision() == PRECISION(kFloat)) {
+    auto* x_data = param.X->template data<float>();
+    auto* y_data = param.Y->template data<float>();
+    auto* out_data = param.Out->template mutable_data<float>();
+    int axis = param.axis;
+    auto x_dims = param.X->dims();
+    auto y_dims = param.Y->dims();
+    int pre, n, post;
+    if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+      lite::arm::math::elementwise_mul_broadcast<float>(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      lite::arm::math::elementwise_mul<float>(
+          x_data, y_data, out_data, x_dims.production());
+    }
+  } else if (param.X->precision() == PRECISION(kInt64)) {
+    lite::arm::math::elementwise_compute_basic<int64_t>(param, "mul", "");
   }
 }
 

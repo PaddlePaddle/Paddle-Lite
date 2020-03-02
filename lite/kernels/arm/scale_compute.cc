@@ -22,16 +22,32 @@ namespace arm {
 
 void ScaleCompute::Run() {
   auto& param = Param<operators::ScaleParam>();
-  const float* x_data = param.x->data<float>();
-  float* output_data = param.output->mutable_data<float>();
-  DDim x_dims = param.x->dims();
-  bool bias_after_scale = param.bias_after_scale;
-  float scale = param.scale;
-  float bias = param.bias;
-  if (!bias_after_scale) {
-    bias *= scale;
+  auto precision = param.x->precision();
+  if (precision == PRECISION(kFloat)) {
+    const float* x_data = param.x->data<float>();
+    float* output_data = param.output->mutable_data<float>();
+    DDim x_dims = param.x->dims();
+    bool bias_after_scale = param.bias_after_scale;
+    float scale = param.scale;
+    float bias = param.bias;
+    if (!bias_after_scale) {
+      bias *= scale;
+    }
+    lite::arm::math::scale(
+        x_data, output_data, x_dims.production(), scale, bias);
+  } else if (precision == PRECISION(kInt64)) {
+    auto x_data = param.x->data<int64_t>();
+    LOG(INFO) << x_data[0] << " " << x_data[1];
+    auto output_data = param.output->mutable_data<int64_t>();
+    DDim x_dims = param.x->dims();
+    bool bias_after_scale = param.bias_after_scale;
+    float scale = param.scale;
+    float bias = param.bias;
+    if (!bias_after_scale) {
+      bias *= scale;
+    }
+    lite::arm::math::scale_compute_basic<int64_t>(param);
   }
-  lite::arm::math::scale(x_data, output_data, x_dims.production(), scale, bias);
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }

@@ -51,7 +51,7 @@ class StepExecutor {
 
   void Run() {
     for (auto &op_handler : ops_of_block_) {
-      // VLOG(4) << op_handler->op_info()->Repr();
+      LOG(INFO) << op_handler->op_info()->Repr();
       op_handler->InferShape();
       // VLOG(4) << "while: infered shape";
       op_handler->Run();

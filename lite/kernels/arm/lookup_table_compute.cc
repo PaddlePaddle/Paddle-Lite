@@ -34,6 +34,9 @@ void LookupTableCompute::Run() {
   // outputs
   auto out = param.Out;
 
+  LOG(INFO) << w->dims();
+  LOG(INFO) << ids->dims();
+  LOG(INFO) << out->dims();
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
   auto ids_data = ids->data<int64_t>();
@@ -72,7 +75,7 @@ REGISTER_LITE_KERNEL(lookup_table,
                      paddle::lite::kernels::arm::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
@@ -83,6 +86,6 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
                      paddle::lite::kernels::arm::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

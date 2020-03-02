@@ -30,6 +30,7 @@ void WriteToArrayCompute::Run() {
   case type__: {                                                    \
     const auto* x_data = param.X->data<T>();                        \
     int id = param.I->data<int64_t>()[0];                           \
+    LOG(INFO) << "write_to_array:" << id;                           \
     if (id >= param.Out->size()) {                                  \
       for (int i = param.Out->size(); i < id + 1; i++) {            \
         lite::Tensor tmp;                                           \
@@ -46,9 +47,12 @@ void WriteToArrayCompute::Run() {
 
   switch (precision_type) {
     SOLVE_TYPE(PRECISION(kFloat), float);
+    SOLVE_TYPE(PRECISION(kUnk), float);
     SOLVE_TYPE(PRECISION(kInt64), int64_t);
+    SOLVE_TYPE(PRECISION(kInt32), int32_t);
     default:
-      LOG(FATAL) << "Unsupported precision type.";
+      LOG(FATAL) << "Unsupported precision type."
+                 << PrecisionToStr(precision_type);
   }
 #undef SOLVE_TYPE
 }

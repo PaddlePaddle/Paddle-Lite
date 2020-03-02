@@ -39,6 +39,7 @@ void ConcatCompute::Run() {
   std::vector<lite::Tensor*> inputs = param.x;
   auto* out = param.output;
   int axis = param.axis;
+  LOG(INFO) << "axis:" << axis;
   auto* axis_tensor = param.axis_tensor;
   if (axis_tensor != nullptr) {
     auto* axis_tensor_data = axis_tensor->data<int>();

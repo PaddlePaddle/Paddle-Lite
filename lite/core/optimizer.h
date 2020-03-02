@@ -62,9 +62,9 @@ class Optimizer {
            "lite_conv_elementwise_fuse_pass",      // conv-bn-elemwise
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
-           "lite_conv_activation_fuse_pass",              //
-           "lite_var_conv_2d_activation_fuse_pass",       //
-           "lite_fc_fuse_pass",                           //
+           "lite_conv_activation_fuse_pass",         //
+           "lite_var_conv_2d_activation_fuse_pass",  //
+           // "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //
            "lite_transpose_softmax_transpose_fuse_pass",  //
            "lite_interpolate_fuse_pass",                  //
@@ -110,8 +110,8 @@ class Optimizer {
            "argument_type_display_pass",
 
            "runtime_context_assign_pass",
-           "argument_type_display_pass",
-           "memory_optimize_pass"}};
+           // "memory_optimize_pass",
+           "argument_type_display_pass"}};
       if (passes.size() == 1) {
         passes_local.push_back(passes[0]);
       }

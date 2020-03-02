@@ -20,7 +20,6 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
 template <>
 void elementwise_add<float>(const float* dinx,
                             const float* diny,
