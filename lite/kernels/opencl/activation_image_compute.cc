@@ -49,7 +49,7 @@ class ActivationComputeImageDefault
         threshold_ = act_param_->Relu_clipped_coef;
         break;
       case 4:
-        kernel_func_name_ = "leakyRelu";
+        kernel_func_name_ = "leaky_relu";
         scale_ = act_param_->Leaky_relu_alpha;
         break;
       case 5:
@@ -347,9 +347,9 @@ class SigmoidComputeImageDefault
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-// activation
+// leakyRelu
 REGISTER_LITE_KERNEL(
-    activation,
+    leaky_relu,
     kOpenCL,
     kFP16,
     kImageDefault,
@@ -365,12 +365,29 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
+// tanh
+REGISTER_LITE_KERNEL(
+    tanhAct,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
 // Relu
 REGISTER_LITE_KERNEL(relu,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ReluComputeImageDefault,
+                     paddle::lite::kernels::opencl::ActivationComputeImageDefault,
                      ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -387,7 +404,7 @@ REGISTER_LITE_KERNEL(relu6,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::Relu6ComputeImageDefault,
+                     paddle::lite::kernels::opencl::ActivationComputeImageDefault,
                      ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -404,7 +421,7 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::SigmoidComputeImageDefault,
+                     paddle::lite::kernels::opencl::ActivationComputeImageDefault,
                      ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

@@ -84,7 +84,7 @@ void act_compute_ref(const dtype *x_data,
   }
 }
 
-//#define ACT_FP16_LOOP_TEST
+#define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
@@ -115,6 +115,25 @@ TEST(act_image2d_fp16, compute) {
                 LOG(INFO) << "====act_type: " << act_type
                           << ", scale: " << scale
                           << ", threshold: " << threshold;
+                std::string func_name = "relu";
+                switch(act_type){
+                   case 1:  // relu
+ 			func_name = "relu";
+			break;
+		   case 2:  // relu6
+                        func_name = "relu6";
+                        break;
+		  case 4:  //leaky_relu
+                        func_name = "leaky_relu";
+                        break;
+                 case 5:  // sigmoid
+                        func_name = "sigmoid";
+                        break;
+		 case 6:  // tanh
+                        func_name = "tanhAct";
+                        break;
+               }
+               LOG(INFO) << "func_name: " << func_name;
                 // set layout kernels
                 auto buf_to_img_kernels =
                     KernelRegistry::Global().Create("layout",
@@ -127,7 +146,7 @@ TEST(act_image2d_fp16, compute) {
                                                     PRECISION(kAny),
                                                     DATALAYOUT(kNCHW));
                 auto act_img_kernels =
-                    KernelRegistry::Global().Create("activation",
+                    KernelRegistry::Global().Create(func_name.c_str(), //"activation",
                                                     TARGET(kOpenCL),
                                                     PRECISION(kFP16),
                                                     DATALAYOUT(kImageDefault));
@@ -292,7 +311,7 @@ TEST(act_image2d_fp16, compute) {
 // nothing to do.
 #endif
 }
-
+#if 0
 // #define RELU_FP16_LOOP_TEST
 // #define RELU_FP16_PRINT_RESULT
 TEST(relu_image2d_fp16, compute) {
@@ -816,15 +835,18 @@ TEST(sigmoid_image2d_fp16, compute) {
 // nothing to do.
 #endif
 }
-
+#endif
 }  // namespace lite
 }  // namespace paddle
 
 // layout
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
-//act 
-USE_LITE_KERNEL(activation, kOpenCL, kFP16, kImageDefault, ImageDefault);
+//leakyRelu
+USE_LITE_KERNEL(leaky_relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
+// tanh
+USE_LITE_KERNEL(tanhAct, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
 USE_LITE_KERNEL(relu, kOpenCL, kFP16, kImageDefault, ImageDefault);

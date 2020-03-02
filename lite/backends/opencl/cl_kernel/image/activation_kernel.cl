@@ -69,7 +69,7 @@ __kernel void sigmoid(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
 
-__kernel void leakyRelu(__read_only image2d_t input,
+__kernel void leaky_relu(__read_only image2d_t input,
                       __write_only image2d_t output,
                       __private const float threshold,
                       __private const float scale) {
