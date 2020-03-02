@@ -91,10 +91,12 @@ class GatherComputeTest : public arena::TestCase {
 };
 
 TEST(Gather, precision) {
-  LOG(INFO) << "test gather op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);

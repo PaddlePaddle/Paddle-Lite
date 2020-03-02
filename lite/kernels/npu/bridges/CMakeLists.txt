@@ -40,6 +40,7 @@ lite_cc_library(subgraph_bridge_square_op_npu SRCS square_op.cc DEPS ${npu_subgr
 lite_cc_library(subgraph_bridge_sqrt_op_npu SRCS sqrt_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_reduce_mean_op_npu SRCS reduce_mean_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unsqueeze_op_npu SRCS unsqueeze_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_gather_op_npu SRCS gather_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_argmax_op_npu SRCS argmax_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_instance_norm_op_npu SRCS instance_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_dropout_op_npu SRCS dropout_op.cc DEPS ${npu_subgraph_bridge_deps})
@@ -77,6 +78,7 @@ set(npu_subgraph_bridges
         subgraph_bridge_sqrt_op_npu
         subgraph_bridge_reduce_mean_op_npu
         subgraph_bridge_unsqueeze_op_npu
+        subgraph_bridge_gather_op_npu
         subgraph_bridge_argmax_op_npu
         subgraph_bridge_instance_norm_op_npu
         subgraph_bridge_dropout_op_npu
