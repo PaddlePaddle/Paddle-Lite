@@ -126,7 +126,7 @@ void pre_process(const cv::Mat& img,
   neon_mean_scale(dimg, data, width * height, means, scales);
 }
 
-void RunModel(std::string model_dir,
+void RunModel(std::string model_file,
               std::string img_path,
               const std::vector<std::string>& labels,
               const int topk,
@@ -134,7 +134,7 @@ void RunModel(std::string model_dir,
               int height) {
   // 1. Set MobileConfig
   MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_file);
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
@@ -169,12 +169,12 @@ void RunModel(std::string model_dir,
 int main(int argc, char** argv) {
   if (argc < 4) {
     std::cerr << "[ERROR] usage: " << argv[0]
-              << " model_dir image_path label_file\n";
+              << " model_file image_path label_file\n";
     exit(1);
   }
-  printf("parameter:  model_dir, image_path and label_file are necessary \n");
+  printf("parameter:  model_file, image_path and label_file are necessary \n");
   printf("parameter:  topk, input_width,  input_height, are optional \n");
-  std::string model_dir = argv[1];
+  std::string model_file = argv[1];
   std::string img_path = argv[2];
   std::string label_file = argv[3];
   std::vector<std::string> labels;
@@ -190,6 +190,6 @@ int main(int argc, char** argv) {
     height = atoi(argv[6]);
   }
 
-  RunModel(model_dir, img_path, labels, topk, width, height);
+  RunModel(model_file, img_path, labels, topk, width, height);
   return 0;
 }

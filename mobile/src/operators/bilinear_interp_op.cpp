@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef BILINEAR_INTERP_OP
 
 #include "operators/bilinear_interp_op.h"
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {
@@ -47,6 +48,10 @@ void BilinearOp<DeviceType, T>::InferShape() const {
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(bilinear_interp, ops::BilinearOp);
+#endif
+
+#if PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(bilinear_interp, ops::BilinearOp)
 #endif
 
 #ifdef PADDLE_MOBILE_FPGA

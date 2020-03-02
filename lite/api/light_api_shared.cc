@@ -12,11 +12,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#ifndef LITE_ON_TINY_PUBLISH
-#include "lite/api/paddle_use_passes.h"
-#endif
 
 namespace paddle {
 namespace lite_api {

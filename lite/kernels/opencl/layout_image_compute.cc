@@ -42,9 +42,10 @@ class LayoutComputeBufferChwToImageDefault
     if (param.process_type == 1) {
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }
+    VLOG(2) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+        kernel_func_name_, "image/layout_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -73,20 +74,21 @@ class LayoutComputeBufferChwToImageDefault
     const int Stride1 = out_H * out_W;
     const int Stride0 = out_W;
 
-    VLOG(4) << "y image_shape(w,h):" << image_shape["width"] << " "
-            << image_shape["height"];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "new_dims[" << new_dims.size() << "D]:" << new_dims[0] << " "
+    VLOG(2) << "param.process_type:" << param.process_type;
+    VLOG(2) << "x_dims:" << x_dims;
+    VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
+    VLOG(2) << "new_dims[" << new_dims.size() << "D]:" << new_dims[0] << " "
             << new_dims[1] << " " << new_dims[2] << " " << new_dims[3];
-    VLOG(4) << "out_C:" << out_C;
-    VLOG(4) << "out_H:" << out_H;
-    VLOG(4) << "out_W:" << out_W;
-    VLOG(4) << "Stride2:" << Stride2;
-    VLOG(4) << "Stride1:" << Stride1;
-    VLOG(4) << "Stride0:" << Stride0;
+    VLOG(2) << "y_dims:" << y_dims;
+    VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
+    VLOG(2) << "y image_shape(w,h):" << image_shape["width"] << " "
+            << image_shape["height"];
+    VLOG(2) << "out_C:" << out_C;
+    VLOG(2) << "out_H:" << out_H;
+    VLOG(2) << "out_W:" << out_W;
+    VLOG(2) << "Stride2:" << Stride2;
+    VLOG(2) << "Stride1:" << Stride1;
+    VLOG(2) << "Stride0:" << Stride0;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -112,7 +114,7 @@ class LayoutComputeBufferChwToImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
     CL_CHECK_FATAL(status);
 
-    VLOG(4) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
+    VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
@@ -126,9 +128,7 @@ class LayoutComputeBufferChwToImageDefault
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(y_data, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -153,9 +153,10 @@ class LayoutComputeImageDefaultToBufferChw
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
     }
+    VLOG(2) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+        kernel_func_name_, "image/layout_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -176,14 +177,15 @@ class LayoutComputeImageDefaultToBufferChw
       new_dims[4 - x_dims.size() + j] = x_dims[j];
     }
 
-    VLOG(4) << "x_image_shape(w,h):" << x_image_shape["width"] << " "
+    VLOG(2) << "param.process_type:" << param.process_type;
+    VLOG(2) << "x_dims:" << x_dims;
+    VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
+    VLOG(2) << "x_image_shape(w,h):" << x_image_shape["width"] << " "
             << x_image_shape["height"];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "new_dims[" << new_dims.size() << "D]:" << new_dims[0] << " "
+    VLOG(2) << "new_dims[" << new_dims.size() << "D]:" << new_dims[0] << " "
             << new_dims[1] << " " << new_dims[2] << " " << new_dims[3];
+    VLOG(2) << "y_dims:" << y_dims;
+    VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
 
     size_t C = new_dims[1];
     size_t in_height = new_dims[2];
@@ -215,7 +217,7 @@ class LayoutComputeImageDefaultToBufferChw
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(C));
     CL_CHECK_FATAL(status);
-    VLOG(4) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
+    VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
@@ -229,9 +231,7 @@ class LayoutComputeImageDefaultToBufferChw
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(y_data, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -311,7 +311,7 @@ class LayoutComputeBufferChwToImage2DNw
     status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
     CL_CHECK_FATAL(status);
 
-    VLOG(4) << "gws:[3D]" << ((out_N + 3) / 4) << " " << out_W << " "
+    VLOG(2) << "gws:[3D]" << ((out_N + 3) / 4) << " " << out_W << " "
             << (out_C * out_H);
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((out_N + 3) / 4),  // N blocks
@@ -325,10 +325,7 @@ class LayoutComputeBufferChwToImage2DNw
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(y_data, event_);
-    context.cl_context()->GetCommandQueue().finish();
-    //    auto image_shape = InitImageDimInfoWith(x_dims);
+    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {

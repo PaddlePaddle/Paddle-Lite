@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include <bmcompiler_op_code.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
@@ -46,22 +47,38 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
   float alpha = 0.f;
+  int active_type_id = 0;
   if (op_type == "relu") {
   } else if (op_type == "leaky_relu") {
     alpha = op_info->GetAttr<float>("alpha");
+  } else if (op_type == "sqrt") {
+    active_type_id = ACTIVE_SQRT;
+  } else if (op_type == "square") {
+    active_type_id = ACTIVE_SQUARE;
   } else {
     LOG(FATAL) << "[BM] unsupport act type";
     return FAILED;
   }
-  add_relu_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_x_shape_data[0]),
-                 x_dims.size(),
-                 static_cast<const char*>(x_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 alpha,
-                 -1.f);
+  if (op_type == "relu" || op_type == "leaky_relu") {
+    add_relu_layer(graph->GetCompilerHandle(),
+                   const_cast<const int*>(&i_x_shape_data[0]),
+                   x_dims.size(),
+                   static_cast<const char*>(x_var_name.c_str()),
+                   const_cast<const int*>(&i_output_shape_data[0]),
+                   output_dims.size(),
+                   static_cast<const char*>(output_var_name.c_str()),
+                   alpha,
+                   -1.f);
+  } else {
+    add_active_layer(graph->GetCompilerHandle(),
+                     const_cast<const int*>(&i_x_shape_data[0]),
+                     x_dims.size(),
+                     static_cast<const char*>(x_var_name.c_str()),
+                     const_cast<const int*>(&i_output_shape_data[0]),
+                     output_dims.size(),
+                     static_cast<const char*>(output_var_name.c_str()),
+                     active_type_id);
+  }
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -75,3 +92,5 @@ REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
                          kBM,
                          paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(sqrt, kBM, paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(square, kBM, paddle::lite::subgraph::bm::ActConverter);

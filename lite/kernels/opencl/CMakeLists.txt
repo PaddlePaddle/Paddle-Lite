@@ -18,7 +18,7 @@ add_kernel(pool_opencl OPENCL basic SRCS pool_image_compute.cc DEPS ${cl_kernel_
 add_kernel(activation_opencl OPENCL basic SRCS activation_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(layout_opencl OPENCL basic SRCS layout_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(layout_opencl OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(concat_opencl OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(nearest_interp_opencl OPENCL basic SRCS nearest_interp_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(scale_opencl OPENCL basic SRCS scale_image_compute.cc DEPS ${cl_kernel_deps})
@@ -68,7 +68,7 @@ lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_comput
              DEPS elementwise_mul_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
-lite_cc_test(test_layout_opencl SRCS layout_compute_test.cc
+lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
              DEPS layout_opencl op_registry program context
              ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
 
