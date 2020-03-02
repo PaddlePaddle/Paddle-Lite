@@ -106,7 +106,21 @@ bool ConvReluKernel<GPU_CL, float>::Init(FusionConvReluParam<GPU_CL> *param) {
       param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
       param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                    cl_helper_.CLCommandQueue());
-      this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+      // std::cout << " input dim " << param->Input()->dims()[0] << "  "
+      //           << param->Input()->dims()[1] << "  "
+      //           << param->Input()->dims()[2] << "  "
+      //           << param->Input()->dims()[3] << "  " << std::endl;
+      // std::cout << " output dim " << param->Output()->dims()[0] << " "
+      //           << param->Output()->dims()[1] << " "
+      //           << param->Output()->dims()[2] << " "
+      //           << param->Output()->dims()[3] << " " << std::endl;
+      // std::cout << " filter dim " << param->Filter()->dims()[0] << " "
+      //           << param->Filter()->dims()[1] << " "
+      //           << param->Filter()->dims()[2] << " "
+      //           << param->Filter()->dims()[3] << " " << std::endl;
+
+      this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file,
+                                 build_options);
     }
     //    }
     DLOG << "conv 3x3";
@@ -126,7 +140,7 @@ void ConvReluKernel<GPU_CL, float>::Compute(
       WinogradConv3x3<4, 3>(&this->cl_helper_, param, true);
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
-    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+    // case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param, true);
@@ -135,6 +149,9 @@ void ConvReluKernel<GPU_CL, float>::Compute(
       DWConvAddBnRelu(&this->cl_helper_, param, true);
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+      SWConvAddBnRelu(&this->cl_helper_, param, true);
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
       SWConvAddBnRelu(&this->cl_helper_, param, true);
       break;
     default:
