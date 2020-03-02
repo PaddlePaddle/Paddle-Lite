@@ -84,7 +84,7 @@ void act_compute_ref(const dtype *x_data,
   }
 }
 
-//#define ACT_FP16_LOOP_TEST
+// #define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
@@ -823,7 +823,8 @@ TEST(sigmoid_image2d_fp16, compute) {
 // layout
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
-// act 
+
+// act
 USE_LITE_KERNEL(activation, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
