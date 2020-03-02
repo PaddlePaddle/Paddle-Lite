@@ -260,7 +260,7 @@ TEST(act_image2d_fp16, compute) {
                       COMPUTE_ABS_DIFF(y_data_ref[eidx], mapped_y[eidx]);
                   auto relative_diff =
                       COMPUTE_RELATIVE_DIFF(y_data_ref[eidx], mapped_y[eidx]);
-                  //EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
+                  // EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
                   //              (abs_diff <= FP16_MAX_DIFF),
                   //          true);
                   if ((relative_diff > FP16_MAX_DIFF) &&
@@ -823,7 +823,7 @@ TEST(sigmoid_image2d_fp16, compute) {
 // layout
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
-//act 
+// act 
 USE_LITE_KERNEL(activation, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
