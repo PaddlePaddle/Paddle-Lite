@@ -37,7 +37,6 @@ void ScaleCompute::Run() {
         x_data, output_data, x_dims.production(), scale, bias);
   } else if (precision == PRECISION(kInt64)) {
     auto x_data = param.x->data<int64_t>();
-    LOG(INFO) << x_data[0] << " " << x_data[1];
     auto output_data = param.output->mutable_data<int64_t>();
     DDim x_dims = param.x->dims();
     bool bias_after_scale = param.bias_after_scale;

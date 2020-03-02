@@ -30,14 +30,12 @@ void elementwise_broadcast_common(T const* x_data,
                                   std::vector<int64_t> out_real_dim,
                                   std::string type,
                                   bool is_xsize_large = false) {
-  LOG(INFO) << "go here";
   int out_size = 1;
   int max_dim = out_real_dim.size();
   std::vector<int> index_array(max_dim, 0);
   for (int i = 0; i < max_dim; ++i) {
     out_size *= out_real_dim[i];
   }
-  LOG(INFO) << "go here";
   int x_index, y_index;
   for (int out_index = 0; out_index < out_size; ++out_index) {
     x_index = 0;
