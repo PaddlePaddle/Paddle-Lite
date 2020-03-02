@@ -20,18 +20,33 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ScaleCompute::Run() {
-  auto& param = Param<operators::ScaleParam>();
-  const float* x_data = param.x->data<float>();
-  float* output_data = param.output->mutable_data<float>();
-  DDim x_dims = param.x->dims();
-  bool bias_after_scale = param.bias_after_scale;
-  float scale = param.scale;
-  float bias = param.bias;
-  if (!bias_after_scale) {
+template <typename T>
+void scale_with_dtype(const operators::ScaleParam& param) {
+  int num = param.x->numel();
+  const T* x_data = param.x->data<T>();
+  T* output_data = param.output->mutable_data<T>();
+  T scale = static_cast<T>(param.scale);
+  T bias = static_cast<T>(param.bias);
+  if (!param.bias_after_scale) {
     bias *= scale;
   }
-  lite::arm::math::scale(x_data, output_data, x_dims.production(), scale, bias);
+  lite::arm::math::scale(x_data, output_data, num, scale, bias);
+}
+
+void ScaleCompute::Run() {
+  auto& param = Param<operators::ScaleParam>();
+  auto x_precision = param.x->precision();
+  switch (x_precision) {
+    case PRECISION(kFloat):
+      scale_with_dtype<float>(param);
+      break;
+    case PRECISION(kInt32):
+      scale_with_dtype<int>(param);
+      break;
+    default:
+      LOG(FATAL) << "unsupported input dtype: " << PrecisionToStr(x_precision);
+      break;
+  }
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }
@@ -44,6 +59,6 @@ void ScaleCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     scale, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ScaleCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
