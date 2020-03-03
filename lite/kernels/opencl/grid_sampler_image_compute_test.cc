@@ -127,7 +127,7 @@ TEST(grid_samler_image2d, compute) {
           operators::GridSamplerParam param;
           param.x = &x;
           param.grid = &grid;
-          param.output = &out;
+          param.out = &out;
 
           std::unique_ptr<KernelContext> context(new KernelContext);
           context->As<OpenCLContext>().InitOnce();
@@ -194,7 +194,7 @@ TEST(grid_samler_image2d, compute) {
           kernel->Launch();
 
           auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-          auto* out_ptr = param.output->data<half_t, cl::Image2D>();
+          auto* out_ptr = param.out->data<half_t, cl::Image2D>();
           auto it = wait_list->find(out_ptr);
           if (it != wait_list->end()) {
             VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
@@ -257,4 +257,4 @@ TEST(grid_samler_image2d, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(grid_sampler, kOpenCL, kFP16, kImageDefault, image2d);
+USE_LITE_KERNEL(grid_sampler, kOpenCL, kFP16, kImageDefault, ImageDefault);

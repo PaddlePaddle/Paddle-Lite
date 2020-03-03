@@ -43,7 +43,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "image/flatten2.cl", build_options_);
+        kernel_func_name_, "image/grid_sampler_kernel.cl", build_options_);
   }
 
   void Run() override {
@@ -51,7 +51,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     CHECK(context.cl_context() != nullptr);
 
     auto* x = grid_param_->x;
-    auto* out = grid_param_->output;
+    auto* out = grid_param_->out;
     auto* grid = grid_param_->grid;
     auto out_dims = out->dims();
     auto in_dims = x->dims();
@@ -71,8 +71,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
     VLOG(4) << "out_image" << out_img;
-    VLOG(4) << "out_img_shape[w,h]:" << out_img_shape[0] << " "
-            << out_img_shape[1];
+    VLOG(4) << "out_image_shape[w,h]:" << out_image_shape["width"] << " "
+            << out_image_shape["height"];
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
@@ -81,11 +81,14 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     int arg_idx = 0;
     int out_height = out_dims[2];
     int out_width = out_dims[3];
-    auto default_work_size = DefaultWorkSize(out_dims, out_image_shape);
+    auto default_work_size = DefaultWorkSize(out_dims, 
+                                             DDim(std::vector<DDim::value_type>{
+                          static_cast<int64_t>(out_image_shape["width"]),
+                          static_cast<int64_t>(out_image_shape["height"])}));
 
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    cl_int status = kernel.setArg(arg_idx++, *grid_img);
+    status = kernel.setArg(arg_idx++, *grid_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
@@ -98,7 +101,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                     static_cast<cl::size_type>(default_work_size[2]),
                     static_cast<cl::size_type>(default_work_size[3] / 4)};
-    auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
@@ -130,7 +133,7 @@ REGISTER_LITE_KERNEL(grid_sampler,
                      kFP16,
                      kImageDefault,
                      ocl::GridSamplerImageCompute,
-                     def)
+                     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

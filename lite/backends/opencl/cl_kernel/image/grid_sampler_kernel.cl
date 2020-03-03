@@ -10,8 +10,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cl_common.h>
-__kernel void buffer_to_image2d(__global CL_DTYPE *input,
-                                __global CL_DTYPE *grid,
+__kernel void grid_sampler(__read_only image2d_t input,
+                                __read_only image2d_t grid,
                                 __write_only image2d_t output,
                                 __private const int out_height,
                                 __private const int out_width) {
@@ -98,7 +98,7 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *input,
   }
 
   out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints,y + 1), out_val);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y + 1), out_val);
 
   // z
   x = (g1.z + 1) * (out_width - 1) / 2;
@@ -131,7 +131,7 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *input,
       input3 = (CL_DTYPE4)(0.0);
   }
   out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints,y + 2), out_val);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y + 2), out_val);
 
   // w
   x = (g1.w + 1) * (out_width - 1) / 2;
@@ -164,5 +164,5 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *input,
       input3 = (CL_DTYPE4)(0.0);
   }
   out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints,y + 3), out_val);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y + 3), out_val);
 }
