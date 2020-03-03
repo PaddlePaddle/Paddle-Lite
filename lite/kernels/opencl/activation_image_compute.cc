@@ -69,6 +69,7 @@ class ActivationComputeImageDefault
         printf("This act type: %d doesn't support \n", act_type);
         return;
     }
+
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/activation_kernel.cl", build_options_);
   }
@@ -154,7 +155,7 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-//swish
+// swish
 REGISTER_LITE_KERNEL(
     swish,
     kOpenCL,

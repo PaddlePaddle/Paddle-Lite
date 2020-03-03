@@ -63,7 +63,7 @@ void act_compute_ref(const dtype *x_data,
   }
 }
 
- #define ACT_FP16_LOOP_TEST
+//  #define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "

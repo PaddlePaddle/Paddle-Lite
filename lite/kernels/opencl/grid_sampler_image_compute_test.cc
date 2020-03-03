@@ -118,9 +118,7 @@ TEST(grid_samler_image2d, compute) {
                                               PRECISION(kFP16),
                                               DATALAYOUT(kImageDefault));
           ASSERT_FALSE(kernels.empty());
-
           auto kernel = std::move(kernels.front());
-
           LOG(INFO) << "get kernel:" << kernel->doc();
 
           lite::Tensor x, grid, out;
