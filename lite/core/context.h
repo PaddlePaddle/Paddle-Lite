@@ -37,11 +37,6 @@
 #include "lite/utils/all.h"
 #include "lite/utils/env.h"
 
-#ifdef LITE_WITH_OPENCL
-static std::string cl_path =
-    paddle::lite::GetStringFromEnv("cl_path", "/data/local/tmp/opencl");
-#endif
-
 namespace paddle {
 namespace lite {
 
@@ -305,7 +300,6 @@ class Context<TargetType::kOpenCL> {
   void InitOnce() {
     // Init cl runtime.
     CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
-    CLRuntime::Global()->set_cl_path(cl_path);
 
     cl_context_ = std::make_shared<CLContext>();
     cl_wait_list_ = std::make_shared<WaitListType>();
