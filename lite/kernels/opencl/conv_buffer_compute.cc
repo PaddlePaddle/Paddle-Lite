@@ -71,7 +71,11 @@ void ConvCompute::PrepareForRun() {
   if (kernel_h == 1 && kernel_w == 1 && stride_h == 1 && stride_w == 1 &&
       zero_pad && no_dilation && pad_equal) {
     // conv2d_1x1
+    /* TODO(ysh329): CL_OUT_OF_MEMORY when use gemm_batched OpenCL kernel,
+                 use gemm_batched_naive instead.
     kernel_func_names_.push_back("gemm_batch");
+  */
+    kernel_func_names_.push_back("gemm_batch_naive");
     kernel_func_paths_.push_back("buffer/fc_kernel.cl");
     if (relu_fused) {
       build_options_.push_back("-DCL_DTYPE_float -DRELU");
@@ -84,7 +88,11 @@ void ConvCompute::PrepareForRun() {
     impl_ = &ConvCompute::Conv2d1x1;
   } else if (pad_equal) {
     kernel_func_names_.push_back("im2col");
+    /* TODO(ysh329): CL_OUT_OF_MEMORY when use gemm_batched OpenCL kernel,
+                 use gemm_batched_naive instead.
     kernel_func_names_.push_back("gemm_batch");
+  */
+    kernel_func_names_.push_back("gemm_batch_naive");
     kernel_func_paths_.push_back("buffer/im2col_kernel.cl");
     kernel_func_paths_.push_back("buffer/fc_kernel.cl");
     build_options_.push_back("-DCL_DTYPE_float");
@@ -258,8 +266,14 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
                               const int m,
                               const int n,
                               const int k) {
-  auto global_work_size = cl::NDRange{static_cast<size_t>((m + 7) / 8),
-                                      static_cast<size_t>((n + 3) / 4),
+  /* TODO(ysh329): CL_OUT_OF_MEMORY when use gemm_batch OpenCL kernel,
+                   use gemm_batch_naive instead.
+    auto global_work_size = cl::NDRange{static_cast<size_t>((m + 7) / 8),
+                                        static_cast<size_t>((n + 3) / 4),
+                                        static_cast<size_t>(batch_size)};
+  */
+  auto global_work_size = cl::NDRange{static_cast<size_t>(m),
+                                      static_cast<size_t>(n),
                                       static_cast<size_t>(batch_size)};
   auto local_work_size = cl::NDRange{16, 16};  // cl::NullRange;
 
