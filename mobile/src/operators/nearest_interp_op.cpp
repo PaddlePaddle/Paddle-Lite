@@ -27,8 +27,12 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
   auto dim_x = this->param_.InputX()->dims();  // NCHW format
   DLOG << "dim_x :" << dim_x;
 
+  bool ignore_scale = false;
   int out_h = this->param_.OutH();
   int out_w = this->param_.OutW();
+  if (out_h > 0 && out_w > 0) {
+    ignore_scale = true;
+  }
   PADDLE_MOBILE_ENFORCE(dim_x.size() == 4, "X's dimension must be 4");
 
   if (this->param_.InputOutPutSize() != nullptr) {
@@ -40,7 +44,7 @@ void NearestInterpolationOp<DeviceType, T>::InferShape() const {
   }
 
   DLOG << "this->param_.HasScale(): " << this->param_.HasScale();
-  if (this->param_.HasScale()) {
+  if (this->param_.HasScale() && !ignore_scale) {
     const float scale = this->param_.Scale();
     DLOG << "scale_:  " << scale;
     std::vector<int64_t> dim_out({dim_x[0], dim_x[1],

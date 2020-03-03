@@ -297,7 +297,7 @@ cpp::OpDesc ChannelWiseDequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
 void DeleteQuantDequantOpFuser::BuildPattern() {
   std::string quant_dequant_op_type =
       "fake_quantize_dequantize_moving_average_abs_max";
-  if (quantized_op_type_ == "pool2d") {
+  if (quantized_op_type_ == "pool2d" || quantized_op_type_ == "softmax") {
     auto* input_scale_node =
         VarNode("input_scale_node")
             ->assert_is_op_input(quant_dequant_op_type, "InScale");
@@ -374,7 +374,7 @@ void DeleteQuantDequantOpFuser::BuildPattern() {
 
 void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
                                               const key2nodes_t& matched) {
-  if (quantized_op_type_ == "pool2d") {
+  if (quantized_op_type_ == "pool2d" || quantized_op_type_ == "softmax") {
     auto* input_scale_node = matched.at("input_scale_node");
     auto* input_act_node = matched.at("input_act_node");
     auto* quant_dequant_node = matched.at("quant_dequant_node");

@@ -471,7 +471,7 @@ TEST(conv2d, compute_image2d_1x1) {
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                auto abs_diff = COMPTUE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
                 // EXPECT_LT(relative_diff, FP16_MAX_DIFF);
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
@@ -1191,7 +1191,7 @@ TEST(conv2d, compute_image2d_5x5) {
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                auto abs_diff = COMPTUE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
@@ -1540,7 +1540,7 @@ TEST(conv2d, compute_image2d_7x7) {
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                auto abs_diff = COMPTUE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
