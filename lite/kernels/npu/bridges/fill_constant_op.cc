@@ -44,13 +44,10 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     dims_node = graph->Get(dims_name);
   } else {
     std::vector<int> target_shape{out_shape.begin(), out_shape.end()};
-    dims_node = graph->Add(out_name + "/dims",
-                           target_shape,
-                           {static_cast<int64_t>(target_shape.size())});
+    dims_node = graph->Add(out_name + "/dims", target_shape);
   }
 
-  auto value_node =
-      graph->Add(out_name + "/value", std::vector<float>{value}, {1});
+  auto value_node = graph->Add(out_name + "/value", std::vector<float>{value});
 
   // Fill node
   auto fill_node = graph->Add<ge::op::Fill>(out_name);

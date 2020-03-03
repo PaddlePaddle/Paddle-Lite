@@ -45,12 +45,9 @@ int FillConstantBatchSizeLikeConverter(void* ctx,
 
   // dims, value node
   std::vector<int> target_shape{out_shape.begin(), out_shape.end()};
-  auto dims_node = graph->Add(out_name + "/dims",
-                              target_shape,
-                              {static_cast<int64_t>(target_shape.size())});
+  auto dims_node = graph->Add(out_name + "/dims", target_shape);
 
-  auto value_node =
-      graph->Add(out_name + "/value", std::vector<float>{value}, {1});
+  auto value_node = graph->Add(out_name + "/value", std::vector<float>{value});
 
   // Fill node
   auto fill_node = graph->Add<ge::op::Fill>(out_name);
