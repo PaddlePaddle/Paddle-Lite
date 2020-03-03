@@ -305,6 +305,11 @@ TEST(act_image2d_fp16, compute) {
 // layout
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
+// leakyRelu
+USE_LITE_KERNEL(leaky_relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
+// tanh
+USE_LITE_KERNEL(tanhAct, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // exp
 USE_LITE_KERNEL(exp_act, kOpenCL, kFP16, kImageDefault, ImageDefault);

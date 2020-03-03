@@ -147,3 +147,4 @@ __kernel void swish(__read_only image2d_t input,
   CL_DTYPE4 out = in / (1 + exp(-scale * in));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
+
