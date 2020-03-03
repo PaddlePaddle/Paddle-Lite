@@ -124,9 +124,12 @@ void Run(const std::vector<int64_t>& input_shape,
 }  // namespace paddle
 
 TEST(mobilenetv1_post_quant_nodata_int16, test_arm) {
+  LOG(INFO) << "model_dir:" << FLAGS_model_dir;
+  LOG(INFO) << "input_img_path:" << FLAGS_input_img_path;
   if (FLAGS_model_dir.back() == '/') {
     FLAGS_model_dir.pop_back();
   }
+
   std::size_t found = FLAGS_model_dir.find_last_of("/");
   std::string model_name = FLAGS_model_dir.substr(found + 1);
   std::string save_optimized_model_dir = FLAGS_model_dir + "_opt2";
