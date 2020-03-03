@@ -28,11 +28,10 @@
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
-DEFINE_string(model_dir,
+DEFINE_string(input_dir,
               "",
               "the path of the model, the model and param files is under "
               "model_dir.");
-DEFINE_string(input_img_path, "", "the path of input image");
 
 namespace paddle {
 namespace lite_api {
@@ -43,9 +42,10 @@ inline double GetCurrentUS() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-void OutputOptModel(const std::string& save_optimized_model_dir) {
+void OutputOptModel(const std::string& model_dir,
+                    const std::string& save_optimized_model_dir) {
   lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
+  config.set_model_dir(model_dir);
   std::vector<Place> vaild_places = {
       Place{TARGET(kARM), PRECISION(kFloat)},
   };
@@ -60,14 +60,15 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   }
   predictor->SaveOptimizedModel(save_optimized_model_dir,
                                 LiteModelType::kNaiveBuffer);
-  LOG(INFO) << "Load model from " << FLAGS_model_dir;
+  LOG(INFO) << "Load model from " << model_dir;
   LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
 }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 void Run(const std::vector<int64_t>& input_shape,
          const std::string& model_dir,
-         const std::string model_name) {
+         const std::string& model_name,
+         const std::string& input_img_path) {
   // set config and create predictor
   lite_api::MobileConfig config;
   config.set_threads(1);
@@ -84,14 +85,14 @@ void Run(const std::vector<int64_t>& input_shape,
   for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
-  if (FLAGS_input_img_path.empty()) {
+  if (input_img_path.empty()) {
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
     }
   } else {
-    std::fstream fs(FLAGS_input_img_path);
+    std::fstream fs(input_img_path);
     if (!fs.is_open()) {
-      LOG(FATAL) << "open input image " << FLAGS_input_img_path << " error.";
+      LOG(FATAL) << "open input image " << input_img_path << " error.";
     }
     for (int i = 0; i < input_num; i++) {
       fs >> input_data[i];
@@ -124,20 +125,25 @@ void Run(const std::vector<int64_t>& input_shape,
 }  // namespace paddle
 
 TEST(mobilenetv1_post_quant_nodata_int16, test_arm) {
-  LOG(INFO) << "model_dir:" << FLAGS_model_dir;
-  LOG(INFO) << "input_img_path:" << FLAGS_input_img_path;
-  if (FLAGS_model_dir.back() == '/') {
-    FLAGS_model_dir.pop_back();
+  LOG(INFO) << "input_dir:" << FLAGS_input_dir;
+  if (FLAGS_input_dir.back() == '/') {
+    FLAGS_input_dir.pop_back();
   }
 
-  std::size_t found = FLAGS_model_dir.find_last_of("/");
-  std::string model_name = FLAGS_model_dir.substr(found + 1);
-  std::string save_optimized_model_dir = FLAGS_model_dir + "_opt2";
+  std::string model_name = "mobilenetv1_int16";
+  std::string model_dir = FLAGS_input_dir + "/mobilenetv1_int16";
+  std::string save_optimized_model_dir = model_dir + "_opt2";
+  std::string input_img_path = FLAGS_input_dir + "/imgnet_val_1.txt";
   std::vector<int64_t> input_shape = {1, 3, 224, 224};
 
+  LOG(INFO) << "model_dir:" << model_dir;
+  LOG(INFO) << "save_optimized_model_dir:" << save_optimized_model_dir;
+  LOG(INFO) << "input_img_path:" << input_img_path;
+
   // Output optimized model if needed
-  paddle::lite_api::OutputOptModel(save_optimized_model_dir);
+  paddle::lite_api::OutputOptModel(model_dir, save_optimized_model_dir);
 
   // Run inference using optimized model
-  paddle::lite_api::Run(input_shape, save_optimized_model_dir, model_name);
+  paddle::lite_api::Run(
+      input_shape, save_optimized_model_dir, model_name, input_img_path);
 }

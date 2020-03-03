@@ -196,9 +196,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        DEPS paddle_api_full paddle_api_light gflags utils ${ops} ${host_kernels} ${arm_kernels}
        CL_DEPS ${opencl_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
-        --input_img_path=${LITE_MODEL_DIR}/test_postquant_nodata/imgnet_val_1.txt
-        --run_model_optimize=true
-        --model_dir=${LITE_MODEL_DIR}/test_postquant_nodata/mobilenetv1_int16 SERIAL)
+        --input_dir=${LITE_MODEL_DIR}/test_postquant_nodata SERIAL)
     add_dependencies(test_mobilenetv1_int16 extern_lite_download_test_postquant_nodata_tar_gz)
 
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
