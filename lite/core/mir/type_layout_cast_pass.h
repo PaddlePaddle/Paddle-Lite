@@ -57,6 +57,15 @@ class TypeLayoutTransformPass : public ProgramPass {
   std::vector<Place> valid_places_;
 };
 
+// add preprocess and postprocess attribute for layout op
+class OpenCLTypeLayoutTransformPass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+
+ private:
+  std::vector<Place> valid_places_;
+};
+
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

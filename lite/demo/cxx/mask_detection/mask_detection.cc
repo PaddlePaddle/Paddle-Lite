@@ -81,6 +81,29 @@ void neon_mean_scale(const float* din,
   }
 }
 
+cv::Mat crop_img(const cv::Mat& img,
+                 cv::Rect rec,
+                 int res_width,
+                 int res_height) {
+  float xmin = rec.x;
+  float ymin = rec.y;
+  float w = rec.width;
+  float h = rec.height;
+  float center_x = xmin + w / 2;
+  float center_y = ymin + h / 2;
+  cv::Point2f center(center_x, center_y);
+  float max_wh = std::max(w / 2, h / 2);
+  float scale = res_width / (2 * max_wh * 1.5);
+  cv::Mat rot_mat = cv::getRotationMatrix2D(center, 0.f, scale);
+  rot_mat.at<double>(0, 2) =
+      rot_mat.at<double>(0, 2) - (center_x - res_width / 2.0);
+  rot_mat.at<double>(1, 2) =
+      rot_mat.at<double>(1, 2) - (center_y - res_width / 2.0);
+  cv::Mat affine_img;
+  cv::warpAffine(img, affine_img, rot_mat, cv::Size(res_width, res_height));
+  return affine_img;
+}
+
 void pre_process(const cv::Mat& img,
                  int width,
                  int height,
@@ -89,8 +112,12 @@ void pre_process(const cv::Mat& img,
                  float* data,
                  bool is_scale = false) {
   cv::Mat resized_img;
-  cv::resize(
-      img, resized_img, cv::Size(width, height), 0.f, 0.f, cv::INTER_CUBIC);
+  if (img.cols != width || img.rows != height) {
+    cv::resize(
+        img, resized_img, cv::Size(width, height), 0.f, 0.f, cv::INTER_CUBIC);
+  } else {
+    resized_img = img;
+  }
   cv::Mat imgf;
   float scale_factor = is_scale ? 1.f / 256 : 1.f;
   resized_img.convertTo(imgf, CV_32FC3, scale_factor);
@@ -98,12 +125,12 @@ void pre_process(const cv::Mat& img,
   neon_mean_scale(dimg, data, width * height, mean, scale);
 }
 
-void RunModel(std::string det_model_dir,
-              std::string class_model_dir,
+void RunModel(std::string det_model_file,
+              std::string class_model_file,
               std::string img_path) {
   // Prepare
   cv::Mat img = imread(img_path, cv::IMREAD_COLOR);
-  float shrink = 0.2;
+  float shrink = 0.4;
   int width = img.cols;
   int height = img.rows;
   int s_width = static_cast<int>(width * shrink);
@@ -111,7 +138,7 @@ void RunModel(std::string det_model_dir,
 
   // Detection
   MobileConfig config;
-  config.set_model_dir(det_model_dir);
+  config.set_model_from_file(det_model_file);
 
   // Create Predictor For Detction Model
   std::shared_ptr<PaddlePredictor> predictor =
@@ -138,7 +165,7 @@ void RunModel(std::string det_model_dir,
   int64_t out_len = ShapeProduction(shape_out);
 
   // Filter Out Detection Box
-  float detect_threshold = 0.3;
+  float detect_threshold = 0.7;
   std::vector<Object> detect_result;
   for (int i = 0; i < out_len / 6; ++i) {
     if (outptr[1] >= detect_threshold) {
@@ -158,7 +185,7 @@ void RunModel(std::string det_model_dir,
   }
 
   // Classification
-  config.set_model_dir(class_model_dir);
+  config.set_model_from_file(class_model_file);
 
   // Create Predictor For Classification Model
   predictor = CreatePaddlePredictor<MobileConfig>(config);
@@ -172,10 +199,13 @@ void RunModel(std::string det_model_dir,
   int detect_num = detect_result.size();
   std::vector<float> classify_mean = {0.5f, 0.5f, 0.5f};
   std::vector<float> classify_scale = {1.f, 1.f, 1.f};
-  float classify_threshold = 0.5;
   for (int i = 0; i < detect_num; ++i) {
     cv::Rect rec_clip = detect_result[i].rec;
-    cv::Mat roi = img(rec_clip);
+    cv::Mat roi = crop_img(img, rec_clip, classify_w, classify_h);
+
+    // uncomment two lines below, save roi img to disk
+    // std::string roi_name = "roi_" + std::to_string(i) + ".jpg";
+    // imwrite(roi_name, roi);
 
     // Do PreProcess
     pre_process(roi,
@@ -193,35 +223,58 @@ void RunModel(std::string det_model_dir,
     std::unique_ptr<const Tensor> output_tensor1(
         std::move(predictor->GetOutput(1)));
     auto* outptr = output_tensor1->data<float>();
+    float prob = outptr[1];
 
     // Draw Detection and Classification Results
-    cv::rectangle(img, rec_clip, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
-    std::string text = outptr[1] > classify_threshold ? "wear mask" : "no mask";
-    int font_face = cv::FONT_HERSHEY_COMPLEX_SMALL;
-    double font_scale = 1.f;
-    int thickness = 1;
+    bool flag_mask = prob > 0.5f;
+    cv::Scalar roi_color;
+    std::string text;
+    if (flag_mask) {
+      text = "MASK:  ";
+      roi_color = cv::Scalar(0, 255, 0);
+    } else {
+      text = "NO MASK:  ";
+      roi_color = cv::Scalar(0, 0, 255);
+      prob = 1 - prob;
+    }
+    std::string prob_str = std::to_string(prob * 100);
+    int point_idx = prob_str.find_last_of(".");
+
+    text += prob_str.substr(0, point_idx + 3) + "%";
+    int font_face = cv::FONT_HERSHEY_SIMPLEX;
+    double font_scale = 0.25;
+    float thickness = 1;
     cv::Size text_size =
         cv::getTextSize(text, font_face, font_scale, thickness, nullptr);
-    float new_font_scale = rec_clip.width * 0.7 * font_scale / text_size.width;
-    text_size =
-        cv::getTextSize(text, font_face, new_font_scale, thickness, nullptr);
+
+    int top_space = std::max(0.35 * text_size.height, 2.0);
+    int bottom_space = top_space + 2;
+    int right_space = 0.05 * text_size.width;
+    int back_width = text_size.width + right_space;
+    int back_height = text_size.height + top_space + bottom_space;
+
+    // Configure text background
+    cv::Rect text_back =
+        cv::Rect(rec_clip.x, rec_clip.y - back_height, back_width, back_height);
+
+    // Draw roi object, text, and background
+    cv::rectangle(img, rec_clip, roi_color, 1);
+    cv::rectangle(img, text_back, cv::Scalar(225, 225, 225), -1);
     cv::Point origin;
-    origin.x = rec_clip.x + 5;
-    origin.y = rec_clip.y + text_size.height + 5;
+    origin.x = rec_clip.x;
+    origin.y = rec_clip.y - bottom_space;
     cv::putText(img,
                 text,
                 origin,
                 font_face,
-                new_font_scale,
-                cv::Scalar(0, 255, 255),
-                thickness,
-                cv::LINE_AA);
+                font_scale,
+                cv::Scalar(0, 0, 0),
+                thickness);
 
     std::cout << "detect face, location: x=" << rec_clip.x
               << ", y=" << rec_clip.y << ", width=" << rec_clip.width
-              << ", height=" << rec_clip.height
-              << ", wear mask: " << (outptr[1] > classify_threshold)
-              << std::endl;
+              << ", height=" << rec_clip.height << ", wear mask: " << flag_mask
+              << ", prob: " << prob << std::endl;
   }
 
   // Write Result to Image File
@@ -230,17 +283,19 @@ void RunModel(std::string det_model_dir,
   std::string img_name = img_path.substr(start + 1, end - start - 1);
   std::string result_name = img_name + "_mask_detection_result.jpg";
   cv::imwrite(result_name, img);
+  std::cout << "write result to file: " << result_name << ", success."
+            << std::endl;
 }
 
 int main(int argc, char** argv) {
   if (argc < 3) {
     std::cerr << "[ERROR] usage: " << argv[0]
-              << " detction_model_dir classification_model_dir image_path\n";
+              << " detction_model_file classification_model_file image_path\n";
     exit(1);
   }
-  std::string detect_model_dir = argv[1];
-  std::string classify_model_dir = argv[2];
+  std::string detect_model_file = argv[1];
+  std::string classify_model_file = argv[2];
   std::string img_path = argv[3];
-  RunModel(detect_model_dir, classify_model_dir, img_path);
+  RunModel(detect_model_file, classify_model_file, img_path);
   return 0;
 }

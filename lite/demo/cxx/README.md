@@ -70,7 +70,11 @@ export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH
 adb pull /data/local/tmp/test_mask_detection_result.jpg ./
 ```
 
-![test_mask_detection_result](https://user-images.githubusercontent.com/7383104/74279176-6200cd00-4d55-11ea-9fc0-83cfc2b3b37d.jpg)
+![test_mask_detection_result](https://user-images.githubusercontent.com/7383104/75131866-bae64300-570f-11ea-9cad-17acfaea1cfc.jpg)
+
+注：mask_detetion.cc 中的缩放因子shrink, 检测阈值detect_threshold, 可供自由配置:
+   - 缩放因子越大，模型运行速度越慢，检测准确率越高。
+   - 检测阈值越高，人脸筛选越严格，检测出的人脸框可能越少。
 
 3. 编译并运行全量api的demo(注：当编译模式为tiny_pubish时将不存在该demo)
 ```shell

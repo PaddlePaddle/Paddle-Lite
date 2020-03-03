@@ -50,7 +50,7 @@ void test_img(std::vector<int> cluster_id,
               float rotate,
               FlipParam flip,
               LayoutType layout,
-              std::string model_dir,
+              std::string model_file,
               int test_iter = 1) {
   // init
   // paddle::lite::DeviceInfo::Init();
@@ -65,10 +65,10 @@ void test_img(std::vector<int> cluster_id,
       std::cout << "cluster: " << cls << ", threads: " << th << std::endl;
       // 1. Set MobileConfig
       MobileConfig config;
-      config.set_model_dir(model_dir);
+      config.set_model_from_file(model_file);
       config.set_power_mode((PowerMode)cls);
       config.set_threads(th);
-      std::cout << "model: " << model_dir;
+      std::cout << "model: " << model_file;
 
       // 2. Create PaddlePredictor by MobileConfig
       std::shared_ptr<PaddlePredictor> predictor =
@@ -359,9 +359,9 @@ int main(int argc, char** argv) {
   int flip = -1;
   float rotate = 90;
   int layout = 1;
-  std::string model_dir = "mobilenet_v1";
+  std::string model_file = "mobilenet_v1.nb";
   if (argc > 7) {
-    model_dir = argv[7];
+    model_file = argv[7];
   }
   if (argc > 8) {
     flip = atoi(argv[8]);
@@ -383,7 +383,7 @@ int main(int argc, char** argv) {
            rotate,
            (FlipParam)flip,
            (LayoutType)layout,
-           model_dir,
+           model_file,
            20);
   return 0;
 }

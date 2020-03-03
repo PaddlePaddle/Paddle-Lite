@@ -30,6 +30,9 @@ void ArgmaxCompute::Run() {
   lite::Tensor* input = param.X;
   lite::Tensor* output = param.Out;
   int axis = param.Axis;
+  if (axis < 0) {
+    axis += input->dims().size();
+  }
 
   lite::arm::math::argmax_func(input, axis, output);
   return;
@@ -47,5 +50,5 @@ REGISTER_LITE_KERNEL(arg_max,
                      paddle::lite::kernels::arm::ArgmaxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

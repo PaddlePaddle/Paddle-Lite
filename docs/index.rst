@@ -29,6 +29,7 @@ Welcome to Paddle-Lite's documentation!
   :caption: 安装
   :name: sec-install
 
+  installation/release_lib
   installation/source_compile
 
 .. toctree::
