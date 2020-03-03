@@ -830,6 +830,9 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
 #ifdef __aarch64__
+  uint8x16_t vb1 = vdupq_n_u8(b);
+  uint8x16_t vg1 = vdupq_n_u8(g);
+  uint8x16_t vr1 = vdupq_n_u8(r);
 #else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
@@ -925,7 +928,7 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             [outr2] "+r"(outr2),
             [outr3] "+r"(outr3),
             [cnt] "+r"(cnt)
-          : [vb] "w"(vb), [vg] "w"(vg), [vr] "w"(vr)
+          : [vb] "w"(vb1), [vg] "w"(vg1), [vr] "w"(vr1)
           : "cc",
             "memory",
             "v0",
@@ -1104,6 +1107,9 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
 #ifdef __aarch64__
+  uint8x16_t vb1 = vdupq_n_u8(b);
+  uint8x16_t vg1 = vdupq_n_u8(g);
+  uint8x16_t vr1 = vdupq_n_u8(r);
 #else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
@@ -1199,7 +1205,7 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             [outr2] "+r"(outr2),
             [outr3] "+r"(outr3),
             [cnt] "+r"(cnt)
-          : [vb] "w"(vb), [vg] "w"(vg), [vr] "w"(vr)
+          : [vb] "w"(vb1), [vg] "w"(vg1), [vr] "w"(vr1)
           : "cc",
             "memory",
             "v0",
