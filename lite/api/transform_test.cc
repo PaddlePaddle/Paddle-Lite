@@ -176,8 +176,10 @@ void pad_batch_input(std::vector<std::string>& input_lines,  // NOLINT
 void TestModel(const std::vector<Place>& valid_places,
                const Place& preferred_place,
                bool use_npu = false) {
+#ifdef LITE_WITH_ARM
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+#endif
   lite::Predictor predictor;
   std::string test_data_path = FLAGS_input;
 
@@ -191,10 +193,8 @@ void TestModel(const std::vector<Place>& valid_places,
   int batch_size = FLAGS_batch;
   int bos_idx = 0;
   int eos_idx = 1;
-  LOG(INFO) << "reading";
 
   test_transformer::load_input_lines(test_data_path.c_str());
-  LOG(INFO) << "reading finished";
 
   auto* trg_bias = predictor.GetInput(6);
   auto* src_word = predictor.GetInput(0);
@@ -224,12 +224,9 @@ void TestModel(const std::vector<Place>& valid_places,
                     i * batch_size,
                     batch_size,
                     bos_idx);
-    LOG(INFO) << "src_word:" << src_word->dims();
     auto start_ii = GetCurrentUS();
-    LOG(INFO) << i << "->ii:" << (start_ii - start_i) / 1000.0;
     predictor.Run();
     auto start_iii = GetCurrentUS();
-    LOG(INFO) << i << "->iii:" << (start_iii - start_ii) / 1000.0;
     auto* outs = predictor.GetOutput(0);
     auto o_data = outs->data<int64_t>();
     auto lod = outs->lod();
@@ -241,7 +238,6 @@ void TestModel(const std::vector<Place>& valid_places,
         LOG(INFO) << lod[i][j];
       }
     }
-    // LOG(INFO) << "out:" << (*outs)[0].dims();
   }
 
   LOG(INFO) << "================== Speed Report ===================";
@@ -249,16 +245,6 @@ void TestModel(const std::vector<Place>& valid_places,
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
-
-  // auto* outs = predictor.GetOutputs();
-  /*for (auto out : *outs) {
-    LOG(INFO) << "======"
-              << "here";
-    LOG(INFO) << out;
-  }
-  */
-  LOG(INFO) << "======"
-            << "hereggg";
 }
 
 }  // namespace lite
