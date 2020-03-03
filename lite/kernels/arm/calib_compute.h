@@ -21,8 +21,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <DataLayoutType DLType>
 class CalibComputeFp32ToInt8
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
  public:
   using param_t = operators::CalibParam;
 
@@ -33,26 +34,15 @@ class CalibComputeFp32ToInt8
  private:
 };
 
+template <DataLayoutType DLType>
 class CalibComputeInt8ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
  public:
   using param_t = operators::CalibParam;
 
   void Run() override;
 
   ~CalibComputeInt8ToFp32() override{};
-
- private:
-};
-
-class CalibComputeInt8ToFp32NHWC
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeInt8ToFp32NHWC() override{};
 
  private:
 };

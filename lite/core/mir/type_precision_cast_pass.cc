@@ -59,7 +59,12 @@ void PrecisionCastPass::ComplementInputs(SSAGraph* graph,
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   VLOG(4) << inst.picked_kernel().name();
-  LOG(INFO) << in_arg_name << " xxxxxxxxxx: " << *in->AsArg().type;
+  if (inst.op_info()->Type() == "fetch") {
+    auto precision_type =
+        static_cast<PrecisionType>(inst.op_info()->GetAttr<int>("data_type"));
+    decl_arg_type = LiteType::GetTensorTy(
+        decl_arg_type->target(), precision_type, decl_arg_type->layout());
+  }
   // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
   // *decl_arg_type)) {
   if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {

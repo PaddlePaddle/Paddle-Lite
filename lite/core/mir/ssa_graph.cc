@@ -140,6 +140,10 @@ void SSAGraph::Build(const Program &program,
         arg_node->AsArg(name, node_storage_.size() - 1);
         arg_update_node_map_[name] = arg_node;
       }
+      if (var_types.count(name) && op->op_info()->Type() == "fetch") {
+        const_cast<OpInfo *>(op->op_info())
+            ->SetAttr<int>("data_type", static_cast<int>(var_types[name]));
+      }
       if (var_types.count(name) && !arg_node->arg()->type) {
         arg_node->arg()->type = LiteType::GetTensorTy(
             TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
