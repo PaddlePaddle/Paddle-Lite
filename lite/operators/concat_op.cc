@@ -44,9 +44,6 @@ bool ConcatOpLite::InferShape() const {
 
   auto out_dims = inputs[0]->dims();
   size_t in_zero_dims_size = out_dims.size();
-  for (int i = 0; i < n; ++i) {
-    const auto &input_dims_i = inputs[i]->dims();
-  }
   for (size_t i = 1; i < n; i++) {
     const auto &input_dims_i = inputs[i]->dims();
     for (size_t j = 0; j < in_zero_dims_size; j++) {
