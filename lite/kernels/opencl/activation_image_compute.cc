@@ -56,14 +56,14 @@ class ActivationComputeImageDefault
         kernel_func_name_ = "sigmoid";
         break;
       case 6:
-        kernel_func_name_ = "Tanh";
+        kernel_func_name_ = "tanh_act";
         break;
       case 7:
         kernel_func_name_ = "swish";
         scale_ = act_param_->Swish_beta;
         break;
       case 8:
-        kernel_func_name_ = "Exp";
+        kernel_func_name_ = "exp_act";
         break;
       default:
         printf("This act type: %d doesn't support \n", act_type);
@@ -154,9 +154,9 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-// tanh
+//swish
 REGISTER_LITE_KERNEL(
-    tanhAct,
+    swish,
     kOpenCL,
     kFP16,
     kImageDefault,
@@ -171,6 +171,43 @@ REGISTER_LITE_KERNEL(
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+
+// exp
+REGISTER_LITE_KERNEL(
+    exp_act,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// tanh
+REGISTER_LITE_KERNEL(
+    tanh_act,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
 // Relu
 REGISTER_LITE_KERNEL(
     relu,

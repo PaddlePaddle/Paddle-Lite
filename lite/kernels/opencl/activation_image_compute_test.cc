@@ -63,7 +63,7 @@ void act_compute_ref(const dtype *x_data,
   }
 }
 
-// #define ACT_FP16_LOOP_TEST
+ #define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
@@ -109,7 +109,13 @@ TEST(act_image2d_fp16, compute) {
                     func_name = "sigmoid";
                     break;
                   case 6:  // tanh
-                    func_name = "tanhAct";
+                    func_name = "tanh_act";
+                    break;
+                  case 7:  // tanh
+                    func_name = "swish";
+                    break;
+                  case 8:  // tanh
+                    func_name = "exp_act";
                     break;
                 }
                 LOG(INFO) << "func_name: " << func_name;
@@ -182,9 +188,11 @@ TEST(act_image2d_fp16, compute) {
                     x_data, 0, sizeof(float) * x_dim.production()));
                 auto *mapped_y = static_cast<float *>(TargetWrapperCL::Map(
                     y_data, 0, sizeof(float) * x_dim.production()));
+                std::default_random_engine engine;
+                std::uniform_real_distribution<float> dist(-1, 1);
                 for (int i = 0; i < x_dim.production(); ++i) {
-                  mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2;
-                  mapped_y[i] = static_cast<int>(0);
+                  mapped_x[i] = dist(engine);
+                  mapped_y[i] = 0.0f;
                 }
                 auto *act_in_data = act_in.mutable_data<half_t, cl::Image2D>(
                     act_image2d_shape["width"], act_image2d_shape["height"]);
@@ -297,11 +305,18 @@ TEST(act_image2d_fp16, compute) {
 // layout
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
+
+// exp
+USE_LITE_KERNEL(exp_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
+// swish
+USE_LITE_KERNEL(swish, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
 // leakyRelu
 USE_LITE_KERNEL(leaky_relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // tanh
-USE_LITE_KERNEL(tanhAct, kOpenCL, kFP16, kImageDefault, ImageDefault);
+USE_LITE_KERNEL(tanh_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
 USE_LITE_KERNEL(relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
