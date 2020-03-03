@@ -43,31 +43,13 @@ int FillConstantBatchSizeLikeConverter(void* ctx,
 
   auto value = op_info->GetAttr<float>("value");
 
-  // x, dims, value node
-  /*
-    std::shared_ptr<Node> x_node = nullptr;
-    if (graph->Has(x_name)) {
-      x_node = graph->Get(x_name);
-    } else {
-      x_node = graph->Add(x_name, *x, CvtShape(x_dims));
-    }
-  */
+  // dims, value node
+  auto dims_node = graph->Add(out_name + "/dims",
+                              out_dims.Vectorize(),
+                              {static_cast<int64_t>(out_dims.size())});
 
-  Tensor dims_tensor;
-  dims_tensor.set_persistable(true);
-  dims_tensor.Resize({out_dims.size()});
-  auto dims_tensor_data = dims_tensor.mutable_data<int>();
-  for (auto i = 0; i < dims_tensor.numel(); i++) {
-    dims_tensor_data[i] = out_dims[i];
-  }
-  auto dims_node = graph->Add(out_name + "/dims", dims_tensor);
-
-  Tensor value_tensor;
-  value_tensor.set_persistable(true);
-  value_tensor.Resize({1});
-  auto value_tensor_data = value_tensor.mutable_data<float>();
-  value_tensor_data[0] = value;
-  auto value_node = graph->Add(out_name + "/value", value_tensor);
+  auto value_node =
+      graph->Add(out_name + "/value", std::vector<float>{value}, {1});
 
   // Fill node
   auto fill_node = graph->Add<ge::op::Fill>(out_name);

@@ -43,22 +43,13 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto dims_name = op_info->Input("ShapeTensor").front();
     dims_node = graph->Get(dims_name);
   } else {
-    Tensor dims_tensor;
-    dims_tensor.set_persistable(true);
-    dims_tensor.Resize({out_dims.size()});
-    auto dims_tensor_data = dims_tensor.mutable_data<int>();
-    for (auto i = 0; i < dims_tensor.numel(); i++) {
-      dims_tensor_data[i] = out_dims[i];
-    }
-    dims_node = graph->Add(out_name + "/dims", dims_tensor);
+    dims_node = graph->Add(out_name + "/dims",
+                           out_dims.Vectorize(),
+                           {static_cast<int64_t>(out_dims.size())});
   }
 
-  Tensor value_tensor;
-  value_tensor.set_persistable(true);
-  value_tensor.Resize({1});
-  auto value_tensor_data = value_tensor.mutable_data<float>();
-  value_tensor_data[0] = value;
-  auto value_node = graph->Add(out_name + "/value", value_tensor);
+  auto value_node =
+      graph->Add(out_name + "/value", std::vector<float>{value}, {1});
 
   // Fill node
   auto fill_node = graph->Add<ge::op::Fill>(out_name);
