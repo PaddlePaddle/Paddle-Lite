@@ -45,6 +45,6 @@ class FillConstantBatchSizeLikeOp : public OpLite {
   mutable FillConstantBatchSizeLikeParam param_;
 };
 
-} /* namespace operators */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace operators
+}  // namespace lite
+}  // namespace paddle

@@ -181,7 +181,7 @@ void Transpose2Compute(const Transpose2Param<GPU_CL> &param, cl_context context,
     }
   }
 
-  output->InitEmptyImage(context, commandQueue, output_tensor->dims());
+  // output->InitEmptyImage(context, commandQueue, output_tensor->dims());
   framework::TensorToCLImage(output_tensor, output, context, commandQueue,
                              kernel1);
   delete (input_tensor);
@@ -197,14 +197,18 @@ void Transpose2Kernel<GPU_CL, float>::Compute(
   const std::vector<int> &axis = param.Axis();
   bool shuffle_channel = IsShuffleChannel(axis);
   if (shuffle_channel) {
+    DLOG << "transpose shuffle_channel .. ";
     ShuffleChannelCompute<float>(param, this->cl_helper_.CLContext(),
                                  this->cl_helper_.CLCommandQueue(), kernel0,
                                  kernel1);
   } else {
+    DLOG << "transpose 2 compute .. ";
     Transpose2Compute<float>(param, this->cl_helper_.CLContext(),
                              this->cl_helper_.CLCommandQueue(), kernel0,
                              kernel1);
   }
+
+  DLOG << "transpose end .. ";
 }
 
 template class Transpose2Kernel<GPU_CL, float>;

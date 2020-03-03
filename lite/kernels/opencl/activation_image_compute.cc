@@ -44,9 +44,9 @@ class ReluComputeImageDefault : public KernelLite<TARGET(kOpenCL),
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
-    auto* x_buf = param.X->data<half_t, cl::Image2D>();
+    auto* x_img = param.X->data<half_t, cl::Image2D>();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(
+    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     const auto& y_dims = param.Out->dims();  // useless: check dim only
 
@@ -57,9 +57,9 @@ class ReluComputeImageDefault : public KernelLite<TARGET(kOpenCL),
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
+    cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
+    status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
 
     VLOG(4) << TargetToStr(param.X->target());
@@ -82,9 +82,7 @@ class ReluComputeImageDefault : public KernelLite<TARGET(kOpenCL),
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:
@@ -112,9 +110,9 @@ class Relu6ComputeImageDefault : public KernelLite<TARGET(kOpenCL),
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
-    auto* x_buf = param.X->data<half_t, cl::Image2D>();
+    auto* x_img = param.X->data<half_t, cl::Image2D>();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(
+    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     const auto& y_dims = param.Out->dims();  // useless: check dim only
     auto threshold = param.Relu_clipped_coef;
@@ -126,9 +124,9 @@ class Relu6ComputeImageDefault : public KernelLite<TARGET(kOpenCL),
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
+    cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
+    status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, threshold);
     CL_CHECK_FATAL(status);
@@ -154,9 +152,7 @@ class Relu6ComputeImageDefault : public KernelLite<TARGET(kOpenCL),
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:
@@ -185,11 +181,11 @@ class SigmoidComputeImageDefault
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
-    auto* x_buf =
+    auto* x_img =
         param.X->data<half_t,
                       cl::Image2D>();  // use half_t represents half float
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
+    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
         // represents half float
         image_shape["width"],
         image_shape["height"]);
@@ -202,9 +198,9 @@ class SigmoidComputeImageDefault
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
+    cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
+    status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
 
     VLOG(4) << TargetToStr(param.X->target());
@@ -227,9 +223,7 @@ class SigmoidComputeImageDefault
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:

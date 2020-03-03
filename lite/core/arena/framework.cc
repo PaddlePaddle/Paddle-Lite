@@ -76,7 +76,7 @@ void TestCase::PrepareInputsForInstruction() {
 
       const auto* inst_type = Type::GetTensorTy(TARGET(kHost));
       CHECK(scope_->FindVar(var));
-      const auto* shared_tensor = scope_->FindTensor((var));
+      const auto* shared_tensor = scope_->FindTensor(var);
       if (!TargetCompatibleTo(*inst_type, *param_type->type)) {
         /// Create a tensor in the instruction's scope, alloc memory and then
         /// copy data there.

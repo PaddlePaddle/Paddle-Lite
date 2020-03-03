@@ -46,11 +46,11 @@ class NearestInterpComputeImageDefault
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
     const auto& y_dims = param.Out->dims();
-    auto* x_buf =
+    auto* x_img =
         param.X->data<half_t,
                       cl::Image2D>();  // use half_t represents half float
     auto out_image_shape = InitImageDimInfoWith(y_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
+    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
         // represents half float
         out_image_shape["width"],
         out_image_shape["height"]);
@@ -69,9 +69,9 @@ class NearestInterpComputeImageDefault
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
+    cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
+    status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const float>(scale_h));
     CL_CHECK_FATAL(status);
@@ -112,9 +112,7 @@ class NearestInterpComputeImageDefault
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:

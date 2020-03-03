@@ -14,7 +14,7 @@
 
 #pragma once
 
-#define COMPTUE_ABS_DIFF(res0, res1) abs(res0 - res1)
+#define COMPUTE_ABS_DIFF(res0, res1) abs(res0 - res1)
 
 #define COMPUTE_RELATIVE_DIFF(res0, res1) abs(abs(res0 - res1) / (res1 + 1e-5))
 
