@@ -33,7 +33,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input, output and op attributes
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindTensor(out_name);
-  auto out_dims = out->dims();
+  auto out_shape = out->dims().Vectorize();
 
   auto value = op_info->GetAttr<float>("value");
 
@@ -43,9 +43,10 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto dims_name = op_info->Input("ShapeTensor").front();
     dims_node = graph->Get(dims_name);
   } else {
+    std::vector<int> target_shape{out_shape.begin(), out_shape.end()};
     dims_node = graph->Add(out_name + "/dims",
-                           out_dims.Vectorize(),
-                           {static_cast<int64_t>(out_dims.size())});
+                           target_shape,
+                           {static_cast<int64_t>(target_shape.size())});
   }
 
   auto value_node =

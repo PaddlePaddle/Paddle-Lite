@@ -39,14 +39,15 @@ int FillConstantBatchSizeLikeConverter(void* ctx,
 
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindTensor(out_name);
-  auto out_dims = out->dims();
+  auto out_shape = out->dims().Vectorize();
 
   auto value = op_info->GetAttr<float>("value");
 
   // dims, value node
+  std::vector<int> target_shape{out_shape.begin(), out_shape.end()};
   auto dims_node = graph->Add(out_name + "/dims",
-                              out_dims.Vectorize(),
-                              {static_cast<int64_t>(out_dims.size())});
+                              target_shape,
+                              {static_cast<int64_t>(target_shape.size())});
 
   auto value_node =
       graph->Add(out_name + "/value", std::vector<float>{value}, {1});
