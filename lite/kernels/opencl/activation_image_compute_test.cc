@@ -51,6 +51,12 @@ void act_compute_ref(const dtype *x_data,
         out_data[i] = (expf(x_data[i]) - expf(-x_data[i])) /
                       (expf(x_data[i]) + expf(-x_data[i]));
         break;
+      case 7:  // swish
+        out_data[i] = x_data[i] / (1 + expf(-x_data[i] * scale));
+        break;
+      case 8:  // exp
+        out_data[i] = expf(x_data[i]);
+        break;
       default:
         break;
     }
@@ -69,7 +75,7 @@ TEST(act_image2d_fp16, compute) {
     for (auto c : {1, 3, 8, 23, 32}) {
       for (int h = 12; h <= 100; h += 13) {
         for (int w = 12; w <= 100; w += 25) {
-          for (auto act_type : {1, 2, 4, 5, 6}) {
+          for (auto act_type : {1, 2, 4, 5, 6, 7, 8}) {
             for (auto scale : {0.5, 0.8}) {
               for (auto threshold : {6.0}) {
 #else
@@ -153,6 +159,7 @@ TEST(act_image2d_fp16, compute) {
                     (paddle::lite_api::ActivationType)act_type;
                 actParam.Relu_clipped_coef = threshold;
                 actParam.Leaky_relu_alpha = scale;
+                actParam.Swish_beta = scale;
 
                 const DDim x_dim =
                     DDim(std::vector<DDim::value_type>{n, c, h, w});

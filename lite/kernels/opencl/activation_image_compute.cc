@@ -56,7 +56,14 @@ class ActivationComputeImageDefault
         kernel_func_name_ = "sigmoid";
         break;
       case 6:
-        kernel_func_name_ = "tanhAct";
+        kernel_func_name_ = "Tanh";
+        break;
+      case 7:
+        kernel_func_name_ = "swish";
+        scale_ = act_param_->Swish_beta;
+        break;
+      case 8:
+        kernel_func_name_ = "Exp";
         break;
       default:
         printf("This act type: %d doesn't support \n", act_type);

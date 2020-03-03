@@ -2203,7 +2203,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop)
                  :
                  : "cc",
-                   "meemory",
+                   "memory",
                    "q0",
                    "q1",
                    "q2",
