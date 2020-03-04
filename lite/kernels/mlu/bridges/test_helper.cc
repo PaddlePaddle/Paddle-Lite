@@ -14,20 +14,19 @@
 
 #include "lite/kernels/mlu/bridges/test_helper.h"
 #include <utility>
-#include "lite/core/op_registry.h"
 #include "lite/core/device_info.h"
-#include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/mlu/subgraph_compute.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/utility.h"
-
+#include "lite/kernels/mlu/subgraph_compute.h"
+#include "lite/kernels/npu/bridges/registry.h"
 namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace mlu {
 
 void LaunchOp(const std::shared_ptr<lite::OpLite> op,
-             const std::vector<std::string>& input_var_names,
-             const std::vector<std::string>& output_var_names) {
+              const std::vector<std::string>& input_var_names,
+              const std::vector<std::string>& output_var_names) {
   CNRT_CALL(cnrtInit(0));
   SetMluDevice(0);
   cnrtQueue_t queue_;
@@ -43,7 +42,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   CNRT_CALL(cnrtSetCurrentDevice(dev_handle));
   auto scope = op->scope();
   auto op_type = op->op_info()->Type();
-  paddle::lite::subgraph::mlu::Graph graph; 
+  paddle::lite::subgraph::mlu::Graph graph;
   // convert op to IR graph
   const auto& bridges = subgraph::Registry::Instance();
   CHECK(bridges.Exists(op_type, TARGET(kMLU)));
@@ -56,26 +55,29 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
     temp_input.Resize(input_tensor->dims().Vectorize());
     temp_input.CopyDataFrom(*input_tensor);
     auto input_node =
-        graph.AddNode(input_name, input_tensor->dims().Vectorize(), CNML_TENSOR,
-            CNML_NHWC, graph.FPType(),
-            reinterpret_cast<void*>(input_tensor->mutable_data<float>(TARGET(kMLU))));
+        graph.AddNode(input_name,
+                      input_tensor->dims().Vectorize(),
+                      CNML_TENSOR,
+                      CNML_NHWC,
+                      graph.FPType(),
+                      reinterpret_cast<void*>(
+                          input_tensor->mutable_data<float>(TARGET(kMLU))));
     CHECK(input_node);
     CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<float>(),
                           temp_input.mutable_data<float>(),
                           sizeof(float) * input_tensor->dims().production(),
                           CNRT_MEM_TRANS_DIR_HOST2DEV));
   }
-  bridges.Select(op_type, TARGET(kMLU))(reinterpret_cast<void*>(&graph),
-                                 const_cast<OpLite*>(op.get()),
-                                 nullptr);
+  bridges.Select(op_type, TARGET(kMLU))(
+      reinterpret_cast<void*>(&graph), const_cast<OpLite*>(op.get()), nullptr);
 
   for (auto& output_name : output_var_names) {
     if (graph.HasNode(output_name)) {
       graph.AddOutput(graph.GetNode(output_name));
     }
     auto output_tensor = scope->FindMutableTensor(output_name);
-    void* p_data = static_cast<void*>(output_tensor->
-        mutable_data<float>(TARGET(kMLU)));
+    void* p_data =
+        static_cast<void*>(output_tensor->mutable_data<float>(TARGET(kMLU)));
     auto node = graph.GetNode(output_name);
     CHECK(p_data);
     node->set_mlu_ptr(p_data);
@@ -98,7 +100,6 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
     output_tensor->mutable_data<float>(TARGET(kHost));
     output_tensor->CopyDataFrom(temp_out);
   }
-
 }
 
 }  // namespace mlu

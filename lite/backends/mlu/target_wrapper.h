@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Cambricon Authors. All Rights Reserved.
 
 #pragma once
-#include "lite/core/target_wrapper.h"
 #include "lite/backends/mlu/mlu_utils.h"
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -15,7 +15,7 @@ class TargetWrapper<TARGET(kMLU)> {
   using queue_t = cnrtQueue_t;
 
   static size_t num_devices();
-  static size_t maxinum_queue() { return 0; }  // TODO: fix out it.
+  static size_t maxinum_queue() { return 0; }  // TODO(zhangshijin): fix out it.
 
   static size_t GetCurDevice() { return 0; }
 

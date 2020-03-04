@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/mlu/bridges/graph.h"
-#include <vector>
 #include <utility>
+#include <vector>
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
@@ -35,7 +35,6 @@ std::shared_ptr<MLUTensor> Graph::AddNode(const std::string& name,
   nodes_.insert(std::make_pair(name, node));
   return node;
 }
-
 
 }  // namespace mlu
 }  // namespace subgraph

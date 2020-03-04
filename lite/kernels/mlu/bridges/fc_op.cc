@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/mlu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -45,16 +45,20 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Create w node
   std::vector<int64_t> w_shape{w_dims[1], w_dims[0]};
-  auto w_tensor = graph->AddNode(w_var_name, w_shape, CNML_FILTER, CNML_NCHW,
-      graph->FPType());
- 
+  auto w_tensor = graph->AddNode(
+      w_var_name, w_shape, CNML_FILTER, CNML_NCHW, graph->FPType());
+
   auto input_scale = op_info->GetAttr<float>("input_scale");
 
-  // TODO  here seems to be a bug, only batch == 1?
   std::vector<int64_t> output_shape_nhwc({1, 1, 1, w_dims[1]});
-  auto output_tensor = graph->AddNode(output_var_name, output_shape_nhwc,
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
-  scope->FindVar(output_var_name)->GetMutable<::paddle::lite::Tensor>()->Resize(output_shape_nhwc);
+  auto output_tensor = graph->AddNode(output_var_name,
+                                      output_shape_nhwc,
+                                      CNML_TENSOR,
+                                      CNML_NHWC,
+                                      graph->FPType());
+  scope->FindVar(output_var_name)
+      ->GetMutable<::paddle::lite::Tensor>()
+      ->Resize(output_shape_nhwc);
 
   std::string bias_var_name;
   std::shared_ptr<MLUTensor> bias_tensor;
@@ -67,24 +71,23 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     // CHECK_EQ(bias_dims.production(), n);
 
     bias_tensor = graph->AddNode(bias_var_name,
-                   bias_dims.Vectorize(),
-                   CNML_CONST,
-                   CNML_CNHW, graph->FPType());
+                                 bias_dims.Vectorize(),
+                                 CNML_CONST,
+                                 CNML_CNHW,
+                                 graph->FPType());
     graph->BindConstData(bias_var_name, bias);
   }
   cnmlBaseOp_t fc_op;
-  CNML_CALL(cnmlCreateMlpOp(
-      &fc_op,
-      graph->GetNode(x_var_name)->mlu_tensor(),
-      output_tensor->mlu_tensor(),
-      w_tensor->mlu_tensor(),
-      bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
-  graph->SetComputingDataType(fc_op,
-       graph->GetNode(x_var_name)->mlu_tensor(),
-       1 / input_scale);
+  CNML_CALL(cnmlCreateMlpOp(&fc_op,
+                            graph->GetNode(x_var_name)->mlu_tensor(),
+                            output_tensor->mlu_tensor(),
+                            w_tensor->mlu_tensor(),
+                            bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
+  graph->SetComputingDataType(
+      fc_op, graph->GetNode(x_var_name)->mlu_tensor(), 1 / input_scale);
   auto weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
 
-  //LOG(INFO) << "W precision " << int(w->precision());
+  // LOG(INFO) << "W precision " << int(w->precision());
   if (w->precision() == PrecisionType::kUnk ||
       w->precision() == PrecisionType::kInt8) {
     std::vector<float> w_dequant(w->data_size());
@@ -96,7 +99,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
             weight_scale);
     for (int i = 0; i < w_dims[1]; i++) {
       for (int j = 0; j < w_dims[0]; j++) {
-        w->mutable_data<float>()[i * w_dims[0] + j] = w_dequant[i + j * w_dims[1]];
+        w->mutable_data<float>()[i * w_dims[0] + j] =
+            w_dequant[i + j * w_dims[1]];
       }
     }
     w->set_precision(PrecisionType::kFloat);
@@ -106,9 +110,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // graph->BindConstData(w_var_name, w_dequant.data());
   graph->BindConstData(w_var_name, w);
 
-  graph->SetComputingDataType(fc_op,
-       w_tensor->mlu_tensor(),
-       1 / *min_element(weight_scale.begin(), weight_scale.end()));
+  graph->SetComputingDataType(
+      fc_op,
+      w_tensor->mlu_tensor(),
+      1 / *min_element(weight_scale.begin(), weight_scale.end()));
 
   graph->FuseOp(fc_op);
   return REBUILD_WHEN_SHAPE_CHANGED;

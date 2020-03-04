@@ -15,8 +15,8 @@
 #include "lite/operators/softmax_op.h"
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -118,7 +118,6 @@ void test_softmax(const std::vector<int64_t>& input_shape, int axis) {
 
   LaunchOp(op, {x_var_name}, {out_var_name});
 
-
   // compare results
   auto* out_data = out->mutable_data<float>();
   auto* out_ref_data = out_ref->mutable_data<float>();
@@ -171,7 +170,6 @@ TEST(MLUBridges, softmax) {
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
-
 
 REGISTER_SUBGRAPH_BRIDGE(MLU,
                          softmax,

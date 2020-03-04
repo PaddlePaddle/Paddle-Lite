@@ -35,7 +35,8 @@ static void UpdateInputTo(cpp::OpDesc* desc,
     }
   }
   if (desc->Type() != "subgraph") return;
-  auto input_names = desc->GetAttr<std::vector<std::string>>("input_data_names");
+  auto input_names =
+      desc->GetAttr<std::vector<std::string>>("input_data_names");
   for (size_t i = 0; i < input_names.size(); ++i) {
     if (input_names[i] == from) {
       input_names[i] = to;
@@ -45,8 +46,8 @@ static void UpdateInputTo(cpp::OpDesc* desc,
 }
 
 static void UpdateOutputTo(cpp::OpDesc* desc,
-                          const std::string& from,
-                          const std::string& to) {
+                           const std::string& from,
+                           const std::string& to) {
   for (auto& item : *desc->mutable_outputs()) {
     for (auto& output : item.second) {
       if (output == from) {
@@ -55,7 +56,8 @@ static void UpdateOutputTo(cpp::OpDesc* desc,
     }
   }
   if (desc->Type() != "subgraph") return;
-  auto output_names = desc->GetAttr<std::vector<std::string>>("output_data_names");
+  auto output_names =
+      desc->GetAttr<std::vector<std::string>>("output_data_names");
   for (size_t i = 0; i < output_names.size(); ++i) {
     if (output_names[i] == from) {
       output_names[i] = to;
@@ -72,18 +74,23 @@ class MLUPostprocessPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  void GetSubgraphOpArgType(Node* inst_node, const Type** arg_type,
-                         SSAGraph* graph);
+  void GetSubgraphOpArgType(Node* inst_node,
+                            const Type** arg_type,
+                            SSAGraph* graph);
 
   void ModifyLayout(SSAGraph* graph);
 
   bool NeedInsert(Node* node, const Type* inst_type);
-  
-  void InsertBefore(SSAGraph* graph, Node* head_node, Node* inst_node,
-      const Type* type);
 
-  void InsertAfter(SSAGraph* graph, Node* tail_node, Node* inst_node,
-      const Type* type);
+  void InsertBefore(SSAGraph* graph,
+                    Node* head_node,
+                    Node* inst_node,
+                    const Type* type);
+
+  void InsertAfter(SSAGraph* graph,
+                   Node* tail_node,
+                   Node* inst_node,
+                   const Type* type);
 
   Node* InsertCastBefore(const std::string& op_type,
                          const std::string& cast_arg_name,
@@ -98,7 +105,6 @@ class MLUPostprocessPass : public ProgramPass {
                         Node* cur_node,
                         Node* inst_node,
                         const Type* cast_type);
-  
 
   void RecreateOp(Node* inst_node, SSAGraph* graph);
 };

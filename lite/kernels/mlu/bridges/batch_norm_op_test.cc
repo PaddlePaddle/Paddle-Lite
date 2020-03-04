@@ -15,8 +15,8 @@
 #include "lite/operators/batch_norm_op.h"
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -132,14 +132,12 @@ void test_batch_norm(
   batch_norm_ref<float>(op);
   out_ref->CopyDataFrom(*out);
 
-
   Tensor input_trans;
   input_trans.Resize({bs, ic, ih, iw});
   transpose(x->mutable_data<float>(),
             input_trans.mutable_data<float>(),
             {bs, ic, ih, iw},
             {0, 2, 3, 1});
-
 
   out->Resize({bs, ih, iw, ic});
   x->CopyDataFrom(input_trans);

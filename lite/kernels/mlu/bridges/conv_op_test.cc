@@ -15,12 +15,10 @@
 #include "lite/operators/conv_op.h"
 #include <gtest/gtest.h>
 #include <random>
-#include "lite/core/op_registry.h"
 #include "lite/core/op_lite.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
-
-
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -181,7 +179,8 @@ void test_conv(int bs,
     input->mutable_data<float>()[i] = input_int.data<int8_t>()[i] * input_scale;
   }
   for (int i = 0; i < filter->data_size(); i++) {
-    filter->mutable_data<float>()[i] = filter_int->data<int8_t>()[i] * filter_scale;
+    filter->mutable_data<float>()[i] =
+        filter_int->data<int8_t>()[i] * filter_scale;
   }
 
   // initialize op desc
@@ -206,7 +205,6 @@ void test_conv(int bs,
     opdesc.SetInput("Bias", {bias_var_name});
   }
 
-
   auto op_cpu = CreateOp<operators::ConvOpLite>(opdesc, &scope);
   // execute reference implementation and save to output tensor('out')
   conv_ref(op_cpu);
@@ -220,8 +218,8 @@ void test_conv(int bs,
   opdesc_mlu.SetOutput("Output", {output_var_name});
   opdesc_mlu.SetAttr("dilations", std::vector<int32_t>({dilation, dilation}));
   opdesc_mlu.SetAttr("strides", std::vector<int32_t>({stride, stride}));
-  opdesc_mlu.SetAttr("paddings",
-                 std::vector<int32_t>({padding, padding, padding, padding}));
+  opdesc_mlu.SetAttr(
+      "paddings", std::vector<int32_t>({padding, padding, padding, padding}));
   opdesc_mlu.SetAttr("groups", groups);
   opdesc_mlu.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
 
@@ -242,13 +240,15 @@ void test_conv(int bs,
     for (int j = 0; j < ic; j++) {
       for (int k = 0; k < ih * iw; k++) {
         input->mutable_data<float>()[i * ic * ih * iw + k * ic + j] =
-          input_int.data<int8_t>()[i * ic * ih * iw  + j * ih * iw + k] * input_scale;
+            input_int.data<int8_t>()[i * ic * ih * iw + j * ih * iw + k] *
+            input_scale;
       }
     }
   }
 
   input->Resize({bs, ih, iw, ic});
-  output->Resize({output_shape[0], output_shape[2], output_shape[3], output_shape[1]});
+  output->Resize(
+      {output_shape[0], output_shape[2], output_shape[3], output_shape[1]});
 
   // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::ConvOpLite>(opdesc_mlu, &scope);
@@ -260,8 +260,10 @@ void test_conv(int bs,
   output_trans.Resize({output_shape});
   transpose(output_data,
             output_trans.mutable_data<float>(),
-            {int(output_shape[0]), int(output_shape[2]),
-             int(output_shape[3]), int(output_shape[1])},
+            {static_cast<int>(output_shape[0]),
+             static_cast<int>(output_shape[2]),
+             static_cast<int>(output_shape[3]),
+             static_cast<int>(output_shape[1])},
             {0, 3, 1, 2});
   output_data = output_trans.mutable_data<float>();
   for (int i = 0; i < output->dims().production(); i++) {
@@ -339,7 +341,6 @@ TEST(MLUBridges, conv) {
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
-
 
 REGISTER_SUBGRAPH_BRIDGE(MLU,
                          conv2d,

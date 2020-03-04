@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -35,15 +35,16 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
-  auto output_tensor = graph->AddNode(out_var_name, output_dims,
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
+  auto output_tensor = graph->AddNode(
+      out_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());
   CHECK(graph->HasNode(x_var_name));
   auto input_tensor = graph->GetNode(x_var_name);
   cnmlActiveFunction_t act_type = OpTypeToCNMLActType(op_type);
   cnmlBaseOp_t activation_op;
-  CNML_CALL(cnmlCreateActiveOp(
-      &activation_op, act_type,
-      input_tensor->mlu_tensor(), output_tensor->mlu_tensor()));
+  CNML_CALL(cnmlCreateActiveOp(&activation_op,
+                               act_type,
+                               input_tensor->mlu_tensor(),
+                               output_tensor->mlu_tensor()));
   graph->FuseOp(activation_op);
   return SUCCESS;
 }

@@ -23,25 +23,23 @@ namespace subgraph {
 namespace mlu {
 
 class MLUTensor {
-  public:
+ public:
   MLUTensor()
       : mlu_tensor_(nullptr),
         tensor_type_(CNML_TENSOR),
-        mlu_dtype_(CNML_DATA_FLOAT32){}
+        mlu_dtype_(CNML_DATA_FLOAT32) {}
 
-  void set_mlu_ptr(void* mlu_data) {
-    mlu_ptr_ = mlu_data;
-  }
+  void set_mlu_ptr(void* mlu_data) { mlu_ptr_ = mlu_data; }
 
   MLUTensor(const std::vector<int64_t>& shape,
             cnmlTensorType_t tensor_type = CNML_TENSOR,
             cnmlDataOrder_t data_order = CNML_NCHW,
             cnmlDataType_t mlu_dtype = CNML_DATA_FLOAT32);
-      
-  void remember(const std::vector<int>& shape, cnmlTensorType_t tensor_type,
+
+  void remember(const std::vector<int>& shape,
+                cnmlTensorType_t tensor_type,
                 cnmlDataType_t mlu_dtype,
-                cnmlDataOrder_t shape_order
-                );
+                cnmlDataOrder_t shape_order);
   void Create();
   cnmlTensor_t mlu_tensor();
   void* mlu_data() {
@@ -51,7 +49,7 @@ class MLUTensor {
 
   ~MLUTensor();
 
-  private:
+ private:
   cnmlTensor_t mlu_tensor_;
 
   std::vector<int> shape_;

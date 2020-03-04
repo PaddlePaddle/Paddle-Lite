@@ -27,7 +27,7 @@ void CopyToHostSync(void* target, const void* source, size_t size) {
 /*
  * This kernel copies a tensor from host to MLU space.
  */
-template<PrecisionType Precision>
+template <PrecisionType Precision>
 class IoCopyHostToMluCompute
     : public KernelLite<TARGET(kMLU), Precision, DATALAYOUT(kNHWC)> {
  public:
@@ -39,14 +39,13 @@ class IoCopyHostToMluCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kX86));
     auto mem_size = param.x->memory_size();
-    //LOG(INFO) << "copy size " << mem_size;
+    // LOG(INFO) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kMLU), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 
   std::unique_ptr<handler_t> GetTypeInferHandler() override {
-    std::unique_ptr<handler_t>
-      res(new handler_t);
+    std::unique_ptr<handler_t> res(new handler_t);
     *res = [](const std::map<std::string, const Type*>& inputs,
               const std::string& out) -> const Type* {
       CHECK(!inputs.empty());
@@ -71,7 +70,7 @@ class IoCopyHostToMluCompute
 /*
  * This kernel copies a tensor from MLU to host space.
  */
-template<PrecisionType Precision>
+template <PrecisionType Precision>
 class IoCopyMluToHostCompute
     : public KernelLite<TARGET(kMLU), Precision, DATALAYOUT(kNHWC)> {
  public:
@@ -91,49 +90,50 @@ class IoCopyMluToHostCompute
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kMLU,
-                     kFloat,
-                     kNHWC,
-                     paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFloat)>,
-                     host_to_device_kFloat)
+REGISTER_LITE_KERNEL(
+    io_copy,
+    kMLU,
+    kFloat,
+    kNHWC,
+    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFloat)>,
+    host_to_device_kFloat)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kMLU,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFP16)>,
-                     host_to_device_kFP16)
+REGISTER_LITE_KERNEL(
+    io_copy,
+    kMLU,
+    kFP16,
+    kNHWC,
+    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFP16)>,
+    host_to_device_kFP16)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU))})
     .Finalize();
 
-
-REGISTER_LITE_KERNEL(io_copy,
-                     kMLU,
-                     kFloat,
-                     kNHWC,
-                     paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFloat)>,
-                     device_to_host_kFloat)
+REGISTER_LITE_KERNEL(
+    io_copy,
+    kMLU,
+    kFloat,
+    kNHWC,
+    paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFloat)>,
+    device_to_host_kFloat)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kMLU,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFP16)>,
-                     device_to_host_kFP16)
+REGISTER_LITE_KERNEL(
+    io_copy,
+    kMLU,
+    kFP16,
+    kNHWC,
+    paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFP16)>,
+    device_to_host_kFP16)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
-
-//REGISTER_LITE_KERNEL(io_copy_once,
 //                     kMLU,
 //                     kFloat,
 //                     kNHWC,
@@ -144,7 +144,6 @@ REGISTER_LITE_KERNEL(io_copy,
 //    .Finalize();
 //
 //
-//REGISTER_LITE_KERNEL(io_copy_once,
 //                     kMLU,
 //                     kFloat,
 //                     kNHWC,

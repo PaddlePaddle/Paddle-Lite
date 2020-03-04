@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 #include <random>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -182,7 +182,10 @@ void test_pool(int bs,
             {0, 2, 3, 1});
 
   auto os = out->dims();
-  out->Resize({int(os[0]), int(os[2]), int(os[3]), int(os[1])});
+  out->Resize({static_cast<int>(os[0]),
+               static_cast<int>(os[2]),
+               static_cast<int>(os[3]),
+               static_cast<int>(os[1])});
   x->CopyDataFrom(input_trans);
   x->Resize({bs, ih, iw, ic});
 
@@ -195,7 +198,10 @@ void test_pool(int bs,
   output_trans.Resize(out->dims());
   transpose(out_data,
             output_trans.mutable_data<float>(),
-            {int(os[0]), int(os[2]), int(os[3]), int(os[1])},
+            {static_cast<int>(os[0]),
+             static_cast<int>(os[2]),
+             static_cast<int>(os[3]),
+             static_cast<int>(os[1])},
             {0, 3, 1, 2});
   out_data = output_trans.mutable_data<float>();
   for (int i = 0; i < out->dims().production(); i++) {

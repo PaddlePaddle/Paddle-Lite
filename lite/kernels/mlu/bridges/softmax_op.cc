@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -37,9 +37,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_dims = output->dims().Vectorize();
 
   // nchw axis to nhwc aixs
-  int nchw_to_nhwc_aixs_map[4] = {
-    0,3,1,2
-  };
+  int nchw_to_nhwc_aixs_map[4] = {0, 3, 1, 2};
   int axis = 1;
   if (op_info->HasAttr("axis")) {
     axis = op_info->GetAttr<int>("axis");
@@ -50,14 +48,13 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   int nhwc_axis = nchw_to_nhwc_aixs_map[axis];
 
-  auto output_tensor = graph->AddNode(out_var_name, output_dims,
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
+  auto output_tensor = graph->AddNode(
+      out_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());
   cnmlBaseOp_t softmax_op;
-  CNML_CALL(
-      cnmlCreateNdSoftmaxOp(&softmax_op,
-                            nhwc_axis,
-                            graph->GetNode(x_var_name)->mlu_tensor(),
-                            output_tensor->mlu_tensor()));
+  CNML_CALL(cnmlCreateNdSoftmaxOp(&softmax_op,
+                                  nhwc_axis,
+                                  graph->GetNode(x_var_name)->mlu_tensor(),
+                                  output_tensor->mlu_tensor()));
   graph->FuseOp(softmax_op);
   return SUCCESS;
 }

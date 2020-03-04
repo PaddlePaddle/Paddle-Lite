@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -90,32 +90,35 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   auto output_shape_nhwc = DimNCHW2NHWC(output_shape);
-  auto output_tensor = graph->AddNode(output_var_name, output_shape_nhwc,
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
-  scope->FindVar(output_var_name)->GetMutable<::paddle::lite::Tensor>()->Resize(output_shape_nhwc);
-
+  auto output_tensor = graph->AddNode(output_var_name,
+                                      output_shape_nhwc,
+                                      CNML_TENSOR,
+                                      CNML_NHWC,
+                                      graph->FPType());
+  scope->FindVar(output_var_name)
+      ->GetMutable<::paddle::lite::Tensor>()
+      ->Resize(output_shape_nhwc);
 
   cnmlPoolOpParam_t pool_param;
-  CNML_CALL(cnmlCreatePoolOpParam_V2(
-      &pool_param,
-      ksize[0],
-      ksize[1],
-      strides[0],
-      strides[1],
-      pad_height,
-      pad_width,
-      1,  // dilation
-      1,
-      ToCnmlPoolMode(pooling_type),
-      ceil_mode ? CNML_POOL_KVALID : CNML_POOL_KFULL,
-      true,                    /* real */
-      1 /* blend factor */));
-  cnmlBaseOp_t pool_op;
   CNML_CALL(
-      cnmlCreatePoolOp(&pool_op,
-                       pool_param,
-                       graph->GetNode(x_var_name)->mlu_tensor(),
-                       output_tensor->mlu_tensor()));
+      cnmlCreatePoolOpParam_V2(&pool_param,
+                               ksize[0],
+                               ksize[1],
+                               strides[0],
+                               strides[1],
+                               pad_height,
+                               pad_width,
+                               1,  // dilation
+                               1,
+                               ToCnmlPoolMode(pooling_type),
+                               ceil_mode ? CNML_POOL_KVALID : CNML_POOL_KFULL,
+                               true, /* real */
+                               1 /* blend factor */));
+  cnmlBaseOp_t pool_op;
+  CNML_CALL(cnmlCreatePoolOp(&pool_op,
+                             pool_param,
+                             graph->GetNode(x_var_name)->mlu_tensor(),
+                             output_tensor->mlu_tensor()));
   CNML_CALL(cnmlDestroyPoolOpParam(&pool_param));
   graph->FuseOp(pool_op);
   return SUCCESS;

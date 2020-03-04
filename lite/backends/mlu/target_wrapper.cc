@@ -1,9 +1,8 @@
 // Copyright (c) 2019 Cambricon Authors. All Rights Reserved.
 
 #include "lite/backends/mlu/target_wrapper.h"
-#include "lite/backends/mlu/mlu_utils.h"
-
 #include <memory>
+#include "lite/backends/mlu/mlu_utils.h"
 
 namespace paddle {
 namespace lite {
@@ -33,7 +32,7 @@ size_t TargetWrapperMlu::num_devices() {
 void* TargetWrapperMlu::Malloc(size_t size) {
   void* ptr{};
   CNRT_CALL(cnrtMalloc(&ptr, size)) << " cnrt malloc failed";
-  //LOG(INFO) << "Malloc mlu ptr: " << ptr << " with size: " << size;
+  // LOG(INFO) << "Malloc mlu ptr: " << ptr << " with size: " << size;
   return ptr;
 }
 
@@ -45,8 +44,8 @@ void TargetWrapperMlu::MemcpySync(void* dst,
                                   const void* src,
                                   size_t size,
                                   IoDirection dir) {
-  //LOG(INFO) << "dst: " << dst << " src: " << src << " size: " << size
-            //<< " dir: " << (int)dir;
+  // LOG(INFO) << "dst: " << dst << " src: " << src << " size: " << size
+  //<< " dir: " << (int)dir;
   switch (dir) {
     case IoDirection::DtoD: {
       std::unique_ptr<char[]> cpu_tmp_ptr(new char[size]);

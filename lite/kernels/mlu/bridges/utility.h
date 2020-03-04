@@ -14,30 +14,27 @@
 
 #pragma once
 
+#include <cnml.h>
+#include <cnrt.h>
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 #include "lite/fluid/data_type.h"
-#include "cnml.h"
-#include "cnrt.h"
-#include "lite/backends/mlu/mlu_utils.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace mlu {
 
-using namespace paddle::lite::mlu;
-
-void transpose(float *input_data,
-               float *output_data,
+void transpose(float* input_data,
+               float* output_data,
                std::vector<int> input_shape,
                std::vector<int> axis);
 int scale2position(float scale);
 void dequant(float* dst, int8_t* src, size_t size, float scale);
-
 
 void dequant(float* dst,
              int8_t* src,
@@ -53,46 +50,42 @@ bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
                  const std::string& argname);
 
-cnmlActiveFunction_t OpTypeToCNMLActType (std::string op_type);
+cnmlActiveFunction_t OpTypeToCNMLActType(std::string op_type);
 
 inline const ::paddle::lite::DDimLite DimNHWC2NCHW(
-    const ::paddle::lite::DDimLite& dim){
-  return ::paddle::lite::DDimLite(std::vector<long int>(
-        {dim[0], dim[3], dim[1], dim[2]}));
+    const ::paddle::lite::DDimLite& dim) {
+  return ::paddle::lite::DDimLite(
+      std::vector<int64_t>({dim[0], dim[3], dim[1], dim[2]}));
 }
 
 inline const ::paddle::lite::DDimLite DimNCHW2NHWC(
-    const ::paddle::lite::DDimLite& dim){
-  return ::paddle::lite::DDimLite(std::vector<long int>(
-        {dim[0], dim[2], dim[3], dim[1]}));
+    const ::paddle::lite::DDimLite& dim) {
+  return ::paddle::lite::DDimLite(
+      std::vector<int64_t>({dim[0], dim[2], dim[3], dim[1]}));
 }
 
 inline const std::vector<int64_t> DimNHWC2NCHW(
-    const std::vector<int64_t>& dim){
-  return std::vector<int64_t>(
-        {dim[0], dim[3], dim[1], dim[2]});
+    const std::vector<int64_t>& dim) {
+  return std::vector<int64_t>({dim[0], dim[3], dim[1], dim[2]});
 }
 
 inline const std::vector<int64_t> DimNCHW2NHWC(
-    const std::vector<int64_t>& dim){
-  return std::vector<int64_t>(
-        {dim[0], dim[2], dim[3], dim[1]});
+    const std::vector<int64_t>& dim) {
+  return std::vector<int64_t>({dim[0], dim[2], dim[3], dim[1]});
 }
 
-template<paddle::lite_api::PrecisionType>
-struct FPTypeTraits {
-};
+template <paddle::lite_api::PrecisionType>
+struct FPTypeTraits {};
 
-template<>
+template <>
 struct FPTypeTraits<paddle::lite_api::PrecisionType::kFloat> {
   typedef float T;
 };
 
-template<>
+template <>
 struct FPTypeTraits<paddle::lite_api::PrecisionType::kFP16> {
   typedef ::paddle::lite::fluid::float16 T;
 };
-
 
 }  // namespace mlu
 }  // namespace subgraph

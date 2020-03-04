@@ -35,10 +35,10 @@ class SubgraphCastDisplayPass : public DebugPass {
     }
     VLOG(3) << "---------------------";
 
-    // 
+    //
     VLOG(0) << "== SubgraphOp Debug Info ==";
     for (auto& node : graph->mutable_nodes()) {
-      if(node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
+      if (node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
         VLOG(0) << "FOUND SUBGRAPH OP";
         display_debug_info(node, "subgraph");
         break;
@@ -47,8 +47,10 @@ class SubgraphCastDisplayPass : public DebugPass {
     VLOG(0) << "---------------------";
   }
 
-  void display_debug_info(Node& node, std::string op_type, 
-      bool display_in_nodes=true, bool display_out_nodes=true) {
+  void display_debug_info(const Node& node,
+                          std::string op_type,
+                          bool display_in_nodes = true,
+                          bool display_out_nodes = true) {
     CHECK(node.IsStmt());
     VLOG(0) << node.AsStmt();
     if (display_in_nodes) {
@@ -65,9 +67,8 @@ class SubgraphCastDisplayPass : public DebugPass {
         for (auto p_in_stmt_node : p_in_arg_node->inlinks) {
           CHECK(p_in_stmt_node->IsStmt());
           std::string stmt_op_type = p_in_stmt_node->AsStmt().op_type();
-          if (stmt_op_type == "cast"
-              || stmt_op_type == "transpose"
-              || stmt_op_type == "io_copy") {
+          if (stmt_op_type == "cast" || stmt_op_type == "transpose" ||
+              stmt_op_type == "io_copy") {
             display_debug_info(*p_in_stmt_node, stmt_op_type, true, false);
           } else {
             VLOG(0) << "** END with op type: " << stmt_op_type;
@@ -89,9 +90,8 @@ class SubgraphCastDisplayPass : public DebugPass {
         for (auto p_out_stmt_node : p_out_arg_node->outlinks) {
           CHECK(p_out_stmt_node->IsStmt());
           std::string stmt_op_type = p_out_stmt_node->AsStmt().op_type();
-          if (stmt_op_type == "cast"
-              || stmt_op_type == "transpose"
-              || stmt_op_type == "io_copy") {
+          if (stmt_op_type == "cast" || stmt_op_type == "transpose" ||
+              stmt_op_type == "io_copy") {
             display_debug_info(*p_out_stmt_node, stmt_op_type, false, true);
           } else {
             VLOG(0) << "** END with op type: " << stmt_op_type;

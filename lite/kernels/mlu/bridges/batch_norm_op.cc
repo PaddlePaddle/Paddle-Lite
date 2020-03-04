@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -41,24 +41,20 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto output = scope->FindVar(y_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
-  auto output_tensor = graph->AddNode(y_var_name, output_dims,
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
+  auto output_tensor = graph->AddNode(
+      y_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());
 
   CHECK(graph->HasNode(x_var_name));
 
   auto mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
   auto mean_dims = mean->dims().Vectorize();
-  auto mean_tensor = graph->AddNode(mean_var_name,
-                                    mean_dims,
-                                    CNML_CONST,
-                                    CNML_CNHW, graph->FPType());
+  auto mean_tensor = graph->AddNode(
+      mean_var_name, mean_dims, CNML_CONST, CNML_CNHW, graph->FPType());
 
   auto variance = scope->FindVar(variance_var_name)->GetMutable<Tensor>();
   auto variance_dims = variance->dims().Vectorize();
-  auto variance_tensor = graph->AddNode(variance_var_name,
-                                        variance_dims,
-                                        CNML_CONST,
-                                        CNML_CNHW, graph->FPType());
+  auto variance_tensor = graph->AddNode(
+      variance_var_name, variance_dims, CNML_CONST, CNML_CNHW, graph->FPType());
 
   auto scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
   auto bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
@@ -75,12 +71,11 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto input_tensor = graph->GetNode(x_var_name);
   cnmlBaseOp_t bn_op;
-  CNML_CALL(cnmlCreateBatchNormOpForward(
-      &bn_op,
-      input_tensor->mlu_tensor(),
-      output_tensor->mlu_tensor(),
-      mean_tensor->mlu_tensor(),
-      variance_tensor->mlu_tensor()));
+  CNML_CALL(cnmlCreateBatchNormOpForward(&bn_op,
+                                         input_tensor->mlu_tensor(),
+                                         output_tensor->mlu_tensor(),
+                                         mean_tensor->mlu_tensor(),
+                                         variance_tensor->mlu_tensor()));
 
   graph->BindConstData(variance_var_name, variance);
   graph->BindConstData(mean_var_name, mean);

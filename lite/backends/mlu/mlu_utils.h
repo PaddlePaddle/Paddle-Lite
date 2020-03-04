@@ -16,7 +16,8 @@
 
 #define CNML_CALL(msg)                                          \
   CHECK_EQ(static_cast<cnmlStatus_t>(msg), CNML_STATUS_SUCCESS) \
-      << (msg) << " MLU CNML: " << CnmlErrorInfo(static_cast<int>(msg))
+      << (msg) << " MLU CNML: "                                 \
+      << ::paddle::lite::mlu::CnmlErrorInfo(static_cast<int>(msg))
 
 namespace paddle {
 namespace lite {

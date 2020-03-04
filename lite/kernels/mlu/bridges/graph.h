@@ -32,131 +32,128 @@ namespace mlu {
 // to the MLU IR graph
 class Graph {
  public:
-  Graph() {
-    CNML_CALL(cnmlCreateFusionOp(&fusion_op_));
-  };
-  
+  Graph() { CNML_CALL(cnmlCreateFusionOp(&fusion_op_)); }
+
   ~Graph() {
-    CNML_CALL(cnmlDestroyFusionOp(&fusion_op_)); 
+    CNML_CALL(cnmlDestroyFusionOp(&fusion_op_));
     for (auto op : ops_) {
       CNML_CALL(cnmlDestroyBaseOp(&op));
     }
   }
-  
- // Data node
- std::shared_ptr<MLUTensor> AddNode(
-     const std::string& name,
-     std::vector<int64_t> shape,
-     cnmlTensorType_t tensor_type = CNML_TENSOR,
-     cnmlDataOrder_t data_order = CNML_NCHW,
-     cnmlDataType_t mlu_dtype = CNML_DATA_FLOAT32,
-     void* raw_ptr = nullptr);
 
- std::shared_ptr<MLUTensor> GetNode(const std::string& name) {
-   CHECK(HasNode(name)) << "[MLU] Node " << name << " not found.";
-   return nodes_.at(name);
- }
- 
- bool HasNode(const std::string& name) {
-   return nodes_.find(name) != nodes_.end();
- }
+  // Data node
+  std::shared_ptr<MLUTensor> AddNode(
+      const std::string& name,
+      std::vector<int64_t> shape,
+      cnmlTensorType_t tensor_type = CNML_TENSOR,
+      cnmlDataOrder_t data_order = CNML_NCHW,
+      cnmlDataType_t mlu_dtype = CNML_DATA_FLOAT32,
+      void* raw_ptr = nullptr);
 
- void AddInput(std::shared_ptr<MLUTensor> tensor) {
-   inputs_.push_back(tensor->mlu_tensor());
-   input_tensors_.push_back(tensor);
- }
+  std::shared_ptr<MLUTensor> GetNode(const std::string& name) {
+    CHECK(HasNode(name)) << "[MLU] Node " << name << " not found.";
+    return nodes_.at(name);
+  }
 
- void AddOutput(std::shared_ptr<MLUTensor> tensor) {
-   outputs_.push_back(tensor->mlu_tensor());
-   output_tensors_.push_back(tensor);
- }
+  bool HasNode(const std::string& name) {
+    return nodes_.find(name) != nodes_.end();
+  }
 
- void FuseOp(cnmlBaseOp_t op) {
-   CNML_CALL(cnmlFuseOp(op, fusion_op_));
- }
+  void AddInput(std::shared_ptr<MLUTensor> tensor) {
+    inputs_.push_back(tensor->mlu_tensor());
+    input_tensors_.push_back(tensor);
+  }
 
- void Compile(cnmlCoreVersion_t core_version, int core_number) {
-   CNML_CALL(cnmlSetFusionIO(fusion_op_,
-             inputs_.data(), inputs_.size(),
-             outputs_.data(), outputs_.size()));
-   CNML_CALL(cnmlSetFusionOpCorenum(fusion_op_, core_number));
-   CNML_CALL(cnmlSetFusionOpCoreVersion(fusion_op_, core_version));
-   CNML_CALL(cnmlCompileFusionOp_V2(fusion_op_));
-   for (auto in : input_tensors_) {
-     input_addrs_.push_back(in->mlu_data());
-   }
-   for (auto out : output_tensors_) {
-     output_addrs_.push_back(out->mlu_data());
-   }
- }
+  void AddOutput(std::shared_ptr<MLUTensor> tensor) {
+    outputs_.push_back(tensor->mlu_tensor());
+    output_tensors_.push_back(tensor);
+  }
 
- void Compute(cnrtInvokeFuncParam_t forward_param, cnrtQueue_t que) {
-   CNML_CALL(cnmlComputeFusionOpForward_V3(fusion_op_,
-             input_addrs_.data(), input_addrs_.size(),
-             output_addrs_.data(), output_addrs_.size(),
-             &forward_param, que));
-   CNRT_CALL(cnrtSyncQueue(que));
- }
+  void FuseOp(cnmlBaseOp_t op) { CNML_CALL(cnmlFuseOp(op, fusion_op_)); }
 
- void BindConstData(std::string tensor_name, ::paddle::lite::Tensor* tensor) {
-   const float* data = tensor->data<float>();
-   size_t len = tensor->data_size();
-   if (fp_type_ == CNML_DATA_FLOAT32) {
-     CNML_CALL(cnmlBindConstData_V2(
-         nodes_[tensor_name]->mlu_tensor(),
-         const_cast<void*>(static_cast<const void*>(data)), false));
-   } else if (fp_type_ == CNML_DATA_FLOAT16){
-     //TODO: do it more efficiently
-     std::vector<float> origin_data(len);
-     for (size_t i = 0; i < len; ++i) {
-       origin_data[i] = data[i];
-     }
-     auto* data_fp16 = tensor->mutable_data<::paddle::lite::fluid::float16>();
-     for (size_t i = 0; i < len; ++i) {
-       data_fp16[i] = static_cast<::paddle::lite::fluid::float16>(origin_data[i]);
-     }
-     CNML_CALL(cnmlBindConstData_V2(
-         nodes_[tensor_name]->mlu_tensor(),
-         static_cast<void*>(data_fp16), false));
-   } else {
-     CHECK(0);
-   }
- }
+  void Compile(cnmlCoreVersion_t core_version, int core_number) {
+    CNML_CALL(cnmlSetFusionIO(fusion_op_,
+                              inputs_.data(),
+                              inputs_.size(),
+                              outputs_.data(),
+                              outputs_.size()));
+    CNML_CALL(cnmlSetFusionOpCorenum(fusion_op_, core_number));
+    CNML_CALL(cnmlSetFusionOpCoreVersion(fusion_op_, core_version));
+    CNML_CALL(cnmlCompileFusionOp_V2(fusion_op_));
+    for (auto in : input_tensors_) {
+      input_addrs_.push_back(in->mlu_data());
+    }
+    for (auto out : output_tensors_) {
+      output_addrs_.push_back(out->mlu_data());
+    }
+  }
 
- void SetComputingDataType(cnmlBaseOp_t op,
-     cnmlTensor_t tensor,
-     float scale,
-     cnmlDataType_t data_type = CNML_DATA_INT8) {
-   cnmlQuantizedParam_t quant_param;
-   CNML_CALL(cnmlCreateQuantizedParam(&quant_param,
-             scale2position(scale),
-             1,
-             0.0));
-   CNML_CALL(cnmlSetOperationComputingDataType(op,
-             tensor,
-             data_type,
-             quant_param));
-   CNML_CALL(cnmlDestroyQuantizedParam(&quant_param));
- }
+  void Compute(cnrtInvokeFuncParam_t forward_param, cnrtQueue_t que) {
+    CNML_CALL(cnmlComputeFusionOpForward_V3(fusion_op_,
+                                            input_addrs_.data(),
+                                            input_addrs_.size(),
+                                            output_addrs_.data(),
+                                            output_addrs_.size(),
+                                            &forward_param,
+                                            que));
+    CNRT_CALL(cnrtSyncQueue(que));
+  }
 
- void SetFPType(::paddle::lite_api::PrecisionType type){
-   switch(type) {
-     case ::paddle::lite_api::PrecisionType::kFP16:
-       fp_type_ = CNML_DATA_FLOAT16;
-       break;
-     case ::paddle::lite_api::PrecisionType::kFloat:
-       fp_type_ = CNML_DATA_FLOAT32;
-       break;
-     default:
-       CHECK(0);
-   }
- }
+  void BindConstData(std::string tensor_name, ::paddle::lite::Tensor* tensor) {
+    const float* data = tensor->data<float>();
+    size_t len = tensor->data_size();
+    if (fp_type_ == CNML_DATA_FLOAT32) {
+      CNML_CALL(cnmlBindConstData_V2(
+          nodes_[tensor_name]->mlu_tensor(),
+          const_cast<void*>(static_cast<const void*>(data)),
+          false));
+    } else if (fp_type_ == CNML_DATA_FLOAT16) {
+      // TODO(zhangmingwei): do it more efficiently
+      std::vector<float> origin_data(len);
+      for (size_t i = 0; i < len; ++i) {
+        origin_data[i] = data[i];
+      }
+      auto* data_fp16 = tensor->mutable_data<::paddle::lite::fluid::float16>();
+      for (size_t i = 0; i < len; ++i) {
+        data_fp16[i] =
+            static_cast<::paddle::lite::fluid::float16>(origin_data[i]);
+      }
+      CNML_CALL(cnmlBindConstData_V2(nodes_[tensor_name]->mlu_tensor(),
+                                     static_cast<void*>(data_fp16),
+                                     false));
+    } else {
+      CHECK(0);
+    }
+  }
 
- cnmlDataType_t FPType() {
-   return fp_type_;
- }
+  void SetComputingDataType(cnmlBaseOp_t op,
+                            cnmlTensor_t tensor,
+                            float scale,
+                            cnmlDataType_t data_type = CNML_DATA_INT8) {
+    cnmlQuantizedParam_t quant_param;
+    CNML_CALL(
+        cnmlCreateQuantizedParam(&quant_param, scale2position(scale), 1, 0.0));
+    CNML_CALL(
+        cnmlSetOperationComputingDataType(op, tensor, data_type, quant_param));
+    CNML_CALL(cnmlDestroyQuantizedParam(&quant_param));
+  }
 
-private:
+  void SetFPType(::paddle::lite_api::PrecisionType type) {
+    switch (type) {
+      case ::paddle::lite_api::PrecisionType::kFP16:
+        fp_type_ = CNML_DATA_FLOAT16;
+        break;
+      case ::paddle::lite_api::PrecisionType::kFloat:
+        fp_type_ = CNML_DATA_FLOAT32;
+        break;
+      default:
+        CHECK(0);
+    }
+  }
+
+  cnmlDataType_t FPType() { return fp_type_; }
+
+ private:
   cnmlDataType_t fp_type_{CNML_DATA_FLOAT32};
   std::unordered_map<std::string, std::shared_ptr<MLUTensor>> nodes_;
   std::vector<cnmlTensor_t> inputs_;

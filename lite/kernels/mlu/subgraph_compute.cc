@@ -18,34 +18,35 @@
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/kernels/mlu/bridges/utility.h"
 #include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
+#include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace mlu {
-}  // namespace mlu
+namespace mlu {}  // namespace mlu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(subgraph,
-                     kMLU,
-                     kFloat,
-                     kNHWC,
-                     paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFloat)>,
-                     def_kFloat)
+REGISTER_LITE_KERNEL(
+    subgraph,
+    kMLU,
+    kFloat,
+    kNHWC,
+    paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFloat)>,
+    def_kFloat)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kMLU))})
     .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kMLU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(subgraph,
-                     kMLU,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFP16)>,
-                     def_FP16)
+REGISTER_LITE_KERNEL(
+    subgraph,
+    kMLU,
+    kFP16,
+    kNHWC,
+    paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFP16)>,
+    def_FP16)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kMLU))})
     .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kMLU))})
     .Finalize();

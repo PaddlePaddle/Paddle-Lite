@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/mlu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -69,64 +69,63 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto y_new_shape = CvtYShape(*x, y, axis);
     // all subgraph input tensor are built at first
     // If we can not find the tensor, it should be const tensor
-    y_tensor = graph->AddNode(y_var_name, y_new_shape, CNML_CONST,
-        CNML_NCHW, graph->FPType());
+    y_tensor = graph->AddNode(
+        y_var_name, y_new_shape, CNML_CONST, CNML_NCHW, graph->FPType());
     graph->BindConstData(y_var_name, y);
   }
 
-  auto output_tensor = graph->AddNode(out_var_name, x->dims().Vectorize(),
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
+  auto output_tensor = graph->AddNode(out_var_name,
+                                      x->dims().Vectorize(),
+                                      CNML_TENSOR,
+                                      CNML_NHWC,
+                                      graph->FPType());
 
   cnmlBaseOp_t elementwise_op;
   if (op_type == "elementwise_add") {
-    CNML_CALL(cnmlCreateBroadcastAddOp(
-      &elementwise_op,
-      x_tensor->mlu_tensor(),
-      y_tensor->mlu_tensor(),
-      output_tensor->mlu_tensor()));
-  }else if (op_type == "fusion_elementwise_add_activation") {
-    auto mid_tensor = graph->AddNode(out_var_name + "_mid", x->dims().Vectorize(),
-                                     CNML_TENSOR, CNML_NHWC, graph->FPType());
-    CNML_CALL(cnmlCreateBroadcastAddOp(
-      &elementwise_op,
-      x_tensor->mlu_tensor(),
-      y_tensor->mlu_tensor(),
-      mid_tensor->mlu_tensor()));
+    CNML_CALL(cnmlCreateBroadcastAddOp(&elementwise_op,
+                                       x_tensor->mlu_tensor(),
+                                       y_tensor->mlu_tensor(),
+                                       output_tensor->mlu_tensor()));
+  } else if (op_type == "fusion_elementwise_add_activation") {
+    auto mid_tensor = graph->AddNode(out_var_name + "_mid",
+                                     x->dims().Vectorize(),
+                                     CNML_TENSOR,
+                                     CNML_NHWC,
+                                     graph->FPType());
+    CNML_CALL(cnmlCreateBroadcastAddOp(&elementwise_op,
+                                       x_tensor->mlu_tensor(),
+                                       y_tensor->mlu_tensor(),
+                                       mid_tensor->mlu_tensor()));
   } else if (op_type == "elementwise_sub") {
-    CNML_CALL(cnmlCreateBroadcastSubOp(
-      &elementwise_op,
-      x_tensor->mlu_tensor(),
-      y_tensor->mlu_tensor(),
-      output_tensor->mlu_tensor()));
+    CNML_CALL(cnmlCreateBroadcastSubOp(&elementwise_op,
+                                       x_tensor->mlu_tensor(),
+                                       y_tensor->mlu_tensor(),
+                                       output_tensor->mlu_tensor()));
   } else if (op_type == "elementwise_mul") {
-    CNML_CALL(cnmlCreateBroadcastMultOp(
-      &elementwise_op,
-      x_tensor->mlu_tensor(),
-      y_tensor->mlu_tensor(),
-      output_tensor->mlu_tensor()));
+    CNML_CALL(cnmlCreateBroadcastMultOp(&elementwise_op,
+                                        x_tensor->mlu_tensor(),
+                                        y_tensor->mlu_tensor(),
+                                        output_tensor->mlu_tensor()));
   } else if (op_type == "elementwise_div") {
-    CNML_CALL(cnmlCreateRealDivOp(
-        &elementwise_op,
-        x_tensor->mlu_tensor(),
-        y_tensor->mlu_tensor(),
-        output_tensor->mlu_tensor()));
+    CNML_CALL(cnmlCreateRealDivOp(&elementwise_op,
+                                  x_tensor->mlu_tensor(),
+                                  y_tensor->mlu_tensor(),
+                                  output_tensor->mlu_tensor()));
   } else {
     LOG(WARNING) << "[MLU] Unsupported op type: " << op_type;
     return FAILED;
   }
 
   graph->FuseOp(elementwise_op);
-  
   cnmlBaseOp_t act_op;
   if (op_type == "fusion_elementwise_add_activation") {
     auto mid_tensor = graph->GetNode(out_var_name + "_mid");
     auto type_string = op_info->GetAttr<std::string>("act_type");
     cnmlActiveFunction_t act_type = OpTypeToCNMLActType(type_string);
-    CNML_CALL(cnmlCreateActiveOp(
-        &act_op,
-        act_type,
-        mid_tensor->mlu_tensor(),
-        output_tensor->mlu_tensor()));
+    CNML_CALL(cnmlCreateActiveOp(&act_op,
+                                 act_type,
+                                 mid_tensor->mlu_tensor(),
+                                 output_tensor->mlu_tensor()));
     graph->FuseOp(act_op);
   }
   return REBUILD_WHEN_SHAPE_CHANGED;

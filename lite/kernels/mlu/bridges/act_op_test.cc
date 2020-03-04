@@ -14,10 +14,10 @@
 
 #include <gtest/gtest.h>
 #include <random>
-#include "lite/core/op_registry.h"
 #include "lite/core/op_lite.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
+#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/operators/activation_ops.h"
 
 namespace paddle {
@@ -27,7 +27,9 @@ namespace mlu {
 
 int ActConverter(void* ctx, OpLite* op);
 
-template void FillTensor<float, int>(Tensor* x, float lower = -2, float upper = -2);
+template void FillTensor<float, int>(Tensor* x,
+                                     float lower = -2,
+                                     float upper = -2);
 
 void act_ref(const std::shared_ptr<operators::ActivationOp> op) {
   Scope* scope = op->scope();
@@ -124,7 +126,6 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
 
   LaunchOp(op, {x_var_name}, {out_var_name});
 
-
   // compare results
   auto* out_data = out->mutable_data<float>();
   auto* out_ref_data = out_ref->mutable_data<float>();
@@ -135,9 +136,7 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
 
 TEST(MLUBridges, activation) {
   std::vector<std::vector<int64_t>> shapes{{1}, {2, 3}, {1, 2, 3, 4}};
-  std::vector<std::string> types{"sigmoid",
-                                 "relu",
-                                 "tanh"};
+  std::vector<std::string> types{"sigmoid", "relu", "tanh"};
   for (auto x_shape : shapes) {
     for (auto op_type : types) {
       test_act(x_shape, op_type);
@@ -150,12 +149,8 @@ TEST(MLUBridges, activation) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         relu,
-                         paddle::lite::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(MLU, relu, paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(MLU,
                          sigmoid,
                          paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         tanh,
-                         paddle::lite::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(MLU, tanh, paddle::lite::subgraph::mlu::ActConverter);

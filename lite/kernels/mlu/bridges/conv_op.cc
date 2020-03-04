@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
 #include "lite/operators/conv_op.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include <algorithm>
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -33,8 +33,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, filter and op attributes
   const auto input_var_name = op_info->Input("Input").front();
-  const auto& input_dims_nhwc = scope->FindVar(input_var_name)
-    ->GetMutable<Tensor>()->dims();
+  const auto& input_dims_nhwc =
+      scope->FindVar(input_var_name)->GetMutable<Tensor>()->dims();
   const auto input_dims = DimNHWC2NCHW(input_dims_nhwc);
   const auto filter_var_name = op_info->Input("Filter").front();
   auto* filter = scope->FindVar(filter_var_name)->GetMutable<Tensor>();
@@ -47,10 +47,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  // TODO
-  // auto groups = op_info->GetAttr<int>("groups");
-  // TODO
-  // auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   CHECK_EQ(strides.size(), 2L);
   CHECK_EQ(dilations.size(), 2L);
   if (paddings.size() == 2L) {
@@ -62,8 +58,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(paddings.size(), 4L)
       << "Paddings size should be the same or twice as the input size.";
 
-  const std::string padding_algorithm = op_info->HasAttr("padding_algorithm")?
-    op_info->GetAttr<std::string>("padding_algorithm"):"";
+  const std::string padding_algorithm =
+      op_info->HasAttr("padding_algorithm")
+          ? op_info->GetAttr<std::string>("padding_algorithm")
+          : "";
 
   operators::UpdatePaddingAndDilation(&paddings,
                                       &dilations,
@@ -77,20 +75,28 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     const int dkernel = dilations[i] * (filter_dims[2 + i] - 1) + 1;
     output_shape.push_back(
         (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] - dkernel) /
-            strides[i] + 1);
+            strides[i] +
+        1);
   }
 
   const auto output_shape_nhwc = DimNCHW2NHWC(output_shape);
-  const auto output_tensor = graph->AddNode(output_var_name, output_shape_nhwc,
-      CNML_TENSOR, CNML_NHWC, graph->FPType());
-  scope->FindVar(output_var_name)->GetMutable<::paddle::lite::Tensor>()
+  const auto output_tensor = graph->AddNode(output_var_name,
+                                            output_shape_nhwc,
+                                            CNML_TENSOR,
+                                            CNML_NHWC,
+                                            graph->FPType());
+  scope->FindVar(output_var_name)
+      ->GetMutable<::paddle::lite::Tensor>()
       ->Resize(output_shape_nhwc);
 
   // Create filter node
-  const auto filter_tensor = graph->AddNode(filter_var_name, filter_dims.Vectorize(),
-      CNML_FILTER, CNML_NCHW, graph->FPType());
-  const auto weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
-
+  const auto filter_tensor = graph->AddNode(filter_var_name,
+                                            filter_dims.Vectorize(),
+                                            CNML_FILTER,
+                                            CNML_NCHW,
+                                            graph->FPType());
+  const auto weight_scale =
+      op_info->GetAttr<std::vector<float>>("weight_scale");
 
   if (filter->precision() == PrecisionType::kUnk ||
       filter->precision() == PrecisionType::kInt8) {
@@ -103,18 +109,24 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
             weight_scale);
     transpose(filter_dequant.data(),
               filter->mutable_data<float>(),
-              {int(filter_dims[0]), int(filter_dims[1]),
-               int(filter_dims[2]), int(filter_dims[3])},
+              {static_cast<int>(filter_dims[0]),
+               static_cast<int>(filter_dims[1]),
+               static_cast<int>(filter_dims[2]),
+               static_cast<int>(filter_dims[3])},
               {0, 2, 3, 1});
     filter->set_precision(PrecisionType::kFloat);
   } else if (filter->precision() != PrecisionType::kFloat) {
     LOG(FATAL) << "UnSupported weight precision!";
   }
 
-  cnmlConvOpParam_t conv_param; 
-  CNML_CALL(cnmlCreateConvOpParam(
-      &conv_param, strides[0], strides[1],
-      dilations[0], dilations[1], paddings[0] * 2, paddings[2] * 2));
+  cnmlConvOpParam_t conv_param;
+  CNML_CALL(cnmlCreateConvOpParam(&conv_param,
+                                  strides[0],
+                                  strides[1],
+                                  dilations[0],
+                                  dilations[1],
+                                  paddings[0] * 2,
+                                  paddings[2] * 2));
   std::string bias_var_name;
   std::shared_ptr<MLUTensor> bias_tensor;
   if (HasInputArg(op_info, scope, "Bias")) {
@@ -142,24 +154,26 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                  << output_dims;
     }
     bias_tensor = graph->AddNode(bias_var_name,
-                   bias_dims.Vectorize(),
-                   CNML_CONST,
-                   CNML_CNHW, graph->FPType());
+                                 bias_dims.Vectorize(),
+                                 CNML_CONST,
+                                 CNML_CNHW,
+                                 graph->FPType());
     graph->BindConstData(bias_var_name, bias);
   }
   cnmlBaseOp_t conv_op;
   const auto input_scale = op_info->GetAttr<float>("input_scale");
-  CNML_CALL(cnmlCreateConvOpForward(&conv_op,
+  CNML_CALL(cnmlCreateConvOpForward(
+      &conv_op,
       conv_param,
       graph->GetNode(input_var_name)->mlu_tensor(),
       output_tensor->mlu_tensor(),
       filter_tensor->mlu_tensor(),
       bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
-   
-  graph->SetComputingDataType(conv_op,
-      graph->GetNode(input_var_name)->mlu_tensor(),
-      1 / input_scale);
-  graph->SetComputingDataType(conv_op,
+
+  graph->SetComputingDataType(
+      conv_op, graph->GetNode(input_var_name)->mlu_tensor(), 1 / input_scale);
+  graph->SetComputingDataType(
+      conv_op,
       filter_tensor->mlu_tensor(),
       1 / *min_element(weight_scale.begin(), weight_scale.end()));
   CNML_CALL(cnmlSetOperationComputingLayout(conv_op, CNML_NHWC));
@@ -167,7 +181,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
     graph->BindConstData(bias_var_name, bias);
   }
-  
   graph->BindConstData(filter_var_name, filter);
   graph->FuseOp(conv_op);
   CNML_CALL(cnmlDestroyConvOpParam(&conv_param));

@@ -14,10 +14,10 @@
 
 #include "lite/operators/fc_op.h"
 #include <gtest/gtest.h>
-#include "lite/core/op_registry.h"
 #include "lite/core/op_lite.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
+#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -133,16 +133,19 @@ void test_fc(const std::vector<int64_t>& input_shape,
   fc_op_desc_mlu.SetOutput("Out", {out_var_name});
   fc_op_desc_mlu.SetAttr("in_num_col_dims", static_cast<int>(in_num_col_dims));
 
-  fc_op_desc_mlu.SetAttr("weight_scale", std::vector<float>(w_shape[1], w_scale));
+  fc_op_desc_mlu.SetAttr("weight_scale",
+                         std::vector<float>(w_shape[1], w_scale));
   fc_op_desc_mlu.SetAttr("input_scale", input_scale);
   if (has_bias) {
     fc_op_desc_mlu.SetInput("Bias", {bias_var_name});
   }
 
   auto fc_op_mlu = CreateOp<operators::FcOpLite>(fc_op_desc_mlu, &scope);
-  input->Resize({int(input_shape[0]), int(input_shape[2]),
-                int(input_shape[3]), int(input_shape[1])});
-  out->Resize({int(input_shape[0]), int(w_shape[1])});
+  input->Resize({static_cast<int>(input_shape[0]),
+                 static_cast<int>(input_shape[2]),
+                 static_cast<int>(input_shape[3]),
+                 static_cast<int>(input_shape[1])});
+  out->Resize({static_cast<int>(input_shape[0]), static_cast<int>(w_shape[1])});
   LaunchOp(fc_op_mlu, {input_var_name}, {out_var_name});
 
   // compare results
@@ -167,6 +170,4 @@ TEST(MLUBridges, fc) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         fc,
-                         paddle::lite::subgraph::mlu::FCConverter);
+REGISTER_SUBGRAPH_BRIDGE(MLU, fc, paddle::lite::subgraph::mlu::FCConverter);

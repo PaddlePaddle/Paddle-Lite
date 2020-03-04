@@ -17,14 +17,14 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/kernel.h"
-#include "lite/core/types.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/core/types.h"
+#include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/kernels/mlu/bridges/graph.h"
-#include "lite/api/paddle_place.h"
 
 namespace paddle {
 namespace lite {
@@ -34,16 +34,17 @@ namespace mlu {
 template <PrecisionType Precision>
 class SubgraphEngine : public subgraph::Engine {
  public:
-  SubgraphEngine(KernelContext * ctx,
+  SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::BlockDesc *block_desc,
-                 const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names,
-                 Scope *scope, ::paddle::lite_api::PrecisionType type)
+                 cpp::BlockDesc* block_desc,
+                 const std::vector<std::string>& input_names,
+                 const std::vector<std::string>& output_names,
+                 Scope* scope,
+                 ::paddle::lite_api::PrecisionType type)
       : subgraph::Engine(
-          ctx, block_idx, block_desc, input_names, output_names, scope) {
-        graph_.SetFPType(type);
-      }
+            ctx, block_idx, block_desc, input_names, output_names, scope) {
+    graph_.SetFPType(type);
+  }
 
  protected:
   int BuildDeviceProgram() override {
@@ -53,9 +54,12 @@ class SubgraphEngine : public subgraph::Engine {
       auto input_tensor = scope_->FindMutableTensor(input_name);
       CHECK(input_tensor);
       auto input_node =
-          graph_.AddNode(input_name, input_tensor->dims().Vectorize(),
-              CNML_TENSOR, CNML_NHWC, graph_.FPType(),
-              const_cast<void*>(input_tensor->raw_data()));
+          graph_.AddNode(input_name,
+                         input_tensor->dims().Vectorize(),
+                         CNML_TENSOR,
+                         CNML_NHWC,
+                         graph_.FPType(),
+                         const_cast<void*>(input_tensor->raw_data()));
       CHECK(input_node);
       // MLU doesn't support dynamic dimensions/shapes, so need to rebuild
       // the program when the shape of any input tensor is changed.
@@ -75,14 +79,14 @@ class SubgraphEngine : public subgraph::Engine {
         return subgraph::FAILED;
       }
       auto kernel = inst.kernel();
-      status |= bridges.Select(op_type, TARGET(kMLU))(reinterpret_cast<void*>(&graph_),
-                                               const_cast<OpLite*>(op),
-                                               const_cast<KernelBase*>(kernel));
+      status |= bridges.Select(op_type, TARGET(kMLU))(
+          reinterpret_cast<void*>(&graph_),
+          const_cast<OpLite*>(op),
+          const_cast<KernelBase*>(kernel));
       if (subgraph::CHECK_FAILED(status)) {
         return subgraph::FAILED;
       }
     }
-    //LOG(INFO) << "after cONVERT ";
     // Obtain the output nodes of the MLU IR graph and build the graph to MLU
     // runtime
     std::vector<std::string> valid_output_names;
@@ -90,9 +94,10 @@ class SubgraphEngine : public subgraph::Engine {
       if (graph_.HasNode(output_name)) {
         graph_.AddOutput(graph_.GetNode(output_name));
         auto output_tensor = scope_->FindMutableTensor(output_name);
-        void* p_data = static_cast<void*>(output_tensor->
-            mutable_data<typename ::paddle::lite::subgraph::mlu::FPTypeTraits<
-            Precision>::T>(TARGET(kMLU)));
+        void* p_data = static_cast<void*>(
+            output_tensor->mutable_data<typename ::paddle::lite::subgraph::mlu::
+                                            FPTypeTraits<Precision>::T>(
+                TARGET(kMLU)));
         auto node = graph_.GetNode(output_name);
         CHECK(p_data);
         node->set_mlu_ptr(p_data);
@@ -127,21 +132,21 @@ class SubgraphEngine : public subgraph::Engine {
 };
 
 template <PrecisionType Precision>
-class SubgraphCompute : public KernelLite<TARGET(kMLU), Precision, DATALAYOUT(kNHWC)> {
+class SubgraphCompute
+    : public KernelLite<TARGET(kMLU), Precision, DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::SubgraphParam;
 
   void PrepareForRun() override {
     auto& param = this->template Param<param_t>();
-    //LOG(INFO) << "SUBGRAP Prepare RUN index " << param.sub_block_idx;
-    engine_.reset(new SubgraphEngine<Precision>(
-                                     this->ctx_.get(),
-                                     param.sub_block_idx,
-                                     param.sub_block_desc,
-                                     param.input_data_names,
-                                     param.output_data_names,
-                                     param.scope,
-                                     this->precision()));
+    // LOG(INFO) << "SUBGRAP Prepare RUN index " << param.sub_block_idx;
+    engine_.reset(new SubgraphEngine<Precision>(this->ctx_.get(),
+                                                param.sub_block_idx,
+                                                param.sub_block_desc,
+                                                param.input_data_names,
+                                                param.output_data_names,
+                                                param.scope,
+                                                this->precision()));
     CHECK(engine_);
     engine_->Build();
   }
