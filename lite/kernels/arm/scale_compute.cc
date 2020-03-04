@@ -20,33 +20,18 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T>
-void scale_with_dtype(const operators::ScaleParam& param) {
+template <typename T, PrecisionType PType>
+void ScaleCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ScaleParam>();
   int num = param.x->numel();
-  const T* x_data = param.x->data<T>();
-  T* output_data = param.output->mutable_data<T>();
+  const T* x_data = param.x->template data<T>();
+  T* output_data = param.output->template mutable_data<T>();
   T scale = static_cast<T>(param.scale);
   T bias = static_cast<T>(param.bias);
   if (!param.bias_after_scale) {
     bias *= scale;
   }
-  lite::arm::math::scale(x_data, output_data, num, scale, bias);
-}
-
-void ScaleCompute::Run() {
-  auto& param = Param<operators::ScaleParam>();
-  auto x_precision = param.x->precision();
-  switch (x_precision) {
-    case PRECISION(kFloat):
-      scale_with_dtype<float>(param);
-      break;
-    case PRECISION(kInt32):
-      scale_with_dtype<int>(param);
-      break;
-    default:
-      LOG(FATAL) << "unsupported input dtype: " << PrecisionToStr(x_precision);
-      break;
-  }
+  lite::arm::math::scale<T>(x_data, output_data, num, scale, bias);
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }
@@ -57,8 +42,16 @@ void ScaleCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    scale, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ScaleCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+using scale_float =
+    paddle::lite::kernels::arm::ScaleCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kARM, kFloat, kNCHW, scale_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+using scale_int32 =
+    paddle::lite::kernels::arm::ScaleCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(scale, kARM, kInt32, kNCHW, scale_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

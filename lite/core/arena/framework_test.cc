@@ -63,7 +63,6 @@ class ScaleComputeTester : public arena::TestCase {
     }
 
     SetCommonTensor(input_, dims_, data.data());
-    SetPrecisionType(output_, PRECISION(kFloat));
   }
 };
 

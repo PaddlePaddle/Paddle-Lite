@@ -108,8 +108,6 @@ class ScaleComputeTester : public arena::TestCase {
         LOG(FATAL) << "unsupported data type: " << PrecisionToStr(x_dtype_);
         break;
     }
-
-    SetPrecisionType(out_, x_dtype_);
   }
 };
 
@@ -145,6 +143,13 @@ void TestScaleOrder(Place place, float abs_error) {
 
 void TestScaleDtype(Place place, float abs_error) {
   for (PrecisionType x_dtype : {PRECISION(kFloat), PRECISION(kInt32)}) {
+    if (x_dtype == PRECISION(kFloat)) {
+      place.precision = PRECISION(kFloat);
+    } else if (x_dtype == PRECISION(kInt32)) {
+      place.precision = PRECISION(kInt32);
+    } else {
+      LOG(FATAL) << "fatal";
+    }
     std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(
         place, "def", DDim({2, 3, 4, 5}), 2.f, 1.f, true, x_dtype));
     arena::Arena arena(std::move(tester), place, abs_error);
