@@ -79,9 +79,6 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   std::unordered_set<std::string> invalid_var_names;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
-    Place place = op_node->AsStmt().place();
-    TargetType target_type = op_node->AsStmt().place().target;
-
     auto op_info = op_node->AsStmt().op_info();
     auto op_type = op_info->Type();
     auto invalid_op_node = invalid_op_nodes.find(op_type);
