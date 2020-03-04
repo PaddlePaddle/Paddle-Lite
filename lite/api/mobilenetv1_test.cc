@@ -53,9 +53,13 @@ void TestModel(const std::vector<Place>& valid_places,
     predictor.Run();
   }
 
-  auto start = GetCurrentUS();
+  double sum_duration = 0.0;  // millisecond;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start = GetCurrentUS();
     predictor.Run();
+    auto duration = (GetCurrentUS() - start) / 1000.0;
+    sum_duration += duration;
+    VLOG(1) << "run_idx:" << i << " " << duration << " ms";
   }
 
   if (save_model) {
@@ -68,8 +72,7 @@ void TestModel(const std::vector<Place>& valid_places,
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+            << ", spend " << sum_duration / FLAGS_repeats << " ms in average.";
 
   std::vector<std::vector<float>> ref;
   ref.emplace_back(std::vector<float>(
@@ -115,13 +118,11 @@ void TestModel(const std::vector<Place>& valid_places,
   }
 
   // Get detailed result
-  auto* pred = &predictor;
-  size_t output_tensor_num = pred->GetOutputNames().size();
+  size_t output_tensor_num = predictor.GetOutputNames().size();
   VLOG(1) << "output tesnor num:" << output_tensor_num;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
-    std::unique_ptr<const Tensor> output_tensor(
-        std::move(pred->GetOutput(tidx)));
+    auto* output_tensor = predictor.GetOutput(tidx);
     VLOG(1) << "============= output tensor " << tidx << " =============\n";
     auto out_dims = output_tensor->dims();
     VLOG(1) << "out_dims:" << out_dims;

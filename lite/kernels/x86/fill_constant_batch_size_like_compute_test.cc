@@ -56,8 +56,8 @@ TEST(fill_constant_batch_size_like_x86, run_test) {
 
   FillConstantBatchSizeLikeCompute<float> fill_constant_batch_size_like;
   operators::FillConstantBatchSizeLikeParam param;
-  param.Input = &input;
-  param.Out = &out;
+  param.input = &input;
+  param.out = &out;
   std::vector<int> shape{-1, 132, 7};
   float value = 3.5;
   param.shape = shape;

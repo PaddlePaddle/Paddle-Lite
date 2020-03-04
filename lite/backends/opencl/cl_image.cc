@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_image.h"
+#include <iostream>
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
@@ -42,7 +43,7 @@ std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
   int stride = cl_image.numel() / 20;
   stride = stride > 0 ? stride : 1;
 
-  os << " dims: " << cl_image.tensor_dims_ << "\n";
+  os << " dims: ";  // << cl_image.tensor_dims_ << "\n";
   for (int i = 0; i < cl_image.numel(); i += stride) {
     os << tensor_data[i] << " ";
   }

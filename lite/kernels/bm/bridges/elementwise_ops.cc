@@ -71,18 +71,14 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   auto axis = op_info->GetAttr<int>("axis");
   int op_code{-1};
-  int eltwise_if_code{-1};
-  float coeff[2] = {1.f, 1.f};
   if (op_type == "elementwise_mul") {
     op_code = BINARY_MUL;
-    eltwise_if_code = 0;
   } else if (op_type == "elementwise_add") {
     op_code = BINARY_ADD;
-    eltwise_if_code = 1;
   } else if (op_type == "elementwise_sub") {
     op_code = BINARY_SUB;
-    eltwise_if_code = 1;
-    coeff[1] = -1.f;
+  } else if (op_type == "elementwise_div") {
+    op_code = BINARY_DIV;
   } else {
     LOG(FATAL) << "UNSUPPORTED ELTWISE OPERATION: " << op_type;
   }
@@ -115,31 +111,21 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       shape[1] = &i_expand_shape_data[0];
       y_data = nullptr;
     }
-    add_binary_layer_v2(graph->GetCompilerHandle(),
-                        name[0],
-                        shape[0],
-                        dim[0],
-                        0,
-                        static_cast<const float*>(x_data),
-                        name[1],
-                        shape[1],
-                        dim[1],
-                        0,
-                        static_cast<const float*>(y_data),
-                        static_cast<const char*>(output_var_name.c_str()),
-                        op_code);
-  } else {
-    add_eltwise_layer(graph->GetCompilerHandle(),
-                      input_num,
-                      shape,
-                      dim,
-                      name,
-                      const_cast<const int*>(&i_output_shape_data[0]),
-                      output_dims.size(),
-                      static_cast<const char*>(output_var_name.c_str()),
-                      eltwise_if_code,
-                      coeff);
   }
+  add_binary_layer_v2(graph->GetCompilerHandle(),
+                      name[0],
+                      shape[0],
+                      dim[0],
+                      0,
+                      static_cast<const float*>(x_data),
+                      name[1],
+                      shape[1],
+                      dim[1],
+                      0,
+                      static_cast<const float*>(y_data),
+                      static_cast<const char*>(output_var_name.c_str()),
+                      op_code);
+
   delete[] shape;
   delete[] name;
   delete[] dim;
@@ -159,5 +145,8 @@ REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
                          kBM,
                          paddle::lite::subgraph::bm::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
+                         kBM,
+                         paddle::lite::subgraph::bm::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(elementwise_div,
                          kBM,
                          paddle::lite::subgraph::bm::ElementwiseConverter);

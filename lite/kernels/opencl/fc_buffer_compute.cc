@@ -57,6 +57,10 @@ class FcCompute
       global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                       static_cast<size_t>((n_ + 3) / 4)};
     }
+
+    if (param.activation_type == "relu") {
+      build_options_ += "-DRELU";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
@@ -107,7 +111,7 @@ class FcCompute
  private:
   int m_, n_, k_;
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE=float"};
+  std::string build_options_{"-DCL_DTYPE_float "};
   cl::NDRange global_work_size_;
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
