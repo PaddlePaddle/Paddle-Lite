@@ -91,11 +91,7 @@ void gemm_batch_naive(__global const CL_DTYPE* a,
     c0 += a0 * b0;
   }
 
-#ifdef RELU
   cur_c[row * N + col] = activation(c0);
-#else
-  cur_c[row * N + col] = c0;
-#endif
 }
 
 
@@ -103,7 +99,7 @@ void gemm_batch_naive(__global const CL_DTYPE* a,
 // a: filter_d
 // b: x_d
 // c: output_d
-
+#if 0 // TODO(ysh239): cause CL_OUT_OF_HOST_MEMORY on some devices(such as snapdragon 855)
 //#define PRINT_KERNEL
 __kernel
 void gemm_batch(__global const CL_DTYPE* Aptr,
@@ -213,7 +209,7 @@ void gemm_batch(__global const CL_DTYPE* Aptr,
         }
     }
 }
-
+#endif
 
 // fc_gemv_naive: keep for check
 // used for fc with M = 1

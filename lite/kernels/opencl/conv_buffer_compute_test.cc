@@ -168,7 +168,7 @@ void PrintData(std::string name,
 
 // buffer
 // #define PRINT_RESULT
-#define LOOP_TEST
+// #define LOOP_TEST
 TEST(conv2d, compute_conv2d_1x1) {
   // conv2d 1x1 note
   // kernel/filter size = 1x1, group = 1, pad = 0, stride = 1, dilation = 1
@@ -199,7 +199,7 @@ TEST(conv2d, compute_conv2d_1x1) {
   // output_dims:1 64 112 112
   // filter_dims:64 32 1 1
   const bool bias_flag = true;
-  const bool relu_flag = true;
+  const std::string relu_flag = "relu";
   const int batch_size = 8;
   const int oc = 64;
   const int ih = 112;
