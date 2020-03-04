@@ -210,7 +210,6 @@ void TestModel(const std::vector<Place>& valid_places,
 
   auto start = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    auto start_i = GetCurrentUS();
     pad_batch_input(test_transformer::inputed_lines,
                     eos_idx,
                     n_head,
@@ -224,9 +223,7 @@ void TestModel(const std::vector<Place>& valid_places,
                     i * batch_size,
                     batch_size,
                     bos_idx);
-    auto start_ii = GetCurrentUS();
     predictor.Run();
-    auto start_iii = GetCurrentUS();
     auto* outs = predictor.GetOutput(0);
     auto o_data = outs->data<int64_t>();
     auto lod = outs->lod();
