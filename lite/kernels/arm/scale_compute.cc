@@ -46,6 +46,8 @@ void ScaleCompute::Run() {
       bias *= scale;
     }
     lite::arm::math::scale_compute_basic<int64_t>(param);
+  } else {
+    LOG(FATAL) << "unsupport input type";
   }
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
