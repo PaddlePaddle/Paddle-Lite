@@ -217,7 +217,9 @@ void OpenCLTypeLayoutTransformPass::Apply(
   for (auto& node : nodes) {
     VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
     if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
-    if (node->AsStmt().op_type() == "layout") {
+    VLOG(1) << "node->AsStmt().op_type():" << node->AsStmt().op_type();
+    if (node->AsStmt().op_type() == "layout" ||
+        node->AsStmt().op_type() == "io_copy") {
       auto new_op = node->AsStmt().mutable_op_info();
       int process_type = 1;
       new_op->SetAttr("process_type", process_type);

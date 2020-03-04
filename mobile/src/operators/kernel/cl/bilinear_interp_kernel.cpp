@@ -41,8 +41,8 @@ void BilinearInterpKernel<GPU_CL, float>::Compute(
     scale_h = (input->dims()[2] - 1.0f) / (output->dims()[2] - 1.0f);
     scale_w = (input->dims()[3] - 1.0f) / (output->dims()[3] - 1.0f);
   } else {
-    scale_h = input->dims()[2] / static_cast<float> output->dims()[2];
-    scale_w = input->dims()[3] / static_cast<float> output->dims()[3];
+    scale_h = input->dims()[2] / static_cast<float>(output->dims()[2]);
+    scale_w = input->dims()[3] / static_cast<float>(output->dims()[3]);
   }
   float align_delta = 0.0f;
   if (!param.AlignCorners() && param.AlignMode() == 0) {
