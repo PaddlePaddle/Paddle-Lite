@@ -194,7 +194,7 @@ function build_opencl {
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # This method is only called in CI.
