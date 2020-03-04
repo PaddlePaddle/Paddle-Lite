@@ -96,7 +96,8 @@ enum class ActivationType : int {
   kLeakyRelu = 4,
   kSigmoid = 5,
   kTanh = 6,
-  kSwish = 7
+  kSwish = 7,
+  kExp = 8
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
