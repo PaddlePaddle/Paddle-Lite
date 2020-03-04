@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::FillConstantParam;
 
