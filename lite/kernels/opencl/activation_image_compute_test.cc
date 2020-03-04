@@ -315,7 +315,7 @@ USE_LITE_KERNEL(swish, kOpenCL, kFP16, kImageDefault, ImageDefault);
 // leaky_relu
 USE_LITE_KERNEL(leaky_relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
-// tanh
+// tanh act
 USE_LITE_KERNEL(tanh_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
