@@ -69,7 +69,6 @@ class ActivationComputeImageDefault
         printf("This act type: %d doesn't support \n", act_type);
         return;
     }
-
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/activation_kernel.cl", build_options_);
   }
@@ -88,7 +87,6 @@ class ActivationComputeImageDefault
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    
     int arg_idx = 0;
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
