@@ -108,15 +108,9 @@ class Graph {
           const_cast<void*>(static_cast<const void*>(data)),
           false));
     } else if (fp_type_ == CNML_DATA_FLOAT16) {
-      // TODO(zhangmingwei): do it more efficiently
-      std::vector<float> origin_data(len);
-      for (size_t i = 0; i < len; ++i) {
-        origin_data[i] = data[i];
-      }
       auto* data_fp16 = tensor->mutable_data<::paddle::lite::fluid::float16>();
       for (size_t i = 0; i < len; ++i) {
-        data_fp16[i] =
-            static_cast<::paddle::lite::fluid::float16>(origin_data[i]);
+        data_fp16[i] = static_cast<::paddle::lite::fluid::float16>(data[i]);
       }
       CNML_CALL(cnmlBindConstData_V2(nodes_[tensor_name]->mlu_tensor(),
                                      static_cast<void*>(data_fp16),
