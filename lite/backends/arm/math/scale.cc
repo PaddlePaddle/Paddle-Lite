@@ -59,6 +59,43 @@ void scale<float>(
 }
 
 template <>
+void scale<int>(const int* din, int* dout, int num, int scale, int bias) {
+  int cnt = num >> 4;
+  int remain = num % 16;
+  int32x4_t vscale = vdupq_n_s32(scale);
+  int32x4_t vbias = vdupq_n_s32(bias);
+#pragma omp parallel for
+  for (int i = 0; i < cnt; i++) {
+    const int* din_ptr = din + (i << 4);
+    int* dout_ptr = dout + (i << 4);
+
+    int32x4_t din0 = vld1q_s32(din_ptr);
+    int32x4_t din1 = vld1q_s32(din_ptr + 4);
+    int32x4_t din2 = vld1q_s32(din_ptr + 8);
+    int32x4_t din3 = vld1q_s32(din_ptr + 12);
+
+    int32x4_t vsum1 = vmlaq_s32(vbias, din0, vscale);
+    int32x4_t vsum2 = vmlaq_s32(vbias, din1, vscale);
+    int32x4_t vsum3 = vmlaq_s32(vbias, din2, vscale);
+    int32x4_t vsum4 = vmlaq_s32(vbias, din3, vscale);
+
+    vst1q_s32(dout_ptr, vsum1);
+    vst1q_s32(dout_ptr + 4, vsum2);
+    vst1q_s32(dout_ptr + 8, vsum3);
+    vst1q_s32(dout_ptr + 12, vsum4);
+  }
+  if (remain > 0) {
+    const int* din_ptr = din + (cnt << 4);
+    int* dout_ptr = dout + (cnt << 4);
+    for (int i = 0; i < remain; i++) {
+      *dout_ptr = *din_ptr * scale + bias;
+      dout_ptr++;
+      din_ptr++;
+    }
+  }
+}
+
+template <>
 void scale<float>(const float* din,
                   float* dout,
                   int outer_dim,
