@@ -181,7 +181,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto* bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
     graph->BindConstData(bias_var_name, bias);
   }
-
   graph->BindConstData(filter_var_name, filter);
   graph->FuseOp(conv_op);
   CNML_CALL(cnmlDestroyConvOpParam(&conv_param));

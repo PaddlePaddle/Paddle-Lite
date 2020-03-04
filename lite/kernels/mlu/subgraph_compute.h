@@ -87,7 +87,6 @@ class SubgraphEngine : public subgraph::Engine {
         return subgraph::FAILED;
       }
     }
-    // LOG(INFO) << "after cONVERT ";
     // Obtain the output nodes of the MLU IR graph and build the graph to MLU
     // runtime
     std::vector<std::string> valid_output_names;

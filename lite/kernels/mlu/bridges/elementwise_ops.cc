@@ -117,7 +117,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   graph->FuseOp(elementwise_op);
-
   cnmlBaseOp_t act_op;
   if (op_type == "fusion_elementwise_add_activation") {
     auto mid_tensor = graph->GetNode(out_var_name + "_mid");

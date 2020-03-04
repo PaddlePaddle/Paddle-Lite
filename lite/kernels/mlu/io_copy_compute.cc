@@ -134,7 +134,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
-// REGISTER_LITE_KERNEL(io_copy_once,
 //                     kMLU,
 //                     kFloat,
 //                     kNHWC,
@@ -145,7 +144,6 @@ REGISTER_LITE_KERNEL(
 //    .Finalize();
 //
 //
-// REGISTER_LITE_KERNEL(io_copy_once,
 //                     kMLU,
 //                     kFloat,
 //                     kNHWC,
