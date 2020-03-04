@@ -20,7 +20,6 @@
 #include "lite/backends/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <gflags/gflags.h>
 #include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
@@ -36,10 +35,7 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
-
-#ifdef LITE_WITH_OPENCL
-DECLARE_string(cl_path);
-#endif
+#include "lite/utils/env.h"
 
 namespace paddle {
 namespace lite {
@@ -304,7 +300,6 @@ class Context<TargetType::kOpenCL> {
   void InitOnce() {
     // Init cl runtime.
     CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
-    CLRuntime::Global()->set_cl_path(FLAGS_cl_path);
 
     cl_context_ = std::make_shared<CLContext>();
     cl_wait_list_ = std::make_shared<WaitListType>();

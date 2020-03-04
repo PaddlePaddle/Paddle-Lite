@@ -34,48 +34,37 @@ add_kernel(grid_sampler_opencl OPENCL basic SRCS grid_sampler_image_compute.cc D
 # image kernel test  #
 ######################
 lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
-             DEPS activation_opencl layout_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS activation_opencl layout_opencl op_registry program context)
 
 lite_cc_test(test_conv_image_opencl SRCS conv_image_compute_test.cc
-             DEPS conv_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS conv_opencl op_registry program context)
 
 lite_cc_test(test_depthwise_conv2d_image_opencl SRCS depthwise_conv2d_image_compute_test.cc
-             DEPS conv_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS conv_opencl op_registry program context)
 
 lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
-             DEPS nearest_interp_opencl layout_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS nearest_interp_opencl layout_opencl op_registry program context)
 
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
-             DEPS pool_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS pool_opencl op_registry program context)
 
 lite_cc_test(test_scale_image_opencl SRCS scale_image_compute_test.cc
-             DEPS scale_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS scale_opencl op_registry program context)
 
 lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
-             DEPS reshape_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS reshape_opencl op_registry program context)
 
 lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
-             DEPS concat_opencl layout_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS concat_opencl layout_opencl op_registry program context)
 
 lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_compute_test.cc
-             DEPS elementwise_mul_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS elementwise_mul_opencl op_registry program context)
 
 lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
-             DEPS layout_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS layout_opencl op_registry program context)
 
 lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
-             DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context)
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
              DEPS grid_sampler_opencl op_registry program context
@@ -107,37 +96,28 @@ add_kernel(io_copy_opencl OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${ten
 # buffer kernel test #
 ######################
 #lite_cc_test(test_activation_buffer_opencl SRCS activation_buffer_compute_test.cc
-#             DEPS activation_opencl op_registry program context
-#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS activation_opencl op_registry program context)
 
 #lite_cc_test(test_conv_buffer_opencl SRCS conv_buffer_compute_test.cc
-#             DEPS conv_opencl op_registry program context
-#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS conv_opencl op_registry program context)
 
 #lite_cc_test(test_depthwise_conv2d_buffer_opencl SRCS depthwise_conv2d_buffer_compute_test.cc
-#             DEPS depthwise_conv2d_opencl op_registry program context
-#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS depthwise_conv2d_opencl op_registry program context)
 
 #lite_cc_test(test_pool_buffer_opencl SRCS pool_buffer_compute_test.cc
-#             DEPS pool_opencl op_registry program context
-#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS pool_opencl op_registry program context)
 
 #lite_cc_test(test_concat_buffer_opencl SRCS concat_buffer_compute_test.cc
-#             DEPS concat_opencl op_registry program context
-#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS concat_opencl op_registry program context)
 
 lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
-             DEPS fc_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS fc_opencl op_registry program context)
 
 lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
-             DEPS mul_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS mul_opencl op_registry program context)
 
 #lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
-#             DEPS elementwise_add_opencl op_registry program context
-#             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+#             DEPS elementwise_add_opencl op_registry program context)
 
 lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
-             DEPS io_copy_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS io_copy_opencl op_registry program context)
