@@ -26,22 +26,18 @@ void WriteToArrayCompute::Run() {
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
   auto precision_type = param.X->precision();
 
-#define SOLVE_TYPE(type__, T)                                       \
-  case type__: {                                                    \
-    const auto* x_data = param.X->data<T>();                        \
-    int id = param.I->data<int64_t>()[0];                           \
-    if (id >= param.Out->size()) {                                  \
-      for (int i = param.Out->size(); i < id + 1; i++) {            \
-        lite::Tensor tmp;                                           \
-        param.Out->push_back(tmp);                                  \
-      }                                                             \
-    }                                                               \
-    (*param.Out)[id].Resize(param.X->dims());                       \
-    auto out_lod = (*param.Out)[id].mutable_lod();                  \
-    *out_lod = param.X->lod();                                      \
-    auto* o_data = (*param.Out)[id].mutable_data<T>(TARGET(kHost)); \
-    int input_size = param.X->numel();                              \
-    memcpy(o_data, x_data, sizeof(T) * input_size);                 \
+#define SOLVE_TYPE(type__, T)                          \
+  case type__: {                                       \
+    const auto* x_data = param.X->data<T>();           \
+    int id = param.I->data<int64_t>()[0];              \
+    if (param.Out->size() < id + 1) {                  \
+      param.Out->resize(id + 1);                       \
+    }                                                  \
+    (*param.Out)[id].Resize(param.X->dims());          \
+    auto* o_data = (*param.Out)[id].mutable_data<T>(); \
+    int input_size = param.X->numel();                 \
+    memcpy(o_data, x_data, sizeof(T) * input_size);    \
+    (*param.Out)[id].set_lod(param.X->lod());          \
   } break;
 
   switch (precision_type) {
@@ -65,6 +61,7 @@ REGISTER_LITE_KERNEL(write_to_array,
                      paddle::lite::kernels::arm::WriteToArrayCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out",
+                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
