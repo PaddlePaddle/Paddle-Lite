@@ -169,15 +169,14 @@ TEST(Scale, precision) {
   return;
 #endif
 
-//  TestScaleShape(place, abs_error);
-//  TestScaleValue(place, abs_error);
-//  TestScaleOrder(place, abs_error);
+  TestScaleShape(place, abs_error);
+  TestScaleValue(place, abs_error);
+  TestScaleOrder(place, abs_error);
 #ifdef LITE_WITH_ARM
   TestScaleDtype(place, abs_error);
 #endif
 }
 
-/*
 TEST(Scale, performance) {
   Place place;
 #if defined(LITE_WITH_ARM)
@@ -199,7 +198,6 @@ TEST(Scale, performance) {
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPerformance(100);
 }
-*/
 
 }  // namespace lite
 }  // namespace paddle
