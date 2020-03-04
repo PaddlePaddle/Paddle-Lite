@@ -161,8 +161,8 @@ function make_opencl {
       -DLITE_BUILD_EXTRA=ON \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
-    make opencl_clhpp -j4
-    make publish_inference -j4
+    make opencl_clhpp -j$NUM_PROC
+    make publish_inference -j$NUM_PROC
 }
 
 function make_full_publish_so {
