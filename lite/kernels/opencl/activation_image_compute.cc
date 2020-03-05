@@ -91,10 +91,6 @@ class ActivationComputeImageDefault
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    VLOG(4) << "---> build_options_:" << build_options_;
-    VLOG(4) << "---> kernel_func_name_:" << kernel_func_name_;
-    VLOG(4) << "---> kernel_key.str():" << kernel_key.str();
-
     int arg_idx = 0;
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
