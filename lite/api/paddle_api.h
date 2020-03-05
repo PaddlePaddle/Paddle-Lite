@@ -127,7 +127,10 @@ class LITE_API ConfigBase {
   void set_threads(int threads);
   int threads() const { return threads_; }
   // skip passes
-  void delete_pass(const std::string& pass) { skip_passes_.push_back(pass); }
+  void add_skip_pass(const std::string& pass) { skip_passes_.push_back(pass); }
+  void add_skip_pass(const std::vector<std::string>& pass) {
+    skip_passes_.insert(skip_passes_.end(), pass.begin(), pass.end());
+  }
   std::vector<std::string> skip_passes() const { return skip_passes_; }
 };
 
