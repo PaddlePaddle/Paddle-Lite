@@ -125,43 +125,13 @@ rm ./lite/api/paddle_use_ops.h
 
 ```bash
 ######################################################################
-# 编译mobile_full的demo                                              #
-######################################################################
-# 步骤:                                                              #
-#   0.确保编译Paddle-Lite时编译了OpenCL;                             #
-#   1.编辑`mobilenetv1_full_api.cc`代码, 开启`DEMO_USE_OPENCL`的宏;  #
-#   2.在产物目录`demo/cxx/mobile_full`下编译`mobile_full`的demo;     #
-#   3.上传demo, 模型文件到手机;                       #
-#   4.运行demo得到预期结果.                                          #
-######################################################################
-# 在/data/local/tmp目录下创建OpenCL文件目录
-adb shell mkdir -p /data/local/tmp/opencl
-
-# 上传demo
-chmod +x ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api
-adb push ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api /data/local/tmp/opencl/
-
-# 上传模型文件
-adb shell mkdir /data/local/tmp/opencl/mobilenet_v1
-adb push ./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1
-
-# use mobile_full run mobilenet_v1
-# `GLOG_v` is log level
-adb shell "export GLOG_v=0; \
-    /data/local/tmp/opencl/mobilenetv1_full_api \
-    --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
-    --optimized_model_dir=/data/local/tmp/opencl/full_api_opt_model"
-
-
-
-######################################################################
 # 编译mobile_light的demo                                             #
 ######################################################################
 # 步骤:                                                              #
 #   0.确保编译Paddle-Lite时编译了OpenCL;                             #
 #   1.编译model_optimize_tool并对模型优化, `targets`参数为`opencl`;  #
 #   2.在产物目录`demo/cxx/mobile_light`下编译`mobile_light`的demo;   #
-#   3.上传demo, 模型, opencl kernel文件到手机;                       #
+#   3.上传demo, 模型文件到手机;                                      #
 #   4.运行demo得到预期结果.                                          #
 ######################################################################
 # 在/data/local/tmp目录下创建OpenCL文件目录
@@ -171,19 +141,21 @@ adb shell mkdir -p /data/local/tmp/opencl
 ./build.model_optimize_tool/lite/api/model_optimize_tool \
   --model_dir=./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/ \
   --optimize_out_type=naive_buffer \
-  --optimize_out=./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/ \
+  --optimize_out=./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/mobilenetv1_opt \
   --valid_targets=opencl
 
-adb shell mkdir /data/local/tmp/opencl/mobilenet_v1
+adb shell mkdir /data/local/tmp/opencl/mobilenet_v1/
 chmod +x ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api
 adb push ./build.lite.android.armv8.gcc.opencl/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api /data/local/tmp/opencl/
-adb push ./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1
+adb push ./build.lite.android.armv8.gcc.opencl/install/mobilenet_v1/mobilenetv1_opt.nb /data/local/tmp/opencl/
 
 # use mobile_light run mobilenet_v1
-adb shell "export GLOG_v=5; \
+adb shell "export GLOG_v=1; \
   /data/local/tmp/opencl/mobilenetv1_light_api \
-  --model_dir=/data/local/tmp/opencl/"
+  /data/local/tmp/opencl/mobilenetv1_opt.nb"
 ```
+
+**注：** `GLOG_v`是指定需要显示VLOG的日志级别，默认为0。权重参数会在第一次运行时加载，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
 
 ### 运行示例2: test_mobilenetv1单元测试
 
@@ -203,43 +175,24 @@ adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/loc
 
 - **执行OpenCL推理过程**
 
-使用如下命令运行OpenCL程序。其中：
-
-- `--cl_path`指定了OpenCL的kernels文件即cl\_kernel所在目录；
-- `--modle_dir`指定了模型文件所在目录。
-
 ```bash
 adb shell chmod +x /data/local/tmp/opencl/test_mobilenetv1
 
-adb shell /data/local/tmp/opencl/test_mobilenetv1 \
-  --cl_path=/data/local/tmp/opencl \
-  --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
-  --warmup=1 \
-  --repeats=1
+adb shell "export GLOG_v=1; \
+   /data/local/tmp/opencl-image/test_mobilenetv1 \
+  --model_dir=/data/local/tmp/opencl-image/mobilenetv1_fluid/ \
+  --warmup=10 \
+  --repeats=100"
 ```
-
-**注意：** 因为权重参数均会在Op Kernel第一次运行时进行加载，所以第一次的执行时间会略长。一般将warmup的值设为1，repeats值设为多次。
 
 ### 运行示例3: test_layout_opencl单元测试
 
-- **运行文件准备**
-
 ```bash
-# 在/data/local/tmp目录下创建OpenCL文件目录
 adb shell mkdir -p /data/local/tmp/opencl
-
-# 将OpenCL单元测试程序test_layout_opencl，推送到/data/local/tmp/opencl目录下
-adb push build.lite.android.armv8.gcc.opencl/lite/kernels/opencl/test_layout_opencl /data/local/tmp/opencl/
-```
-
-
-OpenCL推理过程**
-
-```bash
 adb shell chmod +x /data/local/tmp/opencl/test_layout_opencl
-adb shell /data/local/tmp/opencl/test_layout_opencl
+adb shell "export GLOG_v=4; \
+  /data/local/tmp/opencl/test_layout_opencl"
 ```
-
 
 ### 如何在Code中使用
 
