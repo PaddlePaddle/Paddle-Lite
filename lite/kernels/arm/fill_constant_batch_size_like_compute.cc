@@ -52,7 +52,7 @@ void FillConstantBatchSizeLikeCompute::Run() {
 REGISTER_LITE_KERNEL(
     fill_constant_batch_size_like,
     kARM,
-    kFloat,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::FillConstantBatchSizeLikeCompute,
     def)
