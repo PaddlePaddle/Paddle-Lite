@@ -67,11 +67,10 @@ lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_comput
              DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context)
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
-             DEPS grid_sampler_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS grid_sampler_opencl op_registry program context)
+             
 lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_compute_test.cc
-	    DEPS bilinear_interp_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+	    DEPS bilinear_interp_opencl op_registry program context)
 ######################
 # buffer kernel      #
 ######################

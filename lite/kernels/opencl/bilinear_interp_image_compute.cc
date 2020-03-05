@@ -36,7 +36,7 @@ class BilinearInterpImageCompute
   using param_t = operators::InterpolateParam;
 
   std::string doc() const override {
-    return "BilinearInterp using cl::Image2D(ImageDefault/RGBA), kFP32";
+    return "BilinearInterp using cl::Image2D(ImageDefault/RGBA), kFP16";
   }
 
   void PrepareForRun() override {
@@ -45,6 +45,7 @@ class BilinearInterpImageCompute
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/bilinear_interp_kernel.cl", build_options_);
+    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
   }
 
   void Run() override {

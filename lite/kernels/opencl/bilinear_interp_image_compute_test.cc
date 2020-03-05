@@ -214,12 +214,12 @@ TEST(bilinear_interp_image2d, compute) {
                   // half_t* out_image_data =
                   //     new half_t[out_image_shape.production() * 4];
                   // TargetWrapperCL::ImgcpySync(out_image_data,
-                  //                             out_image,
-                  //                             out_image_shape[0],
-                  //                             out_image_shape[1],
-                  //                             cl_image2d_row_pitch,
-                  //                             cl_image2d_slice_pitch,
-                  //                             IoDirection::DtoH);
+                  //                              out_image,
+                  //                              out_image_shape[0],
+                  //                              out_image_shape[1],
+                  //                              cl_image2d_row_pitch,
+                  //                              cl_image2d_slice_pitch,
+                  //                              IoDirection::DtoH);
                   float* out_data = new float[out_image_shape.production() * 4];
                   default_converter->ImageToNCHW(
                       out_image_data, out_data, out_image_shape, out_dim);

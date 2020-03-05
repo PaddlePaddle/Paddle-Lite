@@ -44,6 +44,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/grid_sampler_kernel.cl", build_options_);
+    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
   }
 
   void Run() override {
