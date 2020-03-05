@@ -736,8 +736,8 @@ struct WriteToArrayParam {
 };
 
 struct ReadFromArrayParam {
-  std::vector<lite::Tensor>* X{};
-  lite::Tensor* I{};
+  const std::vector<lite::Tensor>* X{};
+  const lite::Tensor* I{};
   lite::Tensor* Out{};
 };
 
