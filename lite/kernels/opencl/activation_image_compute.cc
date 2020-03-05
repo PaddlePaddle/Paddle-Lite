@@ -215,6 +215,7 @@ REGISTER_LITE_KERNEL(
     kImageDefault,
     paddle::lite::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
+
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

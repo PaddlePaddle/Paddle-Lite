@@ -109,7 +109,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.output->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.output->mutable_data<half_t, cl::Image2D>(
+    auto* out_buf = param.output->mutable_data<float, cl::Image2D>(
         image_shape["width"], image_shape["height"]);
     const auto& y_dims = param.output->dims();  // useless: check dim only
 
