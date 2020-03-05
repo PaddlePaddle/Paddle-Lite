@@ -17,7 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "ai_ddk_lib/include/HiAiModelManagerService.h"
+#include "HiAiModelManagerService.h"
 #include "lite/core/kernel.h"
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"

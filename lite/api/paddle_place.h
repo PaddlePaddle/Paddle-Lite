@@ -52,8 +52,9 @@ enum class TargetType : int {
   kFPGA = 7,
   kNPU = 8,
   kXPU = 9,
+  kBM = 10,
   kAny = 6,  // any target
-  NUM = 10,  // number of fields.
+  NUM = 11,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -95,7 +96,8 @@ enum class ActivationType : int {
   kLeakyRelu = 4,
   kSigmoid = 5,
   kTanh = 6,
-  kSwish = 7
+  kSwish = 7,
+  kExp = 8
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -114,6 +116,34 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 4;
   }
 }
+
+template <typename T>
+struct PrecisionTypeTrait {
+  constexpr static PrecisionType Type() { return PrecisionType::kUnk; }
+};
+
+#define _ForEachPrecisionTypeHelper(callback, cpp_type, precision_type) \
+  callback(cpp_type, ::paddle::lite_api::PrecisionType::precision_type);
+
+#define _ForEachPrecisionType(callback)                   \
+  _ForEachPrecisionTypeHelper(callback, bool, kBool);     \
+  _ForEachPrecisionTypeHelper(callback, float, kFloat);   \
+  _ForEachPrecisionTypeHelper(callback, int8_t, kInt8);   \
+  _ForEachPrecisionTypeHelper(callback, int16_t, kInt16); \
+  _ForEachPrecisionTypeHelper(callback, int, kInt32);     \
+  _ForEachPrecisionTypeHelper(callback, int64_t, kInt64);
+
+#define DefinePrecisionTypeTrait(cpp_type, precision_type)           \
+  template <>                                                        \
+  struct PrecisionTypeTrait<cpp_type> {                              \
+    constexpr static PrecisionType Type() { return precision_type; } \
+  }
+
+_ForEachPrecisionType(DefinePrecisionTypeTrait);
+
+#undef _ForEachPrecisionTypeHelper
+#undef _ForEachPrecisionType
+#undef DefinePrecisionTypeTrait
 
 #define TARGET(item__) paddle::lite_api::TargetType::item__
 #define PRECISION(item__) paddle::lite_api::PrecisionType::item__

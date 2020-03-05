@@ -19,6 +19,10 @@
 namespace paddle {
 namespace lite {
 
+const std::map<std::string, std::string> &GetOp2PathDict() {
+  return OpKernelInfoCollector::Global().GetOp2PathDict();
+}
+
 std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     const std::string &op_type,
     TargetType target,
@@ -99,6 +103,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     } break;
     case TARGET(kFPGA): {
       CREATE_KERNEL(kFPGA);
+    } break;
+    case TARGET(kBM): {
+      CREATE_KERNEL(kBM);
     } break;
     default:
       CHECK(false) << "not supported kernel target " << TargetToStr(target);
@@ -186,6 +193,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kFPGA, kFloat, kNHWC);
   INIT_FOR(kFPGA, kAny, kNHWC);
   INIT_FOR(kFPGA, kAny, kAny);
+
+  INIT_FOR(kBM, kFloat, kNCHW);
+  INIT_FOR(kBM, kInt8, kNCHW);
+  INIT_FOR(kBM, kAny, kNCHW);
+  INIT_FOR(kBM, kAny, kAny);
 #undef INIT_FOR
 }
 

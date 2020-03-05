@@ -32,31 +32,25 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Transpose node
-  graph->AddNode(out_name,
-                 graph->builder_.CreateTranspose(
-                     *x_node,
-                     CvtShape<xtcl::Integer>(
-                         std::vector<int64_t>(axis.begin(), axis.end()))));
+  graph->Add(out_name,
+             graph->builder_.CreateTranspose(
+                 *x_node->data(),
+                 CvtShape<xtcl::Integer>(
+                     std::vector<int64_t>(axis.begin(), axis.end()))));
 
   return SUCCESS;
 }
@@ -66,9 +60,9 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         transpose,
+REGISTER_SUBGRAPH_BRIDGE(transpose,
+                         kXPU,
                          paddle::lite::subgraph::xpu::TransposeConverter);
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         transpose2,
+REGISTER_SUBGRAPH_BRIDGE(transpose2,
+                         kXPU,
                          paddle::lite::subgraph::xpu::TransposeConverter);

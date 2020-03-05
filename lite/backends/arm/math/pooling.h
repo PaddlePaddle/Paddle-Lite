@@ -64,6 +64,18 @@ void pooling_global_avg(const float* din,
                         int hin,
                         int win);
 
+void pooling1x1s2p0_max(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win,
+                        int pad_bottom,
+                        int pad_right);
+
 void pooling2x2s2_max(const float* din,
                       float* dout,
                       int num,
@@ -72,7 +84,9 @@ void pooling2x2s2_max(const float* din,
                       int wout,
                       int chin,
                       int hin,
-                      int win);
+                      int win,
+                      int pad_bottom,
+                      int pad_right);
 
 void pooling2x2s2_avg(const float* din,
                       float* dout,
@@ -83,7 +97,9 @@ void pooling2x2s2_avg(const float* din,
                       int chin,
                       int hin,
                       int win,
-                      bool exclusive);
+                      bool exclusive,
+                      int pad_bottom,
+                      int pad_right);
 
 void pooling3x3s1p1_max(const float* din,
                         float* dout,
@@ -93,7 +109,9 @@ void pooling3x3s1p1_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win);
+                        int win,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s1p1_avg(const float* din,
                         float* dout,
@@ -104,7 +122,9 @@ void pooling3x3s1p1_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive);
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s2p1_max(const float* din,
                         float* dout,
@@ -114,7 +134,9 @@ void pooling3x3s2p1_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win);
+                        int win,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s1p0_max(const float* din,
                         float* dout,
@@ -124,7 +146,9 @@ void pooling3x3s1p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win);
+                        int win,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s1p0_avg(const float* din,
                         float* dout,
@@ -135,7 +159,9 @@ void pooling3x3s1p0_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive);
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s2p1_avg(const float* din,
                         float* dout,
@@ -146,7 +172,9 @@ void pooling3x3s2p1_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive);
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s2p0_max(const float* din,
                         float* dout,
@@ -156,7 +184,9 @@ void pooling3x3s2p0_max(const float* din,
                         int wout,
                         int chin,
                         int hin,
-                        int win);
+                        int win,
+                        int pad_bottom,
+                        int pad_right);
 
 void pooling3x3s2p0_avg(const float* din,
                         float* dout,
@@ -167,7 +197,9 @@ void pooling3x3s2p0_avg(const float* din,
                         int chin,
                         int hin,
                         int win,
-                        bool exclusive);
+                        bool exclusive,
+                        int pad_bottom,
+                        int pad_right);
 
 }  // namespace math
 }  // namespace arm

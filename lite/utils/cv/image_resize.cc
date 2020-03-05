@@ -38,6 +38,15 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+void ImageResize::choose(const uint8_t* src,
+                         uint8_t* dst,
+                         ImageFormat srcFormat,
+                         int srcw,
+                         int srch,
+                         int dstw,
+                         int dsth) {
+  resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
+}
 void compute_xy(int srcw,
                 int srch,
                 int dstw,
@@ -208,12 +217,12 @@ void resize(const uint8_t* src,
           "1: \n"
           "ld1 {v0.8h}, [%[rows0p]], #16 \n"
           "ld1 {v1.8h}, [%[rows1p]], #16 \n"
-          "orr v6.16b, %w[_v2].16b, %w[_v2].16b \n"
-          "orr v7.16b, %w[_v2].16b, %w[_v2].16b \n"
-          "smull v2.4s, v0.4h, %w[_b0].4h \n"
-          "smull2 v4.4s, v0.8h, %w[_b0].8h \n"
-          "smull v3.4s, v1.4h, %w[_b1].4h \n"
-          "smull2 v5.4s, v1.8h, %w[_b1].8h \n"
+          "orr v6.16b, %[_v2].16b, %[_v2].16b \n"
+          "orr v7.16b, %[_v2].16b, %[_v2].16b \n"
+          "smull v2.4s, v0.4h, %[_b0].4h \n"
+          "smull2 v4.4s, v0.8h, %[_b0].8h \n"
+          "smull v3.4s, v1.4h, %[_b1].4h \n"
+          "smull2 v5.4s, v1.8h, %[_b1].8h \n"
 
           "ssra v6.4s, v2.4s, #16 \n"
           "ssra v7.4s, v4.4s, #16 \n"

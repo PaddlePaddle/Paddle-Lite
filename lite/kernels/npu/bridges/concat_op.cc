@@ -32,33 +32,28 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_names = op_info->Input("X");
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
   auto num = x_names.size();
 
   // Traverse all of input nodes which are added into the new created concat
   // node
-  auto concat_node = graph->AddNode<ge::op::Concat>(out_name);
-  concat_node->set_attr_axis(axis);
-  concat_node->set_attr_N(num);
-  concat_node->create_dynamic_input_x(num);
+  auto concat_node = graph->Add<ge::op::Concat>(out_name);
+  auto concat_op = concat_node->data<ge::op::Concat>();
+  concat_op->set_attr_axis(axis);
+  concat_op->set_attr_N(num);
+  concat_op->create_dynamic_input_x(num);
   int idx = 1;
   for (auto& x_name : x_names) {
     auto x = scope->FindMutableTensor(x_name);
     auto x_dims = x->dims();
-    std::shared_ptr<ge::Operator> x_node = nullptr;
-    if (graph->HasNode(x_name)) {
-      x_node = graph->GetNode(x_name);
+    std::shared_ptr<Node> x_node = nullptr;
+    if (graph->Has(x_name)) {
+      x_node = graph->Get(x_name);
     } else {
-      x_node = graph->AddNode(x_name, x_dims);
+      x_node = graph->Add(x_name, *x);
     }
-    concat_node->set_dynamic_input_x(idx, *x_node);
+    concat_op->set_dynamic_input_x(idx, *x_node->data());
     idx++;
   }
   return SUCCESS;
@@ -69,6 +64,6 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         concat,
+REGISTER_SUBGRAPH_BRIDGE(concat,
+                         kNPU,
                          paddle::lite::subgraph::npu::ConcatConverter);

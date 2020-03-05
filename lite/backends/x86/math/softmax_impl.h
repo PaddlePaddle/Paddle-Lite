@@ -99,7 +99,7 @@ class SoftmaxFunctor<Target, T, is_test, enable_if_CPU<Target>> {
                   const int axis_dim,
                   const lite::Tensor* X,
                   lite::Tensor* Y) {
-    auto in_dims = X->dims();
+    const auto& in_dims = X->dims();
     constexpr int kBatchDim = 0;
     constexpr int kClassDim = 1;
 
@@ -140,7 +140,7 @@ class SoftmaxFunctor<Target, float, true, enable_if_CPU<Target>> {
                   const int axis_dim,
                   const lite::Tensor* X,
                   lite::Tensor* Y) {
-    auto in_dims = X->dims();
+    const auto& in_dims = X->dims();
     const float* in_data = X->data<float>();
     float* out_data = Y->mutable_data<float>();
     const int kBatchDim = 0;

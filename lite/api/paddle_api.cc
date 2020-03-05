@@ -38,6 +38,7 @@ void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }
 
+// Tensor::data
 template <>
 const float *Tensor::data() const {
   return ctensor(raw_tensor_)->data<float>();
@@ -47,15 +48,19 @@ const int8_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int8_t>();
 }
 template <>
+const uint8_t *Tensor::data() const {
+  return ctensor(raw_tensor_)->data<uint8_t>();
+}
+template <>
 const int64_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int64_t>();
 }
-
 template <>
 const int32_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int32_t>();
 }
 
+// Tensor::mutable_data
 template <>
 int *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<int>(type);
@@ -67,6 +72,10 @@ float *Tensor::mutable_data(TargetType type) const {
 template <>
 int8_t *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<int8_t>(type);
+}
+template <>
+uint8_t *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<uint8_t>(type);
 }
 template <>
 int64_t *Tensor::mutable_data(TargetType type) const {
@@ -116,18 +125,22 @@ void Tensor::CopyToCpu(T *data) const {
 template void Tensor::CopyFromCpu<int, TargetType::kHost>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kHost>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kHost>(const int8_t *);
+template void Tensor::CopyFromCpu<uint8_t, TargetType::kHost>(const uint8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
+template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
+
 template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 
-template void Tensor::CopyToCpu(int8_t *) const;
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
+template void Tensor::CopyToCpu(int8_t *) const;
+template void Tensor::CopyToCpu(uint8_t *) const;
 
 shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();
@@ -188,6 +201,28 @@ void ConfigBase::set_threads(int threads) {
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
+}
+
+// set model data in combined format, `set_model_from_file` refers to loading
+// model from file, set_model_from_buffer refers to loading model from memory
+// buffer
+void MobileConfig::set_model_from_file(const std::string &x) {
+  lite_model_file_ = x;
+}
+void MobileConfig::set_model_from_buffer(const std::string &x) {
+  lite_model_file_ = x;
+  model_from_memory_ = true;
+}
+void MobileConfig::set_model_buffer(const char *model_buffer,
+                                    size_t model_buffer_size,
+                                    const char *param_buffer,
+                                    size_t param_buffer_size) {
+  LOG(WARNING) << "warning: `set_model_buffer` will be abandened in "
+                  "release/v3.0.0, new method `set_model_from_buffer(const "
+                  "std::string &x)` is recommended.";
+  model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
+  param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
+  model_from_memory_ = true;
 }
 
 }  // namespace lite_api

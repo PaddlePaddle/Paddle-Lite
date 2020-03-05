@@ -59,6 +59,7 @@ DEFINE_bool(flag_bias, false, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
@@ -116,6 +117,13 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
   if (flag_bias) {
     paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
     // paddle::lite::fill_tensor_const(*param.bias, 1.f);
+  }
+  if (flag_relu) {
+    ActivationParam act_param;
+    act_param.has_active = true;
+    act_param.active_type =
+        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
+    param.activation_param = act_param;
   }
   Tensor tmp_weights;
   tmp_weights.Resize(weight_dim);

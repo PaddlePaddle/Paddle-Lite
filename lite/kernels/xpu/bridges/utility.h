@@ -58,7 +58,6 @@ xtcl::Array<T> CvtShape(const DDim& in_dims) {
 std::shared_ptr<xtcl::xNDArray> CvtTensor(
     const Tensor& in_tensor,
     std::vector<int64_t> out_shape = {},
-    PrecisionType in_precision = PRECISION(kFloat),
     DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
 }  // namespace xpu

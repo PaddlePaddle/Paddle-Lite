@@ -72,6 +72,8 @@ class OpKernelInfoCollector {
 namespace paddle {
 namespace lite {
 
+const std::map<std::string, std::string> &GetOp2PathDict();
+
 using KernelFunc = std::function<void()>;
 using KernelFuncCreator = std::function<std::unique_ptr<KernelFunc>()>;
 class LiteOpRegistry final : public Factory<OpLite, std::shared_ptr<OpLite>> {
@@ -227,6 +229,16 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+
+              KernelRegistryForTarget<TARGET(kBM),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kBM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kBM),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 

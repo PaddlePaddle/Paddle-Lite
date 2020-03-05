@@ -107,7 +107,8 @@ class TestCase {
   void SetCommonTensor(const std::string& var_name,
                        const DDim& ddim,
                        const T* data,
-                       const LoD& lod = {}) {
+                       const LoD& lod = {},
+                       bool is_persistable = false) {
     auto* tensor = scope_->NewTensor(var_name);
     tensor->Resize(ddim);
     auto* d = tensor->mutable_data<T>();
@@ -115,6 +116,8 @@ class TestCase {
 
     // set lod
     if (!lod.empty()) *tensor->mutable_lod() = lod;
+    // set persistable
+    tensor->set_persistable(is_persistable);
   }
 
   // Prepare for the operator.
@@ -243,6 +246,8 @@ class Arena {
         return tester_->CheckPrecision<int8_t>(var_name, abs_error_);
       case PRECISION(kInt32):
         return tester_->CheckPrecision<int32_t>(var_name, abs_error_);
+      case PRECISION(kInt64):
+        return tester_->CheckPrecision<int64_t>(var_name, abs_error_);
       case PRECISION(kBool):
         return tester_->CheckPrecision<bool>(var_name, abs_error_);
       default:

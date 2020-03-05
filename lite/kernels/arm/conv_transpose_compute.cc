@@ -103,6 +103,7 @@ void Conv2DTransposeCompute::Run() {
   auto din = param.x->data<float>();
   auto dout = param.output->mutable_data<float>();
   auto weights = param.filter->data<float>();
+  auto act_param = param.activation_param;
   for (int i = 0; i < num; i++) {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
@@ -115,7 +116,9 @@ void Conv2DTransposeCompute::Run() {
       const float* din_group = din_batch + g * group_size_in;
       const float* weights_group = weights + g * group_size_weights;
       float* coldata_group = col_data + g * group_size_coldata;
-
+      if (flag_bias) {
+        act_param.has_active = false;
+      }
       lite::arm::math::sgemm_prepack(false,
                                      m,
                                      n,
@@ -128,7 +131,7 @@ void Conv2DTransposeCompute::Run() {
                                      n,
                                      nullptr,
                                      false,
-                                     fuse_relu && (!flag_bias),
+                                     act_param,
                                      &ctx);
     }
     if (!flag_1x1s1p1) {

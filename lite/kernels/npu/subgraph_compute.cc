@@ -16,11 +16,12 @@
 #include <sys/time.h>
 #include <time.h>
 #include <utility>
-#include "ai_ddk_lib/include/hiai_ir_build.h"
+#include "hiai_ir_build.h"  // NOLINT
 #include "lite/backends/npu/device.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
+#include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
@@ -39,13 +40,14 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
-    if (!bridges.Exists("NPU", op_type)) {
+    if (!bridges.Exists(op_type, TARGET(kNPU))) {
       return subgraph::FAILED;
     }
     auto kernel = inst.kernel();
-    status |= bridges.Select("NPU", op_type)(reinterpret_cast<void*>(&graph),
-                                             const_cast<OpLite*>(op),
-                                             const_cast<KernelBase*>(kernel));
+    status |=
+        bridges.Select(op_type, TARGET(kNPU))(reinterpret_cast<void*>(&graph),
+                                              const_cast<OpLite*>(op),
+                                              const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
       return subgraph::FAILED;
     }
@@ -57,26 +59,26 @@ int SubgraphEngine::BuildDeviceProgram() {
   std::vector<ge::Operator> device_inodes;
   std::vector<ge::Operator> device_onodes;
   for (auto& input_name : input_names_) {
-    if (graph.HasNode(input_name)) {
-      if (!graph.GetType(input_name).persistable()) {
-        device_inodes.push_back(*graph.GetNode(input_name));
+    if (graph.Has(input_name)) {
+      if (graph.Get(input_name)->is_data()) {
+        device_inodes.push_back(*graph.Get(input_name)->data());
         device_inames_.push_back(input_name);
       } else {
         LOG(WARNING) << "[NPU] Input node " << input_name
-                     << " is skipped because it is a persistable node.";
+                     << " is ignored because it is not a data node.";
       }
     } else {
       LOG(WARNING) << "[NPU] Input node " << input_name
-                   << " is skipped because it does not exist.";
+                   << " is ignored because it does not exist.";
     }
   }
   for (auto& output_name : output_names_) {
-    if (graph.HasNode(output_name)) {
-      device_onodes.push_back(*graph.GetNode(output_name));
+    if (graph.Has(output_name)) {
+      device_onodes.push_back(*graph.Get(output_name)->data());
       device_onames_.push_back(output_name);
     } else {
       LOG(WARNING) << "[NPU] Output node " << output_name
-                   << " is skipped because it does not exist.";
+                   << " is ignored because it does not exist.";
     }
   }
   CHECK(!device_inames_.empty())
@@ -108,35 +110,45 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_otensors_.resize(device_onames_.size());
   device_otensors_.resize(device_onames_.size());
   for (int i = 0; i < device_inames_.size(); i++) {
-    auto type = graph.GetType(device_inames_[i]);
-    auto precision = type.precision();
-    auto layout = type.layout();
+    auto node = graph.Get(device_inames_[i]);
+    auto precision = node->precision();
+    auto layout = node->layout();
     origin_itensors_[i] = scope_->FindMutableTensor(device_inames_[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
-    VLOG(3) << "[NPU] Inputs[" << i
-            << "] precision: " << PrecisionToStr(precision)
+    VLOG(3) << "[NPU] Inputs[" << i << "] name: " << device_inames_[i]
+            << " precision: " << PrecisionToStr(precision)
             << " layout: " << DataLayoutToStr(layout) << " dims: {"
             << device_idims[i].GetNumber() << ","
             << device_idims[i].GetChannel() << ","
             << device_idims[i].GetHeight() << "," << device_idims[i].GetWidth()
             << "}";
     // Prepare the device input tensors
-    CHECK_EQ(origin_idims_[i].production(),
-             device_idims[i].GetNumber() * device_idims[i].GetChannel() *
-                 device_idims[i].GetHeight() * device_idims[i].GetWidth());
+    if (!subgraph::npu::CheckShape(origin_idims_[i], device_idims[i])) {
+      LOG(WARNING) << "origin and device input's dims are mismatched.";
+      for (int j = 0; j < origin_idims_[i].size(); j++) {
+        LOG(WARNING) << "origin_idims_[" << i << "][" << j
+                     << "]: " << origin_idims_[i][j];
+      }
+      LOG(WARNING) << "device_idims[" << i << "]: {"
+                   << device_idims[i].GetNumber() << ", "
+                   << device_idims[i].GetChannel() << ", "
+                   << device_idims[i].GetHeight() << ", "
+                   << device_idims[i].GetWidth() << "}";
+      return subgraph::FAILED;
+    }
     device_itensors_[i].reset(new hiai::AiTensor);
     device_itensors_[i]->Init(&(device_idims[i]));
   }
   for (int i = 0; i < device_onames_.size(); i++) {
-    auto type = graph.GetType(device_onames_[i]);
-    auto precision = type.precision();
-    auto layout = type.layout();
+    auto node = graph.Get(device_onames_[i]);
+    auto precision = node->precision();
+    auto layout = node->layout();
     origin_otensors_[i] = scope_->FindMutableTensor(device_onames_[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
-    VLOG(3) << "[NPU] Outputs[" << i
-            << "] precision: " << PrecisionToStr(precision)
+    VLOG(3) << "[NPU] Outputs[" << i << "] name: " << device_onames_[i]
+            << " precision: " << PrecisionToStr(precision)
             << " layout: " << DataLayoutToStr(layout) << " dims: {"
             << device_odims[i].GetNumber() << ","
             << device_odims[i].GetChannel() << ","
@@ -165,9 +177,21 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
-    CHECK_EQ(origin_odims_[i].production(),
-             device_odims[i].GetNumber() * device_odims[i].GetChannel() *
-                 device_odims[i].GetHeight() * device_odims[i].GetWidth());
+    /*
+    if (!subgraph::npu::CheckShape(origin_odims_[i], device_odims[i])) {
+      LOG(WARNING) << "origin and device output's dims are mismatched.";
+      for (int j = 0; j < origin_odims_[i].size(); j++) {
+        LOG(WARNING) << "origin_odims_[" << i << "][" << j
+                     << "]: " << origin_odims_[i][j];
+      }
+      LOG(WARNING) << "device_odims[" << i << "]: {"
+                   << device_odims[i].GetNumber() << ", "
+                   << device_odims[i].GetChannel() << ", "
+                   << device_odims[i].GetHeight() << ", "
+                   << device_odims[i].GetWidth() << "}";
+      return subgraph::FAILED;
+    }
+    */
     device_otensors_[i].reset(new hiai::AiTensor);
     device_otensors_[i]->Init(&(device_odims[i]));
   }

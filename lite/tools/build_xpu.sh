@@ -104,6 +104,11 @@ function main {
                 build_xpu
                 shift
                 ;;
+            full_publish)
+                TARGET_NAME=publish_inference
+                build_xpu
+                shift
+                ;;
             *)
                 # unknown option
                 print_usage

@@ -44,24 +44,37 @@ void BinaryTable::SaveToFile(const std::string &filename) const {
   fclose(fp);
 }
 
-void BinaryTable::LoadFromFile(const std::string &filename) {
-  // get file size
+void BinaryTable::AppendToFile(const std::string &filename) const {
+  FILE *fp = fopen(filename.c_str(), "ab");
+  CHECK(fp) << "Unable to open file: " << filename;
+  if (fwrite(reinterpret_cast<const char *>(data()), 1, size(), fp) != size()) {
+    fclose(fp);
+    LOG(FATAL) << "Write file error: " << filename;
+  }
+  fclose(fp);
+}
+
+void BinaryTable::LoadFromFile(const std::string &filename,
+                               const size_t &offset,
+                               const size_t &size) {
+  // open file in readonly mode
   FILE *fp = fopen(filename.c_str(), "rb");
   CHECK(fp) << "Unable to open file: " << filename;
-  fseek(fp, 0L, SEEK_END);
-  size_t file_size = ftell(fp);
-  LOG(INFO) << "file size " << file_size;
-
-  // load data.
-  fseek(fp, 0L, SEEK_SET);
-  Require(file_size);
-  if (fread(reinterpret_cast<char *>(&bytes_[0]), 1, file_size, fp) !=
-      file_size) {
+  // move fstream pointer backward for size of offset
+  size_t buffer_size = size;
+  if (size == 0) {
+    fseek(fp, 0L, SEEK_END);
+    buffer_size = ftell(fp) - offset;
+  }
+  fseek(fp, offset, SEEK_SET);
+  Require(buffer_size);
+  // read data of `size` into binary_data_variable:`bytes_`
+  if (fread(reinterpret_cast<char *>(&bytes_[0]), 1, buffer_size, fp) !=
+      buffer_size) {
     fclose(fp);
     LOG(FATAL) << "Read file error: " << filename;
   }
   fclose(fp);
-
   // Set readonly.
   is_mutable_mode_ = false;
 }

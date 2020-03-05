@@ -32,21 +32,12 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto y_name = op_info->Input("Y").front();
-  auto y_type = kernel->GetInputDeclType("Y");
-  CHECK(y_type->precision() == PRECISION(kFloat));
-  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
   auto x_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
@@ -56,49 +47,50 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(x_matrix_dims[1], y_matrix_dims[0]);
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
   // Flatten X node
   if (x_dims.size() != 2) {
-    x_node =
-        graph->AddNode(x_name + "/reshape",
-                       graph->builder_.CreateReshape(
-                           *x_node, {-1, static_cast<int>(x_matrix_dims[1])}));
+    x_node = graph->Add(
+        x_name + "/reshape",
+        graph->builder_.CreateReshape(
+            *x_node->data(), {-1, static_cast<int>(x_matrix_dims[1])}));
   }
 
   // Y node
-  std::shared_ptr<xtcl::xExpr> y_node = nullptr;
-  if (graph->HasNode(y_name)) {
-    y_node = graph->GetNode(y_name);
+  std::shared_ptr<Node> y_node = nullptr;
+  if (graph->Has(y_name)) {
+    y_node = graph->Get(y_name);
   } else {
-    y_node = graph->AddNode(y_name, y_dims);
+    y_node = graph->Add(y_name, *y);
   }
   // Flatten Y node
   if (y_dims.size() != 2) {
-    y_node =
-        graph->AddNode(y_name + "/reshape",
-                       graph->builder_.CreateReshape(
-                           *y_node, {static_cast<int>(y_matrix_dims[0]), -1}));
+    y_node = graph->Add(
+        y_name + "/reshape",
+        graph->builder_.CreateReshape(
+            *y_node->data(), {static_cast<int>(y_matrix_dims[0]), -1}));
   }
 
   // Reshape the matmul node with the inferred shape as the output node
-  auto matmul_node = graph->AddNode(
-      out_name, graph->builder_.CreateMatmul2D(*x_node, *y_node, false));
+  auto matmul_node = graph->Add(
+      out_name,
+      graph->builder_.CreateMatmul2D(*x_node->data(), *y_node->data(), false));
   if (out_dims.size() != 2) {
-    graph->AddNode(out_name,
-                   graph->builder_.CreateReshape(
-                       *matmul_node, CvtShape<xtcl::Integer>(out_dims)));
+    graph->Add(out_name,
+               graph->builder_.CreateReshape(
+                   *matmul_node->data(), CvtShape<xtcl::Integer>(out_dims)));
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
-}
+}  // namespace xpu
 
 }  // namespace xpu
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU, mul, paddle::lite::subgraph::xpu::MulConverter);
+REGISTER_SUBGRAPH_BRIDGE(mul, kXPU, paddle::lite::subgraph::xpu::MulConverter);

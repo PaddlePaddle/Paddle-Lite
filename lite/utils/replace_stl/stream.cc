@@ -101,6 +101,12 @@ ostream& ostream::operator<<(const unsigned& obj) {
 }
 
 template <>
+ostream& ostream::operator<<(const uint16_t& obj) {
+  ADD_DATA_AS_STRING(data_, obj);
+  return *this;
+}
+
+template <>
 ostream& ostream::operator<<(const unsigned long& obj) {  // NOLINT
   ADD_DATA_AS_STRING(data_, obj);
   return *this;

@@ -28,16 +28,13 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
   auto kw = w_dims[3];
+  auto paddings = *param.paddings;
   // select dw conv kernel
   if (kw == 3) {
     // VLOG(5) << "invoke 3x3 dw conv fp32";
-    auto paddings = *param.paddings;
-    bool pads_equal =
-        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-
-    if (pads_equal && paddings[0] == paddings[2] &&
+    bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
+    if (pads_less && paddings[0] == paddings[2] &&
         (paddings[0] == 0 || paddings[0] == 1)) {
-      impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
       flag_trans_weights_ = false;
     } else {
       // trans weights
@@ -50,12 +47,30 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       auto w_data_in = param.filter->data<float>();
       lite::arm::math::conv_trans_weights_numc(
           w_data_in, w_data, oc, 1, cblock, kh * kw);
-      impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
       flag_trans_weights_ = true;
     }
+    impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
   } else if (kw == 5) {
     // VLOG(5) << "invoke 5x5 dw conv fp32";
-    impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
+    auto strides = param.strides;
+    if ((strides[0] == 1 && strides[1] == 1) ||
+        (strides[0] == 2 && strides[1] == 2)) {
+      // trans weights
+      constexpr int cblock = 4;
+      auto oc = w_dims[0];
+      auto kh = w_dims[2];
+      auto cround = ROUNDUP(oc, cblock);
+      weights_.Resize({cround, 1, kh, kw});
+      auto w_data = weights_.mutable_data<float>();
+      auto w_data_in = param.filter->data<float>();
+      lite::arm::math::conv_trans_weights_numc(
+          w_data_in, w_data, oc, 1, cblock, kh * kw);
+      flag_trans_weights_ = true;
+      impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
+    } else {
+      LOG(FATAL)
+          << "5x5 depthwise conv only support stride == 1 or stride == 2";
+    }
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }

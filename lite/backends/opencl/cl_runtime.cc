@@ -75,13 +75,8 @@ cl::CommandQueue& CLRuntime::command_queue() {
 
 std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
     const cl::Context& context, std::string file_name) {
-  std::ifstream file{file_name, std::ios::binary | std::ios::ate};
-  CHECK(file.is_open()) << "Can't open file from " << file_name;
-  auto size = file.tellg();
-  CHECK(size > 0) << "size is too small.";
-  std::string content(size, '\0');
-  file.seekg(0);
-  file.read(&content[0], size);
+  auto cl_file = opencl_kernels_files.find(file_name);
+  std::string content(cl_file->second.begin(), cl_file->second.end());
   cl::Program::Sources sources;
   sources.push_back(content);
   auto prog =

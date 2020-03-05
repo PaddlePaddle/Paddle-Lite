@@ -37,6 +37,19 @@ function prepare_thirdparty {
     fi
 }
 
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+}
+
 # prepare adb devices
 # if USE_ADB_EMULATOR=ON , we create adb emulator port_armv8 and port_armv7 for usage, else we will use actual mobilephone according to adbindex.
 function prepare_adb_devices {
@@ -105,6 +118,7 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -173,12 +187,14 @@ function build_opencl {
     mkdir -p $build_dir
     cd $build_dir
 
+    prepare_opencl_source_code $cur_dir $build_dir
+
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp
+    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # This method is only called in CI.
@@ -519,7 +535,7 @@ function test_model_optimize_tool_compile {
     cd $workspace
     cd build
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+    make opt -j$NUM_CORES_FOR_COMPILE
 }
 
 function _test_paddle_code_generator {
@@ -608,6 +624,44 @@ function build_arm {
     cmake_arm ${os} ${abi} ${lang}
     build $TESTS_FILE
 
+}
+
+# $1: ARM_TARGET_OS in "ios", "ios64"
+# $2: ARM_TARGET_ARCH_ABI in "armv7", "armv8"
+function build_ios {
+    local os=$1
+    local abi=$2
+    build_dir=build.ios.${os}.${abi}
+    echo "building ios target into $build_dir"
+    echo "target os: $os"
+    echo "target abi: $abi"
+    mkdir -p ${build_dir}
+    cd ${build_dir}
+    GEN_CODE_PATH_PREFIX=lite/gen_code
+    mkdir -p ./${GEN_CODE_PATH_PREFIX}
+    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+
+    cmake .. \
+            -DWITH_GPU=OFF \
+            -DWITH_MKL=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_CUDA=OFF \
+            -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_ARM=ON \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_JAVA=OFF \
+            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_OPENMP=OFF \
+            -DWITH_ARM_DOTPROD=OFF \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DARM_TARGET_ARCH_ABI=$abi \
+            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DLITE_WITH_CV=$BUILD_CV \
+            -DARM_TARGET_OS=$os
+
+    make -j4 publish_inference
+    cd -
 }
 
 # $1: ARM_TARGET_OS in "android"
@@ -768,6 +822,21 @@ function build_test_arm_subtask_armlinux {
     # job 7
     build_arm "armlinux" "armv7hf" "gcc"
     test_arm "armlinux" "armv7hf" "gcc" $device_armv8
+    cd $cur
+
+    echo "Done"
+}
+
+# sub-task3
+# this task will test IOS compiling, which requires cmake_version>=3.15
+function build_test_arm_subtask_ios {
+    cur=$PWD
+    # job 8
+    build_ios "ios" "armv7"
+    cd $cur
+
+    # job 9
+    build_ios "ios64" "armv8"
     cd $cur
 
     echo "Done"
@@ -1040,6 +1109,10 @@ function main {
                 ;;
             build_test_arm_subtask_armlinux)
                 build_test_arm_subtask_armlinux
+                shift
+                ;;
+            build_test_arm_subtask_ios)
+                build_test_arm_subtask_ios
                 shift
                 ;;
             check_style)
