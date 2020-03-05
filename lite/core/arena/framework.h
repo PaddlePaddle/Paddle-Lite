@@ -357,11 +357,11 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
     for (int i = 0; i < a_tensor_array->size(); i++) {
       Tensor* a_tensor = &(a_tensor_array->at(i));
       Tensor* b_tensor = &(b_tensor_array->at(i));
-      if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0)
+      if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0) {
         continue;
-      success = success & CheckTensorPrecision<T>(&(a_tensor_array->at(i)),
-                                                  &(b_tensor_array->at(i)),
-                                                  abs_error);
+      }
+      success =
+          success & CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
     }
   } else {
     LOG(FATAL) << "unsupported var type";
