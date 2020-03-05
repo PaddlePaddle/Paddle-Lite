@@ -28,10 +28,8 @@ namespace arm {
 
 void LookupTableCompute::Run() {
   auto& param = this->Param<param_t>();
-  // inputs
   auto w = param.W;
   auto ids = param.Ids;
-  // outputs
   auto out = param.Out;
 
   auto table_dim = w->dims();
