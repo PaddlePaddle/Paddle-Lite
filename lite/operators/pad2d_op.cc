@@ -46,13 +46,14 @@ bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
   param_.mode = op_desc.GetAttr<std::string>("mode");
   param_.pad_value = op_desc.GetAttr<float>("pad_value");
-  if (op_desc.HasAttr('variable_padding') &&
+  if (op_desc.HasAttr("variable_padding") &&
       op_desc.GetAttr<bool>("variable_paddings")) {
     auto Paddings =
         scope->FindVar(op_desc.Input("Paddings").front())->GetMutable<Tensor>();
     auto ptr = Paddings->data<int>();
     if (Paddings->dims().size() < 4) {
-      printf("Paddings size must be four: %d \n", Paddings->dims().size());
+      printf("Paddings size must be four: %d \n",
+             static_cast<int>(Paddings->dims().size()));
       return false;
     }
     param_.paddings = {ptr[0], ptr[1], ptr[2], ptr[3]};
