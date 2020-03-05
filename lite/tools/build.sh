@@ -407,6 +407,10 @@ function main {
                 BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
+            --build_cv=*)
+                BUILD_CV="${i#*=}"
+                shift
+                ;;
             --build_python=*)
                 BUILD_PYTHON="${i#*=}"
                 shift
