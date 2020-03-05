@@ -78,6 +78,9 @@ void TestReadFromArray(Place place, float abs_error) {
   for (int x_size : {1, 3}) {
     for (int id : {0, 2}) {
       if (x_size < id + 1) continue;
+      LOG(INFO) << "read_from_array: tar_dims: {" << dims[0] << ", " << dims[1]
+                << ", " << dims[2] << ", " << dims[3] << "}, x_size: " << x_size
+                << ", id: " << id;
       std::unique_ptr<arena::TestCase> tester(
           new ReadFromArrayComputeTester(place, "def", dims, x_size, id));
       arena::Arena arena(std::move(tester), place, abs_error);

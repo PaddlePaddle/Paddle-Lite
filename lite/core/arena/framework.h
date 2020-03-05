@@ -347,7 +347,7 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
   if (inst_scope_->FindVar(var_name)->IsType<Tensor>()) {
     auto a_tensor = inst_scope_->FindTensor(var_name);
     auto b_tensor = base_scope_->FindTensor(var_name);
-    success = success & CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
+    success = success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
   } else if (inst_scope_->FindVar(var_name)->IsType<std::vector<Tensor>>()) {
     auto a_tensor_array =
         inst_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
@@ -361,7 +361,7 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
         continue;
       }
       success =
-          success & CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
+          success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
     }
   } else {
     LOG(FATAL) << "unsupported var type";
