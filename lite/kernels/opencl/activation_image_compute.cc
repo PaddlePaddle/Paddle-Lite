@@ -40,6 +40,8 @@ class ActivationComputeImageDefault
     auto& context = ctx_->As<OpenCLContext>();
     act_param_ = param_.get_mutable<param_t>();
     int act_type = static_cast<int>(act_param_->active_type);
+    VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
+            << ActivationTypeToStr(act_param_->active_type);
     switch (act_type) {
       case 1:
         kernel_func_name_ = "relu";

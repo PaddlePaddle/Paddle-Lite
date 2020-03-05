@@ -150,6 +150,8 @@ _ForEachPrecisionType(DefinePrecisionTypeTrait);
 #define PRECISION(item__) paddle::lite_api::PrecisionType::item__
 #define DATALAYOUT(item__) paddle::lite_api::DataLayoutType::item__
 
+const std::string& ActivationTypeToStr(ActivationType act);
+
 const std::string& TargetToStr(TargetType target);
 
 const std::string& PrecisionToStr(PrecisionType precision);
