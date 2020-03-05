@@ -86,7 +86,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
-
+    VLOG(4) << "default_work_size: "<< default_work_size[0] << ", " << default_work_size[1] << ", " << default_work_size[2];
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *grid_img);
@@ -100,8 +100,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                    static_cast<cl::size_type>(default_work_size[2]),
-                    static_cast<cl::size_type>(default_work_size[3] / 4)};
+                    static_cast<cl::size_type>(default_work_size[1]),
+                    static_cast<cl::size_type>(default_work_size[2] / 4)};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,

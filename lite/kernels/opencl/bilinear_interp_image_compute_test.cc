@@ -40,18 +40,19 @@ void bilinear_interp_ref(const float* din,
 
   // copy from x if no change
   if (in_h == out_h && in_w == out_w) {
-    memcpy(dout, din, sizeof(float) * x_dims.production()) return;
+    memcpy(dout, din, sizeof(float) * x_dims.production());
+    return;
   }
 
   float ratio_h = 0.f;
   float ratio_w = 0.f;
   if (out_h > 1) {
-    ratio_h = (align_corners) ? static_cast<float>(x_h - 1) / (out_h - 1)
-                              : static_cast<float>(x_h) / out_h;
+    ratio_h = (align_corners) ? static_cast<float>(in_h - 1) / (out_h - 1)
+                              : static_cast<float>(in_h) / out_h;
   }
   if (out_w > 1) {
-    ratio_w = (align_corners) ? static_cast<float>(x_w - 1) / (out_w - 1)
-                              : static_cast<float>(x_w) / out_w;
+    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_w - 1)
+                              : static_cast<float>(in_w) / out_w;
   }
 
   // naive bilinear interpolation
@@ -59,10 +60,10 @@ void bilinear_interp_ref(const float* din,
 
   for (int n = 0; n < batch_size; n++) {
     float* dout_data = dout + n * channel_size * out_h * out_w;
-    float* din_data = din + n * channel_size * in_h * in_w;
+    const float* din_data = din + n * channel_size * in_h * in_w;
     for (int c = 0; c < channel_size; c++) {
       float* dout_data_c = dout_data + c * out_h * out_w;
-      float* din_data_c = din_data + c * in_h * in_w;
+      const float* din_data_c = din_data + c * in_h * in_w;
       for (int h = 0; h < out_h; h++) {
         float center_h = align_flag ? (ratio_h * (h + 0.5) - 0.5) : ratio_h * h;
         int floor_h = static_cast<int>(center_h);
@@ -97,19 +98,19 @@ TEST(bilinear_interp_image2d, compute) {
 #ifdef BILINEAR_FP16_LOOP_TEST
   for (auto n : {1, 3}) {
     for (auto c : {1, 3, 8, 23, 32}) {
-      for (auto h : {12, 20, 64, 112}) {
-        for (auto w : {12, 20, 64, 112}) {
-          for (auto out_h : {14, 32, 96, 224}) {
-            for (auto out_w : {14, 32, 96, 224}) {
+      for (auto h : {2, 20, 64, 112}) {
+        for (auto w : {2, 20, 64, 112}) {
+          for (auto out_h : {4, 32, 96, 224}) {
+            for (auto out_w : {4, 32, 96, 224}) {
               for (auto align_corners : {true, false}) {
                 for (auto align_mode : {0, 1}) {
 #else
   const int n = 1;
   const int c = 1;
-  const int h = 12;
-  const int w = 12;
-  const int out_h = 24;
-  const int out_w = 24;
+  const int h = 2;
+  const int w = 2;
+  const int out_h = 4;
+  const int out_w = 4;
   const bool align_corners = true;
   const int align_mode = 0;
 #endif  // BILINEAR_FP16_LOOP_TEST
@@ -187,7 +188,7 @@ TEST(bilinear_interp_image2d, compute) {
                   kernel->Launch();
 
                   auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-                  auto* out_ptr = param.out->data<half_t, cl::Image2D>();
+                  auto* out_ptr = param.Out->data<half_t, cl::Image2D>();
                   auto it = wait_list->find(out_ptr);
                   if (it != wait_list->end()) {
                     VLOG(4) << "--- Find the sync event for the target cl "
@@ -210,16 +211,15 @@ TEST(bilinear_interp_image2d, compute) {
 
                   const size_t cl_image2d_row_pitch{0};
                   const size_t cl_image2d_slice_pitch{0};
-                  //   half_t* out_image_data =
-                  //       new half_t[1000]; //out_image_shape.production() *
-                  //       4];
-                  //   TargetWrapperCL::ImgcpySync(out_image_data,
-                  //                               out_image,
-                  //                               out_image_shape[0],
-                  //                               out_image_shape[1],
-                  //                               cl_image2d_row_pitch,
-                  //                               cl_image2d_slice_pitch,
-                  //                               IoDirection::DtoH);
+                  half_t* out_image_data =
+                       new half_t[out_image_shape.production() * 4];
+                  TargetWrapperCL::ImgcpySync(out_image_data,
+                                                out_image,
+                                                 out_image_shape[0],
+                                                 out_image_shape[1],
+                                                 cl_image2d_row_pitch,
+                                                 cl_image2d_slice_pitch,
+                                                 IoDirection::DtoH);
                   float* out_data = new float[out_image_shape.production() * 4];
                   default_converter->ImageToNCHW(
                       out_image_data, out_data, out_image_shape, out_dim);
@@ -241,7 +241,7 @@ TEST(bilinear_interp_image2d, compute) {
                               true);
                     if ((relative_diff > FP16_MAX_DIFF) &&
                         (abs_diff > FP16_MAX_DIFF)) {
-                      LOG(ERROR) << "error idx:" << i < < < <
+                      LOG(ERROR) << "error idx:" << i  <<
                           ", in_data["
                               << i << "]: " << input_v[i] << ", out_data[" << i
                               << "]: " << out_data[i] << ", out_ref[" << i

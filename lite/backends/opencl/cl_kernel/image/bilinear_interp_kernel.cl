@@ -20,21 +20,21 @@ __kernel void bilinear_interp(__read_only image2d_t input,
                              __private const float scale_h,
                              __private const float scale_w,
                              __private const float align_delta,
-                             __private const int in_h,
-                             __private const int in_w,
-                             __private const int out_h,
-                             __private const int out_w){
+                             __private const int in_dims_h,
+                             __private const int in_dims_w,
+                             __private const int out_dims_h,
+                             __private const int out_dims_w){
     const int c = get_global_id(0);
     const int w = get_global_id(1);
     const int nh = get_global_id(2);
 
     int2 output_pos;
-    output_pos.x = c * out_w + w;
+    output_pos.x = c * out_dims_w + w;
     output_pos.y = nh;
 
     // calculate center pixel's pos
-    int out_n = nh / out_h;
-    int out_h = nh % out_h;
+    int out_n = nh / out_dims_h;
+    int out_h = nh % out_dims_h;
     float center_w = (w + align_delta)  * scale_w - align_delta;
     float center_h = (out_h + align_delta) * scale_h - align_delta;
 
@@ -48,11 +48,11 @@ __kernel void bilinear_interp(__read_only image2d_t input,
     if (floor_h < 0){
         floor_h = 0;
     }
-    if (ceil_w > in_w - 1) {
-        ceil_w = in_w - 1;
+    if (ceil_w > in_dims_w - 1) {
+        ceil_w = in_dims_w - 1;
     }
-    if (ceil_h > in_h - 1) {
-        ceil_h = in_ h- 1;
+    if (ceil_h > in_dims_h - 1) {
+        ceil_h = in_dims_h- 1;
     }
     float wight0_w = center_w - floor_w;
     float wight0_h = center_h - floor_h;
@@ -65,8 +65,8 @@ __kernel void bilinear_interp(__read_only image2d_t input,
 
     // get left up pixel data
     int2 left_up;
-    left_up.x = c * in_w + floor_w;
-    left_up.y = out_n * in_h + ceil_h;
+    left_up.x = c * in_dims_w + floor_w;
+    left_up.y = out_n * in_dims_h + ceil_h;
     CL_DTYPE4 left_up_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, left_up);
 
 
