@@ -135,7 +135,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s1p1_max(din,
                                             dout,
@@ -165,7 +165,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s1p0_max(din,
                                             dout,
@@ -195,7 +195,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s2p0_max(din,
                                             dout,
@@ -225,7 +225,7 @@ void PoolCompute::Run() {
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
-               kps_equal) {
+               pads_equal && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling3x3s2p1_max(din,
                                             dout,

@@ -37,6 +37,8 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNPU);
+USE_SUBGRAPH_BRIDGE(fill_constant, kNPU)
+USE_SUBGRAPH_BRIDGE(fill_constant_batch_size_like, kNPU)
 
 USE_SUBGRAPH_BRIDGE(fc, kNPU);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kNPU);

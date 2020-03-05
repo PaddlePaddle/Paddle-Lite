@@ -15,6 +15,8 @@ limitations under the License. */
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 #define CL_DTYPE float
 
+#include <cl_common.h>
+
 __kernel
 void im2col(__global const CL_DTYPE* data_im, const int img_offset,
             const int col_chw,
