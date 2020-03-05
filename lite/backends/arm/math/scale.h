@@ -20,7 +20,7 @@ namespace arm {
 namespace math {
 
 template <typename T>
-void scale(const T* din, T* dout, int num, float scale, float bias);
+void scale(const T* din, T* dout, int num, T scale, T bias);
 
 template <typename T>
 void scale(const T* din,

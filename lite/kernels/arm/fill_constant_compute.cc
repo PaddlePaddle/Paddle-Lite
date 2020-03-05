@@ -52,7 +52,7 @@ void FillConstantCompute::Run() {
 // float
 REGISTER_LITE_KERNEL(fill_constant,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::FillConstantCompute,
                      def)

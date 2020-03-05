@@ -37,6 +37,19 @@ function prepare_thirdparty {
     fi
 }
 
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+}
+
 # prepare adb devices
 # if USE_ADB_EMULATOR=ON , we create adb emulator port_armv8 and port_armv7 for usage, else we will use actual mobilephone according to adbindex.
 function prepare_adb_devices {
@@ -105,6 +118,7 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -173,12 +187,14 @@ function build_opencl {
     mkdir -p $build_dir
     cd $build_dir
 
+    prepare_opencl_source_code $cur_dir $build_dir
+
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp
+    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # This method is only called in CI.
