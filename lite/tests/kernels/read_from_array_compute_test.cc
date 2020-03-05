@@ -60,8 +60,8 @@ class ReadFromArrayComputeTester : public arena::TestCase {
     std::vector<std::vector<float>> x_data(x_size_);
     for (int i = 0; i < x_size_; i++) {
       x_dims[i] = tar_dims_;
-      x_data[i].resize(x_dims[i].size());
-      fill_data_rand(x_data[i].data(), -1.f, 1.f, x_dims[i].size());
+      x_data[i].resize(x_dims[i].production());
+      fill_data_rand(x_data[i].data(), -1.f, 1.f, x_dims[i].production());
     }
     SetCommonTensorList(x_, x_dims, x_data);
 
@@ -78,9 +78,6 @@ void TestReadFromArray(Place place, float abs_error) {
   for (int x_size : {1, 3}) {
     for (int id : {0, 2}) {
       if (x_size < id + 1) continue;
-      LOG(INFO) << "read_from_array: tar_dims: {" << dims[0] << ", " << dims[1]
-                << ", " << dims[2] << ", " << dims[3] << "}, x_size: " << x_size
-                << ", id: " << id;
       std::unique_ptr<arena::TestCase> tester(
           new ReadFromArrayComputeTester(place, "def", dims, x_size, id));
       arena::Arena arena(std::move(tester), place, abs_error);
