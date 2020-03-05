@@ -100,12 +100,12 @@ TEST(grid_samler_image2d, compute) {
 #ifdef GRID_FP16_LOOP_TEST
   for (int n = 1; n <= 100; n += 33) {
     for (auto c : {1, 3, 8, 23, 32}) {
-      for (int h = 12; h <= 100; h += 12) {
+      for (int h = 12; h <= 100; h += 13) {
         for (int w = 12; w <= 100; w += 25) {
 #else
   const int n = 1;
   const int c = 2;
-  const int h = 4;
+  const int h = 3;
   const int w = 4;
 #endif  // GRID_FP16_LOOP_TEST
 
