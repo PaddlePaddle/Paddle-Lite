@@ -58,7 +58,7 @@ class BilinearInterpImageCompute
     auto out_dims = out->dims();
     auto in_dims = x->dims();
 
-    if (bilinear_interp_param_.align_corners) {
+    if (bilinear_interp_param_->align_corners) {
       scale_h = (in_dims[2] - 1.0f) / (out_dims[2] - 1.0f);
       scale_w = (in_dims[3] - 1.0f) / (out_dims[3] - 1.0f);
     } else {
@@ -66,8 +66,8 @@ class BilinearInterpImageCompute
       scale_w = in_dims[3] / static_cast<float>(out_dims[3]);
     }
     float align_delta = 0.0f;
-    if (!bilinear_interp_param_.align_corners &&
-        bilinear_interp_param_.align_mode == 0) {
+    if (!bilinear_interp_param_->align_corners &&
+        bilinear_interp_param_->align_mode == 0) {
       align_delta = 0.5f;
     }
 
@@ -106,7 +106,8 @@ class BilinearInterpImageCompute
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
-
+    VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
+            << default_work_size[1] << ", " << default_work_size[2];
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *out_img);
@@ -128,8 +129,8 @@ class BilinearInterpImageCompute
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                    static_cast<cl::size_type>(default_work_size[2]),
-                    static_cast<cl::size_type>(default_work_size[3] / 4)};
+                    static_cast<cl::size_type>(default_work_size[1]),
+                    static_cast<cl::size_type>(default_work_size[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,

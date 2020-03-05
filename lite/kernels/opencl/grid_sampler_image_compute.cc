@@ -100,8 +100,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                    static_cast<cl::size_type>(default_work_size[2]),
-                    static_cast<cl::size_type>(default_work_size[3] / 4)};
+                    static_cast<cl::size_type>(default_work_size[1]),
+                    static_cast<cl::size_type>(default_work_size[2] / 4)};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
