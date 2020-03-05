@@ -52,7 +52,8 @@ bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
         scope->FindVar(op_desc.Input("Paddings").front())->GetMutable<Tensor>();
     auto ptr = Paddings->data<int>();
     if (Paddings->dims().size() < 4) {
-      printf("Paddings size must be four: %d \n", static_cast<int>(Paddings->dims().size()));
+      printf("Paddings size must be four: %d \n",
+             static_cast<int>(Paddings->dims().size()));
       return false;
     }
     param_.paddings = {ptr[0], ptr[1], ptr[2], ptr[3]};
