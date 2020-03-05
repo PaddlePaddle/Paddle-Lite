@@ -42,11 +42,24 @@ function prepare_workspace {
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
     mkdir -p ${GEN_CODE_PATH_PREFIX}
     touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-
     # 2.Prepare debug tool
     DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
     mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
     cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
+}
+
+
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
 }
 
 function prepare_thirdparty {
@@ -111,6 +124,46 @@ function make_tiny_publish_so {
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
+}
+
+function make_opencl {
+  local os=$1
+  local abi=$2
+  local lang=$3
+  #git submodule update --init --recursive
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_dir=$root_dir/build.lite.${os}.${abi}.${lang}.opencl
+  if [ -d $build_directory ]
+  then
+  rm -rf $build_directory
+  fi
+  mkdir -p $build_dir
+  cd $build_dir
+  prepare_workspace $root_dir $build_dir
+  prepare_opencl_source_code $root_dir $build_dir
+  # $1: ARM_TARGET_OS in "android" , "armlinux"
+  # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
+  # $3: ARM_TARGET_LANG in "gcc" "clang"
+  cmake .. \
+      -DLITE_WITH_OPENCL=ON \
+      -DWITH_GPU=OFF \
+      -DWITH_MKL=OFF \
+      -DWITH_LITE=ON \
+      -DLITE_WITH_CUDA=OFF \
+      -DLITE_WITH_X86=OFF \
+      -DLITE_WITH_ARM=ON \
+      -DWITH_ARM_DOTPROD=ON   \
+      -DLITE_ON_TINY_PUBLISH=ON \
+      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
+      -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
+
+    make opencl_clhpp -j$NUM_PROC
+    make publish_inference -j$NUM_PROC
 }
 
 function make_full_publish_so {
@@ -354,6 +407,10 @@ function main {
                 BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
+            --build_cv=*)
+                BUILD_CV="${i#*=}"
+                shift
+                ;;
             --build_python=*)
                 BUILD_PYTHON="${i#*=}"
                 shift
@@ -396,6 +453,10 @@ function main {
                 ;;
             build_optimize_tool)
                 build_opt
+                shift
+                ;;
+            opencl)
+                make_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
                 ;;
             cuda)

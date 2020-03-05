@@ -74,20 +74,50 @@ void TestCase::PrepareInputsForInstruction() {
       const auto* param_type = ParamTypeRegistry::Global().RetrieveInArgument(
           place_, kernel_key, arg);
 
-      const auto* inst_type = Type::GetTensorTy(TARGET(kHost));
+      const Type* inst_type = nullptr;
+      if (param_type->type->IsTensor()) {
+        inst_type = Type::GetTensorTy(TARGET(kHost));
+      } else if (param_type->type->IsTensorList()) {
+        inst_type = Type::GetTensorListTy(TARGET(kHost));
+      } else {
+        LOG(FATAL) << "unsupported param_type";
+      }
+
       CHECK(scope_->FindVar(var));
-      const auto* shared_tensor = scope_->FindTensor(var);
       if (!TargetCompatibleTo(*inst_type, *param_type->type)) {
-        /// Create a tensor in the instruction's scope, alloc memory and then
-        /// copy data there.
-        auto* target_tensor = inst_scope_->NewTensor(var);
-        CHECK(!shared_tensor->dims().empty()) << "shared_tensor is empty yet";
-        target_tensor->Resize(shared_tensor->dims());
-        TargetCopy(param_type->type->target(),
-                   target_tensor->mutable_data(param_type->type->target(),
-                                               shared_tensor->memory_size()),
-                   shared_tensor->raw_data(),
-                   shared_tensor->memory_size());
+        /// Create a tensor or tensor_array in the instruction's scope,
+        /// alloc memory and then copy data there.
+        if (param_type->type->IsTensor()) {
+          const auto* shared_tensor = scope_->FindTensor(var);
+          auto* target_tensor = inst_scope_->NewTensor(var);
+          CHECK(!shared_tensor->dims().empty()) << "shared_tensor is empty yet";
+          target_tensor->Resize(shared_tensor->dims());
+          TargetCopy(param_type->type->target(),
+                     target_tensor->mutable_data(param_type->type->target(),
+                                                 shared_tensor->memory_size()),
+                     shared_tensor->raw_data(),
+                     shared_tensor->memory_size());
+        } else if (param_type->type->IsTensorList()) {
+          const auto* shared_tensor_array =
+              scope_->FindVar(var)->GetMutable<std::vector<Tensor>>();
+          auto* target_tensor_array =
+              inst_scope_->Var(var)->GetMutable<std::vector<Tensor>>();
+          CHECK(!shared_tensor_array->empty())
+              << "shared_tensor_array is empty yet";
+          target_tensor_array->resize(shared_tensor_array->size());
+          for (int i = 0; i < shared_tensor_array->size(); i++) {
+            target_tensor_array->at(i).Resize(
+                shared_tensor_array->at(i).dims());
+            TargetCopy(param_type->type->target(),
+                       target_tensor_array->at(i).mutable_data(
+                           param_type->type->target(),
+                           shared_tensor_array->at(i).memory_size()),
+                       shared_tensor_array->at(i).raw_data(),
+                       shared_tensor_array->at(i).memory_size());
+          }
+        } else {
+          LOG(FATAL) << "not support";
+        }
       }
     }
   }

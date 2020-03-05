@@ -38,7 +38,7 @@ void scale_compute_basic(const operators::ScaleParam& param) {
 }
 
 template <typename T>
-void scale(const T* din, T* dout, int num, float scale, float bias);
+void scale(const T* din, T* dout, int num, T scale, T bias);
 
 template <typename T>
 void scale(const T* din,
