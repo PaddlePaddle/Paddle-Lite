@@ -158,11 +158,12 @@ function make_opencl {
       -DLITE_ON_TINY_PUBLISH=ON \
       -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=OFF \
-      -DLITE_BUILD_EXTRA=ON \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
-    make opencl_clhpp -j4
-    make publish_inference -j4
+    make opencl_clhpp -j$NUM_PROC
+    make publish_inference -j$NUM_PROC
 }
 
 function make_full_publish_so {
@@ -404,6 +405,10 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_cv=*)
+                BUILD_CV="${i#*=}"
                 shift
                 ;;
             --build_python=*)
