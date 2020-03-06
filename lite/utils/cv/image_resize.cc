@@ -51,6 +51,7 @@ void compute_xy(int srcw,
                 int srch,
                 int dstw,
                 int dsth,
+                int num,
                 double scale_x,
                 double scale_y,
                 int* xofs,
@@ -77,8 +78,8 @@ void resize(const uint8_t* src,
     memcpy(dst, src, sizeof(uint8_t) * size);
     return;
   }
-  double scale_x = static_cast<double>(srcw / dstw);
-  double scale_y = static_cast<double>(srch / dsth);
+  double scale_x = static_cast<double>(srcw) / dstw;
+  double scale_y = static_cast<double>(srch) / dsth;
 
   int* buf = new int[dstw * 2 + dsth * 2];
 
@@ -86,9 +87,6 @@ void resize(const uint8_t* src,
   int* yofs = buf + dstw;
   int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw + dsth);
   int16_t* ibeta = reinterpret_cast<int16_t*>(buf + 2 * dstw + dsth);
-
-  compute_xy(
-      srcw, srch, dstw, dsth, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
 
   int w_out = dstw;
   int w_in = srcw;
@@ -111,6 +109,9 @@ void resize(const uint8_t* src,
     num = 4;
   }
 
+  compute_xy(
+      srcw, srch, dstw, dsth, num, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
+
   int* xofs1 = nullptr;
   int* yofs1 = nullptr;
   int16_t* ialpha1 = nullptr;
@@ -124,6 +125,7 @@ void resize(const uint8_t* src,
                srch / 2,
                w,
                tmp,
+               num,
                scale_x,
                scale_y,
                xofs1,
@@ -134,6 +136,7 @@ void resize(const uint8_t* src,
   int cnt = w_out >> 3;
   int remain = w_out % 8;
   int32x4_t _v2 = vdupq_n_s32(2);
+  int prev_sy1 = -1;
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
     int16_t* rowsbuf0 = new int16_t[w_out];
@@ -144,27 +147,20 @@ void resize(const uint8_t* src,
       yofs = yofs1;
       ialpha = ialpha1;
     }
-    if (sy < 0) {
+    if (sy == prev_sy1) {
       memset(rowsbuf0, 0, sizeof(uint16_t) * w_out);
       const uint8_t* S1 = src + srcw * (sy + 1);
       const int16_t* ialphap = ialpha;
       int16_t* rows1p = rowsbuf1;
       for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx] * num;  // num = 4
+        int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
 
         const uint8_t* S1pl = S1 + sx;
         const uint8_t* S1pr = S1 + sx + num;
-        if (sx < 0) {
-          S1pl = S1;
-        }
         for (int i = 0; i < num; i++) {
-          if (sx < 0) {
-            *rows1p++ = ((*S1pl++) * a1) >> 4;
-          } else {
-            *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
-          }
+          *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
         }
         ialphap += 2;
       }
@@ -176,7 +172,7 @@ void resize(const uint8_t* src,
       int16_t* rows0p = rowsbuf0;
       int16_t* rows1p = rowsbuf1;
       for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx] * num;  // num = 4
+        int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
 
@@ -184,32 +180,21 @@ void resize(const uint8_t* src,
         const uint8_t* S0pr = S0 + sx + num;
         const uint8_t* S1pl = S1 + sx;
         const uint8_t* S1pr = S1 + sx + num;
-        if (sx < 0) {
-          S0pl = S0;
-          S1pl = S1;
-        }
         for (int i = 0; i < num; i++) {
-          if (sx < 0) {
-            *rows0p = ((*S0pl++) * a1) >> 4;
-            *rows1p = ((*S1pl++) * a1) >> 4;
-            rows0p++;
-            rows1p++;
-          } else {
-            *rows0p++ = ((*S0pl++) * a0 + (*S0pr++) * a1) >> 4;
-            *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
-          }
+          *rows0p++ = ((*S0pl++) * a0 + (*S0pr++) * a1) >> 4;
+          *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
         }
         ialphap += 2;
       }
     }
-    int ind = dy * 2;
-    int16_t b0 = ibeta[ind];
-    int16_t b1 = ibeta[ind + 1];
-    int16x8_t _b0 = vdupq_n_s16(b0);
-    int16x8_t _b1 = vdupq_n_s16(b1);
+    prev_sy1 = sy + 1;
+    int16_t b0 = ibeta[0];
+    int16_t b1 = ibeta[1];
     uint8_t* dp_ptr = dst + dy * w_out;
     int16_t* rows0p = rowsbuf0;
     int16_t* rows1p = rowsbuf1;
+    int16x8_t _b0 = vdupq_n_s16(b0);
+    int16x8_t _b1 = vdupq_n_s16(b1);
     int re_cnt = cnt;
     if (re_cnt > 0) {
 #ifdef __aarch64__
@@ -295,6 +280,7 @@ void resize(const uint8_t* src,
                      (int16_t)((b1 * (int16_t)(*rows1p++)) >> 16) + 2) >>
                     2);
     }
+    ibeta += 2;
   }
   delete[] buf;
 }
@@ -303,6 +289,7 @@ void compute_xy(int srcw,
                 int srch,
                 int dstw,
                 int dsth,
+                int num,
                 double scale_x,
                 double scale_y,
                 int* xofs,
@@ -334,7 +321,7 @@ void compute_xy(int srcw,
       fx = 1.f;
     }
 
-    xofs[dx] = sx;
+    xofs[dx] = sx * num;
 
     float a0 = (1.f - fx) * resize_coef_scale;
     float a1 = fx * resize_coef_scale;

@@ -28,34 +28,54 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kImageDefault)> {
+class BilinearInterpImageCompute
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kFP16),
+                        DATALAYOUT(kImageDefault)> {
  public:
-  using param_t = operators::GridSamplerParam;
+  using param_t = operators::InterpolateParam;
 
   std::string doc() const override {
-    return "GridSampler using cl::Image2D(ImageDefault/RGBA), kFP16";
+    return "BilinearInterp using cl::Image2D(ImageDefault/RGBA), kFP16";
   }
 
   void PrepareForRun() override {
-    grid_param_ = param_.get_mutable<param_t>();
+    bilinear_interp_param_ = param_.get_mutable<param_t>();
 
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "image/grid_sampler_kernel.cl", build_options_);
-    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+        kernel_func_name_, "image/bilinear_interp_kernel.cl", build_options_);
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
   void Run() override {
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
-    auto* x = grid_param_->x;
-    auto* out = grid_param_->out;
-    auto* grid = grid_param_->grid;
+    auto* x = bilinear_interp_param_->X;
+    auto* out = bilinear_interp_param_->Out;
+    float scale_h = 0.0;
+    float scale_w = 0.0;
     auto out_dims = out->dims();
     auto in_dims = x->dims();
+
+    if (bilinear_interp_param_->align_corners) {
+      scale_h = (in_dims[2] - 1.0f) / (out_dims[2] - 1.0f);
+      scale_w = (in_dims[3] - 1.0f) / (out_dims[3] - 1.0f);
+    } else {
+      scale_h = in_dims[2] / static_cast<float>(out_dims[2]);
+      scale_w = in_dims[3] / static_cast<float>(out_dims[3]);
+    }
+    float align_delta = 0.0f;
+    if (!bilinear_interp_param_->align_corners &&
+        bilinear_interp_param_->align_mode == 0) {
+      align_delta = 0.5f;
+    }
+
+    int in_h = in_dims[2];
+    int in_w = in_dims[3];
+    int out_h = out_dims[2];
+    int out_w = out_dims[3];
 
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
@@ -66,22 +86,22 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* x_img = x->data<half_t, cl::Image2D>();
     // VLOG(4) << "x_image: " << x_img;
 
-    auto* grid_img = x->data<half_t, cl::Image2D>();
-    // VLOG(4) << "grid_img: " << grid_img;
-
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
-    // VLOG(4) << "out_image" << out_img;
-    VLOG(4) << "out_image_shape[w,h]:" << out_image_shape["width"] << " "
+    // VLOG(4) << "out_image: " << out_img;
+    VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
             << out_image_shape["height"];
+
+    VLOG(4) << "scale_h: " << scale_h << ", scale_w: " << scale_w
+            << ", align_delta: " << align_delta;
+    VLOG(4) << "in_h: " << in_h << ", in_w: " << in_w;
+    VLOG(4) << "out_h: " << out_h << ", out_w: " << out_w;
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    int out_height = out_dims[2];
-    int out_width = out_dims[3];
     auto default_work_size =
         DefaultWorkSize(out_dims,
                         DDim(std::vector<DDim::value_type>{
@@ -91,19 +111,27 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
             << default_work_size[1] << ", " << default_work_size[2];
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *grid_img);
-    CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_height);
+    status = kernel.setArg(arg_idx++, scale_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_width);
+    status = kernel.setArg(arg_idx++, scale_w);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, align_delta);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, in_h);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, in_w);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, out_h);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, out_w);
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                     static_cast<cl::size_type>(default_work_size[1]),
-                    static_cast<cl::size_type>(default_work_size[2] / 4)};
+                    static_cast<cl::size_type>(default_work_size[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
@@ -120,8 +148,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
  protected:
-  param_t* grid_param_{nullptr};
-  std::string kernel_func_name_{"grid_sampler"};
+  param_t* bilinear_interp_param_{nullptr};
+  std::string kernel_func_name_{"bilinear_interp"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
@@ -132,21 +160,17 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 }  // namespace paddle
 
 namespace ocl = paddle::lite::kernels::opencl;
-REGISTER_LITE_KERNEL(grid_sampler,
+REGISTER_LITE_KERNEL(bilinear_interp,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     ocl::GridSamplerImageCompute,
+                     ocl::BilinearInterpImageCompute,
                      ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Grid",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Output",
+    .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
