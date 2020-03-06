@@ -32,7 +32,8 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
         DEPS ${light_lib_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
-        NPU_DEPS ${npu_kernels})
+        NPU_DEPS ${npu_kernels}
+        APU_DEPS ${apu_kernels})
 
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
     set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
@@ -50,6 +51,10 @@ else()
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
+        endif()
+        if (LITE_WITH_APU)
+            # Need to add APU runtime libs (libneuron.so libneuron_adapger.so) dependency
+            target_link_libraries(paddle_light_api_shared ${apu_runtime_libs})
         endif()
     endif()
 endif()
@@ -80,6 +85,7 @@ message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get OpenCL kernels ${opencl_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
+message(STATUS "get APU kernels ${apu_kernels}")
 message(STATUS "get XPU kernels ${xpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
 message(STATUS "get BM kernels ${bm_kernels}")
@@ -117,6 +123,7 @@ lite_cc_library(light_api SRCS light_api.cc
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
+        APU_DEPS ${apu_kernels}
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}

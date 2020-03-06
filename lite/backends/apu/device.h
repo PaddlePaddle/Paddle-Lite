@@ -15,33 +15,42 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "NeuronAdapter.h"  // NOLINT
+
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace apu {
 
-class NPUSubgraphPass : public ProgramPass {
+class Device {
  public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  static Device& Global() {
+    static Device x;
+    return x;
+  }
+  Device() {}
+
+  int freq_level() { return freq_level_; }
+  int framework_type() { return framework_type_; }
+  int model_type() { return model_type_; }
+  int device_type() { return device_type_; }
+
+
+  NeuronCompilation* Build(
+      NeuronModel* model);
+
+
+ private:
+  int freq_level_{3};
+  int framework_type_{0};
+  int model_type_{0};
+  int device_type_{0};
+  int model_count_{0};
 };
 
-class APUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace apu
 }  // namespace lite
 }  // namespace paddle

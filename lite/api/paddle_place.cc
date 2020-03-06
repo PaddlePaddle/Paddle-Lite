@@ -71,6 +71,7 @@ const std::string& TargetToStr(TargetType target) {
                                               "fpga",
                                               "npu",
                                               "xpu",
+                                              "apu",
                                               "bm"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
@@ -111,7 +112,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kFPGA",
                                               "kNPU",
                                               "kXPU",
-                                              "kBM"};
+                                              "kBM",
+                                              "kAPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -153,6 +155,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kNPU),
                                                TARGET(kXPU),
                                                TARGET(kBM),
+                                               TARGET(kAPU),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;

@@ -104,6 +104,8 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(TARGET(kX86));
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
+    } else if (target_repr == "apu") {
+      valid_places.emplace_back(TARGET(kAPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
     } else {
@@ -122,6 +124,10 @@ std::vector<Place> ParserValidPlaces() {
     LOG(WARNING) << "Int8 mode is only support by ARM target";
     valid_places.insert(valid_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
+#ifdef LITE_WITH_APU
+    valid_places.insert(valid_places.begin(),
+                        Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNHWC)});
+#endif
   }
   return valid_places;
 }
@@ -186,6 +192,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kOpenCL",
                                       "kFPGA",
                                       "kNPU",
+                                      "kAPU",
                                       "kXPU",
                                       "kAny",
                                       "kUnk"};

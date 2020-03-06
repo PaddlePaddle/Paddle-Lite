@@ -12,36 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/kernels/apu/bridges/utility.h"
+#include <utility>
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace subgraph {
+namespace apu {
 
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname) {
+  auto iarg_names = op_info->input_argnames();
+  if (std::find(iarg_names.begin(), iarg_names.end(), argname) !=
+      iarg_names.end()) {
+    auto inputs = op_info->Input(argname);
+    if (inputs.empty()) {
+      return false;
+    }
+    auto var_name = inputs.front();
+    auto var = scope->FindVar(var_name);
+    return var != nullptr;
+  } else {
+    return false;
+  }
+}
 
-class APUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace apu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

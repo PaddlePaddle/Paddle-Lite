@@ -14,34 +14,28 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "NeuronAdapter.h"
+#include "lite/core/op_lite.h"
+#include "lite/utils/macros.h"
+
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace subgraph {
+namespace apu {
 
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+// Type/tensor converters for converting Paddle type/tensor to HiAI type/tensor
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname);
 
-class APUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace apu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

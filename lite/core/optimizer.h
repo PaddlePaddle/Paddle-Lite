@@ -78,6 +78,7 @@ class Optimizer {
            "npu_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",
+           "apu_subgraph_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)

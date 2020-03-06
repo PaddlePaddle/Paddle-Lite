@@ -12,36 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/kernels/apu/bridges/graph.h"
+#include <utility>
+#include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace subgraph {
+namespace apu {
 
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
+  auto it = nodes_.find(name);
 
-class APUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+  if (it != nodes_.end()) {
+    LOG(FATAL) << "[APU] Node" << name << " is redefined.";
+    return -1;
+  } else {
+    VLOG(3) << " Add: " << name << " : " << node->index();
+    auto ret = nodes_.insert(
+          std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
+    CHECK(ret.second);
+    it = ret.first;
+  }
+  operandIdx_ += 1;
+  it->second.push_back(node);
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+  return it->second.size();
+}
 
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
 
-}  // namespace mir
+}  // namespace apu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

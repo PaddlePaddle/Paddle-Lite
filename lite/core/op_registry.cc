@@ -98,6 +98,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kNPU): {
       CREATE_KERNEL(kNPU);
     } break;
+    case TARGET(kAPU): {
+      CREATE_KERNEL(kAPU);
+    } break;
     case TARGET(kXPU): {
       CREATE_KERNEL(kXPU);
     } break;
@@ -184,6 +187,7 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kNPU, kAny, kNCHW);
   INIT_FOR(kNPU, kAny, kAny);
 
+  INIT_FOR(kAPU, kInt8, kNHWC);
   INIT_FOR(kXPU, kFloat, kNCHW);
   INIT_FOR(kXPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kAny, kNCHW);

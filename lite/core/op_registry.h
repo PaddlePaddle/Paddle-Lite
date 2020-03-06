@@ -225,6 +225,9 @@ class KernelRegistry final {
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 
+              KernelRegistryForTarget<TARGET(kAPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
