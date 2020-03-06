@@ -78,8 +78,8 @@ void resize(const uint8_t* src,
     memcpy(dst, src, sizeof(uint8_t) * size);
     return;
   }
-  double scale_x = static_cast<double>(srcw / dstw);
-  double scale_y = static_cast<double>(srch / dsth);
+  double scale_x = static_cast<double>(srcw) / dstw;
+  double scale_y = static_cast<double>(srch) / dsth;
 
   int* buf = new int[dstw * 2 + dsth * 2];
 
@@ -153,7 +153,7 @@ void resize(const uint8_t* src,
       const int16_t* ialphap = ialpha;
       int16_t* rows1p = rowsbuf1;
       for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx] * num;  // num = 4
+        int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
 
@@ -172,7 +172,7 @@ void resize(const uint8_t* src,
       int16_t* rows0p = rowsbuf0;
       int16_t* rows1p = rowsbuf1;
       for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx];  // num = 4
+        int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
 
