@@ -1,3 +1,4 @@
+NDK_ROOT = /proj/mtk03132/android-ndk-r17c
 # get the name of current operation system: Linux or Darwin
 SYSTEM=$(shell "uname")
 

@@ -393,6 +393,7 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
 
     auto* op_desc = quantized_node->stmt()->mutable_op_info();
     op_desc->SetAttr<int>("bit_length", bit_length);
+    op_desc->SetAttr("enable_int8", true);
     op_desc->SetAttr<float>("input_scale", scale_value);
     op_desc->SetInput("X", {input_act_node->arg()->name});
     IR_NODE_LINK_TO(input_act_node, quantized_node)
@@ -436,6 +437,7 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
 
     auto* op_desc = quantized_node->stmt()->mutable_op_info();
     op_desc->SetAttr<int>("bit_length", bit_length);
+    op_desc->SetAttr("enable_int8", true);
     op_desc->SetAttr<float>("x_input_scale", left_scale_value);
     op_desc->SetAttr<float>("y_input_scale", right_scale_value);
     op_desc->SetInput("X", {input_act_left_node->arg()->name});

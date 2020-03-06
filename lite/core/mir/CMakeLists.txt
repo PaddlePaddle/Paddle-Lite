@@ -30,6 +30,7 @@ lite_cc_library(mir_passes
       type_precision_cast_pass.cc
       io_copy_kernel_pick_pass.cc
       graph_visualize_pass.cc
+      output_scale_inference_pass.cc
       generate_program_pass.cc
       argument_type_display_pass.cc
       demo_pass.cc

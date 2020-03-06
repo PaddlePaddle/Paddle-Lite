@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set(ANDROID_NDK  /proj/mtk03132/android-ndk-r17c)
+
+
 if(NOT ARM_TARGET_OS STREQUAL "android")
     return()
 endif()

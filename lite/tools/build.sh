@@ -1,6 +1,10 @@
 #!/bin/bash
 set -ex
 
+# Path to cmake
+CMAKE_TOOL=/mtkoss/cmake/cmake-3.13.1-Linux-x86_64/bin/cmake
+
+
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
                                -DWITH_LITE=ON \
@@ -80,7 +84,7 @@ function build_opt {
     prepare_thirdparty
     mkdir -p build.opt
     cd build.opt
-    cmake .. -DWITH_LITE=ON \
+    ${CMAKE_TOOL} .. -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
@@ -107,7 +111,7 @@ function make_tiny_publish_so {
     BUILD_JAVA=OFF
   fi
 
-  cmake .. \
+  ${CMAKE_TOOL} .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=OFF \
