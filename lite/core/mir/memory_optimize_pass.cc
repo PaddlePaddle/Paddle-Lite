@@ -50,6 +50,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                                       "lod_reset",
                                                       "concat",
                                                       "yolo_box",
+                                                      "read_from_array",
+                                                      "write_to_array",
                                                       "subgraph",
                                                       "feed",
                                                       "fetch"};
