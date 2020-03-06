@@ -75,6 +75,8 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  persistable_ = other.persistable_;
+  precision_ = other.precision_;
 }
 
 void TensorLite::CopyDataFrom(const TensorLite &other) {
@@ -82,6 +84,8 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  persistable_ = other.persistable_;
+  precision_ = other.precision_;
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 

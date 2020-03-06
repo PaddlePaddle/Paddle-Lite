@@ -36,6 +36,7 @@ lite_cc_library(mir_passes
       runtime_context_assign_pass.cc
       memory_optimize_pass.cc
       weight_quantization_preprocess_pass.cc
+      quantized_op_attributes_inference_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
