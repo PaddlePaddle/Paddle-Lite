@@ -158,6 +158,7 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kARM, kAny, kNCHW);
   INIT_FOR(kARM, kAny, kAny);
   INIT_FOR(kARM, kInt32, kNCHW);
+  INIT_FOR(kARM, kInt64, kNCHW);
 
   INIT_FOR(kOpenCL, kFloat, kNCHW);
   INIT_FOR(kOpenCL, kFloat, kNHWC);

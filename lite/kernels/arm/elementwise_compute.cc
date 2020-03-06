@@ -80,7 +80,11 @@ void ElementwiseAddCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_add_broadcast(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_add_broadcast(
         x_data, y_data, out_data, pre, n, post);
   } else {
@@ -99,7 +103,15 @@ void ElementwiseAddActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_add_relu_broadcast(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_add_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -125,6 +137,9 @@ void ElementwiseSubCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_sub_broadcast(
         x_data, y_data, out_data, pre, n, post);
@@ -143,6 +158,9 @@ void ElementwiseSubActivationCompute::Run() {
   std::string act_type = param.act_type;
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
   int pre, n, post;
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
@@ -164,19 +182,29 @@ void ElementwiseSubActivationCompute::Run() {
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ElementwiseParam>();
-  auto* x_data = param.X->template data<T>();
-  auto* y_data = param.Y->template data<T>();
-  auto* out_data = param.Out->template mutable_data<T>();
-  int axis = param.axis;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_mul_broadcast<T>(
-        x_data, y_data, out_data, pre, n, post);
+  if (param.X->precision() == PRECISION(kFloat)) {
+    auto* x_data = param.X->template data<float>();
+    auto* y_data = param.Y->template data<float>();
+    auto* out_data = param.Out->template mutable_data<float>();
+    int axis = param.axis;
+    auto x_dims = param.X->dims();
+    auto y_dims = param.Y->dims();
+    int pre, n, post;
+    if (x_dims.size() < y_dims.size() &&
+        is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+      lite::arm::math::elementwise_mul_broadcast<float>(
+          y_data, x_data, out_data, pre, n, post);
+    } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+      lite::arm::math::elementwise_mul_broadcast<float>(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      lite::arm::math::elementwise_mul<float>(
+          x_data, y_data, out_data, x_dims.production());
+    }
+  } else if (param.X->precision() == PRECISION(kInt64)) {
+    lite::arm::math::elementwise_compute_basic<int64_t>(param, "mul", "");
   } else {
-    lite::arm::math::elementwise_mul<T>(
-        x_data, y_data, out_data, x_dims.production());
+    LOG(FATAL) << "unsupport input type";
   }
 }
 
@@ -190,7 +218,15 @@ void ElementwiseMulActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_mul_relu_broadcast<float>(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_mul_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -216,7 +252,11 @@ void ElementwiseMaxCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_max_broadcast(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_max_broadcast(
         x_data, y_data, out_data, pre, n, post);
   } else {
@@ -235,7 +275,15 @@ void ElementwiseMaxActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_max_relu_broadcast<float>(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_max_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -261,6 +309,9 @@ void ElementwiseDivCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_div_broadcast(
         x_data, y_data, out_data, pre, n, post);
@@ -279,6 +330,9 @@ void ElementwiseDivActivationCompute::Run() {
   std::string act_type = param.act_type;
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
   int pre, n, post;
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {

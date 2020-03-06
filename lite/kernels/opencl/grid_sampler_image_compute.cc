@@ -35,7 +35,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   using param_t = operators::GridSamplerParam;
 
   std::string doc() const override {
-    return "GridSampler using cl::Image2D(ImageDefault/RGBA), kFP32";
+    return "GridSampler using cl::Image2D(ImageDefault/RGBA), kFP16";
   }
 
   void PrepareForRun() override {
@@ -44,7 +44,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/grid_sampler_kernel.cl", build_options_);
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
   }
 
   void Run() override {
@@ -64,14 +64,14 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
     auto* x_img = x->data<half_t, cl::Image2D>();
-    VLOG(4) << "x_image: " << x_img;
+    // VLOG(4) << "x_image: " << x_img;
 
     auto* grid_img = x->data<half_t, cl::Image2D>();
-    VLOG(4) << "grid_img: " << grid_img;
+    // VLOG(4) << "grid_img: " << grid_img;
 
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
-    VLOG(4) << "out_image" << out_img;
+    // VLOG(4) << "out_image" << out_img;
     VLOG(4) << "out_image_shape[w,h]:" << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
@@ -87,7 +87,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
-
+    VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
+            << default_work_size[1] << ", " << default_work_size[2];
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *grid_img);
@@ -101,8 +102,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                    static_cast<cl::size_type>(default_work_size[2]),
-                    static_cast<cl::size_type>(default_work_size[3] / 4)};
+                    static_cast<cl::size_type>(default_work_size[1]),
+                    static_cast<cl::size_type>(default_work_size[2] / 4)};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
