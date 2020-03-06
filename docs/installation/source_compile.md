@@ -234,6 +234,8 @@ brew cask install java
 
 ## 二、编译PaddleLite
 
+**注：编译OpenCL、华为NPU、FPGA、CUDA、X86预测库、CV模块，见进阶使用指南的对应章节。**
+
 ### 下载代码
 
 ```shell
