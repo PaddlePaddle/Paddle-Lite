@@ -84,11 +84,11 @@ class BilinearInterpImageCompute
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
     auto* x_img = x->data<half_t, cl::Image2D>();
-    VLOG(4) << "x_image: " << x_img;
+    // VLOG(4) << "x_image: " << x_img;
 
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
-    VLOG(4) << "out_image: " << out_img;
+    // VLOG(4) << "out_image: " << out_img;
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
