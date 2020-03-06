@@ -540,9 +540,9 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         const size_t cl_image2d_row_pitch{0};
         const size_t cl_image2d_slice_pitch{0};
 
-        half_t* output_image_data =
-            new half_t[output_image_shape.production() * 4];
-        TargetWrapperCL::ImgcpySync(output_image_data,
+        std::vector<half_t> output_image_data(output_image_shape.production() *
+                                              4);
+        TargetWrapperCL::ImgcpySync(output_image_data.data(),
                                     output_image,
                                     output_image_shape[0],
                                     output_image_shape[1],
@@ -550,7 +550,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
                                     cl_image2d_slice_pitch,
                                     IoDirection::DtoH);
 
-        default_converter->ImageToNCHW(output_image_data,
+        default_converter->ImageToNCHW(output_image_data.data(),
                                        output_v.data(),
                                        output_image_shape,
                                        output.dims());
