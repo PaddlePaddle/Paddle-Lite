@@ -61,11 +61,15 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA>* param) {
 template <>
 void ConvBNReluKernel<FPGA, float>::Compute(
     const FusionConvBNReluParam<FPGA>& param) {
+
+  // param.Input()->zynqmpTensor()->saveToFile("conv-bn-relu-input", true);
+
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ConvPE& pe = context.pe<ConvPE>();
   pe.dispatch();
 
-  param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->saveToFile("conv-bn-relu-output", true);
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput(
       "conv_bn_relu", param.Output()->zynqmpTensor());

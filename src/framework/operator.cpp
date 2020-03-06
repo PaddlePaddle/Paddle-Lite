@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include <memory>
+#include <regex>
 #include "operators/op_param.h"
 namespace paddle_mobile {
 namespace framework {
@@ -58,6 +59,10 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() {
 #ifdef PADDLE_MOBILE_DEBUG
+#ifdef PADDLE_MOBILE_FPGA_KD_INPUT_TENSOR_NAME_LIST
+  std::ofstream ofs;
+  ofs.open("input_tensor_name_lists.cfg", std::ios_base::app);
+#endif
   static int index_input = 0;
   DLOG << "[" << index_input << "] ------------ " << type_ << " ------------";
   for (const auto key : GetInputKeys()) {
@@ -67,18 +72,22 @@ void OperatorBase<Dtype>::Run() {
       auto var = this->scope_->FindVar(var_vec_in[i]);
       if (var->IsInitialized() &&
           var->template IsType<framework::LoDTensor>()) {
-        const Tensor *tensor = var->template Get<framework::LoDTensor>();
-        if (tensor)
-          DLOG << "\ttensor name: " << var_vec_in[i] << " " << *tensor;
-// #ifdef PADDLE_MOBILE_FPGA_KD
-//         if (tensor) {
-//           std::string path = "input/" + std::to_string(index_input) +
-//                              "_input__" + var_vec_in[i] + "__" +
-//                              tensor->zynqmpTensor()->dimsFileName();
-//           // DLOG << "\tfile name: " << path.c_str();
-//           tensor->zynqmpTensor()->readFromFile(path);
-//         }
-// #endif
+          const Tensor *tensor = var->template Get<framework::LoDTensor>();
+          if (tensor) {
+              DLOG << "\ttensor name: " << var_vec_in[i] << " " << *tensor;
+#ifdef PADDLE_MOBILE_FPGA_KD_INPUT_TENSOR_NAME_LIST
+              ofs << var_vec_in[i] << std::endl;
+#endif
+          }
+#ifdef PADDLE_MOBILE_FPGA_KD_FILES
+          if (tensor) {
+              std::string path = "input/" + std::to_string(index_input) +
+                                 "_input__" + std::regex_replace(var_vec_in[i], std::regex("\\/"), "-") +
+                                 "__" + tensor->zynqmpTensor()->dimsFileName();
+              DLOG << "\tfile name: " << path.c_str();
+              tensor->zynqmpTensor()->readFromFile(path);
+          }
+#endif
 #ifdef PADDLE_MOBILE_FPGA
         DLOG << var_vec_in[i];
 #endif
@@ -100,36 +109,42 @@ void OperatorBase<Dtype>::Run() {
         const Tensor *tensor = var->template Get<framework::LoDTensor>();
         if (tensor)
           DLOG << "\ttensor name: " << var_vec_out[i] << " " << *tensor;
-// #ifdef PADDLE_MOBILE_FPGA_KD
-//         if (tensor) {
-//           std::string path = "output/" + std::to_string(index_output) +
-//                              "_output__" + var_vec_out[i] + "__" +
-//                              tensor->zynqmpTensor()->dimsFileName();
-//           // DLOG << "\tfile name: " << path.c_str();
-//           tensor->zynqmpTensor()->save_file_with_name(path);
-//         }
-// #endif
+#ifdef PADDLE_MOBILE_FPGA_KD_FILES
+        if (tensor && (*tensor).numel() != 0) {
+            if (std::strcmp(key.c_str(), "Norm") != 0) {
+                std::string path = "output/" + std::to_string(index_output) + "_output__" +
+                                   std::regex_replace(var_vec_out[i], std::regex("\\/"), "-") +
+                                   "__" + tensor->zynqmpTensor()->dimsFileName();
+                DLOG << "\tfile name: " << path.c_str();
+                tensor->zynqmpTensor()->save_file_with_name(path);
+            }
+        }
+#endif
 #ifdef PADDLE_MOBILE_FPGA
         DLOG << var_vec_out[i];
 #endif
       }
-      //       if (var->IsInitialized() &&
-      //           var->template IsType<std::vector<framework::LoDTensor>>()) {
-      //         const std::vector<framework::LoDTensor> *vec =
-      //             var->template Get<std::vector<framework::LoDTensor>>();
-      //         DLOG << "\ttensor name: " << var_vec_out[i] << " " <<
-      //         (*vec)[0];
-      // #ifdef PADDLE_MOBILE_FPGA_KD
-      //         std::string path = "output/" + std::to_string(index_output) +
-      //                            "_output__" + var_vec_out[i] + "__" +
-      //                            (*vec)[0].zynqmpTensor()->dimsFileName();
-      //         // DLOG << "file name: " << path.c_str();
-      //         (*vec)[0].zynqmpTensor()->save_file_with_name(path);
-      // #endif
-      //       }
+      if (var->IsInitialized() &&
+          var->template IsType<std::vector<framework::LoDTensor>>()) {
+        const std::vector<framework::LoDTensor> *vec =
+           var->template Get<std::vector<framework::LoDTensor>>();
+        DLOG << "\ttensor name: " << var_vec_out[i] << " " << (*vec)[0];
+#ifdef PADDLE_MOBILE_FPGA_KD_FILES
+        if ((*vec)[0].numel() != 0) {
+            std::string path = "output/" + std::to_string(index_output) + "_output__" +
+                               std::regex_replace(var_vec_out[i], std::regex("\\/"), "-") +
+                               "__" + (*vec)[0].zynqmpTensor()->dimsFileName();
+            DLOG << "file name: " << path.c_str();
+            (*vec)[0].zynqmpTensor()->save_file_with_name(path);
+        }
+#endif
+      }
     }
   }
   index_output++;
+#ifdef PADDLE_MOBILE_FPGA_KD_INPUT_TENSOR_NAME_LIST
+  ofs.close();
+#endif
 #endif
 }
 

@@ -65,7 +65,7 @@ void ConvBNRelu6Kernel<FPGA, float>::Compute(
   ConvPE& pe = context.pe<ConvPE>();
   pe.dispatch();
 
-  param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->printScale();
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput(
       "conv_bn_relu", param.Output()->zynqmpTensor());

@@ -91,7 +91,7 @@ void ConvAddReluKernel<FPGA, float>::Compute(
     pe.dispatch();
   }
 
-  param.Output()->zynqmpTensor()->printScale();
+  // param.Output()->zynqmpTensor()->printScale();
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput(
       "conv_add_relu", param.Output()->zynqmpTensor());

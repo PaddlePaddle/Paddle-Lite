@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "common/log.h"
 #include "dl_engine.hpp"
 namespace paddle_mobile {
 namespace zynqmp {
@@ -25,10 +26,8 @@ DLEngine::DLEngine() {
   filter::set_filter_capacity(info_.filter_cap);
   filter::set_colunm(info_.colunm);
 
-  std::cout << " version:" << info_.version;
-  std::cout << " device_type:" << info_.device_type;
-  std::cout << " filter_cap:" << info_.filter_cap;
-  std::cout << " colunm:" << info_.colunm << std::endl;
+  DLOG << "version:" << info_.version <<  " device_type:" << info_.device_type        \
+       << " filter_capacity:" << info_.filter_cap << " column:" << info_.colunm;
 }
 
 }  // namespace zynqmp

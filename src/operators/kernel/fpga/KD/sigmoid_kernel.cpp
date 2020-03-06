@@ -51,7 +51,7 @@ void SigmoidKernel<FPGA, float>::Compute(const SigmoidParam<FPGA> &param) {
   out->zynqmpTensor()->scale()[0] = max / 127.0;
   out->zynqmpTensor()->scale()[1] = 127.0 / max;
   out->zynqmpTensor()->flush();
-  out->zynqmpTensor()->printScale();
+  // out->zynqmpTensor()->printScale();
 
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("sigmoid",

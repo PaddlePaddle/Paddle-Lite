@@ -42,7 +42,7 @@ void NormKernel<FPGA, float>::Compute(const NormParam<FPGA>& param) {
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   zynqmp::NormPE& pe = context.pe<zynqmp::NormPE>();
   pe.dispatch();
-  param.Out()->zynqmpTensor()->printScale();
+  // param.Out()->zynqmpTensor()->printScale();
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("norm",
                                                   param.Out()->zynqmpTensor());

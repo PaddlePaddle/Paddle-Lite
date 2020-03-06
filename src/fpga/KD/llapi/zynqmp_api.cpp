@@ -72,20 +72,27 @@ void *fpga_malloc(size_t size) {
 #ifdef PADDLE_MOBILE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+
   if (ptr == MAP_FAILED) {
-    std::cout << "not enough memory !";
+
+    if (errno == ENOMEM) {
+        std::cout << "mmap failed with not enough memory ! (size=" << size << ")" << std::endl;
+	throw(-1);
+        exit(-1);
+    }
+    if (errno == EINVAL) {
+        std::cout << "mmap failed with invalid arguments ! (size=" << size << ")" << std::endl;
+        // throw -1;
+        exit(-1);
+    }
+    std::cout << "mmap failed with other than memory usage and invalid arguments! errno=" << errno 
+              << ", (size=" << size << ")" << std::endl;
     exit(-1);
   }
-  if (errno == ENOMEM) {
-      std::cout << "mmap failed with not enough memory !";
-      exit(-1);
-  }
-  if (errno == EINVAL) {
-      std::cout << "mmap failed with invalid arguments ! (size=" << size << ")" << std::endl;
-      exit(-1);
-  }
+
   if (ptr == NULL) {
-    std::cout << "NULL returned, errno=" << errno << ", mmap failed with other errors other than memory usage !"    \
+    // std::cout << "not enough memory !";
+    std::cout << "NULL returned, errno=" << errno << ", null retured, mmap failed with other errors other than memory usage !"    \
               << std::endl;
     exit(-1);
   }

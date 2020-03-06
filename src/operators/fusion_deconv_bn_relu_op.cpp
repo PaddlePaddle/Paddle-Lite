@@ -25,7 +25,7 @@ REGISTER_FUSION_MATCHER(fusion_deconv_bn_relu, ops::FusionDeconvBNReluMatcher);
 #ifdef PADDLE_MOBILE_CPU
 #endif
 
-#ifdef PADDLE_MOBILE_FPGA
+#if defined(PADDLE_MOBILE_FPGA) || defined(PADDLE_MOBILE_FPGA_KD)
 REGISTER_OPERATOR_FPGA(fusion_deconv_bn_relu, ops::FusionDeconvBNReluOp);
 #endif
 

@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <stdio.h>
 #include <vector>
+#include <functional>
 
 #include "fpga/KD/alignment.h"
 #include "fpga/KD/layout.hpp"

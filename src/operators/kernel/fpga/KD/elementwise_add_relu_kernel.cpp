@@ -44,9 +44,13 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 template <>
 void ElementwiseAddReluKernel<FPGA, float>::Compute(
     const ElementwiseAddReluParam<FPGA>& param) {
+  // param.InputX()->zynqmpTensor()->saveToFile("elementwise-add-relu-in-x", true);
+  // param.InputY()->zynqmpTensor()->saveToFile("elementwise-add-relu-in-y", true);
+  
   zynqmp::Context& context = const_cast<zynqmp::Context&>(param.context_);
   ElementwiseAddPE& pe = context.pe<ElementwiseAddPE>();
   pe.dispatch();
+  // param.Out()->zynqmpTensor()->saveToFile("elementwise-add-relu-out", true);
 #ifdef PADDLE_MOBILE_DEBUG
   zynqmp::Debugger::get_instance().registerOutput("ew_add_relu",
                                                   param.Out()->zynqmpTensor());

@@ -35,14 +35,19 @@ class Debugger {
   }
 
   void registerOutput(std::string op_type, Tensor* tensor) {
-    tensor->printScale();
-    // tensor->saveToFile(op_type, true);
+    // tensor->printScale();
+    // if (op_config[op_type]) {
+    //   tensor->saveToFile(op_type, true);
+    // }
   }
 
  private:
   std::unordered_map<std::string, bool> op_config;
   Debugger() {
+    op_config["feed"] = true;
+    op_config["fetch"] = true;
     op_config["concat"] = true;
+    op_config["conv"] = true;
     op_config["conv_add_bn"] = true;
     op_config["conv_add_bn_relu"] = true;
     op_config["conv_add"] = true;
@@ -50,6 +55,13 @@ class Debugger {
     op_config["conv_bn"] = true;
     op_config["conv_bn_relu"] = true;
     op_config["crop"] = true;
+
+    op_config["pool"] = true;
+    op_config["ew_add"] = true;
+    op_config["ew_add_relu"] = true;
+    op_config["deconv"] = true;
+
+    op_config["bilinear_interp"] = true;
   }
 };
 }  // namespace zynqmp

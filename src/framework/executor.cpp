@@ -477,6 +477,7 @@ PMStatus Executor<Device, T>::Predict() {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+    DLOG << " ";
     DLOG << "run op: " << op_handler->Type();
     if (lod_mode_) {
       op_handler->InferShape();

@@ -154,6 +154,10 @@ if (CON GREATER -1)
     target_link_libraries(test-yolov3 paddle-mobile)
     target_link_libraries(test-yolov3 ${OpenCV_LIBS})
 
+    ADD_EXECUTABLE(test-keypoint fpga/test_keypoint.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-keypoint paddle-mobile)
+    target_link_libraries(test-keypoint ${OpenCV_LIBS})
+
     set(FOUND_MATCH ON)
 endif ()
 
