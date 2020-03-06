@@ -184,11 +184,11 @@ TEST(grid_samler_image2d, compute) {
 
           DDim out_image_shape =
               default_converter->InitImageDimInfoWith(out_dim);
-          // LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
-          << out_image_shape[1];
+          LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
+                    << out_image_shape[1];
           auto* out_image = out.mutable_data<half_t, cl::Image2D>(
               out_image_shape[0], out_image_shape[1]);
-          LOG(INFO) << "out_image:" << out_image;
+          // LOG(INFO) << "out_image:" << out_image;
           kernel->Launch();
 
           auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
