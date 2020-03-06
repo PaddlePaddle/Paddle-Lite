@@ -66,43 +66,30 @@ class TestCase {
   /// output.
   virtual void RunBaseline(Scope* scope) = 0;
 
-  // checkout the precision of the two tensors. b_tensor is from the baseline
+  // checkout the precision of the two tensors with type T. b_tensor is baseline
   template <typename T>
   bool CheckTensorPrecision(const Tensor* a_tensor,
                             const Tensor* b_tensor,
                             float abs_error);
 
+  // checkout the precision of the two tensors. b_tensor is baseline
+  bool CheckPrecision(const Tensor* a_tensor,
+                      const Tensor* b_tensor,
+                      float abs_error,
+                      PrecisionType precision_type);
+
   /// Check the precision of the output variables. It will compare the same
-  /// tensor
-  /// (or all tensors of tensor_array) in two scopes, one of the instruction
-  /// execution,
-  /// and the other for the baseline.
-  template <typename T>
-  bool CheckPrecision(const std::string& var_name, float abs_error);
+  /// tensor (or all tensors of the tensor_array) in two scopes, one of the
+  /// instruction execution, and the other for the baseline.
+  bool CheckPrecision(const std::string& var_name,
+                      float abs_error,
+                      PrecisionType precision_type);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
   // Check whether the output tensor is consistent with the output definition in
   // kernel registry.
   void CheckKernelConsistWithDefinition() {}
-
-  // Get the precision from the tensor or tensor_array of base_scope_
-  PrecisionType GetPrecisonType(const std::string& var_name) {
-    auto var = base_scope_->FindVar(var_name);
-    if (var->IsType<Tensor>()) {
-      return var->GetMutable<Tensor>()->precision();
-    } else if (var->IsType<std::vector<Tensor>>()) {
-      auto tensor_array = var->GetMutable<std::vector<Tensor>>();
-      for (int i = 0; i < tensor_array->size(); i++) {
-        if (!tensor_array->at(i).dims().empty()) {
-          return tensor_array->at(i).precision();
-        }
-      }
-    } else {
-      LOG(FATAL) << "unsupported var type";
-    }
-    return PRECISION(kUnk);
-  }
 
   Scope& scope() { return *scope_; }
 
@@ -262,24 +249,7 @@ class Arena {
     const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
     auto precision_type = type->precision();
-    if (precision_type == PRECISION(kAny)) {
-      precision_type = tester_->GetPrecisonType(var_name);
-    }
-    switch (precision_type) {
-      case PRECISION(kFloat):
-        return tester_->CheckPrecision<float>(var_name, abs_error_);
-      case PRECISION(kInt8):
-        return tester_->CheckPrecision<int8_t>(var_name, abs_error_);
-      case PRECISION(kInt32):
-        return tester_->CheckPrecision<int32_t>(var_name, abs_error_);
-      case PRECISION(kInt64):
-        return tester_->CheckPrecision<int64_t>(var_name, abs_error_);
-      case PRECISION(kBool):
-        return tester_->CheckPrecision<bool>(var_name, abs_error_);
-      default:
-        LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());
-        return false;
-    }
+    return tester_->CheckPrecision(var_name, abs_error_, precision_type);
   }
 
  private:
@@ -331,13 +301,41 @@ bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
   return success;
 }
 
-template <typename T>
-bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
+bool TestCase::CheckPrecision(const Tensor* a_tensor,
+                              const Tensor* b_tensor,
+                              float abs_error,
+                              PrecisionType precision_type) {
+  if (precision_type == PRECISION(kAny)) {
+    precision_type = b_tensor->precision();
+  }
+  CHECK_EQ(precision_type, b_tensor->precision())
+      << "arg precision type and real tensor precision type are not matched!";
+  switch (precision_type) {
+    case PRECISION(kFloat):
+      return CheckTensorPrecision<float>(a_tensor, b_tensor, abs_error_);
+    case PRECISION(kInt8):
+      return CheckTensorPrecision<int8_t>(a_tensor, b_tensor, abs_error_);
+    case PRECISION(kInt32):
+      return CheckTensorPrecision<int32_t>(a_tensor, b_tensor, abs_error_);
+    case PRECISION(kInt64):
+      return CheckTensorPrecision<int64_t>(a_tensor, b_tensor, abs_error_);
+    case PRECISION(kBool):
+      return CheckTensorPrecision<bool>(a_tensor, b_tensor, abs_error_);
+    default:
+      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type);
+      return false;
+  }
+}
+
+bool TestCase::CheckPrecision(const std::string& var_name,
+                              float abs_error,
+                              PrecisionType precision_type) {
   bool success = true;
   if (inst_scope_->FindVar(var_name)->IsType<Tensor>()) {
     auto a_tensor = inst_scope_->FindTensor(var_name);
     auto b_tensor = base_scope_->FindTensor(var_name);
-    success = success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
+    success = success &&
+              CheckPrecision(a_tensor, b_tensor, abs_error, precision_type);
   } else if (inst_scope_->FindVar(var_name)->IsType<std::vector<Tensor>>()) {
     auto a_tensor_array =
         inst_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
@@ -350,8 +348,8 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
       if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0) {
         continue;
       }
-      success =
-          success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
+      success = success &&
+                CheckPrecision(a_tensor, b_tensor, abs_error, precision_type);
     }
   } else {
     LOG(FATAL) << "unsupported var type";
