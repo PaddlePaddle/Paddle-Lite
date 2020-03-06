@@ -101,6 +101,12 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
   return std::unique_ptr<const lite_api::Tensor>(new lite_api::Tensor(x));
 }
 
+std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
+    const std::string &name) {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_.GetMutableTensor(name)));
+}
+
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
     const std::string &name) {
   return std::unique_ptr<lite_api::Tensor>(

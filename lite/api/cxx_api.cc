@@ -314,7 +314,14 @@ void Predictor::GenRuntimeProgram() {
 
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
+  CHECK(var) << "no variable named with " << name << " in exec_scope";
   return &var->Get<lite::Tensor>();
+}
+
+lite::Tensor *Predictor::GetMutableTensor(const std::string &name) const {
+  auto *var = exec_scope_->FindVar(name);
+  CHECK(var) << "no variable named with " << name << " in exec_scope";
+  return var->GetMutable<lite::Tensor>();
 }
 
 // get input by name
