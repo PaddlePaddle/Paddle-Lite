@@ -21,9 +21,16 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/test_helper.h"
 
 namespace paddle {
 namespace lite {
+
+#define SHADOW_LOG VLOG(4)
+#define FP16_MAX_DIFF (1e0)
+#define FP16_ABS_DIFF (1e-1)
+// #define TEST_DEPTHWISE_CONV_IMAGE_BASIC
+#define TEST_DEPTHWISE_CONV_IMAGE_3X3
 
 template <typename T, int STRIDE_H = 1, int STRIDE_W = 1>
 void depth_conv(const T* input_data,
@@ -105,8 +112,9 @@ int ConvOutputSize(int input_size,
   return output_size;
 }
 
+#ifdef TEST_DEPTHWISE_CONV_IMAGE_BASIC
 // #define LOOP_TEST
-TEST(depthwise_conv2d_basic, compute) {
+TEST(depthwise_conv2d, compute_basic) {
   // conv infos
   //  const int ksize = 1;
   const int stride = 1;
@@ -383,133 +391,193 @@ TEST(depthwise_conv2d_basic, compute) {
 // nothing to do.
 #endif
 }
+#endif
 
-TEST(depthwise_conv2d_image2d_fp16, compute) {
-  LOG(INFO) << "to get kernel ...";
-  auto kernels = KernelRegistry::Global().Create("depthwise_conv2d",
-                                                 TARGET(kOpenCL),
-                                                 PRECISION(kFP16),
-                                                 DATALAYOUT(kImageDefault));
-  ASSERT_FALSE(kernels.empty());
+#ifdef TEST_DEPTHWISE_CONV_IMAGE_3X3
+// #define LOOP_TEST
+TEST(depthwise_conv2d, compute_image2d_3x3) {
+  const int fw = 3;
+  const int fh = fw;
+  int dilation = 1;
+  int stride = 1;
+  int pad = 0;
+#ifdef LOOP_TEST
+  // for (int batch_size = 1; batch_size < 2; ++batch_size) {
+  for (int oc = 4; oc < 10; oc += 1) {      // oc = ic
+    for (int ih = 3; ih < 15; ih += 1) {    // ih
+      for (int iw = 3; iw < 15; iw += 1) {  // iw
+#else
+  const int oc = 32;
+  const int ih = 112;
+  const int iw = 112;
+#endif
+        stride = (stride == 1) ? 2 : 1;
+        // pad = (pad == 0) ? 1 : 0;
+        const int fb = oc;
+        const int ic = oc;
+        const int oh = ConvOutputSize(ih, fh, dilation, pad, pad, stride);
+        const int ow = ConvOutputSize(iw, fw, dilation, pad, pad, stride);
 
-  auto kernel = std::move(kernels.front());
+        LOG(INFO) << "to get kernel ...";
+        auto kernels =
+            KernelRegistry::Global().Create("depthwise_conv2d",
+                                            TARGET(kOpenCL),
+                                            PRECISION(kFP16),
+                                            DATALAYOUT(kImageDefault));
+        ASSERT_FALSE(kernels.empty());
 
-  LOG(INFO) << "get kernel";
-  lite::Tensor input, filter, output;
-  operators::ConvParam param;
-  param.x = &input;
-  param.filter = &filter;
-  param.output = &output;
-  std::vector<int> paddings = {0, 0};
-  param.paddings = std::make_shared<std::vector<int>>(paddings);
-  param.strides = std::vector<int>{1, 1};
-  std::vector<int> dilations = {1, 1};
-  param.dilations = std::make_shared<std::vector<int>>(dilations);
+        auto kernel = std::move(kernels.front());
 
-  std::unique_ptr<KernelContext> context(new KernelContext);
-  context->As<OpenCLContext>().InitOnce();
+        LOG(INFO) << "get kernel";
+        lite::Tensor input, filter, output;
+        operators::ConvParam param;
+        param.x = &input;
+        param.filter = &filter;
+        param.output = &output;
+        param.groups = oc;
+        std::vector<int> paddings = {pad, pad, pad, pad};
+        param.paddings = std::make_shared<std::vector<int>>(paddings);
+        param.strides = std::vector<int>{stride, stride};
+        std::vector<int> dilations = {dilation, dilation};
+        param.dilations = std::make_shared<std::vector<int>>(dilations);
 
-  kernel->SetParam(param);
-  std::unique_ptr<KernelContext> dep_context(new KernelContext);
-  context->As<OpenCLContext>().CopySharedTo(
-      &(dep_context->As<OpenCLContext>()));
-  kernel->SetContext(std::move(dep_context));
+        std::unique_ptr<KernelContext> context(new KernelContext);
+        context->As<OpenCLContext>().InitOnce();
 
-  LOG(INFO) << "kernel ready";
-  std::default_random_engine engine;
-  std::uniform_real_distribution<float> gen(-5, 5);
-  std::vector<float> input_v(1 * 32 * 112 * 112);
-  std::vector<float> filter_v(32 * 1 * 3 * 3);
-  for (auto& i : input_v) {
-    i = gen(engine);
+        kernel->SetParam(param);
+        std::unique_ptr<KernelContext> dep_context(new KernelContext);
+        context->As<OpenCLContext>().CopySharedTo(
+            &(dep_context->As<OpenCLContext>()));
+        kernel->SetContext(std::move(dep_context));
+
+        LOG(INFO) << "kernel ready";
+        const DDim& input_dim =
+            lite::DDim{std::vector<int64_t>({1, ic, ih, iw})};
+        const DDim& filter_dim =
+            lite::DDim{std::vector<int64_t>({fb, 1, 3, 3})};
+        const DDim& output_dim =
+            lite::DDim{std::vector<int64_t>({1, oc, oh, ow})};
+        input.Resize(input_dim);
+        filter.Resize(filter_dim);
+        output.Resize(output_dim);
+
+        std::default_random_engine engine;
+        std::uniform_real_distribution<float> gen(-5, 5);
+        std::vector<float> input_v(input_dim.production());
+        std::vector<float> filter_v(filter_dim.production());
+        std::vector<float> output_v(output_dim.production());
+        for (auto& i : input_v) {
+          i = gen(engine);
+        }
+        for (auto& f : filter_v) {
+          f = gen(engine);
+        }
+
+        LOG(INFO) << "prepare input";
+        CLImageConverterDefault* default_converter =
+            new CLImageConverterDefault();
+        DDim input_image_shape =
+            default_converter->InitImageDimInfoWith(input.dims());
+        LOG(INFO) << "input_image_shape = " << input_image_shape[0] << " "
+                  << input_image_shape[1];
+        std::vector<half_t> input_image_data(input_image_shape.production() *
+                                             4);  // 4 : RGBA
+        default_converter->NCHWToImage(
+            input_v.data(), input_image_data.data(), input.dims());
+        auto* input_image =
+            input.mutable_data<half_t, cl::Image2D>(input_image_shape[0],
+                                                    input_image_shape[1],
+                                                    input_image_data.data());
+
+        LOG(INFO) << "prepare kernel";
+        filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+                                                       filter_dim);
+
+        LOG(INFO) << "launch";
+        DDim output_image_shape =
+            default_converter->InitImageDimInfoWith(output.dims());
+        LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
+                  << output_image_shape[1];
+        auto* output_image = output.mutable_data<half_t, cl::Image2D>(
+            output_image_shape[0], output_image_shape[1]);
+
+        kernel->Launch();
+
+        auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+        auto* out_ptr = param.output->data<half_t, cl::Image2D>();
+        auto it = wait_list->find(out_ptr);
+        if (it != wait_list->end()) {
+          VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+          LOG(INFO) << "--- Find the sync event for the target cl tensor. ---";
+          auto& event = *(it->second);
+          event.wait();
+        } else {
+          LOG(FATAL)
+              << "Could not find the sync event for the target cl tensor.";
+          LOG(INFO)
+              << "Could not find the sync event for the target cl tensor.";
+        }
+
+        lite::Tensor out_ref;
+        out_ref.Resize(output_dim);
+        auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
+        if (stride == 1) {
+          depth_conv<float, 1, 1>(input_v.data(),
+                                  input.dims(),
+                                  filter_v.data(),
+                                  filter.dims(),
+                                  out_ref_data,
+                                  out_ref.dims());
+        } else if (stride == 2) {
+          depth_conv<float, 2, 2>(input_v.data(),
+                                  input.dims(),
+                                  filter_v.data(),
+                                  filter.dims(),
+                                  out_ref_data,
+                                  out_ref.dims());
+        }
+
+        const size_t cl_image2d_row_pitch{0};
+        const size_t cl_image2d_slice_pitch{0};
+
+        half_t* output_image_data =
+            new half_t[output_image_shape.production() * 4];
+        TargetWrapperCL::ImgcpySync(output_image_data,
+                                    output_image,
+                                    output_image_shape[0],
+                                    output_image_shape[1],
+                                    cl_image2d_row_pitch,
+                                    cl_image2d_slice_pitch,
+                                    IoDirection::DtoH);
+
+        default_converter->ImageToNCHW(output_image_data,
+                                       output_v.data(),
+                                       output_image_shape,
+                                       output.dims());
+
+        LOG(INFO) << "output_data vs output_ref_data";
+        for (int i = 0; i < output.dims().production(); i++) {
+          auto relative_diff =
+              COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+          auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
+          EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+                       abs_diff > FP16_ABS_DIFF);
+          if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
+            LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                       << "]:" << output_v[i] << " "
+                                                 "out_ref_data["
+                       << i << "]:" << out_ref_data[i];
+          }
+        }
+#ifdef LOOP_TEST
+      }
+    }
   }
-  for (auto& f : filter_v) {
-    f = gen(engine);
-  }
-
-  LOG(INFO) << "prepare input";
-  input.Resize({1, 32, 112, 112});
-  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
-  DDim input_image_shape =
-      default_converter->InitImageDimInfoWith(input.dims());
-  LOG(INFO) << "input_image_shape = " << input_image_shape[0] << " "
-            << input_image_shape[1];
-  std::vector<half_t> input_image_data(input_image_shape.production() *
-                                       4);  // 4 : RGBA
-  default_converter->NCHWToImage(
-      input_v.data(), input_image_data.data(), input.dims());
-  auto* input_image = input.mutable_data<half_t, cl::Image2D>(
-      input_image_shape[0], input_image_shape[1], input_image_data.data());
-
-  LOG(INFO) << "prepare kernel";
-  filter.Resize({32, 1, 3, 3});
-  CLImageConverterNWBlock* nw_converter = new CLImageConverterNWBlock();
-  DDim filter_image_shape = nw_converter->InitImageDimInfoWith(filter.dims());
-  LOG(INFO) << "filter_image_shape = " << filter_image_shape[0] << " "
-            << filter_image_shape[1];
-  std::vector<half_t> filter_image_data(filter_image_shape.production() *
-                                        4);  // 4 : RGBA
-  nw_converter->NCHWToImage(
-      filter_v.data(), filter_image_data.data(), filter.dims());
-  auto* filter_image = filter.mutable_data<half_t, cl::Image2D>(
-      filter_image_shape[0], filter_image_shape[1], filter_image_data.data());
-
-  LOG(INFO) << "launch";
-  output.Resize({1, 32, 110, 110});
-  DDim output_image_shape =
-      default_converter->InitImageDimInfoWith(output.dims());
-  LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
-            << output_image_shape[1];
-  auto* output_image = output.mutable_data<half_t, cl::Image2D>(
-      output_image_shape[0], output_image_shape[1]);
-
-  kernel->Launch();
-
-  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    LOG(INFO) << "--- Find the sync event for the target cl tensor. ---";
-    auto& event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-    LOG(INFO) << "Could not find the sync event for the target cl tensor.";
-  }
-
-  lite::Tensor output_ref;
-  output_ref.Resize({1, 32, 110, 110});
-  auto* output_ref_data = output_ref.mutable_data<float>(TARGET(kARM));
-  depth_conv<float, 1, 1>(input_v.data(),
-                          input.dims(),
-                          filter_v.data(),
-                          filter.dims(),
-                          output_ref_data,
-                          output_ref.dims());
-
-  const size_t cl_image2d_row_pitch{0};
-  const size_t cl_image2d_slice_pitch{0};
-
-  half_t* output_image_data = new half_t[output_image_shape.production() * 4];
-  TargetWrapperCL::ImgcpySync(output_image_data,
-                              output_image,
-                              output_image_shape[0],
-                              output_image_shape[1],
-                              cl_image2d_row_pitch,
-                              cl_image2d_slice_pitch,
-                              IoDirection::DtoH);
-
-  float* output_data = new float[output_image_shape.production() * 4];
-  default_converter->ImageToNCHW(
-      output_image_data, output_data, output_image_shape, output.dims());
-
-  LOG(INFO) << "output_data vs output_ref_data";
-  for (int i = 0; i < output.dims().production(); i++) {
-    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-4);
-    LOG(INFO) << output_data[i] << " " << output_ref_data[i];
-  }
+#else
+// nothing to do.
+#endif
 }
+#endif
 
 }  // namespace lite
 }  // namespace paddle

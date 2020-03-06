@@ -92,9 +92,6 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1;
-#if 1  // TODO(ysh329): enable general dwconv
-  } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1]) {
-#else  // TODO(ysh329): remove dwconv3x3s1 and dwconv3x3 temporarily, need fix
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h == 3 && kernel_w == 3 && groups > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
@@ -116,7 +113,6 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h != 3) {
-#endif
     // depth_conv2d
     kernel_func_names_.push_back("depth_conv2d");
     kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");
