@@ -25,8 +25,6 @@ namespace arm {
 
 class WriteToArrayCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
-  using param_t = operators::WriteToArrayParam;
-
   void Run() override;
 
   ~WriteToArrayCompute() {}
