@@ -390,13 +390,13 @@ function main {
                 ;;
             --arm_lang=*)
                 ARM_LANG="${i#*=}"
-                if [ ${ARM_LANG} == "clang" ]; then
-                     set +x
-                     echo
-                     echo -e "error: only support gcc now, clang will be supported in future."
-                     echo
-                     exit 1
-                fi
+                #if [ ${ARM_LANG} == "clang" ]; then
+                #     set +x
+                #     echo
+                #     echo -e "error: only support gcc now, clang will be supported in future."
+                #     echo
+                #     exit 1
+                #fi
                 shift
                 ;;
             --android_stl=*)
