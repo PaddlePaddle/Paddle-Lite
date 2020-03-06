@@ -25,7 +25,7 @@ void TopkCompute::Run() {
   auto& param = Param<operators::TopkParam>();
   const float* x_data = param.X->data<float>();
   float* out_val = param.Out->mutable_data<float>();
-  int* out_ind = param.Indices->mutable_data<int>();
+  auto out_ind = param.Indices->mutable_data<int64_t>();
   DDim x_dims = param.X->dims();
   int K = param.K;
   int dim_size = x_dims.size();

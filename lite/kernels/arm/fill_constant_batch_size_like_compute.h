@@ -22,7 +22,7 @@ namespace kernels {
 namespace arm {
 
 class FillConstantBatchSizeLikeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::FillConstantBatchSizeLikeParam;
 

@@ -134,8 +134,11 @@ TEST(fill_constant_batch_size_like, precision) {
   LOG(INFO) << "test fill_constant_batch_size_like op";
   Place place;
   float abs_error = 1e-5;
-#ifdef LITE_WITH_ARM
-  place = TARGET(kARM);
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = {TARGET(kARM), PRECISION(kAny)};
 #else
   return;
 #endif

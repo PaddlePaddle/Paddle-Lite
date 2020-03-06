@@ -263,9 +263,9 @@ void ConvImageCompute::Conv2d1x1() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -352,7 +352,7 @@ void ConvImageCompute::Conv2d1x1() {
                   static_cast<size_t>(maped_w),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -434,10 +434,10 @@ void ConvImageCompute::Conv2d3x3() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "input_dims: " << input_dims;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -529,7 +529,7 @@ void ConvImageCompute::Conv2d3x3() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -591,10 +591,10 @@ void ConvImageCompute::Conv2d5x5() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "input_dims: " << input_dims;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -674,7 +674,7 @@ void ConvImageCompute::Conv2d5x5() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -736,10 +736,10 @@ void ConvImageCompute::Conv2d7x7() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "input_dims: " << input_dims;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -819,7 +819,7 @@ void ConvImageCompute::Conv2d7x7() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -1051,9 +1051,9 @@ void ConvImageCompute::DepthwiseConv2d() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -1139,7 +1139,7 @@ void ConvImageCompute::DepthwiseConv2d() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 

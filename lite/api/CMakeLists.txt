@@ -78,6 +78,7 @@ message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get CUDA kernels ${cuda_kernels}")
 message(STATUS "get Host kernels ${host_kernels}")
 message(STATUS "get ARM kernels ${arm_kernels}")
+message(STATUS "get OpenCL kernels ${opencl_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
 message(STATUS "get XPU kernels ${xpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
@@ -237,6 +238,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
            ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_full_quant SERIAL)
     endif()
 
+   # brief: we comment ocr_test_ut because we do not supply ocr model to test, it is the reference to infer nlp model
    # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
    #    DEPS ${lite_model_test_DEPS})
 
@@ -382,6 +384,16 @@ if(NOT IOS)
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
 	BM_DEPS ${bm_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        X86_DEPS ${x86_kernels}
+        CUDA_DEPS ${cuda_kernels})
+    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels}
+        ARM_DEPS ${arm_kernels}
+        CV_DEPS paddle_cv_arm
+        NPU_DEPS ${npu_kernels}
+        XPU_DEPS ${xpu_kernels}
+        CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})

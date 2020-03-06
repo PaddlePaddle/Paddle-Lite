@@ -66,9 +66,17 @@ class TestCase {
   /// output.
   virtual void RunBaseline(Scope* scope) = 0;
 
-  /// Check the precision of the output tensors. It will compare the same tensor
-  /// in two scopes, one of the instruction execution, and the other for the
-  /// baseline.
+  // checkout the precision of the two tensors. b_tensor is from the baseline
+  template <typename T>
+  bool CheckTensorPrecision(const Tensor* a_tensor,
+                            const Tensor* b_tensor,
+                            float abs_error);
+
+  /// Check the precision of the output variables. It will compare the same
+  /// tensor
+  /// (or all tensors of tensor_array) in two scopes, one of the instruction
+  /// execution,
+  /// and the other for the baseline.
   template <typename T>
   bool CheckPrecision(const std::string& var_name, float abs_error);
 
@@ -118,6 +126,34 @@ class TestCase {
     if (!lod.empty()) *tensor->mutable_lod() = lod;
     // set persistable
     tensor->set_persistable(is_persistable);
+  }
+
+  /// Prepare a tensor_array in host. The tensors will be created in scope_.
+  /// Need to specify the targets other than X86 or ARM.
+  template <typename T>
+  void SetCommonTensorList(const std::string& var_name,
+                           const std::vector<DDim>& array_tensor_dims,
+                           const std::vector<std::vector<T>>& datas,
+                           const std::vector<LoD>& lods = {}) {
+    CHECK_EQ(array_tensor_dims.size(), datas.size());
+    if (!lods.empty()) {
+      CHECK_EQ(array_tensor_dims.size(), lods.size());
+    }
+
+    auto* tensor_array =
+        scope_->Var(var_name)->GetMutable<std::vector<Tensor>>();
+    for (int i = 0; i < array_tensor_dims.size(); i++) {
+      Tensor tmp;
+      tmp.Resize(array_tensor_dims[i]);
+      auto* tmp_data = tmp.mutable_data<T>();
+      memcpy(tmp_data,
+             datas[i].data(),
+             array_tensor_dims[i].production() * sizeof(T));
+      if (!lods.empty()) {
+        tmp.set_lod(lods[i]);
+      }
+      tensor_array->push_back(tmp);
+    }
   }
 
   // Prepare for the operator.
@@ -263,9 +299,9 @@ class Arena {
 };
 
 template <typename T>
-bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
-  auto a_tensor = inst_scope_->FindTensor(var_name);
-  auto b_tensor = base_scope_->FindTensor(var_name);
+bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
+                                    const Tensor* b_tensor,
+                                    float abs_error) {
   CHECK(a_tensor);
   CHECK(b_tensor);
 
@@ -301,6 +337,34 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
     if (fabsf(a_data[i] - b_data[i]) > abs_error) {
       success = false;
     }
+  }
+  return success;
+}
+
+template <typename T>
+bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
+  bool success = true;
+  if (inst_scope_->FindVar(var_name)->IsType<Tensor>()) {
+    auto a_tensor = inst_scope_->FindTensor(var_name);
+    auto b_tensor = base_scope_->FindTensor(var_name);
+    success = success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
+  } else if (inst_scope_->FindVar(var_name)->IsType<std::vector<Tensor>>()) {
+    auto a_tensor_array =
+        inst_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
+    auto b_tensor_array =
+        base_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
+    CHECK_EQ(a_tensor_array->size(), b_tensor_array->size());
+    for (int i = 0; i < a_tensor_array->size(); i++) {
+      Tensor* a_tensor = &(a_tensor_array->at(i));
+      Tensor* b_tensor = &(b_tensor_array->at(i));
+      if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0) {
+        continue;
+      }
+      success =
+          success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
+    }
+  } else {
+    LOG(FATAL) << "unsupported var type";
   }
   return success;
 }

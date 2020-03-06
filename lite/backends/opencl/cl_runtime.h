@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <fstream>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,6 +24,9 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
+
+extern const std::map<std::string, std::vector<unsigned char>>
+    opencl_kernels_files;
 
 class CLRuntime {
  public:
