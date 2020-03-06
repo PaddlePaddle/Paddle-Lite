@@ -45,7 +45,7 @@ class BilinearInterpImageCompute
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/bilinear_interp_kernel.cl", build_options_);
-    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
   void Run() override {

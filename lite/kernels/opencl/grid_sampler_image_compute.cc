@@ -35,7 +35,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   using param_t = operators::GridSamplerParam;
 
   std::string doc() const override {
-    return "GridSampler using cl::Image2D(ImageDefault/RGBA), kFP32";
+    return "GridSampler using cl::Image2D(ImageDefault/RGBA), kFP16";
   }
 
   void PrepareForRun() override {
