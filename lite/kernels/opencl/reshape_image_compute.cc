@@ -35,6 +35,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/reshape_kernel.cl", build_options_);
   }
