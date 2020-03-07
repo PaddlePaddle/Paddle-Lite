@@ -40,33 +40,6 @@ float lrn_square(const float* din,
   for (int i = start; i <= end; i++) {
     sum += din[i * height * width] * din[i * height * width];
   }
-  /*
-  // handle left channels with padding situation.
-  if (c - pre_pad < 0){
-      for (int i = 0; i <= c; i++){
-          sum += din[i * height * width] * din[i * height * width];
-      }
-  }
-
-  // handle left channels.
-  if (c - pre_pad >= 0) {
-      for (int i = c - pre_pad; i <= c; i++) {
-          sum += din[i * height * width] * din[i * height * width];
-      }
-  }
-  // handle right channels.
-  if (c + pre_pad < channel) {
-      for (int i = c + 1; i <= c + pre_pad; i++) {
-          sum += din[i * height * width] * din[i * height * width];
-      }
-  }
-  //handle right channels with padding situation.
-  if (c + pre_pad >= channel){
-      for (int i = c + 1; i < channel; i++){
-          sum += din[i * height * width] * din[i * height * width];
-      }
-  }
-  */
   return sum;
 }
 void lrn_ref(const float* din,
@@ -197,7 +170,7 @@ TEST(lrn_image2d, compute) {
                         x_image_shape[0],
                         x_image_shape[1],
                         x_image_data.data());
-                    LOG(INFO) << "x_image:" << x_image;
+                    // LOG(INFO) << "x_image:" << x_image;
 
                     DDim out_image_shape =
                         default_converter->InitImageDimInfoWith(out_dim);
@@ -205,7 +178,7 @@ TEST(lrn_image2d, compute) {
                               << " " << out_image_shape[1];
                     auto* out_image = out.mutable_data<half_t, cl::Image2D>(
                         out_image_shape[0], out_image_shape[1]);
-                    LOG(INFO) << "out_image:" << out_image;
+                    // LOG(INFO) << "out_image:" << out_image;
                     kernel->Launch();
 
                     auto* wait_list =
