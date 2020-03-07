@@ -59,7 +59,7 @@ void lrn_ref(const float* din,
     for (int b = 0; b < num; b++) {
       const float* din_batch = din + b * channel * height * width;
       float* dout_batch = output + b * channel * height * width;
-      int offset_num = n * channel * height * width;
+      int offset_num = b * channel * height * width;
       for (int c = 0; c < channel; c++) {
         for (int h = 0; h < height; ++h) {
           for (int w = 0; w < width; ++w) {
@@ -183,7 +183,7 @@ TEST(lrn_image2d, compute) {
 
                     auto* wait_list =
                         context->As<OpenCLContext>().cl_wait_list();
-                    auto* out_ptr = param.out->data<half_t, cl::Image2D>();
+                    auto* out_ptr = param.Out->data<half_t, cl::Image2D>();
                     auto it = wait_list->find(out_ptr);
                     if (it != wait_list->end()) {
                       VLOG(4) << "--- Find the sync event for the target cl "
