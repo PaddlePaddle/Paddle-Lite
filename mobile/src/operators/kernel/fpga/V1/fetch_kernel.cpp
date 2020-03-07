@@ -80,6 +80,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   auto output = &param.Out()->at(col);
   if (input->type() == type_id<float>()) {
     output->ShareDataWith(*input);
+    output->Resize(input->dims());
     return;
   }
 
