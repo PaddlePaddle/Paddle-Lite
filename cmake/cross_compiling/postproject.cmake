@@ -64,7 +64,7 @@ if (LITE_ON_TINY_PUBLISH)
     endif()
     if(ARM_TARGET_LANG STREQUAL "clang")
         # TODO(ysh329): add options for clang like gcc branch below
-	else() # ARM_TARGET_LANG STREQUAL "gcc"
+    else() # ARM_TARGET_LANG STREQUAL "gcc"
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -Ofast -Os -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden -ffunction-sections")

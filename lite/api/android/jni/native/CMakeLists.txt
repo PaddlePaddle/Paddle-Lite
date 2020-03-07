@@ -4,7 +4,7 @@ if (LITE_ON_TINY_PUBLISH)
     if(ARM_TARGET_LANG STREQUAL "clang")
         set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
         set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG")
-	else() # ARM_TARGET_LANG STREQUAL "gcc"
+    else() # ARM_TARGET_LANG STREQUAL "gcc"
         set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
         set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
     endif()
@@ -30,9 +30,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
     endif()
 else()
     add_library(paddle_lite_jni SHARED "")
-	if(ARM_TARGET_LANG STREQUAL "clang")
+    if(ARM_TARGET_LANG STREQUAL "clang")
         set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "")
-	else() # ARM_TARGET_LANG STREQUAL "gcc"
+    else() # ARM_TARGET_LANG STREQUAL "gcc"
         set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
     endif()
     target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
