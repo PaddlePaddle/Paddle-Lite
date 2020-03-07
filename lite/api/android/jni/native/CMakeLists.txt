@@ -1,8 +1,13 @@
 # Generate paddle_lite_jni.so
 
 if (LITE_ON_TINY_PUBLISH)
-    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    if(ARM_TARGET_LANG STREQUAL "clang")
+        set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
+        set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG")
+	else() # ARM_TARGET_LANG STREQUAL "gcc"
+        set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
+        set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    endif()
     set(lib_DEPS light_api paddle_api paddle_api_light)
 else()
     set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
@@ -25,7 +30,11 @@ if (NOT LITE_ON_TINY_PUBLISH)
     endif()
 else()
     add_library(paddle_lite_jni SHARED "")
-    set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
+	if(ARM_TARGET_LANG STREQUAL "clang")
+        set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "")
+	else() # ARM_TARGET_LANG STREQUAL "gcc"
+        set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
+    endif()
     target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
     add_dependencies(paddle_lite_jni op_list_h kernel_list_h)
     if (LITE_WITH_NPU)
