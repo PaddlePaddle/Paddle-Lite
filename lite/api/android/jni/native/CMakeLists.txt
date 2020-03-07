@@ -26,7 +26,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
 else()
     add_library(paddle_lite_jni SHARED "")
     set(TARGET_COMIPILE_FLAGS "-fdata-sections")
-    if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc 
+    if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
         set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
     endif()
     set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS ${TARGET_COMIPILE_FLAGS})
