@@ -65,9 +65,6 @@ __kernel void lrn(__read_only image2d_t input,
             square0 += input_data.w * input_data.w;
             break;
       }
-      /*if (i % 4 == 0){
-          square0 += input_data.x * input_data.x;
-      }else if ((i % 4 == 1))*/
   }
   start = out_c1 - pad;
   end = out_c1 + pad;
