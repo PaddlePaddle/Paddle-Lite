@@ -395,7 +395,7 @@ function main {
                      echo
                      echo -e "error: only support gcc now, clang will be supported in future."
                      echo
-                     exit 1
+#                     exit 1
                 fi
                 shift
                 ;;
