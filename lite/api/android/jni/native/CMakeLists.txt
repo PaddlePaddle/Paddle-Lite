@@ -1,6 +1,7 @@
 # Generate paddle_lite_jni.so
 
 if (LITE_ON_TINY_PUBLISH)
+    # For clang, '-Os' isn't supported if '-flto' is enabled.
     if (ARM_TARGET_LANG STREQUAL "clang")
       set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
       set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
@@ -30,9 +31,11 @@ if (NOT LITE_ON_TINY_PUBLISH)
     endif()
 else()
     add_library(paddle_lite_jni SHARED "")
-    if (NOT ((ARM_TARGET_ARCH_ABI STREQUAL "armv8") AND (ARM_TARGET_LANG STREQUAL "clang")))
-      set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
+    set(LTO_FLAGS "-flto")
+    if (ARM_TARGET_LANG STREQUAL "clang")
+        set(LTO_FLAGS "${LTO_FLAGS} -fuse-ld=gold")
     endif()
+    set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${LTO_FLAGS} -fdata-sections")
     target_sources(paddle_lite_jni PUBLIC ${__lite_cc_files} paddle_lite_jni.cc tensor_jni.cc)
     add_dependencies(paddle_lite_jni op_list_h kernel_list_h)
     if (LITE_WITH_NPU)
