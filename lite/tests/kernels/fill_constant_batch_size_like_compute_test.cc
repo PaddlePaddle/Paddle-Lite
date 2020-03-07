@@ -86,8 +86,6 @@ class FillConstantBatchSizeLikeComputeTester : public arena::TestCase {
     std::vector<float> din(in_dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, in_dims_.production());
     SetCommonTensor(input_, in_dims_, din.data(), in_lod_);
-
-    SetPrecisionType(out_, PRECISION(kFloat));
   }
 };
 

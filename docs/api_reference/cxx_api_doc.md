@@ -277,13 +277,13 @@ config.set_power_mode(LITE_POWER_HIGH);
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
 
-### `set_model_from_file(model_dir)`
+### `set_model_from_file(model_file)`
 
 设置模型文件，当需要从磁盘加载模型时使用。
 
 参数：
 
-- `model_dir(std::string)` - 模型文件路径
+- `model_file(std::string)` - 模型文件路径
 
 返回：`None`
 

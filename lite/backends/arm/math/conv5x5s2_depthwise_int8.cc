@@ -102,7 +102,7 @@ void conv_depthwise_5x5s2_int8(Dtype* dout,
       if (h + hout_r_block > hout) {
         h_kernel = hout - h;
       }
-      int hs = h - padh;
+      int hs = h * 2 - padh;
       int he = hs + h_kernel * 2 + 3;
 
 #pragma omp parallel for num_threads(threads)
