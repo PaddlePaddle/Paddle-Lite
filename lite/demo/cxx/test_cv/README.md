@@ -17,7 +17,7 @@ example:
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 ./lite/tools/build.sh build_optimize_tool
-./build.model_optimize_tool/lite/api/model_optimize_tool 
+./build.opt/lite/api/opt
 --optimize_out_type=naive_buffer 
 --optimize_out=model_dir 
 --model_dir=model_dir

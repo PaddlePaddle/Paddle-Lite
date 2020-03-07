@@ -23,16 +23,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void AssignCompute::PrepareForRun() {
-  //  CHECK_OR_FALSE(param_t.Out);
-}
-
 void AssignCompute::Run() {
-  // LOG(INFO) << "into kernel compute run";
   auto& param = Param<param_t>();
-  const lite::Tensor* input = param.X;
-  lite::Tensor* output = param.Out;
-  output->CopyDataFrom(*input);
+  param.Out->CopyDataFrom(*param.X);
 }
 
 }  // namespace arm
@@ -41,7 +34,7 @@ void AssignCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    assign, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::AssignCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    assign, kARM, kAny, kNCHW, paddle::lite::kernels::arm::AssignCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

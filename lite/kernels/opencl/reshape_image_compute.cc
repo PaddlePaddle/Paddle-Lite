@@ -206,3 +206,38 @@ REGISTER_LITE_KERNEL(reshape2,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(flatten,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flatten2,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();

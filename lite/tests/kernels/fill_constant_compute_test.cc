@@ -109,7 +109,6 @@ class FillConstantComputeTester : public arena::TestCase {
         SetCommonTensor(shape_tensor_list_[i], DDim({1}), dshape_tensor.data());
       }
     }
-    SetPrecisionType(out_, PRECISION(kFloat));
   }
 };
 

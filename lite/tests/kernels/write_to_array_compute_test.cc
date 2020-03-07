@@ -66,8 +66,6 @@ class WriteToArrayComputeTester : public arena::TestCase {
     std::vector<int64_t> didn(1);
     didn[0] = id_;
     SetCommonTensor(idn_, DDim{{1}}, didn.data());
-
-    SetPrecisionType(out_, PRECISION(kFloat));
   }
 };
 
