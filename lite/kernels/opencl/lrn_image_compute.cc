@@ -49,7 +49,7 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
     norm_region_ = lrn_param_->norm_region;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/lrn_kernel.cl", build_options_);
-    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
   void Run() override {
@@ -77,11 +77,11 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
     auto* x_img = x->data<half_t, cl::Image2D>();
-    VLOG(4) << "x_image: " << x_img;
+    // VLOG(4) << "x_image: " << x_img;
 
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
-    VLOG(4) << "out_image" << out_img;
+    // VLOG(4) << "out_image" << out_img;
     VLOG(4) << "out_image_shape[w,h]:" << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
