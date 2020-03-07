@@ -13,12 +13,28 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef FLATTEN2_OP
-
 #include "operators/flatten2_op.h"
+#include <operators/kernel/reshape_kernel.h>
+
 namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
-void Flatten2Op<DeviceType, T>::InferShape() const {}
+void Flatten2Op<DeviceType, T>::InferShape() const {
+  const auto* input = this->param_.InputX();
+  auto* output = this->param_.Out();
+  auto input_x_dims = input->dims();
+  if (input->dims().size() == 4) {
+    PADDLE_MOBILE_ENFORCE(this->param_.Axis() == 1,
+                          "flatten 2 only support axis == 1");
+    if (this->param_.Axis() == 1) {
+      std::vector<int> temp_output_dims(2);
+      temp_output_dims[0] = input->dims()[0];
+      temp_output_dims[1] =
+          input->dims()[1] * input->dims()[2] * input->dims()[3];
+      output->Resize(framework::make_ddim(temp_output_dims));
+    }
+  }
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

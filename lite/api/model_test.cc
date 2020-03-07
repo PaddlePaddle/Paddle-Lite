@@ -13,20 +13,28 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
-#include "lite/core/cpu_info.h"
+#include "lite/core/device_info.h"
+#include "lite/core/profile/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/basic_profiler.h"
+#endif  // LITE_WITH_PROFILE
+
+using paddle::lite::profile::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
               "input shapes, separated by colon and comma");
+DEFINE_bool(use_optimize_nb,
+            false,
+            "optimized & naive buffer model for mobile devices");
+DEFINE_string(arg_name, "", "the arg name");
 
 namespace paddle {
 namespace lite_api {
@@ -36,9 +44,7 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  config.set_preferred_place(Place{TARGET(kX86), PRECISION(kFloat)});
   config.set_valid_places({
-      Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
   auto predictor = lite_api::CreatePaddlePredictor(config);
@@ -59,15 +65,14 @@ void OutputOptModel(const std::string& load_model_dir,
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const std::string& model_dir,
-         const int repeat,
+         const PowerMode power_mode,
          const int thread_num,
+         const int repeat,
          const int warmup_times = 0) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(lite::LITE_POWER_HIGH, thread_num);
-#endif
   lite_api::MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_dir + ".nb");
+  config.set_power_mode(power_mode);
+  config.set_threads(thread_num);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -79,6 +84,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     for (int i = 0; i < input_shapes[j].size(); ++i) {
       input_num *= input_shapes[j][i];
     }
+
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
     }
@@ -88,17 +94,22 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     predictor->Run();
   }
 
-  auto start = lite::GetCurrentUS();
-  for (int i = 0; i < repeat; ++i) {
+  Timer ti;
+  for (int j = 0; j < repeat; ++j) {
+    ti.Start();
     predictor->Run();
+    float t = ti.Stop();
+    LOG(INFO) << "iter: " << j << ", time: " << t << " ms";
   }
-  auto end = lite::GetCurrentUS();
 
   LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << model_dir << ", threads num " << thread_num
-            << ", warmup: " << warmup_times << ", repeats: " << repeat
-            << ", spend " << (end - start) / repeat / 1000.0
-            << " ms in average.";
+  LOG(INFO) << "Model: " << model_dir
+            << ", power_mode: " << static_cast<int>(power_mode)
+            << ", threads num " << thread_num << ", warmup: " << warmup_times
+            << ", repeats: " << repeat << ", avg time: " << ti.LapTimes().Avg()
+            << " ms"
+            << ", min time: " << ti.LapTimes().Min() << " ms"
+            << ", max time: " << ti.LapTimes().Max() << " ms.";
 
   auto output = predictor->GetOutput(0);
   auto out = output->data<float>();
@@ -110,6 +121,28 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     output_num *= output_shape[i];
   }
   LOG(INFO) << "output_num: " << output_num;
+
+  // please turn off memory_optimize_pass to use this feature.
+  if (FLAGS_arg_name != "") {
+    auto arg_tensor = predictor->GetTensor(FLAGS_arg_name);
+    auto arg_shape = arg_tensor->shape();
+    int arg_num = 1;
+    std::ostringstream os;
+    os << "{";
+    for (int i = 0; i < arg_shape.size(); ++i) {
+      arg_num *= arg_shape[i];
+      os << arg_shape[i] << ",";
+    }
+    os << "}";
+    float sum = 0.;
+    std::ofstream out(FLAGS_arg_name + ".txt");
+    for (size_t i = 0; i < arg_num; ++i) {
+      sum += arg_tensor->data<float>()[i];
+      out << std::to_string(arg_tensor->data<float>()[i]) << "\n";
+    }
+    LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
+              << ", mean value is " << sum * 1. / arg_num;
+  }
 }
 #endif
 
@@ -123,7 +156,12 @@ int main(int argc, char** argv) {
               << "--model_dir /path/to/your/model";
     exit(0);
   }
-  std::string save_optimized_model_dir = FLAGS_model_dir + "opt2";
+  std::string save_optimized_model_dir = "";
+  if (FLAGS_use_optimize_nb) {
+    save_optimized_model_dir = FLAGS_model_dir;
+  } else {
+    save_optimized_model_dir = FLAGS_model_dir + "opt2";
+  }
 
   auto split_string =
       [](const std::string& str_in) -> std::vector<std::string> {
@@ -165,17 +203,21 @@ int main(int argc, char** argv) {
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }
 
-  // Output optimized model
-  paddle::lite_api::OutputOptModel(
-      FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  if (!FLAGS_use_optimize_nb) {
+    // Output optimized model
+    paddle::lite_api::OutputOptModel(
+        FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+  }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
-  paddle::lite_api::Run(input_shapes,
-                        save_optimized_model_dir,
-                        FLAGS_repeats,
-                        FLAGS_threads,
-                        FLAGS_warmup);
+  paddle::lite_api::Run(
+      input_shapes,
+      save_optimized_model_dir,
+      static_cast<paddle::lite_api::PowerMode>(FLAGS_power_mode),
+      FLAGS_threads,
+      FLAGS_repeats,
+      FLAGS_warmup);
 #endif
   return 0;
 }

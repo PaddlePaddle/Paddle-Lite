@@ -24,27 +24,9 @@ namespace host {
 void ReshapeCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
   auto x = param.x;
-  auto actual_shape = param.actual_shape;
   auto output = param.output;
-  bool inplace = param.inplace;
-  auto x_dims = x->dims();
   auto output_dims = output->dims();
-  if (actual_shape) {
-    auto actual_shape_dims = actual_shape->dims();
-    auto* actual_shape_data = actual_shape->data<int>();
-#ifdef LITE_WITH_CUDA
-    lite::Tensor cpu_actual_shape;
-    if (actual_shape->target() == TARGET(kCUDA)) {
-      cpu_actual_shape.CopyDataFrom(*actual_shape);
-      actual_shape_data = cpu_actual_shape.data<int>();
-    }
-#endif
-    auto shape = std::vector<int>(
-        actual_shape_data, actual_shape_data + actual_shape_dims.production());
-    output_dims = lite::operators::ValidateShape(shape, x_dims);
-    output->Resize(output_dims);
-  }
-  if (inplace) {
+  if (param.inplace) {
     output->ShareDataWith(*x);
   } else {
     output->CopyDataFrom(*x);
@@ -66,6 +48,9 @@ REGISTER_LITE_KERNEL(reshape,
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("Shape",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
@@ -75,6 +60,46 @@ REGISTER_LITE_KERNEL(reshape,
     .Finalize();
 
 REGISTER_LITE_KERNEL(reshape2,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::ReshapeCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flatten,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::ReshapeCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flatten2,
                      kHost,
                      kAny,
                      kAny,

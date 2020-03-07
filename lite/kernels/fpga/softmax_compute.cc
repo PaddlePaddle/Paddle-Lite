@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/softmax_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -22,7 +22,7 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void SoftmaxCompute::Run() {
+void SoftmaxCompute::PrepareForRun() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
   auto& param = Param<operators::SoftmaxParam>();
 
@@ -31,6 +31,14 @@ void SoftmaxCompute::Run() {
   softmax_param.output = param.output->ZynqTensor();
   pe_.init();
   pe_.apply();
+}
+
+void SoftmaxCompute::Run() {
+  pe_.dispatch();
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::SoftmaxParam& softmax_param = pe_.param();
+  Debugger::get_instance().registerOutput("softmax", softmax_param.output);
+#endif
 }
 
 }  // namespace fpga

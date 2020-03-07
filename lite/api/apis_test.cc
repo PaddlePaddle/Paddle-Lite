@@ -21,9 +21,6 @@
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/light_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/pass_registry.h"
 
 DEFINE_string(model_dir, "", "");
@@ -51,32 +48,28 @@ bool CompareTensors(const std::string& name,
 TEST(CXXApi_LightApi, optim_model) {
   lite::Predictor cxx_api;
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
   });
   // On ARM devices, the preferred X86 target not works, but it can still
   // select ARM kernels.
-  cxx_api.Build(
-      FLAGS_model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
+  cxx_api.Build(FLAGS_model_dir, "", "", valid_places);
   cxx_api.SaveModel(FLAGS_optimized_model);
 }
 
 TEST(CXXApi_LightApi, save_and_load_model) {
   lite::Predictor cxx_api;
-  lite::LightPredictor light_api(FLAGS_optimized_model);
+  lite::LightPredictor light_api(FLAGS_optimized_model + ".nb", false);
 
   // CXXAPi
   {
     std::vector<Place> valid_places({
-        Place{TARGET(kHost), PRECISION(kFloat)},
         Place{TARGET(kX86), PRECISION(kFloat)},
         Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
     });
     // On ARM devices, the preferred X86 target not works, but it can still
     // select ARM kernels.
-    cxx_api.Build(
-        FLAGS_model_dir, Place{TARGET(kX86), PRECISION(kFloat)}, valid_places);
+    cxx_api.Build(FLAGS_model_dir, "", "", valid_places);
 
     auto* x = cxx_api.GetInput(0);
     SetConstInput(x);

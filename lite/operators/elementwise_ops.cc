@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/elementwise_ops.h"
+#include <algorithm>
+#include <cmath>
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace operators {
@@ -27,10 +28,59 @@ bool ElementwiseOp::CheckShape() const {
 }
 
 bool ElementwiseOp::InferShape() const {
-  CHECK_OR_FALSE(param_.X->dims().size() >= param_.Y->dims().size());
-  param_.Out->Resize(param_.X->dims());
-  auto out_lod = param_.Out->mutable_lod();
-  *out_lod = param_.X->lod();
+  auto x_dim = param_.X->dims();
+  auto y_dim = param_.Y->dims();
+  if (x_dim == y_dim) {
+    param_.Out->Resize(x_dim);
+    auto out_lod = param_.Out->mutable_lod();
+    *out_lod = param_.X->lod();
+  } else {
+    int max_dim = (x_dim.size() > y_dim.size() ? x_dim.size() : y_dim.size());
+    int axis = param_.axis;
+    axis = (axis == -1 ? std::abs(static_cast<int>(x_dim.size() - y_dim.size()))
+                       : axis);
+    std::vector<int64_t> x_dims_array(max_dim);
+    std::vector<int64_t> y_dims_array(max_dim);
+    std::vector<int64_t> out_dims_array(max_dim);
+
+    if (x_dim.size() > y_dim.size()) {
+      for (int i = 0; i < axis; ++i) {
+        y_dims_array[i] = 1;
+      }
+      if (axis + y_dim.size() < max_dim) {
+        for (int i = axis + y_dim.size(); i < max_dim; ++i) {
+          y_dims_array[i] = 1;
+        }
+      }
+      x_dims_array = x_dim.Vectorize();
+      for (int i = 0; i < y_dim.size(); ++i) {
+        y_dims_array[i + axis] = y_dim[i];
+      }
+    } else {
+      for (int i = 0; i < axis; ++i) {
+        x_dims_array[i] = 1;
+      }
+      if (axis + x_dim.size() < max_dim) {
+        for (int i = axis + x_dim.size(); i < max_dim; ++i) {
+          x_dims_array[i] = 1;
+        }
+      }
+      y_dims_array = y_dim.Vectorize();
+      for (int i = 0; i < x_dim.size(); ++i) {
+        x_dims_array[i + axis] = x_dim[i];
+      }
+    }
+    for (int i = 0; i < max_dim; i++) {
+      if (x_dims_array[i] == -1 || y_dims_array[i] == -1) {
+        out_dims_array[i] = -1;
+      } else {
+        out_dims_array[i] = std::max(x_dims_array[i], y_dims_array[i]);
+      }
+    }
+    param_.Out->Resize(DDim(out_dims_array));
+    auto out_lod = param_.Out->mutable_lod();
+    *out_lod = param_.X->lod();
+  }
   return true;
 }
 
@@ -89,6 +139,7 @@ REGISTER_LITE_OP(elementwise_add, paddle::lite::operators::ElementwiseOp);
 
 REGISTER_LITE_OP(elementwise_mul, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_max, paddle::lite::operators::ElementwiseOp);
+REGISTER_LITE_OP(elementwise_div, paddle::lite::operators::ElementwiseOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(elementwise_sub_grad,

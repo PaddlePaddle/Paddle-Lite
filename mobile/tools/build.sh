@@ -2,6 +2,33 @@
 NETS=""
 declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet" "super" "op")
 
+# merge cl to so
+merge_cl_to_so=1
+opencl_kernels="opencl_kernels.cpp"
+cd ../src/operators/kernel/cl
+if [[ -f "${opencl_kernels}" ]]; then
+    rm "${opencl_kernels}"
+fi
+python gen_code.py "${merge_cl_to_so}" > "${opencl_kernels}"
+cd -
+
+# get cl headers
+opencl_header_dir="../third_party/opencl/OpenCL-Headers"
+commit_id="320d7189b3e0e7b6a8fc5c10334c79ef364b5ef6"
+if [[ -d "$opencl_header_dir" && -d "$opencl_header_dir/.git" ]]; then
+    echo "pulling opencl headers"
+    cd $opencl_header_dir
+    git stash
+    git pull
+    git checkout $commit_id
+    cd -
+else
+    echo "cloning opencl headers"
+    rm -rf $opencl_header_dir
+    git clone https://github.com/KhronosGroup/OpenCL-Headers $opencl_header_dir
+    git checkout $commit_id
+fi
+
 build_for_mac() {
     if [ ! `which brew` ]; then
         echo "building failed! homebrew not found, please install homebrew."
@@ -33,7 +60,7 @@ build_for_mac() {
 }
 
 build_for_android() {
-    #rm -rf "../build"
+    # rm -rf "../build"
     if [ -z "${NDK_ROOT}" ]; then
         echo "NDK_ROOT not found!"
         exit -1
@@ -41,7 +68,7 @@ build_for_android() {
 
     if [ -z "$PLATFORM" ]; then
         PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
-#        PLATFORM="arm-v8a"
+        # PLATFORM="arm-v8a"
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
@@ -51,7 +78,7 @@ build_for_android() {
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
-        CXX_FLAGS="-march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog"
+        CXX_FLAGS="-march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog -fuse-ld=gold"
     else
         echo "unknown platform!"
         exit -1

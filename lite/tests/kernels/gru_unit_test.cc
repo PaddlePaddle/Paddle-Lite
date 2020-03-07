@@ -14,8 +14,8 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
-#include "lite/tests/kernels/fill_data.h"
-#include "lite/tests/kernels/test_funcs.h"
+#include "lite/tests/utils/fill_data.h"
+#include "lite/tests/utils/naive_math_impl.h"
 
 namespace paddle {
 namespace lite {
@@ -243,11 +243,11 @@ class GRUUnitTester : public arena::TestCase {
   std::string reset_hidden_prev_ = "reset_hidden_prev";
   std::string hidden_ = "hidden";
 
-  DDim dims_{{16, 256 * 3}};
   // 0: indentity; 1: sigmoid; 2: tanh; 3: relu
   int gate_activation_{1};
   int activation_{2};
   bool origin_mode_{false};
+  DDim dims_{{16, 256 * 3}};
 
  public:
   GRUUnitTester(const Place& place,
@@ -344,7 +344,7 @@ void test_gru_unit(Place place) {
       place, "def", 1 /* sigomoid */, 2 /* tanh */, false, dims));
 #ifdef LITE_WITH_ARM
   auto& ctx = tester->context()->template As<ARMContext>();
-  ctx.SetRunMode(LITE_POWER_HIGH, 1);
+  ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
 #endif
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();

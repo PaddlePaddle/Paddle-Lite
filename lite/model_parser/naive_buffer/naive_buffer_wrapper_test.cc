@@ -293,7 +293,7 @@ TEST(NaiveBufferWrapper, ProgramDesc) {
   // Set ProgramDesc
   nb_desc0.SetVersion(1);
   for (int i = 0; i < 3; ++i) {
-    auto* item = nb_desc0.AddBlock<proto::BlockDesc>();
+    nb_desc0.AddBlock<proto::BlockDesc>();
   }
 
   // Save model

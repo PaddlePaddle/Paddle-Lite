@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/feed_compute.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -25,21 +26,29 @@ using float16 = zynqmp::float16;
 
 void FeedCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  // ====================================================
-  zynqmp::InputParam& conv_param = pe_.param();
   Tensor& x = param.feed_list->at(param.col);
-
   param.out->Resize(x.dims());
   param.out->mutable_data<float16>();
-  conv_param.input = x.ZynqTensor();
-  conv_param.output = param.out->ZynqTensor();
+  // ====================================================
+  zynqmp::InputParam& feed_param = pe_.param();
+  feed_param.input = x.ZynqTensor();
+  feed_param.output = param.out->ZynqTensor();
   pe_.init();
   pe_.apply();
 }
 
 void FeedCompute::Run() {
   auto& param = this->Param<param_t>();
+  Tensor& x = param.feed_list->at(param.col);
   pe_.dispatch();
+
+  auto out_lod = param.out->mutable_lod();
+  *out_lod = x.lod();
+
+#ifdef FPGA_PRINT_TENSOR
+  zynqmp::InputParam& feed_param = pe_.param();
+  Debugger::get_instance().registerOutput("feed", feed_param.output);
+#endif
 }
 
 }  // namespace fpga
@@ -50,11 +59,21 @@ void FeedCompute::Run() {
 REGISTER_LITE_KERNEL(
     feed, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(feed,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::FeedCompute,
+                     def_host)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

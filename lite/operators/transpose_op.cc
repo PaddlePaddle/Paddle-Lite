@@ -135,6 +135,15 @@ bool Transpose2Op::InferShape() const {
     out_dims[i] = x_dims[axis[i]];
   }
   param_.output->Resize(out_dims);
+
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
+  for (size_t i = 0; i < x_dims.size(); i++) {
+    xshape_dims[i + 1] = x_dims[i];
+  }
+  param_.xshape->Resize(xshape_dims);
+  auto xshape_lod = param_.xshape->mutable_lod();
+  *xshape_lod = param_.x->lod();
+
   return true;
 }
 
@@ -153,6 +162,10 @@ bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   }
   if (op_desc.HasAttr("data_format")) {
     param_.data_format = op_desc.GetAttr<std::string>("data_format");
+  }
+  if (op_desc.HasOutput("XShape")) {
+    auto xshape_var = scope->FindVar(op_desc.Output("XShape").front());
+    param_.xshape = xshape_var->GetMutable<lite::Tensor>();
   }
   return true;
 }

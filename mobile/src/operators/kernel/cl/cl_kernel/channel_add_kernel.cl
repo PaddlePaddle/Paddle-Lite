@@ -28,3 +28,24 @@ __kernel void channel_add(__global image2d_t input, __global image2d_t bias,__wr
      half4 output = in + biase;
      write_imageh(outputImage,coords,output);
  }
+
+__kernel void width_add(__global image2d_t input, __global image2d_t bias,__write_only image2d_t
+outputImage,int w) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
+  int2 coords_bias;
+  coords_bias.x = x % w;
+  coords_bias.y = 0;
+  half4 in = read_imageh(input, sampler, coords);
+  half4 biase = read_imageh(bias, sampler, coords_bias);
+  half4 output;
+  output.x = in.x + biase.x;
+  output.y = in.y + biase.x;
+  output.z = in.z + biase.x;
+  output.w = in.w + biase.x;
+  write_imageh(outputImage,coords,output);
+}

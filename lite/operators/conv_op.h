@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
@@ -47,9 +48,10 @@ class ConvOpLite : public OpLite {
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.groups = op_desc.GetAttr<int>("groups");
-    param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+    auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+    param_.dilations = std::make_shared<std::vector<int>>(dilations);
 
     // optional params
     std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
@@ -76,8 +78,30 @@ class ConvOpLite : public OpLite {
         }
       }
     }
-    if (op_desc.HasAttr("fuse_relu")) {
-      param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
+
+    if (op_desc.HasAttr("with_act") && op_desc.GetAttr<bool>("with_act")) {
+      param_.activation_param.has_active = true;
+      auto act_type = op_desc.GetAttr<std::string>("act_type");
+      if (act_type == "relu") {
+        param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+        param_.fuse_relu = true;
+      } else if (act_type == "relu6") {
+        param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
+        param_.activation_param.Relu_clipped_coef =
+            op_desc.GetAttr<float>("fuse_brelu_threshold");  // 6.f
+      } else if (act_type == "leaky_relu") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kLeakyRelu;
+        param_.activation_param.Leaky_relu_alpha =
+            op_desc.GetAttr<float>("leaky_relu_alpha");
+      } else {
+        CHECK(false)
+            << "The fused conv only supports fuse with relu and leaky relu";
+      }
+    }
+
+    if (op_desc.HasAttr("padding_algorithm")) {
+      padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
     // For Int8
     if (op_desc.HasAttr("enable_int8")) {
@@ -91,6 +115,20 @@ class ConvOpLite : public OpLite {
         param_.output_scale = op_desc.GetAttr<float>("output_scale");
       }
     }
+
+    // 2-pad to 4-pad
+    if (paddings.size() == 2L) {
+      for (size_t i = 0; i < param_.strides.size(); ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != 4L) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the input size.";
+      }
+    }
+    param_.paddings = std::make_shared<std::vector<int>>(paddings);
     return true;
   }
 
@@ -100,8 +138,15 @@ class ConvOpLite : public OpLite {
 
  private:
   mutable ConvParam param_;
+  std::string padding_algorithm_{""};
 };
-
+// update padding dilation
+void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                              std::vector<int>* dilations,
+                              const std::vector<int>& strides,
+                              const std::string padding_algorithm,
+                              const lite::DDim data_dims,
+                              const lite::DDim& ksize);
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

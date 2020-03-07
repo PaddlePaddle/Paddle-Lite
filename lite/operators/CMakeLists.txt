@@ -1,176 +1,142 @@
-set(op_DEPS tensor op op_params)
-
-lite_cc_library(conv_op SRCS conv_op.cc DEPS ${op_DEPS})
-lite_cc_library(pool_op SRCS pool_op.cc DEPS ${op_DEPS})
-lite_cc_library(fc_op SRCS fc_op.cc DEPS ${op_DEPS})
-lite_cc_library(relu_op SRCS relu_op.cc DEPS ${op_DEPS})
-lite_cc_library(mul_op SRCS mul_op.cc DEPS ${op_DEPS})
-lite_cc_library(matmul_op SRCS matmul_op.cc DEPS ${op_DEPS})
-lite_cc_library(scale_op SRCS scale_op.cc DEPS ${op_DEPS})
-lite_cc_library(softmax_op SRCS softmax_op.cc DEPS ${op_DEPS})
-lite_cc_library(reshape_op SRCS reshape_op.cc DEPS ${op_DEPS} )
-lite_cc_library(batch_norm_op SRCS batch_norm_op.cc DEPS ${op_DEPS})
-lite_cc_library(feed_op SRCS feed_op.cc DEPS ${op_DEPS})
-lite_cc_library(fetch_op SRCS fetch_op.cc DEPS ${op_DEPS})
-lite_cc_library(io_copy_op SRCS io_copy_op.cc DEPS ${op_DEPS})
-lite_cc_library(io_copy_once_op SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
-lite_cc_library(activation_ops SRCS activation_ops.cc DEPS ${op_DEPS})
-lite_cc_library(elementwise_ops SRCS elementwise_ops.cc DEPS ${op_DEPS})
-lite_cc_library(lrn_op_lite SRCS lrn_op.cc DEPS ${op_DEPS})
-lite_cc_library(decode_bboxes_op_lite SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
-lite_cc_library(box_coder_op_lite SRCS box_coder_op.cc DEPS ${op_DEPS})
-lite_cc_library(multiclass_nms_op_lite SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
-lite_cc_library(fusion_elementwise_activation_ops SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
-lite_cc_library(mean_op SRCS mean_op.cc DEPS ${op_DEPS})
-lite_cc_library(fill_constant_op SRCS fill_constant_op.cc DEPS ${op_DEPS})
-lite_cc_library(sgd_op SRCS sgd_op.cc DEPS ${op_DEPS})
-lite_cc_library(uniform_random_op SRCS uniform_random_op.cc DEPS ${op_DEPS})
-lite_cc_library(power_op SRCS power_op.cc DEPS ${op_DEPS})
-lite_cc_library(shuffle_channel_op SRCS shuffle_channel_op.cc DEPS ${op_DEPS})
-lite_cc_library(yolo_box_op SRCS yolo_box_op.cc DEPS ${op_DEPS})
-lite_cc_library(interpolate_op SRCS interpolate_op.cc DEPS ${op_DEPS})
-lite_cc_library(argmax_op SRCS argmax_op.cc DEPS ${op_DEPS})
-lite_cc_library(axpy_op SRCS axpy_op.cc DEPS ${op_DEPS})
-lite_cc_library(gru_unit_op SRCS gru_unit_op.cc DEPS ${op_DEPS})
-lite_cc_library(gru_op SRCS gru_op.cc DEPS ${op_DEPS})
-lite_cc_library(layout_op SRCS layout_op.cc DEPS ${op_DEPS})
-lite_cc_library(layout_once_op SRCS layout_once_op.cc DEPS ${op_DEPS})
-lite_cc_library(while_op SRCS while_op.cc DEPS ${op_DEPS})
-lite_cc_library(lookup_table_op SRCS lookup_table_op.cc DEPS ${op_DEPS})
-lite_cc_library(beam_search_decode_op SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
-lite_cc_library(prior_box_op SRCS prior_box_op.cc DEPS ${op_DEPS})
-lite_cc_library(density_prior_box_op SRCS density_prior_box_op.cc DEPS ${op_DEPS})
+set(op_DEPS tensor op op_params scope memory)
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
-lite_cc_library(dropout_op SRCS dropout_op.cc DEPS ${op_DEPS})
-lite_cc_library(concat_op SRCS concat_op.cc DEPS ${op_DEPS})
-lite_cc_library(pad2d_op SRCS pad2d_op.cc DEPS ${op_DEPS})
-lite_cc_library(negative_op SRCS negative_op.cc DEPS ${op_DEPS})
-lite_cc_library(crop_op SRCS crop_op.cc DEPS ${op_DEPS})
-lite_cc_library(calib_op SRCS calib_op.cc DEPS ${op_DEPS})
-lite_cc_library(calib_once_op SRCS calib_once_op.cc DEPS ${op_DEPS})
-lite_cc_library(split_op SRCS split_op.cc DEPS ${op_DEPS})
-lite_cc_library(transpose_op SRCS transpose_op.cc DEPS ${op_DEPS})
-lite_cc_library(fake_quant SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
-lite_cc_library(fake_dequant SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
-lite_cc_library(conv_transpose_op SRCS conv_transpose_op.cc DEPS ${op_DEPS})
-lite_cc_library(im2sequence_op SRCS im2sequence_op.cc DEPS ${op_DEPS})
-lite_cc_library(sequence_softmax_op SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
-lite_cc_library(norm_op SRCS norm_op.cc DEPS ${op_DEPS})
-lite_cc_library(graph_op SRCS graph_op.cc DEPS ${op_DEPS})
-lite_cc_library(topk_op SRCS topk_op.cc DEPS ${op_DEPS})
-lite_cc_library(increment_op SRCS increment_op.cc DEPS ${op_DEPS})
-lite_cc_library(write_to_array_op SRCS write_to_array_op.cc DEPS ${op_DEPS})
-lite_cc_library(graph_op_lite SRCS graph_op.cc DEPS ${op_DEPS})
-lite_cc_library(logical_xor  SRCS logical_op.cc DEPS ${op_DEPS})
-lite_cc_library(logical_and  SRCS logical_op.cc DEPS ${op_DEPS})
-lite_cc_library(logical_or  SRCS logical_op.cc DEPS ${op_DEPS})
-lite_cc_library(logical_not  SRCS logical_op.cc DEPS ${op_DEPS})
-lite_cc_library(less_than  SRCS compare_op.cc DEPS ${op_DEPS})
-lite_cc_library(equal  SRCS compare_op.cc DEPS ${op_DEPS})
-lite_cc_library(not_equal  SRCS compare_op.cc DEPS ${op_DEPS})
-lite_cc_library(less_equal  SRCS compare_op.cc DEPS ${op_DEPS})
-lite_cc_library(greater_than  SRCS compare_op.cc DEPS ${op_DEPS})
-lite_cc_library(greater_equal  SRCS compare_op.cc DEPS ${op_DEPS})
-lite_cc_library(read_from_array_op SRCS read_from_array_op.cc DEPS ${op_DEPS})
-lite_cc_library(beam_search_op SRCS beam_search_op.cc DEPS ${op_DEPS})
-lite_cc_library(sequence_pool_op_lite SRCS sequence_pool_op.cc DEPS ${op_DEPS})
-lite_cc_library(sequence_expand_op_lite SRCS sequence_expand_op.cc DEPS ${op_DEPS})
-lite_cc_library(reduce_max_op_lite SRCS reduce_max_op.cc DEPS ${op_DEPS})
-lite_cc_library(lod_reset_op SRCS lod_reset_op.cc DEPS ${op_DEPS})
-lite_cc_library(is_empty SRCS is_empty_op.cc DEPS ${op_DEPS})
-lite_cc_library(shape_op_lite SRCS shape_op.cc DEPS ${op_DEPS})
-lite_cc_library(cast_op_lite SRCS cast_op.cc DEPS ${op_DEPS})
-lite_cc_library(slice_op_lite SRCS slice_op.cc DEPS ${op_DEPS})
-lite_cc_library(squeeze_op_lite SRCS squeeze_op.cc DEPS ${op_DEPS})
-lite_cc_library(expand_op_lite SRCS expand_op.cc DEPS ${op_DEPS})
 
+# 1.baisc ops used in basic models
+add_operator(conv_op basic SRCS conv_op.cc DEPS ${op_DEPS})
+add_operator(pool_op basic SRCS pool_op.cc DEPS ${op_DEPS})
+add_operator(fc_op basic SRCS fc_op.cc DEPS ${op_DEPS})
+add_operator(mul_op basic SRCS mul_op.cc DEPS ${op_DEPS})
+add_operator(matmul_op basic SRCS matmul_op.cc DEPS ${op_DEPS})
+add_operator(scale_op basic SRCS scale_op.cc DEPS ${op_DEPS})
+add_operator(softmax_op basic SRCS softmax_op.cc DEPS ${op_DEPS})
+add_operator(reshape_op basic SRCS reshape_op.cc DEPS ${op_DEPS} )
+add_operator(batch_norm_op basic SRCS batch_norm_op.cc DEPS ${op_DEPS})
+add_operator(feed_op basic SRCS feed_op.cc DEPS ${op_DEPS})
+add_operator(fetch_op basic SRCS fetch_op.cc DEPS ${op_DEPS})
+add_operator(activation_ops basic SRCS activation_ops.cc DEPS ${op_DEPS})
+add_operator(elementwise_ops basic SRCS elementwise_ops.cc DEPS ${op_DEPS})
+add_operator(box_coder_op_lite basic SRCS box_coder_op.cc DEPS ${op_DEPS})
+add_operator(multiclass_nms_op_lite basic SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
+add_operator(mean_op basic SRCS mean_op.cc DEPS ${op_DEPS})
+add_operator(fill_constant_op basic SRCS fill_constant_op.cc DEPS ${op_DEPS})
+add_operator(fill_constant_batch_size_like_op basic SRCS fill_constant_batch_size_like_op.cc DEPS ${op_DEPS})
+add_operator(shuffle_channel_op basic SRCS shuffle_channel_op.cc DEPS ${op_DEPS})
+add_operator(yolo_box_op basic SRCS yolo_box_op.cc DEPS ${op_DEPS})
+add_operator(interpolate_op basic SRCS interpolate_op.cc DEPS ${op_DEPS})
+add_operator(argmax_op basic SRCS argmax_op.cc DEPS ${op_DEPS})
+add_operator(prior_box_op basic SRCS prior_box_op.cc DEPS ${op_DEPS})
+add_operator(concat_op basic SRCS concat_op.cc DEPS ${op_DEPS})
+add_operator(pad2d_op basic SRCS pad2d_op.cc DEPS ${op_DEPS})
+add_operator(calib_op basic SRCS calib_op.cc DEPS ${op_DEPS})
+add_operator(split_op basic SRCS split_op.cc DEPS ${op_DEPS})
+add_operator(transpose_op basic SRCS transpose_op.cc DEPS ${op_DEPS})
+add_operator(fake_quant basic SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
+add_operator(fake_dequant basic SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
+add_operator(conv_transpose_op basic SRCS conv_transpose_op.cc DEPS ${op_DEPS})
+add_operator(expand_op_lite basic SRCS expand_op.cc DEPS ${op_DEPS})
+add_operator(squeeze_op_lite basic SRCS squeeze_op.cc DEPS ${op_DEPS})
+add_operator(unsqueeze_op_lite basic SRCS unsqueeze_op.cc DEPS ${op_DEPS})
+add_operator(stack_op basic SRCS stack_op.cc DEPS ${op_DEPS})
+add_operator(cast_op_lite basic SRCS cast_op.cc DEPS ${op_DEPS})
+add_operator(affine_channel_op basic SRCS affine_channel_op.cc DEPS ${op_DEPS})
+add_operator(range_op basic SRCS range_op.cc DEPS ${op_DEPS})
+add_operator(reduce_mean_op basic SRCS reduce_mean_op.cc DEPS ${op_DEPS})
+add_operator(relu_op basic SRCS relu_op.cc DEPS ${op_DEPS})
+add_operator(io_copy_op basic SRCS io_copy_op.cc DEPS ${op_DEPS})
+add_operator(fusion_elementwise_activation_ops basic SRCS fusion_elementwise_activation_ops.cc DEPS elementwise_ops ${op_DEPS})
+add_operator(io_copy_once_op basic SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
+add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
+add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
+add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
+add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
+add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
+add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
 
-set(ops
-        conv_op
-        pool_op
-        fc_op
-        relu_op
-        mul_op
-        matmul_op
-        scale_op
-        softmax_op
-        reshape_op
-        batch_norm_op
-        feed_op
-        fetch_op
-        gru_unit_op
-        gru_op
-        beam_search_decode_op
-        lookup_table_op
-        io_copy_op
-        io_copy_once_op
-        elementwise_ops
-        fusion_elementwise_activation_ops
-        lrn_op_lite
-	decode_bboxes_op_lite
-	multiclass_nms_op_lite
-        decode_bboxes_op_lite
-        box_coder_op_lite
-        multiclass_nms_op_lite
-        mean_op
-        fill_constant_op
-        activation_ops
-        dropout_op
-        concat_op
-        pad2d_op
-        crop_op
-        prior_box_op
-        density_prior_box_op
-        negative_op
-        calib_op
-        calib_once_op
-        split_op
-        transpose_op
-        fake_quant
-        fake_dequant
-        sgd_op
-        uniform_random_op
-        power_op
-        yolo_box_op
-        shuffle_channel_op
-        argmax_op
-        axpy_op
-        conv_transpose_op
-        im2sequence_op
-        sequence_softmax_op
-        norm_op
-        layout_op
-        layout_once_op
-        interpolate_op
-        logical_xor
-        logical_and        
-        logical_or        
-        logical_not        
-        equal        
-        not_equal        
-        less_than        
-        while_op
-        less_equal        
-        greater_than        
-        greater_equal        
-        graph_op
-        topk_op
-        increment_op
-        write_to_array_op
-        read_from_array_op
-        beam_search_op
-        sequence_pool_op_lite
-        sequence_expand_op_lite
-        reduce_max_op_lite
-        lod_reset_op
-        is_empty 
-        shape_op_lite
-        cast_op_lite
-        slice_op_lite
-        squeeze_op_lite
-        expand_op_lite
-        CACHE INTERNAL "ops lite")
+# 2.basic ops not used in basic models
+add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
+add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
+add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
+add_operator(power_op extra SRCS power_op.cc DEPS ${op_DEPS})
+add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
+
+# 3.extra ops
+add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
+add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
+add_operator(decode_bboxes_op_lite extra SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
+add_operator(uniform_random_op extra SRCS uniform_random_op.cc DEPS ${op_DEPS})
+add_operator(axpy_op extra SRCS axpy_op.cc DEPS ${op_DEPS})
+add_operator(gru_unit_op extra SRCS gru_unit_op.cc DEPS ${op_DEPS})
+add_operator(gru_op extra SRCS gru_op.cc DEPS ${op_DEPS})
+add_operator(layout_once_op extra SRCS layout_once_op.cc DEPS ${op_DEPS})
+add_operator(density_prior_box_op basic SRCS density_prior_box_op.cc DEPS ${op_DEPS})
+add_operator(calib_once_op extra SRCS calib_once_op.cc DEPS ${op_DEPS})
+add_operator(reduce_max_op_lite extra SRCS reduce_max_op.cc DEPS ${op_DEPS})
+add_operator(shape_op_lite extra SRCS shape_op.cc DEPS ${op_DEPS})
+add_operator(sequence_expand_op_lite extra SRCS sequence_expand_op.cc DEPS ${op_DEPS})
+add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
+add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
+add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
+add_operator(generate_proposals_op extra SRCS generate_proposals_op.cc DEPS ${op_DEPS})
+add_operator(roi_align_op extra SRCS roi_align_op.cc DEPS ${op_DEPS})
+add_operator(box_clip_op extra SRCS box_clip_op.cc DEPS ${op_DEPS})
+add_operator(fake_quantize_range_abs_max_op basic SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
+add_operator(sequence_expand_as_op_lite extra SRCS sequence_expand_as_op.cc DEPS ${op_DEPS})
+add_operator(assign_value_op extra SRCS assign_value_op.cc DEPS ${op_DEPS})
+add_operator(fake_quantize_dequantize_moving_avg_abs_max_op basic SRCS fake_quantize_dequantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
+add_operator(fake_channel_wise_dequantize_max_abs_op basic SRCS fake_channel_wise_dequantize_max_abs.cc DEPS ${op_DEPS})
+add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc DEPS ${op_DEPS})
+add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc DEPS ${op_DEPS})
+add_operator(reduce_prod_op_lite extra SRCS reduce_prod_op.cc DEPS ${op_DEPS})
+add_operator(sequence_reshape_op_lite extra SRCS sequence_reshape_op.cc DEPS ${op_DEPS})
+add_operator(sequence_reverse_op_lite extra SRCS sequence_reverse_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pool extra SRCS sequence_pool_op.cc DEPS ${op_DEPS})
+add_operator(sequence_conv extra SRCS sequence_conv_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pool_concat extra SRCS sequence_pool_concat_op.cc DEPS ${op_DEPS})
+add_operator(reduce_sum_op_lite extra SRCS reduce_ops.cc DEPS ${op_DEPS})
+add_operator(match_matrix_tensor_op_lite extra SRCS match_matrix_tensor_op.cc DEPS ${op_DEPS})
+add_operator(search_seq_depadding_op_lite extra SRCS search_seq_depadding_op.cc DEPS ${op_DEPS})
+add_operator(search_grnn_op_lite extra SRCS search_grnn_op.cc DEPS ${op_DEPS})
+add_operator(search_seq_softmax_op_lite extra SRCS search_seq_softmax_op.cc DEPS ${op_DEPS})
+add_operator(sequence_concat_op_lite extra SRCS sequence_concat_op.cc DEPS ${op_DEPS})
+add_operator(var_conv_2d_op_lite extra SRCS var_conv_2d_op.cc DEPS ${op_DEPS})
+add_operator(attention_padding_mask_op_lite extra SRCS attention_padding_mask_op.cc DEPS ${op_DEPS})
+add_operator(sequence_arithmetic_op_lite extra SRCS sequence_arithmetic_op.cc DEPS ${op_DEPS})
+add_operator(conditional_block_op_lite extra SRCS conditional_block_op.cc DEPS ${op_DEPS})
+add_operator(collect_fpn_proposals_op_lite extra SRCS collect_fpn_proposals_op.cc DEPS ${op_DEPS})
+add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposals_op.cc DEPS ${op_DEPS})
+
+# for OCR specific
+add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
+add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
+add_operator(lookup_table_v2_op extra SRCS lookup_table_v2_op.cc DEPS ${op_DEPS})
+add_operator(beam_search_decode_op extra SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
+add_operator(logical_xor  extra SRCS logical_op.cc DEPS ${op_DEPS})
+add_operator(logical_and  extra SRCS logical_op.cc DEPS ${op_DEPS})
+add_operator(logical_or  extra SRCS logical_op.cc DEPS ${op_DEPS})
+add_operator(logical_not  extra SRCS logical_op.cc DEPS ${op_DEPS})
+add_operator(less_than  extra SRCS compare_op.cc DEPS ${op_DEPS})
+add_operator(equal  extra SRCS compare_op.cc DEPS ${op_DEPS})
+add_operator(not_equal  extra SRCS compare_op.cc DEPS ${op_DEPS})
+add_operator(less_equal  extra SRCS compare_op.cc DEPS ${op_DEPS})
+add_operator(greater_than  extra SRCS compare_op.cc DEPS ${op_DEPS})
+add_operator(greater_equal  extra SRCS compare_op.cc DEPS ${op_DEPS})
+add_operator(read_from_array_op extra SRCS read_from_array_op.cc DEPS ${op_DEPS})
+add_operator(beam_search_op extra SRCS beam_search_op.cc DEPS ${op_DEPS})
+add_operator(lod_reset_op extra SRCS lod_reset_op.cc DEPS ${op_DEPS})
+add_operator(is_empty extra SRCS is_empty_op.cc DEPS ${op_DEPS})
+add_operator(slice_op_lite basic SRCS slice_op.cc DEPS ${op_DEPS})
+add_operator(write_to_array_op extra SRCS write_to_array_op.cc DEPS ${op_DEPS})
+add_operator(topk_op extra SRCS topk_op.cc DEPS ${op_DEPS})
+add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
+add_operator(layer_norm_op extra SRCS layer_norm_op.cc DEPS ${op_DEPS})
+add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
+# for content-dnn specific
+add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
+add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
+add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_op.cc DEPS ${op_DEPS})
+add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
+add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
@@ -184,10 +150,10 @@ if (NOT LITE_WITH_X86)
     lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS softmax_op memory)
     #lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op memory)
     lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op memory)
-    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory)
+    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory scope)
     lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)
-    lite_cc_test(test_fusion_elementwise_activation_ops
-                SRCS fusion_elementwise_activation_ops_test.cc
-                DEPS fusion_elementwise_activation_ops memory)
     lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS transpose_op memory)
+    lite_cc_test(test_fusion_elementwise_activation_ops
+                 SRCS fusion_elementwise_activation_ops_test.cc
+                 DEPS fusion_elementwise_activation_ops memory)
 endif()

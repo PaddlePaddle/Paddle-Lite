@@ -14,7 +14,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::CastParam;
 

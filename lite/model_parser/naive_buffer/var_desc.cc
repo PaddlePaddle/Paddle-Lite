@@ -51,6 +51,7 @@ VarDescAPI::Type VarDesc::GetType() const {
     GET_TYPE_CASE_ITEM(READER);
     default:
       LOG(FATAL) << "Unknown var type";
+      return VarDescAPI::Type();
   }
 #undef GET_TYPE_CASE_ITEM
 }
@@ -96,6 +97,32 @@ void VarDesc::SetPersistable(bool persistable) {
 
 const proto::VarType& VarDesc::GetVarType() const {
   return desc_->GetField<proto::VarType>("type");
+}
+
+VarDescAPI::VarDataType VarDesc::GetDataType() const {
+  using data_type_builder_t = EnumBuilder<proto::VarDataType>;
+
+  auto data_type = desc_->GetField<proto::TensorDesc>("tensor_desc")
+                       .GetField<data_type_builder_t>("data_type")
+                       .data();
+#define GET_DATA_TYPE_CASE_ITEM(type__) \
+  case proto::VarDataType::type__:      \
+    return VarDescAPI::VarDataType::type__
+
+  switch (data_type) {
+    // Only support primary data type now.
+    GET_DATA_TYPE_CASE_ITEM(UINT8);
+    GET_DATA_TYPE_CASE_ITEM(INT8);
+    GET_DATA_TYPE_CASE_ITEM(INT16);
+    GET_DATA_TYPE_CASE_ITEM(INT32);
+    GET_DATA_TYPE_CASE_ITEM(INT64);
+    GET_DATA_TYPE_CASE_ITEM(FP32);
+    GET_DATA_TYPE_CASE_ITEM(FP64);
+    default:
+      LOG(FATAL) << "Unknown var data type";
+  }
+  return VarDescAPI::VarDataType();
+#undef GET_DATA_TYPE_CASE_ITEM
 }
 
 proto::VarType* VarDesc::GetMutableVarType() {

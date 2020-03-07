@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "common/log.h"
@@ -55,6 +56,21 @@ using std::string;
 using std::vector;
 
 using framework::DtypeTensorTrait;
+
+template <typename Dtype>
+class CLImageDeleter {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+
+ public:
+  void operator()(GType *ptr) {
+#ifdef PADDLE_MOBILE_CL
+    framework::CLImage *image = dynamic_cast<framework::CLImage *>(ptr);
+    if (image) {
+      delete image;
+    }
+#endif
+  }
+};
 
 class OpParam {
  public:
@@ -322,16 +338,29 @@ class OpParam {
   }
 
   template <typename T>
+  static T *GridFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Grid", inputs, scope);
+  }
+
+  template <typename T>
   static const T GetAttr(const string &key, const AttributeMap &map) {
+    PADDLE_MOBILE_ENFORCE(HasAttr(key, map), "%s is not contained in attr map",
+                          key.c_str())
     return ((Attribute)map.at(key)).Get<T>();
   }
   static const std::string GetStringAttr(const string &key,
                                          const AttributeMap &map) {
+    PADDLE_MOBILE_ENFORCE(HasAttr(key, map), "%s is not contained in attr map",
+                          key.c_str())
     return ((Attribute)map.at(key)).GetString();
   }
 
   static const bool HasAttr(const string &key, const AttributeMap &map) {
     return map.count(key) > 0;
+  }
+
+  static const bool HasVar(const string &key, const VariableNameMap &var_map) {
+    return var_map.count(key) > 0;
   }
 
   template <typename T>
@@ -468,6 +497,7 @@ class ConvParam : public OpParam {
     EXEC_SLIDINGWINDOW5x5_FLOAT,
     EXEC_SLIDINGWINDOW7x7_FLOAT,
     EXEC_GEMM1x1s1_FLOAT,
+    EXEC_DEPTHWISEBASIC_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -654,9 +684,9 @@ class MulParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
   }
 
-  const GType *InputX() const { return input_x_; }
+  GType *InputX() const { return input_x_; }
 
-  const GType *InputY() const { return input_y_; }
+  GType *InputY() const { return input_y_; }
 
   GType *Out() const { return out_; }
 
@@ -686,7 +716,7 @@ class ConcatParam : public OpParam {
     inputs_ = InputMultiFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     axis_ = GetAttr<int>("axis", attrs);
-    original_output_dims_size_ = inputs_[0]->dims().size();
+    original_output_dims_size_ = out_->dims().size();
   }
 
   vector<GType *> Inputs() const { return inputs_; }
@@ -849,6 +879,8 @@ class BatchNormParam : public OpParam {
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
+  ~BatchNormParam() {}
+
   const GType *InputX() const { return input_x_; }
 
   GType *OutputY() const { return output_y_; }
@@ -869,13 +901,17 @@ class BatchNormParam : public OpParam {
 
   const string &DataFormat() const { return data_format_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  private:
   GType *input_x_;
@@ -888,8 +924,66 @@ class BatchNormParam : public OpParam {
   float momentum_;
   bool is_test_;
   string data_format_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
+};
+#endif
+
+#ifdef INSTANCENORM_OP
+template <typename Dtype>
+class InstanceNormParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  InstanceNormParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    output_y_ = OutputYFrom<GType>(outputs, *scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *OutputY() const { return output_y_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+ private:
+  GType *input_x_;
+  GType *output_y_;
+  float epsilon_;
+};
+#endif
+
+#ifdef FUSION_INSTANCENORM_RELU_OP
+template <typename Dtype>
+class FusionInstanceNormReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionInstanceNormReluParam(const VariableNameMap &inputs,
+                              const VariableNameMap &outputs,
+                              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+  float epsilon_;
 };
 #endif
 
@@ -2046,6 +2140,9 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
+
+  ~FusionConvAddBNReluParam() {}
+
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
@@ -2062,13 +2159,17 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *bias_;
@@ -2079,8 +2180,8 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2113,6 +2214,8 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
     }
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
+
+  ~FusionConvBNAddReluParam() {}
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
@@ -2129,13 +2232,17 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *bias_;
@@ -2146,8 +2253,8 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
   std::string keyBNY_;
   std::string keyX_;
   std::string keyY_;
@@ -2186,13 +2293,17 @@ class FusionConvBNParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *input_bias_;
@@ -2201,8 +2312,8 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2243,13 +2354,17 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *bias_;
@@ -2260,8 +2375,8 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2285,6 +2400,8 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
+  ~FusionDWConvBNReluParam() {}
+
   const GType *InputBias() const { return input_bias_; }
 
   const GType *InputMean() const { return input_mean_; }
@@ -2297,13 +2414,17 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *input_bias_;
@@ -2312,8 +2433,8 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 
 #endif
@@ -2354,6 +2475,8 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
     this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
+  ~FusionConvBNReluParam() {}
+
   const GType *InputBias() const { return input_bias_; }
 
   const GType *InputMean() const { return input_mean_; }
@@ -2366,13 +2489,17 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(GType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(GType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const GType *NewScale() const { return new_scale_; }
+  const GType *NewScale() const { return new_scale_.get(); }
 
-  const GType *NewBias() const { return new_bias_; }
+  const GType *NewBias() const { return new_bias_.get(); }
 
  protected:
   GType *input_bias_;
@@ -2381,8 +2508,8 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  GType *new_bias_;
-  GType *new_scale_;
+  std::shared_ptr<GType> new_bias_;
+  std::shared_ptr<GType> new_scale_;
 };
 #endif
 
@@ -2462,8 +2589,8 @@ class ConvTransposeParam : public OpParam {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    filter_ = FilterFrom<GType>(inputs, *scope);
-    input_ = InputFrom<GType>(inputs, *scope);
+    filter_ = OpParam::FilterFrom<GType>(inputs, *scope);
+    input_ = OpParam::InputFrom<GType>(inputs, *scope);
     // output_ = OutputFrom<GType>(outputs, scope);
     if (outputs.count("Output")) {
       output_ = OpParam::OutputFrom<GType>(outputs, *scope);
@@ -2471,12 +2598,16 @@ class ConvTransposeParam : public OpParam {
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    if (HasAttr("output_size", attrs)) {
+      output_size_ = GetAttr<vector<int>>("output_size", attrs);
+      DLOG << "conv transpose output size: " << output_size_;
+    }
     groups = GetAttr<int>("groups", attrs);
   }
 
   const GType *Input() const { return input_; }
 
-  const GType *Filter() const { return filter_; }
+  GType *Filter() const { return filter_; }
 
   GType *Output() const { return output_; }
 
@@ -2484,7 +2615,13 @@ class ConvTransposeParam : public OpParam {
 
   const vector<int> &Paddings() const { return paddings_; }
 
+  const vector<int> &Filters() const { return filter_; }
+
+  const vector<int> &TransFilters() const { return transformed_filter_; }
+
   const vector<int> &Dilations() const { return dilations_; }
+
+  const vector<int> &OutputSize() const { return output_size_; }
 
   const int &Groups() const { return groups; }
 
@@ -2493,6 +2630,9 @@ class ConvTransposeParam : public OpParam {
     EXEC_GEMM_FLOAT,
     EXEC_DECONV3X3_FLOAT,
     EXEC_DECONV4X4_FLOAT,
+    EXEC_DEPTHWISETRANS_FLOAT,
+    EXEC_CONVTRANS3x3s2_FLOAT,
+    EXEC_CONVTRANS_FLOAT,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -2501,9 +2641,11 @@ class ConvTransposeParam : public OpParam {
   GType *input_;
   GType *output_;
   GType *filter_;
+  GType *transformed_filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
+  vector<int> output_size_;
   int groups;
   mutable enum ExecMode exec_mode_;
 
@@ -2593,13 +2735,17 @@ class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const RType *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_.get(); }
 
-  const RType *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_.get(); }
 
  protected:
   RType *output_;
@@ -2610,8 +2756,8 @@ class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  RType *new_bias_;
-  RType *new_scale_;
+  std::shared_ptr<RType> new_bias_;
+  std::shared_ptr<RType> new_scale_;
 };
 #endif
 #ifdef FUSION_DECONVBNRELU_OP
@@ -2649,13 +2795,17 @@ class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const RType *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_.get(); }
 
-  const RType *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_.get(); }
 
  protected:
   RType *output_;
@@ -2666,8 +2816,8 @@ class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  RType *new_bias_;
-  RType *new_scale_;
+  std::shared_ptr<RType> new_bias_;
+  std::shared_ptr<RType> new_scale_;
 };
 #endif
 #ifdef FUSION_DECONVADDBNRELU_OP
@@ -2706,13 +2856,17 @@ class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) {
+    new_scale_.reset(new_scale, CLImageDeleter<Dtype>());
+  }
 
-  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) {
+    new_bias_.reset(new_bias, CLImageDeleter<Dtype>());
+  }
 
-  const RType *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_.get(); }
 
-  const RType *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_.get(); }
 
  protected:
   RType *output_;
@@ -2723,8 +2877,8 @@ class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  RType *new_bias_;
-  RType *new_scale_;
+  std::shared_ptr<RType> new_bias_;
+  std::shared_ptr<RType> new_scale_;
 };
 #endif
 
@@ -2898,7 +3052,7 @@ class SplitParam : public OpParam {
   int axis;
   int num;
   std::vector<int> sections;
-  //  std::vector<GType> out_ts_;
+//  std::vector<GType> out_ts_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -2927,12 +3081,16 @@ class BilinearInterpParam : public OpParam {
     out_ = OutFrom<GType>(outputs, *scope);
     out_h_ = GetAttr<int>("out_h", attrs);
     out_w_ = GetAttr<int>("out_w", attrs);
+    align_corners = GetAttr<bool>("align_corners", attrs);
+    align_mode = GetAttr<int>("align_mode", attrs);
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
   GType *Out() const { return out_; }
   int OutH() const { return out_h_; }
   int OutW() const { return out_w_; }
+  bool AlignCorners() const { return align_corners; }
+  int AlignMode() const { return align_mode; }
 
  private:
   GType *input_x_;
@@ -2940,6 +3098,8 @@ class BilinearInterpParam : public OpParam {
   GType *out_;
   int out_h_;
   int out_w_;
+  bool align_corners;
+  int align_mode;
 };
 #endif
 
@@ -2955,16 +3115,45 @@ class NearestInterpolationParam : public OpParam {
                             const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
-    input_outsize_ = InputOutSizeFrom<GType>(inputs, *scope);
+    const bool has_out_size = HasVar("OutSize", inputs);
+
+    if (has_out_size) {
+      input_outsize_ = InputOutSizeFrom<GType>(inputs, *scope);
+    }
+
     out_ = OutFrom<GType>(outputs, *scope);
-    out_h_ = GetAttr<int>("out_h", attrs);
-    out_w_ = GetAttr<int>("out_w", attrs);
+
+    if (HasAttr("out_h", attrs)) {
+      out_h_ = GetAttr<int>("out_h", attrs);
+    } else if (HasAttr("out_h ", attrs)) {
+      // some models hurts ....   attr with space ..
+      out_h_ = GetAttr<int>("out_h ", attrs);
+    }
+
+    if (HasAttr("out_w", attrs)) {
+      out_w_ = GetAttr<int>("out_w", attrs);
+    } else if (HasAttr("out_w ", attrs)) {
+      // some models hurts ....   attr with space ..
+      out_w_ = GetAttr<int>("out_w ", attrs);
+    }
+
+    LOG(kLOG_DEBUG1) << "out_h_: " << out_h_;
+    LOG(kLOG_DEBUG1) << "out_w_: " << out_w_;
+
+    if (HasAttr("scale", attrs)) {
+      has_scale_ = true;
+      scale_ = GetAttr<float>("scale", attrs);
+    }
+    LOG(kLOG_DEBUG1) << "has_scale_:  " << has_scale_;
+    LOG(kLOG_DEBUG1) << "scale_:  " << scale_;
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
   GType *Out() const { return out_; }
   int OutH() const { return out_h_; }
   int OutW() const { return out_w_; }
+  float Scale() const { return scale_; }
+  bool HasScale() const { return has_scale_; }
 
  private:
   GType *input_x_;
@@ -2972,6 +3161,8 @@ class NearestInterpolationParam : public OpParam {
   GType *out_;
   int out_h_;
   int out_w_;
+  float scale_;
+  bool has_scale_;
 };
 #endif
 
@@ -3470,23 +3661,31 @@ class IncrementParam : public OpParam {
 #endif  // INCREMENT_OP
 #ifdef PAD2D_OP
 template <typename Dtype>
-class Pad2dParam : public OpParam {
+class Pad2DParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  Pad2dParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+  Pad2DParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
+    paddings_ = OpParam::GetAttr<std::vector<int>>("paddings", attrs);
+    pad_value_ = OpParam::GetAttr<float>("pad_value", attrs);
+    mode_ = OpParam::GetStringAttr("mode", attrs);
+    DLOG << "mode" << mode_;
   }
-  const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
+
+  std::vector<int> paddings_;
+  float pad_value_;
+  std::string mode_;
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
 };
 #endif
 #ifdef EXP_OP
@@ -3509,6 +3708,91 @@ class EXPParam : public OpParam {
   GType *input_x_;
   GType *out_;
 };
+#endif
+
+#ifdef PIXEL_SHUFFLE_OP
+template <typename Dtype>
+class PixelShuffleParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  PixelShuffleParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    upscale_factor_ = GetAttr<int>("upscale_factor", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  const int &upscale_factor() const { return upscale_factor_; }
+
+ private:
+  GType *input_x_;
+  GType *out_;
+  int upscale_factor_;
+};
+#endif
+
+#ifdef GRID_SAMPLER_OP
+template <typename Dtype>
+class GridSamplerParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  GridSamplerParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    grid_ = GridFrom<GType>(inputs, *scope);
+    output_ = OutputFrom<GType>(outputs, *scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  const GType *Grid() const { return grid_; }
+
+  GType *Output() const { return output_; }
+
+ private:
+  GType *input_x_;
+  GType *grid_;
+  GType *output_;
+};
+#endif
+
+#ifdef EXPAND_OP
+template <typename Dtype>
+class ExpandParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ExpandParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
+    expand_times = OpParam::GetAttr<std::vector<int>>("expand_times", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  GType *Out() const { return out_; }
+
+  std::vector<int> expand_times;
+
+ private:
+  GType *input_x_;
+  GType *out_;
+};
+
 #endif
 }  // namespace operators
 }  // namespace paddle_mobile

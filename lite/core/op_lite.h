@@ -57,7 +57,7 @@ class OpLite : public Registry {
       : valid_places_(valid_places) {}
 
   void SetValidPlaces(const std::vector<Place> &places) {
-    VLOG(3) << "valid places " << valid_places_.size();
+    VLOG(5) << "valid places " << valid_places_.size();
     valid_places_ = places;
   }
   const std::vector<Place> &valid_places() const { return valid_places_; }
@@ -79,6 +79,8 @@ class OpLite : public Registry {
 
   // Human-readable information.
   virtual std::string DebugString() const = 0;
+
+  virtual std::string SerializedOpInfo() const { return "N/A"; }
 
   const Place &kernel_place() const { return kernel_place_; }
 

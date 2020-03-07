@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 
@@ -46,7 +46,7 @@ void WhileCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     while, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::WhileCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
     .BindInput("Condition",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})

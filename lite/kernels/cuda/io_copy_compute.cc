@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/cuda/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/cuda/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
 
-using TargetW = TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>;
+using TargetW = TargetWrapper<TARGET(kCUDA)>;
 
 // Host to CUDA memory.
 void CopyFromHostSync(void* target, const void* source, size_t size) {
@@ -51,7 +51,7 @@ class IoCopyHostToCudaCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kX86));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
+    VLOG(4) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kCUDA), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -89,7 +89,7 @@ class IoCopyCudaToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kCUDA));
     auto mem_size = param.x->memory_size();
-    LOG(INFO) << "copy size " << mem_size;
+    VLOG(4) << "io copy cuda to host " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -108,8 +108,14 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      paddle::lite::kernels::cuda::IoCopyHostToCudaCompute,
                      host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -118,8 +124,14 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      paddle::lite::kernels::cuda::IoCopyCudaToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -128,8 +140,14 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      paddle::lite::kernels::cuda::IoCopyHostToCudaCompute,
                      host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -138,6 +156,12 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      paddle::lite::kernels::cuda::IoCopyCudaToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();

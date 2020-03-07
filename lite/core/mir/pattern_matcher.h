@@ -123,6 +123,7 @@ struct PMNode {
   // Assertions, helper functions to simplify the pattern definition.
   PMNode* assert_is_op();
   PMNode* assert_is_op(const std::string& op_type);
+  PMNode* assert_is_not_op_type(const std::string& op_type);
   PMNode* assert_is_var();
   PMNode* assert_var_not_persistable();
   PMNode* assert_is_persistable_var();
@@ -141,16 +142,24 @@ struct PMNode {
                                   int nth);
 
   template <typename T>
-  PMNode* assert_op_attr(const std::string& attr_name, const T& attr) {
+  PMNode* assert_op_attr_satisfied(
+      const std::string& attr_name,
+      const std::function<bool(const T&)>& condition) {
     asserts_.push_back([=](const Node* x) {
       if (x && x->IsStmt()) {
         auto* op_info = x->stmt()->op_info();
         return op_info->HasAttr(attr_name) &&
-               op_info->GetAttr<T>(attr_name) == attr;
+               condition(op_info->GetAttr<T>(attr_name));
       }
       return false;
     });
     return this;
+  }
+
+  template <typename T>
+  PMNode* assert_op_attr(const std::string& attr_name, const T& attr) {
+    return assert_op_attr_satisfied<T>(
+        attr_name, [=](const T& src) { return src == attr; });
   }
 
  private:

@@ -26,6 +26,7 @@ limitations under the License. */
 #include "io/paddle_inference_api.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_engine.h"
+#include "io/opencl_interface.h"
 #endif
 
 namespace paddle_mobile {
@@ -34,26 +35,35 @@ template <typename Device, typename T = float>
 class PaddleMobile {
  public:
   explicit PaddleMobile(PaddleMobileConfigInternal config) : config_(config) {
-#ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
+#ifndef PADDLE_MOBILE_CL
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
+#else
+    if (is_gpu) {
+      prepareOpenclRuntime();
+    }
 #endif
   }
 
   PaddleMobile() {
-#ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
+#ifndef PADDLE_MOBILE_CL
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
+#else
+    if (is_gpu) {  // recheck when run cpu in with opencl.
+      prepareOpenclRuntime();
+    }
 #endif
   }
   virtual ~PaddleMobile() { Clear(); }
 
   PMStatus Load(const std::string &dirname, const bool optimize = false,
                 const bool quantification = false, const int batch_size = 1,
-                const bool lod_mode = false);
+                const bool lod_mode = false, const int quantification_fold = 1);
   PMStatus Load(const std::string &model_path, const std::string &para_path,
                 const bool optimize = false, const bool quantification = false,
-                const int batch_size = 1, const bool lod_mode = false);
+                const int batch_size = 1, const bool lod_mode = false,
+                const int quantification_fold = 1);
 
   PMStatus Load(const PaddleMobileConfig &config);
 
@@ -84,12 +94,13 @@ class PaddleMobile {
                           size_t combined_params_len,
                           uint8_t *combined_params_buf, bool optimize = false,
                           bool quantification = false, int batch_size = 1,
-                          bool lod_mode = false);
+                          bool lod_mode = false, int quantification_fold = 1);
 
   void SetThreadNum(int thread_num,
                     PowerMode power_mode = PERFORMANCE_PRIORITY);
   void Clear();
   double GetPredictTime();
+  std::string GetExceptionMsg();
 
 #ifdef PADDLE_MOBILE_FPGA
   void InjectVariable(const framework::Tensor &t, std::string var_name);

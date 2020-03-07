@@ -25,6 +25,7 @@ bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
   auto input = const_cast<LoDTensor *>(param->InputX());
   auto output = param->Out();
   auto shape = param->Shape();
+  output->scale[0] = input->scale[0];
 
   auto num_in = framework::product(input->dims());
   auto num_shape = framework::product(framework::make_ddim(shape));
@@ -109,7 +110,26 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
     }
   }
   output->Resize(framework::make_ddim(shape));
+
+  bool reshapeNeedFlg = 1;
   if (output->dims() == input->dims()) {
+    reshapeNeedFlg = 0;
+  } else if (output->dims().size() != input->dims().size()) {
+    auto inputdimsize = input->dims().size();
+    auto outputdimsize = output->dims().size();
+    int smallersize =
+        inputdimsize > outputdimsize ? outputdimsize : inputdimsize;
+    int i = 0;
+    for (i = 0; i < smallersize; i++) {
+      if ((input->dims())[i] != (output->dims())[i]) break;
+    }
+    if (i == smallersize) {
+      reshapeNeedFlg = 0;
+    }
+  }
+  if (reshapeNeedFlg) {
+    reshape(input, output);
+  } else {
     DLOG << "No need to reshape";
     output->ShareDataWith(*input);
     framework::LoD lod = input->lod();
@@ -117,9 +137,6 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
     output->scale[0] = input->scale[0];
     return;
   }
-
-  reshape(input, output);
-  //
 }
 
 }  // namespace operators

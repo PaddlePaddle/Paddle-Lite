@@ -11,6 +11,8 @@ cd `dirname $0`
 cd ..
 export PATH=/usr/bin:$PATH
 pre-commit install
+which clang-format
+clang-format --version
 
 if ! pre-commit run -a ; then
   ls -lh

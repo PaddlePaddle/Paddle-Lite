@@ -35,15 +35,23 @@ void ScaleKernel<GPU_CL, float>::Compute(const ScaleParam<GPU_CL>& param) {
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*output);
   auto inputImage = input->GetCLImage();
   auto outputImage = output->GetCLImage();
-  int out_width = output->dims()[3];
-  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
-  clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
-  clSetKernelArg(kernel, 2, sizeof(float), &scale);
-  clSetKernelArg(kernel, 3, sizeof(float), &bias);
-  clSetKernelArg(kernel, 4, sizeof(int), &out_width);
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel,
-                         default_work_size.size(), NULL,
-                         default_work_size.data(), NULL, 0, NULL, NULL);
+  int out_width = (output->dims().size() == 4) ? output->dims()[3] : 1;
+
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(float), &scale);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(float), &bias);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 4, sizeof(int), &out_width);
+  CL_CHECK_ERRORS(status);
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 }
 
 template class ScaleKernel<GPU_CL, float>;

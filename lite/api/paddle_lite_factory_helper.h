@@ -25,7 +25,7 @@
 
 #define USE_LITE_KERNEL(op_type__, target__, precision__, layout__, alias__) \
   extern int touch_##op_type__##target__##precision__##layout__##alias__();  \
-  int op_type__##target__##precision__##layout__##alias__                    \
+  int op_type__##target__##precision__##layout__##alias__##__use_lite_kernel \
       __attribute__((unused)) =                                              \
           touch_##op_type__##target__##precision__##layout__##alias__();
 

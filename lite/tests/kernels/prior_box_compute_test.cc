@@ -75,7 +75,7 @@ void prior_box_compute_ref(const lite::Tensor* input,
                            const std::vector<float>& min_size_,
                            const std::vector<float>& fixed_size_,
                            const std::vector<float>& fixed_ratio_,
-                           const std::vector<float>& density_size_,
+                           const std::vector<int>& density_size_,
                            const std::vector<float>& max_size_,
                            const std::vector<float>& aspect_ratio_,
                            const std::vector<float>& variance_,
@@ -125,7 +125,6 @@ void prior_box_compute_ref(const lite::Tensor* input,
       if (fixed_size_.size() > 0) {
         for (int s = 0; s < fixed_size_.size(); ++s) {
           int fixed_size = fixed_size_[s];
-          int com_idx = 0;
           box_width = fixed_size;
           box_height = fixed_size;
 
@@ -352,7 +351,7 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
   std::vector<float> min_size_;
   std::vector<float> fixed_size_;
   std::vector<float> fixed_ratio_;
-  std::vector<float> density_size_;
+  std::vector<int> density_size_;
   std::vector<float> max_size_;
   std::vector<float> aspect_ratio_;
   std::vector<float> variance_;
@@ -375,7 +374,7 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
                                const std::vector<float>& min_size,
                                const std::vector<float>& fixed_size,
                                const std::vector<float>& fixed_ratio,
-                               const std::vector<float>& density_size,
+                               const std::vector<int>& density_size,
                                const std::vector<float>& max_size,
                                const std::vector<float>& aspect_ratio,
                                const std::vector<float>& variance,
@@ -561,7 +560,7 @@ class PriorBoxComputeTester : public arena::TestCase {
                           min_size_,
                           std::vector<float>(),
                           std::vector<float>(),
-                          std::vector<float>(),
+                          std::vector<int>(),
                           max_size_,
                           aspect_ratio_,
                           variance_,
@@ -621,7 +620,7 @@ void test_density_prior_box(Place place) {
   std::vector<float> variance{0.1f, 0.1f, 0.2f, 0.2f};
   std::vector<float> fixed_size{60, 30};
   std::vector<float> fixed_ratio{1., 2.};
-  std::vector<float> density_size{1., 3.};
+  std::vector<int> density_size{1, 3};
   bool flip = true;
   bool clip = false;
   float step_h = 0;

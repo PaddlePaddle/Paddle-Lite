@@ -105,6 +105,7 @@ void PatternMatcher::operator()(SSAGraph *graph,
   ValidateByNodeRole(&subgraphs);
 
   if (subgraphs.empty()) return;
+  LOG(INFO) << "detected " << subgraphs.size() << " subgraph";
   int id = 0;
   for (auto &g : subgraphs) {
     VLOG(3) << "optimizing #" << id++ << " subgraph";
@@ -376,6 +377,19 @@ PMNode *PMNode::assert_is_op(const std::string &op_type) {
   return this;
 }
 
+PMNode *PMNode::assert_is_not_op_type(const std::string &op_type) {
+  asserts_.emplace_back([op_type](const Node *x) {
+    if (x && x->IsStmt()) {
+      auto *op_info = x->stmt()->op_info();
+      if (op_info->Type() == op_type) {
+        return false;
+      }
+    }
+    return true;
+  });
+  return this;
+}
+
 PMNode *PMNode::assert_is_var() {
   asserts_.emplace_back([](const Node *x) { return x && x->IsArg(); });
   return this;
@@ -414,7 +428,8 @@ bool IsNthOutput(const Node *var,
   CHECK(var->IsArg());
   CHECK(op->IsStmt());
   auto op_info = op->stmt()->op_info();
-  if (op_info->Output(argument).size() <= nth) return false;
+  if (!op_info->HasOutput(argument) || op_info->Output(argument).size() <= nth)
+    return false;
   return var->arg()->name == op_info->Output(argument)[nth];
 }
 
@@ -425,7 +440,8 @@ bool IsNthInput(const Node *var,
   CHECK(var->IsArg());
   CHECK(op->IsStmt());
   auto op_info = op->stmt()->op_info();
-  if (op_info->Input(argument).size() <= nth) return false;
+  if (!op_info->HasInput(argument) || op_info->Input(argument).size() <= nth)
+    return false;
   return var->arg()->name == op_info->Input(argument)[nth];
 }
 

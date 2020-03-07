@@ -29,12 +29,9 @@ namespace lite {
 TEST(ResNet50, test) {
   lite::Predictor predictor;
   std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-       Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNHWC)}});
+      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
 
-  predictor.Build(FLAGS_model_dir,
-                  Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
-                  valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));

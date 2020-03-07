@@ -17,11 +17,6 @@
 #include <jni.h>
 /* Header for class com_baidu_paddle_lite_PaddlePredictor */
 #include "lite/api/paddle_lite_factory_helper.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#ifndef LITE_ON_TINY_PUBLISH
-#include "lite/api/paddle_use_passes.h"
-#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +31,14 @@ namespace lite_api {
  */
 JNIEXPORT jboolean JNICALL
 Java_com_baidu_paddle_lite_PaddlePredictor_run(JNIEnv *, jobject);
+
+/*
+ * Class:     com_baidu_paddle_lite_PaddlePredictor
+ * Method:    getVersion
+ * Signature: ()Z
+ */
+JNIEXPORT jstring JNICALL
+Java_com_baidu_paddle_lite_PaddlePredictor_getVersion(JNIEnv *, jobject);
 
 /*
  * Class:     com_baidu_paddle_lite_PaddlePredictor

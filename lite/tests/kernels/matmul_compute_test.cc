@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -130,17 +131,17 @@ class MatMulComputeTester : public arena::TestCase {
  public:
   MatMulComputeTester(const Place& place,
                       const std::string& alias,
-                      bool x_transpose,
-                      bool y_transpose,
-                      float alpha,
                       const DDim& x_dims,
-                      const DDim& y_dims)
+                      const DDim& y_dims,
+                      bool x_transpose = false,
+                      bool y_transpose = false,
+                      float alpha = 1.f)
       : TestCase(place, alias),
+        x_dims_(x_dims),
+        y_dims_(y_dims),
         x_transpose_(x_transpose),
         y_transpose_(y_transpose),
-        alpha_(alpha),
-        x_dims_(x_dims),
-        y_dims_(y_dims) {}
+        alpha_(alpha) {}
 
   void RunBaseline(Scope* scope) override {
     auto* x = scope->FindTensor(x_);
@@ -152,29 +153,36 @@ class MatMulComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(out_);
     CHECK(out);
 
-    // todo alpha
     std::vector<int64_t> dim_out_vec;
     if (x_dims_.size() > 2 && y_dims_.size() >= 2) {
       // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
       // x: [B, M, K], y: [K, N], out: [B, M, N]
-      if (x_transpose_ || y_transpose_) {
-        LOG(FATAL) << "not supported transpose for x and y.";
-      }
-      CHECK_EQ(x_dims_[x_dims_.size() - 1], y_dims_[y_dims_.size() - 2])
-          << "not supported x_dims(" << x_dims_ << ") and y_dims(" << y_dims_
-          << ")";
       dim_out_vec.resize(x_dims_.size());
-      for (size_t i = 0; i < x_dims_.size() - 1; ++i) {
+      for (size_t i = 0; i < x_dims_.size() - 2; ++i) {
         dim_out_vec[i] = x_dims_[i];
       }
-      dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 1];
+      if (!x_transpose_ && !y_transpose_) {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 2];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 1];
+      } else if (!x_transpose_ && y_transpose_) {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 2];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 2];
+      } else if (x_transpose_ && !y_transpose_) {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 1];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 1];
+      } else {
+        dim_out_vec[x_dims_.size() - 2] = x_dims_[x_dims_.size() - 1];
+        dim_out_vec[x_dims_.size() - 1] = y_dims_[y_dims_.size() - 2];
+      }
+
       out->Resize(dim_out_vec);
       auto* out_data = out->mutable_data<float>();
       int x_inner = x_dims_[x_dims_.size() - 2] * x_dims_[x_dims_.size() - 1];
 
       if (y_dims_.size() > 2) {
         int y_inner = y_dims_[y_dims_.size() - 2] * y_dims_[y_dims_.size() - 1];
-        int o_inner = x_dims_[x_dims_.size() - 2] * y_dims_[y_dims_.size() - 1];
+        int o_inner =
+            dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
         for (size_t i = 0; i < x_dims_.count(0, x_dims_.size() - 2); ++i) {
           mul_low_efficiency(
               DDim({x_dims_[x_dims_.size() - 2], x_dims_[x_dims_.size() - 1]}),
@@ -187,7 +195,8 @@ class MatMulComputeTester : public arena::TestCase {
               out_data + i * o_inner);
         }
       } else {
-        int o_inner = x_dims_[x_dims_.size() - 2] * y_dims_[1];
+        int o_inner =
+            dim_out_vec[x_dims_.size() - 2] * dim_out_vec[x_dims_.size() - 1];
         for (size_t i = 0; i < x_dims_.count(0, x_dims_.size() - 2); ++i) {
           mul_low_efficiency(
               DDim({x_dims_[x_dims_.size() - 2], x_dims_[x_dims_.size() - 1]}),
@@ -240,7 +249,7 @@ class MatMulComputeTester : public arena::TestCase {
           out_data[i] += x_data[i * y_dims_[0] + j] * y_data[j] * alpha_;
         }
       }
-    } else if (x_dims_.size() == 1 && y_dims_.size() == 1) {  // todo
+    } else if (x_dims_.size() == 1 && y_dims_.size() == 1) {
       // x: [K], y: [K], out: [1]
       if (x_dims_[0] == y_dims_[0] && x_transpose_ == false &&
           y_transpose_ == false) {
@@ -287,165 +296,279 @@ class MatMulComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> x_data(x_dims_.production());
-    std::vector<float> y_data(y_dims_.production());
+    std::vector<float> x(x_dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, x_dims_.production());
+    SetCommonTensor(x_, x_dims_, x.data());
 
-    for (int i = 0; i < x_dims_.production(); ++i) {
-      x_data[i] = 1;  // i * 1.1;
-    }
-    for (int i = 0; i < y_dims_.production(); ++i) {
-      y_data[i] = 1;  // i * 0.9;
-    }
-
-    SetCommonTensor(x_, x_dims_, x_data.data());
-    SetCommonTensor(y_, y_dims_, y_data.data());
+    std::vector<float> y(y_dims_.production());
+    fill_data_rand(y.data(), -1.f, 1.f, y_dims_.production());
+    SetCommonTensor(y_, y_dims_, y.data(), {}, true);
   }
 };
 
-void test_matmul2x2_no_transform(Place place) {
-  for (int m : {1, 2, 4, 8}) {
-    for (int k : {1, 3, 5}) {
-      for (int n : {1, 2, 4, 6}) {
+void test_matmul_helper(Place place,
+                        float abs_error,
+                        std::vector<int64_t> x_dims,
+                        std::vector<int64_t> y_dims,
+                        bool x_transpose,
+                        bool y_transpose,
+                        float alpha) {
+  std::unique_ptr<arena::TestCase> tester(new MatMulComputeTester(place,
+                                                                  "def",
+                                                                  DDim(x_dims),
+                                                                  DDim(y_dims),
+                                                                  x_transpose,
+                                                                  y_transpose,
+                                                                  alpha));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+void test_matmul2x2(Place place, float abs_error) {
+  for (int64_t m : {1, 2, 8}) {
+    for (int64_t k : {1, 3, 5}) {
+      for (int64_t n : {1, 4, 6}) {
         for (float alpha : {1., 2.}) {
-          bool x_transform = false;
-          bool y_transform = false;
-          std::unique_ptr<arena::TestCase> tester(
-              new MatMulComputeTester(place,
-                                      "def",
-                                      x_transform,
-                                      y_transform,
-                                      alpha,
-                                      DDim({m, k}),
-                                      DDim({k, n})));
-          arena::Arena arena(std::move(tester), place, 5e-4);
-          arena.TestPrecision();
+          test_matmul_helper(
+              place, abs_error, {m, k}, {k, n}, false, false, alpha);
         }
       }
     }
   }
 }
 
-void test_matmul2x2_transform(Place place) {
-  DDim x_dim({3, 2});
-  DDim y_dim({3, 2});
-  float alpha = 1.f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, true, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmul2x2_xtranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(place, abs_error, {3, 4}, {3, 2}, true, false, alpha);
+    test_matmul_helper(place, abs_error, {2, 5}, {2, 1}, true, false, alpha);
+  }
 }
 
-void test_matmul1x1_no_transpose(Place place) {
-  DDim x_dim({3});
-  DDim y_dim({3});
-  float alpha = 1.5f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmul2x2_ytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(place, abs_error, {5, 2}, {3, 2}, false, true, alpha);
+    test_matmul_helper(place, abs_error, {2, 5}, {1, 5}, false, true, alpha);
+  }
 }
 
-void test_matmul1x1_transpose(Place place) {
-  DDim x_dim({3});
-  DDim y_dim({5});
-  float alpha = 1.5f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", true, true, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmul2x2_xytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(place, abs_error, {6, 2}, {3, 6}, true, true, alpha);
+    test_matmul_helper(place, abs_error, {5, 3}, {1, 5}, true, true, alpha);
+  }
 }
 
-void test_matmul_nx1(Place place) {
-  DDim x_dim({3, 4, 2, 5});
-  DDim y_dim({5});
-  float alpha = 1.5f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmul1x1(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(place, abs_error, {3}, {3}, false, false, alpha);
+  }
 }
 
-void test_matmul_nx2_1(Place place) {
-  DDim x_dim({3, 4, 2, 5});
-  DDim y_dim({5, 1});
-  float alpha = 1.5f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmul1x1_xytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(place, abs_error, {3}, {5}, true, true, alpha);
+  }
 }
 
-void test_matmul_nx2_2(Place place) {
-  DDim x_dim({3, 4, 2, 5});
-  DDim y_dim({5, 3});
-  float alpha = 1.5f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmulnx1(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 2, 5}, {5}, false, false, alpha);
+  }
 }
 
-void test_matmul_nxn(Place place) {
-  DDim x_dim({3, 4, 2, 5});
-  DDim y_dim({3, 4, 5, 2});
-  float alpha = 1.5f;
-  std::unique_ptr<arena::TestCase> tester(
-      new MatMulComputeTester(place, "def", false, false, alpha, x_dim, y_dim));
-  arena::Arena arena(std::move(tester), place, 2e-5);
-  arena.TestPrecision();
+void test_matmulnx2(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {1, 2, 2, 3}, {3, 1}, false, false, alpha);
+    test_matmul_helper(
+        place, abs_error, {1, 2, 2, 3}, {3, 4}, false, false, alpha);
+  }
+}
+
+void test_matmulnx2_xtranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 6, 2}, {6, 2}, true, false, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 3, 5, 2}, {5, 1}, true, false, alpha);
+  }
+}
+
+void test_matmulnx2_ytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 6, 2}, {5, 2}, false, true, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 3, 5, 2}, {1, 2}, false, true, alpha);
+  }
+}
+
+void test_matmulnx2_xytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 4, 3}, {2, 4}, true, true, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 3, 3, 2}, {1, 3}, true, true, alpha);
+  }
+}
+
+void test_matmulnxn(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 6, 2}, {3, 4, 2, 5}, false, false, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 3, 4}, {5, 4, 6}, false, false, alpha);
+  }
+}
+
+void test_matmulnxn_xtranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 2, 6}, {3, 4, 2, 5}, true, false, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 4, 2}, {5, 4, 6}, true, false, alpha);
+  }
+}
+
+void test_matmulnxn_ytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 6, 2}, {3, 4, 5, 2}, false, true, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 3, 4}, {5, 6, 4}, false, true, alpha);
+  }
+}
+
+void test_matmulnxn_xytranspose(Place place, float abs_error) {
+  for (float alpha : {1.f, 2.f}) {
+    test_matmul_helper(
+        place, abs_error, {3, 4, 2, 6}, {3, 4, 5, 2}, true, true, alpha);
+    test_matmul_helper(
+        place, abs_error, {5, 4, 3}, {5, 6, 4}, true, true, alpha);
+  }
 }
 
 TEST(Matmul2x2, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  // test_matmul2x2_transform(place);
-  test_matmul2x2_no_transform(place);
+
+  test_matmul2x2(place, abs_error);
+}
+
+TEST(Matmul2x2_x_transpose, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
+
+  test_matmul2x2_xtranspose(place, abs_error);
+}
+
+TEST(Matmul2x2_y_transpose, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
+
+  test_matmul2x2_ytranspose(place, abs_error);
+}
+
+TEST(Matmul2x2_transpose, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  test_matmul2x2_xytranspose(place, abs_error);
 }
 
 TEST(Matmul1x1, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_matmul1x1_transpose(place);
-  test_matmul1x1_no_transpose(place);
-#endif
+
+  test_matmul1x1(place, abs_error);
+  test_matmul1x1_xytranspose(place, abs_error);
 }
 
 TEST(Matmulnx1, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_matmul_nx1(place);
-#endif
+
+  test_matmulnx1(place, abs_error);
 }
 
 TEST(Matmulnx2, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_matmul_nx2_1(place);
-  test_matmul_nx2_2(place);
-#endif
+
+  test_matmulnx2(place, abs_error);
+  test_matmulnx2_xtranspose(place, abs_error);
+  test_matmulnx2_ytranspose(place, abs_error);
+  test_matmulnx2_xytranspose(place, abs_error);
 }
 
 TEST(Matmulnxn, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_matmul_nxn(place);
-#endif
+
+  test_matmulnxn(place, abs_error);
+  test_matmulnxn_xtranspose(place, abs_error);
+  test_matmulnxn_ytranspose(place, abs_error);
+  test_matmulnxn_xytranspose(place, abs_error);
 }
 
 }  // namespace lite

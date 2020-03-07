@@ -63,12 +63,19 @@ void fill_cpu_cache_size(std::vector<int> *cpu_cache_sizes, int value,
   int num = cpu_ids.size();
   if (num > 0) {
     for (int i = 0; i < num; i++) {
-      (*cpu_cache_sizes)[cpu_ids[i]] = value;
+      if (cpu_ids.size() > i) {
+        int idx = cpu_ids[i];
+        if (cpu_cache_sizes->size() > idx) {
+          (*cpu_cache_sizes)[idx] = value;
+        }
+      }
     }
   } else {
     num = cpu_cache_sizes->size();
     for (int i = 0; i < num; i++) {
-      (*cpu_cache_sizes)[i] = value;
+      if (cpu_cache_sizes->size() > i) {
+        (*cpu_cache_sizes)[i] = value;
+      }
     }
   }
 }
@@ -248,9 +255,9 @@ int set_sched_affinity(const std::vector<int> &cpu_ids) {
 // cpu_set_t definition
 // ref http://stackoverflow.com/questions/16319725/android-set-thread-affinity
 #define CPU_SETSIZE 1024
-#define __NCPUBITS (8 * sizeof(unsigned long))
+#define __NCPUBITS (8 * sizeof(unsigned long))  // NOLINT
   typedef struct {
-    unsigned long __bits[CPU_SETSIZE / __NCPUBITS];
+    unsigned long __bits[CPU_SETSIZE / __NCPUBITS];  // NOLINT
   } cpu_set_t;
 
 #define CPU_SET(cpu, cpusetp) \
@@ -477,6 +484,10 @@ CPUContext::CPUContext() {
   }
   LOG(kLOG_INFO) << "CPU num: " << _cpu_num;
   for (int i = 0; i < _cpu_num; i++) {
+    if (!(_l1_cache_sizes.size() > i && _l2_cache_sizes.size() > i &&
+          _l3_cache_sizes.size() > i)) {
+      break;
+    }
     LOG(kLOG_INFO) << i << " L1 Cache: " << _l1_cache_sizes[i] << "KB"
                    << " L2 Cache: " << _l2_cache_sizes[i] << "KB"
                    << " L3 Cache: " << _l3_cache_sizes[i] << "KB";
@@ -563,12 +574,25 @@ int CPUContext::get_cache_size(int level) {
     return 0;
   }
   if (_power_mode == PERFORMANCE_PRIORITY || _power_mode == PERFORMANCE_ONLY) {
-    return (*ptr)[_big_core_ids[0]];
+    if (_big_core_ids.size() > 0) {
+      int idx = _big_core_ids[0];
+      if (ptr->size() > idx) {
+        return (*ptr)[idx];
+      }
+    }
   } else if (_power_mode == EFFICIENCY_PRIORITY ||
              _power_mode == EFFICIENCY_ONLY) {
-    return (*ptr)[_little_core_ids[0]];
+    if (_little_core_ids.size() > 0) {
+      int idx = _little_core_ids[0];
+      if (ptr->size() > idx) {
+        return (*ptr)[idx];
+      }
+    }
   } else {  // AUTO
-    return (*ptr)[0];
+    int idx = 0;
+    if (ptr->size() > idx) {
+      return (*ptr)[idx];
+    }
   }
 }
 

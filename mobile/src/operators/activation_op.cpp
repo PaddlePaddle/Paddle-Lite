@@ -80,6 +80,9 @@ REGISTER_OPERATOR_CL(sigmoid, ops::SigmoidOp);
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(tanh, ops::TanhOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(tanh, ops::TanhOp);
+#endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
 #endif

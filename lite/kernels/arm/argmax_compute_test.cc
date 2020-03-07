@@ -33,7 +33,7 @@ void argmax_compute_ref(const operators::ArgmaxParam& param) {
   int axis = param.Axis;
 
   auto x_data = x->data<dtype>();
-  auto output_data = output->mutable_data<dtype>();
+  auto output_data = output->mutable_data<int64_t>();
   DDim x_dims = x->dims();
   DDim output_dims = output->dims();
 
@@ -59,7 +59,7 @@ void argmax_compute_ref(const operators::ArgmaxParam& param) {
                         std::greater<std::pair<dtype, int>>());
 
       // out
-      dtype* out_ptr = output_data + n * out_channel + k;
+      auto* out_ptr = output_data + n * out_channel + k;
       *out_ptr = vec[0].second;
     }
   }
@@ -68,7 +68,7 @@ void argmax_compute_ref(const operators::ArgmaxParam& param) {
 TEST(argmax_arm, retrive_op) {
   auto argmax =
       KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "argmax");
+          "arg_max");
   ASSERT_FALSE(argmax.empty());
   ASSERT_TRUE(argmax.front());
 }
@@ -115,12 +115,12 @@ TEST(argmax_arm, compute) {
           param.Axis = axis;
           argmaxOp.SetParam(param);
           argmaxOp.Launch();
-          auto* output_data = output.mutable_data<float>();
+          auto* output_data = output.mutable_data<int64_t>();
 
           // obtain output_ref_data
           param.Out = &output_ref;
           argmax_compute_ref<float>(param);
-          auto* output_ref_data = output_ref.mutable_data<float>();
+          auto* output_ref_data = output_ref.mutable_data<int64_t>();
 
           // compare
           for (int i = 0; i < output.dims().production(); i++) {
@@ -136,4 +136,4 @@ TEST(argmax_arm, compute) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-USE_LITE_KERNEL(argmax, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(arg_max, kARM, kFloat, kNCHW, def);

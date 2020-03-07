@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/increment_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -27,10 +27,22 @@ void IncrementCompute::Run() {
   auto& param = this->Param<operators::IncrementParam>();
 
   int total_num = param.X->dims().production();
-
-  const auto* x_data = param.X->data<int>();
-  auto* o_data = param.Out->mutable_data<int>();
-  lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  if (param.X->precision() == PRECISION(kFloat)) {
+    const auto* x_data = param.X->data<float>();
+    auto* o_data = param.Out->mutable_data<float>();
+    lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  } else if (param.X->precision() == PRECISION(kInt64)) {
+    const auto* x_data = param.X->data<int64_t>();
+    auto* o_data = param.Out->mutable_data<int64_t>();
+    lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  } else if (param.X->precision() == PRECISION(kInt32)) {
+    const auto* x_data = param.X->data<int32_t>();
+    auto* o_data = param.Out->mutable_data<int32_t>();
+    lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  } else {
+    LOG(FATAL) << "unsupport input type "
+               << PrecisionToStr(param.X->precision());
+  }
 }
 
 }  // namespace arm

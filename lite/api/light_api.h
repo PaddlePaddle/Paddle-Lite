@@ -18,6 +18,8 @@
  */
 #pragma once
 
+#include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -38,15 +40,32 @@ namespace lite {
  */
 class LITE_API LightPredictor {
  public:
-  explicit LightPredictor(
-      const std::string& model_dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+  // constructor function of LightPredictor, `lite_model_file` refers to data in
+  // model file or buffer,`model_from_memory` refers to whther to load model
+  // from memory.
+  LightPredictor(const std::string& lite_model_file,
+                 bool model_from_memory = false) {
+    scope_ = std::make_shared<Scope>();
+    Build(lite_model_file, model_from_memory);
+  }
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
+  LightPredictor(const std::string& model_dir,
+                 const std::string& model_buffer = "",
+                 const std::string& param_buffer = "",
+                 bool model_from_memory = false,
+                 lite_api::LiteModelType model_type =
+                     lite_api::LiteModelType::kNaiveBuffer) {
+    scope_ = std::make_shared<Scope>();
+    Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
+  }
 
   void Run() { program_->Run(); }
 
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
-
+  // get input by name.
+  Tensor* GetInputByName(const std::string& name);
   // Get offset-th col of fetch outputs.
   const Tensor* GetOutput(size_t offset);
 
@@ -55,15 +74,61 @@ class LITE_API LightPredictor {
     return &var->Get<lite::Tensor>();
   }
 
+  // get inputnames and get outputnames.
+  std::vector<std::string> GetInputNames();
+  std::vector<std::string> GetOutputNames();
+  void PrepareFeedFetch();
+
  private:
+  void Build(const std::string& lite_model_file,
+             bool model_from_memory = false);
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
   void Build(
       const std::string& model_dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      const std::string& model_buffer,
+      const std::string& param_buffer,
+      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      bool model_from_memory = false);
+
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
+
+  void DequantizeWeight();
 
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
+  cpp::ProgramDesc cpp_program_desc_;
+  std::vector<std::string> input_names_;
+  std::vector<std::string> output_names_;
+};
+
+class LightPredictorImpl : public lite_api::PaddlePredictor {
+ public:
+  LightPredictorImpl() = default;
+
+  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+
+  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  void Run() override;
+
+  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+
+  std::string GetVersion() const override;
+  std::vector<std::string> GetInputNames() override;
+  std::vector<std::string> GetOutputNames() override;
+
+  std::unique_ptr<const lite_api::Tensor> GetTensor(
+      const std::string& name) const override;
+  // Get InputTebsor by name
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
+
+  void Init(const lite_api::MobileConfig& config);
+
+ private:
+  std::unique_ptr<lite::LightPredictor> raw_predictor_;
 };
 
 }  // namespace lite

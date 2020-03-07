@@ -81,6 +81,7 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
   auto w = 1;
   auto c = 1;
   if (dims.size() == 4) {
+    n = dims[0];
     h = dims[1];
     w = dims[2];
     c = dims[3];
@@ -90,6 +91,7 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
       h = 1;
     }
   } else if (dims.size() == 2) {
+    n = dims[0];
     c = dims[1];
   }
   if ((c == 2) && (in_x->type() == type_id<int8_t>())) {

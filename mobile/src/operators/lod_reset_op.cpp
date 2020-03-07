@@ -23,11 +23,11 @@ template <typename Dtype, typename T>
 void LodResetOp<Dtype, T>::InferShape() const {
   const auto &input_dims = this->param_.input_x_->dims();
   this->param_.output_->Resize(input_dims);
-#ifdef PADDLE_MOBILE_CPU
-  if (this->param_.append) {
-    this->param_.output_->set_lod(this->param_.input_x_->lod());
+  if (std::is_same<DeviceType<kCPU>, Dtype>::value) {
+    if (this->param_.append) {
+      this->param_.output_->set_lod(this->param_.input_x_->lod());
+    }
   }
-#endif
 }
 
 }  // namespace operators

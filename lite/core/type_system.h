@@ -27,6 +27,7 @@
 #include <unordered_set>
 #include <vector>
 #include "lite/core/tensor.h"
+#include "lite/core/version.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -176,8 +177,9 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
   };
   if (a.IsVoid() || b.IsVoid()) return true;
-  if (a.IsTensor() || b.IsTensor()) {
-    if (a.IsTensor() && b.IsTensor()) {
+  if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
+    if ((a.IsTensor() && b.IsTensor()) ||
+        (a.IsTensorList() && b.IsTensorList())) {
       return is_host(a.target()) ? is_host(b.target())
                                  : a.target() == b.target();
     }
@@ -280,7 +282,7 @@ struct ParamTypeRecorder {
  */
 class ParamTypeRegistry {
  public:
-  enum class IO : int { kInput = 0, kOutput };
+  enum class IO : int { kInvalid = 0, kInput, kOutput };
 
   template <TargetType target,
             PrecisionType precision,
@@ -310,6 +312,12 @@ class ParamTypeRegistry {
           kernel_type_, Place{target, precision, layout}, arg_name, ptype);
       return *this;
     }
+    NewInstance& SetVersion(const std::string& version) {
+      ParamTypeRegistry::Global().SetVersion(int_version(version),
+                                             Split(kernel_type_, "/").front(),
+                                             Place{target, precision, layout});
+      return *this;
+    }
 
     bool Finalize() { return true; }
 
@@ -325,6 +333,22 @@ class ParamTypeRegistry {
     KernelIdTy key{kernel_type, place, io, arg_name};
     types_[key] = data_type;
     CHECK(types_.count(key));
+  }
+
+  void SetVersion(const int64_t version,
+                  const std::string& kernel_type,
+                  const Place& place) {
+    KernelIdTy key{kernel_type, place, IO(), std::string()};
+    versions_[key] = version;
+    CHECK(versions_.count(key));
+  }
+
+  int64_t GetVersion(const std::string& kernel_type, const Place& place) {
+    KernelIdTy key{kernel_type, place, IO(), std::string()};
+    if (versions_.count(key)) {
+      return versions_[key];
+    }
+    return -1;
   }
 
   const ParamType* RetrieveInArgument(const Place& place,
@@ -384,6 +408,7 @@ class ParamTypeRegistry {
 
  private:
   std::map<key_t, ParamType, ParamTypeRegistry::KeyCmp> types_;
+  std::map<key_t, int64_t, ParamTypeRegistry::KeyCmp> versions_;
 };
 
 }  // namespace lite

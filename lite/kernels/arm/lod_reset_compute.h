@@ -14,7 +14,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -22,7 +22,7 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-class LodResetCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class LodResetCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::LodResetParam;
 

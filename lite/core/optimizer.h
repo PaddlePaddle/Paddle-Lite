@@ -13,20 +13,20 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
+#include "lite/core/mir/pass_utils.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/mir/static_kernel_pick_pass.h"
 #include "lite/core/mir/type_target_cast_pass.h"
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
-#ifdef LITE_WITH_NPU
-#include "lite/core/mir/subgraph/generate_npu_program_pass.h"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -45,6 +45,7 @@ class Optimizer {
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
     CHECK(!graph_) << "duplicate optimize found";
+
     graph_.reset(new mir::SSAGraph);
     graph_->Build(program, valid_places);
     graph_->SetValidPlaces(valid_places);
@@ -52,31 +53,48 @@ class Optimizer {
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
 
-    if (passes.empty()) {
-      RunPasses(std::vector<std::string>{
-          {"lite_quant_dequant_fuse_pass",  //
-           "lite_conv_bn_fuse_pass",        //
-           // This pass is disabled to force some opencl kernels selected for
-           // final running, otherwise, they will be fused to ARM fusion
-           // kernels, and the OpenCL devices will be discarded.
+    if (passes.empty() || passes.size() == 1) {
+      std::vector<std::string> passes_local{
+          {"lite_quant_dequant_fuse_pass",         //
+           "weight_quantization_preprocess_pass",  //
+           "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
+           "lite_conv_bn_fuse_pass",               //
+           "lite_conv_elementwise_fuse_pass",      // conv-bn-elemwise
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
-           "lite_conv_elementwise_fuse_pass",  //
-           "lite_conv_activation_fuse_pass",   //
-           "lite_fc_fuse_pass",                //
-           "identity_scale_eliminate_pass",    //
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+           "lite_conv_activation_fuse_pass",              //
+           "lite_var_conv_2d_activation_fuse_pass",       //
+           "lite_fc_fuse_pass",                           //
+           "lite_shuffle_channel_fuse_pass",              //
+           "lite_transpose_softmax_transpose_fuse_pass",  //
+           "lite_interpolate_fuse_pass",                  //
+           "identity_scale_eliminate_pass",               //
+           "elementwise_mul_constant_eliminate_pass",     //
+           "lite_sequence_pool_concat_fuse_pass",         //
+#if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
+    (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-           "static_kernel_pick_pass",        //
+           "npu_subgraph_pass",
+           "xpu_subgraph_pass",
+           "bm_subgraph_pass",
+           "static_kernel_pick_pass",        // pick original kernel from graph
+           "variable_place_inference_pass",  // inference arg/var's
+           // info(target/precision/layout/device)
+           // using kernel info
+           "argument_type_display_pass",  // debug pass: show arg-type-node's
+                                          // info
+                                          // (target/precision/layout/device)
+
+           "type_target_cast_pass",  // add io_copy/io_copy_once if meet
+                                     // different targets when last and next
+                                     // node
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
-           "type_target_cast_pass",          //
-           "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "io_copy_kernel_pick_pass",    //
+           "argument_type_display_pass",  //
 
-           "io_copy_kernel_pick_pass",       //
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
@@ -84,23 +102,24 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",     //
 
-           "type_layout_cast_pass",          //
+           "type_layout_cast_pass",  // add layout/layout_once op if meet
+                                     // different layout when last and next node
+           "argument_type_display_pass",  //
+
            "variable_place_inference_pass",  //
-           "argument_type_display_pass",     //
+           "argument_type_display_pass",
 
            "runtime_context_assign_pass",
-           "graph_visualze"}});
+           "argument_type_display_pass",
+           "memory_optimize_pass"}};
+      if (passes.size() == 1) {
+        passes_local.push_back(passes[0]);
+      }
+      RunPasses(passes_local);
     } else {
       RunPasses(passes);
     }
     exec_scope_ = program.exec_scope();
-  }
-
-  void KernelPickPreferPlace(const Place& place) {
-    auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-        "static_kernel_pick_pass");
-    CHECK(pass);
-    pass->SetPreferPlace(place);
   }
 
   const lite::Scope* exec_scope() const { return exec_scope_; }
@@ -114,37 +133,6 @@ class Optimizer {
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
     return program;
-  }
-
-  // check the input dims in the scope, must not be empty
-  void CheckInputDimsNotEmpty(const lite::Scope* scope) {
-    CHECK(scope);
-    auto* feed_var = scope->FindVar("feed");
-    CHECK(feed_var) << "no feed variable in exec_scope: " << scope;
-    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
-    CHECK_GE(feed_tensor_list->size(), 1);
-    for (size_t i = 0; i < feed_tensor_list->size(); ++i) {
-      CHECK(!feed_tensor_list->at(i).dims().empty())
-          << "Input " << i << " dims can not be empty.";
-    }
-  }
-
-  std::unique_ptr<RuntimeProgram> GenNPURuntimeProgram() {
-#ifdef LITE_WITH_NPU
-    CheckInputDimsNotEmpty(exec_scope_);
-    auto pass = mir::PassManager::Global()
-                    .LookUp<mir::subgraph::GenerateNPUProgramPass>(
-                        "generate_npu_program_pass");
-    pass->Apply(graph_);
-
-    auto program = pass->GenProgram();
-    CHECK(exec_scope_);
-    program->set_exec_scope(exec_scope_);
-    return program;
-#else
-    LOG(WARNING) << "Not compiled with NPU but use it!";
-    return GenRuntimeProgram();
-#endif
   }
 
   void InitTargetTypeTransformPass() {
@@ -177,11 +165,25 @@ class Optimizer {
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
-      LOG(INFO) << "== Running pass " << x;
-      auto* pass = mir::PassManager::Global().LookUp(x);
-      CHECK(pass) << "Can not find pass: " << x;
-      pass->Apply(graph_);
-      LOG(INFO) << "== Running pass Done." << x;
+      LOG(INFO) << "== Running pass: " << x;
+      mir::Pass* pass = mir::PassManager::Global().LookUp(x);
+      if (!pass) {
+        LOG(INFO) << "   - Skip " << x << " because the pass isn't found.";
+        continue;
+      }
+      std::set<TargetType> targets;
+      for (const auto& place : valid_places_) {
+        targets.insert(place.target);
+      }
+      bool matched =
+          PassMatchesTarget(*pass, targets) && PassMatchesKernels(*pass);
+      if (!matched) {
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
+      } else {
+        pass->Apply(graph_);
+        LOG(INFO) << "== Finished running: " << x;
+      }
     }
   }
 

@@ -41,15 +41,29 @@ bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   param_.boxes = scope->FindVar(boxes)->GetMutable<lite::Tensor>();
   param_.variances = scope->FindVar(variances)->GetMutable<lite::Tensor>();
 
-  param_.flip = opdesc.GetAttr<bool>("flip");
   param_.clip = opdesc.GetAttr<bool>("clip");
-  param_.min_sizes = opdesc.GetAttr<std::vector<float>>("min_sizes");
   param_.fixed_sizes = opdesc.GetAttr<std::vector<float>>("fixed_sizes");
   param_.fixed_ratios = opdesc.GetAttr<std::vector<float>>("fixed_ratios");
-  param_.density_sizes = opdesc.GetAttr<std::vector<float>>("density_sizes");
-  param_.max_sizes = opdesc.GetAttr<std::vector<float>>("max_sizes");
-  param_.aspect_ratios = opdesc.GetAttr<std::vector<float>>("aspect_ratios");
   param_.variances_ = opdesc.GetAttr<std::vector<float>>("variances");
+
+  if (opdesc.HasAttr("aspect_ratios")) {
+    param_.aspect_ratios = opdesc.GetAttr<std::vector<float>>("aspect_ratios");
+  }
+  if (opdesc.HasAttr("max_sizes")) {
+    param_.max_sizes = opdesc.GetAttr<std::vector<float>>("max_sizes");
+  }
+  if (opdesc.HasAttr("density_sizes")) {
+    param_.density_sizes = opdesc.GetAttr<std::vector<int>>("density_sizes");
+  }
+  if (opdesc.HasAttr("densities")) {
+    param_.density_sizes = opdesc.GetAttr<std::vector<int>>("densities");
+  }
+  if (opdesc.HasAttr("min_sizes")) {
+    param_.min_sizes = opdesc.GetAttr<std::vector<float>>("min_sizes");
+  }
+  if (opdesc.HasAttr("flip")) {
+    param_.flip = opdesc.GetAttr<bool>("flip");
+  }
   if (opdesc.HasAttr("img_w")) {
     param_.img_w = opdesc.GetAttr<int>("img_w");
   }

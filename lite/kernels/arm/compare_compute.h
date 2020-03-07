@@ -14,7 +14,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/compare_op.h"
 
@@ -33,8 +33,28 @@ class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
 
   ~CompareCompute() {}
+};
 
- private:
+template <template <typename T> class Functor>
+class CompareCompute_int32
+    : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
+ public:
+  using param_t = operators::LogicalParam;
+
+  void Run() override;
+
+  ~CompareCompute_int32() {}
+};
+
+template <template <typename T> class Functor>
+class CompareCompute_int64
+    : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
+ public:
+  using param_t = operators::LogicalParam;
+
+  void Run() override;
+
+  ~CompareCompute_int64() {}
 };
 
 }  // namespace arm

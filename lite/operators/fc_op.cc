@@ -27,21 +27,21 @@ bool FcOpLite::CheckShape() const {
 
   const auto input_dims = param_.input->dims();
   const auto w_dims = param_.w->dims();
+  CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
 
+  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
   if (param_.bias) {
     const auto bias_dims = param_.bias->dims();
     if (bias_dims.size() == 2) {
       CHECK_EQ_OR_FALSE(bias_dims[0], 1);
-      CHECK_EQ_OR_FALSE(bias_dims[1], w_dims[1]);
+      CHECK_EQ_OR_FALSE(bias_dims[1], w_dims_1);
     } else if (bias_dims.size() == 1) {
-      CHECK_EQ_OR_FALSE(bias_dims[0], w_dims[1]);
+      CHECK_EQ_OR_FALSE(bias_dims[0], w_dims_1);
     }
   }
 
-  CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
-
   param_.in_mat_dims = input_dims.Flatten2D(param_.in_num_col_dims);
   // CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
 
@@ -49,23 +49,25 @@ bool FcOpLite::CheckShape() const {
 }
 
 bool FcOpLite::InferShape() const {
-  const auto input_dims = param_.input->dims();
-  const auto w_dims = param_.w->dims();
+  const auto& input_dims = param_.input->dims();
+  const auto& w_dims = param_.w->dims();
+  int in_num_col_dims = param_.in_num_col_dims;
+  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
 
   // Set output dims
-  std::vector<int64_t> output_dims(param_.in_num_col_dims + 1, 0);
-  for (int i = 0; i < param_.in_num_col_dims; ++i) {
+  std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
+  for (int i = 0; i < in_num_col_dims; ++i) {
     output_dims[i] = input_dims[i];
   }
-  output_dims.back() = w_dims[1];
-  param_.output->Resize(lite::DDim(output_dims));
+  output_dims[in_num_col_dims] = w_dims_1;
+  param_.output->Resize(output_dims);
 
   // share LoD
-  // param_.output->set_lod(param_.input->lod());
+  param_.output->set_lod(param_.input->lod());
   return true;
 }
 
-bool FcOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto W = op_desc.Input("W").front();
   auto out = op_desc.Output("Out").front();
@@ -86,6 +88,15 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   CHECK(scope->FindVar(out));
   param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
+
+  if (op_desc.HasAttr("activation_type")) {
+    param_.activation_type = op_desc.GetAttr<std::string>("activation_type");
+  }
+  if (op_desc.HasAttr("padding_weights")) {
+    param_.padding_weights = op_desc.GetAttr<bool>("padding_weights");
+  } else {
+    param_.padding_weights = false;
+  }
 
   // For Int8
   if (op_desc.HasAttr("enable_int8")) {

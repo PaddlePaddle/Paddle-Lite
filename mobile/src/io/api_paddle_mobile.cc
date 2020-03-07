@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 #include "common/enforce.h"
+#include "common/type_define.h"
 #include "framework/tensor.h"
 #ifdef PADDLE_MOBILE_FPGA
 #include <fpga/common/fpga_common.h>
@@ -35,16 +36,26 @@ PaddleMobilePredictor<Device, T>::PaddleMobilePredictor(
 
 template <typename Device, typename T>
 bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
-  paddle_mobile_.reset(new PaddleMobile<Device, T>());
+  PaddleMobileConfigInternal configInternal;
+  configInternal.load_when_predict = config.load_when_predict;
+  if (config.pre_post_type == PaddleMobileConfig::UINT8_255) {
+    configInternal.pre_post_type = PrePostType::UINT8_255;
+  }
+
+  configInternal.memory_optimization_level =
+      config.mem_opt ? MemoryOptimizationWithoutFeeds : NoMemoryOptimization;
+
+  paddle_mobile_.reset(new PaddleMobile<Device, T>(configInternal));
 #ifdef PADDLE_MOBILE_CL
   paddle_mobile_->SetCLPath(config.cl_path);
 #endif
   if (config.memory_pack.from_memory) {
     DLOG << "load from memory!";
-    paddle_mobile_->LoadCombinedMemory(config.memory_pack.model_size,
-                                       config.memory_pack.model_buf,
-                                       config.memory_pack.combined_params_size,
-                                       config.memory_pack.combined_params_buf);
+    paddle_mobile_->LoadCombinedMemory(
+        config.memory_pack.model_size, config.memory_pack.model_buf,
+        config.memory_pack.combined_params_size,
+        config.memory_pack.combined_params_buf, config.optimize,
+        config.quantification, config.batch_size, config.lod_mode);
   } else if (!config.model_dir.empty()) {
     paddle_mobile_->Load(config.model_dir, config.optimize,
                          config.quantification, config.batch_size,
@@ -82,26 +93,37 @@ bool PaddleMobilePredictor<Device, T>::Run(
 
   // use tensor
   framework::DDim ddim = framework::make_ddim(dims);
-
-  framework::Tensor input_tensor;
-  framework::LoDTensor input_lod_tensor;
-  paddle_mobile::framework::LoD lod{{}};
-  for (int i = 0; i < input.lod.size(); ++i) {
-    lod[0].push_back(input.lod[i]);
-  }
-  input_lod_tensor.set_lod(lod);
-
   int input_length = framework::product(ddim);
   if (input.lod.size() > 0) {
+    framework::LoDTensor input_lod_tensor;
+    paddle_mobile::framework::LoD lod{{}};
+    for (int i = 0; i < input.lod.size(); ++i) {
+      lod[0].push_back(input.lod[i]);
+    }
+    input_lod_tensor.set_lod(lod);
     input_lod_tensor.Resize(ddim);
-    memcpy(input_lod_tensor.mutable_data<T>(),
-           static_cast<T *>(input.data.data()), input_length * sizeof(T));
+    if (input.dtype == UINT8) {
+      memcpy(input_lod_tensor.mutable_data<uint8_t>(),
+             static_cast<uint8_t *>(input.data.data()),
+             input_length * sizeof(uint8_t));
+    } else {
+      memcpy(input_lod_tensor.mutable_data<T>(),
+             static_cast<T *>(input.data.data()), input_length * sizeof(T));
+    }
     paddle_mobile_->Predict(input_lod_tensor);
   } else {
-    input_tensor.Resize(ddim);
-    memcpy(input_tensor.mutable_data<T>(), static_cast<T *>(input.data.data()),
-           input_length * sizeof(T));
-    paddle_mobile_->Predict(input_tensor);
+    if (input.dtype == UINT8) {
+      framework::Tensor input_tensor(static_cast<uint8_t *>(input.data.data()),
+                                     ddim);
+      if (paddle_mobile_->Predict(input_tensor) != PMStatus::PMSuccess) {
+        return false;
+      }
+    } else {
+      framework::Tensor input_tensor(static_cast<T *>(input.data.data()), ddim);
+      if (paddle_mobile_->Predict(input_tensor) != PMStatus::PMSuccess) {
+        return false;
+      }
+    }
   }
 
   auto output_tensor = paddle_mobile_->Fetch();
@@ -120,28 +142,42 @@ bool PaddleMobilePredictor<Device, T>::Run(
     output.shape.push_back(static_cast<int>(d));
   }
 
-  if (output.data.length() < output_length * sizeof(T)) {
-    output.data.Resize(output_length * sizeof(T));
+  if (output.dtype == UINT8) {
+    if (output.data.length() < output_length * sizeof(uint8_t)) {
+      output.data.Resize(output_length * sizeof(uint8_t));
+    }
+
+    memcpy(output.data.data(), output_tensor->template data<uint8_t>(),
+           output_length * sizeof(uint8_t));
+  } else {
+    if (output.data.length() < output_length * sizeof(T)) {
+      output.data.Resize(output_length * sizeof(T));
+    }
+
+    memcpy(output.data.data(), output_tensor->template data<T>(),
+           output_length * sizeof(T));
   }
 
-  memcpy(output.data.data(), output_tensor->template data<T>(),
-         output_length * sizeof(T));
-
   return true;
+}
+
+template <typename Device, typename T>
+std::string PaddleMobilePredictor<Device, T>::GetExceptionMsg() {
+  return paddle_mobile_->GetExceptionMsg();
 }
 
 #ifdef PADDLE_MOBILE_FPGA
 void ConvertPaddleTensors(const PaddleTensor &src, framework::Tensor *des) {
   des->Resize(framework::make_ddim(src.shape));
   des->external_data = src.data.data();
-  des->set_type(src.dtypeid);
+  des->set_type(static_cast<kTypeId_t>(static_cast<int>(src.dtypeid)));
   des->layout =
       src.layout == LAYOUT_HWC ? framework::LAYOUT_HWC : framework::LAYOUT_CHW;
 }
 
 void ConvertTensors(const framework::Tensor &src, PaddleTensor *des) {
   des->shape = framework::vectorize2int(src.dims());
-  des->dtypeid = src.type();
+  des->dtypeid = static_cast<PaddlekTypeId_t>(static_cast<int>(src.type()));
   des->layout = src.layout == framework::LAYOUT_HWC ? LAYOUT_HWC : LAYOUT_CHW;
 
   auto num = src.numel();
@@ -163,7 +199,8 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
   auto num = inputs.size();
   std::vector<framework::Tensor> tensors(num, framework::Tensor());
   for (int i = 0; i < num; i++) {
-    if (inputs[i].dtypeid == type_id<int8_t>().hash_code()) {
+    if (static_cast<kTypeId_t>(static_cast<int>(inputs[i].dtypeid)) ==
+        type_id<int8_t>().hash_code()) {
       tensors[i].init(type_id<int8_t>().hash_code());
     } else {
       tensors[i].init(type_id<float>().hash_code());
@@ -225,6 +262,37 @@ void PaddleMobilePredictor<Device, T>::Predict_From_To(int start, int end) {
   paddle_mobile_->Predict_From_To(start, end);
 }
 
+#else
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::Feed(const std::string &var_name,
+                                            const PaddleTensor &input) {
+  framework::DDim ddim = framework::make_ddim(input.shape);
+  framework::Tensor input_tensor(static_cast<T *>(input.data.data()), ddim);
+  paddle_mobile_->Feed(var_name, input_tensor);
+}
+
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::Fetch(const std::string &var_name,
+                                             PaddleTensor *output) {
+  auto output_tensor = paddle_mobile_->Fetch(var_name);
+  auto ddim = output_tensor->dims();
+
+  output->shape.clear();
+  for (int i = 0; i < ddim.size(); i++) {
+    output->shape.push_back(static_cast<int>(ddim[i]));
+  }
+
+  int length = output_tensor->numel() * sizeof(T);
+  if (output->data.length() < length) {
+    output->data.Resize(length);
+  }
+  memcpy(output->data.data(), output_tensor->template data<T>(), length);
+}
+
+template <typename Device, typename T>
+bool PaddleMobilePredictor<Device, T>::Run() {
+  paddle_mobile_->Predict();
+}
 #endif
 template <typename Device, typename T>
 PaddleMobilePredictor<Device, T>::~PaddleMobilePredictor() {

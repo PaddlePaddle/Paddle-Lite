@@ -36,7 +36,7 @@ int TestSequencePoolOp(const framework::LoDTensor &input_x,
   auto output_var = scope.get()->Var("output");
 
   framework::AttributeMap attrs;
-  attrs["pooltype"].SetString(pool_type);
+  attrs["pooltype"].Set<std::string>(pool_type);
 
   auto *op = new operators::SequencePoolOp<CPU, float>(
       "sequence_pool", inputs, outputs, attrs, scope.get());

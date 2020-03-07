@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/loader.h"
+#include <memory>
 
 #include "framework/lod_tensor.h"
 #include "framework/program/program-optimize/program_optimize.h"
@@ -87,7 +88,8 @@ void Loader<GPU_CL, float>::InitMemoryFromProgram(
 template <>
 const Program<GPU_CL, float> Loader<GPU_CL, float>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
-    uint8_t *combined_params_buf, bool optimize, bool quantification) {
+    uint8_t *combined_params_buf, bool optimize, bool quantification,
+    int quantification_fold) {
   bool can_add_split = false;
 
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
@@ -109,6 +111,7 @@ const Program<GPU_CL, float> Loader<GPU_CL, float>::LoadCombinedMemory(
   program.quantification = quantification;
   program.combined_params_len = combined_params_len;
   program.combined_params_buf = combined_params_buf;
+  program.quantification_fold = quantification_fold;
 
   auto scope = std::make_shared<Scope>();
   program.scope = scope;
@@ -171,7 +174,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   rewind(fp);
 
   DLOG << "model size: " << size;
-
+  PADDLE_MOBILE_ENFORCE(size > 0, "model size should > 0")
   *out = reinterpret_cast<uint8_t *>(malloc(size));
 
   size_t cur_len = 0;
@@ -187,9 +190,11 @@ template <typename Device, typename T>
 const Program<Device, T> Loader<Device, T>::Load(const std::string &dirname,
                                                  bool optimize,
                                                  bool quantification,
-                                                 bool can_add_split) {
-  auto program = this->LoadProgram(dirname + "/__model__", optimize,
-                                   quantification, can_add_split);
+                                                 bool can_add_split,
+                                                 int quantification_fold) {
+  auto program =
+      this->LoadProgram(dirname + "/__model__", optimize, quantification,
+                        can_add_split, quantification_fold);
   program.model_path = dirname;
   return program;
 }
@@ -198,8 +203,10 @@ template <typename Device, typename T>
 const Program<Device, T> Loader<Device, T>::Load(const std::string &model_path,
                                                  const std::string &para_path,
                                                  bool optimize,
-                                                 bool quantification) {
-  auto program = this->LoadProgram(model_path, optimize, quantification);
+                                                 bool quantification,
+                                                 int quantification_fold) {
+  auto program = this->LoadProgram(model_path, optimize, quantification, false,
+                                   quantification_fold);
 
   program.para_path = para_path;
   program.combined = true;
@@ -210,7 +217,7 @@ const Program<Device, T> Loader<Device, T>::Load(const std::string &model_path,
 template <typename Device, typename T>
 const Program<Device, T> Loader<Device, T>::LoadProgram(
     const std::string &model_path, bool optimize, bool quantification,
-    bool can_add_split) {
+    bool can_add_split, int quantification_fold) {
   std::string model_filename = model_path;
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
@@ -232,6 +239,7 @@ const Program<Device, T> Loader<Device, T>::LoadProgram(
   program.quantification = quantification;
   program.combined_params_len = 0;
   program.combined_params_buf = nullptr;
+  program.quantification_fold = quantification_fold;
   auto scope = std::make_shared<Scope>();
   program.scope = scope;
 
@@ -248,7 +256,8 @@ const Program<Device, T> Loader<Device, T>::LoadProgram(
 template <typename Device, typename T>
 const Program<Device, T> Loader<Device, T>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
-    uint8_t *combined_params_buf, bool optimize, bool quantification) {
+    uint8_t *combined_params_buf, bool optimize, bool quantification,
+    int quantification_fold) {
   bool can_add_split = false;
 
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
@@ -270,6 +279,7 @@ const Program<Device, T> Loader<Device, T>::LoadCombinedMemory(
   program.quantification = quantification;
   program.combined_params_len = combined_params_len;
   program.combined_params_buf = combined_params_buf;
+  program.quantification_fold = quantification_fold;
 
   auto scope = std::make_shared<Scope>();
   program.scope = scope;

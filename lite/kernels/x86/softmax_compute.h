@@ -14,12 +14,9 @@
 #pragma once
 
 #include <vector>
+#include "lite/backends/x86/math/softmax.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/lod_tensor.h"
-#include "paddle/fluid/framework/operator.h"
-#include "paddle/fluid/operators/math/softmax.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -32,7 +29,7 @@ static inline int CanonicalAxis(const int axis, const int rank) {
   return axis;
 }
 
-static inline int SizeToAxis(const int axis, lite::DDim dims) {
+static inline int SizeToAxis(const int axis, const DDim& dims) {
   int size = 1;
   for (int i = 0; i < axis; i++) {
     size *= dims[i];
@@ -40,7 +37,7 @@ static inline int SizeToAxis(const int axis, lite::DDim dims) {
   return size;
 }
 
-static inline int SizeFromAxis(const int axis, lite::DDim dims) {
+static inline int SizeFromAxis(const int axis, const DDim& dims) {
   int size = 1;
   for (size_t i = axis; i < dims.size(); i++) {
     size *= dims[i];
@@ -55,30 +52,36 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::SoftmaxParam>();
-    // auto& context = context_->As<X86Context>();
+    auto& context = ctx_->As<X86Context>();
     CHECK(param.output);
     CHECK(param.x);
-    param.output->mutable_data<T>();
-    const int rank = param.x->dims().size();
+
+    auto* x = param.x;
+    auto* output = param.output;
+    output->mutable_data<T>();
+
+    const int rank = x->dims().size();
     const int axis = CanonicalAxis(param.axis, rank);
-    int axis_dim = param.x->dims()[axis];
-    const int n = SizeToAxis(axis, param.x->dims());
-    const int d = SizeFromAxis(axis, param.x->dims());
-    std::vector<int64_t> shape{n, d};
+    int axis_dim = x->dims()[axis];
+    if (rank == 2 && axis == 1) {
+      lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+          context, axis_dim, x, output);
+    } else {
+      const int n = SizeToAxis(axis, x->dims());
+      const int d = SizeFromAxis(axis, x->dims());
 
-    lite::Tensor input_2d, out_2d;
-    input_2d.ShareDataWith(*param.x);
-    input_2d.Resize(lite::DDim(shape));
-    out_2d.ShareDataWith(*param.output);
-    out_2d.Resize(lite::DDim(shape));
+      DDim x_dims = x->dims();
+      DDim out_dims = output->dims();
 
-    paddle::operators::math::SoftmaxFunctor<platform::CPUDeviceContext,
-                                            T,
-                                            true>()(
-        platform::CPUDeviceContext(),
-        axis_dim,
-        &input_2d.raw_tensor(),
-        &out_2d.raw_tensor());
+      DDim shape_2d(std::vector<DDim::value_type>{n, d});
+      x->Resize(shape_2d);
+      output->Resize(shape_2d);
+
+      lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+          context, axis_dim, x, output);
+      x->Resize(x_dims);
+      output->Resize(out_dims);
+    }
   }
 
   virtual ~SoftmaxCompute() = default;

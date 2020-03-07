@@ -24,27 +24,27 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype>
-class Pad2DParam : public OpParam {
- public:
-  Pad2DParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-             const AttributeMap &attrs, Scope *scope)
-      : OpParam(inputs, outputs, attrs, scope) {
-    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
-    output_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
-    paddings_ = OpParam::GetAttr<std::vector<int>>("paddings", attrs);
-    pad_value_ = OpParam::GetAttr<float>("pad_value", attrs);
-    mode_ = OpParam::GetStringAttr("mode", attrs);
-  }
-
- public:
-  framework::LoDTensor *input_;
-  framework::LoDTensor *output_;
-  std::vector<int> paddings_;
-  float pad_value_;
-  std::string mode_;
-};
+// template <typename Dtype>
+// class Pad2DParam : public OpParam {
+// public:
+//  Pad2DParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+//             const AttributeMap &attrs, Scope *scope)
+//      : OpParam(inputs, outputs, attrs, scope) {
+//    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
+//    output_ =
+//        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
+//    paddings_ = OpParam::GetAttr<std::vector<int>>("paddings", attrs);
+//    pad_value_ = OpParam::GetAttr<float>("pad_value", attrs);
+//    mode_ = OpParam::GetStringAttr("mode", attrs);
+//  }
+//
+// public:
+//  framework::LoDTensor *input_;
+//  framework::LoDTensor *output_;
+//  std::vector<int> paddings_;
+//  float pad_value_;
+//  std::string mode_;
+//};
 
 DECLARE_KERNEL(Pad2D, Pad2DParam);
 

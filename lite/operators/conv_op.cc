@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
+#include <algorithm>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -33,34 +34,71 @@ bool ConvOpLite::CheckShape() const {
 
   CHECK_EQ_OR_FALSE(in_dims.size(), filter_dims.size());
   CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
-  CHECK_EQ_OR_FALSE(param_.paddings.size(), param_.strides.size());
-
-  CHECK_EQ_OR_FALSE(in_dims[1], filter_dims[1] * param_.groups);
-  CHECK_EQ_OR_FALSE(filter_dims[0] % param_.groups, 0);
   CHECK_EQ_OR_FALSE(filter_dims.size(), 4UL);
 
   return true;
 }
 
-inline int ConvOutputSize(
-    int input_size, int filter_size, int dilation, int padding, int stride) {
+inline int ConvOutputSize(int input_size,
+                          int filter_size,
+                          int dilation,
+                          int pad_left,
+                          int pad_right,
+                          int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
-  CHECK_GT_OR_FALSE(output_size, 0);
+  int output_size =
+      (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
 
   return output_size;
+}
+
+void UpdatePaddingAndDilation(std::vector<int>* paddings,
+                              std::vector<int>* dilations,
+                              const std::vector<int>& strides,
+                              const std::string padding_algorithm,
+                              const lite::DDim data_dims,
+                              const lite::DDim& ksize) {
+  // when padding_desc is "VALID" or "SAME"
+  if (padding_algorithm == "SAME") {
+    for (size_t i = 0; i < strides.size(); ++i) {
+      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
+      int pad_sum = std::max(
+          (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
+          (int64_t)0);
+      int pad_0 = pad_sum / 2;
+      int pad_1 = pad_sum - pad_0;
+      // pad
+      *(paddings->begin() + i * 2) = pad_0;
+      *(paddings->begin() + i * 2 + 1) = pad_1;
+      // dilation
+      *(dilations->begin() + i) = 1;
+    }
+  } else if (padding_algorithm == "VALID") {
+    for (auto& it : *paddings) {
+      it = 0;
+    }
+  }
 }
 
 bool ConvOpLite::InferShape() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
 
+  UpdatePaddingAndDilation(param_.paddings.get(),
+                           param_.dilations.get(),
+                           param_.strides,
+                           padding_algorithm_,
+                           in_dims,
+                           filter_dims);
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
+  auto paddings = *param_.paddings;
+  auto dilations = *param_.dilations;
   for (size_t i = 0; i < param_.strides.size(); ++i) {
     output_shape.push_back(ConvOutputSize(in_dims[i + 2],
                                           filter_dims[i + 2],
-                                          param_.dilations[i],
-                                          param_.paddings[i],
+                                          dilations[i],
+                                          paddings[i * 2],
+                                          paddings[i * 2 + 1],
                                           param_.strides[i]));
   }
 

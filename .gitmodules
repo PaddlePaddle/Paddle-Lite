@@ -1,0 +1,12 @@
+[submodule "third-party/gflags"]
+	path = third-party/gflags
+	url = https://github.com/gflags/gflags.git
+[submodule "third-party/googletest"]
+	path = third-party/googletest
+	url = https://github.com/google/googletest.git
+[submodule "third-party/protobuf-mobile"]
+	path = third-party/protobuf-mobile
+	url = https://github.com/tensor-tang/protobuf.git
+[submodule "third-party/protobuf-host"]
+	path = third-party/protobuf-host
+	url = https://github.com/protocolbuffers/protobuf.git

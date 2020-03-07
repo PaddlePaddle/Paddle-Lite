@@ -23,41 +23,44 @@
 #include "lite/core/op_registry.h"
 
 DEFINE_string(optimized_model, "", "optimized_model");
+DEFINE_int32(N, 1, "input_batch");
+DEFINE_int32(C, 3, "input_channel");
+DEFINE_int32(H, 224, "input_height");
+DEFINE_int32(W, 224, "input_width");
 
 namespace paddle {
 namespace lite {
 
 #ifdef LITE_WITH_ARM
 void TestModel(const std::vector<Place>& valid_places,
-               const Place& preferred_place,
                const std::string& model_dir = FLAGS_model_dir,
-               bool gen_npu = false,
                bool save_model = false) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(model_dir, preferred_place, valid_places);
+  predictor.Build(model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(
+      std::vector<DDim::value_type>({FLAGS_N, FLAGS_C, FLAGS_H, FLAGS_W})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
     data[i] = 1;
   }
 
-  if (gen_npu) {
-    predictor.GenNPURuntimeProgram();
-  }
-
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
 
-  auto start = GetCurrentUS();
+  double sum_duration = 0.0;  // millisecond;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start = GetCurrentUS();
     predictor.Run();
+    auto duration = (GetCurrentUS() - start) / 1000.0;
+    sum_duration += duration;
+    VLOG(1) << "run_idx:" << i << " " << duration << " ms";
   }
 
   if (save_model) {
@@ -65,11 +68,12 @@ void TestModel(const std::vector<Place>& valid_places,
     predictor.SaveModel(FLAGS_optimized_model);
   }
 
+  LOG(INFO) << "input shape(NCHW):" << FLAGS_N << " " << FLAGS_C << " "
+            << FLAGS_H << " " << FLAGS_W;
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+            << ", spend " << sum_duration / FLAGS_repeats << " ms in average.";
 
   std::vector<std::vector<float>> ref;
   // i = 1
@@ -82,69 +86,97 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* out = predictor.GetOutput(0);
   const auto* pdata = out->data<float>();
   int step = 50;
-#ifdef LITE_WITH_NPU
-  ASSERT_EQ(out->dims().production(), 1000);
-  double eps = 0.1;
-  for (int i = 0; i < ref.size(); ++i) {
-    for (int j = 0; j < ref[i].size(); ++j) {
-      auto result = pdata[j * step + (out->dims()[1] * i)];
-      auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
-      VLOG(3) << diff;
-      EXPECT_LT(diff, eps);
+
+  // Get target and check result
+  VLOG(1) << "valid_places.size():" << valid_places.size();
+  for (int i = 0; i < valid_places.size(); ++i) {
+    auto p = valid_places[i];
+    VLOG(1) << "valid_places[" << i << "]:" << p.DebugString();
+  }
+  auto first_target = valid_places[0].target;
+
+  if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
+    ASSERT_EQ(out->dims().production(), 1000);
+    double eps = 0.1;
+    for (int i = 0; i < ref.size(); ++i) {
+      for (int j = 0; j < ref[i].size(); ++j) {
+        auto result = pdata[j * step + (out->dims()[1] * i)];
+        auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
+        VLOG(3) << diff;
+        EXPECT_LT(diff, eps);
+      }
+    }
+  } else {
+    ASSERT_EQ(out->dims().size(), 2);
+    ASSERT_EQ(out->dims()[0], 1);
+    ASSERT_EQ(out->dims()[1], 1000);
+    double eps = 1e-6;
+    for (int i = 0; i < ref.size(); ++i) {
+      for (int j = 0; j < ref[i].size(); ++j) {
+        auto result = pdata[j * step + (out->dims()[1] * i)];
+        EXPECT_NEAR(result, ref[i][j], eps);
+      }
     }
   }
-#else
-  ASSERT_EQ(out->dims().size(), 2);
-  ASSERT_EQ(out->dims()[0], 1);
-  ASSERT_EQ(out->dims()[1], 1000);
-  for (int i = 0; i < ref.size(); ++i) {
-    for (int j = 0; j < ref[i].size(); ++j) {
-      EXPECT_NEAR(pdata[j * step + (out->dims()[1] * i)], ref[i][j], 1e-6);
+
+  // Get detailed result
+  size_t output_tensor_num = predictor.GetOutputNames().size();
+  VLOG(1) << "output tesnor num:" << output_tensor_num;
+
+  for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
+    auto* output_tensor = predictor.GetOutput(tidx);
+    VLOG(1) << "============= output tensor " << tidx << " =============\n";
+    auto out_dims = output_tensor->dims();
+    VLOG(1) << "out_dims:" << out_dims;
+
+    float sum = 0.f;
+    for (int i = 0; i < out_dims.production(); ++i) {
+      sum += output_tensor->data<float>()[i];
+    }
+    VLOG(1) << "out_dims.production():" << out_dims.production();
+    VLOG(1) << "output tensor sum value:" << sum;
+    VLOG(1) << "output tensor mean value:" << sum / out_dims.production();
+
+    // print result
+    for (int i = 0; i < out_dims.production(); ++i) {
+      VLOG(2) << "output_tensor->data<float>()[" << i
+              << "]:" << output_tensor->data<float>()[i];
     }
   }
-#endif
 }
 
 #ifdef LITE_WITH_NPU
 TEST(MobileNetV2, test_npu) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kNPU), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places,
-            Place({TARGET(kARM), PRECISION(kFloat)}),
-            FLAGS_model_dir,
-            true /* gen_npu */,
-            true /* save_model*/);
+  TestModel(valid_places, FLAGS_model_dir, true /* save_model*/);
 
-  TestModel(valid_places,
-            Place({TARGET(kARM), PRECISION(kFloat)}),
-            FLAGS_optimized_model,
-            false /* gen_npu */,
-            false /* save model */);
+  TestModel(valid_places, FLAGS_optimized_model, false /* save model */);
 }
 #endif  // LITE_WITH_NPU
 
 TEST(MobileNetV2, test_arm) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places, Place({TARGET(kARM), PRECISION(kFloat)}));
+  TestModel(valid_places);
 }
 
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV2, test_opencl) {
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat)},
+      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+      TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
   });
 
-  TestModel(valid_places, Place({TARGET(kOpenCL), PRECISION(kFloat)}));
+  TestModel(valid_places);
 }
 #endif  // LITE_WITH_OPENCL
 

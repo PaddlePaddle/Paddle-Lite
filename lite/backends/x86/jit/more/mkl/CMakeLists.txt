@@ -1,0 +1,20 @@
+
+cc_library(jit_kernel_mkl SRCS mkl.cc DEPS jit_kernel_base dynload_mklml)
+set(JIT_KERNEL_DEPS ${JIT_KERNEL_DEPS} dynload_mklml jit_kernel_mkl PARENT_SCOPE)
+
+# use mkl kernels by name and type
+USE_JITKERNEL_MORE_LITE(kMatMul, mkl)
+USE_JITKERNEL_MORE_LITE(kVMul, mkl)
+USE_JITKERNEL_MORE_LITE(kVAdd, mkl)
+USE_JITKERNEL_MORE_LITE(kVScal, mkl)
+USE_JITKERNEL_MORE_LITE(kStrideScal, mkl)
+USE_JITKERNEL_MORE_LITE(kVExp, mkl)
+USE_JITKERNEL_MORE_LITE(kVSquare, mkl)
+USE_JITKERNEL_MORE_LITE(kVCopy, mkl)
+USE_JITKERNEL_MORE_LITE(kVSigmoid, mkl)
+USE_JITKERNEL_MORE_LITE(kVTanh, mkl)
+USE_JITKERNEL_MORE_LITE(kSeqPool, mkl)
+USE_JITKERNEL_MORE_LITE(kSoftmax, mkl)
+USE_JITKERNEL_MORE_LITE(kEmbSeqPool, mkl)
+USE_JITKERNEL_MORE_LITE(kSgd, mkl)
+USE_JITKERNEL_MORE_LITE(kVBroadcast, mkl)

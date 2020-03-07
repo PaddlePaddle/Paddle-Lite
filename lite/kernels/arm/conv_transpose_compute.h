@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/conv_transpose_op.h"
 
@@ -32,6 +32,9 @@ class Conv2DTransposeCompute
   void Run() override;
 
   ~Conv2DTransposeCompute() = default;
+
+ protected:
+  int workspace_size_{0};
 };
 
 }  // namespace arm

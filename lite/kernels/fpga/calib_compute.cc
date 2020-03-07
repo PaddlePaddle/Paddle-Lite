@@ -14,33 +14,33 @@
 
 #include "lite/kernels/fpga/calib_compute.h"
 #include <vector>
+#include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 using float16 = zynqmp::float16;
+
 void CalibComputeFp32ToFP16::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float>();
-  auto* dout = param.output->mutable_data<float16>(TARGET(kFPGA));
-
-  for (int i = 0; i < param.input->numel(); ++i) {
-    dout[i] = zynqmp::float_to_half(din[i]);
-  }
+  param.output->mutable_data<float16>();
+  param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
   return;
 }
 
 void CalibComputeFP16ToFp32::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float16>();
-  auto* dout = param.output->mutable_data<float>(TARGET(kFPGA));
-  for (int i = 0; i < param.input->numel(); ++i) {
-    dout[i] = zynqmp::half_to_float(din[i]);
-  }
+  auto* dout = param.output->mutable_data<float>();
+  param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
   return;
 }
 

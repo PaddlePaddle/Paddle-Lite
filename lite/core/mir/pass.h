@@ -14,7 +14,10 @@
 
 #pragma once
 #include <memory>
+#include <set>
 #include <string>
+#include <unordered_map>
+
 #include "lite/core/mir/node.h"
 #include "lite/core/mir/ssa_graph.h"
 
@@ -44,6 +47,73 @@ class Pass {
   void set_doc(const std::string& doc) { doc_ = doc; }
   const std::string& doc() const { return doc_; }
 
+  // Some passes only apply to qualified targets, which need to be explicitly
+  // declared.
+
+  // Bind targets. At runtime, there must be one device in the bound targets.
+  void BindTargets(const std::set<TargetType>& targets) {
+    for (const auto& target : targets) {
+      const std::set<TargetType>& universe = ExpandValidTargets(target);
+      std::set_union(bound_targets_.begin(),
+                     bound_targets_.end(),
+                     universe.begin(),
+                     universe.end(),
+                     std::inserter(bound_targets_, bound_targets_.begin()));
+    }
+  }
+
+  // Exclude targets. At runtime, there must be one device in the bound targets.
+  // Disable the pass if one of the valid devices is in the excluded targets.
+  void ExcludeTargets(const std::set<TargetType>& targets) {
+    for (const auto& target : targets) {
+      const std::set<TargetType>& universe = ExpandValidTargets(target);
+      std::set<TargetType> updated_bound_targets;
+      std::set_difference(
+          bound_targets_.begin(),
+          bound_targets_.end(),
+          universe.begin(),
+          universe.end(),
+          std::inserter(updated_bound_targets, updated_bound_targets.begin()));
+      bound_targets_ = updated_bound_targets;
+      std::set_union(
+          excluded_targets_.begin(),
+          excluded_targets_.end(),
+          universe.begin(),
+          universe.end(),
+          std::inserter(excluded_targets_, excluded_targets_.begin()));
+    }
+  }
+
+  // Get all bound targets.
+  const std::set<TargetType>& BoundTargets() const { return bound_targets_; }
+  // Get all excluded targets.
+  const std::set<TargetType>& ExcludedTargets() const {
+    return excluded_targets_;
+  }
+
+  // Some passes are only available on qualified kernels and need to be
+  // explicitly declared.
+  // Bind kernels. All kernels bound at runtime must be registered.
+  void BindKernels(
+      const std::unordered_map<std::string, std::set<lite_api::Place>>&
+          kernels) {
+    bound_kernels_ = kernels;
+  }
+  // Get all bound kernels.
+  const std::unordered_map<std::string, std::set<lite_api::Place>>&
+  GetBoundKernels() const {
+    return bound_kernels_;
+  }
+  // Add one kernel to the bound kernels.
+  void BindKernel(const std::string& kernel_name,
+                  const lite_api::Place& place) {
+    if (!bound_kernels_.count(kernel_name)) {
+      bound_kernels_.insert({kernel_name, {place}});
+    } else {
+      bound_kernels_.at(kernel_name).insert(place);
+    }
+  }
+
   Kind kind() const { return kind_; }
   bool is_debug_pass() const { return kind_ == Kind::kDebug; }
   bool is_program_pass() const { return kind_ == Kind::kProgramWise; }
@@ -55,6 +125,9 @@ class Pass {
   const Kind kind_;
   std::string name_;
   std::string doc_;
+  std::set<TargetType> bound_targets_;
+  std::set<TargetType> excluded_targets_;
+  std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_;
 };
 
 // Different kinds.

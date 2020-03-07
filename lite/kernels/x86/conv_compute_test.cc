@@ -14,6 +14,8 @@
 
 #include "lite/kernels/x86/conv_compute.h"
 #include <gtest/gtest.h>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -38,7 +40,7 @@ TEST(conv2d_x86, init) {
 
 TEST(conv2d_x86, run_test) {
   lite::Tensor x, filter, b, out;
-  constexpr int batch_size = 1;
+  const int batch_size = 1;
   std::vector<int64_t> x_shape{batch_size, 3, 3, 3};
   x.Resize(lite::DDim(x_shape));
   std::vector<int64_t> filter_shape{1, 3, 3, 3};
@@ -71,16 +73,22 @@ TEST(conv2d_x86, run_test) {
   param.bias = &b;
   param.output = &out;
   param.strides = {1, 1};
-  param.paddings = {0, 0};
+  std::vector<int> paddings = {0, 0, 0, 0};
   param.groups = 1;
-  param.dilations = {1, 1};
-
+  std::vector<int> dilations = {1, 1};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
+  param.dilations = std::make_shared<std::vector<int>>(dilations);
+  LOG(INFO) << 123;
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  conv2d.SetContext(std::move(ctx));
   conv2d.SetParam(param);
   conv2d.Run();
 
   LOG(INFO) << "output: ";
+  float ref_result[1] = {27.};
   for (int i = 0; i < out.dims().production(); i++) {
-    LOG(INFO) << out_data[i] << " ";
+    EXPECT_NEAR(out_data[i], ref_result[i], 1e-5);
   }
 }
 

@@ -26,8 +26,8 @@ namespace mir {
 bool SSAGraph::CheckBidirectionalConnection() {
   VLOG(4) << "node count " << node_storage_.size();
   for (auto &node : node_storage_) {
-    if (node.IsStmt()) VLOG(4) << node.AsStmt().op_info()->Type();
-    if (node.IsArg()) VLOG(4) << node.AsArg().name << " " << node.AsArg().id;
+    if (node.IsStmt()) VLOG(6) << node.AsStmt().op_info()->Type();
+    if (node.IsArg()) VLOG(6) << node.AsArg().name << " " << node.AsArg().id;
     for (auto *in : node.inlinks) {
       CHECK(in->outlinks.end() !=
             std::find(in->outlinks.begin(), in->outlinks.end(), &node));
@@ -123,6 +123,9 @@ void SSAGraph::Build(const Program &program,
     return true;
   };
 
+  std::unordered_map<std::string, PrecisionType> var_types =
+      program.var_data_type();
+
   std::unordered_map<std::string, mir::Node *> arg_update_node_map_;
   for (auto &op : program.ops()) {
     VLOG(3) << op->op_info()->Type();
@@ -137,6 +140,10 @@ void SSAGraph::Build(const Program &program,
         arg_node->AsArg(name, node_storage_.size() - 1);
         arg_update_node_map_[name] = arg_node;
       }
+      if (var_types.count(name) && !arg_node->arg()->type) {
+        arg_node->arg()->type = LiteType::GetTensorTy(
+            TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+      }
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
       DirectedLink(arg_node, op_node);
@@ -146,6 +153,10 @@ void SSAGraph::Build(const Program &program,
       auto *arg_node = &node_storage_.back();
       arg_node->AsArg(name, node_storage_.size() - 1);
       arg_update_node_map_[name] = arg_node;
+      if (var_types.count(name) && !arg_node->arg()->type) {
+        arg_node->arg()->type = LiteType::GetTensorTy(
+            TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+      }
 
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());

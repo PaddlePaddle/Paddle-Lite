@@ -31,4 +31,5 @@ void VariablePlaceInferencePass::Apply(const std::unique_ptr<SSAGraph> &graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(variable_place_inference_pass,
-                  paddle::lite::mir::VariablePlaceInferencePass);
+                  paddle::lite::mir::VariablePlaceInferencePass)
+    .BindTargets({TARGET(kAny)});

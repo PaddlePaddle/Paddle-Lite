@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/concat_compute.h"
 #include <string>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -39,6 +39,11 @@ void ConcatCompute::Run() {
   std::vector<lite::Tensor*> inputs = param.x;
   auto* out = param.output;
   int axis = param.axis;
+  auto* axis_tensor = param.axis_tensor;
+  if (axis_tensor != nullptr) {
+    auto* axis_tensor_data = axis_tensor->data<int>();
+    axis = axis_tensor_data[0];
+  }
   out->mutable_data<float>();
 
   /// Sometimes direct copies will be faster, this maybe need deeply analysis.
@@ -83,5 +88,7 @@ void ConcatCompute::Run() {
 REGISTER_LITE_KERNEL(
     concat, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ConcatCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

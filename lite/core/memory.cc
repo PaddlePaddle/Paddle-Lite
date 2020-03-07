@@ -27,8 +27,7 @@ void* TargetMalloc(TargetType target, size_t size) {
       break;
 #ifdef LITE_WITH_CUDA
     case TargetType::kCUDA:
-      data =
-          TargetWrapper<TARGET(kCUDA), cudaStream_t, cudaEvent_t>::Malloc(size);
+      data = TargetWrapper<TARGET(kCUDA)>::Malloc(size);
       break;
 #endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_OPENCL
@@ -41,6 +40,11 @@ void* TargetMalloc(TargetType target, size_t size) {
       data = TargetWrapper<TARGET(kFPGA)>::Malloc(size);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_BM
+    case TargetType::kBM:
+      data = TargetWrapper<TARGET(kBM)>::Malloc(size);
+      break;
+#endif
     default:
       LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
   }
@@ -70,6 +74,11 @@ void TargetFree(TargetType target, void* data) {
       TargetWrapper<TARGET(kFPGA)>::Free(data);
       break;
 #endif  // LITE_WITH_CUDA
+#ifdef LITE_WITH_BM
+    case TargetType::kBM:
+      TargetWrapper<TARGET(kBM)>::Free(data);
+      break;
+#endif
     default:
       LOG(FATAL) << "Unknown type";
   }
@@ -96,6 +105,11 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
           dst, src, size, IoDirection::DtoD);
       break;
 #endif
+#ifdef LITE_WITH_BM
+    case TargetType::kBM:
+      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, IoDirection::DtoD);
+      break;
+#endif
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
       TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
@@ -105,6 +119,24 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
       LOG(FATAL) << "unsupported type";
   }
 }
+
+#ifdef LITE_WITH_OPENCL
+void TargetCopyImage2D(TargetType target,
+                       void* dst,
+                       const void* src,
+                       const size_t cl_image2d_width,
+                       const size_t cl_image2d_height,
+                       const size_t cl_image2d_row_pitch,
+                       const size_t cl_image2d_slice_pitch) {
+  TargetWrapperCL::ImgcpySync(dst,
+                              src,
+                              cl_image2d_width,
+                              cl_image2d_height,
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::DtoD);
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle

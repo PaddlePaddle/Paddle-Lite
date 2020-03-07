@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_place.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -28,7 +28,6 @@ namespace arm {
 
 void LookupTableCompute::Run() {
   auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
   // inputs
   auto w = param.W;
   auto ids = param.Ids;
@@ -37,14 +36,15 @@ void LookupTableCompute::Run() {
 
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
-  auto ids_data = ids->data<float>();
-  int ids_int = ids_data[0];
+  auto ids_data = ids->data<int64_t>();
+
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
   auto table_data = w->data<float>();
   auto dout = out->mutable_data<float>();
 
   for (int64_t i = 0; i < ids_numel; ++i) {
+    int ids_int = ids_data[i];
     if (param.padding_idx != -1 && ids_data[i] == param.padding_idx) {
       memset(dout + i * row_width, 0, row_width * sizeof(float));
     } else {
@@ -67,11 +67,22 @@ void LookupTableCompute::Run() {
 
 REGISTER_LITE_KERNEL(lookup_table,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(lookup_table_v2,
+                     kARM,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::arm::LookupTableCompute,
+                     def)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

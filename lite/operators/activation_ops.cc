@@ -36,21 +36,44 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto x_name = opdesc.Input("X").front();
   auto out_name = opdesc.Output("Out").front();
   param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
-  if (opdesc.Type() == "leaky_relu") {
+
+  if (opdesc.Type() == "relu") {
+    // relu
+    param_.active_type = lite_api::ActivationType::kRelu;
+  } else if (opdesc.Type() == "leaky_relu") {
+    // leaky_relu
     param_.Leaky_relu_alpha = opdesc.GetAttr<float>("alpha");
-  }
-  if (opdesc.Type() == "relu_clipped") {
+    param_.active_type = lite_api::ActivationType::kLeakyRelu;
+  } else if (opdesc.Type() == "relu_clipped") {
+    // relu_clipped
     param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
-  }
-  if (opdesc.Type() == "prelu") {
+  } else if (opdesc.Type() == "prelu") {
+    // prelu
     param_.Prelu_mode = opdesc.GetAttr<std::string>("mode");
     auto prelu_alpha_name = opdesc.Input("Alpha").front();
     param_.Prelu_alpha =
         scope->FindVar(prelu_alpha_name)->GetMutable<lite::Tensor>();
-  }
-  if (opdesc.Type() == "swish") {
+    param_.active_type = lite_api::ActivationType::kPRelu;
+  } else if (opdesc.Type() == "swish") {
+    // swish
     param_.Swish_beta = opdesc.GetAttr<float>("beta");
+    param_.active_type = lite_api::ActivationType::kSwish;
+  } else if (opdesc.Type() == "hard_sigmoid") {
+    // hard_sigomid
+    param_.hard_sigmoid_slope = opdesc.GetAttr<float>("slope");
+    param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
+  } else if (opdesc.Type() == "sigmoid") {
+    // sigmoid
+    param_.active_type = lite_api::ActivationType::kSigmoid;
+  } else if (opdesc.Type() == "tanh") {
+    // tanh
+    param_.active_type = lite_api::ActivationType::kTanh;
+  } else if (opdesc.Type() == "exp") {
+    // exp
+    param_.active_type = lite_api::ActivationType::kExp;
   }
+  VLOG(4) << "opdesc.Type():" << opdesc.Type();
+
   param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
   return true;
 }
@@ -98,7 +121,6 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-
 REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
@@ -110,6 +132,12 @@ REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
 
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);

@@ -25,7 +25,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  int axis_ = 0.;
+  int64_t axis_ = 0.;
   DDim dims_{{2, 5, 20, 30}};
 
  public:
@@ -43,12 +43,12 @@ class ArgmaxComputeTester : public arena::TestCase {
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
-    int nchw[] = {dims_[0], dims_[1], dims_[2], dims_[3]};
+    int64_t nchw[] = {dims_[0], dims_[1], dims_[2], dims_[3]};
     std::vector<int64_t> output_shape(nchw, nchw + 4);
     output_shape.erase(output_shape.begin() + axis_);
     DDim output_dims(output_shape);
     out->Resize(output_dims);
-    auto* output_data = out->mutable_data<float>();
+    auto* output_data = out->mutable_data<int64_t>();
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
@@ -75,17 +75,17 @@ class ArgmaxComputeTester : public arena::TestCase {
                           std::greater<std::pair<float, int>>());
 
         // out
-        float* out_ptr = output_data + n * out_channel + k;
+        auto* out_ptr = output_data + n * out_channel + k;
         *out_ptr = vec[0].second;
       }
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("argmax");
+    op_desc->SetType("arg_max");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("Axis", axis_);
+    op_desc->SetAttr("axis", axis_);
   }
 
   void PrepareData() override {

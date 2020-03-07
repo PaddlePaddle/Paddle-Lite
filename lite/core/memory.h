@@ -18,8 +18,16 @@
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
-#include "lite/opencl/target_wrapper.h"
+#include "lite/backends/opencl/target_wrapper.h"
 #endif  // LITE_WITH_OPENCL
+
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/target_wrapper.h"
+#endif  // LITE_WITH_CUDA
+
+#ifdef LITE_WITH_BM
+#include "lite/backends/bm/target_wrapper.h"
+#endif  // LITE_WITH_BM
 
 namespace paddle {
 namespace lite {
@@ -34,9 +42,18 @@ void LITE_API TargetFree(TargetType target, void* data);
 
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);
+#ifdef LITE_WITH_OPENCL
+void TargetCopyImage2D(TargetType target,
+                       void* dst,
+                       const void* src,
+                       const size_t cl_image2d_width,
+                       const size_t cl_image2d_height,
+                       const size_t cl_image2d_row_pitch,
+                       const size_t cl_image2d_slice_pitch);
+#endif  // LITE_WITH_OPENCL
 
 template <TargetType Target>
-void CopySync(void* dst, void* src, size_t size, IoDirection dir) {
+void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
   switch (Target) {
     case TARGET(kX86):
     case TARGET(kHost):
@@ -57,6 +74,11 @@ void CopySync(void* dst, void* src, size_t size, IoDirection dir) {
 #ifdef LITE_WITH_FPGA
     case TARGET(kFPGA):
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
+      break;
+#endif
+#ifdef LITE_WITH_BM
+    case TARGET(kBM):
+      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
       break;
 #endif
   }
@@ -83,10 +105,31 @@ class Buffer {
 
   void ResizeLazy(size_t size) { ResetLazy(target_, size); }
 
+#ifdef LITE_WITH_OPENCL
+  template <typename T>
+  void ResetLazyImage2D(TargetType target,
+                        const size_t img_w,
+                        const size_t img_h,
+                        void* host_ptr = nullptr) {
+    size_t size = sizeof(T) * img_w * img_h *
+                  4;  // 4 for RGBA, un-used for opencl Image2D
+    if (target != target_ || cl_image2d_width_ < img_w ||
+        cl_image2d_height_ < img_h) {
+      Free();
+      data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
+      target_ = target;
+      space_ = size;  // un-used for opencl Image2D
+      cl_image2d_width_ = img_w;
+      cl_image2d_height_ = img_h;
+    }
+  }
+#endif
+
   void Free() {
     if (space_ > 0) {
       TargetFree(target_, data_);
     }
+    data_ = nullptr;
     target_ = TargetType::kHost;
     space_ = 0;
   }
@@ -103,6 +146,8 @@ class Buffer {
  private:
   // memory it actually malloced.
   size_t space_{0};
+  size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
+  size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
   void* data_{nullptr};
   TargetType target_{TargetType::kHost};
 };

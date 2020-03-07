@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/shape_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -37,5 +37,5 @@ void ShapeCompute::Run() {
 REGISTER_LITE_KERNEL(
     shape, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ShapeCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/elementwise_compute.h"
 #include <string>
 #include <vector>
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -35,7 +35,7 @@ inline DDim trim_trailing_singular_dims(const DDim& dims) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {
-    return DDim({1});
+    return DDim();
   }
   return DDim(trim_dims);
 }
@@ -50,6 +50,7 @@ inline bool is_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
+  axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
     return false;
   }
@@ -79,7 +80,11 @@ void ElementwiseAddCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_add_broadcast(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_add_broadcast(
         x_data, y_data, out_data, pre, n, post);
   } else {
@@ -98,7 +103,15 @@ void ElementwiseAddActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_add_relu_broadcast(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_add_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -115,7 +128,7 @@ void ElementwiseAddActivationCompute::Run() {
   }
 }
 
-void ElementwiseMulCompute::Run() {
+void ElementwiseSubCompute::Run() {
   auto& param = Param<operators::ElementwiseParam>();
   const float* x_data = param.X->data<float>();
   const float* y_data = param.Y->data<float>();
@@ -124,12 +137,74 @@ void ElementwiseMulCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_mul_broadcast(
+    lite::arm::math::elementwise_sub_broadcast(
         x_data, y_data, out_data, pre, n, post);
   } else {
-    lite::arm::math::elementwise_mul(
+    lite::arm::math::elementwise_sub(
         x_data, y_data, out_data, x_dims.production());
+  }
+}
+
+void ElementwiseSubActivationCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  std::string act_type = param.act_type;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_sub_relu_broadcast(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_sub_relu(
+          x_data, y_data, out_data, x_dims.production());
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  }
+}
+
+template <typename T, PrecisionType PType>
+void ElementwiseMulCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ElementwiseParam>();
+  if (param.X->precision() == PRECISION(kFloat)) {
+    auto* x_data = param.X->template data<float>();
+    auto* y_data = param.Y->template data<float>();
+    auto* out_data = param.Out->template mutable_data<float>();
+    int axis = param.axis;
+    auto x_dims = param.X->dims();
+    auto y_dims = param.Y->dims();
+    int pre, n, post;
+    if (x_dims.size() < y_dims.size() &&
+        is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+      lite::arm::math::elementwise_mul_broadcast<float>(
+          y_data, x_data, out_data, pre, n, post);
+    } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+      lite::arm::math::elementwise_mul_broadcast<float>(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      lite::arm::math::elementwise_mul<float>(
+          x_data, y_data, out_data, x_dims.production());
+    }
+  } else if (param.X->precision() == PRECISION(kInt64)) {
+    lite::arm::math::elementwise_compute_basic<int64_t>(param, "mul", "");
+  } else {
+    LOG(FATAL) << "unsupport input type";
   }
 }
 
@@ -143,7 +218,15 @@ void ElementwiseMulActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_mul_relu_broadcast<float>(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_mul_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -169,7 +252,11 @@ void ElementwiseMaxCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_max_broadcast(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_max_broadcast(
         x_data, y_data, out_data, pre, n, post);
   } else {
@@ -188,7 +275,15 @@ void ElementwiseMaxActivationCompute::Run() {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_max_relu_broadcast<float>(
+          y_data, x_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
       lite::arm::math::elementwise_max_relu_broadcast(
           x_data, y_data, out_data, pre, n, post);
@@ -198,6 +293,57 @@ void ElementwiseMaxActivationCompute::Run() {
   } else {
     if (act_type == "relu") {
       lite::arm::math::elementwise_max_relu(
+          x_data, y_data, out_data, x_dims.production());
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  }
+}
+
+void ElementwiseDivCompute::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_div_broadcast(
+        x_data, y_data, out_data, pre, n, post);
+  } else {
+    lite::arm::math::elementwise_div(
+        x_data, y_data, out_data, x_dims.production());
+  }
+}
+
+void ElementwiseDivActivationCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  const float* x_data = param.X->data<float>();
+  const float* y_data = param.Y->data<float>();
+  float* out_data = param.Out->mutable_data<float>();
+  int axis = param.axis;
+  std::string act_type = param.act_type;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
+  int pre, n, post;
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_div_relu_broadcast(
+          x_data, y_data, out_data, pre, n, post);
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type;
+    }
+  } else {
+    if (act_type == "relu") {
+      lite::arm::math::elementwise_div_relu(
           x_data, y_data, out_data, x_dims.production());
     } else {
       LOG(FATAL) << "unsupported Activation type: " << act_type;
@@ -233,15 +379,45 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(elementwise_mul,
+REGISTER_LITE_KERNEL(elementwise_sub,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseMulCompute,
+                     paddle::lite::kernels::arm::ElementwiseSubCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_sub_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseSubActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_mul_float =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_mul_int32 =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kInt32, kNCHW, elementwise_mul_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -273,6 +449,29 @@ REGISTER_LITE_KERNEL(
     kFloat,
     kNCHW,
     paddle::lite::kernels::arm::ElementwiseMaxActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_div,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ElementwiseDivCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_div_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseDivActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

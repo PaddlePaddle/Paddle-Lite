@@ -14,7 +14,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/arm/math/type_trans.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -22,11 +22,11 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-class SliceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+
+template <typename T, PrecisionType PType>
+class SliceCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::SliceParam;
-
-  void PrepareForRun() override;
 
   void Run() override;
 

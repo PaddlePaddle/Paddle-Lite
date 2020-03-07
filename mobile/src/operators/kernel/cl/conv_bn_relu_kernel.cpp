@@ -107,8 +107,13 @@ bool ConvBNReluKernel<GPU_CL, float>::Init(
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_1x1_spl", conv_kernel_file, build_options);
-
+    if (param->Input()->dims()[1] % 4 == 0) {
+      this->cl_helper_.AddKernel("conv_1x1_simple", conv_kernel_file,
+                                 build_options);
+    } else {
+      this->cl_helper_.AddKernel("conv_1x1_wrapped", conv_kernel_file,
+                                 build_options);
+    }
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
@@ -124,6 +129,14 @@ bool ConvBNReluKernel<GPU_CL, float>::Init(
                                  build_options);
     }
 
+  } else if (param->Filter()->dims()[1] == 1 &&
+             param->Input()->dims()[1] == param->Output()->dims()[1] &&
+             param->Filter()->dims()[2] != 3) {
+    param->Filter()->InitDWImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT;
+    this->cl_helper_.AddKernel("depth_conv", conv_kernel_file, build_options);
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     //    if (param->Strides()[0] == param->Strides()[1] &&
@@ -144,7 +157,7 @@ bool ConvBNReluKernel<GPU_CL, float>::Init(
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file, build_options);
     //    }
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
@@ -161,13 +174,18 @@ void ConvBNReluKernel<GPU_CL, float>::Compute(
                             param.NewScale(), param.NewBias());
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
-    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+    // case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param, true, nullptr, param.NewScale(),
                     param.NewBias());
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
       DWConvAddBnRelu(&this->cl_helper_, param, true, nullptr, param.NewScale(),
+                      param.NewBias());
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+      SWConvAddBnRelu(&this->cl_helper_, param, true, nullptr, param.NewScale(),
                       param.NewBias());
       break;
     default:

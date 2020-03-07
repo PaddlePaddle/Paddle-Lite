@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/topk_compute.h"
-#include "lite/arm/math/funcs.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -25,7 +25,7 @@ void TopkCompute::Run() {
   auto& param = Param<operators::TopkParam>();
   const float* x_data = param.X->data<float>();
   float* out_val = param.Out->mutable_data<float>();
-  int* out_ind = param.Indices->mutable_data<int>();
+  auto out_ind = param.Indices->mutable_data<int64_t>();
   DDim x_dims = param.X->dims();
   int K = param.K;
   int dim_size = x_dims.size();
@@ -43,5 +43,6 @@ REGISTER_LITE_KERNEL(
     top_k, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Indices", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Indices",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

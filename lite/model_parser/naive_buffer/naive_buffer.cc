@@ -44,37 +44,58 @@ void BinaryTable::SaveToFile(const std::string &filename) const {
   fclose(fp);
 }
 
-void BinaryTable::LoadFromFile(const std::string &filename) {
-  // get file size
+void BinaryTable::AppendToFile(const std::string &filename) const {
+  FILE *fp = fopen(filename.c_str(), "ab");
+  CHECK(fp) << "Unable to open file: " << filename;
+  if (fwrite(reinterpret_cast<const char *>(data()), 1, size(), fp) != size()) {
+    fclose(fp);
+    LOG(FATAL) << "Write file error: " << filename;
+  }
+  fclose(fp);
+}
+
+void BinaryTable::LoadFromFile(const std::string &filename,
+                               const size_t &offset,
+                               const size_t &size) {
+  // open file in readonly mode
   FILE *fp = fopen(filename.c_str(), "rb");
   CHECK(fp) << "Unable to open file: " << filename;
-  fseek(fp, 0L, SEEK_END);
-  size_t file_size = ftell(fp);
-  LOG(INFO) << "file size " << file_size;
-
-  // load data.
-  fseek(fp, 0L, SEEK_SET);
-  Require(file_size);
-  if (fread(reinterpret_cast<char *>(&bytes_[0]), 1, file_size, fp) !=
-      file_size) {
+  // move fstream pointer backward for size of offset
+  size_t buffer_size = size;
+  if (size == 0) {
+    fseek(fp, 0L, SEEK_END);
+    buffer_size = ftell(fp) - offset;
+  }
+  fseek(fp, offset, SEEK_SET);
+  Require(buffer_size);
+  // read data of `size` into binary_data_variable:`bytes_`
+  if (fread(reinterpret_cast<char *>(&bytes_[0]), 1, buffer_size, fp) !=
+      buffer_size) {
     fclose(fp);
     LOG(FATAL) << "Read file error: " << filename;
   }
   fclose(fp);
+  // Set readonly.
+  is_mutable_mode_ = false;
+}
 
+void BinaryTable::LoadFromMemory(const char *buffer, size_t buffer_size) {
+  // get buffer
+  bytes_.resize(buffer_size);
+  memcpy(reinterpret_cast<char *>(&bytes_[0]), buffer, buffer_size);
   // Set readonly.
   is_mutable_mode_ = false;
 }
 
 void StringBuilder::Save() {
   // memory format: [size][string data]
-  size_t mem_size = sizeof(size_t) + data_.size();
+  uint64_t mem_size = sizeof(uint64_t) + data_.size();
   table()->Require(mem_size);
-  size_t str_len = data_.size();
+  uint64_t str_len = data_.size();
 
   // write meta data of size.
-  memcpy(table()->cursor(), &str_len, sizeof(size_t));
-  table()->Consume(sizeof(size_t));
+  memcpy(table()->cursor(), &str_len, sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
 
   // write the string data.
   memcpy(table()->cursor(),
@@ -85,9 +106,9 @@ void StringBuilder::Save() {
 
 void StringBuilder::Load() {
   // load meta data of size
-  size_t str_len{};
-  memcpy(&str_len, table()->cursor(), sizeof(size_t));
-  table()->Consume(sizeof(size_t));
+  uint64_t str_len{};
+  memcpy(&str_len, table()->cursor(), sizeof(uint64_t));
+  table()->Consume(sizeof(uint64_t));
 
   // load string data.
   data_.resize(str_len);

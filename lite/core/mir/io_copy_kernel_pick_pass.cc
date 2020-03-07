@@ -71,4 +71,6 @@ class IoCopyKernelPickPass : public StmtPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(io_copy_kernel_pick_pass,
-                  paddle::lite::mir::IoCopyKernelPickPass);
+                  paddle::lite::mir::IoCopyKernelPickPass)
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("io_copy");

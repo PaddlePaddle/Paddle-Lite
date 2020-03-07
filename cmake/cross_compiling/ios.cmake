@@ -120,6 +120,7 @@
 #
 
 ## Lite settings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
 if (ARM_TARGET_OS STREQUAL "ios")
   set(PLATFORM "OS")
 elseif(ARM_TARGET_OS STREQUAL "ios64")
@@ -127,6 +128,7 @@ elseif(ARM_TARGET_OS STREQUAL "ios64")
 else()
   return()
 endif()
+add_definitions(-DTARGET_IOS)
 
 # if do not specify the ARM_TARGET_ARCH_ABI then use default all supported
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv7"

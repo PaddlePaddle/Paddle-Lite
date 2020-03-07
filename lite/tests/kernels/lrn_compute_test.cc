@@ -123,7 +123,6 @@ class LrnComputeTester : public arena::TestCase {
     int H = dims_[2];
     int W = dims_[3];
 
-    int pre_pad = (local_size_ - 1) / 2;
     int offset_num = 0;
     int offset_within_channel = 0;
     int dst_id;
@@ -159,7 +158,7 @@ class LrnComputeTester : public arena::TestCase {
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("alpha", alpha_);
     op_desc->SetAttr("beta", beta_);
-    op_desc->SetAttr("local_size", local_size_);
+    op_desc->SetAttr("n", local_size_);
     op_desc->SetAttr("k", k_);
     op_desc->SetAttr("norm_region", norm_region_);
   }

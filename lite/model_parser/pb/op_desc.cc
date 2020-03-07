@@ -46,6 +46,7 @@ FindAttr(framework::proto::OpDesc *desc, const std::string &name) {
 SET_IMPL_ONE(int, INT, i);
 SET_IMPL_ONE(float, FLOAT, f);
 SET_IMPL_ONE(bool, BOOLEAN, b);
+SET_IMPL_ONE(int64_t, LONG, l);
 
 template <>
 void OpDesc::SetAttr<std::vector<int>>(const std::string &name,
@@ -88,6 +89,16 @@ void OpDesc::SetAttr<std::vector<std::string>>(
   }
 }
 
+template <>
+void OpDesc::SetAttr<std::vector<int64_t>>(const std::string &name,
+                                           const std::vector<int64_t> &v) {
+  auto it = FindAttr(desc_, name);
+  it->set_type(framework::proto::LONGS);
+  it->clear_longs();
+  for (auto &i : v) {
+    it->add_longs(i);
+  }
+}
 google::protobuf::internal::RepeatedPtrIterator<
     const framework::proto::OpDesc_Attr>
 GetFindAttr(const framework::proto::OpDesc &desc, const std::string &name) {

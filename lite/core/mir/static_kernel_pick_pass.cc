@@ -14,36 +14,67 @@
 
 #include "lite/core/mir/static_kernel_pick_pass.h"
 #include <algorithm>
+#include <list>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
+#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-bool KernelScoreCmp(const std::pair<size_t, std::unique_ptr<KernelBase>>& a,
-                    const std::pair<size_t, std::unique_ptr<KernelBase>>& b) {
+bool KernelScoreCmp(const std::pair<float, std::unique_ptr<KernelBase>>& a,
+                    const std::pair<float, std::unique_ptr<KernelBase>>& b) {
   return a.first > b.first;
 }
 
 void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  kernel_pick_factors_.ConsiderTarget();
+  kernel_pick_factors_.ConsiderPrecision();
+  kernel_pick_factors_.ConsiderDataLayout();
   CHECK(kernel_pick_factors_.any_factor_considered())
       << "kernel_pick_factors should be specified first";
   CHECK(graph) << "graph not valid";
-  // sort kernels by the factors.
 
+  // sort kernels by the factors.
+  VLOG(4) << "graph->mutable_nodes().size():" << graph->mutable_nodes().size();
   for (auto& node : graph->mutable_nodes()) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
 
+    std::unordered_map<std::string, PrecisionType> in_types;
+    std::unordered_map<std::string, PrecisionType> out_types;
+    for (std::list<Node*>::iterator i = node.inlinks.begin();
+         i != node.inlinks.end();
+         ++i) {
+      if ((*i)->arg()->type)
+        in_types[(*i)->arg()->name] = (*i)->arg()->type->precision();
+    }
+    for (std::list<Node*>::iterator i = node.outlinks.begin();
+         i != node.outlinks.end();
+         ++i) {
+      if ((*i)->arg()->type)
+        out_types[(*i)->arg()->name] = (*i)->arg()->type->precision();
+    }
     // Get candidate kernels
-    std::vector<std::pair<size_t, std::unique_ptr<KernelBase>>> scored;
+    std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;
     CHECK(!instruct.kernels().empty()) << "No kernels found for "
                                        << instruct.op_type();
+    VLOG(4) << "instruct.kernels().size():" << instruct.kernels().size();
     for (auto&& kernel : instruct.kernels()) {
-      size_t score = KernelGrade(*kernel);
+      float score = KernelGrade(instruct,
+                                *kernel,
+                                graph->valid_places(),
+                                in_types,
+                                out_types,
+                                instruct.op_info()->input_names(),
+                                instruct.op_info()->output_names());
+      VLOG(4) << "kernel->summary():" << kernel->summary()
+              << " score:" << score;
       scored.emplace_back(score, std::move(kernel));
     }
     std::sort(scored.begin(), scored.end(), KernelScoreCmp);
@@ -54,7 +85,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       // Just keep a single best kernel.
       // TODO(Superjomn) reconsider this.
       instruct.kernels().emplace_back(std::move(scored.front().second));
-      VLOG(2) << "pick " << instruct.kernels().front()->name();
+      VLOG(2) << "pick " << instruct.kernels().front()->name() << "\n\n";
 
     } else {
       bool out_type_int8 = true;
@@ -91,7 +122,13 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         instruct.ResetOp(update_desc, graph->valid_places());
         scored.clear();
         for (auto&& kernel : instruct.kernels()) {
-          size_t score = KernelGrade(*kernel);
+          float score = KernelGrade(instruct,
+                                    *kernel,
+                                    graph->valid_places(),
+                                    in_types,
+                                    out_types,
+                                    instruct.op_info()->input_names(),
+                                    instruct.op_info()->output_names());
           scored.emplace_back(score, std::move(kernel));
         }
         std::sort(scored.begin(), scored.end(), KernelScoreCmp);
@@ -117,7 +154,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
         if (all_output_type_match) {
           instruct.kernels().emplace_back(std::move(candidate.second));
-          VLOG(2) << "pick " << instruct.kernels().front()->name();
+          VLOG(2) << "instruct.kernels.emplace_back "
+                  << instruct.kernels().front()->name();
           break;
         }
       }
@@ -132,4 +170,5 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(static_kernel_pick_pass,
-                  paddle::lite::mir::StaticKernelPickPass);
+                  paddle::lite::mir::StaticKernelPickPass)
+    .BindTargets({TARGET(kAny)});

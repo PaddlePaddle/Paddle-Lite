@@ -18,6 +18,37 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
+void CLImage::PrintTensor(const CLImage &cl_image) const {
+  size_t width = cl_image.ImageDims()[0];
+  size_t height = cl_image.ImageDims()[1];
+
+  half_t *image_data = new half_t[height * width * 4];
+  cl_int err;
+  cl_mem image = cl_image.GetCLImage();
+  size_t origin[3] = {0, 0, 0};
+  size_t region[3] = {width, height, 1};
+  err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
+                           region, 0, 0, image_data, 0, NULL, NULL);
+
+  CL_CHECK_ERRORS(err);
+
+  PADDLE_MOBILE_ENFORCE(cl_image.numel() != 0,
+                        "cl_image numel should not be 0 ");
+  float *tensor_data = new float[cl_image.numel()];
+  auto converter = cl_image.Converter();
+  converter->ImageToNCHW(image_data, tensor_data, cl_image.ImageDims(),
+                         cl_image.dims());
+  int stride = cl_image.numel() / 20;
+  stride = stride > 0 ? stride : 1;
+
+  for (int i = 0; i < cl_image.numel(); i++) {
+    printf("%f \n", tensor_data[i]);
+  }
+
+  delete[](tensor_data);
+  delete[](image_data);
+}
+
 void CLImageToTensor(CLImage *cl_image, Tensor *tensor, cl_context context,
                      cl_command_queue commandQueue, cl_kernel kernel) {
   tensor->mutable_data<float>();
@@ -38,21 +69,31 @@ void CLImageToTensor(CLImage *cl_image, Tensor *tensor, cl_context context,
 
   auto input_image = cl_image->GetCLImage();
 
-  clSetKernelArg(kernel, 0, sizeof(int), &in_height);
-  clSetKernelArg(kernel, 1, sizeof(int), &in_width);
-  clSetKernelArg(kernel, 2, sizeof(cl_mem), &input_image);
-  clSetKernelArg(kernel, 3, sizeof(cl_mem), &outBuffer);
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(int), &in_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(int), &in_width);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &input_image);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &outBuffer);
+  CL_CHECK_ERRORS(status);
   int size_ch = in_height * in_width;
   int size_block = size_ch * 4;
   int size_batch = size_ch * C;
-  clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
-  clSetKernelArg(kernel, 5, sizeof(int), &size_block);
-  clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
-  clSetKernelArg(kernel, 7, sizeof(int), &C);
+  status = clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(int), &size_block);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(int), &C);
+  CL_CHECK_ERRORS(status);
   size_t global_work_size[3] = {(new_dims[1] + 3) / 4, new_dims[3],
                                 new_dims[0] * new_dims[2]};
-  clEnqueueNDRangeKernel(commandQueue, kernel, 3, NULL, global_work_size, NULL,
-                         0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(commandQueue, kernel, 3, NULL,
+                                  global_work_size, NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
   memcpy(tensor->data<float>(), out_cl_tensor.Data<float>(),
          tensor->memory_size());
 }
@@ -109,8 +150,8 @@ void TensorToCLImage(Tensor *tensor, CLImage *cl_image, cl_context context,
 
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &cl_image) {
-  int width = cl_image.ImageDims()[0];
-  int height = cl_image.ImageDims()[1];
+  size_t width = cl_image.ImageDims()[0];
+  size_t height = cl_image.ImageDims()[1];
 
   half_t *image_data = new half_t[height * width * 4];
   cl_int err;

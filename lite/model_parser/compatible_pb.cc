@@ -32,20 +32,31 @@ namespace lite {
 /// For VarDesc transfrom
 #define TRANS_VAR_ANY_WITH_CPP_IMPL(T)                           \
   template <>                                                    \
-  void TransformVarDescAnyToCpp<T>(const T &any_desc,            \
-                                   cpp::VarDesc *cpp_desc) {     \
-    cpp_desc->SetName(any_desc.Name());                          \
-    cpp_desc->SetType(any_desc.GetType());                       \
-    cpp_desc->SetPersistable(any_desc.Persistable());            \
-  }                                                              \
-                                                                 \
-  template <>                                                    \
   void TransformVarDescCppToAny<T>(const cpp::VarDesc &cpp_desc, \
                                    T *any_desc) {                \
     any_desc->SetName(cpp_desc.Name());                          \
     any_desc->SetType(cpp_desc.GetType());                       \
     any_desc->SetPersistable(cpp_desc.Persistable());            \
   }
+
+#ifndef LITE_ON_TINY_PUBLISH
+template <>
+void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
+                                           cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+  cpp_desc->SetDataType(any_desc.GetDataType());
+}
+#endif
+
+template <>
+void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
+    const naive_buffer::VarDesc &any_desc, cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+}
 
 /// For OpDesc transform
 template <typename OpDescType>
@@ -116,10 +127,8 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
             name, any_desc.template GetAttr<std::vector<int64_t>>(name));
         break;
       case AttrType::BLOCK: {
-        LOG(INFO) << "loading block " << name;
         auto i = any_desc.template GetAttr<int16_t>(name);
-        LOG(INFO) << i;
-        cpp_desc->SetAttr<int16_t>(name, i);
+        cpp_desc->SetAttr<int32_t>(name, i);
         // naive_buffer::BlockDesc* sub_block = any_desc.template
         // GetAttr<naive_buffer::BlockDesc*>(name);
         // LOG(INFO) << sub_block->OpsSize();
@@ -152,6 +161,8 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
       IMPL_ONE(FLOATS, std::vector<float>);
       IMPL_ONE(INTS, std::vector<int>);
       IMPL_ONE(BOOLEAN, bool);
+      IMPL_ONE(LONG, int64_t);
+      IMPL_ONE(LONGS, std::vector<int64_t>);
       default:
         LOG(FATAL) << "Unsupported attr type found: " << static_cast<int>(type);
     }

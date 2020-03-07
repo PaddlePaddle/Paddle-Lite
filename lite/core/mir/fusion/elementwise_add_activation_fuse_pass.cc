@@ -33,4 +33,9 @@ void ElementwiseAddActivationFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_elementwise_add_activation_fuse_pass,
-                  paddle::lite::mir::ElementwiseAddActivationFusePass);
+                  paddle::lite::mir::ElementwiseAddActivationFusePass)
+    .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)})
+    .ExcludeTargets({TARGET(kBM)})
+    .ExcludeTargets({TARGET(kX86)})
+    .BindKernel("fusion_elementwise_add_activation");

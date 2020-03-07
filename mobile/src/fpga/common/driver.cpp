@@ -136,6 +136,7 @@ int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
   int64_t timeout = time * 6;
 
   for (i = 0; i < timeout; i++) {
+    usleep(1);
     if (val == reg_readq(reg)) {
       break;
     }

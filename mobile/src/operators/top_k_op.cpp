@@ -19,18 +19,18 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TopKOp<DeviceType, T>::InferShape() const {
+template <typename Dtype, typename T>
+void TopKOp<Dtype, T>::InferShape() const {
   const int k = this->param_.k_;
   auto dims = this->param_.input_->dims();
   // should check k <= dims[-1] && k >= 1
   dims[dims.size() - 1] = k;
   this->param_.output_->Resize(dims);
   this->param_.indices_->Resize(dims);
-#ifdef PADDLE_MOBILE_CPU
-  this->param_.output_->set_lod(this->param_.input_->lod());
-  this->param_.indices_->set_lod(this->param_.input_->lod());
-#endif
+  if (std::is_same<DeviceType<kCPU>, Dtype>::value) {
+    this->param_.output_->set_lod(this->param_.input_->lod());
+    this->param_.indices_->set_lod(this->param_.input_->lod());
+  }
 }
 
 }  // namespace operators

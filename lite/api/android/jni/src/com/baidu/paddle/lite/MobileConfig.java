@@ -18,5 +18,90 @@ package com.baidu.paddle.lite;
  * optimization or other unnecessary stages.
  */
 public class MobileConfig extends ConfigBase {
-    // Empty class
+
+    /**
+     * Set power mode.
+     *
+     * @return
+     */
+    public void setPowerMode(PowerMode powerMode) {
+        this.powerMode = powerMode;
+    }
+
+    /**
+     * Returns power mode.
+     *
+     * @return power mode
+     */
+    public PowerMode getPowerMode() {
+        return powerMode;
+    }
+
+    /**
+     * Set threads num.
+     *
+     * @return
+     */
+    public void setThreads(int threads) {
+        this.threads = threads;
+    }
+
+    /**
+     * Returns threads num.
+     *
+     * @return threads num
+     */
+    public int getThreads() {
+        return threads;
+    }
+
+    /**
+     * Returns power mode as enum int value.
+     *
+     * @return power mode as enum int value
+     */
+    public int getPowerModeInt() {
+        return powerMode.value();
+    }
+
+    /**
+     * Set model from file.
+     *
+     * @return
+     */
+    public void setModelFromFile(String modelFile) {
+        this.liteModelFile = modelFile;
+    }
+
+    /**
+     * Returns name of model_file.
+     *  
+     * @return liteModelFile
+     */
+    public String getModelFromFile() {
+        return liteModelFile;
+    }
+
+    /**
+     * Set model from buffer.
+     *
+     * @return
+     */
+    public void setModelFromBuffer(String modelBuffer) {
+        this.liteModelBuffer = modelBuffer;
+    }
+
+    /**
+     * Returns model buffer
+     *  
+     * @return liteModelBuffer
+     */
+    public String getModelFromBuffer() {
+        return liteModelBuffer;
+    }
+
+    private PowerMode powerMode = PowerMode.LITE_POWER_HIGH;
+    private int threads = 1;
+    private String liteModelFile;
+    private String liteModelBuffer;
 }
