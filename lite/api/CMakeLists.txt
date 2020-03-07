@@ -5,8 +5,13 @@ else()
 endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 
 if (LITE_ON_TINY_PUBLISH)
-    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    if(ARM_TARGET_LANG STREQUAL "clang")
+        set(CMAKE_CXX_FLAGS_RELEASE " -DNDEBUG")
+        set(CMAKE_C_FLAGS_RELEASE " -DNDEBUG")
+    else() # gcc
+        set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
+        set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    endif()
 endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
@@ -45,7 +50,11 @@ else()
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
         target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
+        if(ARM_TARGET_LANG STREQUAL "clang")
+            set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "")
+        else() # ARM_TARGET_LANG STREQUAL "gcc"
+            set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
+        endif()
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
@@ -230,6 +239,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
+   # brief: we comment ocr_test_ut because we do not supply ocr model to test, it is the reference to infer nlp model
    # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
    #    DEPS ${lite_model_test_DEPS})
 
@@ -375,6 +385,16 @@ if(NOT IOS)
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
 	BM_DEPS ${bm_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        X86_DEPS ${x86_kernels}
+        CUDA_DEPS ${cuda_kernels})
+    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+        ${ops} ${host_kernels}
+        ARM_DEPS ${arm_kernels}
+        CV_DEPS paddle_cv_arm
+        NPU_DEPS ${npu_kernels}
+        XPU_DEPS ${xpu_kernels}
+        CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})

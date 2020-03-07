@@ -35,6 +35,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/reshape_kernel.cl", build_options_);
   }
@@ -198,6 +199,41 @@ REGISTER_LITE_KERNEL(reshape2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flatten,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flatten2,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out",

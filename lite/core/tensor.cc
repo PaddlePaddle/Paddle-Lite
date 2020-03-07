@@ -82,6 +82,7 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  precision_ = other.precision();
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 

@@ -40,6 +40,8 @@ class ActivationComputeImageDefault
     auto& context = ctx_->As<OpenCLContext>();
     act_param_ = param_.get_mutable<param_t>();
     int act_type = static_cast<int>(act_param_->active_type);
+    VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
+            << ActivationTypeToStr(act_param_->active_type);
     switch (act_type) {
       case 1:
         kernel_func_name_ = "relu";
@@ -66,9 +68,10 @@ class ActivationComputeImageDefault
         kernel_func_name_ = "exp_act";
         break;
       default:
-        printf("This act type: %d doesn't support \n", act_type);
+        LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
         return;
     }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/activation_kernel.cl", build_options_);
   }
@@ -87,6 +90,7 @@ class ActivationComputeImageDefault
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
     int arg_idx = 0;
     cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);

@@ -204,7 +204,7 @@ function make_full_publish_so {
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -268,7 +268,7 @@ function make_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make -j4 publish_inference
+    make publish_inference -j$NUM_PROC
     cd -
 }
 
@@ -299,7 +299,7 @@ function make_cuda {
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
  
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd -
 }
 
@@ -328,7 +328,7 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd -
 }
 
@@ -395,7 +395,7 @@ function main {
                      echo
                      echo -e "error: only support gcc now, clang will be supported in future."
                      echo
-                     exit 1
+#                     exit 1
                 fi
                 shift
                 ;;
@@ -405,6 +405,10 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_cv=*)
+                BUILD_CV="${i#*=}"
                 shift
                 ;;
             --build_python=*)
