@@ -22,10 +22,10 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class AssignCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class AssignCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::AssignParam;
-  void PrepareForRun() override;
+
   void Run() override;
 
   virtual ~AssignCompute() = default;
