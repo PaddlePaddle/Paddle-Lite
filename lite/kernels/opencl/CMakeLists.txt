@@ -70,6 +70,7 @@ lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_comput
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
              DEPS grid_sampler_opencl op_registry program context)
+
 lite_cc_test(test_lrn_image_opencl SRCS lrn_image_compute_test.cc
              DEPS lrn_opencl op_registry program context)
              
