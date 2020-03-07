@@ -66,39 +66,30 @@ class TestCase {
   /// output.
   virtual void RunBaseline(Scope* scope) = 0;
 
-  // checkout the precision of the two tensors. b_tensor is from the baseline
+  // checkout the precision of the two tensors with type T. b_tensor is baseline
   template <typename T>
   bool CheckTensorPrecision(const Tensor* a_tensor,
                             const Tensor* b_tensor,
                             float abs_error);
 
+  // checkout the precision of the two tensors. b_tensor is baseline
+  bool CheckPrecision(const Tensor* a_tensor,
+                      const Tensor* b_tensor,
+                      float abs_error,
+                      PrecisionType precision_type);
+
   /// Check the precision of the output variables. It will compare the same
-  /// tensor
-  /// (or all tensors of tensor_array) in two scopes, one of the instruction
-  /// execution,
-  /// and the other for the baseline.
-  template <typename T>
-  bool CheckPrecision(const std::string& var_name, float abs_error);
+  /// tensor (or all tensors of the tensor_array) in two scopes, one of the
+  /// instruction execution, and the other for the baseline.
+  bool CheckPrecision(const std::string& var_name,
+                      float abs_error,
+                      PrecisionType precision_type);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
   // Check whether the output tensor is consistent with the output definition in
   // kernel registry.
   void CheckKernelConsistWithDefinition() {}
-
-  // Get the real precision of the output for check precision. When the declare
-  // precision obtained from the kernel is any, we should set the precision of
-  // the output in test case.
-  bool GetPrecisonType(const std::string& var_name,
-                       PrecisionType* precision_type) {
-    auto res = precision_type_map_.find(var_name);
-    if (res == precision_type_map_.end()) {
-      return false;
-    } else {
-      *precision_type = precision_type_map_.at(var_name);
-      return true;
-    }
-  }
 
   Scope& scope() { return *scope_; }
 
@@ -159,19 +150,6 @@ class TestCase {
   // Prepare for the operator.
   virtual void PrepareOpDesc(cpp::OpDesc* op_desc) = 0;
 
-  // Set the real precision of the output for check precision. When the declare
-  // precision obtained from the kernel is any, we should set the precision of
-  // the output in test case.
-  void SetPrecisionType(const std::string& var_name,
-                        const PrecisionType& precision_type) {
-    auto res = precision_type_map_.find(var_name);
-    if (res == precision_type_map_.end()) {
-      precision_type_map_.insert({var_name, precision_type});
-    } else {
-      precision_type_map_.at(var_name) = precision_type;
-    }
-  }
-
  public:
   const Instruction& instruction() { return *instruction_; }
 
@@ -215,7 +193,6 @@ class TestCase {
   Scope* base_scope_{};
   std::unique_ptr<cpp::OpDesc> op_desc_;
   std::unique_ptr<Instruction> instruction_;
-  std::unordered_map<std::string, PrecisionType> precision_type_map_;
 };
 
 class Arena {
@@ -272,24 +249,7 @@ class Arena {
     const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
     auto precision_type = type->precision();
-    if (precision_type == PRECISION(kAny)) {
-      CHECK(tester_->GetPrecisonType(var_name, &precision_type));
-    }
-    switch (precision_type) {
-      case PRECISION(kFloat):
-        return tester_->CheckPrecision<float>(var_name, abs_error_);
-      case PRECISION(kInt8):
-        return tester_->CheckPrecision<int8_t>(var_name, abs_error_);
-      case PRECISION(kInt32):
-        return tester_->CheckPrecision<int32_t>(var_name, abs_error_);
-      case PRECISION(kInt64):
-        return tester_->CheckPrecision<int64_t>(var_name, abs_error_);
-      case PRECISION(kBool):
-        return tester_->CheckPrecision<bool>(var_name, abs_error_);
-      default:
-        LOG(FATAL) << "not support type " << PrecisionToStr(type->precision());
-        return false;
-    }
+    return tester_->CheckPrecision(var_name, abs_error_, precision_type);
   }
 
  private:
@@ -297,77 +257,6 @@ class Arena {
   Place place_;
   float abs_error_;
 };
-
-template <typename T>
-bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
-                                    const Tensor* b_tensor,
-                                    float abs_error) {
-  CHECK(a_tensor);
-  CHECK(b_tensor);
-
-  CHECK(ShapeEquals(a_tensor->dims(), b_tensor->dims()));
-
-  CHECK(a_tensor->lod() == b_tensor->lod()) << "lod not match";
-
-  // The baseline should output in host devices.
-  CHECK(b_tensor->target() == TARGET(kHost) ||
-        b_tensor->target() == TARGET(kX86) ||
-        b_tensor->target() == TARGET(kARM));
-
-  const T* a_data{};
-  switch (a_tensor->target()) {
-    case TARGET(kX86):
-    case TARGET(kHost):
-    case TARGET(kARM):
-      a_data = static_cast<const T*>(a_tensor->raw_data());
-      break;
-
-    default:
-      // Before compare, need to copy data from `target` device to host.
-      LOG(FATAL) << "Not supported";
-  }
-
-  CHECK(a_data);
-
-  const T* b_data = static_cast<const T*>(b_tensor->raw_data());
-
-  bool success = true;
-  for (int i = 0; i < a_tensor->dims().production(); i++) {
-    EXPECT_NEAR(a_data[i], b_data[i], abs_error);
-    if (fabsf(a_data[i] - b_data[i]) > abs_error) {
-      success = false;
-    }
-  }
-  return success;
-}
-
-template <typename T>
-bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
-  bool success = true;
-  if (inst_scope_->FindVar(var_name)->IsType<Tensor>()) {
-    auto a_tensor = inst_scope_->FindTensor(var_name);
-    auto b_tensor = base_scope_->FindTensor(var_name);
-    success = success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
-  } else if (inst_scope_->FindVar(var_name)->IsType<std::vector<Tensor>>()) {
-    auto a_tensor_array =
-        inst_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
-    auto b_tensor_array =
-        base_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
-    CHECK_EQ(a_tensor_array->size(), b_tensor_array->size());
-    for (int i = 0; i < a_tensor_array->size(); i++) {
-      Tensor* a_tensor = &(a_tensor_array->at(i));
-      Tensor* b_tensor = &(b_tensor_array->at(i));
-      if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0) {
-        continue;
-      }
-      success =
-          success && CheckTensorPrecision<T>(a_tensor, b_tensor, abs_error);
-    }
-  } else {
-    LOG(FATAL) << "unsupported var type";
-  }
-  return success;
-}
 
 }  // namespace arena
 }  // namespace lite
