@@ -23,7 +23,9 @@ add_kernel(concat_opencl OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_ker
 add_kernel(nearest_interp_opencl OPENCL basic SRCS nearest_interp_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(scale_opencl OPENCL basic SRCS scale_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(grid_sampler_opencl OPENCL basic SRCS grid_sampler_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(lrn_opencl OPENCL basic SRCS lrn_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(bilinear_interp_opencl OPENCL basic SRCS bilinear_interp_image_compute.cc DEPS ${cl_kernel_deps})
+
 # extra
 # wait to add ...
 
@@ -68,6 +70,9 @@ lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_comput
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
              DEPS grid_sampler_opencl op_registry program context)
+
+lite_cc_test(test_lrn_image_opencl SRCS lrn_image_compute_test.cc
+             DEPS lrn_opencl op_registry program context)
              
 lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_compute_test.cc
 	         DEPS bilinear_interp_opencl op_registry program context)
