@@ -236,10 +236,10 @@ void resize(const uint8_t* src,
           "vorr.s32   q10, q12, q12   \n"
           "vorr.s32   q11, q12, q12   \n"
 
-          "vmull.s16  q0, d2, %[_b0]     \n"
-          "vmull.s16  q1, d3, %[_b0]     \n"
-          "vmull.s16  q2, d6, %[_b1]     \n"
-          "vmull.s16  q3, d7, %[_b1]     \n"
+          "vmull.s16  q0, d2, %e[_b0]     \n"
+          "vmull.s16  q1, d3, %e[_b0]     \n"
+          "vmull.s16  q2, d6, %e[_b1]     \n"
+          "vmull.s16  q3, d7, %e[_b1]     \n"
 
           "vsra.s32   q10, q0, #16    \n"
           "vsra.s32   q11, q1, #16    \n"
