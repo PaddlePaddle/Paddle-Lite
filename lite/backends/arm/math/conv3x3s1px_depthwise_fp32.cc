@@ -455,7 +455,6 @@ void act_switch_3x3s1(const float* inr0,
                       float32x4_t w8,
                       float32x4_t vbias,
                       const operators::ActivationParam act_param) {
-#if 0
   bool has_active = act_param.has_active;
   if (has_active) {
     switch (act_param.active_type) {
@@ -804,7 +803,6 @@ void act_switch_3x3s1(const float* inr0,
                    "r5");
 #endif
   }
-#endif
 }
 void conv_3x3s1_depthwise_fp32(const float* i_data,
                                float* o_data,
@@ -820,7 +818,6 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                const operators::ConvParam& param,
                                const operators::ActivationParam act_param,
                                ARMContext* ctx) {
-#if 0
   int threads = ctx->threads();
 
   auto paddings = *param.paddings;
@@ -1038,7 +1035,6 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
       }
     }
   }
-#endif
 }
 
 }  // namespace math
