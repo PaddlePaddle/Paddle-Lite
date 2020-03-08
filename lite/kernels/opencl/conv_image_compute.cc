@@ -98,6 +98,8 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1;
+// # define DEPTH_CONV_USE_SPL
+#ifdef DEPTH_CONV_USE_SPL
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h == 3 && kernel_w == 3 && groups > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
@@ -117,8 +119,14 @@ void ConvImageCompute::PrepareForRun() {
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
     filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
-  } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
-             kernel_h != 3) {
+
+#endif
+  } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1]
+#ifdef DEPTH_CONV_USE_SPL
+             &&
+             kernel_h != 3
+#endif
+             ) {
     // depth_conv2d
     kernel_func_names_.push_back("depth_conv2d");
     kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");
