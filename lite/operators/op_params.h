@@ -730,15 +730,15 @@ struct IncrementParam {
 };
 
 struct WriteToArrayParam {
-  const lite::Tensor* X{};
-  const lite::Tensor* I{};
-  std::vector<lite::Tensor>* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* I{nullptr};
+  std::vector<lite::Tensor>* Out{nullptr};
 };
 
 struct ReadFromArrayParam {
-  const std::vector<lite::Tensor>* X{};
-  const lite::Tensor* I{};
-  lite::Tensor* Out{};
+  const std::vector<lite::Tensor>* X{nullptr};
+  const lite::Tensor* I{nullptr};
+  lite::Tensor* Out{nullptr};
 };
 
 struct BeamSearchParam {
