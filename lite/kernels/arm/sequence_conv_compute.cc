@@ -126,7 +126,7 @@ void SequenceConvCompute::Run() {
                                  kernel_num,                // ldb: n
                                  0.f,                       // beta
                                  out_data,                  // C
-                                 sequence_len,              // ldc: m
+                                 kernel_num,                // ldc: n
                                  NULL,                      // bias
                                  false,                     // is_bias
                                  act_param,                 // act_param
