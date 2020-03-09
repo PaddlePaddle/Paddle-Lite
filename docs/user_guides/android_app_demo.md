@@ -9,24 +9,28 @@
 人脸检测是Paddle-Lite提供的人像检测demo。在移动端上提供了高精度、实时的人脸检测能力，能处理基于人脸检测的业务场景。在移动端预测的效果图如下：
 
 <p align="center"><img width="300" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/face.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="300" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/face2.jpg"/></p>
+
 ### 2. 人像分割
 
 人像分割是Paddle-Lite 提供的图像分割demo ，在移动端上提供了实时的人像分割能力，可以应用证件照自动抠图、面积测量、智能交通（标记车道和交通标志）等场景。  在移动端预测的效果图如下：
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/human.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/human2.jpg"/></p>
+
 ### 3. 图像分类
 
 图像分类是Paddle-Lite 提供的图像处理demo ，在移动端上提供了实时的物体识别能力，可以应用到生产线自动分拣或质检、识别医疗图像、辅助医生肉眼诊断等场景。在移动端预测的效果图如下：
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/tabby_cat.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/tabby_cat2.jpg"/></p>
+
 ### 4. 物体检测
 
 物体检测是Paddle-Lite 提供的图像识别demo ，在移动端上提供了检测多个物体的位置、名称、位置及数量的能力。可以应用到视频监控（是否有违规物体或行为）、工业质检（微小瑕疵的数量和位置）、医疗诊断（细胞计数、中药识别）等场景。在移动端预测的效果图如下：
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/dog.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/dog2.jpg"/></p>
+
 ## Android demo部署方法
 
-下面我们以**目标检测示例（object_detection_demo)**为例讲解如何部署。
+下面我们以 **目标检测示例（object_detection_demo)** 为例讲解如何部署。
 
 **目的**：将基于Paddle-Lite预测库的Android APP 部署到手机，实现物体检测
 
@@ -47,11 +51,13 @@
 成功后效果如下，图一：APP安装到手机        图二： APP打开后的效果，会自动识别图片中的物体并标记
 
 <p align="center"><img width="300" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/AndroidApp0.png"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="300" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/AndroidApp1.jpg"/></p>
+
 ## Android demo结构讲解
 
 Android 示例的代码结构如下图所示：
 
-<p align="center"><img width="600" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/Android_struct.png"/>
+<p align="center"><img width="600" height="450"  src="http://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/Android_struct.png"/>
+
 
    1、 Predictor.java： 预测代码
 
@@ -60,11 +66,12 @@ Android 示例的代码结构如下图所示：
 object_detection_demo/app/src/main/java/com/baidu/paddle/lite/demo/object_detection/Predictor.java
 ```
 
-  2、 model.nb : 模型文件 (opt 工具转化后Paddle-Lite模型)
+  2、 model.nb : 模型文件 (opt 工具转化后Paddle-Lite模型)；pascalvoc_label_list：训练模型时的`labels`文件
 
 ```shell
 # 位置：
 object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu/model.nb
+object_detection_demo/app/src/main/assets/labels/pascalvoc_label_list
 ```
 
   3、 libpaddle_lite_jni.so、PaddlePredictor.jar：Paddle-Lite Java 预测库与Jar包 
