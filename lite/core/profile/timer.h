@@ -87,6 +87,8 @@ class Timer {
     this->laps_t_.Add(elapse_ms);
     return elapse_ms;
   }
+  void SetGops(int gops) { this->gops_ = gops; }
+  float GetGops(int gops) { return this->gops_; }
   virtual void Start(KernelContext* ctx) { return Start(); }
   virtual float Stop(KernelContext* ctx) { return Stop(); }
   float AvgLapTimeMs() const { return laps_t_.Avg(); }
@@ -94,6 +96,7 @@ class Timer {
 
  protected:
   TimeList<float> laps_t_;
+  float gops_{0};
 
  private:
   std::chrono::time_point<std::chrono::system_clock> t_start_, t_stop_;

@@ -35,6 +35,7 @@ struct TimeInfo {
   float avg;
   float min;
   float max;
+  float gops;
 };
 
 struct OpCharacter {
