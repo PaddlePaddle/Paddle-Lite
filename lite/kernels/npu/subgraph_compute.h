@@ -51,8 +51,7 @@ class SubgraphEngine : public subgraph::Engine {
   std::unique_ptr<hiai::AiModelMngerClient> device_program_{nullptr};
 };
 
-class SubgraphCompute
-    : public KernelLite<TARGET(kNPU), PRECISION(kInt8), DATALAYOUT(kNHWC)> {
+class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SubgraphParam;
 

@@ -231,13 +231,6 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
 
-    if(LITE_WITH_NPU)
-       lite_cc_test(test_mobilenetv1_int8_npu SRCS test_mobilenetv1_int8_npu.cc
-           DEPS ${lite_model_test_DEPS} paddle_api_full
-           NPU_DEPS ${npu_kernels} ${npu_bridges}
-           ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_full_quant SERIAL)
-    endif()
-
    # brief: we comment ocr_test_ut because we do not supply ocr model to test, it is the reference to infer nlp model
    # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
    #    DEPS ${lite_model_test_DEPS})

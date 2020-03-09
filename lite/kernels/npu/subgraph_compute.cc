@@ -253,16 +253,10 @@ void SubgraphCompute::Run() {
 
 REGISTER_LITE_KERNEL(subgraph,
                      kNPU,
-                     kInt8,
-                     kNHWC,
+                     kFloat,
+                     kNCHW,
                      paddle::lite::kernels::npu::SubgraphCompute,
                      def)
-    .BindInput("Inputs",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kInt8),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Outputs",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kInt8),
-                                       DATALAYOUT(kNHWC))})
+    .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
