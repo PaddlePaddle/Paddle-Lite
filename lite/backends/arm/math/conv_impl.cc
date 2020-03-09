@@ -646,10 +646,10 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 ctx);
 #else
 #ifdef LITE_WITH_ARM_CLANG
-    printf("This type not support \n");
-    return;
+      LOG(FATAL) << "fp32 depthwise conv3x3s1px doesnot support in v7-clang, "
+                    "this can run in basic";
 #else
-     conv_3x3s1_depthwise_fp32(reinterpret_cast<const float*>(din),
+      conv_3x3s1_depthwise_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
                                 ch_out,
@@ -665,6 +665,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 ctx);
 #endif
 #endif
+    }
   } else if (stride == 2) {
     if (pads_less && pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
