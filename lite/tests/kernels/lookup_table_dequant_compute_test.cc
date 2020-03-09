@@ -132,7 +132,6 @@ TEST(LookupTableDequant, precision) {
   Place place = {TARGET(kARM), PRECISION(kAny)};
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
-    << ids_dims[1];
     for (auto w_dims :
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
       for (auto padding_idx : std::vector<int64_t>{-1}) {
