@@ -76,6 +76,7 @@ lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 # cv build options
 lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF)
 lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." ON)
+lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -108,6 +109,9 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
+#message("tiny: ${LITE_ON_TINY_PUBLISH}")
+#message("lite: ${WITH_LITE}") 
+#set(LITE_ON_TINY_PUBLISH "OFF")
 if (LITE_ON_TINY_PUBLISH)
     if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
         message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
