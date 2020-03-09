@@ -293,8 +293,12 @@ REGISTER_LITE_KERNEL(beam_search_decode,
                      kNCHW,
                      paddle::lite::kernels::arm::BeamSearchDecodeCompute,
                      def)
-    .BindInput("Ids", {LiteType::GetTensorListTy(TARGET(kARM))})
-    .BindInput("Scores", {LiteType::GetTensorListTy(TARGET(kARM))})
-    .BindOutput("SentenceIds", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("SentenceScores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Scores",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("SentenceIds",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("SentenceScores",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

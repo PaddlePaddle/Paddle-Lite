@@ -20,8 +20,6 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void IncrementCompute::PrepareForRun() {}
-
 void IncrementCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::IncrementParam>();
@@ -52,10 +50,10 @@ void IncrementCompute::Run() {
 
 REGISTER_LITE_KERNEL(increment,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::IncrementCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
