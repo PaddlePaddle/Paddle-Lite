@@ -26,7 +26,7 @@ class CalibComputeFp32ToInt8
  public:
   using param_t = operators::CalibParam;
 
-  void Run() override;
+  int Run() override;
 
   ~CalibComputeFp32ToInt8() override{};
 
@@ -38,7 +38,7 @@ class CalibComputeInt8ToFp32
  public:
   using param_t = operators::CalibParam;
 
-  void Run() override;
+  int Run() override;
 
   ~CalibComputeInt8ToFp32() override{};
 

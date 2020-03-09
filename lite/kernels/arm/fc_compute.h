@@ -111,7 +111,7 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
   }
 
   virtual void PrepareForRun();
-  virtual void Run();
+  virtual int Run();
 
   ~FcCompute() = default;
 

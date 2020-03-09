@@ -28,7 +28,7 @@ void PoolCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<ARMContext>();
 }
 
-void PoolCompute::Run() {
+int PoolCompute::Run() {
   auto& param = Param<operators::PoolParam>();
   auto& in_dims = param.x->dims();
   auto& out_dims = param.output->dims();
@@ -74,7 +74,7 @@ void PoolCompute::Run() {
                                           in_dims[1],
                                           in_dims[2],
                                           in_dims[3]);
-      return;
+      return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
     } else if (pooling_type == "avg") {
       lite::arm::math::pooling_global_avg(din,
                                           dout,
@@ -85,7 +85,7 @@ void PoolCompute::Run() {
                                           in_dims[1],
                                           in_dims[2],
                                           in_dims[3]);
-      return;
+      return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
     }
   } else {
     if (ksize[0] == 1 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
@@ -102,7 +102,7 @@ void PoolCompute::Run() {
                                             in_dims[3],
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       }
     } else if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 &&
                kps_equal) {
@@ -118,7 +118,7 @@ void PoolCompute::Run() {
                                           in_dims[3],
                                           paddings[1],
                                           paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling2x2s2_avg(din,
                                           dout,
@@ -132,7 +132,7 @@ void PoolCompute::Run() {
                                           exclusive,
                                           paddings[1],
                                           paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
                pads_equal && kps_equal) {
@@ -148,7 +148,7 @@ void PoolCompute::Run() {
                                             in_dims[3],
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s1p1_avg(din,
                                             dout,
@@ -162,7 +162,7 @@ void PoolCompute::Run() {
                                             exclusive,
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
                pads_equal && kps_equal) {
@@ -178,7 +178,7 @@ void PoolCompute::Run() {
                                             in_dims[3],
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s1p0_avg(din,
                                             dout,
@@ -192,7 +192,7 @@ void PoolCompute::Run() {
                                             exclusive,
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
                pads_equal && kps_equal) {
@@ -208,7 +208,7 @@ void PoolCompute::Run() {
                                             in_dims[3],
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s2p0_avg(din,
                                             dout,
@@ -222,7 +222,7 @@ void PoolCompute::Run() {
                                             exclusive,
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
                pads_equal && kps_equal) {
@@ -238,7 +238,7 @@ void PoolCompute::Run() {
                                             in_dims[3],
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling3x3s2p1_avg(din,
                                             dout,
@@ -252,7 +252,7 @@ void PoolCompute::Run() {
                                             exclusive,
                                             paddings[1],
                                             paddings[3]);
-        return;
+        return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
       }
     }
   }
@@ -275,6 +275,7 @@ void PoolCompute::Run() {
                                  ceil_mode,
                                  use_quantizer,
                                  pooling_type);
+  return in_dims[0] * in_dims[1] * in_dims[2] * in_dims[3];
 }
 
 }  // namespace arm

@@ -23,24 +23,24 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void CalibComputeFp32ToInt8::Run() {
+int CalibComputeFp32ToInt8::Run() {
   auto& param = this->Param<operators::CalibParam>();
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->data<float>();
   auto* dout = param.output->mutable_data<signed char>();
   lite::arm::math::fp32_to_int8(
       din, dout, scale.data(), 1, 1, param.input->numel());
-  return;
+  return param.input->numel();
 }
 
-void CalibComputeInt8ToFp32::Run() {
+int CalibComputeInt8ToFp32::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<signed char>();
   std::vector<float> scale = {param.scale};
   auto* dout = param.output->mutable_data<float>();
   lite::arm::math::int8_to_fp32(
       din, dout, scale.data(), 1, 1, param.input->numel());
-  return;
+  return param.input->numel();
 }
 
 }  // namespace arm
