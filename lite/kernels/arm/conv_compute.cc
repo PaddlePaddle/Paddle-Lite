@@ -60,6 +60,10 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool flag_dw_5x5 = (kw == 5) && (kh == 5) && (stride == 1 || stride == 2);
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
+#ifdef LITE_WITH_ARM_CLANG  // clang
+  flag_dw_3x3 =
+      (stride == 1 && (paddings[0] > 1 || paddings[2] > 1)) ? false : true;
+#endif
   /// select conv impl
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
