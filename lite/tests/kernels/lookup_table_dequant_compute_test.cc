@@ -133,7 +133,7 @@ TEST(LookupTableDequant, precision) {
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
     for (auto w_dims :
-         std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
+         std::vector<std::vector<int64_t>>{{4, 3}, {6, 8}, {12, 15}}) {
       for (auto padding_idx : std::vector<int64_t>{-1}) {
         std::unique_ptr<arena::TestCase> tester(
             new LookupTableDequantComputeTest(

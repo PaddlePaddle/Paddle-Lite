@@ -32,7 +32,7 @@ bool LookupTableDequantOpLite::CheckShape() const {
 
   CHECK_EQ_OR_FALSE(table_dims.size(), 2);
   CHECK_EQ_OR_FALSE(ids_dims[ids_rank - 1], 1);
-  CHECK_GE_OR_FALSE(table_dims[1], 2);
+  CHECK_GT_OR_FALSE(table_dims[1], 2);
   return true;
 }
 
