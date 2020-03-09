@@ -186,6 +186,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference tiny_publish_cxx_lib)
                 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
                     add_custom_command(TARGET tiny_publish_cxx_lib POST_BUILD
+                                COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_api_light_bundled.a
                                 COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_light_api_shared.so)
                 endif()
             endif()
@@ -282,6 +283,10 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/opencl"
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/backends/opencl/cl_kernel" "${INFER_LITE_PUBLISH_ROOT}/opencl"
         )
+       if (NOT LITE_ON_TINY_PUBLISH)
         add_dependencies(publish_inference_cxx_lib publish_inference_opencl)
+       else()
+        add_dependencies(tiny_publish_cxx_lib publish_inference_opencl)
+       endif()
     endif()
 endif()

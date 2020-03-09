@@ -86,8 +86,6 @@ class FillConstantBatchSizeLikeComputeTester : public arena::TestCase {
     std::vector<float> din(in_dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, in_dims_.production());
     SetCommonTensor(input_, in_dims_, din.data(), in_lod_);
-
-    SetPrecisionType(out_, PRECISION(kFloat));
   }
 };
 
@@ -138,7 +136,7 @@ TEST(fill_constant_batch_size_like, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
+  place = {TARGET(kARM), PRECISION(kAny)};
 #else
   return;
 #endif

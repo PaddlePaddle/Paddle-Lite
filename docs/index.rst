@@ -41,7 +41,8 @@ Welcome to Paddle-Lite's documentation!
   user_guides/model_optimize_tool
   user_guides/cpp_demo
   user_guides/java_demo
-  user_guides/android_ios_app_demo
+  user_guides/android_app_demo
+  user_guides/ios_app_demo
   user_guides/library_tailoring
 
 .. toctree::

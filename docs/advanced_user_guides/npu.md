@@ -1,4 +1,4 @@
-# 使用华为NPU
+# Lite基于华为NPU的模型预测
 
 Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
 原理是在线分析Paddle模型，将Paddle算子转成HiAI IR后，调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。

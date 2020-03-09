@@ -51,13 +51,19 @@ void act_compute_ref(const dtype *x_data,
         out_data[i] = (expf(x_data[i]) - expf(-x_data[i])) /
                       (expf(x_data[i]) + expf(-x_data[i]));
         break;
+      case 7:  // swish
+        out_data[i] = x_data[i] / (1 + expf(-x_data[i] * scale));
+        break;
+      case 8:  // exp
+        out_data[i] = expf(x_data[i]);
+        break;
       default:
         break;
     }
   }
 }
 
-// #define ACT_FP16_LOOP_TEST
+//  #define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
@@ -69,7 +75,7 @@ TEST(act_image2d_fp16, compute) {
     for (auto c : {1, 3, 8, 23, 32}) {
       for (int h = 12; h <= 100; h += 13) {
         for (int w = 12; w <= 100; w += 25) {
-          for (auto act_type : {1, 2, 4, 5, 6}) {
+          for (auto act_type : {1, 2, 4, 5, 6, 7, 8}) {
             for (auto scale : {0.5, 0.8}) {
               for (auto threshold : {6.0}) {
 #else
@@ -103,7 +109,13 @@ TEST(act_image2d_fp16, compute) {
                     func_name = "sigmoid";
                     break;
                   case 6:  // tanh
-                    func_name = "tanhAct";
+                    func_name = "tanh_act";
+                    break;
+                  case 7:  // tanh
+                    func_name = "swish";
+                    break;
+                  case 8:  // tanh
+                    func_name = "exp_act";
                     break;
                 }
                 LOG(INFO) << "func_name: " << func_name;
@@ -153,6 +165,7 @@ TEST(act_image2d_fp16, compute) {
                     (paddle::lite_api::ActivationType)act_type;
                 actParam.Relu_clipped_coef = threshold;
                 actParam.Leaky_relu_alpha = scale;
+                actParam.Swish_beta = scale;
 
                 const DDim x_dim =
                     DDim(std::vector<DDim::value_type>{n, c, h, w});
@@ -175,9 +188,11 @@ TEST(act_image2d_fp16, compute) {
                     x_data, 0, sizeof(float) * x_dim.production()));
                 auto *mapped_y = static_cast<float *>(TargetWrapperCL::Map(
                     y_data, 0, sizeof(float) * x_dim.production()));
+                std::default_random_engine engine;
+                std::uniform_real_distribution<float> dist(-1, 1);
                 for (int i = 0; i < x_dim.production(); ++i) {
-                  mapped_x[i] = static_cast<int>(i) - x_dim.production() / 2;
-                  mapped_y[i] = static_cast<int>(0);
+                  mapped_x[i] = dist(engine);
+                  mapped_y[i] = 0.0f;
                 }
                 auto *act_in_data = act_in.mutable_data<half_t, cl::Image2D>(
                     act_image2d_shape["width"], act_image2d_shape["height"]);
@@ -290,11 +305,18 @@ TEST(act_image2d_fp16, compute) {
 // layout
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
-// leakyRelu
+
+// exp
+USE_LITE_KERNEL(exp_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
+// swish
+USE_LITE_KERNEL(swish, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
+// leaky_relu
 USE_LITE_KERNEL(leaky_relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
-// tanh
-USE_LITE_KERNEL(tanhAct, kOpenCL, kFP16, kImageDefault, ImageDefault);
+// tanh act
+USE_LITE_KERNEL(tanh_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
 USE_LITE_KERNEL(relu, kOpenCL, kFP16, kImageDefault, ImageDefault);

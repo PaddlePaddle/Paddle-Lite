@@ -40,6 +40,8 @@ class ActivationComputeImageDefault
     auto& context = ctx_->As<OpenCLContext>();
     act_param_ = param_.get_mutable<param_t>();
     int act_type = static_cast<int>(act_param_->active_type);
+    VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
+            << ActivationTypeToStr(act_param_->active_type);
     switch (act_type) {
       case 1:
         kernel_func_name_ = "relu";
@@ -56,12 +58,20 @@ class ActivationComputeImageDefault
         kernel_func_name_ = "sigmoid";
         break;
       case 6:
-        kernel_func_name_ = "tanhAct";
+        kernel_func_name_ = "tanh_act";
+        break;
+      case 7:
+        kernel_func_name_ = "swish";
+        scale_ = act_param_->Swish_beta;
+        break;
+      case 8:
+        kernel_func_name_ = "exp_act";
         break;
       default:
-        printf("This act type: %d doesn't support \n", act_type);
+        LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
         return;
     }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/activation_kernel.cl", build_options_);
   }
@@ -147,9 +157,9 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-// tanh
+// swish
 REGISTER_LITE_KERNEL(
-    tanhAct,
+    swish,
     kOpenCL,
     kFP16,
     kImageDefault,
@@ -164,6 +174,43 @@ REGISTER_LITE_KERNEL(
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+
+// exp
+REGISTER_LITE_KERNEL(
+    exp_act,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// tanh
+REGISTER_LITE_KERNEL(
+    tanh_act,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
 // Relu
 REGISTER_LITE_KERNEL(
     relu,
