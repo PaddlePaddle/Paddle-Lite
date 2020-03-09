@@ -668,6 +668,13 @@ struct LookupTableParam {
   int64_t padding_idx{-1};
 };
 
+struct LookupTableDequantParam {
+  lite::Tensor* W{nullptr};
+  lite::Tensor* Ids{nullptr};
+  lite::Tensor* Out{nullptr};
+  int64_t padding_idx{-1};
+};
+
 struct Im2SequenceParam {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
