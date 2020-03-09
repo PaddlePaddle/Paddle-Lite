@@ -6,10 +6,10 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
                          __read_only image2d_t input_image,
                          __read_only image2d_t filter,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
-                         __read_only image2d_t bias,
+    __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
-                         __read_only image2d_t new_scale,
+__read_only image2d_t new_scale,
                          __read_only image2d_t new_biase,
 #endif
                          __write_only image2d_t output_image,
@@ -23,7 +23,7 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
                          __private const int output_width,
                          __private const int output_height,
                          __private const int old_w) {
-  CL_DTYPE zero = 0.0f;
+
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -81,11 +81,6 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
 
   int max_w_bound = input_c_block * input_width;
   int burndary_index = input_c_block * 4 - input_c_origin;
-  bool burndary_index_w =
-      burndary_index == 1 || burndary_index == 2 || burndary_index == 3;
-  bool burndary_index_z = burndary_index == 2 || burndary_index == 3;
-  bool burndary_index_y = burndary_index == 3;
-
   for (int i = 0; i < input_c_block; ++i) {
     // ------------0---------------
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
@@ -101,104 +96,73 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
         READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 2));
     CL_DTYPE4 weight3 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 3));
-    int bound_gap = max_w_bound - pos_in.x - 1;
 
-    bool outof_bound = bound_gap < input_width && bound_gap >= 0;
-    input0.w = select(input0.w, zero, outof_bound && burndary_index_w);
-    input0.z = select(input0.z, zero, outof_bound && burndary_index_z);
-    input0.y = select(input0.y, zero, outof_bound && burndary_index_y);
-#ifdef DEBUG
-    if (output_pos0.x == 0 && output_pos0.y == 0) {
-      printf("i ={ %d, }\n", i);
-      printf("in={ %f , %f , %f , %f } \n",
-             convert_float(input0.x),
-             convert_float(input0.y),
-             convert_float(input0.z),
-             convert_float(input0.w));
-      printf("filter0={ %f , %f , %f , %f } \n",
-             convert_float(weight0.x),
-             convert_float(weight0.y),
-             convert_float(weight0.z),
-             convert_float(weight0.w));
-      printf("filter1={ %f , %f , %f , %f } \n",
-             convert_float(weight1.x),
-             convert_float(weight1.y),
-             convert_float(weight1.z),
-             convert_float(weight1.w));
-      printf("filter2={ %f , %f , %f , %f } \n",
-             convert_float(weight2.x),
-             convert_float(weight2.y),
-             convert_float(weight2.z),
-             convert_float(weight2.w));
-      printf("filter3={ %f , %f , %f , %f } \n",
-             convert_float(weight3.x),
-             convert_float(weight3.y),
-             convert_float(weight3.z),
-             convert_float(weight3.w));
-      printf("000---- output={ %f , %f , %f , %f } \n",
-             convert_float(output0.x),
-             convert_float(output0.y),
-             convert_float(output0.z),
-             convert_float(output0.w));
+    if ((max_w_bound - pos_in.x - 1) < input_width &&
+        (max_w_bound - pos_in.x - 1) >= 0) {
+      if (burndary_index == 0) {
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(input0.y, weight1, output0);
+        output0 = mad(input0.z, weight2, output0);
+        output0 = mad(input0.w, weight3, output0);
+      } else if (burndary_index == 1) {
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(input0.y, weight1, output0);
+        output0 = mad(input0.z, weight2, output0);
+        output0 = mad(0.0f, weight3, output0);
+
+      } else if (burndary_index == 2) {
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(input0.y, weight1, output0);
+        output0 = mad(0.0f, weight2, output0);
+        output0 = mad(0.0f, weight3, output0);
+      } else if (burndary_index == 3) {
+        output0 = mad(input0.x, weight0, output0);
+        output0 = mad(0.0f, weight1, output0);
+        output0 = mad(0.0f, weight2, output0);
+        output0 = mad(0.0f, weight3, output0);
+      }
+    } else {
+      output0 = mad(input0.x, weight0, output0);
+      output0 = mad(input0.y, weight1, output0);
+      output0 = mad(input0.z, weight2, output0);
+      output0 = mad(input0.w, weight3, output0);
     }
-#endif
-    output0 = mad(input0.x, weight0, output0);
-#ifdef DEBUG
-    if (output_pos0.x == 0 && output_pos0.y == 0) {
-      printf("111---- output={ %f , %f , %f , %f } \n",
-             convert_float(output0.x),
-             convert_float(output0.y),
-             convert_float(output0.z),
-             convert_float(output0.w));
-    }
-#endif
-    output0 = mad(input0.y, weight1, output0);
-#ifdef DEBUG
-    if (output_pos0.x == 0 && output_pos0.y == 0) {
-      printf("222---- output={ %f , %f , %f , %f } \n",
-             convert_float(output0.x),
-             convert_float(output0.y),
-             convert_float(output0.z),
-             convert_float(output0.w));
-    }
-#endif
-    output0 = mad(input0.z, weight2, output0);
-#ifdef DEBUG
-    if (output_pos0.x == 0 && output_pos0.y == 0) {
-      printf("333---- output={ %f , %f , %f , %f } \n",
-             convert_float(output0.x),
-             convert_float(output0.y),
-             convert_float(output0.z),
-             convert_float(output0.w));
-    }
-#endif
-    output0 = mad(input0.w, weight3, output0);
-#ifdef DEBUG
-    if (output_pos0.x == 0 && output_pos0.y == 0) {
-      printf("444---- output={ %f , %f , %f , %f } \n",
-             convert_float(output0.x),
-             convert_float(output0.y),
-             convert_float(output0.z),
-             convert_float(output0.w));
-    }
-#endif
+
     // -------------1--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
     CL_DTYPE4 input1 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
-    bound_gap = max_w_bound - pos_in.x - 1;
+    if (abs(max_w_bound - pos_in.x) < input_width) {
+      if (burndary_index == 0) {
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(input1.y, weight1, output1);
+        output1 = mad(input1.z, weight2, output1);
+        output1 = mad(input1.w, weight3, output1);
+      } else if (burndary_index == 1) {
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(input1.y, weight1, output1);
+        output1 = mad(input1.z, weight2, output1);
+        output1 = mad(0.0f, weight3, output1);
 
-    outof_bound = bound_gap < input_width && bound_gap >= 0;
-    input1.w = select(input1.w, zero, outof_bound && burndary_index_w);
-    input1.z = select(input1.z, zero, outof_bound && burndary_index_z);
-    input1.y = select(input1.y, zero, outof_bound && burndary_index_y);
-
-    output1 = mad(input1.x, weight0, output1);
-    output1 = mad(input1.y, weight1, output1);
-    output1 = mad(input1.z, weight2, output1);
-    output1 = mad(input1.w, weight3, output1);
+      } else if (burndary_index == 2) {
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(input1.y, weight1, output1);
+        output1 = mad(0.0f, weight2, output1);
+        output1 = mad(0.0f, weight3, output1);
+      } else if (burndary_index == 3) {
+        output1 = mad(input1.x, weight0, output1);
+        output1 = mad(0.0f, weight1, output1);
+        output1 = mad(0.0f, weight2, output1);
+        output1 = mad(0.0f, weight3, output1);
+      }
+    } else {
+      output1 = mad(input1.x, weight0, output1);
+      output1 = mad(input1.y, weight1, output1);
+      output1 = mad(input1.z, weight2, output1);
+      output1 = mad(input1.w, weight3, output1);
+    }
 
     // -------------2--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x,
@@ -206,78 +170,71 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
     CL_DTYPE4 input2 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
-    bound_gap = max_w_bound - pos_in.x - 1;
+    if (abs(max_w_bound - pos_in.x) < input_width) {
+      if (burndary_index == 0) {
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(input2.y, weight1, output2);
+        output2 = mad(input2.z, weight2, output2);
+        output2 = mad(input2.w, weight3, output2);
+      } else if (burndary_index == 1) {
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(input2.y, weight1, output2);
+        output2 = mad(input2.z, weight2, output2);
+        output2 = mad(0.0f, weight3, output2);
 
-    outof_bound = bound_gap < input_width && bound_gap >= 0;
-    input2.w = select(input2.w, zero, outof_bound && burndary_index_w);
-    input2.z = select(input2.z, zero, outof_bound && burndary_index_z);
-    input2.y = select(input2.y, zero, outof_bound && burndary_index_y);
-
-    output2 = mad(input2.x, weight0, output2);
-    output2 = mad(input2.y, weight1, output2);
-    output2 = mad(input2.z, weight2, output2);
-    output2 = mad(input2.w, weight3, output2);
+      } else if (burndary_index == 2) {
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(input2.y, weight1, output2);
+        output2 = mad(0.0f, weight2, output2);
+        output2 = mad(0.0f, weight3, output2);
+      } else if (burndary_index == 3) {
+        output2 = mad(input2.x, weight0, output2);
+        output2 = mad(0.0f, weight1, output2);
+        output2 = mad(0.0f, weight2, output2);
+        output2 = mad(0.0f, weight3, output2);
+      }
+    } else {
+      output2 = mad(input2.x, weight0, output2);
+      output2 = mad(input2.y, weight1, output2);
+      output2 = mad(input2.z, weight2, output2);
+      output2 = mad(input2.w, weight3, output2);
+    }
 
     // -------------3--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x,
                     in_pos_in_one_block3.y);
     CL_DTYPE4 input3 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
-    bound_gap = max_w_bound - pos_in.x - 1;
 
-    outof_bound = bound_gap < input_width && bound_gap >= 0;
-    input3.w =
-        select(input3.w,
-               zero,
-               outof_bound && (burndary_index == 1 || burndary_index == 2 ||
-                               burndary_index == 3));
-    input3.z =
-        select(input3.z,
-               zero,
-               outof_bound && (burndary_index == 2 || burndary_index == 3));
-    input3.y = select(input3.y, zero, outof_bound && burndary_index == 3);
+    if (abs(max_w_bound - pos_in.x) < input_width) {
+      if (burndary_index == 0) {
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(input3.y, weight1, output3);
+        output3 = mad(input3.z, weight2, output3);
+        output3 = mad(input3.w, weight3, output3);
+      } else if (burndary_index == 1) {
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(input3.y, weight1, output3);
+        output3 = mad(input3.z, weight2, output3);
+        output3 = mad(0.0f, weight3, output3);
 
-    output3 = mad(input3.x, weight0, output3);
-    output3 = mad(input3.y, weight1, output3);
-    output3 = mad(input3.z, weight2, output3);
-    output3 = mad(input3.w, weight3, output3);
-
-#ifdef DEBUG
-    if (output_pos0.x == 0 && output_pos0.y == 0) {
-      //  printf("i,j,k ={ %d, %d , %d }\n", i,j,k);
-      printf("i ={ %d, }\n", i);
-      printf("in={ %f , %f , %f , %f } \n",
-             convert_float(input0.x),
-             convert_float(input0.y),
-             convert_float(input0.z),
-             convert_float(input0.w));
-      printf("filter0={ %f , %f , %f , %f } \n",
-             convert_float(weight0.x),
-             convert_float(weight0.y),
-             convert_float(weight0.z),
-             convert_float(weight0.w));
-      printf("filter1={ %f , %f , %f , %f } \n",
-             convert_float(weight1.x),
-             convert_float(weight1.y),
-             convert_float(weight1.z),
-             convert_float(weight1.w));
-      printf("filter2={ %f , %f , %f , %f } \n",
-             convert_float(weight2.x),
-             convert_float(weight2.y),
-             convert_float(weight2.z),
-             convert_float(weight2.w));
-      printf("filter3={ %f , %f , %f , %f } \n",
-             convert_float(weight3.x),
-             convert_float(weight3.y),
-             convert_float(weight3.z),
-             convert_float(weight3.w));
-      printf("output={ %f , %f , %f , %f } \n",
-             convert_float(output0.x),
-             convert_float(output0.y),
-             convert_float(output0.z),
-             convert_float(output0.w));
+      } else if (burndary_index == 2) {
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(input3.y, weight1, output3);
+        output3 = mad(0.0f, weight2, output3);
+        output3 = mad(0.0f, weight3, output3);
+      } else if (burndary_index == 3) {
+        output3 = mad(input3.x, weight0, output3);
+        output3 = mad(0.0f, weight1, output3);
+        output3 = mad(0.0f, weight2, output3);
+        output3 = mad(0.0f, weight3, output3);
+      }
+    } else {
+      output3 = mad(input3.x, weight0, output3);
+      output3 = mad(input3.y, weight1, output3);
+      output3 = mad(input3.z, weight2, output3);
+      output3 = mad(input3.w, weight3, output3);
     }
-#endif
   }
 
 #ifdef BATCH_NORM
@@ -302,6 +259,7 @@ __kernel void conv2d_1x1(__private const int global_size_dim0,
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
+
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
@@ -329,7 +287,7 @@ __kernel void conv2d_1x1_simple(
     __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
-    __read_only image2d_t new_scale,
+__read_only image2d_t new_scale,
     __read_only image2d_t new_biase,
 #endif
     __write_only image2d_t output_image,
