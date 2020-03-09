@@ -95,8 +95,7 @@ class LITE_API PaddlePredictor {
       const std::string& name) const = 0;
   /// Get a mutable tensor, return null if on one called `name` exists
   /// internal infereces API, not recommanded.
-  virtual std::unique_ptr<Tensor> GetMutableTensor(
-      const std::string& name) const = 0;
+  virtual std::unique_ptr<Tensor> GetMutableTensor(const std::string& name);
 
   /// Persist the optimized model to disk. This API is only supported by
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
