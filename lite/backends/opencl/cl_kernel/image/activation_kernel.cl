@@ -144,7 +144,7 @@ __kernel void swish(__read_only image2d_t input,
                             CLK_FILTER_NEAREST;
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
-  CL_DTYPE4 out = in / (1 + exp(-scale * in));
+  CL_DTYPE4 out = in / (1 + exp(-(CL_DTYPE)scale * in));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
 
