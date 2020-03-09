@@ -144,4 +144,6 @@ REGISTER_LITE_OP(elementwise_div, paddle::lite::operators::ElementwiseOp);
 #ifdef LITE_WITH_TRAIN
 REGISTER_LITE_OP(elementwise_sub_grad,
                  paddle::lite::operators::ElementwiseGradExplicitOp);
+REGISTER_LITE_OP(elementwise_add_grad,
+                 paddle::lite::operators::ElementwiseGradExplicitOp);
 #endif
