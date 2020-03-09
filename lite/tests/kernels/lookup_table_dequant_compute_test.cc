@@ -73,7 +73,7 @@ class LookupTableDequantComputeTest : public arena::TestCase {
     for (int i = 0; i < ids_rank - 1; ++i) {
       out_dims.push_back(ids_dims[i]);
     }
-    out_dims.push_back(w_dims[1]);
+    out_dims.push_back((w_dims[1] - 2) * 4);
     out->Resize(out_dims);
     out->set_lod(ids->lod());
 
@@ -133,8 +133,11 @@ TEST(LookupTableDequant, precision) {
   Place place(TARGET(kARM));
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
+    LOG(INFO) << "ids_dims[0] and ids_dims[1]" << ids_dims[0] << " "
+              << ids_dims[1];
     for (auto w_dims :
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
+      LOG(INFO) << "w_dims[0] and w_dims[1]" << w_dims[0] << " " << w_dims[1];
       for (auto padding_idx : std::vector<int64_t>{-1}) {
         std::unique_ptr<arena::TestCase> tester(
             new LookupTableDequantComputeTest(
