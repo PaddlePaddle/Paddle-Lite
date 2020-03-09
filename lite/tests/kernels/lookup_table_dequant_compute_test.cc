@@ -127,10 +127,9 @@ class LookupTableDequantComputeTest : public arena::TestCase {
 };
 
 TEST(LookupTableDequant, precision) {
-  LOG(INFO) << "test lookup_table dequant op";
 #ifdef LITE_WITH_ARM
   float abs_error = 2e-5;
-  Place place(TARGET(kARM));
+  Place place = {TARGET(kARM), PRECISION(kAny)};
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
     LOG(INFO) << "ids_dims[0] and ids_dims[1]" << ids_dims[0] << " "
