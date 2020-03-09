@@ -15,7 +15,9 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
+
 #include <cmath>
+
 #include "framework/cl/cl_image.h"
 #include "framework/cl/cl_tool.h"
 #include "operators/kernel/cl/cl-kernel-func/conv_func.h"
@@ -245,7 +247,8 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
                       param.NewScale(), param.NewBias());
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
-      SWConvAddBnRelu(&this->cl_helper_, param, true, param.Bias());
+      SWConvAddBnRelu(&this->cl_helper_, param, true, param.Bias(),
+                      param.NewScale(), param.NewBias());
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
