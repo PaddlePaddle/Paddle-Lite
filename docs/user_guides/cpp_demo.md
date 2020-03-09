@@ -173,7 +173,7 @@ predictor->Run();
 std::unique_ptr<const Tensor> output_tensor(
     std::move(predictor->GetOutput(0)));
 // 转化为数据
-auto output_data=output_tensor<float>();
+auto output_data=output_tensor->data<float>();
 ```
 
 
