@@ -14,6 +14,7 @@
 
 #include "lite/kernels/xpu/matmul_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/backends/xpu/math.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -21,34 +22,60 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+namespace math = paddle::lite::xpu::math;
+
 void MatMulCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int m = param.X->numel();
-  int n = param.Y->numel();
-  auto x_dims = param.X->dims();
-  int k = x_dims[x_dims.size() - 1];
-  if (param.transpose_X) {
-    k = x_dims[x_dims.size() - 2];
-  }
-  m /= k;
-  n /= k;
-  CHECK(!param.transpose_X);
-  CHECK(param.transpose_Y);
+  auto* x = param.X;
+  auto* y = param.Y;
+  auto* out = param.Out;
 
-  int r = xdnn::fc_int16(
-    ctx.GetRawContext(), /* context */
-    param.transpose_X, /* TransA */
-    param.transpose_Y, /* TransB */
-    m, /* m */
-    n, /* n */
-    k, /* k */
-    1.0f, /* alpha */
-    param.X->data<float>(), /* A */
-    param.Y->data<float>(), /* B */
-    0.0f, /* beta */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* C */);
+  auto mat_dim_a = math::CreateMatrixDescriptor(
+      math::RowMatrixFromVector(x->dims()), 0, param.transpose_X);
+  auto mat_dim_b = math::CreateMatrixDescriptor(
+      math::ColumnMatrixFromVector(y->dims()), 0, param.transpose_Y);
+  int lda = (mat_dim_a.trans_ ? mat_dim_a.height_ : mat_dim_a.width_);
+  int ldb = (mat_dim_b.trans_ ? mat_dim_b.height_ : mat_dim_b.width_);
+  int ldc = mat_dim_b.width_;
+
+  int r = 0;
+  if (mat_dim_a.batch_size_ == 0 || mat_dim_a.batch_size_ == 1) {
+    r = xdnn::fc_int16(
+      ctx.GetRawContext(), /* context */
+      mat_dim_a.trans_, /* TransA */
+      mat_dim_b.trans_, /* TransB */
+      mat_dim_a.height_, /* m */
+      mat_dim_b.width_, /* n */
+      mat_dim_a.width_, /* k */
+      param.alpha, /* alpha */
+      x->data<float>(), /* A */
+      y->data<float>(), /* B */
+      0.0f, /* beta */
+      out->mutable_data<float>(TARGET(kXPU)) /* C */);
+  } else {
+    // batch matmul
+    r = xdnn::gemm_strided_batched_int16<float, float, float>(
+      ctx.GetRawContext(), /* context */
+      mat_dim_a.trans_, /* TransA */
+      mat_dim_b.trans_, /* TransB */
+      mat_dim_a.batch_size_, /* batch_size */
+      mat_dim_a.height_, /* M */
+      mat_dim_b.width_, /* N */
+      mat_dim_a.width_, /* K */
+      param.alpha, /* alpha */
+      x->data<float>(), /* A */
+      lda, /* lda */
+      mat_dim_a.stride_, /* stride_a */
+      y->data<float>(), /* B */
+      ldb, /* ldb */
+      mat_dim_b.stride_, /* stride_b */
+      0.0f, /* beta */
+      out->mutable_data<float>(TARGET(kXPU)), /* C */
+      ldc, /* ldc */
+      mat_dim_a.height_ * mat_dim_b.width_ /* stride_c */);
+  }
   CHECK(r == 0);
 }
 
