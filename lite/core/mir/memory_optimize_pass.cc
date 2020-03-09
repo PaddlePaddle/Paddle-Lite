@@ -218,6 +218,10 @@ void MemoryOptimizePass::PerformReusePlan(
           name = reuse_table.at(x);
         }
         in_args[argument.first].push_back(name);
+        if (op_info->HasAttr(x + ".input_scale")) {
+          op_info->SetAttr<float>(name + ".input_scale",
+                                  op_info->GetAttr<float>(x + ".input_scale"));
+        }
         VLOG(4) << op_info->Type() << " input " << x << " -> " << name;
       }
     }

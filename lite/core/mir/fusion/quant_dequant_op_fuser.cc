@@ -61,11 +61,12 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
   // save the input scale in all quantized op
   auto outlinks = output_act_node->outlinks;
   for (auto* quantized_node : outlinks) {
-    auto* op_desc = quantized_node->stmt()->mutable_op_info();
-    op_desc->SetAttr<int>("bit_length", bit_length);
-    op_desc->SetAttr<float>(input_act_node->arg()->name + ".input_scale",
-                            scale_value);
-    IR_NODE_LINK_TO(input_act_node, quantized_node)
+    auto op_desc = *quantized_node->stmt()->mutable_op_info();
+    op_desc.SetAttr<int>("bit_length", bit_length);
+    op_desc.SetAttr<float>(input_act_node->arg()->name + ".input_scale",
+                           scale_value);
+    IR_NODE_LINK_TO(input_act_node, quantized_node);
+    quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
   }
 
   // delete nodes and edges
@@ -321,27 +322,28 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* output_scale_node = matched.at("output_scale_node");
   auto* output_act_node = matched.at("output_act_node");
   auto input_act_name = input_act_node->arg()->name;
+  auto output_act_name = output_act_node->arg()->name;
 
   // for all quantized node, modify the scale value, input name and inlink
   for (auto* quantized_node : output_act_node->outlinks) {
-    // obtain values, save values and relink node
     auto op_info = *quantized_node->stmt()->op_info();
-    int activation_bits = op_info.GetAttr<int>("activation_bits");
-    int range = ((1 << (activation_bits - 1)) - 1);
-    float scale_threshold = op_info.GetAttr<float>(
-        input_act_name + ".scale_threshold");  // the KL thread or abs_max value
-    float scale_value = scale_threshold / range;
+    if (op_info.HasAttr("is_quantized_without_weight") &&
+        op_info.GetAttr<int>("is_quantized_without_weight")) {
+      int activation_bits = op_info.GetAttr<int>("activation_bits");
+      int range = ((1 << (activation_bits - 1)) - 1);
+      float scale_threshold = op_info.GetAttr<float>(
+          input_act_name +
+          ".input_threshold");  // the KL thread or abs_max value
+      float scale_value = scale_threshold / range;
+      op_info.SetAttr<float>(input_act_name + ".input_scale", scale_value);
+    }
 
-    op_info.SetAttr<float>(input_act_name + ".scale_threshold", scale_value);
     // set input in op_info, replace the output_act_node with input_act_node
-    auto* inputs_map = op_info.mutable_inputs();
-    for (auto iter = inputs_map->begin(); iter != inputs_map->end(); ++iter) {
-      auto& inputs_vct = iter->second;
-      auto pos = std::find(inputs_vct.begin(),
-                           inputs_vct.end(),
-                           input_act_name + ".quant_dequant");
-      if (pos != inputs_vct.end()) {
-        *pos = input_act_name;
+    for (auto& input : *op_info.mutable_inputs()) {
+      for (auto& var_name : input.second) {
+        if (var_name == output_act_name) {
+          var_name = input_act_name;
+        }
       }
     }
     IR_NODE_LINK_TO(input_act_node, quantized_node)

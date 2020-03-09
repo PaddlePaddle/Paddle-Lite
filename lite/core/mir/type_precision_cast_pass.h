@@ -34,6 +34,8 @@ static void UpdateInputTo(cpp::OpDesc* desc,
       }
     }
   }
+  desc->SetAttr(to + ".input_scale",
+                desc->GetAttr<float>(from + ".input_scale"));
 }
 
 /*

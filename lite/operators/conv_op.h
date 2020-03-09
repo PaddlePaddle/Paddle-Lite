@@ -106,11 +106,10 @@ class ConvOpLite : public OpLite {
     // For Int8
     if (op_desc.HasAttr("enable_int8")) {
       param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
-      if (op_desc.HasAttr(X + ".input_scale"))
-        param_.input_scale = op_desc.GetAttr<float>(X + ".input_scale");
-      if (op_desc.HasAttr("weight_scale"))
-        param_.weight_scale =
-            op_desc.GetAttr<std::vector<float>>("weight_scale");
+      CHECK(op_desc.HasAttr(X + ".input_scale"));
+      CHECK(op_desc.HasAttr("weight_scale"));
+      param_.input_scale = op_desc.GetAttr<float>(X + ".input_scale");
+      param_.weight_scale = op_desc.GetAttr<std::vector<float>>("weight_scale");
       if (op_desc.HasAttr("output_scale")) {
         param_.output_scale = op_desc.GetAttr<float>("output_scale");
       }
