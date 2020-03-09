@@ -49,6 +49,7 @@ sh download_dependencies.sh     # 2. 执行脚本下载依赖项 （需要联网
 4、 IPhone手机连接电脑，在Xcode中连接自己的手机 （第一次连接IPhone到电脑时，需要在IPhone的`设置->通用->设备管理`中选择本电脑并信任）
 
 <p align="center"><img width="600" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/Xcode-phone.jpg"/>
+
 5、按下左上角的 Run按钮，自动编译APP并安装到手机。在苹果手机中设置信任该APP（进入`设置->通用->设备管理`，选中新安装的APP并`验证该应用`）
 
 成功后效果如下，图一：APP安装到手机        图二： APP打开后的效果，会自动识别图片中的物体并标记
@@ -60,6 +61,7 @@ sh download_dependencies.sh     # 2. 执行脚本下载依赖项 （需要联网
 iOS 示例的代码结构如下图所示：
 
 <p align="center"><img width="600" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/IOS-struct.png"/>
+
    1、 mobilenetv1-ssd： 模型文件 (opt 工具转化后Paddle-Lite模型)
 
 ```shell
