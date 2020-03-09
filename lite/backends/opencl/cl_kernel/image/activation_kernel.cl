@@ -37,7 +37,6 @@ __kernel void relu6(__read_only image2d_t input,
                     __write_only image2d_t output,
                     __private const float threshold,
                    __private const float scale){
-
   const int x = get_global_id(0);
   const int y = get_global_id(1);
 

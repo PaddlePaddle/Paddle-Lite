@@ -64,6 +64,21 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
+<<<<<<< HEAD
+  auto padding = op_info->GetAttr<std::vector<int>>("paddings");
+  bool pads_equal = (padding[0] == padding[1]) && (padding[2] == padding[3]);
+  if (!pads_equal) {
+    LOG(FATAL)
+        << "padding requires pad_left == pad_right, pad_top == pad_bottom";
+  }
+  auto npu_pad =
+      ge::AttrValue::LIST_INT{padding[0], padding[1], padding[2], padding[3]};
+  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  auto npu_stride = ge::AttrValue::LIST_INT(strides.begin(), strides.end());
+  int npu_ceil_mode = 0;
+  if (op_info->HasAttr("ceil_mode")) {
+    npu_ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
+=======
   // pad mode
   int pad_mode = 0;
   std::string padding_algorithm("");
@@ -74,6 +89,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     pad_mode = 6;
   } else if (padding_algorithm == "VALID") {
     pad_mode = 5;
+>>>>>>> 9188571c60284519335da9b90b5e451a561e868f
   }
 
   // paddings and strides

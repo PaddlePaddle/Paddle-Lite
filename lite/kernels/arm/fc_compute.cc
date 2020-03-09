@@ -82,7 +82,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 }
 
 template <>
-void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
+int FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
@@ -143,7 +143,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 }
 
 template <>
-void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
+int FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
@@ -194,10 +194,11 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  &ctx);
     }
   }
+  return 2.f * m_ * n_ * k_;
 }
 
 template <>
-void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
+int FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
@@ -246,6 +247,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                  &ctx);
     }
   }
+  return 2.0 * m_ * n_ * k_;
 }
 
 }  // namespace arm

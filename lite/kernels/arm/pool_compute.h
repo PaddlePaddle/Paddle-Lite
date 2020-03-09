@@ -27,7 +27,7 @@ class PoolCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   using param_t = operators::PoolParam;
 
   void PrepareForRun() override;
-  void Run() override;
+  int Run() override;
 
   virtual ~PoolCompute() = default;
 };

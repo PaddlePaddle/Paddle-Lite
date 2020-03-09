@@ -143,6 +143,9 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int repeat,
          const int warmup_times = 0) {
   lite_api::MobileConfig config;
+  config.set_model_from_file(model_dir + ".nb");
+  config.set_power_mode(power_mode);
+  config.set_threads(thread_num);
   config.set_model_dir(model_dir);
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
@@ -207,9 +210,9 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   auto out = output->data<float>();
   auto output_shape = output->shape();
   // detect
-  detect_object(
-      out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih, FLAGS_oriw);
-  // detect_choose(out, output_shape, atof(FLAGS_threshold.data()));
+  //detect_object(
+  //    out, output_shape, atof(FLAGS_threshold.data()), FLAGS_orih, FLAGS_oriw);
+  detect_choose(out, output_shape, atof(FLAGS_threshold.data()));
   LOG(INFO) << "out " << out[0];
   LOG(INFO) << "out " << out[1];
   int output_num = 1;

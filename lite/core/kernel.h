@@ -54,8 +54,9 @@ class KernelBase {
   /// Run kernel initialization if needed at every run (eg. input shape changed)
   virtual void ReInitWhenNeeded() {}
 
-  /// Run the kernel. Before Run, both the param_ and context_ should be valid.
-  virtual void Run() = 0;
+  /// Run the kernel, return ops. Before Run, both the param_ and context_
+  /// should be valid.
+  virtual int Run() = 0;
 
 #ifdef LITE_WITH_PROFILE
   void SetProfiler(profile::Profiler* profiler, int id) {
@@ -86,8 +87,10 @@ class KernelBase {
 #ifdef LITE_WITH_PROFILE
     profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
     profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
-    Run();
-    profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+    // Run();
+    float gops = Run();
+    profiler_->StopTiming(
+        profile::Type::kDispatch, profile_id_, ctx_.get(), gops);
 #else
     Run();
 #endif
@@ -193,7 +196,7 @@ template <TargetType Target,
 class KernelLite : public KernelBase {
  public:
   // Run the kernel.
-  virtual void Run() { CHECK(false) << "Not Implemented"; }
+  virtual int Run() { CHECK(false) << "Not Implemented"; }
 
   TargetType target() const override { return Target; }
   PrecisionType precision() const override { return Precision; }

@@ -70,9 +70,13 @@ void Profiler::StartTiming(Type type, const int index, KernelContext* ctx) {
   units_[index].Timer(type)->Start(ctx);
 }
 
-float Profiler::StopTiming(Type type, const int index, KernelContext* ctx) {
+float Profiler::StopTiming(Type type,
+                           const int index,
+                           KernelContext* ctx,
+                           float gops = 0.0) {
   CHECK_LT(index, units_.size())
       << "The timer index in the profiler is out of range.";
+  units_[index].Timer(type)->SetGops(gops);
   return units_[index].Timer(type)->Stop(ctx);
 }
 
@@ -97,48 +101,94 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
   ss << setw(25) << left << "Operator Type"
      << " " << setw(40) << left << "Kernel Name"
      << " " << setw(12) << left << "Remark"
+     << " " << setw(12) << left << "GOPS (OPS/Time)"
      << " " << setw(12) << left << "Avg (ms)"
      << " " << setw(12) << left << "Min (ms)"
      << " " << setw(12) << left << "Max (ms)"
-     << " " << setw(12) << left << "Last (ms)" << std::endl;
+     << " " << setw(12) << left << "Last (ms)"
+     << " " << setw(12) << left << "Percent (%)" << std::endl;
+
   // Profile information.
   if (concise) {
     std::map<OpCharacter, TimeInfo, decltype(op_comp)> summary(op_comp);
-    for (auto& unit : units_) {
+    float for (auto& unit : units_) {
       auto ch = summary.find(unit.Character());
       if (ch != summary.end()) {
         ch->second.avg += unit.Timer(type)->LapTimes().Avg(w);
         ch->second.min += unit.Timer(type)->LapTimes().Min(w);
         ch->second.max += unit.Timer(type)->LapTimes().Max(w);
+        ch->second.gops = unit.Timer(type)->GetGops();
       } else {
         TimeInfo info({unit.Timer(type)->LapTimes().Avg(w),
                        unit.Timer(type)->LapTimes().Min(w),
-                       unit.Timer(type)->LapTimes().Max(w)});
+                       unit.Timer(type)->LapTimes().Max(w),
+                       unit.Timer(type)->GetGops()});
         summary.insert({unit.Character(), info});
       }
     }
+    // clang-format off
+    // compute total time
+    float total = 0.0;
     for (const auto& item : summary) {
-      // clang-format off
+      total += item.second.avg;
+    }
+
+    for (const auto& item : summary) {
+      float gops = 0.0;
+      float percent = 0;
+      if (total > 0) {
+        percent = 100 * (item.second.avg / total);
+      }
+      if (item.second.avg > 0.0) {
+        gops = 1e-6f * item.second.gops / item.second.avg;
+      }
+#if 0  // #ifdef LITE_WITH_ARM
+      float cpu_freq_cur = ctx->mode() == LITE_POWER_HIGH
+            ? ctx->max_frequence() : ctx->min_frequence();
+      float cpu_ca_theory = cpu_freq_cur * 8.0f / 1000;
+      int th_num = ctx->threads();
+      float cpus_ops = th_num * cpu_ca_theory;
+      float cpu = 100 * (gops / cpus_ops);
+#endif
       ss << setw(25) << left << fixed << item.first.op_type             \
          << " " << setw(40) << left << fixed << item.first.kernel_name  \
          << " " << setw(12) << left << fixed << item.first.remark       \
+         << " " << setw(12) << left << fixed << gops                    \
          << " " << setw(12) << left << fixed << item.second.avg         \
          << " " << setw(12) << left << fixed << item.second.min         \
          << " " << setw(12) << left << fixed << item.second.max         \
+         << " " << setw(12) << left << fixed << "0.0"                   \
+         << " " << setw(12) << left << fixed << percent << "%"          \
          << " " << std::endl;
       // clang-format on
     }
   } else {
+    float total = 0.0;
     for (auto& unit : units_) {
       const auto& times = unit.Timer(type)->LapTimes();
+      total += times.Avg(w);
+    }
+    for (auto& unit : units_) {
+      const auto& times = unit.Timer(type)->LapTimes();
+      float gops = 0.0;
+      float percent = 0;
+      float run = times.Avg(w);
+      if (run > 0.0) {
+        gops = 1e-6f * unit.Timer(type)->GetGops() / run;
+      }
+      if (total > 0.0) {
+        percent = 100 * (run / total);
+      }
       // clang-format off
       ss << setw(25) << left << fixed << unit.Character().op_type            \
          << " " << setw(40) << left << fixed << unit.Character().kernel_name \
          << " " << setw(12) << left << fixed << unit.Character().remark      \
+         << " " << setw(12) << left << fixed << unit.Timer(type)->GetGops()  \
          << " " << setw(12) << left << fixed << times.Avg(w)                 \
          << " " << setw(12) << left << fixed << times.Min(w)                 \
          << " " << setw(12) << left << fixed << times.Max(w)                 \
          << " " << setw(12) << left << fixed << times.Last(w)                \
+         << " " << setw(12) << left << fixed << percent << "%"               \
          << std::endl;
       // clang-format on
     }

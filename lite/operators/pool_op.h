@@ -14,7 +14,10 @@
 
 #pragma once
 
+<<<<<<< HEAD
+=======
 #include <algorithm>
+>>>>>>> 9188571c60284519335da9b90b5e451a561e868f
 #include <memory>
 #include <string>
 #include <vector>
