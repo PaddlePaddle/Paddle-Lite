@@ -559,7 +559,7 @@ void test_img(const std::vector<int>& cluster_id,
   }
 }
 
-#if 0
+#if 1
 TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 4, 8, 16, 112, 224, 1092}) {
@@ -573,12 +573,12 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
                     for (auto layout : {1}) {
                       if ((srcFormat == ImageFormat::NV12 ||
                            srcFormat == ImageFormat::NV21) &&
-                              (dstFormat == ImageFormat::GRAY)) {
+                          (dstFormat == ImageFormat::GRAY)) {
                         continue;
                       }
                       if ((dstFormat == ImageFormat::NV12 ||
                            dstFormat == ImageFormat::NV21) &&
-                              (srcFormat == ImageFormat::GRAY)) {
+                          (srcFormat == ImageFormat::GRAY)) {
                         continue;
                       }
                       if (srcFormat == ImageFormat::NV12 ||
@@ -611,7 +611,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   }
 }
 #endif
-#if 0
+#if 1
 TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 4, 8, 16, 112, 224, 1092}) {
@@ -624,7 +624,7 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
                   for (auto dstFormat : {0, 1, 2, 3, 4, 11}) {
                     for (auto layout : {1}) {
                       if (dstFormat == ImageFormat::NV12 ||
-                           dstFormat == ImageFormat::NV21 ||
+                          dstFormat == ImageFormat::NV21 ||
                           (srcFormat == ImageFormat::NV12 ||
                            srcFormat == ImageFormat::NV21) &&
                               dstFormat == ImageFormat::GRAY) {
