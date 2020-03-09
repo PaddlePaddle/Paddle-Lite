@@ -48,7 +48,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto w_tensor = graph->AddNode(
       w_var_name, w_shape, CNML_FILTER, CNML_NCHW, graph->FPType());
 
-  auto input_scale = op_info->GetAttr<float>("input_scale");
+  auto input_scale = op_info->GetAttr<float>(x_var_name + ".input_scale");
 
   std::vector<int64_t> output_shape_nhwc({1, 1, 1, w_dims[1]});
   auto output_tensor = graph->AddNode(output_var_name,

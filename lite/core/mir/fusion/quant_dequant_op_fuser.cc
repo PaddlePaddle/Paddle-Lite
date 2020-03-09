@@ -58,11 +58,13 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
                            ->GetMutable<lite::Tensor>();
   float scale_value = scale_tensor->data<float>()[0] / range;
 
+  // save the input scale in all quantized op
   auto outlinks = output_act_node->outlinks;
   for (auto* quantized_node : outlinks) {
     auto* op_desc = quantized_node->stmt()->mutable_op_info();
     op_desc->SetAttr<int>("bit_length", bit_length);
-    op_desc->SetAttr<float>("input_scale", scale_value);
+    op_desc->SetAttr<float>(input_act_node->arg()->name + ".input_scale",
+                            scale_value);
     IR_NODE_LINK_TO(input_act_node, quantized_node)
   }
 
@@ -125,13 +127,11 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
 
-  // obtain input_scale and weight_scale
+  // obtain  weight_scale
   auto* scope = quantized_op->stmt()->op()->scope();
   auto& valid_places = quantized_op->stmt()->op()->valid_places();
   int bit_length = quantized_op->stmt()->op_info()->GetAttr<int>("bit_length");
   int range = ((1 << (bit_length - 1)) - 1);
-  float input_scale =
-      quantized_op->stmt()->op_info()->GetAttr<float>("input_scale");
   float max_range = dequant_op->stmt()->op_info()->GetAttr<float>("max_range");
   float whole_weight_scale =
       static_cast<float>(range * range) / max_range / range;
@@ -163,7 +163,6 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     weight_scale.push_back(whole_weight_scale);
   }
   op_desc.SetAttr("enable_int8", true);
-  op_desc.SetAttr("input_scale", input_scale);
   op_desc.SetAttr("weight_scale", weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -237,11 +236,9 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
 
-  // obtain input_scale and weight_scale
+  // obtain weight_scale
   auto* scope = quantized_op->stmt()->op()->scope();
   auto& valid_places = quantized_op->stmt()->op()->valid_places();
-  float input_scale =
-      quantized_op->stmt()->op_info()->GetAttr<float>("input_scale");
 
   std::vector<float> weight_scale;
   std::vector<int> quant_bits =
@@ -262,7 +259,6 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
 
   op_desc.SetAttr("enable_int8", true);
-  op_desc.SetAttr("input_scale", input_scale);
   op_desc.SetAttr("weight_scale", weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -297,174 +293,70 @@ cpp::OpDesc ChannelWiseDequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
 void DeleteQuantDequantOpFuser::BuildPattern() {
   std::string quant_dequant_op_type =
       "fake_quantize_dequantize_moving_average_abs_max";
-  if (quantized_op_type_ == "pool2d" || quantized_op_type_ == "softmax") {
-    auto* input_scale_node =
-        VarNode("input_scale_node")
-            ->assert_is_op_input(quant_dequant_op_type, "InScale");
-    auto* input_act_node = VarNode("input_act_node")
-                               ->assert_is_op_input(quant_dequant_op_type, "X");
-    auto* quant_dequant_node =
-        OpNode("quant_dequant_node", quant_dequant_op_type)
-            ->assert_is_op(quant_dequant_op_type);
-    auto* output_scale_node =
-        VarNode("output_scale_node")
-            ->assert_is_op_output(quant_dequant_op_type, "OutScale");
-    auto* output_act_node =
-        VarNode("output_act_node")
-            ->assert_is_op_output(quant_dequant_op_type, "Out");
-    auto* quantized_node = OpNode("quantized_node", quantized_op_type_)
-                               ->assert_is_op(quantized_op_type_);
 
-    quant_dequant_node->LinksFrom({input_scale_node, input_act_node});
-    output_scale_node->LinksFrom({quant_dequant_node});
-    output_act_node->LinksFrom({quant_dequant_node});
-    quantized_node->LinksFrom({output_act_node});
-  } else if (quantized_op_type_ == "elementwise_add") {
-    auto* input_scale_left_node =
-        VarNode("input_scale_left_node")
-            ->assert_is_op_input(quant_dequant_op_type, "InScale");
-    auto* input_act_left_node =
-        VarNode("input_act_left_node")
-            ->assert_is_op_input(quant_dequant_op_type, "X");
-    auto* quant_dequant_left_node =
-        OpNode("quant_dequant_left_node", quant_dequant_op_type)
-            ->assert_is_op(quant_dequant_op_type);
-    auto* output_scale_left_node =
-        VarNode("output_scale_left_node")
-            ->assert_is_op_output(quant_dequant_op_type, "OutScale");
-    auto* output_act_left_node =
-        VarNode("output_act_left_node")
-            ->assert_is_op_output(quant_dequant_op_type, "Out")
-            ->assert_is_op_input(quantized_op_type_, "X");
-    quant_dequant_left_node->LinksFrom(
-        {input_scale_left_node, input_act_left_node});
-    output_scale_left_node->LinksFrom({quant_dequant_left_node});
-    output_act_left_node->LinksFrom({quant_dequant_left_node});
+  auto* input_scale_node =
+      VarNode("input_scale_node")
+          ->assert_is_op_input(quant_dequant_op_type, "InScale");
+  auto* input_act_node =
+      VarNode("input_act_node")->assert_is_op_input(quant_dequant_op_type, "X");
+  auto* quant_dequant_node = OpNode("quant_dequant_node", quant_dequant_op_type)
+                                 ->assert_is_op(quant_dequant_op_type);
+  auto* output_scale_node =
+      VarNode("output_scale_node")
+          ->assert_is_op_output(quant_dequant_op_type, "OutScale");
+  auto* output_act_node =
+      VarNode("output_act_node")
+          ->assert_is_op_output(quant_dequant_op_type, "Out");
 
-    auto* input_scale_right_node =
-        VarNode("input_scale_right_node")
-            ->assert_is_op_input(quant_dequant_op_type, "InScale");
-    auto* input_act_right_node =
-        VarNode("input_act_right_node")
-            ->assert_is_op_input(quant_dequant_op_type, "X");
-    auto* quant_dequant_right_node =
-        OpNode("quant_dequant_right_node", quant_dequant_op_type)
-            ->assert_is_op(quant_dequant_op_type);
-    auto* output_scale_right_node =
-        VarNode("output_scale_right_node")
-            ->assert_is_op_output(quant_dequant_op_type, "OutScale");
-    auto* output_act_right_node =
-        VarNode("output_act_right_node")
-            ->assert_is_op_output(quant_dequant_op_type, "Out")
-            ->assert_is_op_input(quantized_op_type_, "Y");
-    quant_dequant_right_node->LinksFrom(
-        {input_scale_right_node, input_act_right_node});
-    output_scale_right_node->LinksFrom({quant_dequant_right_node});
-    output_act_right_node->LinksFrom({quant_dequant_right_node});
-
-    auto* quantized_node = OpNode("quantized_node", quantized_op_type_)
-                               ->assert_is_op(quantized_op_type_);
-    quantized_node->LinksFrom({output_act_left_node, output_act_right_node});
-  } else {
-    LOG(FATAL) << "No support quantized_op_type:" << quantized_op_type_;
-  }
-  VLOG(4) << "DeleteQuantDequantOpFuser BuildPattern op_type:"
-          << quantized_op_type_;
+  quant_dequant_node->LinksFrom({input_scale_node, input_act_node});
+  output_scale_node->LinksFrom({quant_dequant_node});
+  output_act_node->LinksFrom({quant_dequant_node});
 }
 
 void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
                                               const key2nodes_t& matched) {
-  if (quantized_op_type_ == "pool2d" || quantized_op_type_ == "softmax") {
-    auto* input_scale_node = matched.at("input_scale_node");
-    auto* input_act_node = matched.at("input_act_node");
-    auto* quant_dequant_node = matched.at("quant_dequant_node");
-    auto* output_scale_node = matched.at("output_scale_node");
-    auto* output_act_node = matched.at("output_act_node");
-    auto* quantized_node = matched.at("quantized_node");
+  auto* input_scale_node = matched.at("input_scale_node");
+  auto* input_act_node = matched.at("input_act_node");
+  auto* quant_dequant_node = matched.at("quant_dequant_node");
+  auto* output_scale_node = matched.at("output_scale_node");
+  auto* output_act_node = matched.at("output_act_node");
+  auto input_act_name = input_act_node->arg()->name;
 
+  // for all quantized node, modify the scale value, input name and inlink
+  for (auto* quantized_node : output_act_node->outlinks) {
     // obtain values, save values and relink node
-    int bit_length =
-        quant_dequant_node->stmt()->op_info()->GetAttr<int>("bit_length");
-    int range = ((1 << (bit_length - 1)) - 1);
-    auto* scope = quant_dequant_node->stmt()->op()->scope();
-    auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
-                             ->GetMutable<lite::Tensor>();
-    float scale_value = scale_tensor->data<float>()[0] / range;
+    auto op_info = *quantized_node->stmt()->op_info();
+    int activation_bits = op_info.GetAttr<int>("activation_bits");
+    int range = ((1 << (activation_bits - 1)) - 1);
+    float scale_threshold = op_info.GetAttr<float>(
+        input_act_name + ".input_threshold");  // the KL thread or abs_max value
+    float scale_value = scale_threshold / range;
 
-    auto* op_desc = quantized_node->stmt()->mutable_op_info();
-    op_desc->SetAttr<int>("bit_length", bit_length);
-    op_desc->SetAttr<float>("input_scale", scale_value);
-    op_desc->SetInput("X", {input_act_node->arg()->name});
+    op_info.SetAttr<float>(input_act_name + ".input_scale", scale_value);
+    // set input in op_info, replace the output_act_node with input_act_node
+    auto* inputs_map = op_info.mutable_inputs();
+    for (auto iter = inputs_map->begin(); iter != inputs_map->end(); ++iter) {
+      auto& inputs_vct = iter->second;
+      auto pos = std::find(inputs_vct.begin(),
+                           inputs_vct.end(),
+                           input_act_name + ".quant_dequant");
+      if (pos != inputs_vct.end()) {
+        *pos = input_act_name;
+      }
+    }
     IR_NODE_LINK_TO(input_act_node, quantized_node)
-    auto update_op_desc = *quantized_node->stmt()->mutable_op_info();
-    quantized_node->stmt()->ResetOp(update_op_desc, graph->valid_places());
-
-    // delete nodes and edges
-    std::unordered_set<const Node*> nodes2rm = {input_scale_node,
-                                                quant_dequant_node,
-                                                output_scale_node,
-                                                output_act_node};
-    GraphSafeRemoveNodes(graph, nodes2rm);
-  } else if (quantized_op_type_ == "elementwise_add") {
-    auto* input_scale_left_node = matched.at("input_scale_left_node");
-    auto* input_act_left_node = matched.at("input_act_left_node");
-    auto* quant_dequant_left_node = matched.at("quant_dequant_left_node");
-    auto* output_scale_left_node = matched.at("output_scale_left_node");
-    auto* output_act_left_node = matched.at("output_act_left_node");
-
-    auto* input_scale_right_node = matched.at("input_scale_right_node");
-    auto* input_act_right_node = matched.at("input_act_right_node");
-    auto* quant_dequant_right_node = matched.at("quant_dequant_right_node");
-    auto* output_scale_right_node = matched.at("output_scale_right_node");
-    auto* output_act_right_node = matched.at("output_act_right_node");
-
-    auto* quantized_node = matched.at("quantized_node");
-
-    // obtain values, save values and relink node
-    int bit_length =
-        quant_dequant_left_node->stmt()->op_info()->GetAttr<int>("bit_length");
-    int range = ((1 << (bit_length - 1)) - 1);
-    auto* scope = quant_dequant_left_node->stmt()->op()->scope();
-    auto* left_scale_tensor =
-        scope->FindVar(output_scale_left_node->arg()->name)
-            ->GetMutable<lite::Tensor>();
-    float left_scale_value = left_scale_tensor->data<float>()[0] / range;
-    auto* right_scale_tensor =
-        scope->FindVar(output_scale_right_node->arg()->name)
-            ->GetMutable<lite::Tensor>();
-    float right_scale_value = right_scale_tensor->data<float>()[0] / range;
-
-    auto* op_desc = quantized_node->stmt()->mutable_op_info();
-    op_desc->SetAttr<int>("bit_length", bit_length);
-    op_desc->SetAttr<float>("x_input_scale", left_scale_value);
-    op_desc->SetAttr<float>("y_input_scale", right_scale_value);
-    op_desc->SetInput("X", {input_act_left_node->arg()->name});
-    op_desc->SetInput("Y", {input_act_right_node->arg()->name});
-    IR_NODE_LINK_TO(input_act_left_node, quantized_node)
-    IR_NODE_LINK_TO(input_act_right_node, quantized_node)
-    auto update_op_desc = *quantized_node->stmt()->mutable_op_info();
-    quantized_node->stmt()->ResetOp(update_op_desc, graph->valid_places());
-
-    // delete nodes and edges
-    std::unordered_set<const Node*> nodes2rm = {input_scale_left_node,
-                                                quant_dequant_left_node,
-                                                output_scale_left_node,
-                                                output_act_left_node,
-                                                input_scale_right_node,
-                                                quant_dequant_right_node,
-                                                output_scale_right_node,
-                                                output_act_right_node};
-    GraphSafeRemoveNodes(graph, nodes2rm);
-  } else {
-    LOG(FATAL) << "No support quantized_op_type:" << quantized_op_type_;
+    quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
   }
+  // delete nodes and edges
+  std::unordered_set<const Node*> nodes2rm = {
+      input_scale_node, quant_dequant_node, output_scale_node, output_act_node};
+  GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
 cpp::OpDesc DeleteQuantDequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc;
   return op_desc;
 }
-
 }  // namespace fusion
 }  // namespace mir
 }  // namespace lite

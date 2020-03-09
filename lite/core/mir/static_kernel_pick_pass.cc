@@ -112,11 +112,13 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         CHECK(one_adj_op_node->IsStmt());
         auto& one_adj_instruct = one_adj_op_node->AsStmt();
         CHECK(one_adj_instruct.op_info()->HasAttr("enable_int8"));
-        CHECK(one_adj_instruct.op_info()->HasAttr("input_scale"));
+        CHECK(one_adj_instruct.op_info()->HasAttr(out_node->arg()->name +
+                                                  ".input_scale"));
 
         instruct.mutable_op_info()->SetAttr(
             "output_scale",
-            one_adj_instruct.op_info()->GetAttr<float>("input_scale"));
+            one_adj_instruct.op_info()->GetAttr<float>(out_node->arg()->name +
+                                                       ".input_scale"));
 
         auto update_desc = *instruct.mutable_op_info();
         instruct.ResetOp(update_desc, graph->valid_places());

@@ -135,7 +135,7 @@ void test_fc(const std::vector<int64_t>& input_shape,
 
   fc_op_desc_mlu.SetAttr("weight_scale",
                          std::vector<float>(w_shape[1], w_scale));
-  fc_op_desc_mlu.SetAttr("input_scale", input_scale);
+  fc_op_desc_mlu.SetAttr(input_var_name + ".input_scale", input_scale);
   if (has_bias) {
     fc_op_desc_mlu.SetInput("Bias", {bias_var_name});
   }

@@ -50,7 +50,6 @@ class FakeQuantizeMovingAvgMaxAbsOpLite : public OpLite {
 
     param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
     param_.out_scale = scope->FindVar(out_scale)->GetMutable<lite::Tensor>();
-    param_.bit_length = op_desc.GetAttr<int>("bit_length");
     return true;
   }
 

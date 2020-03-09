@@ -101,8 +101,8 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   // For Int8
   if (op_desc.HasAttr("enable_int8")) {
     param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
-    if (op_desc.HasAttr("input_scale"))
-      param_.input_scale = op_desc.GetAttr<float>("input_scale");
+    if (op_desc.HasAttr(input + ".input_scale"))
+      param_.input_scale = op_desc.GetAttr<float>(input + ".input_scale");
     if (op_desc.HasAttr("weight_scale"))
       param_.weight_scale = op_desc.GetAttr<std::vector<float>>("weight_scale");
     if (op_desc.HasAttr("output_scale"))
