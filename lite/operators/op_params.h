@@ -37,8 +37,7 @@ using param_t = Any;
   bool enable_int8{false};           \
   float input_scale{1.0};            \
   std::vector<float> weight_scale{}; \
-  float output_scale{1.0};           \
-  int bit_length{8};
+  float output_scale{1.0};
 
 /// ----------------------- Functional operators ------------------------------
 struct FeedParam {
@@ -335,8 +334,6 @@ struct PoolParam {
   bool ceil_mode{false};
   bool use_quantizer{false};
   std::string data_format{"AnyLayout"};
-  // for int8
-  WITH_INT8_CONFIG
 };
 
 // For Dropout op
@@ -380,10 +377,6 @@ struct ElementwiseParam {
   const lite::Tensor* Y{};
   lite::Tensor* Out{};
   int axis{-1};  // for broadcasting.
-  // for int8
-  WITH_INT8_CONFIG
-  float x_input_scale{1.0};
-  float y_input_scale{1.0};
 };
 
 struct ElementwiseGradParam {
@@ -451,7 +444,6 @@ struct FakeQuantizeMovingAvgMaxAbsParam {
   lite::Tensor* out_scale{};
   lite::Tensor* out_state{};
   lite::Tensor* out_accum{};
-  int bit_length;
   bool is_test{true};
   float moving_rate{0.9};
 };

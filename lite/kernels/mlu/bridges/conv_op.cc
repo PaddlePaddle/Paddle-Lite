@@ -161,7 +161,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     graph->BindConstData(bias_var_name, bias);
   }
   cnmlBaseOp_t conv_op;
-  const auto input_scale = op_info->GetAttr<float>("input_scale");
+  const auto input_scale =
+      op_info->GetAttr<float>(input_var_name + ".input_scale");
   CNML_CALL(cnmlCreateConvOpForward(
       &conv_op,
       conv_param,

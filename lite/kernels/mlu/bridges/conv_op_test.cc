@@ -224,7 +224,7 @@ void test_conv(int bs,
   opdesc_mlu.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
 
   opdesc_mlu.SetAttr("weight_scale", std::vector<float>(oc, filter_scale));
-  opdesc_mlu.SetAttr("input_scale", input_scale);
+  opdesc_mlu.SetAttr(input_var_name + ".input_scale", input_scale);
 
   if (has_bias) {
     if (is_channel_bias) {
