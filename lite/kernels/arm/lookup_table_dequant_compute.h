@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/bm/bridges/graph.h"
-#include <bmcompiler_if.h>
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace subgraph {
-namespace bm {
+namespace kernels {
+namespace arm {
 
-void Graph::AddNode(const std::string& name) {
-  nodes_.insert(std::make_pair(name, name));
-}
+class LookupTableDequantCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+ public:
+  using param_t = operators::LookupTableDequantParam;
 
-void Graph::CreateCompilerHandle() {
-#ifdef BM1682
-  compiler_handle_ = create_bmcompiler("BM1682");
-#else
-  compiler_handle_ = create_bmcompiler("BM1684");
-#endif
-  CHECK(compiler_handle_ != nullptr);
-}
+  LookupTableDequantCompute() = default;
 
-}  // namespace bm
-}  // namespace subgraph
+  void Run() override;
+
+  virtual ~LookupTableDequantCompute() = default;
+};
+
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

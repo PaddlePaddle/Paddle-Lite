@@ -52,9 +52,9 @@ bool LookupTableV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
   auto ids = op_desc.Input("Ids").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.W = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.Ids = scope->FindVar(ids)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.W = scope->FindTensor(input);
+  param_.Ids = scope->FindTensor(ids);
+  param_.Out = scope->FindMutableTensor(out);
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
 

@@ -78,6 +78,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   // Collect the invalid input and output variables that will not be reused.
   std::unordered_set<std::string> invalid_var_names;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
+    // variables of invalid_op_nodes wil not be reused
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().op_info();
     auto op_type = op_info->Type();
@@ -117,6 +118,13 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
           invalid_var_names.insert(out_arg_names.begin(), out_arg_names.end());
         }
       }
+    }
+  }
+
+  // non-tensor(like tensor_array) variables will not be reused
+  for (auto& node : graph->nodes()) {
+    if (node.IsArg() && !node.arg()->type->IsTensor()) {
+      invalid_var_names.insert(node.arg()->name);
     }
   }
 

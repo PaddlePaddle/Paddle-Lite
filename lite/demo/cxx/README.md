@@ -8,12 +8,42 @@
 
 2. 人脸识别和佩戴口罩判断的Demo
 
+目前，PaddleLite提供了shell端的人脸识别和佩戴口罩判断的Demo，首先基于已经准备好的Demo进行演示，然后介绍如何基于代码编译Demo并执行。
+
+**下载Demo并执行**
+
+下载压缩包[mask_detection_files](https://paddle-inference-dist.cdn.bcebos.com/PaddleLiteDemo/mask_detection_files.tgz)，解压到本地，其中包括编译好的可执行文件、模型文件、测试图片、PaddleLite 2.3版本动态库。
+
+电脑连接安卓手机，在电脑shell端执行如下命令，将mask_detection_files文件夹push到安卓手机上。
+```
+adb push mask_detection_files /data/local/tmp/
+```
+
+在电脑shell端执行如下命令，进入安卓手机，执行demo。
+```
+adb shell
+cd /data/local/tmp/mask_detection_files
+export LD_LIBRARY_PATH=/data/local/tmp/mask_detection_files:$LD_LIBRARY_PATH 
+./mask_detection face_detection mask_classification test.jpg
+```
+
+回到电脑端，将结果图片（test_mask_detection_result.jpg）取出，查看检测结果。
+```
+exit
+adb pull /data/local/tmp/mask_detection_files/test_mask_detection_result.jpg ./
+```
+
+
+**编译Demo并执行**
+
 参考[源码编译](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/source_compile/)准备编译环境。
 
-执行下面命令，下载PaddleLite代码。
+执行下面命令，下载PaddleLite代码，切换到2.3版本分支。
 ```shell
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite
+git fetch origin release/v2.3:release/v2.3 
+git checkout release/v2.3
 ```
 
 进入PaddleLite根目录，编译预测库。

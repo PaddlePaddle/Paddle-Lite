@@ -655,6 +655,13 @@ struct BeamSearchDecodeParam {
 
 /// ----------------------- LookupTable operators ----------------------f
 struct LookupTableParam {
+  const lite::Tensor* W{nullptr};
+  const lite::Tensor* Ids{nullptr};
+  lite::Tensor* Out{nullptr};
+  int64_t padding_idx{-1};
+};
+
+struct LookupTableDequantParam {
   lite::Tensor* W{nullptr};
   lite::Tensor* Ids{nullptr};
   lite::Tensor* Out{nullptr};
@@ -730,15 +737,15 @@ struct IncrementParam {
 };
 
 struct WriteToArrayParam {
-  const lite::Tensor* X{};
-  const lite::Tensor* I{};
-  std::vector<lite::Tensor>* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* I{nullptr};
+  std::vector<lite::Tensor>* Out{nullptr};
 };
 
 struct ReadFromArrayParam {
-  const std::vector<lite::Tensor>* X{};
-  const lite::Tensor* I{};
-  lite::Tensor* Out{};
+  const std::vector<lite::Tensor>* X{nullptr};
+  const lite::Tensor* I{nullptr};
+  lite::Tensor* Out{nullptr};
 };
 
 struct BeamSearchParam {
