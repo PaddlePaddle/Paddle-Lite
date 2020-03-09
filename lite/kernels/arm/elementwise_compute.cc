@@ -182,30 +182,30 @@ void ElementwiseSubActivationCompute::Run() {
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ElementwiseParam>();
-  if (PType == PRECISION(kFloat) || PType == PRECISION(kInt32)) {
-    auto* x_data = param.X->template data<T>();
-    auto* y_data = param.Y->template data<T>();
-    auto* out_data = param.Out->template mutable_data<T>();
-    int axis = param.axis;
-    auto x_dims = param.X->dims();
-    auto y_dims = param.Y->dims();
-    int pre, n, post;
-    if (x_dims.size() < y_dims.size() &&
-        is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
-      lite::arm::math::elementwise_mul_broadcast<T>(
-          y_data, x_data, out_data, pre, n, post);
-    } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-      lite::arm::math::elementwise_mul_broadcast<T>(
-          x_data, y_data, out_data, pre, n, post);
-    } else {
-      lite::arm::math::elementwise_mul<T>(
-          x_data, y_data, out_data, x_dims.production());
-    }
-  } else if (PType == PRECISION(kInt64)) {
-    lite::arm::math::elementwise_compute_basic<int64_t>(param, "mul", "");
+  auto* x_data = param.X->template data<T>();
+  auto* y_data = param.Y->template data<T>();
+  auto* out_data = param.Out->template mutable_data<T>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_mul_broadcast<T>(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_mul_broadcast<T>(
+        x_data, y_data, out_data, pre, n, post);
   } else {
-    LOG(FATAL) << "unsupport input type";
+    lite::arm::math::elementwise_mul<T>(
+        x_data, y_data, out_data, x_dims.production());
   }
+}
+
+template <>
+void ElementwiseMulCompute<int64_t, PRECISION(kInt64)>::Run() {
+  auto& param = this->template Param<operators::ElementwiseParam>();
+  lite::arm::math::elementwise_compute_basic<int64_t>(param, "mul", "");
 }
 
 void ElementwiseMulActivationCompute::Run() {
