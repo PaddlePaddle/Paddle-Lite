@@ -655,8 +655,8 @@ struct BeamSearchDecodeParam {
 
 /// ----------------------- LookupTable operators ----------------------f
 struct LookupTableParam {
-  lite::Tensor* W{nullptr};
-  lite::Tensor* Ids{nullptr};
+  const lite::Tensor* W{nullptr};
+  const lite::Tensor* Ids{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };
