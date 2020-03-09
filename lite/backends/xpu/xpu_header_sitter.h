@@ -16,6 +16,7 @@
 #include <xpu/runtime.h>
 #include <xpu/api.h>
 #include <xpu/golden.h>
+#include <xtcl/xtcl.h>
 
 namespace paddle {
 namespace lite {
