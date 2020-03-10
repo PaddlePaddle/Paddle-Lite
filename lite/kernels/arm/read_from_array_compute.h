@@ -23,12 +23,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ReadFromArrayCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ReadFromArrayCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::ReadFromArrayParam;
-
-  void PrepareForRun() override;
 
   void Run() override;
 

@@ -45,6 +45,21 @@ std::string Place::DebugString() const {
   return os.str();
 }
 
+const std::string& ActivationTypeToStr(ActivationType act) {
+  static const std::string act2string[] = {"unk",
+                                           "Relu",
+                                           "Relu6",
+                                           "PRelu",
+                                           "LeakyRelu",
+                                           "Sigmoid",
+                                           "Tanh",
+                                           "Swish",
+                                           "Exp"};
+  auto x = static_cast<int>(act);
+  CHECK_LT(x, static_cast<int>(ActivationType::NUM));
+  return act2string[x];
+}
+
 const std::string& TargetToStr(TargetType target) {
   static const std::string target2string[] = {"unk",
                                               "host",

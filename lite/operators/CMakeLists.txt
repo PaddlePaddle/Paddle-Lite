@@ -109,6 +109,7 @@ add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposal
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
+add_operator(lookup_table_dequant_op extra SRCS lookup_table_dequant_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_v2_op extra SRCS lookup_table_v2_op.cc DEPS ${op_DEPS})
 add_operator(beam_search_decode_op extra SRCS beam_search_decode_op.cc DEPS ${op_DEPS})
 add_operator(logical_xor  extra SRCS logical_op.cc DEPS ${op_DEPS})

@@ -118,6 +118,7 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -189,11 +190,11 @@ function build_opencl {
     prepare_opencl_source_code $cur_dir $build_dir
 
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp
+    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # This method is only called in CI.
@@ -659,7 +660,7 @@ function build_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make -j4 publish_inference
+    make publish_inference -j$NUM_PROC
     cd -
 }
 

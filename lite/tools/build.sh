@@ -21,6 +21,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 SHUTDOWN_LOG=ON
+LITE_WITH_ARM_LANG=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -37,6 +38,14 @@ fi
 function prepare_workspace {
     local root_dir=$1
     local build_dir=$2
+    # ARM LANG
+    if [ ${ARM_LANG} == "clang" ]; then
+        LITE_WITH_ARM_LANG=ON
+    else
+        LITE_WITH_ARM_LANG=OFF
+    fi
+    echo "ARM_LANG is  ${ARM_LANG}"
+    echo "LITE_WITH_ARM_LANG is ${LITE_WITH_ARM_LANG}"
     # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
@@ -106,7 +115,7 @@ function make_tiny_publish_so {
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
-
+  
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
@@ -118,6 +127,7 @@ function make_tiny_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -158,11 +168,12 @@ function make_opencl {
       -DLITE_ON_TINY_PUBLISH=ON \
       -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=OFF \
-      -DLITE_BUILD_EXTRA=ON \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
-    make opencl_clhpp -j4
-    make publish_inference -j4
+    make opencl_clhpp -j$NUM_PROC
+    make publish_inference -j$NUM_PROC
 }
 
 function make_full_publish_so {
@@ -199,11 +210,12 @@ function make_full_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -222,13 +234,14 @@ function make_all_tests {
   fi
   mkdir -p $build_directory
   cd $build_directory
-
+ 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -267,7 +280,7 @@ function make_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make -j4 publish_inference
+    make publish_inference -j$NUM_PROC
     cd -
 }
 
@@ -298,7 +311,7 @@ function make_cuda {
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
  
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd -
 }
 
@@ -327,7 +340,7 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd -
 }
 
@@ -389,13 +402,6 @@ function main {
                 ;;
             --arm_lang=*)
                 ARM_LANG="${i#*=}"
-                if [ ${ARM_LANG} == "clang" ]; then
-                     set +x
-                     echo
-                     echo -e "error: only support gcc now, clang will be supported in future."
-                     echo
-                     exit 1
-                fi
                 shift
                 ;;
             --android_stl=*)
@@ -404,6 +410,10 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_cv=*)
+                BUILD_CV="${i#*=}"
                 shift
                 ;;
             --build_python=*)

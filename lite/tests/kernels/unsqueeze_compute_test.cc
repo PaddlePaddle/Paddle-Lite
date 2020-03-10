@@ -107,7 +107,6 @@ class UnsqueezeComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    SetPrecisionType(out_, PRECISION(kFloat));
     std::vector<float> in_data(dims_.production());
     for (int i = 0; i < dims_.production(); ++i) {
       in_data[i] = i;
@@ -214,7 +213,6 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    SetPrecisionType(out_, PRECISION(kFloat));
     std::vector<float> in_data(dims_.production());
     for (int i = 0; i < dims_.production(); ++i) {
       in_data[i] = i;

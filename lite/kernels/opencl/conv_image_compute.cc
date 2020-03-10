@@ -61,8 +61,6 @@ void ConvImageCompute::PrepareForRun() {
   bool stride_equal = stride_h == stride_w;
   bool dilation_equal = dilations[0] == dilations[1];
 
-  CHECK(pad_equal && stride_equal && dilation_equal);
-
   VLOG(3) << "Is relu fused? / " << (relu_fused ? "Yes" : "No");
   VLOG(3) << "groups:" << groups << " stride_h:" << stride_h
           << " stride_w:" << stride_w << " pad_h:" << pad_h
@@ -70,10 +68,18 @@ void ConvImageCompute::PrepareForRun() {
           << " kernel_h:" << kernel_h;
   VLOG(3) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
           << " " << x_dims[3];
+  VLOG(3) << "dialtion:" << dilations[0] << " " << dilations[1];
   VLOG(3) << "output_dims:" << output_dims[0] << " " << output_dims[1] << " "
           << output_dims[2] << " " << output_dims[3];
   VLOG(3) << "filter_dims:" << filter_dims[0] << " " << filter_dims[1] << " "
           << filter_dims[2] << " " << filter_dims[3];
+  VLOG(3) << "pad_equal:" << pad_equal;
+  VLOG(3) << "stride_equal:" << stride_equal;
+  VLOG(3) << "dilation_equal:" << dilation_equal;
+  VLOG(3) << "padding :" << paddings[0] << " " << paddings[1] << " "
+          << paddings[2] << " " << paddings[3];
+  CHECK(pad_equal && stride_equal && dilation_equal);
+
   if (kernel_h == 1 && kernel_w == 1) {
     // conv2d_1x1
     if (param.x->dims()[1] % 4 == 0) {
@@ -92,9 +98,8 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1;
-#if 1  // TODO(ysh329): enable general dwconv
-  } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1]) {
-#else  // TODO(ysh329): remove dwconv3x3s1 and dwconv3x3 temporarily, need fix
+// # define DEPTH_CONV_USE_SPL
+#ifdef DEPTH_CONV_USE_SPL
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h == 3 && kernel_w == 3 && groups > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
@@ -114,9 +119,14 @@ void ConvImageCompute::PrepareForRun() {
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
     filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
-  } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
-             kernel_h != 3) {
+
 #endif
+  } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1]
+#ifdef DEPTH_CONV_USE_SPL
+             &&
+             kernel_h != 3
+#endif
+             ) {
     // depth_conv2d
     kernel_func_names_.push_back("depth_conv2d");
     kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");
@@ -263,9 +273,9 @@ void ConvImageCompute::Conv2d1x1() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -352,7 +362,7 @@ void ConvImageCompute::Conv2d1x1() {
                   static_cast<size_t>(maped_w),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -434,10 +444,10 @@ void ConvImageCompute::Conv2d3x3() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "input_dims: " << input_dims;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -529,7 +539,7 @@ void ConvImageCompute::Conv2d3x3() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -591,10 +601,10 @@ void ConvImageCompute::Conv2d5x5() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "input_dims: " << input_dims;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -674,7 +684,7 @@ void ConvImageCompute::Conv2d5x5() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -736,10 +746,10 @@ void ConvImageCompute::Conv2d7x7() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "input_dims: " << input_dims;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -819,7 +829,7 @@ void ConvImageCompute::Conv2d7x7() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
@@ -883,6 +893,17 @@ void ConvImageCompute::DepthwiseConv2d3x3s1() {
   CL_CHECK_FATAL(status);
   status = kernel.setArg(++arg_idx, *filter_img);
   CL_CHECK_FATAL(status);
+
+  const bool has_bias = param.bias != nullptr;
+  const bool is_element_wise_bias =
+      has_bias && param.output->dims() == param.bias->dims();
+  const cl::Image2D* bias_image = nullptr;
+  if (has_bias) {
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    VLOG(4) << "set bias_image: ";
+    status = kernel.setArg(++arg_idx, *bias_image);
+    CL_CHECK_FATAL(status);
+  }
   status = kernel.setArg(++arg_idx, *output_img);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
@@ -974,6 +995,16 @@ void ConvImageCompute::DepthwiseConv2d3x3() {
   CL_CHECK_FATAL(status);
   status = kernel.setArg(++arg_idx, *filter_img);
   CL_CHECK_FATAL(status);
+  const bool has_bias = param.bias != nullptr;
+  const bool is_element_wise_bias =
+      has_bias && param.output->dims() == param.bias->dims();
+  const cl::Image2D* bias_image = nullptr;
+  if (has_bias) {
+    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    VLOG(4) << "set bias_image: ";
+    status = kernel.setArg(++arg_idx, *bias_image);
+    CL_CHECK_FATAL(status);
+  }
   status = kernel.setArg(++arg_idx, *output_img);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
@@ -1051,9 +1082,9 @@ void ConvImageCompute::DepthwiseConv2d() {
           << input_image_shape["height"];
   VLOG(4) << "input_c_block: " << input_c_block;
   VLOG(4) << "input_c: " << input_c;
-  VLOG(4) << "input_image: " << input_image;
+  //  VLOG(4) << "input_image: " << input_image;
   VLOG(4) << "filter_dims: " << filter_dims;
-  VLOG(4) << "filter_image: " << filter_image;
+  //  VLOG(4) << "filter_image: " << filter_image;
   VLOG(4) << "output_dims: " << output_dims;
   VLOG(4) << "out_image_shape: " << out_image_shape["width"] << ", "
           << out_image_shape["height"];
@@ -1139,7 +1170,7 @@ void ConvImageCompute::DepthwiseConv2d() {
                   static_cast<size_t>(default_work_size.data()[1]),
                   static_cast<size_t>(default_work_size.data()[2])};
 
-  VLOG(4) << "out_image: " << out_image;
+  //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 

@@ -40,10 +40,8 @@ bool BeamSearchDecodeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.ids = scope->FindVar(ids)->GetMutable<std::vector<lite::Tensor>>();
   param_.scores =
       scope->FindVar(scores)->GetMutable<std::vector<lite::Tensor>>();
-  param_.sentence_ids =
-      scope->FindVar(sentence_ids)->GetMutable<lite::Tensor>();
-  param_.sentence_scores =
-      scope->FindVar(sentence_scores)->GetMutable<lite::Tensor>();
+  param_.sentence_ids = scope->FindMutableTensor(sentence_ids);
+  param_.sentence_scores = scope->FindMutableTensor(sentence_scores);
 
   param_.beam_size = op_desc.GetAttr<int>("beam_size");
   param_.end_id = op_desc.GetAttr<int>("end_id");

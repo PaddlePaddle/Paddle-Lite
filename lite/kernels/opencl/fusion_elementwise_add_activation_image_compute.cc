@@ -38,6 +38,7 @@ class FusionElementwiseAddActivationImageCompute
     if (act_t != "relu") {
       LOG(FATAL) << "Unsupported Activation type: " << act_t;
     }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 };
 

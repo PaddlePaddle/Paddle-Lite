@@ -1,5 +1,5 @@
 
-# C++ API文档
+# C++ API
 
 ## CreatePaddlePredictor
 
@@ -260,7 +260,7 @@ class MobileConfig;
 
 `MobileConfig`用来配置构建轻量级PaddlePredictor的配置信息，如NaiveBuffer格式的模型地址、模型的内存地址(从内存加载模型时使用)、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用[Model Optimize Tool](../model_optimize_tool)转化为NaiveBuffer格式的优化模型。*
+*注意：输入的模型需要使用[Model Optimize Tool](../user_guides/model_optimize_tool)转化为NaiveBuffer格式的优化模型。*
 
 示例：
 
@@ -277,13 +277,13 @@ config.set_power_mode(LITE_POWER_HIGH);
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
 
-### `set_model_from_file(model_dir)`
+### `set_model_from_file(model_file)`
 
 设置模型文件，当需要从磁盘加载模型时使用。
 
 参数：
 
-- `model_dir(std::string)` - 模型文件路径
+- `model_file(std::string)` - 模型文件路径
 
 返回：`None`
 
@@ -589,7 +589,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 根据名称获取输出Tensor的指针。
 
-**注意**：`GetTensor`接口是为开发者设计的调试接口，可以输出[转化](../model_optimize_tool)后模型中的任一节点。如果出现`GetTensor(InputName)`返回值为空`Tensor`，可能原因是以该`InputName`命名的Tensor在模型转化的**子图融合**过程被融合替换了。
+**注意**：`GetTensor`接口是为开发者设计的调试接口，可以输出[转化](../user_guides/model_optimize_tool)后模型中的任一节点。如果出现`GetTensor(InputName)`返回值为空`Tensor`，可能原因是以该`InputName`命名的Tensor在模型转化的**子图融合**过程被融合替换了。
 
 参数：
 
