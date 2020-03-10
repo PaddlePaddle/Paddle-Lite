@@ -9,7 +9,7 @@
 
 ## 编译
 
-首先在PaddleLite的开发 [Docker镜像](../installation/source_compile) 中，拉取最新PaddleLite代码，编译对应你手机架构的预测库，
+首先在PaddleLite的开发 [Docker镜像](../user_guides/source_compile) 中，拉取最新PaddleLite代码，编译对应你手机架构的预测库，
 下面我们以arm8 架构举例。进入paddlelite 目录，运行以下命令：
 
 ```shell

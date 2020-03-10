@@ -1,4 +1,4 @@
-# 使用华为NPU
+# PaddleLite使用NPU(华为)预测部署
 
 Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
 原理是在线分析Paddle模型，将Paddle算子转成HiAI IR后，调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。
@@ -91,7 +91,7 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared tiny_publish
 ```
 
-注意：为了保证编译环境一致，建议参考[源码编译](../installation/source_compile)中的Docker开发环境进行配置，然后再执行上述命令。
+注意：为了保证编译环境一致，建议参考[源码编译](../user_guides/source_compile)中的Docker开发环境进行配置，然后再执行上述命令。
 
 ## 优化生成NPU模型
 
@@ -111,13 +111,13 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 
 ## 通过JAVA接口加载并执行NPU模型
 
-- 使用方法和[Java实例](../user_guides/java_demo)一致，无需额外设置任何参数，只需将模型换成NPU模型即可。[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中的Image Classification Demo for Android是同时支持CPU和NPU两种模型的图像分类Demo。
+- 使用方法和[Java实例](java_demo)一致，无需额外设置任何参数，只需将模型换成NPU模型即可。[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中的Image Classification Demo for Android是同时支持CPU和NPU两种模型的图像分类Demo。
 
 注意：在拷贝libpaddle_lite_jni.so的时候，由于依赖HiAI DDK so和libc++_shared.so库，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，拷到libpaddle_lite_jni.so同级目录下。
 
 ## 通过C++接口加载并执行NPU模型
 
-- 使用方法和[C++实例](../user_guides/cpp_demo)一致，同样无需额外设置任何参数，只需将模型换成NPU模型即可。
+- 使用方法和[C++实例](cpp_demo)一致，同样无需额外设置任何参数，只需将模型换成NPU模型即可。
 
 注意：1）不能使用安卓模拟器，需要使用真实设备，且必须是支持NPU的华为手机。2）在使用adb push命令向手机推送目标程序时，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，推送到目标程序同级目录下。
 

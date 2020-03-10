@@ -1,7 +1,9 @@
 
-# 源码编译
+# 预测库编译
 
-Paddle-Lite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`，编译流程如下：
+PaddleLite已经提供官方Release预测库下载，请参考[文档](release_lib)。
+
+PaddleLite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`，编译流程如下：
 
 1. 环境准备（选择其一）：Docker交叉编译环境、Linux交叉编译环境
 2. 编译：调用`build.sh`脚本一键编译
