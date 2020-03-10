@@ -509,6 +509,8 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
+#ifdef LITE_WITH_ARM_CLANG
+#else
         asm volatile(COMPUTE RELU STORE
                      : [r0] "+r"(inr0),
                        [r1] "+r"(inr1),
@@ -541,6 +543,7 @@ void act_switch_3x3s1(const float* inr0,
                        "r3",
                        "r4",
                        "r5");
+#endif
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -594,6 +597,8 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
+#ifdef LITE_WITH_ARM_CLANG
+#else
         asm volatile(COMPUTE RELU RELU6 STORE
                      : [r0] "+r"(inr0),
                        [r1] "+r"(inr1),
@@ -626,6 +631,7 @@ void act_switch_3x3s1(const float* inr0,
                        "r3",
                        "r4",
                        "r5");
+#endif
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -679,6 +685,8 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
+#ifdef LITE_WITH_ARM_CLANG
+#else
         asm volatile(COMPUTE LEAKY_RELU STORE
                      : [r0] "+r"(inr0),
                        [r1] "+r"(inr1),
@@ -711,6 +719,7 @@ void act_switch_3x3s1(const float* inr0,
                        "r3",
                        "r4",
                        "r5");
+#endif
 #endif
         break;
       default:
@@ -769,6 +778,8 @@ void act_switch_3x3s1(const float* inr0,
                    "x6",
                    "x7");
 #else
+#ifdef LITE_WITH_ARM_CLANG
+#else
     asm volatile(COMPUTE STORE
                  : [r0] "+r"(inr0),
                    [r1] "+r"(inr1),
@@ -801,6 +812,7 @@ void act_switch_3x3s1(const float* inr0,
                    "r3",
                    "r4",
                    "r5");
+#endif
 #endif
   }
 }
@@ -989,6 +1001,8 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                            vbias,
                            act_param);
 #else
+#ifdef LITE_WITH_ARM_CLANG
+#else
           act_switch_3x3s1(inr0,
                            inr1,
                            inr2,
@@ -1008,6 +1022,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                            vbias,
                            vbias,
                            act_param);
+#endif
 #endif
           outl[0] += 4;
           outl[1] += 4;

@@ -147,52 +147,34 @@ void resize(const uint8_t* src,
       yofs = yofs1;
       ialpha = ialpha1;
     }
-    if (sy == prev_sy1) {
-      memset(rowsbuf0, 0, sizeof(uint16_t) * w_out);
-      const uint8_t* S1 = src + srcw * (sy + 1);
-      const int16_t* ialphap = ialpha;
-      int16_t* rows1p = rowsbuf1;
-      for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx];
-        int16_t a0 = ialphap[0];
-        int16_t a1 = ialphap[1];
 
-        const uint8_t* S1pl = S1 + sx;
-        const uint8_t* S1pr = S1 + sx + num;
-        for (int i = 0; i < num; i++) {
-          *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
-        }
-        ialphap += 2;
-      }
-    } else {
-      // hresize two rows
-      const uint8_t* S0 = src + w_in * (sy);
-      const uint8_t* S1 = src + w_in * (sy + 1);
-      const int16_t* ialphap = ialpha;
-      int16_t* rows0p = rowsbuf0;
-      int16_t* rows1p = rowsbuf1;
-      for (int dx = 0; dx < dstw; dx++) {
-        int sx = xofs[dx];
-        int16_t a0 = ialphap[0];
-        int16_t a1 = ialphap[1];
+    // hresize two rows
+    const uint8_t* S0 = src + w_in * (sy);
+    const uint8_t* S1 = src + w_in * (sy + 1);
+    const int16_t* ialphap = ialpha;
+    int16_t* rows0p = rowsbuf0;
+    int16_t* rows1p = rowsbuf1;
+    for (int dx = 0; dx < dstw; dx++) {
+      int sx = xofs[dx];
+      int16_t a0 = ialphap[0];
+      int16_t a1 = ialphap[1];
 
-        const uint8_t* S0pl = S0 + sx;
-        const uint8_t* S0pr = S0 + sx + num;
-        const uint8_t* S1pl = S1 + sx;
-        const uint8_t* S1pr = S1 + sx + num;
-        for (int i = 0; i < num; i++) {
-          *rows0p++ = ((*S0pl++) * a0 + (*S0pr++) * a1) >> 4;
-          *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
-        }
-        ialphap += 2;
+      const uint8_t* S0pl = S0 + sx;
+      const uint8_t* S0pr = S0 + sx + num;
+      const uint8_t* S1pl = S1 + sx;
+      const uint8_t* S1pr = S1 + sx + num;
+      for (int i = 0; i < num; i++) {
+        *rows0p++ = ((*S0pl++) * a0 + (*S0pr++) * a1) >> 4;
+        *rows1p++ = ((*S1pl++) * a0 + (*S1pr++) * a1) >> 4;
       }
+      ialphap += 2;
     }
-    prev_sy1 = sy + 1;
+
     int16_t b0 = ibeta[0];
     int16_t b1 = ibeta[1];
     uint8_t* dp_ptr = dst + dy * w_out;
-    int16_t* rows0p = rowsbuf0;
-    int16_t* rows1p = rowsbuf1;
+    rows0p = rowsbuf0;
+    rows1p = rowsbuf1;
     int16x8_t _b0 = vdupq_n_s16(b0);
     int16x8_t _b1 = vdupq_n_s16(b1);
     int re_cnt = cnt;
@@ -281,6 +263,13 @@ void resize(const uint8_t* src,
                     2);
     }
     ibeta += 2;
+    delete[] rowsbuf0;
+    delete[] rowsbuf1;
+  }
+  if (orih < dsth) {  // uv
+    delete[] xofs1;
+    delete[] yofs1;
+    delete[] ialpha1;
   }
   delete[] buf;
 }

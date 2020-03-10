@@ -21,6 +21,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 SHUTDOWN_LOG=ON
+LITE_WITH_ARM_LANG=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -37,6 +38,14 @@ fi
 function prepare_workspace {
     local root_dir=$1
     local build_dir=$2
+    # ARM LANG
+    if [ ${ARM_LANG} == "clang" ]; then
+        LITE_WITH_ARM_LANG=ON
+    else
+        LITE_WITH_ARM_LANG=OFF
+    fi
+    echo "ARM_LANG is  ${ARM_LANG}"
+    echo "LITE_WITH_ARM_LANG is ${LITE_WITH_ARM_LANG}"
     # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
@@ -106,7 +115,7 @@ function make_tiny_publish_so {
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
-
+  
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
@@ -118,6 +127,7 @@ function make_tiny_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -200,6 +210,7 @@ function make_full_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -223,13 +234,14 @@ function make_all_tests {
   fi
   mkdir -p $build_directory
   cd $build_directory
-
+ 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
