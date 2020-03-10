@@ -65,7 +65,8 @@ if (WITH_TESTING)
       CUDA_DEPS ${cuda_kernels}
       X86_DEPS ${x86_kernels}
       XPU_DEPS ${xpu_kernels}
-      BM_DEPS ${bm_kernels})
+      BM_DEPS ${bm_kernels}
+      MLU_DEPS ${mlu_kernels})
 endif()
 if(LITE_WITH_FPGA)
     set(light_api_deps ${light_api_deps} ${fpga_deps})
@@ -87,6 +88,7 @@ message(STATUS "get NPU kernels ${npu_kernels}")
 message(STATUS "get XPU kernels ${xpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
 message(STATUS "get BM kernels ${bm_kernels}")
+message(STATUS "get MLU kernels ${mlu_kernels}")
 
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)
@@ -124,7 +126,8 @@ lite_cc_library(light_api SRCS light_api.cc
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
-        BM_DEPS ${bm_kernels})
+        BM_DEPS ${bm_kernels}
+        MLU_DEPS ${mlu_kernels})
 
 include(ExternalProject)
 set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
@@ -143,6 +146,7 @@ if(WITH_TESTING)
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels}
        BM_DEPS ${bm_kernels}
+       MLU_DEPS ${mlu_kernels}
        EXCLUDE_COMPILE_DEPS "ON"
        ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
@@ -288,6 +292,7 @@ lite_cc_test(test_apis SRCS apis_test.cc
         XPU_DEPS ${xpu_kernels}
         FPGA_DEPS ${fpga_kernels}
         BM_DEPS ${bm_kernels}
+        MLU_DEPS ${mlu_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
         --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
@@ -320,6 +325,7 @@ lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle
   X86_DEPS ${x86_kernels}
   FPGA_DEPS ${fpga_kernels}
   BM_DEPS ${bm_kernels}
+  MLU_DEPS ${mlu_kernels}
   ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
 if (WITH_TESTING)
     add_dependencies(test_paddle_api extern_lite_download_lite_naive_model_tar_gz)
@@ -333,6 +339,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -345,6 +352,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -357,6 +365,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -369,6 +378,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
@@ -380,6 +390,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
 	BM_DEPS ${bm_kernels}
         FPGA_DEPS ${fpga_kernels}

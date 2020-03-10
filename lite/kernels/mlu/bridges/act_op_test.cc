@@ -25,8 +25,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ActConverter(void* ctx, OpLite* op);
-
 template void FillTensor<float, int>(Tensor* x,
                                      float lower = -2,
                                      float upper = -2);
@@ -149,8 +147,6 @@ TEST(MLUBridges, activation) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU, relu, paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         sigmoid,
-                         paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU, tanh, paddle::lite::subgraph::mlu::ActConverter);
+USE_SUBGRAPH_BRIDGE(sigmoid, kMLU)
+USE_SUBGRAPH_BRIDGE(relu, kMLU)
+USE_SUBGRAPH_BRIDGE(tanh, kMLU)

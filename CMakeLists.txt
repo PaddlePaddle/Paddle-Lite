@@ -59,6 +59,7 @@ lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+lite_option(LITE_WITH_MLU  "Enable MLU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
 lite_option(LITE_WITH_TRAIN "Enable training operators and kernels in lite" OFF)
@@ -175,6 +176,10 @@ endif()
 
 if(LITE_WITH_XPU)
     include(device/xpu)
+endif()
+
+if(LITE_WITH_MLU)
+    include(mlu)
 endif()
 
 include(external/mklml)     # download mklml package

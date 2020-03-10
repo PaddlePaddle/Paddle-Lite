@@ -22,29 +22,15 @@ namespace mir {
 class SubgraphCastDisplayPass : public DebugPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    VLOG(3) << "== Argument types ==";
-    for (auto& node : graph->mutable_nodes()) {
-      if (!node.IsArg()) continue;
-
-      auto* type = node.AsArg().type;
-      if (type) {
-        VLOG(3) << "* ARG " << node.AsArg().name << " type: " << *type;
-      } else {
-        VLOG(3) << "* ARG " << node.AsArg().name << " type: UNK";
-      }
-    }
-    VLOG(3) << "---------------------";
-
-    //
-    VLOG(0) << "== SubgraphOp Debug Info ==";
+    VLOG(4) << "== SubgraphOp Debug Info ==";
     for (auto& node : graph->mutable_nodes()) {
       if (node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
-        VLOG(0) << "FOUND SUBGRAPH OP";
+        VLOG(4) << "FOUND SUBGRAPH OP";
         display_debug_info(node, "subgraph");
         break;
       }
     }
-    VLOG(0) << "---------------------";
+    VLOG(4) << "---------------------";
   }
 
   void display_debug_info(const Node& node,
@@ -52,17 +38,17 @@ class SubgraphCastDisplayPass : public DebugPass {
                           bool display_in_nodes = true,
                           bool display_out_nodes = true) {
     CHECK(node.IsStmt());
-    VLOG(0) << node.AsStmt();
+    // VLOG(4) << node.AsStmt();
     if (display_in_nodes) {
       for (auto p_in_arg_node : node.inlinks) {
         CHECK(p_in_arg_node->IsArg());
-        VLOG(0) << "* ARG[IN] " << p_in_arg_node->AsArg().name
+        VLOG(4) << "* ARG[IN] " << p_in_arg_node->AsArg().name
                 << " type: " << *p_in_arg_node->AsArg().type
                 << " is_weight: " << p_in_arg_node->AsArg().is_weight
                 << " is_persist: " << p_in_arg_node->AsArg().is_persist
                 << " input_count: " << p_in_arg_node->inlinks.size();
         if (p_in_arg_node->inlinks.size() == 0) {
-          VLOG(0) << "** END with No Op";
+          VLOG(4) << "** END with No Op";
         }
         for (auto p_in_stmt_node : p_in_arg_node->inlinks) {
           CHECK(p_in_stmt_node->IsStmt());
@@ -71,7 +57,7 @@ class SubgraphCastDisplayPass : public DebugPass {
               stmt_op_type == "io_copy") {
             display_debug_info(*p_in_stmt_node, stmt_op_type, true, false);
           } else {
-            VLOG(0) << "** END with op type: " << stmt_op_type;
+            VLOG(4) << "** END with op type: " << stmt_op_type;
           }
         }
       }
@@ -79,13 +65,13 @@ class SubgraphCastDisplayPass : public DebugPass {
     if (display_out_nodes) {
       for (auto p_out_arg_node : node.outlinks) {
         CHECK(p_out_arg_node->IsArg());
-        VLOG(0) << "* ARG[OUT] " << p_out_arg_node->AsArg().name
+        VLOG(4) << "* ARG[OUT] " << p_out_arg_node->AsArg().name
                 << " type: " << *p_out_arg_node->AsArg().type
                 << " is_weight: " << p_out_arg_node->AsArg().is_weight
                 << " is_persist: " << p_out_arg_node->AsArg().is_persist
                 << " output_count: " << p_out_arg_node->outlinks.size();
         if (p_out_arg_node->outlinks.size() == 0) {
-          VLOG(0) << "** END with No Op";
+          VLOG(4) << "** END with No Op";
         }
         for (auto p_out_stmt_node : p_out_arg_node->outlinks) {
           CHECK(p_out_stmt_node->IsStmt());
@@ -94,7 +80,7 @@ class SubgraphCastDisplayPass : public DebugPass {
               stmt_op_type == "io_copy") {
             display_debug_info(*p_out_stmt_node, stmt_op_type, false, true);
           } else {
-            VLOG(0) << "** END with op type: " << stmt_op_type;
+            VLOG(4) << "** END with op type: " << stmt_op_type;
           }
         }
       }
@@ -108,4 +94,4 @@ class SubgraphCastDisplayPass : public DebugPass {
 
 REGISTER_MIR_PASS(subgraph_cast_display_pass,
                   paddle::lite::mir::SubgraphCastDisplayPass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kMLU)});

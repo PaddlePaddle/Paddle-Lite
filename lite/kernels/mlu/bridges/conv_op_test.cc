@@ -25,8 +25,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ConvConverter(void* ctx, OpLite* op);
-
 void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
@@ -342,9 +340,5 @@ TEST(MLUBridges, conv) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         conv2d,
-                         paddle::lite::subgraph::mlu::ConvConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         depthwise_conv2d,
-                         paddle::lite::subgraph::mlu::ConvConverter);
+USE_SUBGRAPH_BRIDGE(conv2d, kMLU)
+USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kMLU)
