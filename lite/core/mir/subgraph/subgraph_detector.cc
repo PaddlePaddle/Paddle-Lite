@@ -313,8 +313,9 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
 
 std::vector<std::vector<Node *>> SubgraphDetector::ExtractSubgraphs(
     node_map_t *nodes) {
-  for (auto &it : *nodes) {
-    node_dat_t *node = it.second;
+  for (auto &n_tpo : graph_->NodeTopologicalOrder()) {
+    CHECK(nodes->find(n_tpo) != nodes->end());
+    node_dat_t *node = (*nodes)[n_tpo];
     if (!node->marked) {
       continue;
     }
