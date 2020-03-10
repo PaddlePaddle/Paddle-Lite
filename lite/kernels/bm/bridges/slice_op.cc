@@ -31,7 +31,6 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
   // input
   auto input_var_name = op_info->Input("Input").front();
   auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
