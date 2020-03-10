@@ -46,6 +46,32 @@ class SubgraphEngine : public subgraph::Engine {
     graph_.SetFPType(type);
   }
 
+  int Build() {
+    // In order to attach all of the ops of the block desc, we need to build
+    // the original program firstly.
+    BuildOriginProgram();
+    // Run InferShape() of all of ops, and convert Paddle ops to MLU IR graph
+    build_device_program_status_ = BuildDeviceProgram();
+    return build_device_program_status_;
+  }
+
+  int Launch() {
+    // Rebuild device program when the shapes of input tensors have been
+    // changed.
+    if (subgraph::CHECK_SUCCESS(build_device_program_status_) &&
+        subgraph::CHECK_REBUILD_WHEN_SHAPE_CHANGED(
+            build_device_program_status_) &&
+        InputShapeChanged()) {
+      Build();
+    }
+    if (subgraph::CHECK_FAILED(build_device_program_status_)) {
+      LaunchOriginProgram();
+    } else {
+      LaunchDeviceProgram();
+    }
+    return 0;
+  }
+
  protected:
   int BuildDeviceProgram() override {
     int status = 0;
@@ -108,23 +134,23 @@ class SubgraphEngine : public subgraph::Engine {
       graph_.AddInput(graph_.GetNode(input_name));
     }
     CHECK(!valid_output_names.empty()) << "[MLU] no valid output names";
-    // auto& mlu_context = this->ctx_->template As<MLUContext>();
-    // auto core_version = mlu_context.MLUCoreVersion();
-    // auto core_number = mlu_context.MLUCoreNumber();
-    // graph_.Compile(core_version, core_number);
+    auto& mlu_context = this->ctx_->template As<MLUContext>();
+    auto core_version = mlu_context.MLUCoreVersion();
+    auto core_number = mlu_context.MLUCoreNumber();
+    graph_.Compile(core_version, core_number);
     return status;
   }
 
   int LaunchDeviceProgram() override {
-    // auto& mlu_context = this->ctx_->template As<MLUContext>();
-    // auto exec_queue = mlu_context.exec_queue();
-    // u32_t affinity = mlu_context.affinity();
-    // cnrtInvokeFuncParam_t forward_param = mlu_context.forward_param();
-    // int data_param = 1;
-    // forward_param.data_parallelism = &data_param;
-    // forward_param.affinity = &affinity;
-    // forward_param.end = CNRT_PARAM_END;
-    // graph_.Compute(forward_param, exec_queue);
+    auto& mlu_context = this->ctx_->template As<MLUContext>();
+    auto exec_queue = mlu_context.exec_queue();
+    u32_t affinity = mlu_context.affinity();
+    cnrtInvokeFuncParam_t forward_param = mlu_context.forward_param();
+    int data_param = 1;
+    forward_param.data_parallelism = &data_param;
+    forward_param.affinity = &affinity;
+    forward_param.end = CNRT_PARAM_END;
+    graph_.Compute(forward_param, exec_queue);
     return 0;
   }
 

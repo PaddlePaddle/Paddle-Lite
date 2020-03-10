@@ -23,8 +23,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int BatchNormConverter(void* ctx, OpLite* op);
-
 template <typename dtype>
 void batch_norm_ref(const std::shared_ptr<operators::BatchNormOp> op) {
   Scope* scope = op->scope();
@@ -181,6 +179,4 @@ TEST(MLUBridges, batch_norm) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         batch_norm,
-                         paddle::lite::subgraph::mlu::BatchNormConverter);
+USE_SUBGRAPH_BRIDGE(batch_norm, kMLU)

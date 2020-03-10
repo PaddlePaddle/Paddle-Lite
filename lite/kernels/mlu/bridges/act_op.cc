@@ -54,4 +54,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
+REGISTER_SUBGRAPH_BRIDGE(sigmoid,
+                         kMLU,
+                         paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu, kMLU, paddle::lite::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(tanh, kMLU, paddle::lite::subgraph::mlu::ActConverter);

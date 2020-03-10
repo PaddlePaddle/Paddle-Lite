@@ -24,6 +24,11 @@
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
+#ifdef LITE_WITH_MLU
+#include <cnml.h>
+#include <cnrt.h>
+#include "lite/backends/mlu/mlu_utils.h"
+#endif
 
 #include <map>
 #include <memory>
@@ -52,6 +57,7 @@ using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
+using MLUContext = Context<TargetType::kMLU>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -170,6 +176,85 @@ class Context<TargetType::kFPGA> {
   std::string name() const { return "FPGAContext"; }
 };
 #endif
+
+#ifdef LITE_WITH_MLU
+template <>
+class Context<TargetType::kMLU> {
+ public:
+  typename Env<TargetType::kMLU>::Devs& devs = Env<TargetType::kMLU>::Global();
+
+  void InitOnce() {}
+
+  MLUContext& operator=(const MLUContext& ctx) {
+    this->Init(ctx.device_id_, ctx.exec_queue_id_, ctx.io_queue_id_);
+    return *this;
+  }
+
+  void Init(int dev_id, int exec_queue_id = 0, int io_queue_id = 0) {
+    CHECK_GT(devs.size(), 0UL)
+        << "Env is not initialized or current target is not exit!";
+    if (dev_id >= static_cast<int>(devs.size())) {
+      LOG(WARNING) << "device index exceeds the number of devices, set to "
+                      "default device(0)!";
+      device_id_ = 0;
+    } else {
+      device_id_ = dev_id;
+    }
+    SetMluDevice(device_id_);
+    if (io_queue_id >= devs[dev_id].max_queue()) {
+      LOG(WARNING) << "data queue index exceeds the maximum queue number, "
+                      "set to default qeueu(0)!";
+      io_queue_id = 0;
+    }
+    if (exec_queue_id >= devs[dev_id].max_queue()) {
+      LOG(WARNING) << "exec queue index exceeds the maximum queue number, "
+                      "set to default qeueu(0)!";
+      exec_queue_id = 0;
+    }
+    io_queue_ = devs[dev_id].io_queues()[io_queue_id];
+    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id];
+
+    exec_queue_id_ = exec_queue_id;
+    io_queue_id_ = io_queue_id;
+  }
+
+  void CopySharedTo(MLUContext* ctx) { ctx->forward_param_ = forward_param_; }
+
+  const cnrtQueue_t& exec_queue() const { return exec_queue_; }
+  void SetExecQueue(cnrtQueue_t queue) { exec_queue_ = queue; }
+
+  const cnrtQueue_t& io_queue() const { return io_queue_; }
+  void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
+
+  cnmlCoreVersion_t MLUCoreVersion() {
+    return DeviceInfo::Global().MLUCoreVersion();
+  }
+
+  int MLUCoreNumber() { return DeviceInfo::Global().MLUCoreNumber(); }
+
+  u32_t affinity() { return affinity_; }
+
+  cnrtInvokeFuncParam_t forward_param() { return forward_param_; }
+
+  int device_id() { return device_id_; }
+
+  std::string name() const { return "MLUContext"; }
+
+ private:
+  int device_id_;
+  // overall information
+  int exec_queue_id_;
+  int io_queue_id_;
+  cnrtQueue_t io_queue_;
+  cnrtQueue_t exec_queue_;
+
+  std::vector<cnrtNotifier_t> input_notifiers_;
+  std::vector<cnrtNotifier_t> output_notifiers_;
+
+  cnrtInvokeFuncParam_t forward_param_;
+  u32_t affinity_ = 0x01;
+};
+#endif  // LITE_WITH_MLU
 
 #ifdef LITE_WITH_CUDA
 // Only works with CUDA kernels.
@@ -394,6 +479,16 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
+#ifdef LITE_WITH_MLU
+      case TARGET(kMLU): {
+        int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
+        auto& context = ctx->As<MLUContext>();
+        context.Init(dev_id);
+        kernel_contexts_[TargetType::kMLU].As<MLUContext>().CopySharedTo(
+            &context);
+        LOG(INFO) << "New Context for MLU";
+      } break;
+#endif
       default:
 #ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
@@ -434,6 +529,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_BM
     InitContext<TargetType::kBM, BMContext>();
+#endif
+#ifdef LITE_WITH_MLU
+    InitContext<TargetType::kMLU, MLUContext>();
 #endif
   }
 

@@ -147,6 +147,10 @@ if (LITE_WITH_BM)
 add_definitions("-DLITE_WITH_BM")
 endif()
 
+if (LITE_WITH_MLU)
+add_definitions("-DLITE_WITH_MLU")
+endif()
+
 if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
     if (LITE_WITH_PRECISION_PROFILE)
