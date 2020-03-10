@@ -500,7 +500,7 @@ class XPUMultiEncoderFuser {
       if (mask_name.empty()) {
         mask_name = op_info->Input("Mask").front();
       } else {
-        CHECK(mask_name == op_info->Input("Mask").front());
+        //CHECK(mask_name == op_info->Input("Mask").front());
       }
     }
 

@@ -27,7 +27,7 @@ void ElementwiseAddCompute::Run() {
 
   auto& x_dims = param.X->dims().data();
   auto& y_dims = param.Y->dims();
-  int axis = 0;
+  int axis = param.axis;
   if (param.axis == -1) {
     axis = x_dims.size() - y_dims.size();
   }
@@ -55,7 +55,7 @@ void ElementwiseSubCompute::Run() {
 
   auto& x_dims = param.X->dims().data();
   auto& y_dims = param.Y->dims();
-  int axis = 0;
+  int axis = param.axis;
   if (param.axis == -1) {
     axis = x_dims.size() - y_dims.size();
   }
