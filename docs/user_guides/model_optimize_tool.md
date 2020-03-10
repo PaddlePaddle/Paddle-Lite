@@ -1,5 +1,5 @@
 
-# 模型转化方法
+# 模型优化工具 opt
 
 Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中包括量化、子图融合、混合调度、Kernel优选等等方法。为了使优化过程更加方便易用，我们提供了**opt** 工具来自动完成优化步骤，输出一个轻量的、最优的可执行模型。
 
@@ -25,7 +25,7 @@ git checkout <release-version-tag>
 ./lite/tools/build.sh build_optimize_tool
 ```
 编译结果位于`Paddle-Lite/build.opt/lite/api/opt`
-**注意**：从源码编译opt前需要先[安装Paddle-Lite的开发环境](../installation/source_compile)。
+**注意**：从源码编译opt前需要先[安装Paddle-Lite的开发环境](source_compile)。
 
 ## 使用opt
 

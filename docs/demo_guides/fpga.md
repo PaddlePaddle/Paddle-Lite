@@ -1,4 +1,4 @@
-# Lite基于FPGA的模型预测
+# PaddleLite使用FPGA预测部署
 
 Paddle Lite支持基于arm的FPGA zu3/zu5/zu9的模型预测，提供armv8的交叉编译
 
@@ -22,7 +22,7 @@ CMAKE编译选项：
 
 - 设置`LITE_WITH_FPGA=ON`和`LITE_WITH_ARM=ON`
 
-其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../source_compile)。
+其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../user_guides/source_compile)。
 示例如下：
 ```shell
     cmake .. \
