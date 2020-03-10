@@ -1,4 +1,4 @@
-# Lite基于CUDA的模型预测
+# PaddleLite使用CUDA预测部署
 
 Lite支持在x86_64，arm64架构上（如：TX2）进行CUDA的编译运行。
 
