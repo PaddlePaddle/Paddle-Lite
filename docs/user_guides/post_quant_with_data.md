@@ -41,7 +41,7 @@
 ### 2.3 配置校准数据生成器
 
 有校准数据训练后量化内部使用异步数据读取的方式读取校准数据，大家只需要根据模型的输入，配置读取数据的sample_generator。sample_generator是Python生成器，**必须每次返回单个样本数据**，会用作`DataLoader.set_sample_generator()`的数据源。
-建议参考[异步数据读取文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/user_guides/howto/prepare_data/use_py_reader.html)和本文示例，学习如何配置校准数据生成器。
+建议参考[异步数据读取文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/advanced_guide/data_preparing/use_py_reader.html)和本文示例，学习如何配置校准数据生成器。
 
 ### 2.4 调用有校准数据训练后量化
 
@@ -158,7 +158,7 @@ with fluid.name_scope('skip_quant'):
 
 ### 3.2 量化模型预测
 
-和FP32模型一样，转换后的量化模型可以在Android/IOS APP中加载预测，建议参考[C++ Demo](../user_guides/cpp_demo)、[Java Demo](../user_guides/java_demo)、[Android/IOS Demo](../user_guides/android_ios_app_demo)。
+和FP32模型一样，转换后的量化模型可以在Android/IOS APP中加载预测，建议参考[C++ Demo](../demo_guides/cpp_demo)、[Java Demo](../demo_guides/java_demo)、[Android/IOS Demo](../demo_guides/android_app_demo)。
 
 ## 4 使用示例
 

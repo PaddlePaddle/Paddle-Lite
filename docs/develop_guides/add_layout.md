@@ -1,4 +1,4 @@
-# 如何增加Layout
+# 新增Layout
 
 Paddle-Lite中Place包含了Target、Layout、Precision信息，用来注册和选择模型中的具体Kernel。下面以增加Place中的layout：`ImageDefault`、`ImageFolder`、`ImageNW`为例，讲解如何增加新Layout。
 

@@ -37,11 +37,13 @@
 对于调用无校准数据训练后量化，首先给出一个例子。
 
 ```python
+from paddle.fluid.contrib.slim.quantization import WeightQuantization
+
 model_dir = path/to/fp32_model_params
 save_model_dir = path/to/save_model_path
 weight_quant = WeightQuantization(model_dir=model_dir)
 weight_quant.quantize_weight_to_int(save_model_dir=save_model_dir,
-                                    weight_bits=8,
+                                    weight_bits=16,
                                     quantizable_op_type=['conv2d', 'depthwise_conv2d', 'mul'])
 ```
 
@@ -73,7 +75,11 @@ WeightQuantization.quantize_weight_to_int(save_model_dir,
 
 ## 3 量化模型预测
 
-首先，使用PaddleLite提供的模型转换工具（model_optimize_tool）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
+目前，对于无校准数据训练后量化产出的量化模型，不支持PaddlePaddle加载执行，只能使用PaddleLite进行预测部署。
+
+很简单，首先使用PaddleLite提供的模型转换工具（opt）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
+
+注意，PaddleLite 2.3版本才支持无校准数据训练后量化产出的量化，所以转换工具和预测库必须是2.3及之后的版本。
 
 ### 3.1 模型转换
 
@@ -91,4 +97,4 @@ WeightQuantization.quantize_weight_to_int(save_model_dir,
 
 ### 3.2 量化模型预测
 
-和FP32模型一样，转换后的量化模型可以在Android/IOS APP中加载预测，建议参考[C++ Demo](../user_guides/cpp_demo)、[Java Demo](../user_guides/java_demo)、[Android/IOS Demo](../user_guides/android_ios_app_demo)。
+和FP32模型一样，转换后的量化模型可以在Android/IOS APP中加载预测，建议参考[C++ Demo](../demo_guides/cpp_demo)、[Java Demo](../demo_guides/java_demo)、[Android/IOS Demo](../demo_guides/android_app_demo)。

@@ -237,7 +237,7 @@ python compress.py \
 
 接下来，使用原始的量化模型生成适合在移动端直接部署的模型。
 
-参考[源码编译](../source_compile)配置编译环境，确保可以编译成功。参考[模型转化方法](../model_optimize_tool)，首先编译model_optimize_tool工具，然后执行下面命令对量化训练的模型进行优化（注意，需要自行修改model_file、param_file和optimize_out）。
+参考[源码编译](source_compile)配置编译环境，确保可以编译成功。参考[模型转化方法](model_optimize_tool)，首先编译model_optimize_tool工具，然后执行下面命令对量化训练的模型进行优化（注意，需要自行修改model_file、param_file和optimize_out）。
 ```bash
 ./model_optimize_tool                         \
 --model_file=mobilenet_v1_quant/float/model   \
@@ -260,7 +260,7 @@ adb push mobilenet_v1_quant_opt /data/local/tmp
 
 ### 使用mobilenetv1\_light\_api运行优化后的量化模型
 
-参考[源码编译](../source_compile)配置编译环境后，在Paddle-Lite执行如下命令获取轻量级API的demo：
+参考[源码编译](source_compile)配置编译环境后，在Paddle-Lite执行如下命令获取轻量级API的demo：
 
 ```bash
 cd /Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mobile_light
@@ -288,7 +288,7 @@ Output[700]: 0.002509
 Output[800]: 0.000538
 Output[900]: 0.000969
 ```
-在C++中使用Paddle-Lite API的方法请猛戳[此处](../cpp_demo)，用户也可参考[mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)的代码示例。
+在C++中使用Paddle-Lite API的方法请猛戳[此处](../demo_guides/cpp_demo)，用户也可参考[mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)的代码示例。
 
 ## FAQ
 
