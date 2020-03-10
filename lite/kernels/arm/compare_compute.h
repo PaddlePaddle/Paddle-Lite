@@ -26,10 +26,6 @@ namespace arm {
 template <template <typename T> class Functor>
 class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::LogicalParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
   ~CompareCompute() {}
@@ -39,8 +35,6 @@ template <template <typename T> class Functor>
 class CompareCompute_int32
     : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
  public:
-  using param_t = operators::LogicalParam;
-
   void Run() override;
 
   ~CompareCompute_int32() {}
@@ -50,8 +44,6 @@ template <template <typename T> class Functor>
 class CompareCompute_int64
     : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
  public:
-  using param_t = operators::LogicalParam;
-
   void Run() override;
 
   ~CompareCompute_int64() {}

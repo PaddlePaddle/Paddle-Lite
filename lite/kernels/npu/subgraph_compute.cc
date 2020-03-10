@@ -149,6 +149,9 @@ int SubgraphEngine::BuildDeviceProgram() {
       case PRECISION(kFloat):
         origin_otensors_[i]->mutable_data<float>();
         break;
+      case PRECISION(kBool):
+        origin_otensors_[i]->mutable_data<bool>();
+        break;
       case PRECISION(kInt8):
         origin_otensors_[i]->mutable_data<int8_t>();
         break;
