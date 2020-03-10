@@ -48,7 +48,6 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.x->dims();
     const auto& out_dims = param.output->dims();
-    LOG(INFO) << out_dims;
     auto* x_img = param.x->data<half_t, cl::Image2D>();
     const float dropout_prob = param.dropout_prob;
 
