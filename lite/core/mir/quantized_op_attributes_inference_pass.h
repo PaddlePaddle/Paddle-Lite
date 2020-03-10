@@ -14,44 +14,21 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "lite/core/mir/pass.h"
-#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-class TypeLayoutTransformPass : public ProgramPass {
+class QuantizedOpAttributesInferencePass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-
-  void ComplementInputs(SSAGraph* graph, Node* inst_node, Node* in);
-
-  void AddLayoutInst(const Type& from,
-                     const Type& to,
-                     Node* in,
-                     SSAGraph* graph,
-                     Node* inst_node,
-                     const std::vector<Place>& valid_places);
-
-  void SetValidPlaces(const std::vector<Place>& valid_places);
-
-  const std::vector<Place>& valid_places() const { return valid_places_; }
-
- private:
-  std::vector<Place> valid_places_;
-};
-
-// add preprocess and postprocess attribute for layout op
-class OpenCLTypeLayoutTransformPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-
- private:
-  std::vector<Place> valid_places_;
 };
 
 }  // namespace mir

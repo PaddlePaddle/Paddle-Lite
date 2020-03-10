@@ -20,10 +20,114 @@
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
+#include "lite/operators/subgraph_op.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
+
+// For the subgraph op, we also need to update the attr 'input_data_names' and
+// the input variables names of the Ops in the subblock.
+void UpdateInputsForSubgraph(OpLite* op,
+                             const std::string& from,
+                             const std::string& to) {
+  auto* op_desc = op->mutable_op_info();
+  auto input_data_names =
+      op_desc->GetAttr<std::vector<std::string>>("input_data_names");
+  std::replace(input_data_names.begin(), input_data_names.end(), from, to);
+  op_desc->SetAttr("input_data_names", input_data_names);
+  auto* subblock_desc = static_cast<operators::SubgraphOp*>(op)->GetSubBlock();
+  CHECK(subblock_desc);
+  for (size_t i = 0; i < subblock_desc->OpsSize(); i++) {
+    auto* subblock_op_desc = subblock_desc->GetOp<cpp::OpDesc>(i);
+    for (auto& subblock_op_input : *subblock_op_desc->mutable_inputs()) {
+      for (auto& subblock_var_name : subblock_op_input.second) {
+        if (subblock_var_name == from) {
+          subblock_var_name = to;
+        }
+      }
+    }
+  }
+}
+
+// Update the input variable names from 'from' to 'to' for the target Op
+void UpdateInputs(OpLite* op, const std::string& from, const std::string& to) {
+  auto* op_desc = op->mutable_op_info();
+  auto op_type = op_desc->Type();
+  for (auto& op_input : *op_desc->mutable_inputs()) {
+    for (auto& var_name : op_input.second) {
+      if (var_name == from) {
+        var_name = to;
+      }
+    }
+  }
+  if (op_type == "subgraph") {
+    UpdateInputsForSubgraph(op, from, to);
+  }
+}
+
+// Infer the scale value for the new calib op from the subgraph op
+static bool InferScaleFromSubgraph(std::string var_name,
+                                   const OpInfo* op_info,
+                                   float* scale,
+                                   bool reverse = false) {
+  bool found = false;
+  auto input_or_output_names = op_info->GetAttr<std::vector<std::string>>(
+      reverse ? "output_data_names" : "input_data_names");
+  auto input_or_output_scales = op_info->GetAttr<std::vector<float>>(
+      reverse ? "output_data_scales" : "input_data_scales");
+  auto size = input_or_output_names.size();
+  CHECK(size == input_or_output_scales.size());
+  for (int i = 0; i < size; i++) {
+    if (input_or_output_names[i] == var_name) {
+      *scale = input_or_output_scales[i];
+      found = true;
+      break;
+    }
+  }
+  return found;
+}
+
+// Infer the scale value for the new calib op from the input_scale of the
+// current op and output_scale of the previous op.
+// case 1: prev_op->var_node->op_node(int8->any op, with input_scale).
+// case 2: prev_op->var_node->op_node(subgraph op, int8->any, with
+// input_data_scales).
+// case 3: prev_op(any->int8, with output_scale)->var_node->op_node(fp32->any,
+// without input_scale).
+// case 4: prev_op(any->int8, subgraph_op, with
+// output_data_scales)->var_node->op_node(fp32->any, without input_scale).
+static bool InferScale(Node* var_node, Node* op_node, float* scale) {
+  bool found = false;
+  auto& inst = op_node->AsStmt();
+  auto op_info = inst.op_info();
+  auto op_type = op_info->Type();
+  auto var_name = var_node->AsArg().name;
+  if (op_type == "subgraph") {
+    found = InferScaleFromSubgraph(var_name, op_info, scale, false);
+  } else {
+    if (op_info->HasAttr("input_scale")) {
+      *scale = op_info->GetAttr<float>("input_scale");
+      found = true;
+    } else {
+      // Obtain the output_scale from one of its previous Ops
+      auto prev_op_node = var_node->inlinks.front();
+      CHECK(prev_op_node->IsStmt());
+      auto& prev_inst = prev_op_node->AsStmt();
+      auto prev_op_info = prev_inst.op_info();
+      auto prev_op_type = prev_op_info->Type();
+      if (prev_op_type == "subgraph") {
+        found = InferScaleFromSubgraph(var_name, prev_op_info, scale, true);
+      } else {
+        if (prev_op_info->HasAttr("output_scale")) {
+          *scale = prev_op_info->GetAttr<float>("output_scale");
+          found = true;
+        }
+      }
+    }
+  }
+  return found;
+}
 
 void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
@@ -59,6 +163,14 @@ void PrecisionCastPass::ComplementInputs(SSAGraph* graph,
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   VLOG(4) << inst.picked_kernel().name();
+  if (inst.op_info()->Type() == "fetch") {
+    if (inst.op_info()->HasAttr("data_type")) {
+      auto data_type =
+          static_cast<PrecisionType>(inst.op_info()->GetAttr<int>("data_type"));
+      decl_arg_type = LiteType::GetTensorTy(
+          decl_arg_type->target(), data_type, decl_arg_type->layout());
+    }
+  }
   // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
   // *decl_arg_type)) {
   if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
@@ -109,10 +221,11 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   op_desc.SetType(cast_type);
   op_desc.SetInput("Input", {in->AsArg().name});
   op_desc.SetOutput("Out", {cast_op_output_name});
-  if (inst_node->AsStmt().op_info()->HasAttr("input_scale")) {
-    op_desc.SetAttr(
-        "scale", inst_node->AsStmt().op_info()->GetAttr<float>("input_scale"));
+  float scale;
+  if (InferScale(in, inst_node, &scale)) {
+    op_desc.SetAttr("scale", scale);
   }
+
   cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
   auto kernels = cast_op->CreateKernels(valid_places);
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
@@ -146,9 +259,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   DirectedLink(cast_op_output_arg, inst_node);
 
   // reset opdesc and update kernel information
-  UpdateInputTo(inst_node->AsStmt().op()->mutable_op_info(),
-                in->AsArg().name,
-                cast_op_output_name);
+  UpdateInputs(
+      inst_node->AsStmt().op().get(), in->AsArg().name, cast_op_output_name);
 
   // recreate the op
   auto original_selected_kernel =
