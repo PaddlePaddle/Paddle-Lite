@@ -37,11 +37,13 @@
 对于调用无校准数据训练后量化，首先给出一个例子。
 
 ```python
+from paddle.fluid.contrib.slim.quantization import WeightQuantization
+
 model_dir = path/to/fp32_model_params
 save_model_dir = path/to/save_model_path
 weight_quant = WeightQuantization(model_dir=model_dir)
 weight_quant.quantize_weight_to_int(save_model_dir=save_model_dir,
-                                    weight_bits=8,
+                                    weight_bits=16,
                                     quantizable_op_type=['conv2d', 'depthwise_conv2d', 'mul'])
 ```
 
