@@ -2,7 +2,7 @@
 
 ## 1. 下载最新版本预测库
 
-预测库下载界面位于[Paddle-Lite官方预编译库](../installation/release_lib)，可根据需求选择合适版本。
+预测库下载界面位于[Paddle-Lite官方预编译库](../user_guides/release_lib)，可根据需求选择合适版本。
 
 以**Android-ARMv8架构**为例，可以下载以下版本：
 

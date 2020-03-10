@@ -1,5 +1,5 @@
 
-# 官方 release 预编译库
+# 预编译库
 
 ## 编译版本介绍
 
@@ -11,7 +11,7 @@
 
 - arm_stl=`c++_static/c++_shared`             Lite预测库链接STL库的方式，支持静态或动态链接
 
-- build_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](./library.html)
+- build_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](library)
 
 -  `tiny_publish/full_publish`                   编译模式，`tiny_publish`编译移动端部署库、`full_publish`编译部署库的同时编译第三方依赖库
 
@@ -63,7 +63,7 @@
 - [Android源码编译](./source_compile.html#paddlelite)
 - [iOS源码编译](./source_compile.html#paddlelite)
 - [ArmLinux源码编译](./source_compile.html#paddlelite)
-- [x86源码编译](../advanced_user_guides/x86)
-- [opencl源码编译](../advanced_user_guides/opencl)
-- [CUDA源码编译](../advanced_user_guides/cuda)
-- [FPGA源码编译](../advanced_user_guides/fpga)
+- [x86源码编译](../demo_guides/x86)
+- [opencl源码编译](../demo_guides/opencl)
+- [CUDA源码编译](../demo_guides/cuda)
+- [FPGA源码编译](../demo_guides/fpga)

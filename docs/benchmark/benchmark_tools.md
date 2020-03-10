@@ -1,4 +1,4 @@
-# Benchmark 测试方法
+# 测试方法
 
 本文将会介绍，在**Ubuntu:16.04交叉编译环境**下，用安卓手机在终端测试Paddle-Lite的性能，并介绍两种Benchmark方法：
 
@@ -57,7 +57,7 @@ wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/bench
 
 #### 方式二：由源码编译benchmark_bin文件
 
-根据[源码编译](../installation/source_compile)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
+根据[源码编译](../user_guides/source_compile)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
 
 ```shell
 ###########################################

@@ -91,4 +91,4 @@ WeightQuantization.quantize_weight_to_int(save_model_dir,
 
 ### 3.2 量化模型预测
 
-和FP32模型一样，转换后的量化模型可以在Android/IOS APP中加载预测，建议参考[C++ Demo](../user_guides/cpp_demo)、[Java Demo](../user_guides/java_demo)、[Android/IOS Demo](../user_guides/android_ios_app_demo)。
+和FP32模型一样，转换后的量化模型可以在Android/IOS APP中加载预测，建议参考[C++ Demo](../demo_guides/cpp_demo)、[Java Demo](../demo_guides/java_demo)、[Android/IOS Demo](../demo_guides/android_app_demo)。

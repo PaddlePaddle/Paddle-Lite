@@ -1,25 +1,60 @@
-# 调试方法
+# 调试
+
+## Profiler工具
+
+Basic profiler 用于 CPU 上kernel 耗时的统计。
+
+### 开启方法:
+
+参照 [编译安装](../user_guides/source_compile) 中的**full_publish**部分进行环境配置，在 cmake 时添加 `-DLITE_WITH_PROFILE=ON` ，就可以开启相应支持。
+
+### 使用示例：
+
+在模型执行完毕后，会自动打印类似如下 profiler 的日志
+
+```
+                        kernel   average       min       max     count
+                feed/def/1/4/2         0         0         0         1
+              conv2d/def/4/1/1      1175      1175      1175         1
+              conv2d/def/4/1/1      1253      1253      1253         1
+    depthwise_conv2d/def/4/1/1       519       519       519         1
+              conv2d/def/4/1/1       721       721       721         1
+     elementwise_add/def/4/1/1        18        18        18         1
+              conv2d/def/4/1/1      2174      2174      2174         1
+    depthwise_conv2d/def/4/1/1       380       380       380         1
+              conv2d/def/4/1/1       773       773       773         1
+     elementwise_add/def/4/1/1         2         2         2         1
+              conv2d/def/4/1/1      1248      1248      1248         1
+    depthwise_conv2d/def/4/1/1       492       492       492         1
+              conv2d/def/4/1/1      1150      1150      1150         1
+     elementwise_add/def/4/1/1        33        33        33         1
+     elementwise_add/def/4/1/1         3         3         3         1
+              conv2d/def/4/1/1      1254      1254      1254         1
+    depthwise_conv2d/def/4/1/1       126       126       126         1
+```
+
+## Debug工具
 
 **Lite Model Debug Tool** 是用来检查Paddle-Lite框架与Paddle-Fluid框架运行时tensor(包括variable与weight)之间diff信息的基础工具。
 
-## 编译方法:
+### 编译方法:
 
-1. 参照 [编译安装](../installation/source_compile) 中的**full_publish**部分进行环境配置和编译。
+1. 参照 [编译安装](../user_guides/source_compile) 中的**full_publish**部分进行环境配置和编译。
 2. 在生成的`build`目录下，执行`make lite_model_debug_tool`，`lite_model_debug_tool`产出在编译目录的`lite/tools/debug`目录下。
 
-## 工作流程:
+### 工作流程:
 
 1. 运行 `/bin/bash check_model.sh --model_dir=<your_model_path> --build_root_dir=<your_cmake_root_dir> debug_cpp_stage` 获得模型在Paddle-Lite框架下的运行拓扑信息、varibles信息和weights信息。运行后拓扑信息将会存储在默认名为 `topo_file.txt` 的文件中，variables和weights信息将会存储在默认名为 `tensor_cpp.txt` 的文件中。
 2. 运行 `/bin/bash check_model.sh --model_dir=<your_model_path> --build_root_dir=<your_cmake_root_dir> debug_py_stage`执行fluid框架预测以获取相同模型在fluid框架下的variable与weight信息(注意：我们使用fluid的python api运行fluid模型，因此您在运行此步之前应确保已正确安装fluid的python api)。然后debug tool将会自动比较Paddle-Lite框架输出的信息和Paddle-Fluid框架输出的信息来检查是否存在运行时diff。 执行Paddle-Fluid框架，输出的信息将会存储在默认名为 `tensor_py.txt` 的文件中，相应的diff信息将会存储在默认名为 `diff.txt`的文件中(默认情况下，只会输出执行拓扑序中第一个有diff的variable相关的信息)。
 
-## 注意事项:
+### 注意事项:
 
 1. 输出的结果是在**执行完一次预测后**输出的相应变量/权重的最终值，因此如果您在预测过程进行过诸如变量复用/子图融合等优化方法，则相应的输出可能会出现偏差。
 2. 默认情况下debug tools将以全1作为输入进行比对。
 3. 默认情况下，为了保证与Paddle-Fluid框架的结果可比对，debug tool将会禁用掉所有的Paddle-Lite的优化策略。
 4. Paddle-Lite框架的执行环境由与您的编译选项有关，比如您开启了LITE_WITH_ARM编译选项，那debug tool的`debug_cpp_stage`也需要在ARM平台下运行。
 
-## Diff信息输出：
+### Diff信息输出：
 
 如果debug tool检测到diff信息，那么在`diff.txt`中将会输出类似以下结构信息
 
@@ -37,7 +72,7 @@ dropout_0.tmp_0	{1,1536,1,1}	0.599913 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.01202671
 其中第二行为op相关信息，标明了执行哪个op出现了diff及其对应的输入输出变量名。Tensor File info为Paddle-Lite框架的输出信息，而Fluid Tensor info为Paddle-Fluid框架的相应输出信息。
 示例中的`dropout_0.tmp_1`没有相应的tensor信息是因为工具检测到其在预测的后序流程中未被使用，因此不会对预测结果造成影响，从而将其自动屏蔽掉以保证输出尽量简洁。
 
-## 其他选项：
+### 其他选项：
 
 | Option                      | Description                                                  |
 | --------------------------- | ------------------------------------------------------------ |

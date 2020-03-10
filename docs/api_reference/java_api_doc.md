@@ -1,4 +1,4 @@
-# Java API 文档
+# Java API
 
 ## MobileConfig
 
