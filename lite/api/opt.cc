@@ -106,6 +106,8 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "mlu") {
+      valid_places.emplace_back(TARGET(kMLU));
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "

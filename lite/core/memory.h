@@ -29,6 +29,10 @@
 #include "lite/backends/bm/target_wrapper.h"
 #endif  // LITE_WITH_BM
 
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/target_wrapper.h"
+#endif  // LITE_WITH_MLU
+
 namespace paddle {
 namespace lite {
 
@@ -79,6 +83,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
 #ifdef LITE_WITH_BM
     case TARGET(kBM):
       TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
+      break;
+#endif
+#ifdef LITE_WITH_MLU
+    case TARGET(kMLU):
+      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
       break;
 #endif
   }

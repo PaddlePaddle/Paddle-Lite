@@ -285,7 +285,6 @@ bool TestCase::CheckPrecision(const std::string& var_name, float abs_error) {
     case TARGET(kARM):
       a_data = static_cast<const T*>(a_tensor->raw_data());
       break;
-
     default:
       // Before compare, need to copy data from `target` device to host.
       LOG(FATAL) << "Not supported";

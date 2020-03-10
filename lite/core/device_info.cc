@@ -58,13 +58,18 @@
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM_) || (defined LITE_WITH_MLU))
 thread_local lite_api::PowerMode DeviceInfo::mode_;
 thread_local ARMArch DeviceInfo::arch_;
 thread_local int DeviceInfo::mem_size_;
 thread_local std::vector<int> DeviceInfo::active_ids_;
 thread_local TensorLite DeviceInfo::workspace_;
 thread_local int64_t DeviceInfo::count_ = 0;
+
+#ifdef LITE_WITH_MLU
+thread_local cnmlCoreVersion_t DeviceInfo::mlu_core_version_{CNML_MLU270};
+thread_local int DeviceInfo::mlu_core_number_{1};
+#endif
 
 #ifdef TARGET_IOS
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
@@ -1080,6 +1085,28 @@ int DeviceInfo::Setup() {
   return 0;
 }
 
+#ifdef LITE_WITH_MLU
+void DeviceInfo::SetMLURunMode(lite_api::MLUCoreVersion core_version,
+                               int core_number) {
+  switch (core_version) {
+    case (lite_api::MLUCoreVersion::MLU_220):
+      mlu_core_version_ = CNML_MLU220;
+      break;
+    case (lite_api::MLUCoreVersion::MLU_270):
+      mlu_core_version_ = CNML_MLU270;
+      break;
+    default:
+      mlu_core_version_ = CNML_MLU270;
+      break;
+  }
+  mlu_core_number_ = core_number;
+}
+
+cnmlCoreVersion_t DeviceInfo::MLUCoreVersion() { return mlu_core_version_; }
+
+int DeviceInfo::MLUCoreNumber() { return mlu_core_number_; }
+#endif  // LITE_WITH_MLU
+
 void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
 #ifdef ARM_WITH_OMP
   thread_num = std::min(thread_num, core_num_);
@@ -1158,6 +1185,39 @@ bool DeviceInfo::ExtendWorkspace(size_t size) {
 }
 
 #endif  // LITE_WITH_ARM
+
+#ifdef LITE_WITH_MLU
+void SetMluDevice(int device_id) {
+  LOG(INFO) << "Set mlu device " << device_id;
+  cnrtDev_t dev_handle;
+  CNRT_CALL(cnrtGetDeviceHandle(&dev_handle, device_id));
+  CNRT_CALL(cnrtSetCurrentDevice(dev_handle));
+}
+
+void Device<TARGET(kMLU)>::Init() {
+  SetMluDevice(idx_);
+  GetInfo();
+  CreateQueue();
+}
+
+void Device<TARGET(kMLU)>::GetInfo() {}
+
+void Device<TARGET(kMLU)>::CreateQueue() {
+  exec_queue_.clear();
+  io_queue_.clear();
+  for (size_t i = 0; i < max_queue_; ++i) {
+    cnrtQueue_t exec_queue;
+    cnrtQueue_t io_queue;
+    cnrtCreateQueue(&exec_queue);
+    cnrtCreateQueue(&io_queue);
+    exec_queue_.push_back(exec_queue);
+    io_queue_.push_back(io_queue);
+
+    cnrtCreateQueue(&exec_queue);
+    exec_queue_.push_back(exec_queue);
+  }
+}
+#endif  // LITE_WITH_MLU
 
 #ifdef LITE_WITH_CUDA
 
