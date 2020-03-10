@@ -27,7 +27,13 @@ void SliceCompute::PrepareForRun() {
   x_shape_.reserve(x_dims.size());
   x_dim_begin_.reserve(x_dims.size());
   x_dim_end_.reserve(x_dims.size());
+}
 
+void SliceCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  auto x_dims = param.X->dims();
   for (size_t i = 0; i < x_dims.size(); ++i) {
     x_shape_[i] = x_dims[i];
     x_dim_begin_[i] = 0;
@@ -38,11 +44,6 @@ void SliceCompute::PrepareForRun() {
     x_dim_begin_[axis] = param.starts[i];
     x_dim_end_[axis] = param.ends[i];
   }
-}
-
-void SliceCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
 
   int ndim = param.X->dims().size();
   int r = xdnn::slice_forward(
