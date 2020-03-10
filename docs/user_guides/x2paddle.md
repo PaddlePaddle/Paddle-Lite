@@ -1,6 +1,31 @@
-# 通过 X2Paddle 转换模型 
+# 模型转换工具 X2Paddle
+
+X2Paddle可以将caffe、tensorflow、onnx模型转换成Paddle支持的模型。
 
 [X2Paddle](https://github.com/PaddlePaddle/X2Paddle)支持将Caffe/TensorFlow模型转换为PaddlePaddle模型。目前X2Paddle支持的模型参考[x2paddle_model_zoo](https://github.com/PaddlePaddle/X2Paddle/blob/develop/x2paddle_model_zoo.md)。
+
+
+## 多框架支持
+
+|模型 | caffe | tensorflow | onnx | 
+|---|---|---|---|
+|mobilenetv1 | Y | Y |  | 
+|mobilenetv2 | Y | Y | Y | 
+|resnet18 | Y | Y |  | 
+|resnet50 | Y | Y | Y | 
+|mnasnet | Y | Y |  | 
+|efficientnet | Y | Y | Y | 
+|squeezenetv1.1 | Y | Y | Y | 
+|shufflenet | Y | Y |  | 
+|mobilenet_ssd | Y | Y |  | 
+|mobilenet_yolov3 |  | Y |  | 
+|inceptionv4 |  |  |  | 
+|mtcnn | Y | Y |  | 
+|facedetection | Y |  |  | 
+|unet | Y | Y |  | 
+|ocr_attention |  |  |  | 
+|vgg16 |  |  |  | 
+
 
 ## 安装
 
