@@ -44,7 +44,7 @@ void slice_channel(const float* input_data,
   }
 }
 
-TEST(slice_image2d_fp32, compute) {
+TEST(slice_image2d_fp16, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
       "slice", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
