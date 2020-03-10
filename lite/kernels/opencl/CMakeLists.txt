@@ -30,6 +30,7 @@ add_kernel(grid_sampler_opencl OPENCL basic SRCS grid_sampler_image_compute.cc D
 add_kernel(lrn_opencl OPENCL basic SRCS lrn_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(bilinear_interp_opencl OPENCL basic SRCS bilinear_interp_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(instance_norm_opencl OPENCL basic SRCS instance_norm_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(dropout_opencl OPENCL basic SRCS dropout_image_compute.cc DEPS ${cl_kernel_deps})
 
 # extra
 # wait to add ...
@@ -88,6 +89,9 @@ lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_comput
 
 lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
                  DEPS instance_norm_opencl op_registry program context)             
+
+lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
+                 DEPS dropout_opencl op_registry program context)             
 ######################
 # buffer kernel      #
 ######################
