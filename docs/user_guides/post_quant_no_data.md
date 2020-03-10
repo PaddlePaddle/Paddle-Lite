@@ -75,7 +75,11 @@ WeightQuantization.quantize_weight_to_int(save_model_dir,
 
 ## 3 量化模型预测
 
-首先，使用PaddleLite提供的模型转换工具（model_optimize_tool）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
+目前，对于无校准数据训练后量化产出的量化模型，不支持PaddlePaddle加载执行，只能使用PaddleLite进行预测部署。
+
+很简单，首先使用PaddleLite提供的模型转换工具（opt）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
+
+注意，PaddleLite 2.3版本才支持无校准数据训练后量化产出的量化，所以转换工具和预测库必须是2.3及之后的版本。
 
 ### 3.1 模型转换
 
