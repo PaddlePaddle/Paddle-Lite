@@ -63,7 +63,6 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   flag_dw_3x3 =
       (stride == 1 && (paddings[0] > 1 || paddings[2] > 1)) ? false : true;
 #endif
-  
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   /// select conv impl
