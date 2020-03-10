@@ -19,11 +19,14 @@
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/mlu_utils.h"
+#endif
 
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
 
 typedef enum {
   kAPPLE = 0,
@@ -52,6 +55,11 @@ class DeviceInfo {
   int Setup();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
+#ifdef LITE_WITH_MLU
+  void SetMLURunMode(lite_api::MLUCoreVersion core_version, int core_number);
+  cnmlCoreVersion_t MLUCoreVersion();
+  int MLUCoreNumber();
+#endif
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
 
@@ -103,6 +111,11 @@ class DeviceInfo {
   static thread_local TensorLite workspace_;
   static thread_local int64_t count_;
 
+#ifdef LITE_WITH_MLU
+  static thread_local cnmlCoreVersion_t mlu_core_version_;
+  static thread_local int mlu_core_number_;
+#endif
+
   void SetDotInfo(int argc, ...);
   void SetFP16Info(int argc, ...);
   void SetFP32Info(int argc, ...);
@@ -134,6 +147,9 @@ class Env {
     return *devs;
   }
   static void Init(int max_stream = 4) {
+#ifdef LITE_WITH_MLU
+    CNRT_CALL(cnrtInit(0));
+#endif
     Devs& devs = Global();
     if (devs.size() > 0) {
       return;
@@ -155,6 +171,41 @@ class Env {
     LOG(INFO) << "dev size = " << devs.size();
   }
 };
+
+#ifdef LITE_WITH_MLU
+void SetMluDevice(int device_id);
+
+template <>
+class Device<TARGET(kMLU)> {
+ public:
+  Device(int dev_id, int max_queue = 1) : idx_(dev_id), max_queue_(max_queue) {}
+  void Init();
+
+  int id() { return idx_; }
+  int max_queue() { return max_queue_; }
+  void SetId(int idx) { idx_ = idx; }
+  std::string name() { return "MLU"; }
+  int core_num() { return 16; }
+  float max_memory() { return 16 * 1024; }
+  std::vector<cnrtQueue_t> io_queues() { return io_queue_; }
+  std::vector<cnrtQueue_t> exec_queues() { return exec_queue_; }
+
+ private:
+  void CreateQueue();
+  void GetInfo();
+
+ private:
+  int idx_{0};
+  int max_queue_;
+  std::string device_name_;
+  float max_memory_;
+
+  std::vector<cnrtQueue_t> io_queue_;
+  std::vector<cnrtQueue_t> exec_queue_;
+};
+
+template class Env<TARGET(kMLU)>;
+#endif  // LITE_WITH_MLU
 
 #ifdef LITE_WITH_CUDA
 template <>

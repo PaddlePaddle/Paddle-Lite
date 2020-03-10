@@ -24,8 +24,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int FCConverter(void* ctx, OpLite* op);
-
 void fc_ref(const std::shared_ptr<operators::FcOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
@@ -170,4 +168,4 @@ TEST(MLUBridges, fc) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU, fc, paddle::lite::subgraph::mlu::FCConverter);
+USE_SUBGRAPH_BRIDGE(fc, kMLU);

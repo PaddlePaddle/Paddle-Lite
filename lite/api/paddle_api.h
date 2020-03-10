@@ -106,6 +106,8 @@ class LITE_API PaddlePredictor {
  protected:
   int threads_{1};
   lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
+  lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLU_270};
+  int mlu_core_number_{1};
 };
 
 /// Base class for all the configs.
@@ -136,6 +138,11 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
+  bool use_firstconv_{false};
+  std::vector<float> mean_ = {0.0f};
+  std::vector<float> std_ = {1.0f};
+  lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
+  int mlu_core_number_{1};
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -163,6 +170,20 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
+  void set_use_firstconv(const bool firstconv) { use_firstconv_ = firstconv; }
+  void set_mean(const std::vector<float> mean) { mean_ = mean; }
+  void set_std(const std::vector<float> std) { std_ = std; }
+  void set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
+    mlu_core_version_ = core_version;
+  }
+  void set_mlu_core_number(int core_number) { mlu_core_number_ = core_number; }
+  bool use_first_conv() const { return use_firstconv_; }
+  std::vector<float> mean() const { return mean_; }
+  std::vector<float> std() const { return std_; }
+  lite_api::MLUCoreVersion mlu_core_version() const {
+    return mlu_core_version_;
+  }
+  int mlu_core_number() const { return mlu_core_number_; }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

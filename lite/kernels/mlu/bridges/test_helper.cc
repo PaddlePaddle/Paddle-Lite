@@ -28,7 +28,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
               const std::vector<std::string>& output_var_names) {
   CNRT_CALL(cnrtInit(0));
-  SetMluDevice(0);
+  ::paddle::lite::SetMluDevice(0);
   cnrtQueue_t queue_;
   cnrtInvokeFuncParam_t forward_param;
   u32_t affinity = 1;

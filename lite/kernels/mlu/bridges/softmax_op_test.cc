@@ -23,8 +23,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int SoftmaxConverter(void* ctx, OpLite* op);
-
 template <typename dtype>
 void softmax_ref(const std::shared_ptr<operators::SoftmaxOp> op) {
   Scope* scope = op->scope();
@@ -171,6 +169,4 @@ TEST(MLUBridges, softmax) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         softmax,
-                         paddle::lite::subgraph::mlu::SoftmaxConverter);
+USE_SUBGRAPH_BRIDGE(softmax, kMLU)
