@@ -86,6 +86,8 @@ class LITE_API PaddlePredictor {
   virtual std::vector<std::string> GetInputNames() = 0;
   // Get output names
   virtual std::vector<std::string> GetOutputNames() = 0;
+  // Get output names
+  virtual std::vector<std::string> GetParamNames();
 
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;

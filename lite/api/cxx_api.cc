@@ -150,6 +150,11 @@ std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
 std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
+// get param names
+std::vector<std::string> Predictor::GetParamNames() {
+  return exec_scope_->LocalVarNames();
+}
+
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
   if (!program_) {

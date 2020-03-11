@@ -84,6 +84,9 @@ class LITE_API Predictor {
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
+  // get param names
+  std::vector<std::string> GetParamNames();
+
   void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
@@ -144,6 +147,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   // get inputs names and get outputs names
   std::vector<std::string> GetInputNames() override;
   std::vector<std::string> GetOutputNames() override;
+  // get param names
+  std::vector<std::string> GetParamNames() override;
 
   // get tensor according to tensor's name
   std::unique_ptr<const lite_api::Tensor> GetTensor(
