@@ -178,9 +178,18 @@ void SSAGraph::Build(const Program &program,
         arg_node->AsArg(name, node_storage_.size() - 1);
         arg_update_node_map_[name] = arg_node;
       }
-      if (var_types.count(name) && !arg_node->arg()->type) {
-        arg_node->arg()->type = LiteType::GetTensorTy(
-            TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+      if (var_types.count(name)) {
+        if (!arg_node->arg()->type) {
+          arg_node->arg()->type = LiteType::GetTensorTy(
+              TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+        }
+        // Store the original data type of the output tensors for
+        // type_precision_cast_pass, to keep the consistency between the
+        // output types of original graph and optimized graph's
+        if (op->op_info()->Type() == "fetch") {
+          op->mutable_op_info()->SetAttr<int>(
+              "data_type", static_cast<int>(var_types[name]));
+        }
       }
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
