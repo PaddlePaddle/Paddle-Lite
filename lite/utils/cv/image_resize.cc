@@ -147,6 +147,7 @@ void resize(const uint8_t* src,
       yofs = yofs1;
       ialpha = ialpha1;
       num = 2;
+      sy = yofs1[dy - orih];
     }
 
     // hresize two rows
