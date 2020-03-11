@@ -66,7 +66,6 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 #ifdef LITE_WITH_TRAIN
-
 REGISTER_LITE_KERNEL(mean_grad,
                      kARM,
                      kFloat,
@@ -77,5 +76,4 @@ REGISTER_LITE_KERNEL(mean_grad,
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-
 #endif
