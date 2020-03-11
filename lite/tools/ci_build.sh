@@ -4,7 +4,7 @@ set -ex
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
-CUDNN_ROOT="/usr/local/cudnn"
+CUDNN_ROOT="/usr"
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -213,8 +213,8 @@ function cmake_x86_for_CI {
 
 function cmake_cuda_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF \
-        -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
+    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF \
+        -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT} -DWITH_LITE=OFF
 }
 
 function cmake_gpu {
@@ -288,7 +288,8 @@ function build_test_cuda_server {
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_cuda_for_CI
-    build
+    make -j$NUM_CORES_FOR_COMPILE
+    ctest -R "/*_cuda_test" -V
 }
 
 function build_test_train {
