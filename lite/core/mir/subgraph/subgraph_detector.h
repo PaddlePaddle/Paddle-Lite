@@ -51,6 +51,7 @@ class SubgraphDetector {
   // pointer of the Node. This is to avoid changing the original graph in the
   // process of graph analysis.
   struct node_dat_t;
+  struct node_exclude_t;
   using node_map_t = std::unordered_map<Node*, node_dat_t*>;
   using node_set_t = std::vector<node_dat_t*>;
   struct node_dat_t {
@@ -63,6 +64,7 @@ class SubgraphDetector {
     node_dat_t* UnionFindAncestor();
     void UnionFindCombine(node_dat_t* candidate);
   };
+
   SubgraphDetector(SSAGraph* graph, const SubgraphTeller& teller)
       : graph_(graph), teller_(teller) {}
   std::vector<std::vector<Node*>> operator()();
@@ -71,7 +73,11 @@ class SubgraphDetector {
                    bool reverse,
                    const std::function<bool(const node_dat_t*)>& enter,
                    const std::function<bool(const node_dat_t*)>& leave);
-  void InitNodes(node_map_t* nodes);
+
+  std::vector<const Node*> GetNodesExclude();
+
+  void InitNodes(node_map_t* nodes, std::vector<const Node*>* nodes_exclude);
+
   std::vector<std::vector<Node*>> ExtractSubgraphs(node_map_t* nodes);
 
  protected:

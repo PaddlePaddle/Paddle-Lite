@@ -22,6 +22,9 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
 #include "lite/operators/subgraph_op.h"
+#include "lite/utils/env.h"
+#include "lite/utils/io.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -209,7 +212,55 @@ void SubgraphDetector::FlexibleDFS(
   }
 }
 
-void SubgraphDetector::InitNodes(node_map_t *nodes) {
+std::vector<const Node *> SubgraphDetector::GetNodesExclude() {
+  std::vector<const Node *> nodes_exclude{};
+  std::string config_dir = GetStringFromEnv("CONFIG_SPLIT");
+  if (!IsFileExists(config_dir)) {
+    return nodes_exclude;
+  }
+  std::vector<std::string> config_file = ReadLines(config_dir);
+
+  for (std::string line : config_file) {
+    std::vector<std::string> node_info = Split(line, " ");
+    std::string op_type = node_info.at(0);
+    std::vector<std::string> in_vars = Split(node_info.at(1), ",");
+    std::vector<std::string> out_vars = Split(node_info.at(2), ",");
+
+    for (auto &node : graph_->nodes()) {
+      if (node.IsArg()) continue;
+      auto stmt = node.stmt();
+      if (op_type != stmt->op_type()) continue;
+      auto in_nodes = node.inlinks;
+      auto out_nodes = node.outlinks;
+      if (in_nodes.size() != in_vars.size() ||
+          out_nodes.size() != out_vars.size()) {
+        continue;
+      }
+      bool matched = true;
+      for (auto *var : in_nodes) {
+        if (std::find(in_vars.begin(), in_vars.end(), var->arg()->name) ==
+            in_vars.end()) {
+          matched = false;
+          break;
+        }
+      }
+      for (auto *var : out_nodes) {
+        if (std::find(out_vars.begin(), out_vars.end(), var->arg()->name) ==
+            out_vars.end()) {
+          matched = false;
+          break;
+        }
+      }
+      if (matched) {
+        nodes_exclude.push_back(&node);
+      }
+    }
+  }
+  return nodes_exclude;
+}
+
+void SubgraphDetector::InitNodes(node_map_t *nodes,
+                                 std::vector<const Node *> *nodes_exclude) {
   // Initialize and mark the subgraph detector nodes based on teller.
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
@@ -219,6 +270,10 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
       it.second->outlinks.push_back((*nodes)[out_node]);
     }
     if (teller_(it.first)) {
+      if (std::find(nodes_exclude->begin(), nodes_exclude->end(), it.first) !=
+          nodes_exclude->end()) {
+        continue;
+      }
       it.second->marked = true;
       if (it.first->IsStmt()) {
         // If a function is inside the subgraph, mark all the output variables
@@ -313,8 +368,10 @@ std::vector<std::vector<Node *>> SubgraphDetector::operator()() {
     nodes[&node] = new node_dat_t(&node);
     CHECK(nodes[&node]);
   }
+  // get exclude nodes from config file
+  std::vector<const Node *> nodes_exclude = GetNodesExclude();
   // Initialize and mark the subgraph detector nodes based on teller.
-  InitNodes(&nodes);
+  InitNodes(&nodes, &nodes_exclude);
   // Run the Extract algorithm to find all subgraphs.
   std::vector<std::vector<Node *>> subgraphs = ExtractSubgraphs(&nodes);
   for (auto &it : nodes) {
