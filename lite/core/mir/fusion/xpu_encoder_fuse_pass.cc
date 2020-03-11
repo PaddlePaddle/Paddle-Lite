@@ -596,6 +596,26 @@ class XPUMultiEncoderFuser {
     std::vector<std::unique_ptr<KernelBase>> kernels;
     kernels.emplace_back(std::move(kernel));
     multi_encoder_stmt->SetKernels(std::move(kernels));
+
+    // temp remove useless cast
+    std::unordered_set<const Node*> to_remove2;
+    Node* stack = nullptr;
+    for (auto* node : graph->StmtTopologicalOrder()) {
+      CHECK(node->IsStmt());
+      if (node->stmt()->op_info()->Type() == "stack") {
+        stack = node;
+      }
+    }
+    Node* stack_out = stack->outlinks.front();
+    for (Node* cast : stack_out->outlinks) {
+      Node* cast_out = cast->outlinks.front();
+      if (cast_out->outlinks.size() == 0) {
+        // remove
+        to_remove2.insert(cast_out);
+        to_remove2.insert(cast);
+      }
+    }
+    GraphSafeRemoveNodes(graph, to_remove2);
   }
 };
 
