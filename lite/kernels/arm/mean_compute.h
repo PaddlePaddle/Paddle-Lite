@@ -30,6 +30,17 @@ class MeanCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~MeanCompute() = default;
 };
 
+#ifdef LITE_WITH_TRAIN
+class MeanGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MeanGradParam;
+
+  void Run() override;
+
+  virtual ~MeanGradCompute() = default;
+};
+#endif
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

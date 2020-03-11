@@ -35,6 +35,25 @@ void MeanCompute::Run() {
   out_data[0] = sum / x_size;
 }
 
+#ifdef LITE_WITH_TRAIN
+void MeanGradCompute::Run() {
+  auto& param = this->Param<operators::MeanGradParam>();
+  const auto* input = param.X;
+  const auto* out_grad = param.Out_grad;
+  auto* input_grad = param.X_grad;
+
+  auto out_grad_data = out_grad->data<float>();
+  auto input_data = input->data<float>();
+  auto input_grad_data = input_grad->mutable_data<float>();
+
+  int input_grad_size = input_grad->dims().production();
+
+  // TODO(mapingshuo): use parallel methods to accelerate this for loop
+  for (int i = 0; i < input_grad_size; i++) {
+    input_grad_data[i] = out_grad_data[0] / input_grad_size;
+  }
+}
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -45,3 +64,18 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+#ifdef LITE_WITH_TRAIN
+
+REGISTER_LITE_KERNEL(mean_grad,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::MeanGradCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+#endif

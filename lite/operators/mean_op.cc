@@ -50,18 +50,17 @@ bool MeanGradOp::CheckShape() const {
   return true;
 }
 
-bool MeanGradOp::InferShape() const override {
+bool MeanGradOp::InferShape() const {
   param_.X_grad->Resize(param_.X->dims());
   // param_.X_grad->set_lod(param_.X->lod());
   return true;
 }
 
-bool MeanGradOp::AttachImpl(const cpp::OpDesc& opdesc,
-                            lite::Scope* scope) override {
+bool MeanGradOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   CHECK_EQ(opdesc.InputArgumentNames().size(), 2UL);
   auto X_name = opdesc.Input("X").front();
-  auto Out_grad_name = opdesc.Input(framework::GradVarName("Out")).front();
-  auto X_grad_name = opdesc.Output(framework::GradVarName("X")).front();
+  auto Out_grad_name = opdesc.Input("Out@GRAD").front();
+  auto X_grad_name = opdesc.Output("X@GRAD").front();
 
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Out_grad = GetVar<lite::Tensor>(scope, Out_grad_name);
