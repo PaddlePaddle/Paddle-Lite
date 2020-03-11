@@ -36,7 +36,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
 
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
     set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
-    set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
+    set(LINK_FLAGS "-lz -Wl,--version-script ${LINK_MAP_FILE}")
     add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
     add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
     set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
