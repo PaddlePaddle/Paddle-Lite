@@ -38,7 +38,7 @@ const size_t kSentenceLevel = 1;
 
 template <typename T>
 struct Sentence {
-  std::vector<float> word_ids;
+  std::vector<int64_t> word_ids;
   std::vector<T> scores;
 };
 
@@ -73,7 +73,7 @@ struct BeamSearchDecoder {
 
     std::vector<uint64_t> source_level_lod = {0};
     std::vector<uint64_t> sentence_level_lod = {0};
-    std::vector<float> id_data;
+    std::vector<int64_t> id_data;
     std::vector<T> score_data;
 
     for (size_t src_idx = 0; src_idx < src_num; ++src_idx) {
@@ -117,9 +117,9 @@ struct BeamSearchDecoder {
     *(id_tensor->mutable_lod()) = lod;
 
     id_tensor->Resize({static_cast<int64_t>(id_data.size())});
-    auto id_ptr = id_tensor->mutable_data<float>();
+    auto id_ptr = id_tensor->mutable_data<int64_t>();
     TargetCopy(
-        TARGET(kARM), id_ptr, id_data.data(), id_data.size() * sizeof(float));
+        TARGET(kARM), id_ptr, id_data.data(), id_data.size() * sizeof(int64_t));
 
     *(score_tensor->mutable_lod()) = lod;
     score_tensor->Resize({static_cast<int64_t>(score_data.size())});
@@ -169,7 +169,7 @@ struct BeamSearchDecoder {
                  ++candidate_idx) {
               prefix_idx_vector.push_back(prefix_idx);
               size_t idx = prefix_idx_vector.size() - 1;
-              auto cur_id = cur_ids.data<float>()[candidate_idx];
+              auto cur_id = cur_ids.data<int64_t>()[candidate_idx];
               auto cur_score = cur_scores.data<T>()[candidate_idx];
               sentence_vector.at(idx).word_ids.push_back(cur_id);
               sentence_vector.at(idx).scores.push_back(cur_score);
@@ -184,7 +184,7 @@ struct BeamSearchDecoder {
               cur_ids.lod().at(kSentenceLevel)[prefix_idx];
           for (size_t idx = 0; idx < prefix_idx_vector.size(); ++idx) {
             auto candidate_idx = prefix_idx_vector.at(idx);
-            auto cur_id = cur_ids.data<float>()[candidate_idx];
+            auto cur_id = cur_ids.data<int64_t>()[candidate_idx];
             auto cur_score = cur_scores.data<T>()[candidate_idx];
             if (cur_id != end_id_ || sentence_vector.at(idx).word_ids.empty()) {
               // to skip redundant end tokens
@@ -293,8 +293,12 @@ REGISTER_LITE_KERNEL(beam_search_decode,
                      kNCHW,
                      paddle::lite::kernels::arm::BeamSearchDecodeCompute,
                      def)
-    .BindInput("Ids", {LiteType::GetTensorListTy(TARGET(kARM))})
-    .BindInput("Scores", {LiteType::GetTensorListTy(TARGET(kARM))})
-    .BindOutput("SentenceIds", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("SentenceScores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Scores",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("SentenceIds",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("SentenceScores",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

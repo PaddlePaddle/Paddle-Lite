@@ -34,7 +34,6 @@ int SubgraphEngine::BuildDeviceProgram() {
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
-  int kk = 0;
   for (auto& inst : origin_program_) {
     auto op = inst.op();
     CHECK(op);

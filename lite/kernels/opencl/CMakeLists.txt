@@ -9,10 +9,14 @@ set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper 
 #####################
 # basic
 add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(elementwise_sub_opencl OPENCL basic SRCS elementwise_sub_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_mul_opencl OPENCL basic SRCS elementwise_mul_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fusion_elementwise_add_activation_opencl
            OPENCL basic SRCS fusion_elementwise_add_activation_image_compute.cc
            DEPS elementwise_add_opencl ${cl_kernel_deps})
+add_kernel(fusion_elementwise_sub_activation_opencl
+           OPENCL basic SRCS fusion_elementwise_sub_activation_image_compute.cc
+           DEPS elementwise_sub_opencl ${cl_kernel_deps})
 
 add_kernel(pool_opencl OPENCL basic SRCS pool_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(activation_opencl OPENCL basic SRCS activation_image_compute.cc DEPS ${cl_kernel_deps})
@@ -23,6 +27,10 @@ add_kernel(concat_opencl OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_ker
 add_kernel(nearest_interp_opencl OPENCL basic SRCS nearest_interp_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(scale_opencl OPENCL basic SRCS scale_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(grid_sampler_opencl OPENCL basic SRCS grid_sampler_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(lrn_opencl OPENCL basic SRCS lrn_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(bilinear_interp_opencl OPENCL basic SRCS bilinear_interp_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(slice_opencl OPENCL basic SRCS slice_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(instance_norm_opencl OPENCL basic SRCS instance_norm_image_compute.cc DEPS ${cl_kernel_deps})
 
 # extra
 # wait to add ...
@@ -65,11 +73,22 @@ lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
 
 lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
              DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context)
+lite_cc_test(test_elementwise_sub_image_opencl SRCS elementwise_sub_image_compute_test.cc
+             DEPS elementwise_sub_opencl fusion_elementwise_sub_activation_opencl op_registry program context)
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
-             DEPS grid_sampler_opencl op_registry program context
-             ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+             DEPS grid_sampler_opencl op_registry program context)
 
+lite_cc_test(test_lrn_image_opencl SRCS lrn_image_compute_test.cc
+             DEPS lrn_opencl op_registry program context)
+             
+lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_compute_test.cc
+	         DEPS bilinear_interp_opencl op_registry program context)
+lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
+	         DEPS slice_opencl op_registry program context)
+             
+lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
+                 DEPS instance_norm_opencl op_registry program context)             
 ######################
 # buffer kernel      #
 ######################

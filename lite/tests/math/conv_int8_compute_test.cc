@@ -502,7 +502,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});
               for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 3, 15, 33}) {
+                for (auto& h : {1, 3, 15, 33, 112, 224}) {
                   dims.push_back(DDim({batch, c, h, h}));
                 }
               }
@@ -514,7 +514,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
                              {1, 1},
                              flag_bias,
                              flag_relu,
-                             {4},
+                             {1, 4},
                              {FLAGS_power_mode});
             }
           }

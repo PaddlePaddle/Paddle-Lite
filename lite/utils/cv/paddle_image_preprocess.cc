@@ -30,6 +30,7 @@ namespace cv {
 #define Radians2Degrees(radians) ((radians) * (180 / SK_ScalarPI))
 #define ScalarNearlyZero (1.0f / (1 << 12))
 // init
+__attribute__((visibility("default")))
 ImagePreprocess::ImagePreprocess(ImageFormat srcFormat,
                                  ImageFormat dstFormat,
                                  TransParam param) {
@@ -37,7 +38,8 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat,
   this->dstFormat_ = dstFormat;
   this->transParam_ = param;
 }
-void ImagePreprocess::imageConvert(const uint8_t* src, uint8_t* dst) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
+    const uint8_t* src, uint8_t* dst) {
   ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
@@ -47,10 +49,11 @@ void ImagePreprocess::imageConvert(const uint8_t* src, uint8_t* dst) {
                      this->transParam_.ih);
 }
 
-void ImagePreprocess::imageConvert(const uint8_t* src,
-                                   uint8_t* dst,
-                                   ImageFormat srcFormat,
-                                   ImageFormat dstFormat) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
+    const uint8_t* src,
+    uint8_t* dst,
+    ImageFormat srcFormat,
+    ImageFormat dstFormat) {
   ImageConvert img_convert;
   img_convert.choose(src,
                      dst,
@@ -60,18 +63,20 @@ void ImagePreprocess::imageConvert(const uint8_t* src,
                      this->transParam_.ih);
 }
 
-void ImagePreprocess::imageResize(const uint8_t* src,
-                                  uint8_t* dst,
-                                  ImageFormat srcFormat,
-                                  int srcw,
-                                  int srch,
-                                  int dstw,
-                                  int dsth) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageResize(
+    const uint8_t* src,
+    uint8_t* dst,
+    ImageFormat srcFormat,
+    int srcw,
+    int srch,
+    int dstw,
+    int dsth) {
   ImageResize img_resize;
   img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
-void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageResize(
+    const uint8_t* src, uint8_t* dst) {
   int srcw = this->transParam_.iw;
   int srch = this->transParam_.ih;
   int dstw = this->transParam_.ow;
@@ -81,17 +86,19 @@ void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst) {
   img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
-void ImagePreprocess::imageRotate(const uint8_t* src,
-                                  uint8_t* dst,
-                                  ImageFormat srcFormat,
-                                  int srcw,
-                                  int srch,
-                                  float degree) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageRotate(
+    const uint8_t* src,
+    uint8_t* dst,
+    ImageFormat srcFormat,
+    int srcw,
+    int srch,
+    float degree) {
   ImageRotate img_rotate;
   img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
 }
 
-void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageRotate(
+    const uint8_t* src, uint8_t* dst) {
   auto srcw = this->transParam_.ow;
   auto srch = this->transParam_.oh;
   auto srcFormat = this->dstFormat_;
@@ -100,17 +107,19 @@ void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst) {
   img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
 }
 
-void ImagePreprocess::imageFlip(const uint8_t* src,
-                                uint8_t* dst,
-                                ImageFormat srcFormat,
-                                int srcw,
-                                int srch,
-                                FlipParam flip_param) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageFlip(
+    const uint8_t* src,
+    uint8_t* dst,
+    ImageFormat srcFormat,
+    int srcw,
+    int srch,
+    FlipParam flip_param) {
   ImageFlip img_flip;
   img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
-void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
+__attribute__((visibility("default"))) void ImagePreprocess::imageFlip(
+    const uint8_t* src, uint8_t* dst) {
   auto srcw = this->transParam_.ow;
   auto srch = this->transParam_.oh;
   auto srcFormat = this->dstFormat_;
@@ -119,24 +128,26 @@ void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst) {
   img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
-void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   Tensor* dstTensor,
-                                   ImageFormat srcFormat,
-                                   int srcw,
-                                   int srch,
-                                   LayoutType layout,
-                                   float* means,
-                                   float* scales) {
+__attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
+    const uint8_t* src,
+    Tensor* dstTensor,
+    ImageFormat srcFormat,
+    int srcw,
+    int srch,
+    LayoutType layout,
+    float* means,
+    float* scales) {
   Image2Tensor img2tensor;
   img2tensor.choose(
       src, dstTensor, srcFormat, layout, srcw, srch, means, scales);
 }
 
-void ImagePreprocess::image2Tensor(const uint8_t* src,
-                                   Tensor* dstTensor,
-                                   LayoutType layout,
-                                   float* means,
-                                   float* scales) {
+__attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
+    const uint8_t* src,
+    Tensor* dstTensor,
+    LayoutType layout,
+    float* means,
+    float* scales) {
   Image2Tensor img2tensor;
   img2tensor.choose(src,
                     dstTensor,

@@ -63,7 +63,7 @@ class ElementwiseMulImageCompute
                  << y_dims.size()
                  << ", x_dims.size():" << ele_param_->X->dims().size();
     }
-    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     VLOG(4) << "y_dims:" << y_dims;
     VLOG(4) << "y_dims.size():" << y_dims.size();
 

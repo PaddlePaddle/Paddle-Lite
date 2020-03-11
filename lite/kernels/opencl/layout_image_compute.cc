@@ -42,7 +42,7 @@ class LayoutComputeBufferChwToImageDefault
     if (param.process_type == 1) {
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }
-    VLOG(2) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/layout_kernel.cl", build_options_);
@@ -153,7 +153,7 @@ class LayoutComputeImageDefaultToBufferChw
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
     }
-    VLOG(2) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/layout_kernel.cl", build_options_);

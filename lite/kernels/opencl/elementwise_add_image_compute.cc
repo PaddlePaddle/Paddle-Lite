@@ -46,7 +46,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
                << ", x->dims().size():" << x->dims().size()
                << ", y->dims.size():" << y->dims().size();
   }
-  VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+  VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
   auto& context = ctx_->As<OpenCLContext>();
   context.cl_context()->AddKernel(

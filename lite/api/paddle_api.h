@@ -227,7 +227,7 @@ class LITE_API MobileConfig : public ConfigBase {
 };
 
 template <typename ConfigT>
-std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT&);
+LITE_API std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT&);
 
 }  // namespace lite_api
 }  // namespace paddle
