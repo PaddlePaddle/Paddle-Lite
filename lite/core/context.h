@@ -108,6 +108,10 @@ class Context<TargetType::kXPU> {
 
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
+    const char* dev_env = getenv("LITE_XPU_DEV");
+    if (dev_env) {
+      xpu_set_device(atoi(dev_env));
+    }
     _raw_ctx = xdnn::create_context();
     CHECK(_raw_ctx);
     xdnn::set_workspace_l3_size(_raw_ctx, 0xFFFC00);
