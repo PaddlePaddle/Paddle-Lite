@@ -39,26 +39,6 @@ class MeanOp : public OpLite {
   mutable operators::MeanParam param_;
 };
 
-#ifdef LITE_WITH_TRAIN
-class MeanGradOp : public OpLite {
- public:
-  explicit MeanGradOp(const std::string &type) : OpLite(type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "mean_grad"; }
-
- private:
-  mutable operators::MeanGradParam param_;
-};
-#endif
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

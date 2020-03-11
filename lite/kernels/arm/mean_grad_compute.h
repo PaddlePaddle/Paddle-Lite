@@ -12,36 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/mean_compute.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/operators/mean_grad_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void MeanCompute::Run() {
-  auto& param = this->Param<operators::MeanParam>();
-  const auto* input = param.X;
-  auto* output = param.Out;
-  auto x_dim = input->dims();
-  auto x_data = input->data<float>();
-  auto out_data = output->mutable_data<float>();
+class MeanGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MeanGradParam;
 
-  int x_size = x_dim.production();
-  float sum = 0;
-  for (int i = 0; i < x_size; i++) {
-    sum += x_data[i];
-  }
-  out_data[0] = sum / x_size;
-}
+  void Run() override;
+
+  virtual ~MeanGradCompute() = default;
+};
 
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    mean, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::MeanCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
