@@ -20,6 +20,8 @@
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
+#include "lite/core/mir/type_precision_cast_pass.h"
+#include "lite/operators/subgraph_op.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -170,9 +172,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
   DirectedLink(layout_output_arg, inst_node);
 
   // reset opdesc and update kernel information
-  UpdateInputTo(inst_node->AsStmt().op()->mutable_op_info(),
-                in->AsArg().name,
-                layout_output_name);
+  UpdateInputs(
+      inst_node->AsStmt().op().get(), in->AsArg().name, layout_output_name);
   auto original_selected_kernel =
       std::move(inst_node->AsStmt().kernels().front());
   auto update_op_info = *inst_node->AsStmt().op_info();

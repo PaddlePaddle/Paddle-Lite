@@ -20,8 +20,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class FeedCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class FeedCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::FeedParam;
 
@@ -40,7 +39,7 @@ class FeedCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    feed, kHost, kAny, kAny, paddle::lite::kernels::host::FeedCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    feed, kHost, kAny, kNCHW, paddle::lite::kernels::host::FeedCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
