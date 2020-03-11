@@ -21,6 +21,10 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 SHUTDOWN_LOG=ON
+WITH_NPU=OFF
+NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # HiAI DDK 310 from https://developer.huawei.com/consumer/cn/hiai/
+WITH_XPU=OFF
+XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
 LITE_WITH_ARM_LANG=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -130,6 +134,10 @@ function make_tiny_publish_so {
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+      -DLITE_WITH_NPU=$WITH_NPU \
+      -DNPU_SDK_ROOT=$NPU_SDK_ROOT \
+      -DLITE_WITH_XPU=$WITH_XPU \
+      -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -213,6 +221,10 @@ function make_full_publish_so {
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+      -DLITE_WITH_NPU=$WITH_NPU \
+      -DNPU_SDK_ROOT=$NPU_SDK_ROOT \
+      -DLITE_WITH_XPU=$WITH_XPU \
+      -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -438,6 +450,22 @@ function main {
                 ;;
             --shutdown_log=*)
                 SHUTDOWN_LOG="${i#*=}"
+                shift
+                ;;
+            --with_npu=*)
+                WITH_NPU="${i#*=}"
+                shift
+                ;;
+           --npu_sdk_root=*)
+                NPU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --with_xpu=*)
+                WITH_XPU="${i#*=}"
+                shift
+                ;;
+            --xpu_sdk_root=*)
+                XPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             tiny_publish)
