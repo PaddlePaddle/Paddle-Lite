@@ -2,7 +2,7 @@
 set -ex
 
 # global variables with default value
-NEUWARE_HOME="${NEUWARE_HOME}"    # XPU SDK
+NEUWARE_HOME="${NEUWARE_HOME}"
 TARGET_NAME="all"    # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
 WITH_TESTING=OFF                     # ON/OFF
@@ -23,7 +23,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DWITH_PYTHON=OFF \
                                -DLITE_WITH_ARM=OFF"
 
-readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-4}
+readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$(pwd)
