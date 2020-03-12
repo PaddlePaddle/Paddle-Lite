@@ -45,8 +45,6 @@ for path in paths:
     op_parser = RegisterLiteOpParser(str_info)
     ops = op_parser.parse()
     for op in ops:
-        if "_grad" in op: 
-            continue
         if tailored == "ON":
             if op not in minlines: continue
         out = "USE_LITE_OP(%s);" % op

@@ -18,7 +18,6 @@ add_operator(activation_ops basic SRCS activation_ops.cc DEPS ${op_DEPS})
 add_operator(elementwise_ops basic SRCS elementwise_ops.cc DEPS ${op_DEPS})
 add_operator(box_coder_op_lite basic SRCS box_coder_op.cc DEPS ${op_DEPS})
 add_operator(multiclass_nms_op_lite basic SRCS multiclass_nms_op.cc DEPS ${op_DEPS})
-add_operator(mean_op basic SRCS mean_op.cc DEPS ${op_DEPS})
 add_operator(fill_constant_op basic SRCS fill_constant_op.cc DEPS ${op_DEPS})
 add_operator(fill_constant_batch_size_like_op basic SRCS fill_constant_batch_size_like_op.cc DEPS ${op_DEPS})
 add_operator(shuffle_channel_op basic SRCS shuffle_channel_op.cc DEPS ${op_DEPS})
@@ -138,6 +137,12 @@ add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
 add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_op.cc DEPS ${op_DEPS})
 add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
 add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
+
+# 4. training op
+add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})
+if (LITE_WITH_TRAIN)
+  add_operator(mean_grad_op extra SRCS mean_grad_op.cc DEPS ${op_DEPS})
+endif()
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc

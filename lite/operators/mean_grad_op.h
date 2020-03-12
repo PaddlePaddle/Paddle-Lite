@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/mean_op.h"
-#include <vector>
+#pragma once
+#include <string>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -21,28 +21,24 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool MeanOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
-  return true;
-}
+class MeanGradOp : public OpLite {
+ public:
+  explicit MeanGradOp(const std::string &type) : OpLite(type) {}
 
-bool MeanOp::InferShape() const {
-  param_.Out->Resize(std::vector<int64_t>{1});
-  return true;
-}
+  bool CheckShape() const override;
 
-bool MeanOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
-  auto X_name = opdesc.Input("X").front();
-  auto Out_name = opdesc.Output("Out").front();
+  bool InferShape() const override;
 
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Out = GetMutableVar<Tensor>(scope, Out_name);
-  return true;
-}
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "mean_grad"; }
+
+ private:
+  mutable operators::MeanGradParam param_;
+};
 
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_OP(mean, paddle::lite::operators::MeanOp);

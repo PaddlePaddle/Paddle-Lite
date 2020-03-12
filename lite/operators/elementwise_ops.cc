@@ -96,39 +96,39 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_TRAIN
-bool ElementwiseGradExplicitOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.Y);
-  CHECK_OR_FALSE(param_.X_grad);
-  CHECK_OR_FALSE(param_.Out_grad);
-  return true;
-}
+// #ifdef LITE_WITH_TRAIN
+// bool ElementwiseGradExplicitOp::CheckShape() const {
+//  CHECK_OR_FALSE(param_.Y);
+//  CHECK_OR_FALSE(param_.X_grad);
+//  CHECK_OR_FALSE(param_.Out_grad);
+//  return true;
+//}
 
-bool ElementwiseGradExplicitOp::InferShape() const {
-  param_.X_grad->Resize(param_.Out_grad->dims());
-  if (param_.Y_grad) param_.Y_grad->Resize(param_.Y->dims());
-  return true;
-}
+// bool ElementwiseGradExplicitOp::InferShape() const {
+//   param_.X_grad->Resize(param_.Out_grad->dims());
+//   if (param_.Y_grad) param_.Y_grad->Resize(param_.Y->dims());
+//   return true;
+// }
 
-bool ElementwiseGradExplicitOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                           lite::Scope* scope) {
-  CHECK_EQ(opdesc.InputArgumentNames().size(), 2UL);
-  auto Y_name = opdesc.Input("Y").front();
-  auto Out_name = opdesc.Input(framework::GradVarName("Out")).front();
-  auto X_grad = opdesc.Output(framework::GradVarName("X")).front();
+// bool ElementwiseGradExplicitOp::AttachImpl(const cpp::OpDesc& opdesc,
+//                                            lite::Scope* scope) {
+//   CHECK_EQ(opdesc.InputArgumentNames().size(), 2UL);
+//   auto Y_name = opdesc.Input("Y").front();
+//   auto Out_name = opdesc.Input(framework::GradVarName("Out")).front();
+//   auto X_grad = opdesc.Output(framework::GradVarName("X")).front();
 
-  if (opdesc.Output(framework::GradVarName("Y")).size() > 0) {
-    auto Y_grad = opdesc.Output(framework::GradVarName("Y")).front();
-    param_.Y_grad = GetMutableVar<Tensor>(scope, Y_grad);
-  }
-  param_.Y = GetVar<lite::Tensor>(scope, Y_name);
-  param_.Out_grad = GetVar<lite::Tensor>(scope, Out_name);
-  param_.X_grad = GetMutableVar<lite::Tensor>(scope, X_grad);
-  param_.axis = opdesc.GetAttr<int>("axis");
+//   if (opdesc.Output(framework::GradVarName("Y")).size() > 0) {
+//     auto Y_grad = opdesc.Output(framework::GradVarName("Y")).front();
+//     param_.Y_grad = GetMutableVar<Tensor>(scope, Y_grad);
+//   }
+//   param_.Y = GetVar<lite::Tensor>(scope, Y_name);
+//   param_.Out_grad = GetVar<lite::Tensor>(scope, Out_name);
+//   param_.X_grad = GetMutableVar<lite::Tensor>(scope, X_grad);
+//   param_.axis = opdesc.GetAttr<int>("axis");
 
-  return true;
-}
-#endif
+//   return true;
+// }
+// #endif
 
 }  // namespace operators
 }  // namespace lite
@@ -141,7 +141,9 @@ REGISTER_LITE_OP(elementwise_mul, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_max, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_div, paddle::lite::operators::ElementwiseOp);
 
-#ifdef LITE_WITH_TRAIN
-REGISTER_LITE_OP(elementwise_sub_grad,
-                 paddle::lite::operators::ElementwiseGradExplicitOp);
-#endif
+// #ifdef LITE_WITH_TRAIN
+// REGISTER_LITE_OP(elementwise_sub_grad,
+//                  paddle::lite::operators::ElementwiseGradExplicitOp);
+// REGISTER_LITE_OP(elementwise_add_grad,
+//                  paddle::lite::operators::ElementwiseGradExplicitOp);
+// #endif

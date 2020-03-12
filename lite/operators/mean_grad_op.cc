@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/mean_op.h"
+#include "lite/operators/mean_grad_op.h"
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -21,23 +21,27 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool MeanOp::CheckShape() const {
+bool MeanGradOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK_OR_FALSE(param_.Out_grad);
+  CHECK_OR_FALSE(param_.X_grad);
   return true;
 }
 
-bool MeanOp::InferShape() const {
-  param_.Out->Resize(std::vector<int64_t>{1});
+bool MeanGradOp::InferShape() const {
+  param_.X_grad->Resize(param_.X->dims());
   return true;
 }
 
-bool MeanOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool MeanGradOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+  CHECK_EQ(opdesc.InputArgumentNames().size(), 2UL);
   auto X_name = opdesc.Input("X").front();
-  auto Out_name = opdesc.Output("Out").front();
+  auto Out_grad_name = opdesc.Input("Out@GRAD").front();
+  auto X_grad_name = opdesc.Output("X@GRAD").front();
 
   param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Out = GetMutableVar<Tensor>(scope, Out_name);
+  param_.Out_grad = GetVar<lite::Tensor>(scope, Out_grad_name);
+  param_.X_grad = GetMutableVar<Tensor>(scope, X_grad_name);
   return true;
 }
 
@@ -45,4 +49,4 @@ bool MeanOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(mean, paddle::lite::operators::MeanOp);
+REGISTER_LITE_OP(mean_grad, paddle::lite::operators::MeanGradOp);
