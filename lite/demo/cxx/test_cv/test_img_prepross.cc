@@ -629,7 +629,7 @@ void test_custom(bool has_img,  // input is image
   }
 }
 
-#if 1
+#if 0
 void test_all_r(std::string dst_path, int test_iter = 1) {
   // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12,
   cv::Mat img;
@@ -881,7 +881,7 @@ int main(int argc, char** argv) {
               rotate,
               (FlipParam)flip,
               test_iter);
-#if 1
+#if 0
   test_all_r(dst_path, test_iter);
 #endif
   return 0;
