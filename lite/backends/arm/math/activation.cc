@@ -700,6 +700,30 @@ void act_rsqrt<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <>
+void act_square<float>(const float* din, float* dout, int size, int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = ptr_in[0] * ptr_in[0];
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+#ifdef LITE_WITH_TRAIN
+template <>
+void act_grad_square(const T* dout_grad, T* din_grad, int size, int threads) {
+  const float* ptr_out_grad = dout_grad;
+  float* ptr_in_grad = din_grad;
+  for (int i = 0; i < size; ++i) {
+    ptr_in_grad[0] = sqrtf(ptr_out_grad[0]);
+    ptr_out_grad++;
+    ptr_in_grad++;
+  }
+}
+#endif
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -69,6 +69,14 @@ void act_hard_sigmoid(const T* din,
 template <typename T>
 void act_rsqrt(const T* din, T* dout, int size, int threads);
 
+template <typename T>
+void act_square(const T* din, T* dout, int size, int threads);
+
+#ifdef LITE_WITH_TRAIN
+template <typename T>
+void act_grad_square(const T* din, T* dout, int size, int threads);
+#endif
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
