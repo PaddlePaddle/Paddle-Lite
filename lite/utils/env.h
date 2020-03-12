@@ -19,6 +19,8 @@
 #include <iostream>
 #include <string>
 
+#define SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE "CONFIG_SPLIT"
+
 namespace paddle {
 namespace lite {
 

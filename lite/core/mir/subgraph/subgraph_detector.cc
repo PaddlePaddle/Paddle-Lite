@@ -212,56 +212,76 @@ void SubgraphDetector::FlexibleDFS(
   }
 }
 
-std::vector<const Node *> SubgraphDetector::GetNodesExclude() {
-  std::vector<const Node *> nodes_exclude{};
-  std::string config_dir = GetStringFromEnv("CONFIG_SPLIT");
-  if (!IsFileExists(config_dir)) {
-    return nodes_exclude;
+std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
+  // get exclude nodes from config file
+  std::unordered_set<Node *> excluded_nodes;
+  std::string config_file_path =
+      GetStringFromEnv(SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE);
+  if (!IsFileExists(config_file_path)) {
+    return excluded_nodes;
   }
-  std::vector<std::string> config_file = ReadLines(config_dir);
+  std::vector<std::string> lines = ReadLines(config_file_path);
 
-  for (std::string line : config_file) {
+  for (std::string line : lines) {
     std::vector<std::string> node_info = Split(line, " ");
     std::string op_type = node_info.at(0);
-    std::vector<std::string> in_vars = Split(node_info.at(1), ",");
-    std::vector<std::string> out_vars = Split(node_info.at(2), ",");
+    std::vector<std::string> in_vars_name = Split(node_info.at(1), ",");
+    std::vector<std::string> out_vars_name = Split(node_info.at(2), ",");
 
-    for (auto &node : graph_->nodes()) {
+    for (auto &node : graph_->mutable_nodes()) {
       if (node.IsArg()) continue;
       auto stmt = node.stmt();
       if (op_type != stmt->op_type()) continue;
       auto in_nodes = node.inlinks;
       auto out_nodes = node.outlinks;
-      if (in_nodes.size() != in_vars.size() ||
-          out_nodes.size() != out_vars.size()) {
+      if (in_vars_name.size() > in_nodes.size() ||
+          out_vars_name.size() > out_nodes.size()) {
         continue;
       }
+
       bool matched = true;
-      for (auto *var : in_nodes) {
-        if (std::find(in_vars.begin(), in_vars.end(), var->arg()->name) ==
-            in_vars.end()) {
+
+      for (auto in_var_name : in_vars_name) {
+        bool find_var = false;
+        for (auto *in_node : in_nodes) {
+          if (in_node->arg()->name == in_var_name) {
+            find_var = true;
+            break;
+          }
+        }
+        if (!find_var) {
           matched = false;
           break;
         }
       }
-      for (auto *var : out_nodes) {
-        if (std::find(out_vars.begin(), out_vars.end(), var->arg()->name) ==
-            out_vars.end()) {
+
+      for (auto out_var_name : out_vars_name) {
+        bool find_var = false;
+        for (auto *out_node : out_nodes) {
+          if (out_node->arg()->name == out_var_name) {
+            find_var = true;
+            break;
+          }
+        }
+        if (!find_var) {
           matched = false;
           break;
         }
       }
+
       if (matched) {
-        nodes_exclude.push_back(&node);
+        excluded_nodes.insert(&node);
+        break;
       }
     }
   }
-  return nodes_exclude;
+
+  return excluded_nodes;
 }
 
-void SubgraphDetector::InitNodes(node_map_t *nodes,
-                                 std::vector<const Node *> *nodes_exclude) {
+void SubgraphDetector::InitNodes(node_map_t *nodes) {
   // Initialize and mark the subgraph detector nodes based on teller.
+  std::unordered_set<Node *> excluded_nodes = GetExcludedNodesFromConfigFile();
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
       it.second->inlinks.push_back((*nodes)[in_node]);
@@ -269,11 +289,7 @@ void SubgraphDetector::InitNodes(node_map_t *nodes,
     for (auto &out_node : it.first->outlinks) {
       it.second->outlinks.push_back((*nodes)[out_node]);
     }
-    if (teller_(it.first)) {
-      if (std::find(nodes_exclude->begin(), nodes_exclude->end(), it.first) !=
-          nodes_exclude->end()) {
-        continue;
-      }
+    if (teller_(it.first) && excluded_nodes.count(it.first) == 0) {
       it.second->marked = true;
       if (it.first->IsStmt()) {
         // If a function is inside the subgraph, mark all the output variables
@@ -368,10 +384,8 @@ std::vector<std::vector<Node *>> SubgraphDetector::operator()() {
     nodes[&node] = new node_dat_t(&node);
     CHECK(nodes[&node]);
   }
-  // get exclude nodes from config file
-  std::vector<const Node *> nodes_exclude = GetNodesExclude();
   // Initialize and mark the subgraph detector nodes based on teller.
-  InitNodes(&nodes, &nodes_exclude);
+  InitNodes(&nodes);
   // Run the Extract algorithm to find all subgraphs.
   std::vector<std::vector<Node *>> subgraphs = ExtractSubgraphs(&nodes);
   for (auto &it : nodes) {
