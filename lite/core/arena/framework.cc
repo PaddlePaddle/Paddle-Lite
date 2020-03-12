@@ -59,6 +59,8 @@ void TestCase::CreateInstruction() {
   CHECK(it != kernels.end()) << "failed to create the kernel in "
                              << place_.DebugString()
                              << " with alias: " << alias_;
+  // reset final place
+  place_ = (*it)->place();
   // prepare context
   (*it)->SetContext(std::move(ctx_));
   instruction_.reset(new Instruction(op, std::move(*it)));
@@ -174,20 +176,18 @@ bool TestCase::CheckPrecision(const Tensor* a_tensor,
   if (precision_type == PRECISION(kAny)) {
     precision_type_t = b_tensor->precision();
   }
-#ifndef LITE_WITH_NPU
   CHECK(precision_type_t == b_tensor->precision())
       << "arg precision type and base tensor precision type are not matched! "
          "arg precision type is: "
       << PrecisionToStr(precision_type) << ", base tensor precision type is: "
       << PrecisionToStr(b_tensor->precision());
-#endif
   CHECK(a_tensor->precision() == b_tensor->precision())
       << "real tensor precision type and base tensor precision type are not "
          "matched! real tensor precision type is: "
       << PrecisionToStr(a_tensor->precision())
       << ", base tensor precision type is: "
       << PrecisionToStr(b_tensor->precision());
-  switch (b_tensor->precision()) {
+  switch (precision_type_t) {
     case PRECISION(kFloat):
       return CheckTensorPrecision<float>(a_tensor, b_tensor, abs_error);
     case PRECISION(kInt8):

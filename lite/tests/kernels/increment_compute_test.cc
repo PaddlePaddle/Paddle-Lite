@@ -87,7 +87,7 @@ TEST(Increment, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
-  place = {TARGET(kARM), PRECISION(kAny)};
+  place = TARGET(kARM);
 #else
   return;
 #endif
