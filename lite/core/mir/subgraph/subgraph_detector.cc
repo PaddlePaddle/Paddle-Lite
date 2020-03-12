@@ -372,6 +372,37 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
                                                      output_var_names);
 
+  // Set input/output scale values of input/output var nodes for
+  // type_precision_cast_pass.
+  std::vector<float> input_data_scales;
+  std::vector<float> output_data_scales;
+  for (auto &var_node : input_var_nodes) {
+    auto any_op_node = var_node->outlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasAttr("input_scale")) {
+      input_data_scales.push_back(
+          any_inst.op_info()->GetAttr<float>("input_scale"));
+    }
+  }
+  for (auto &var_node : output_var_nodes) {
+    auto any_op_node = var_node->inlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasAttr("output_scale")) {
+      output_data_scales.push_back(
+          any_inst.op_info()->GetAttr<float>("output_scale"));
+    }
+  }
+  if (input_data_scales.size() > 0) {
+    subgraph_op_desc.SetAttr<std::vector<float>>("input_data_scales",
+                                                 input_data_scales);
+  }
+  if (output_data_scales.size() > 0) {
+    subgraph_op_desc.SetAttr<std::vector<float>>("output_data_scales",
+                                                 output_data_scales);
+  }
+
   // Set all of the inputs and outputs to the target subgraph op
   // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
   for (auto &var_node : weight_var_nodes) {

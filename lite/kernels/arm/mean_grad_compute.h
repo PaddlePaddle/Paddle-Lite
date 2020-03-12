@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,37 +14,20 @@
 
 #pragma once
 #include "lite/core/kernel.h"
-#include "lite/operators/calib_op.h"
+#include "lite/operators/mean_grad_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-template <DataLayoutType DLType>
-class CalibComputeFp32ToInt8
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
+class MeanGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::CalibParam;
+  using param_t = operators::MeanGradParam;
 
   void Run() override;
 
-  ~CalibComputeFp32ToInt8() override{};
-
- private:
-};
-
-template <DataLayoutType DLType>
-class CalibComputeInt8ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeInt8ToFp32() override{};
-
- private:
+  virtual ~MeanGradCompute() = default;
 };
 
 }  // namespace arm
