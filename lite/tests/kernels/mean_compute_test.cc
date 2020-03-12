@@ -49,7 +49,6 @@ class MeanComputeTester : public arena::TestCase {
       sum += input_data[i];
     }
     output_data[0] = sum / x_size;
-    LOG(INFO) << "output: " << output_data[0];
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -61,14 +60,12 @@ class MeanComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<float> input(input_dims_.production());
     fill_data_rand(input.data(), -1.f, 1.f, input_dims_.production());
-    for (int i = 0; i < input.size(); i++) {
-      LOG(INFO) << "input_data_" << i << ": " << input[i];
-    }
     SetCommonTensor(input_, input_dims_, input.data());
   }
 };
 
 void TestNormalCase(Place place, float abs_error = 2e-5) {
+  LOG(INFO) << "Test Mean";
   for (std::vector<int64_t> dims : std::vector<std::vector<int64_t>>{
            {5}, {4, 5}, {3, 4, 5}, {2, 3, 4, 5}}) {
     std::unique_ptr<arena::TestCase> tester(
@@ -109,7 +106,6 @@ class MeanGradComputeTester : public arena::TestCase {
 
     for (int i = 0; i < x_size; i++) {
       input_grad_data[i] = d_x;
-      LOG(INFO) << "input_grad_data_" << i << ": " << input_grad_data[i];
     }
   }
 
@@ -127,12 +123,12 @@ class MeanGradComputeTester : public arena::TestCase {
 
     std::vector<float> output_grad(1);
     fill_data_rand(output_grad.data(), -1.f, 1.f, 1);
-    LOG(INFO) << "output_grad: " << output_grad[0];
     SetCommonTensor(output_grad_, output_grad_dims_, output_grad.data());
   }
 };
 
 void TestGradNormalCase(Place place, float abs_error = 2e-5) {
+  LOG(INFO) << "Test Mean Grad";
   for (std::vector<int64_t> dims : std::vector<std::vector<int64_t>>{
            {5}, {4, 5}, {3, 4, 5}, {2, 3, 4, 5}}) {
     std::unique_ptr<arena::TestCase> tester(
