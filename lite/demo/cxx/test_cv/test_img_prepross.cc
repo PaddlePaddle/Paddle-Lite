@@ -33,8 +33,6 @@ void fill_with_mat(cv::Mat& mat, uint8_t* src, int num) {  // NOLINT
     for (int j = 0; j < mat.cols; j++) {
       if (num == 1) {
         int tmp = (i * mat.cols + j);
-        cv::uchar rgb = mat.at<cv::uchar>(i, j);
-        rgb[0] = src[tmp];
       } else if (num == 2) {
         int tmp = (i * mat.cols + j) * 2;
         cv::Vec2b& rgb = mat.at<cv::Vec2b>(i, j);
@@ -55,7 +53,7 @@ void fill_with_mat(cv::Mat& mat, uint8_t* src, int num) {  // NOLINT
         rgb[2] = src[tmp + 2];
         rgb[3] = src[tmp + 3];
       } else {
-        std::cout << "it is not support" << st::endl;
+        std::cout << "it is not support" << std::endl;
         return;
       }
     }
@@ -70,7 +68,7 @@ double compare_diff(uint8_t* data1, uint8_t* data2, int size) {
   }
   return diff;
 }
-void print_data(uint8_t* data, int size) {
+void print_data(const uint8_t* data, int size) {
   for (int i = 0; i < size; i++) {
     std::cout << data[i] << " ";
     if ((i + 1) % 10 == 0) {
@@ -88,7 +86,8 @@ bool test_convert(bool cv_run,
                   ImageFormat srcFormat,
                   ImageFormat dstFormat,
                   int dsth,
-                  int dastw,
+                  int dstw,
+                  std::string dst_path,
                   int test_iter = 1) {
   // out
   uint8_t* resize_cv = new uint8_t[out_size];
@@ -156,17 +155,17 @@ bool test_convert(bool cv_run,
       cv::Mat resize_mat;
       int num = 1;
       if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
-        resize_mat(dsth, dstw, CV_8UC3);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
         num = 3;
       } else if (dstFormat == ImageFormat::BGRA ||
                  dstFormat == ImageFormat::RGBA) {
-        resize_mat(dsth, dstw, CV_8UC4);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
         num = 4;
       } else if (dstFormat == ImageFormat::GRAY) {
-        resize_mat(dsth, dstw, CV_8UC1);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
         num = 1;
       } else if (dstFormat == ImageFormat::NV12) {
-        resize_mat(dsth, dstw, CV_8UC2);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
         num = 2;
       }
       fill_with_mat(resize_mat, resize_lite, num);
@@ -187,7 +186,8 @@ bool test_flip(bool cv_run,
                FlipParam flip,
                ImageFormat dstFormat,
                int dsth,
-               int dastw,
+               int dstw,
+               std::string dst_path,
                int test_iter = 1) {
   // out
   uint8_t* resize_cv = new uint8_t[out_size];
@@ -241,17 +241,17 @@ bool test_flip(bool cv_run,
       cv::Mat resize_mat;
       int num = 1;
       if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
-        resize_mat(dsth, dstw, CV_8UC3);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
         num = 3;
       } else if (dstFormat == ImageFormat::BGRA ||
                  dstFormat == ImageFormat::RGBA) {
-        resize_mat(dsth, dstw, CV_8UC4);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
         num = 4;
       } else if (dstFormat == ImageFormat::GRAY) {
-        resize_mat(dsth, dstw, CV_8UC1);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
         num = 1;
       } else if (dstFormat == ImageFormat::NV12) {
-        resize_mat(dsth, dstw, CV_8UC2);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
         num = 2;
       }
       fill_with_mat(resize_mat, resize_lite, num);
@@ -271,7 +271,8 @@ bool test_rotate(bool cv_run,
                  float rotate,
                  ImageFormat dstFormat,
                  int dsth,
-                 int dastw,
+                 int dstw,
+                 std::string dst_path,
                  int test_iter = 1) {
   // out
   uint8_t* resize_cv = new uint8_t[out_size];
@@ -331,17 +332,17 @@ bool test_rotate(bool cv_run,
       cv::Mat resize_mat;
       int num = 1;
       if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
-        resize_mat(dsth, dstw, CV_8UC3);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
         num = 3;
       } else if (dstFormat == ImageFormat::BGRA ||
                  dstFormat == ImageFormat::RGBA) {
-        resize_mat(dsth, dstw, CV_8UC4);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
         num = 4;
       } else if (dstFormat == ImageFormat::GRAY) {
-        resize_mat(dsth, dstw, CV_8UC1);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
         num = 1;
       } else if (dstFormat == ImageFormat::NV12) {
-        resize_mat(dsth, dstw, CV_8UC2);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
         num = 2;
       }
       fill_with_mat(resize_mat, resize_lite, num);
@@ -352,15 +353,16 @@ bool test_rotate(bool cv_run,
   }
 }
 
-void test_resize(bool cv_run,
+bool test_resize(bool cv_run,
                  const uint8_t* src,
                  cv::Mat img,
                  ImagePreprocess image_preprocess,
                  int in_size,
                  int out_size,
-                 int dsth,
-                 int dastw,
                  ImageFormat dstFormat,
+                 int dsth,
+                 int dstw,
+                 std::string dst_path,
                  int test_iter = 1) {
   // out
   uint8_t* resize_cv = new uint8_t[out_size];
@@ -407,6 +409,7 @@ void test_resize(bool cv_run,
       print_data(resize_cv, out_size);
       std::cout << "lite out: " << std::endl;
       print_data(resize_lite, out_size);
+      return false;
     } else {
       // save_img
       std::cout << "write image: " << std::endl;
@@ -414,22 +417,23 @@ void test_resize(bool cv_run,
       cv::Mat resize_mat;
       int num = 1;
       if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
-        resize_mat(dsth, dstw, CV_8UC3);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
         num = 3;
       } else if (dstFormat == ImageFormat::BGRA ||
                  dstFormat == ImageFormat::RGBA) {
-        resize_mat(dsth, dstw, CV_8UC4);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
         num = 4;
       } else if (dstFormat == ImageFormat::GRAY) {
-        resize_mat(dsth, dstw, CV_8UC1);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
         num = 1;
       } else if (dstFormat == ImageFormat::NV12) {
-        resize_mat(dsth, dstw, CV_8UC2);
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
         num = 2;
       }
       fill_with_mat(resize_mat, resize_lite, num);
       cv::imwrite(resize_name, resize_mat);
       std::cout << "resize successed!" << std::endl;
+      return true;
     }
   }
 }
@@ -467,6 +471,7 @@ void test_custom(bool has_img,  // input is image
   bool cv_run = true;
   if (srcFormat == ImageFormat::GRAY) {
     std::cout << "srcFormat: GRAY" << std::endl;
+    cv_run = false;
   } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
     in_size = 3 * srch * srcw;
     std::cout << "srcFormat: BGR/RGB" << std::endl;
@@ -504,17 +509,17 @@ void test_custom(bool has_img,  // input is image
     fclose(fp);
     int num = 1;
     if (srcFormat == ImageFormat::GRAY) {
-      img(srch, srcw, CV_8UC1);
+      img = cv::Mat(srch, srcw, CV_8UC1);
     } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-      img(srch, srcw, CV_8UC3);
+      img = cv::Mat(srch, srcw, CV_8UC3);
       num = 3;
     } else if (srcFormat == ImageFormat::BGRA ||
                srcFormat == ImageFormat::RGBA) {
-      img(srch, srcw, CV_8UC4);
+      img = cv::Mat(srch, srcw, CV_8UC4);
       num = 4;
     } else if (srcFormat == ImageFormat::NV12 ||
                srcFormat == ImageFormat::NV21) {
-      img(srch, srcw, CV_8UC2);
+      img = cv::Mat(srch, srcw, CV_8UC2);
       num = 2;
       std::cout << "CV not support NV12";
     }
@@ -526,76 +531,106 @@ void test_custom(bool has_img,  // input is image
   TransParam tparam;
   tparam.ih = srch;
   tparam.iw = srcw;
-  tparam.oh = dsth;
-  tparam.ow = dstw;
+  tparam.oh = srch;
+  tparam.ow = srcw;
   tparam.flip_param = flip;
   tparam.rotate_param = rotate;
+
+  TransParam tparam1;
+  tparam1.ih = srch;
+  tparam1.iw = srcw;
+  tparam1.oh = dsth;
+  tparam1.ow = dstw;
+  tparam1.flip_param = flip;
+  tparam1.rotate_param = rotate;
 
   ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
   std::cout << "image convert testing";
   bool re = test_convert(cv_run,
-                         img,
                          src,
+                         img,
                          image_preprocess,
                          in_size,
                          out_size,
                          srcFormat,
                          dstFormat,
-                         dsth,
-                         dstw,
+                         srch,
+                         srcw,
+                         dst_path,
                          test_iter);
   if (!re) {
     return;
   }
   std::cout << "image resize testing";
+  tparam.oh = dsth;
+  tparam.ow = dstw;
+  ImagePreprocess image_preprocess1(srcFormat, srcFormat, tparam1);
   re = test_resize(cv_run,
-                   img,
                    src,
-                   image_preprocess,
+                   img,
+                   image_preprocess1,
                    in_size,
                    out_size,
-                   dstFormat,
+                   srcFormat,
                    dsth,
                    dstw,
+                   dst_path,
                    test_iter);
   if (!re) {
     return;
   }
+
   std::cout << "image rotate testing";
+  if (rotate == 90 || rotate == 270) {
+    tparam.oh = srcw;
+    tparam.ow = srch;
+    dsth = srcw;
+    dstw = srch;
+  } else {
+    tparam.oh = srch;
+    tparam.ow = srcw;
+    dsth = srch;
+    dstw = srcw;
+  }
+  ImagePreprocess image_preprocess2(srcFormat, srcFormat, tparam);
   re = test_rotate(cv_run,
-                   img,
                    src,
-                   image_preprocess,
+                   img,
+                   image_preprocess2,
                    in_size,
                    out_size,
                    rotate,
-                   dstFormat,
+                   srcFormat,
                    dsth,
                    dstw,
+                   dst_path,
                    test_iter);
   if (!re) {
     return;
   }
+  tparam.oh = srch;
+  tparam.ow = srcw;
+  ImagePreprocess image_preprocess3(srcFormat, srcFormat, tparam);
   std::cout << "image flip testing";
   re = test_flip(cv_run,
-                 img,
                  src,
-                 image_preprocess,
+                 img,
+                 image_preprocess3,
                  in_size,
                  out_size,
                  flip,
-                 dstFormat,
-                 dsth,
-                 dstw,
+                 srcFormat,
+                 srch,
+                 srcw,
+                 dst_path,
                  test_iter);
   if (!re) {
     return;
   }
 }
 
-#if 0
-void test_all_r(std::string dst_path,
-              int test_iter = 1) {
+#if 1
+void test_all_r(std::string dst_path, int test_iter = 1) {
   // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12,
   cv::Mat img;
   uint8_t* src = nullptr;
@@ -605,54 +640,76 @@ void test_all_r(std::string dst_path,
       for (auto& srcw : {10, 112, 200}) {
         for (auto& srch : {10, 224, 400}) {
           for (auto& dstw : {12, 224, 180}) {
-             for (auto& dsth : {12, 224, 320}) {
+            for (auto& dsth : {12, 224, 320}) {
               for (auto& flip : {-1, 0, 1}) {
                 for (auto& rotate : {90, 180, 270}) {
                   TransParam tparam;
                   tparam.ih = srch;
                   tparam.iw = srcw;
-                  tparam.oh = dsth;
-                  tparam.ow = dstw;
-                  tparam.flip_param = flip;
+                  tparam.oh = srch;
+                  tparam.ow = srcw;
+                  tparam.flip_param = (FlipParam)flip;
                   tparam.rotate_param = rotate;
 
-                  ImagePreprocess image_preprocess(srcFormat,
-                                  dstFormat, tparam);
+                  TransParam tparam1;
+                  tparam1.ih = srch;
+                  tparam1.iw = srcw;
+                  tparam1.oh = dsth;
+                  tparam1.ow = dstw;
+                  tparam1.flip_param = (FlipParam)flip;
+                  tparam.rotate_param = rotate;
+
+                  ImagePreprocess image_preprocess(
+                      (ImageFormat)srcFormat, (ImageFormat)dstFormat, tparam);
+                  ImagePreprocess image_preprocess1(
+                      (ImageFormat)srcFormat, (ImageFormat)srcFormat, tparam1);
+                  ImagePreprocess image_preprocess2(
+                      (ImageFormat)srcFormat, (ImageFormat)srcFormat, tparam);
+                  int h = srch;
+                  int w = srcw;
+                  if (rotate == 90 || rotate == 270) {
+                    tparam.oh = srcw;
+                    h = srcw;
+                    tparam.ow = srch;
+                    w = srch;
+                  }
+                  ImagePreprocess image_preprocess3(
+                      (ImageFormat)srcFormat, (ImageFormat)srcFormat, tparam);
                   int in_size = srcw * srch;
                   int out_size = dstw * dsth;
                   if (srcFormat == ImageFormat::GRAY) {
                     std::cout << "srcFormat: GRAY" << std::endl;
                   } else if (srcFormat == ImageFormat::BGR ||
-                              srcFormat == ImageFormat::RGB) {
+                             srcFormat == ImageFormat::RGB) {
                     in_size = 3 * srch * srcw;
                     std::cout << "srcFormat: BGR/RGB" << std::endl;
-                  } else if (srcFormat == ImageFormat::RGBA
-                            || srcFormat == ImageFormat::BGRA) {
+                  } else if (srcFormat == ImageFormat::RGBA ||
+                             srcFormat == ImageFormat::BGRA) {
                     in_size = 4 * srch * srcw;
                     std::cout << "srcFormat: BGRA/RGBA" << std::endl;
-                  } else if (srcFormat == ImageFormat::NV12
-                            || srcFormat == ImageFormat::NV21) {
+                  } else if (srcFormat == ImageFormat::NV12 ||
+                             srcFormat == ImageFormat::NV21) {
                     in_size = (3 * srch * srcw) / 2;
                     std::cout << "srcFormat: NV12/NV12" << std::endl;
                   }
                   // out
                   if (dstFormat == ImageFormat::GRAY) {
                     std::cout << "dstFormat: GRAY" << std::endl;
-                  } else if (dstFormat == ImageFormat::BGR
-                            || dstFormat == ImageFormat::RGB) {
+                  } else if (dstFormat == ImageFormat::BGR ||
+                             dstFormat == ImageFormat::RGB) {
                     out_size = 3 * dsth * dstw;
                     std::cout << "dstFormat: BGR/RGB" << std::endl;
-                  } else if (dstFormat == ImageFormat::RGBA
-                            || dstFormat == ImageFormat::BGRA) {
-                    out_size = 4 *  dsth * dstw;
+                  } else if (dstFormat == ImageFormat::RGBA ||
+                             dstFormat == ImageFormat::BGRA) {
+                    out_size = 4 * dsth * dstw;
                     std::cout << "dstFormat: BGRA/RGBA" << std::endl;
-                  } else if (dstFormat == ImageFormat::NV12
-                            || dstFormat == ImageFormat::NV21) {
-                    out_size = (3 *  dsth * dstw) / 2;
+                  } else if (dstFormat == ImageFormat::NV12 ||
+                             dstFormat == ImageFormat::NV21) {
+                    out_size = (3 * dsth * dstw) / 2;
                     std::cout << "dstFormat: NV12/NV12" << std::endl;
                   }
                   // init
-                  uint8_t src = new uint8_t[in_size];
+                  uint8_t* src = new uint8_t[in_size];
                   for (int i = 0; i < in_size; i++) {
                     src[i] = i % 255;
                   }
@@ -660,18 +717,19 @@ void test_all_r(std::string dst_path,
                   int num = 1;
                   bool cv_run = true;
                   if (srcFormat == ImageFormat::GRAY) {
-                    img(srch, srcw, CV_8UC1);
-                  } else if (srcFormat == ImageFormat::BGR
-                          || srcFormat == ImageFormat::RGB) {
-                    img(srch, srcw, CV_8UC3);
+                    img = cv::Mat(srch, srcw, CV_8UC1);
+                    cv_run = false;
+                  } else if (srcFormat == ImageFormat::BGR ||
+                             srcFormat == ImageFormat::RGB) {
+                    img = cv::Mat(srch, srcw, CV_8UC3);
                     num = 3;
-                  } else if (srcFormat == ImageFormat::BGRA
-                          || srcFormat == ImageFormat::RGBA) {
-                    img(srch, srcw, CV_8UC4);
+                  } else if (srcFormat == ImageFormat::BGRA ||
+                             srcFormat == ImageFormat::RGBA) {
+                    img = cv::Mat(srch, srcw, CV_8UC4);
                     num = 4;
-                  } else if (srcFormat == ImageFormat::NV12
-                          || srcFormat == ImageFormat::NV21) {
-                    img(srch, srcw, CV_8UC2);
+                  } else if (srcFormat == ImageFormat::NV12 ||
+                             srcFormat == ImageFormat::NV21) {
+                    img = cv::Mat(srch, srcw, CV_8UC2);
                     num = 2;
                     cv_run = false;
                   }
@@ -682,41 +740,76 @@ void test_all_r(std::string dst_path,
                   bool convert = true;
                   if (srcFormat == 11 || dstFormat == 11) {
                     // NV12, cv not support
-                      convert = false;
-                      cv_run = false;
+                    convert = false;
+                    cv_run = false;
                   }
                   if (convert) {
                     std::cout << "image convert testing";
-                    bool re = test_convert(cv_run, img, src,
-                              image_preprocess, in_size, out_size,
-                              (ImageFormat)srcFormat, (ImageFormat)dstFormat,
-                              dsth, dstw, test_iter);
+                    bool re = test_convert(cv_run,
+                                           src,
+                                           img,
+                                           image_preprocess,
+                                           in_size,
+                                           out_size,
+                                           (ImageFormat)srcFormat,
+                                           (ImageFormat)dstFormat,
+                                           srch,
+                                           srcw,
+                                           dst_path,
+                                           test_iter);
                     if (!re) {
                       return;
                     }
                   }
+
                   // resize
                   std::cout << "image resize testing";
-                  re = test_resize(cv_run, img, src,
-                        image_preprocess, in_size, out_size,
-                        (ImageFormat)dstFormat, dsth, dstw, test_iter);
+                  bool re = test_resize(cv_run,
+                                        src,
+                                        img,
+                                        image_preprocess1,
+                                        in_size,
+                                        out_size,
+                                        (ImageFormat)srcFormat,
+                                        dsth,
+                                        dstw,
+                                        dst_path,
+                                        test_iter);
                   if (convert && !re) {
                     return;
                   }
                   // rotate
                   std::cout << "image rotate testing";
-                  re = test_rotate(cv_run, img, src,
-                       image_preprocess, in_size, out_size, rotate,
-                      (ImageFormat)dstFormat, dsth, dstw, test_iter);
+
+                  re = test_rotate(cv_run,
+                                   src,
+                                   img,
+                                   image_preprocess3,
+                                   in_size,
+                                   out_size,
+                                   rotate,
+                                   (ImageFormat)srcFormat,
+                                   h,
+                                   w,
+                                   dst_path,
+                                   test_iter);
                   if (convert && !re) {
                     return;
                   }
                   // flip
                   std::cout << "image rotate testing";
-                  re = test_flip(cv_run, img, src, image_preprocess,
-                        in_size, out_size, (FlipParam)flip,
-                        (ImageFormat)dstFormat,
-                        dsth, dstw, test_iter);
+                  re = test_flip(cv_run,
+                                 src,
+                                 img,
+                                 image_preprocess2,
+                                 in_size,
+                                 out_size,
+                                 (FlipParam)flip,
+                                 (ImageFormat)srcFormat,
+                                 srch,
+                                 srcw,
+                                 dst_path,
+                                 test_iter);
                   if (convert && !re) {
                     return;
                   }
@@ -788,7 +881,7 @@ int main(int argc, char** argv) {
               rotate,
               (FlipParam)flip,
               test_iter);
-#if 0
+#if 1
   test_all_r(dst_path, test_iter);
 #endif
   return 0;
