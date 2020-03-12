@@ -29,17 +29,13 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 readonly workspace=$(pwd)
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party ]; then
         rm -rf $workspace/third-party
-
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
-            wget $THIRDPARTY_TAR
-        fi
-        tar xvf third-party-05b862.tar.gz
-    else
-        # git submodule update --init --recursive
-        echo "third-party is in ready"
     fi
+    if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        wget $THIRDPARTY_TAR
+    fi
+    tar xvf third-party-05b862.tar.gz
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
