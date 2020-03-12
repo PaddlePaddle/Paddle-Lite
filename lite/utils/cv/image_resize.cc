@@ -316,7 +316,6 @@ void compute_xy(int srcw,
 
     float a0 = (1.f - fx) * resize_coef_scale;
     float a1 = fx * resize_coef_scale;
-
     ialpha[dx * 2] = SATURATE_CAST_SHORT(a0);
     ialpha[dx * 2 + 1] = SATURATE_CAST_SHORT(a1);
   }
