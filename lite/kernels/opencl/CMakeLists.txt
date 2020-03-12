@@ -4,9 +4,15 @@ endif()
 
 set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
 
-#####################
-# image kernel      #
-#####################
+#########################
+# opencl special kernel #
+#########################
+add_kernel(fetch_opencl OPENCL basic SRCS fetch_compute.cc DEPS ${cl_kernel_deps})
+
+
+#########################
+# image kernel          #
+#########################
 # basic
 add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_sub_opencl OPENCL basic SRCS elementwise_sub_image_compute.cc DEPS ${cl_kernel_deps})
@@ -39,10 +45,9 @@ add_kernel(pad2d_opencl OPENCL basic SRCS pad2d_image_compute.cc DEPS ${cl_kerne
 
 
 
-
-######################
-# image kernel test  #
-######################
+#########################
+# image kernel test     #
+#########################
 lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
              DEPS activation_opencl layout_opencl op_registry program context)
 
@@ -97,9 +102,10 @@ lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
                  
 lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
                  DEPS pad2d_opencl layout_opencl op_registry program context)
-######################
-# buffer kernel      #
-######################
+
+#########################
+# buffer kernel         #
+#########################
 # basic
 #add_kernel(activation_opencl OPENCL basic SRCS activation_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(conv_opencl OPENCL basic SRCS conv_buffer_compute.cc DEPS ${cl_kernel_deps})
@@ -119,9 +125,9 @@ add_kernel(io_copy_opencl OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${ten
 
 
 
-######################
-# buffer kernel test #
-######################
+#########################
+# buffer kernel test    #
+#########################
 #lite_cc_test(test_activation_buffer_opencl SRCS activation_buffer_compute_test.cc
 #             DEPS activation_opencl op_registry program context)
 
