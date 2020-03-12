@@ -59,6 +59,7 @@ static void BindLiteLightPredictor(py::module *m);
 static void BindLiteCxxConfig(py::module *m);
 static void BindLiteMobileConfig(py::module *m);
 static void BindLitePowerMode(py::module *m);
+static void BindLiteMLUCoreVersion(py::module *m);
 static void BindLitePlace(py::module *m);
 static void BindLiteTensor(py::module *m);
 
@@ -66,6 +67,7 @@ void BindLiteApi(py::module *m) {
   BindLiteCxxConfig(m);
   BindLiteMobileConfig(m);
   BindLitePowerMode(m);
+  BindLiteMLUCoreVersion(m);
   BindLitePlace(m);
   BindLiteTensor(m);
 #ifndef LITE_ON_TINY_PUBLISH
@@ -113,6 +115,8 @@ void BindLiteCxxConfig(py::module *m) {
   cxx_config.def("set_use_firstconv", &CxxConfig::set_use_firstconv)
       .def("set_mean", &CxxConfig::set_mean)
       .def("set_std", &CxxConfig::set_std)
+      .def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
+      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
 #endif
 }
 
@@ -145,6 +149,12 @@ void BindLitePowerMode(py::module *m) {
       .value("LITE_POWER_RAND_LOW", PowerMode::LITE_POWER_RAND_LOW);
 }
 
+void BindLiteMLUCoreVersion(py::module *m) {
+  py::enum_<PowerMode>(*m, "MLUCoreVersion")
+      .value("LITE_MLU_220", MLUCoreVersion::MLU_220)
+      .value("LITE_MLU_270", MLUCoreVersion::MLU_270);
+}
+
 void BindLitePlace(py::module *m) {
   // TargetType
   py::enum_<TargetType>(*m, "TargetType")
@@ -155,9 +165,7 @@ void BindLitePlace(py::module *m) {
       .value("OpenCL", TargetType::kOpenCL)
       .value("FPGA", TargetType::kFPGA)
       .value("NPU", TargetType::kNPU)
-#ifdef LITE_WITH_MLU
       .value("MLU", TargetType::kMLU)
-#endif
       .value("Any", TargetType::kAny);
 
   // PrecisionType
