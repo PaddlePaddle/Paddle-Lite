@@ -98,10 +98,3 @@ REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
-<<<<<<< HEAD
-
-// #ifdef LITE_WITH_TRAIN
-// REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
-// #endif
-=======
->>>>>>> add op

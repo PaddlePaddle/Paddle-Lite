@@ -142,6 +142,7 @@ add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
 add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})
 if (LITE_WITH_TRAIN)
   add_operator(mean_grad_op extra SRCS mean_grad_op.cc DEPS ${op_DEPS})
+  add_operator(activation_grad_ops basic SRCS activation_grad_ops.cc DEPS ${op_DEPS})
 endif()
 
 if (NOT LITE_WITH_X86)
