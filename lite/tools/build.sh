@@ -254,6 +254,10 @@ function make_all_tests {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
+      -DLITE_WITH_NPU=$WITH_NPU \
+      -DNPU_SDK_ROOT=$NPU_SDK_ROOT \
+      -DLITE_WITH_XPU=$WITH_XPU \
+      -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
