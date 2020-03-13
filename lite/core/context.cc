@@ -15,5 +15,9 @@
 #include "lite/core/context.h"
 
 namespace paddle {
-namespace lite {}  // namespace lite
+namespace lite {
+
+thread_local xdnn::Context* Context<TargetType::kXPU>::_tls_raw_ctx{nullptr};
+
+}  // namespace lite
 }  // namespace paddle

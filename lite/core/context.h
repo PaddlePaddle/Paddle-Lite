@@ -108,28 +108,37 @@ class Context<TargetType::kXPU> {
 
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
-    const char* dev_env = getenv("LITE_XPU_DEV");
-    if (dev_env) {
-      xpu_set_device(atoi(dev_env));
-    }
-    _raw_ctx = xdnn::create_context();
-    CHECK(_raw_ctx);
-    xdnn::set_workspace_l3_size(_raw_ctx, 0xFFFC00);
   }
 
   void CopySharedTo(XPUContext* ctx) {
-    ctx->_raw_ctx = _raw_ctx;
   }
 
-  xdnn::Context* GetRawContext() {
-    CHECK(_raw_ctx);
-    return _raw_ctx;
+  static xdnn::Context* GetRawContext() {
+    if (_tls_raw_ctx == nullptr) {
+      _tls_raw_ctx = xdnn::create_context();
+      CHECK(_tls_raw_ctx);
+    }
+    return _tls_raw_ctx;
+  }
+
+  static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
+    xdnn::set_workspace_l3_size(GetRawContext(), l3_size);
+  }
+
+  static void SetDev(int dev_no = 0) {
+    const char* dev_env = getenv("LITE_XPU_DEV");
+    if (dev_env) {
+      xpu_set_device(atoi(dev_env));
+      return;
+    }
+
+    xpu_set_device(dev_no);
   }
 
   std::string name() const { return "XPUContext"; }
 
  private:
-  xdnn::Context* _raw_ctx{nullptr};
+  static thread_local xdnn::Context* _tls_raw_ctx;
 };
 #endif
 

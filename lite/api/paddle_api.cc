@@ -16,6 +16,7 @@
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
+#include "lite/core/context.h"
 
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
@@ -223,6 +224,14 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
   model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
   param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
   model_from_memory_ = true;
+}
+
+void XPUSetWorkspaceL3SizePerThread(int l3_size) {
+  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
+}
+
+void XPUSetDevPerThread(int dev_no) {
+  lite::Context<TargetType::kXPU>::SetDev(dev_no);
 }
 
 }  // namespace lite_api
