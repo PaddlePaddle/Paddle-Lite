@@ -17,15 +17,16 @@ if(NOT LITE_WITH_NPU)
 endif()
 
 if(NOT DEFINED NPU_DDK_ROOT)
-    set(NPU_DDK_ROOT $ENV{NPU_DDK_ROOT})
-    if(NOT NPU_DDK_ROOT)
-        message(FATAL_ERROR "Must set NPU_DDK_ROOT or env NPU_DDK_ROOT when LITE_WITH_NPU=ON")
-    endif()
+  set(NPU_DDK_ROOT $ENV{NPU_DDK_ROOT})
+  if(NOT NPU_DDK_ROOT)
+    message(FATAL_ERROR "Must set NPU_DDK_ROOT or env NPU_DDK_ROOT when LITE_WITH_NPU=ON")
+  endif()
 endif()
 
 message(STATUS "NPU_DDK_ROOT: ${NPU_DDK_ROOT}")
 find_path(NPU_DDK_INC NAMES HiAiModelManagerService.h
-  PATHS ${NPU_DDK_ROOT}/include NO_DEFAULT_PATH)
+  PATHS ${NPU_DDK_ROOT}/include
+  NO_DEFAULT_PATH)
 if(NOT NPU_DDK_INC)
   message(FATAL_ERROR "Can not find HiAiModelManagerService.h in ${NPU_DDK_ROOT}/include")
 endif()
@@ -34,21 +35,24 @@ include_directories("${NPU_DDK_ROOT}/include")
 
 set(NPU_SUB_LIB_PATH "lib64")
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
-    set(NPU_SUB_LIB_PATH "lib64")
+  set(NPU_SUB_LIB_PATH "lib64")
 endif()
 
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
-    set(NPU_SUB_LIB_PATH "lib")
+  set(NPU_SUB_LIB_PATH "lib")
 endif()
 
 find_library(NPU_DDK_HIAI_FILE NAMES hiai
-  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH})
+  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
+  NO_DEFAULT_PATH)
 
 find_library(NPU_DDK_IR_FILE NAMES hiai_ir
-  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH})
+  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
+  NO_DEFAULT_PATH)
 
 find_library(NPU_DDK_IR_BUILD_FILE NAMES hiai_ir_build
-  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH})
+  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
+  NO_DEFAULT_PATH)
 
 if(NOT NPU_DDK_HIAI_FILE)
   message(FATAL_ERROR "Can not find NPU_DDK_HIAI_FILE in ${NPU_DDK_ROOT}")
@@ -76,6 +80,3 @@ endif()
 
 set(npu_runtime_libs npu_ddk_hiai CACHE INTERNAL "npu ddk runtime libs")
 set(npu_builder_libs npu_ddk_ir npu_ddk_ir_build CACHE INTERNAL "npu ddk builder libs")
-
-
-

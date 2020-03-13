@@ -17,15 +17,16 @@ if(NOT LITE_WITH_XPU)
 endif()
 
 if(NOT DEFINED XPU_SDK_ROOT)
-    set(XPU_SDK_ROOT $ENV{XPU_SDK_ROOT})
-    if(NOT XPU_SDK_ROOT)
-        message(FATAL_ERROR "Must set XPU_SDK_ROOT or env XPU_SDK_ROOT when LITE_WITH_XPU=ON")
-    endif()
+  set(XPU_SDK_ROOT $ENV{XPU_SDK_ROOT})
+  if(NOT XPU_SDK_ROOT)
+    message(FATAL_ERROR "Must set XPU_SDK_ROOT or env XPU_SDK_ROOT when LITE_WITH_XPU=ON")
+  endif()
 endif()
 
 message(STATUS "XPU_SDK_ROOT: ${XPU_SDK_ROOT}")
 find_path(XPU_SDK_INC NAMES xtcl.h
-  PATHS ${XPU_SDK_ROOT}/XTCL/include/xtcl NO_DEFAULT_PATH)
+  PATHS ${XPU_SDK_ROOT}/XTCL/include/xtcl
+  NO_DEFAULT_PATH)
 if(NOT XPU_SDK_INC)
   message(FATAL_ERROR "Can not find xtcl.h in ${XPU_SDK_ROOT}/include")
 endif()
@@ -34,7 +35,8 @@ include_directories("${XPU_SDK_ROOT}/XTCL/include")
 include_directories("${XPU_SDK_ROOT}/XTDK/include")
 
 find_library(XPU_SDK_XTCL_FILE NAMES xtcl
-  PATHS ${XPU_SDK_ROOT}/XTCL/so)
+  PATHS ${XPU_SDK_ROOT}/XTCL/so
+  NO_DEFAULT_PATH)
 
 if(NOT XPU_SDK_XTCL_FILE)
   message(FATAL_ERROR "Can not find XPU XTCL Library in ${XPU_SDK_ROOT}")
@@ -45,7 +47,8 @@ else()
 endif()
 
 find_library(XPU_SDK_TVM_FILE NAMES tvm
-  PATHS ${XPU_SDK_ROOT}/XTCL/so)
+  PATHS ${XPU_SDK_ROOT}/XTCL/so
+  NO_DEFAULT_PATH)
 
 if(NOT XPU_SDK_TVM_FILE)
   message(FATAL_ERROR "Can not find XPU TVM Library in ${XPU_SDK_ROOT}")
@@ -56,7 +59,8 @@ else()
 endif()
 
 find_library(XPU_SDK_XPU_API_FILE NAMES xpuapi
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib)
+  PATHS ${XPU_SDK_ROOT}/XTDK/shlib
+  NO_DEFAULT_PATH)
 
 if(NOT XPU_SDK_XPU_API_FILE)
   message(FATAL_ERROR "Can not find XPU API Library in ${XPU_SDK_ROOT}")
@@ -67,7 +71,8 @@ else()
 endif()
 
 find_library(XPU_SDK_XPU_RT_FILE NAMES xpurt
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib)
+  PATHS ${XPU_SDK_ROOT}/XTDK/shlib
+  NO_DEFAULT_PATH)
 
 if(NOT XPU_SDK_XPU_RT_FILE)
   message(FATAL_ERROR "Can not find XPU RT Library in ${XPU_SDK_ROOT}")
@@ -78,18 +83,12 @@ else()
 endif()
 
 find_library(XPU_SDK_XPU_JITC_FILE NAMES xpujitc
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib)
-
-#if(NOT XPU_SDK_XPU_JITC_FILE)
-#  message(FATAL_ERROR "Can not find XPU JITC Library in ${XPU_SDK_ROOT}")
-#else()
-#  message(STATUS "Found XPU JITC Library: ${XPU_SDK_XPU_JITC_FILE}")
-#  add_library(xpu_sdk_xpu_jitc SHARED IMPORTED GLOBAL)
-#  set_property(TARGET xpu_sdk_xpu_jitc PROPERTY IMPORTED_LOCATION ${XPU_SDK_XPU_JITC_FILE})
-#endif()
+  PATHS ${XPU_SDK_ROOT}/XTDK/shlib
+  NO_DEFAULT_PATH)
 
 find_library(XPU_SDK_LLVM_FILE NAMES LLVM-8
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib)
+  PATHS ${XPU_SDK_ROOT}/XTDK/shlib
+  NO_DEFAULT_PATH)
 
 if(NOT XPU_SDK_LLVM_FILE)
   message(FATAL_ERROR "Can not find LLVM Library in ${XPU_SDK_ROOT}")
@@ -101,7 +100,5 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=0 -L/home/hongming/Work/xpu_toolchain_aarch64/XTDK/shlib -L/home/hongming/Work/xpu_toolchain_aarch64/XTCL/so")
 
-#set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_xpu_jitc xpu_sdk_llvm CACHE INTERNAL "xpu runtime libs")
-#set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_xpu_jitc xpu_sdk_llvm CACHE INTERNAL "xpu builder libs")
 set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu runtime libs")
 set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu builder libs")
