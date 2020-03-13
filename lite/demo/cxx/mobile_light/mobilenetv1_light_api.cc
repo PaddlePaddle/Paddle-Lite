@@ -114,8 +114,8 @@ void RunModel(std::string model_dir,
     for (int i = 0; i < ShapeProduction(out_shape); ++i) {
       sum += output_tensor->data<float>()[i];
     }
-    std::cout << "out_dims.production():" << ShapeProduction(out_shape)
-              << std::endl;
+    std::cout << "output tensor " << tidx
+              << " elem num:" << ShapeProduction(out_shape) << std::endl;
     std::cout << "output tensor " << tidx << " sum value:" << sum << std::endl;
     std::cout << "output tensor " << tidx
               << " mean value:" << sum / ShapeProduction(out_shape)
