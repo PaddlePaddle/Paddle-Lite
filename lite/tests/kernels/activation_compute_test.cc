@@ -202,9 +202,6 @@ class ActivationComputeTester : public arena::TestCase {
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
-    for (int i = 0; i < dims_.production(); i++) {
-      LOG(INFO) << "output_" << i << " : " << output_data[i];
-    }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -232,7 +229,6 @@ class ActivationComputeTester : public arena::TestCase {
       float sign = i % 3 == 0 ? -1.0f : 1.0f;
       sign = (type_ == "log" || type_ == "rsqrt") ? 1 : sign;
       data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
-      LOG(INFO) << "data_" << i << " : " << data[i];
     }
     SetCommonTensor(input_, dims_, data.data());
 
