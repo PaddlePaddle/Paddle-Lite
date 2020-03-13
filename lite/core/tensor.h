@@ -179,6 +179,11 @@ class TensorLite {
         (static_cast<char *>(buffer_->data()) + offset_));
   }
 
+  void *raw_data() {
+    return static_cast<char *>(
+        (static_cast<char *>(buffer_->data()) + offset_));
+  }
+
   void clear() {
     buffer_->Free();
     offset_ = 0;
