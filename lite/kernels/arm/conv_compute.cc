@@ -59,7 +59,8 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool flag_dw_3x3 = (kw == 3) && (kh == 3) && (stride == 1 || stride == 2);
   bool flag_dw_5x5 = (kw == 5) && (kh == 5) && (stride == 1 || stride == 2);
 
-#if 1  // def LITE_WITH_ARM_CLANG  // clang
+#ifdef __aarch64__ 
+#else
   flag_dw_3x3 =
       (stride == 1 && (paddings[0] > 1 || paddings[2] > 1)) ? false : true;
 #endif
