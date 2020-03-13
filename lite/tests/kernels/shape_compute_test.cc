@@ -16,13 +16,14 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
 class ShapeComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string x_ = "Input";
+  std::string input_ = "Input";
   std::string out_ = "Out";
   DDim dims_;
 
@@ -31,7 +32,7 @@ class ShapeComputeTester : public arena::TestCase {
       : TestCase(place, alias), dims_(dims) {}
 
   void RunBaseline(Scope* scope) override {
-    const auto* input = scope->FindTensor(x_);
+    const auto* input = scope->FindTensor(input_);
     CHECK(input);
     auto* out = scope->NewTensor(out_);
     CHECK(out);
@@ -45,42 +46,46 @@ class ShapeComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("shape");
-    op_desc->SetInput("Input", {x_});
+    op_desc->SetInput("Input", {input_});
     op_desc->SetOutput("Out", {out_});
   }
 
   void PrepareData() override {
-    std::vector<float> in_data(dims_.production());
-    for (int i = 0; i < dims_.production(); ++i) {
-      in_data[i] = i;
-    }
-    SetCommonTensor(x_, dims_, in_data.data());
+    std::vector<float> din(dims_.production());
+    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(input_, dims_, din.data());
   }
 };
 
-void test_shape(Place place) {
-  for (int N : {1, 2, 3, 4}) {
-    for (int C : {1, 2, 3, 4}) {
-      for (int H : {1, 2, 3, 4}) {
-        for (int W : {1, 2, 3, 4}) {
-          std::unique_ptr<arena::TestCase> tester(
-              new ShapeComputeTester(place, "def", DDim({N, C, H, W})));
-          arena::Arena arena(std::move(tester), place, 2e-5);
-          arena.TestPrecision();
-        }
-      }
-    }
-  }
+void TestShapeHelper(Place place,
+                     float abs_error,
+                     std::vector<int64_t> x_dims) {
+  std::unique_ptr<arena::TestCase> tester(
+      new ShapeComputeTester(place, "def", DDim(x_dims)));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+void test_shape(Place place, float abs_error) {
+  TestShapeHelper(place, abs_error, {2, 3, 4, 5});
+  TestShapeHelper(place, abs_error, {3, 4, 5});
+  TestShapeHelper(place, abs_error, {4, 5});
+  TestShapeHelper(place, abs_error, {5});
 }
 
 TEST(shape, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 1e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_shape(place);
-#endif
+
+  test_shape(place, abs_error);
 }
 
 }  // namespace lite

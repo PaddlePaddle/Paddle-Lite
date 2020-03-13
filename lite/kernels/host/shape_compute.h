@@ -19,16 +19,17 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class ShapeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ShapeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
   virtual ~ShapeCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
