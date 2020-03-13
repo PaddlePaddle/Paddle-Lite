@@ -325,6 +325,13 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
                         dims.push_back(DDim({batch, c, h, h}));
                       }
                     }
+#ifdef __aarch64__
+#else
+                    if (stride == 1 && (pad_bottom == 2 || pad_right == 2 ||
+                                        pad_top == 2 || pad_left == 2)) {
+                      continue;
+                    }
+#endif
                     const float leakey_relu_scale = 8.88;
                     test_conv_fp32(dims,
                                    weights_dim,
