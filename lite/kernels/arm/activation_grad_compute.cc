@@ -20,15 +20,19 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void SquareCompute::Run() {
+void SquareGradCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
 
+  auto x_data = param.X->data<float>();
   auto x_grad_data = param.X_grad->mutable_data<float>();
-  lite::arm::math::act_square_grad<float>(
-      out_grad_data, x_grad_data, out_grad_dims.production(), ctx.threads());
+  lite::arm::math::act_square_grad<float>(x_data,
+                                          out_grad_data,
+                                          x_grad_data,
+                                          out_grad_dims.production(),
+                                          ctx.threads());
 }
 
 }  // namespace arm
@@ -42,6 +46,7 @@ REGISTER_LITE_KERNEL(square_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::SquareGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

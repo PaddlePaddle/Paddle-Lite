@@ -35,7 +35,8 @@ enum activation_type_test {
   EXP,
   FLOOR,
   RSQRT,
-  GELU
+  GELU,
+  SQUARE
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -192,8 +193,17 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case SQUARE: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] * x_data[i];
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
+    }
+    for (int i = 0; i < dims_.production(); i++) {
+      LOG(INFO) << "output_" << i << " : " << output_data[i];
     }
   }
 
@@ -222,6 +232,7 @@ class ActivationComputeTester : public arena::TestCase {
       float sign = i % 3 == 0 ? -1.0f : 1.0f;
       sign = (type_ == "log" || type_ == "rsqrt") ? 1 : sign;
       data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
+      LOG(INFO) << "data_" << i << " : " << data[i];
     }
     SetCommonTensor(input_, dims_, data.data());
 
@@ -623,6 +634,33 @@ TEST(Activation_rsqrt, precision) {
               DDim(std::vector<int64_t>({n, c, h, w})),
               "rsqrt",
               RSQRT));
+          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+#endif
+}
+
+TEST(Activation_square, precision) {
+  LOG(INFO) << "test square op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  for (auto n : {2}) {
+    for (auto c : {2}) {
+      for (auto h : {2}) {
+        for (auto w : {2}) {
+          std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+              place,
+              "def",
+              0.01,
+              6.,
+              "all",
+              0.,
+              DDim(std::vector<int64_t>({n, c, h, w})),
+              "square",
+              SQUARE));
           arena::Arena arena(std::move(tester), place, 2e-5);
           arena.TestPrecision();
         }
