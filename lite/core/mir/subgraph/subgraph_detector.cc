@@ -223,10 +223,16 @@ std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
   std::vector<std::string> lines = ReadLines(config_file_path);
 
   for (std::string line : lines) {
-    std::vector<std::string> node_info = Split(line, " ");
+    std::vector<std::string> node_info = Split(line, ":");
     std::string op_type = node_info.at(0);
-    std::vector<std::string> in_vars_name = Split(node_info.at(1), ",");
-    std::vector<std::string> out_vars_name = Split(node_info.at(2), ",");
+    std::vector<std::string> in_vars_name;
+    if (node_info.size() > 1) {
+      in_vars_name = Split(node_info.at(1), ",");
+    }
+    std::vector<std::string> out_vars_name;
+    if (node_info.size() > 2) {
+      out_vars_name = Split(node_info.at(2), ",");
+    }
 
     for (auto &node : graph_->mutable_nodes()) {
       if (node.IsArg()) continue;
@@ -271,7 +277,6 @@ std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
 
       if (matched) {
         excluded_nodes.insert(&node);
-        break;
       }
     }
   }
