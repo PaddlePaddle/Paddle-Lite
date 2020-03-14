@@ -513,7 +513,7 @@ void image_resize_basic(const uint8_t* in_data,
   int w_out = dstw;
   int num = 1;
   int orih = dsth;
-  
+
   compute_xy(
       srcw, srch, dstw, dsth, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
   if (srcFormat == ImageFormat::GRAY) {
@@ -565,10 +565,10 @@ void image_resize_basic(const uint8_t* in_data,
       ialpha = ialpha1;
       xofs = xofs1;
       yofs = yofs1;
-      y_in_start = yofs[dy-orih];
+      y_in_start = yofs[dy - orih];
     }
-     int y_in_end = y_in_start + 1;
-     if (y_in_start < 0) {
+    int y_in_end = y_in_start + 1;
+    if (y_in_start < 0) {
       y_flag = 1;
       y_in_end = 0;
     }
@@ -606,9 +606,6 @@ void image_resize_basic(const uint8_t* in_data,
         bl_index++;
         br_index++;
         float outval = (tl * a0 + tr * a1) * b0 + (bl * a0 + br * a1) * b1;
-        // printf("tl: %d, tr: %d, bl: %d, br: %d \n", tl, tr, bl, br);
-        // printf("br_index: %d, a0: %f, b1: %f, out: %f \n", br_index, a0, b1,
-        // outval);
         out_ptr[ind++] = ceil(outval);
       }
     }

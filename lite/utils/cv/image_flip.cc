@@ -388,7 +388,7 @@ flip:
 */
 void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 8;
-  uint8_t* zerobuff = new uint8_t[w_in]; 
+  uint8_t* zerobuff = new uint8_t[w_in];
   memset(zerobuff, 0.0, sizeof(uint8_t) * w_in);
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
