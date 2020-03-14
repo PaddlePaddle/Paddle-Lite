@@ -31,7 +31,7 @@ int64_t ShapeProduction(const shape_t& shape) {
 std::string ShapePrint(const shape_t& shape) {
   std::string shape_str{""};
   for (auto i : shape) {
-    shape_str = shape_str + std::to_string(i) + " ";
+    shape_str += std::to_string(i) + " ";
   }
   return shape_str;
 }
@@ -153,9 +153,9 @@ int main(int argc, char** argv) {
   std::string model_dir = argv[1];
   if (argc >= 9) {
     input_shape[0] = atoi(argv[2]);
-    input_shape[1] = atoi(argv[4]);
-    input_shape[2] = atoi(argv[5]);
-    input_shape[3] = atoi(argv[6]);
+    input_shape[1] = atoi(argv[3]);
+    input_shape[2] = atoi(argv[4]);
+    input_shape[3] = atoi(argv[5]);
     repeats = atoi(argv[6]);
     warmup = atoi(argv[7]);
     print_output_elem = atoi(argv[8]);
