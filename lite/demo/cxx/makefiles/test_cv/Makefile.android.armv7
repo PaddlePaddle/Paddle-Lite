@@ -40,7 +40,7 @@ CXX_INCLUDES = $(INCLUDES) ${OPENCV_INCLUDE} -I$(LITE_ROOT)/cxx/include
 # 1. Comment above line using `libpaddle_light_api_shared.so`
 # 2. Undo comment below line using `libpaddle_api_light_bundled.a`
 
-CXX_LIBS = $(LITE_ROOT)/cxx/lib/libpaddle_api_light_bundled.a $(SYSTEM_LIBS)
+CXX_LIBS = ${OPENCV_LIBS} $(LITE_ROOT)/cxx/lib/libpaddle_api_light_bundled.a $(SYSTEM_LIBS)
 
 test_model_cv: fetch_opencv test_model_cv.o
 	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) test_model_cv.o -o test_model_cv  $(CXX_LIBS) $(LDFLAGS)

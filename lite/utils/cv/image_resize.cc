@@ -125,7 +125,7 @@ void resize(const uint8_t* src,
                srch / 2,
                w,
                tmp,
-               num,
+               2,
                scale_x,
                scale_y,
                xofs1,
@@ -146,6 +146,8 @@ void resize(const uint8_t* src,
       xofs = xofs1;
       yofs = yofs1;
       ialpha = ialpha1;
+      num = 2;
+      sy = yofs1[dy - orih];
     }
 
     // hresize two rows
@@ -154,8 +156,8 @@ void resize(const uint8_t* src,
     const int16_t* ialphap = ialpha;
     int16_t* rows0p = rowsbuf0;
     int16_t* rows1p = rowsbuf1;
-    for (int dx = 0; dx < dstw; dx++) {
-      int sx = xofs[dx];
+    for (int dx = 0; dx < w_out; dx += num) {
+      int sx = xofs[dx / num];
       int16_t a0 = ialphap[0];
       int16_t a1 = ialphap[1];
 
@@ -314,7 +316,6 @@ void compute_xy(int srcw,
 
     float a0 = (1.f - fx) * resize_coef_scale;
     float a1 = fx * resize_coef_scale;
-
     ialpha[dx * 2] = SATURATE_CAST_SHORT(a0);
     ialpha[dx * 2 + 1] = SATURATE_CAST_SHORT(a1);
   }
