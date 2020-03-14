@@ -32,34 +32,33 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
-  auto axis = op_info->GetAttr<int>("axis");
-  if (x_dims.size() > 3) {
-    CHECK(!(axis == 2 && x_dims[3] > 1))
-        << "[NPU] Unsupported softmax params: axis = " << axis
-        << "  :x_w = " << x_dims[3];
+  int axis = op_info->HasAttr("axis") ? op_info->GetAttr<int>("axis") : -1;
+  if (axis < 0) {
+    axis += x_rank;
+  }
+  if (axis == 2 && x_rank > 3 && x_dims[3] != 1) {
+    LOG(WARNING) << "[NPU] Unsupported softmax params: axis = " << axis
+                 << "  :x_w = " << x_dims[3];
+    return FAILED;
   }
 
   // X node
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Softmax node
-  auto softmax_node = graph->AddNode<ge::op::Softmax>(out_name);
-  softmax_node->set_input_x(*x_node);
-  softmax_node->set_attr_axis(axis);
+  auto softmax_node = graph->Add<ge::op::Softmax>(out_name);
+  auto softmax_op = softmax_node->data<ge::op::Softmax>();
+  softmax_op->set_input_x(*x_node->data());
+  softmax_op->set_attr_axis(axis);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -68,6 +67,6 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU,
-                         softmax,
+REGISTER_SUBGRAPH_BRIDGE(softmax,
+                         kNPU,
                          paddle::lite::subgraph::npu::SoftmaxConverter);

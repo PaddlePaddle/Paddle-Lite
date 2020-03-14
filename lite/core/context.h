@@ -20,7 +20,6 @@
 #include "lite/backends/cuda/cuda_utils.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <gflags/gflags.h>
 #include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
@@ -36,10 +35,7 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
-
-#ifdef LITE_WITH_OPENCL
-DECLARE_string(cl_path);
-#endif
+#include "lite/utils/env.h"
 
 namespace paddle {
 namespace lite {
@@ -55,6 +51,7 @@ using NPUContext = Context<TargetType::kNPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
+using BMContext = Context<TargetType::kBM>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -79,6 +76,23 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_BM
+template <>
+class Context<TargetType::kBM> {
+ public:
+  Context() {}
+  explicit Context(const BMContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() { Init(0); }
+
+  void Init(int dev_id) { TargetWrapperBM::SetDevice(dev_id); }
+  void CopySharedTo(BMContext* ctx) {}
+  void* GetHandle() { return TargetWrapperBM::GetHandle(); }
+
+  std::string name() const { return "BMContext"; }
 };
 #endif
 
@@ -286,7 +300,6 @@ class Context<TargetType::kOpenCL> {
   void InitOnce() {
     // Init cl runtime.
     CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
-    CLRuntime::Global()->set_cl_path(FLAGS_cl_path);
 
     cl_context_ = std::make_shared<CLContext>();
     cl_wait_list_ = std::make_shared<WaitListType>();
@@ -375,6 +388,12 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
+#ifdef LITE_WITH_BM
+      case TARGET(kBM):
+        kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
+            &ctx->As<BMContext>());
+        break;
+#endif
       default:
 #ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
@@ -412,6 +431,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
+#endif
+#ifdef LITE_WITH_BM
+    InitContext<TargetType::kBM, BMContext>();
 #endif
   }
 

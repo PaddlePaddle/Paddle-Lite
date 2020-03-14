@@ -41,8 +41,7 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
     return *(it->second);
   }
 
-  auto program = CLRuntime::Global()->CreateProgram(
-      GetContext(), CLRuntime::Global()->cl_path() + "/cl_kernel/" + file_name);
+  auto program = CLRuntime::Global()->CreateProgram(GetContext(), file_name);
 
   VLOG(3) << " --- begin build program -> " << program_key << " --- ";
   CLRuntime::Global()->BuildProgram(program.get(), options);

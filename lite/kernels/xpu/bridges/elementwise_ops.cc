@@ -32,47 +32,40 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto y_name = op_info->Input("Y").front();
-  auto y_type = kernel->GetInputDeclType("Y");
-  CHECK(y_type->precision() == PRECISION(kFloat));
-  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Y node
-  std::shared_ptr<xtcl::xExpr> y_node = nullptr;
-  if (graph->HasNode(y_name)) {
-    y_node = graph->GetNode(y_name);
+  std::shared_ptr<Node> y_node = nullptr;
+  if (graph->Has(y_name)) {
+    y_node = graph->Get(y_name);
   } else {
-    y_node = graph->AddNode(y_name, y_dims);
+    y_node = graph->Add(y_name, *y);
   }
 
   // Elementwise node
-  std::shared_ptr<xtcl::xExpr> elementwise_node = nullptr;
+  std::shared_ptr<Node> elt_node = nullptr;
   if (y_dims.size() == 1) {
-    elementwise_node = graph->AddNode(
-        out_name, graph->builder_.CreateBiasAdd(*x_node, axis, *y_node));
+    elt_node = graph->Add(
+        out_name,
+        graph->builder_.CreateBiasAdd(*x_node->data(), axis, *y_node->data()));
   } else if (x_dims.size() == y_dims.size()) {
-    elementwise_node = graph->AddNode(
-        out_name, graph->builder_.CreateBinaryOp("add", *x_node, *y_node));
+    elt_node = graph->Add(out_name,
+                          graph->builder_.CreateBinaryOp(
+                              "add", *x_node->data(), *y_node->data()));
   } else {
     LOG(WARNING)
         << "[XPU] elementwise_add only support y of one dimension, or x "
@@ -88,6 +81,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         elementwise_add,
+REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
+                         kXPU,
                          paddle::lite::subgraph::xpu::ElementwiseConverter);

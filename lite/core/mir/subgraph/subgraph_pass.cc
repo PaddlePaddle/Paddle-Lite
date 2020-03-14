@@ -27,7 +27,7 @@ namespace mir {
 
 void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::unordered_set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(dev_type, op_type) supported_lists.insert(#op_type);
+#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
   auto teller = [&](Node* node) {
@@ -41,8 +41,22 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::unordered_set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(dev_type, op_type) supported_lists.insert(#op_type);
+#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
+  auto teller = [&](Node* node) {
+    if (!node->IsStmt()) return false;
+    auto& stmt = node->AsStmt();
+    return supported_lists.count(stmt.op_type()) != 0;
+  };
+  SubgraphFuser fuser(graph.get(), teller, 1 /* min_subgraph_size */);
+  fuser();
+}
+
+void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::unordered_set<std::string> supported_lists;
+#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
+#include "lite/kernels/bm/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
@@ -61,3 +75,5 @@ REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite::mir::NPUSubgraphPass)
     .BindTargets({TARGET(kNPU)});
 REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite::mir::XPUSubgraphPass)
     .BindTargets({TARGET(kXPU)});
+REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite::mir::BMSubgraphPass)
+    .BindTargets({TARGET(kBM)});

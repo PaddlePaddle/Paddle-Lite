@@ -614,16 +614,16 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "fmin   v3.4s, v3.4s, %[six].4s  \n" /* relu6 */
 
 #define NCHWC1_TRANS_FP32_LEAKY_RELU                   \
-  "cmhs v4.4s, v0.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "cmhs v5.4s, v1.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "cmhs v6.4s, v2.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "cmhs v7.4s, v3.4s, v20.4s \n"       /* vcgeq_u32 */ \
-  "fmul v8.4s, v0.4s, %[scale].4s \n"  /* mul */       \
-  "fmul v9.4s, v1.4s, %[scale].4s \n"  /* mul */       \
+  "fcmge v4.4s, v0.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v5.4s, v1.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v6.4s, v2.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v7.4s, v3.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fmul v8.4s, v0.4s, %[scale].4s  \n" /* mul */       \
+  "fmul v9.4s, v1.4s, %[scale].4s  \n" /* mul */       \
   "fmul v10.4s, v2.4s, %[scale].4s \n" /* mul */       \
   "fmul v11.4s, v3.4s, %[scale].4s \n" /* mul */       \
-  "bif  v0.16b, v8.16b, v4.16b \n"     /* choose*/     \
-  "bif  v1.16b, v9.16b, v5.16b \n"     /* choose*/     \
+  "bif  v0.16b, v8.16b, v4.16b  \n"    /* choose*/     \
+  "bif  v1.16b, v9.16b, v5.16b  \n"    /* choose*/     \
   "bif  v2.16b, v10.16b, v6.16b \n"    /* choose*/     \
   "bif  v3.16b, v11.16b, v7.16b \n"    /* choose*/
 
@@ -674,15 +674,15 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "vbif q3, q12, q8 @ choose \n"
 
 #define NCHWC1_TRANS_FP32_STORE                                 \
-  "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result    \n" \
-  "vst1.32  {d2-d3}, [%[doutc0r0]]!       @ store result,  \n"  \
+  "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result  \n"   \
+  "vst1.32  {d2-d3}, [%[doutc0r0]]!       @ store result, \n"   \
   "subs   %[cnt], %[cnt], #1              @ loop count - 1\n"   \
                                                                 \
-  "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data \n"       \
-  "vst1.32  {d4-d5}, [%[doutc0r0]]!       @ store result    \n" \
+  "vld1.32 {d0-d3}, [%[ptr_din]]!         @ load data      \n"  \
+  "vst1.32  {d4-d5}, [%[doutc0r0]]!       @ store result   \n"  \
   "vst1.32  {d6-d7}, [%[doutc0r0]]!       @ store result,  \n"  \
                                                                 \
-  "vld1.32 {d4-d7}, [%[ptr_din]]!         @ load data \n"       \
+  "vld1.32 {d4-d7}, [%[ptr_din]]!         @ load data     \n"   \
                                                                 \
   "bne    1b                              @ jump to main loop\n"
 #endif
@@ -703,7 +703,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -722,7 +724,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -734,7 +736,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -753,7 +757,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -765,7 +769,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -785,7 +791,9 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                       "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -812,14 +820,14 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0", "v1", "v2", "v3", "v20");
+                 : "cc", "memory", "v0", "v1", "v2", "v3", "v20");
 #else
     asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_STORE
                  : [doutc0r0] "+r"(doutc0_ptr),
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q15");
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
 }
@@ -934,12 +942,12 @@ inline bool write_to_output_c1_fp32(const float* din,
   "fmin   v2.4s, v2.4s, %[six].4s  \n" /* relu6 */ \
   "fmin   v3.4s, v3.4s, %[six].4s  \n" /* relu6 */
 
-#define NCHWC2_TRANS_FP32_LEAKY_RELU                  \
-  "cmhs v6.4s, v2.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "cmhs v7.4s, v3.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "fmul v4.4s, v2.4s, %[scale].4s \n" /* mul */       \
-  "fmul v5.4s, v3.4s, %[scale].4s \n" /* mul */       \
-  "bif  v2.16b, v4.16b, v6.16b \n"    /* choose*/     \
+#define NCHWC2_TRANS_FP32_LEAKY_RELU                   \
+  "fcmge v6.4s, v2.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fcmge v7.4s, v3.4s, v20.4s \n"      /* vcgeq_f32 */ \
+  "fmul v4.4s, v2.4s, %[scale].4s \n" /* mul */        \
+  "fmul v5.4s, v3.4s, %[scale].4s \n" /* mul */        \
+  "bif  v2.16b, v4.16b, v6.16b \n"    /* choose*/      \
   "bif  v3.16b, v5.16b, v7.16b \n"    /* choose*/
 
 #define NCHWC2_TRANS_FP32_STORE                          \
@@ -1006,7 +1014,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1026,7 +1036,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -1039,7 +1049,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1059,7 +1071,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -1072,7 +1084,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1092,7 +1106,9 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                       "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -1120,7 +1136,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0", "v1", "v2", "v3", "v4", "v5", "v20");
+                 : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v20");
 #else
     asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_STORE
                  : [doutc0r0] "+r"(doutc0_ptr),
@@ -1128,7 +1144,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q15");
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
 }
@@ -1275,19 +1291,19 @@ inline bool write_to_output_c2_fp32(const float* din,
   "fmin   v18.4s, v18.4s, %[six].4s  \n" /* relu6 */ \
   "fmin   v19.4s, v19.4s, %[six].4s  \n" /* relu6 */
 
-#define NCHWC4_TRANS_FP32_LEAKY_RELU                   \
-  "cmhs v8.4s, v16.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "cmhs v9.4s, v17.4s, v20.4s \n"      /* vcgeq_u32 */ \
-  "cmhs v10.4s, v18.4s, v20.4s \n"     /* vcgeq_u32 */ \
-  "cmhs v11.4s, v19.4s, v20.4s \n"     /* vcgeq_u32 */ \
-  "fmul v4.4s, v16.4s, %[scale].4s \n" /* mul */       \
-  "fmul v5.4s, v17.4s, %[scale].4s \n" /* mul */       \
-  "fmul v6.4s, v18.4s, %[scale].4s \n" /* mul */       \
-  "fmul v7.4s, v19.4s, %[scale].4s \n" /* mul */       \
-  "bif  v16.16b, v4.16b, v8.16b \n"    /* choose*/     \
-  "bif  v17.16b, v5.16b, v9.16b \n"    /* choose*/     \
-  "bif  v18.16b, v6.16b, v10.16b \n"   /* choose*/     \
-  "bif  v19.16b, v7.16b, v11.16b \n"   /* choose*/
+#define NCHWC4_TRANS_FP32_LEAKY_RELU                    \
+  "fcmge v8.4s, v16.4s, v20.4s  \n"     /* vcgeq_f32 */ \
+  "fcmge v9.4s, v17.4s, v20.4s  \n"     /* vcgeq_f32 */ \
+  "fcmge v10.4s, v18.4s, v20.4s \n"     /* vcgeq_f32 */ \
+  "fcmge v11.4s, v19.4s, v20.4s \n"     /* vcgeq_f32 */ \
+  "fmul v4.4s, v16.4s, %[scale].4s \n"  /* mul */       \
+  "fmul v5.4s, v17.4s, %[scale].4s \n"  /* mul */       \
+  "fmul v6.4s, v18.4s, %[scale].4s \n"  /* mul */       \
+  "fmul v7.4s, v19.4s, %[scale].4s \n"  /* mul */       \
+  "bif  v16.16b, v4.16b, v8.16b  \n"    /* choose*/     \
+  "bif  v17.16b, v5.16b, v9.16b  \n"    /* choose*/     \
+  "bif  v18.16b, v6.16b, v10.16b \n"    /* choose*/     \
+  "bif  v19.16b, v7.16b, v11.16b \n"    /* choose*/
 
 #define NCHWC4_TRANS_FP32_STORE                          \
   "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/    \
@@ -1373,7 +1389,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1403,7 +1421,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -1418,7 +1436,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1448,7 +1468,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q15");
+                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -1463,7 +1483,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1493,7 +1515,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                       "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -1523,7 +1547,9 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0",
+                 : "cc",
+                   "memory",
+                   "v0",
                    "v1",
                    "v2",
                    "v3",
@@ -1544,7 +1570,7 @@ inline void act_switch_c4_fp32(const float* din_ptr,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q15");
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
 }
@@ -1754,15 +1780,15 @@ inline bool write_to_output_c4_fp32(const float* din,
   "fmin   v13.4s, v13.4s, %[six].4s  \n" /*relu6*/
 
 #define NCHWC8_TRANS_FP32_LEAKY_RELU                \
-  "cmhs v10.4s, v16.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v11.4s, v17.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v14.4s, v18.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v15.4s, v19.4s, v20.4s \n" /* vcgeq_u32 */  \
+  "fcmge v10.4s, v16.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v11.4s, v17.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v14.4s, v18.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v15.4s, v19.4s, v20.4s \n" /* vcgeq_u32 */ \
                                                     \
-  "cmhs v21.4s, v8.4s, v20.4s \n"  /* vcgeq_u32 */  \
-  "cmhs v22.4s, v9.4s, v20.4s \n"  /* vcgeq_u32 */  \
-  "cmhs v23.4s, v12.4s, v20.4s \n" /* vcgeq_u32 */  \
-  "cmhs v24.4s, v13.4s, v20.4s \n" /* vcgeq_u32 */  \
+  "fcmge v21.4s, v8.4s, v20.4s \n"  /* vcgeq_u32 */ \
+  "fcmge v22.4s, v9.4s, v20.4s \n"  /* vcgeq_u32 */ \
+  "fcmge v23.4s, v12.4s, v20.4s \n" /* vcgeq_u32 */ \
+  "fcmge v24.4s, v13.4s, v20.4s \n" /* vcgeq_u32 */ \
                                                     \
   "fmul v25.4s, v16.4s, %[scale].4s \n" /* mul */   \
   "fmul v26.4s, v17.4s, %[scale].4s \n" /* mul */   \
@@ -1839,7 +1865,7 @@ inline bool write_to_output_c4_fp32(const float* din,
   "vmin.f32  q7, q7, %q[six]                 @ relu6\n"
 
 #define NCHWC8_TRANS_FP32_LEAKY_RELU           \
-  "vcge.f32   q9, q0, q15        @ q0 > 0 \n"  \
+  "vcge.f32   q9, q0,  q15        @ q0 > 0 \n" \
   "vcge.f32   q10, q1, q15        @ q0 > 0 \n" \
   "vcge.f32   q11, q2, q15        @ q0 > 0 \n" \
   "vcge.f32   q12, q3, q15        @ q0 > 0 \n" \
@@ -1929,7 +1955,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      :
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -1963,7 +1991,17 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      :
-                     : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
+                     : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -1982,7 +2020,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [six] "w"(six)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -2012,7 +2052,17 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
-                     : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
+                     : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -2031,7 +2081,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [cnt] "+r"(cnt_loop),
                        [ptr_din] "+r"(din_ptr)
                      : [scale] "w"(scale)
-                     : "v0",
+                     : "cc",
+                       "memory",
+                       "v0",
                        "v1",
                        "v2",
                        "v3",
@@ -2076,7 +2128,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [scale] "w"(scale)
-                     : "q0",
+                     : "cc",
+                       "memory",
+                       "q0",
                        "q1",
                        "q2",
                        "q3",
@@ -2112,7 +2166,9 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
                  :
-                 : "v0",
+                 : "cc",
+                   "memory",
+                   "v0",
                    "v1",
                    "v2",
                    "v3",
@@ -2146,7 +2202,17 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
                  :
-                 : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q15");
+                 : "cc",
+                   "memory",
+                   "q0",
+                   "q1",
+                   "q2",
+                   "q3",
+                   "q4",
+                   "q5",
+                   "q6",
+                   "q7",
+                   "q15");
 #endif
   }
 }
@@ -2168,19 +2234,19 @@ inline void act_switch_c8_fp32(const float* din_ptr,
   "fmin v1.4s, v1.4s, %[vsix].4s   \n" /* vmaxq_f32() */ \
   "fmin v2.4s, v2.4s, %[vsix].4s   \n" /* vmaxq_f32() */ \
   "fmin v3.4s, v3.4s, %[vsix].4s   \n" /* vmaxq_f32() */
-#define DO_LEAKY_RELU                                     \
-  "cmhs v4.4s, v0.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v5.4s, v0.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v6.4s, v1.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v7.4s, v1.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v8.4s, v2.4s,  %[vzero].4s  \n"   /* vcgeq_u32 */ \
-  "fmul v9.4s, v2.4s, %[vscale].4s \n"    /* vmulq_f32 */ \
-  "cmhs v10.4s, v3.4s,  %[vzero].4s  \n"  /* vcgeq_u32 */ \
-  "fmul v11.4s, v3.4s, %[vscale].4s \n"   /* vmulq_f32 */ \
-  "bif v0.16b, v5.16b, v4.16b       \n"   /* choose*/     \
-  "bif v1.16b, v7.16b, v6.16b       \n"   /* choose*/     \
-  "bif v2.16b, v9.16b, v8.16b       \n"   /* choose*/     \
-  "bif v3.16b, v11.16b, v10.16b       \n" /* choose*/
+#define DO_LEAKY_RELU                                    \
+  "fcmge v4.4s, v0.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v5.4s, v0.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v6.4s, v1.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v7.4s, v1.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v8.4s, v2.4s,  %[vzero].4s  \n" /* vcgeq_f32 */ \
+  "fmul v9.4s, v2.4s, %[vscale].4s   \n" /* vmulq_f32 */ \
+  "fcmge v10.4s, v3.4s,  %[vzero].4s \n" /* vcgeq_f32 */ \
+  "fmul v11.4s, v3.4s, %[vscale].4s  \n" /* vmulq_f32 */ \
+  "bif v0.16b, v5.16b, v4.16b        \n" /* choose*/     \
+  "bif v1.16b, v7.16b, v6.16b        \n" /* choose*/     \
+  "bif v2.16b, v9.16b, v8.16b        \n" /* choose*/     \
+  "bif v3.16b, v11.16b, v10.16b      \n" /* choose*/
 #define DO_STORE                                         \
   "subs %w[cnt], %w[cnt], #1                    \n"      \
   "st1 {v0.4s}, [%[dout_ptr]], #16 \n" /* vst1q_f32() */ \
@@ -2217,7 +2283,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
   "vbif q3, q8, q7               @ choose \n"    \
   "vbif q4, q10, q9              @ choose \n"    \
   "vbif q5, q12, q11             @ choose \n"    \
-  "vbif q6, q13, q13             @ choose \n"
+  "vbif q6, q14, q13             @ choose \n"
 #define DO_STORE                                            \
   "subs %[cnt], #1                                \n"       \
   "vst1.32 {d6-d7}, [%[dout_ptr]]!       @ vst1q_f32()  \n" \
@@ -2237,7 +2303,7 @@ inline void act_switch_process(float* src,
   int cnt = size >> 4;
   int remain = size % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-  if (act_param != nullptr && act_param->has_active) {
+  if (act_param != nullptr) {
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     if (cnt > 0) {
@@ -2327,6 +2393,7 @@ inline void act_switch_process(float* src,
           src++;
           dst++;
         }
+        break;
       case lite_api::ActivationType::kRelu6:
         for (int i = 0; i < remain; i++) {
           float tmp = *src >= 0.f ? *src : 0.f;
@@ -2336,6 +2403,7 @@ inline void act_switch_process(float* src,
           src++;
           dst++;
         }
+        break;
       case lite_api::ActivationType::kLeakyRelu:
         for (int i = 0; i < remain; i++) {
           if (*src >= 0.f) {
@@ -2742,8 +2810,18 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                                 float32x4_t bias,
                                 bool is_relu) {
 #ifdef __aarch64__
+  float32x4_t vmax = vdupq_n_f32(-127.f);
   asm volatile(NCHWC4_TRANS_INT32
                "subs   %w[cnt], %w[cnt], #1\n"
+               /* data >= -127 */
+               "fcmge v4.4s, v16.4s, %[vmax].4s             \n"
+               "fcmge v5.4s, v18.4s, %[vmax].4s             \n"
+               "fcmge v6.4s, v17.4s, %[vmax].4s            \n"
+               "fcmge v7.4s, v19.4s, %[vmax].4s            \n"
+               "bif v16.16b, %[vmax].16b, v4.16b            \n"
+               "bif v18.16b, %[vmax].16b, v5.16b            \n"
+               "bif v17.16b, %[vmax].16b, v6.16b            \n"
+               "bif v19.16b, %[vmax].16b, v7.16b            \n"
                /* fp32-int32 */
                "fcvtas  v4.4s, v16.4s\n"
                "fcvtas  v5.4s, v18.4s\n"
@@ -2771,7 +2849,10 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  [doutc3r0] "+r"(dout3),
                  [ptr_din] "+r"(din),
                  [cnt] "+r"(cnt)
-               : [scale] "w"(scale), [bias] "w"(bias), [relu] "r"(is_relu)
+               : [scale] "w"(scale),
+                 [vmax] "w"(vmax),
+                 [bias] "w"(bias),
+                 [relu] "r"(is_relu)
                : "cc",
                  "memory",
                  "v0",
@@ -2797,6 +2878,7 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  "v20",
                  "v31");
 #else
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(NCHWC4_TRANS_INT32
                /* set 0.5 offset */
                "vmov.f32 q2, #0.5\n"
@@ -2813,11 +2895,21 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                "vbif.f32   q3, q14, q7   @ get right offset\n"
                "vbif.f32   q4, q14, q8   @ get right offset\n"
                "vbif.f32   q5, q14, q9   @ get right offset\n"
+               "vld1.32 {d28-d29}, [%[vmax]] \n"
                /* add offset */
                "vadd.f32   q10, q2, q10\n"
                "vadd.f32   q11, q3, q11\n"
                "vadd.f32   q12, q4, q12\n"
                "vadd.f32   q13, q5, q13\n"
+               /* data >= -127 */
+               "vcge.f32 q6, q10, q14     @ q10 >= vmax \n"
+               "vcge.f32 q7, q11, q14     @ q11 >= vmax \n"
+               "vcge.f32 q8, q12, q14     @ q12 >= vmax \n"
+               "vcge.f32 q9, q13, q14     @ q13 >= vmax \n"
+               "vbif q10, q14, q6         @ choose \n"
+               "vbif q11, q14, q7         @ choose \n"
+               "vbif q12, q14, q8         @ choose \n"
+               "vbif q13, q14, q9         @ choose \n"
                /* fp32 to int32 */
                "vcvt.s32.f32  q6, q10    @ cvt to int32\n"
                "vcvt.s32.f32  q7, q11    @ cvt to int32\n"
@@ -2834,7 +2926,7 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                "vqmovn.s16 d14, q12      @ cnt to int8\n"
                "vqmovn.s16 d15, q13      @ cnt to int8\n"
                "subs   %[cnt], %[cnt], #1\n"
-               /* store */
+               /* store data*/
                "vld1.32 {d4-d7}, [%[ptr_din]]!\n"
                "vst1.32 {d12[0]},    [%[doutc0r0]]!\n"
                "vst1.32 {d13[0]},    [%[doutc1r0]]!\n"
@@ -2848,7 +2940,10 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
                  [doutc3r0] "+r"(dout3),
                  [ptr_din] "+r"(din),
                  [cnt] "+r"(cnt)
-               : [scale] "w"(scale), [bias] "w"(bias), [relu] "r"(is_relu)
+               : [scale] "w"(scale),
+                 [bias] "w"(bias),
+                 [relu] "r"(is_relu),
+                 [vmax] "r"(vmax)
                : "cc",
                  "memory",
                  "q2",
@@ -2987,8 +3082,10 @@ template <>
 inline int8_t cvt_kernel(int din, float scale, float bias, bool flag_relu) {
   if (flag_relu) {
     return saturate_cast<int8_t>(round(LITEMAX(din * scale + bias, 0)));
+  } else {
+    auto tmp = saturate_cast<int8_t>(round(din * scale + bias));
+    return tmp < -127 ? -127 : tmp;
   }
-  return saturate_cast<int8_t>(round(din * scale + bias));
 }
 
 template <>
@@ -3360,7 +3457,27 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                                 float32x4_t bias1,
                                 bool is_relu) {
 #ifdef __aarch64__
+  float32x4_t vmax = vdupq_n_f32(-127.f);
   asm volatile(INT32_NCHWC8_TO_NCHW_FP32 /* fp32-int32 */
+               /* data >= -127 */
+               "fcmge v10.4s, v16.4s, %[vmax].4s             \n"
+               "fcmge v11.4s, v17.4s, %[vmax].4s             \n"
+               "fcmge v14.4s, v18.4s, %[vmax].4s            \n"
+               "fcmge v15.4s, v19.4s, %[vmax].4s            \n"
+               "fcmge v20.4s, v8.4s, %[vmax].4s             \n"
+               "fcmge v21.4s, v9.4s, %[vmax].4s             \n"
+               "fcmge v22.4s, v12.4s, %[vmax].4s            \n"
+               "fcmge v23.4s, v13.4s, %[vmax].4s            \n"
+               /* choose data */
+               "bif v16.16b, %[vmax].16b, v10.16b            \n"
+               "bif v17.16b, %[vmax].16b, v11.16b            \n"
+               "bif v18.16b, %[vmax].16b, v14.16b            \n"
+               "bif v19.16b, %[vmax].16b, v15.16b            \n"
+               "bif v8.16b, %[vmax].16b, v20.16b            \n"
+               "bif v9.16b, %[vmax].16b, v21.16b            \n"
+               "bif v12.16b, %[vmax].16b, v22.16b            \n"
+               "bif v13.16b, %[vmax].16b, v23.16b            \n"
+               /* fp32 - int32 */
                "fcvtas  v10.4s, v16.4s\n"
                "fcvtas  v11.4s, v17.4s\n"
                "fcvtas  v14.4s, v18.4s\n"
@@ -3411,6 +3528,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  [scale1] "w"(scale1),
                  [bias0] "w"(bias0),
                  [bias1] "w"(bias1),
+                 [vmax] "w"(vmax),
                  [relu] "r"(is_relu)
                : "cc",
                  "memory",
@@ -3440,6 +3558,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  "v23",
                  "v31");
 #else
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(INT32_NCHWC8_TO_NCHW_FP32 /* set +-0.5 offset */
                "vmov.f32 q10, #-0.5\n"
                "vmov.f32 q9, #0.5\n"
@@ -3473,7 +3592,18 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                "vmov.f32 q9, #0.5\n"
                "vcgt.f32   q11, q7, q8   @ get mask > 0, in0\n"
                "vbif.f32   q9, q10, q11   @ get right offset\n"
+               "vld1.32 {d22-d23}, [%[vmax]] \n"
                "vadd.f32   q7, q7, q9\n"
+               /* data >= -127 */
+               "vcge.f32 q8, q0, q11     @ q10 >= vmax \n"
+               "vcge.f32 q9, q2, q11     @ q10 >= vmax \n"
+               "vcge.f32 q10, q4, q11     @ q10 >= vmax \n"
+               /* choose data */
+               "vbif q0, q11, q8    @ choose \n"
+               "vcge.f32 q8, q6, q11     @ q10 >= vmax \n"
+               "vbif q2, q11, q9    @ choose \n"
+               "vbif q4, q11, q10    @ choose \n"
+               "vbif q6, q11, q8    @ choose \n"
                /* fp32 to int32 */
                "vcvt.s32.f32  q8, q0    @ cvt to int32\n"
                "vcvt.s32.f32  q9, q2    @ cvt to int32\n"
@@ -3484,6 +3614,17 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                "vqmovn.s32 d4, q9       @ cnt to int16\n"
                "vqmovn.s32 d8, q10      @ cnt to int16\n"
                "vqmovn.s32 d12, q11      @ cnt to int16\n"
+               /* data >= -127 */
+               "vld1.32 {d22-d23}, [%[vmax]] \n"
+               "vcge.f32 q8, q1, q11     @ q10 >= vmax \n"
+               "vcge.f32 q9, q3, q11     @ q10 >= vmax \n"
+               "vcge.f32 q10, q5, q11     @ q10 >= vmax \n"
+               /* choose data */
+               "vbif q1, q11, q8    @ choose \n"
+               "vcge.f32 q8, q7, q11     @ q10 >= vmax \n"
+               "vbif q3, q11, q9    @ choose \n"
+               "vbif q5, q11, q10    @ choose \n"
+               "vbif q7, q11, q8    @ choose \n"
                /* fp32 to int32 */
                "vcvt.s32.f32  q8, q1    @ cvt to int32\n"
                "vcvt.s32.f32  q9, q3    @ cvt to int32\n"
@@ -3527,6 +3668,7 @@ inline void int32_nchwc8_kernel(int8_t*& dout0,       // NOLINT
                  [scale1] "w"(scale1),
                  [bias0] "w"(bias0),
                  [bias1] "w"(bias1),
+                 [vmax] "r"(vmax),
                  [relu] "r"(is_relu)
                : "cc",
                  "memory",

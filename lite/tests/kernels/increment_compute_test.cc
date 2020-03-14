@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -58,36 +59,35 @@ class IncrementComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(input_, dims_, data.data());
+    std::vector<float> din(dims_.production());
+    fill_data_rand(din.data(), -5.f, 5.f, dims_.production());
+    SetCommonTensor(input_, dims_, din.data());
   }
 };
-void test_increment(Place place) {
+
+void test_increment(Place place, float abs_error) {
   DDimLite dims_0{{3, 5, 4, 4}};
   DDimLite dims_1{{3, 5}};
   for (auto dims : {dims_0, dims_1}) {
     for (float step : {1, 2}) {
       std::unique_ptr<arena::TestCase> tester(
           new IncrementComputeTester(place, "def", step, dims));
-      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
   }
 }
 
 TEST(Increment, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_increment(place);
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = {TARGET(kARM), PRECISION(kAny)};
+#else
+  return;
 #endif
+
+  test_increment(place, abs_error);
 }
 
 }  // namespace lite

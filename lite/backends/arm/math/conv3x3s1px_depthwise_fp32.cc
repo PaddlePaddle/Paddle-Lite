@@ -179,11 +179,11 @@ namespace math {
 #define LEAKY_RELU \
           "movi   v0.4s, #0\n"             /* for relu */ \
           "ldr x0,    [%[outl], #88]\n" \
-          "cmhs v1.4s, v15.4s,  v0.4s \n" /* vcgeq_u32 */ \
-          "cmhs v2.4s, v16.4s,  v0.4s \n" /* vcgeq_u32 */ \
+          "fcmge v1.4s, v15.4s,  v0.4s \n" /* vcgeq_f32 */ \
+          "fcmge v2.4s, v16.4s,  v0.4s \n" /* vcgeq_f32 */ \
           "ld1 {v9.4s}, [x0] \n" \
-          "cmhs v3.4s, v17.4s,  v0.4s \n" /* vcgeq_u32 */ \
-          "cmhs v4.4s, v18.4s,  v0.4s \n" /* vcgeq_u32 */ \
+          "fcmge v3.4s, v17.4s,  v0.4s \n" /* vcgeq_f32 */ \
+          "fcmge v4.4s, v18.4s,  v0.4s \n" /* vcgeq_f32 */ \
           "ldr x0,    [%[outl]] \n" \
           "fmul v5.4s, v15.4s, v9.4s \n" /* mul */ \
           "fmul v6.4s, v16.4s, v9.4s \n" /* mul */ \
@@ -193,10 +193,10 @@ namespace math {
           "bif  v16.16b, v6.16b, v2.16b \n" /* choose*/ \
           "bif  v17.16b, v7.16b, v3.16b \n" /* choose*/ \
           "bif  v18.16b, v8.16b, v4.16b \n" /* choose*/ \
-          "cmhs v1.4s, v19.4s,  v0.4s \n" /* vcgeq_u32 */ \
-          "cmhs v2.4s, v20.4s,  v0.4s \n" /* vcgeq_u32 */ \
-          "cmhs v3.4s, v21.4s,  v0.4s \n" /* vcgeq_u32 */ \
-          "cmhs v4.4s, v22.4s,  v0.4s \n" /* vcgeq_u32 */ \
+          "fcmge v1.4s, v19.4s,  v0.4s \n" /* vcgeq_f32 */ \
+          "fcmge v2.4s, v20.4s,  v0.4s \n" /* vcgeq_f32 */ \
+          "fcmge v3.4s, v21.4s,  v0.4s \n" /* vcgeq_f32 */ \
+          "fcmge v4.4s, v22.4s,  v0.4s \n" /* vcgeq_f32 */ \
           "fmul v5.4s, v19.4s, v9.4s \n" /* mul */ \
           "fmul v6.4s, v20.4s, v9.4s \n" /* mul */ \
           "fmul v7.4s, v21.4s, v9.4s \n" /* mul */ \
@@ -509,6 +509,8 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
+#if 1  // def LITE_WITH_ARM_CLANG
+#else
         asm volatile(COMPUTE RELU STORE
                      : [r0] "+r"(inr0),
                        [r1] "+r"(inr1),
@@ -541,6 +543,7 @@ void act_switch_3x3s1(const float* inr0,
                        "r3",
                        "r4",
                        "r5");
+#endif
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -594,6 +597,8 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
+#if 1  // def LITE_WITH_ARM_CLANG
+#else
         asm volatile(COMPUTE RELU RELU6 STORE
                      : [r0] "+r"(inr0),
                        [r1] "+r"(inr1),
@@ -626,6 +631,7 @@ void act_switch_3x3s1(const float* inr0,
                        "r3",
                        "r4",
                        "r5");
+#endif
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -679,6 +685,8 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
+#if 1  // def LITE_WITH_ARM_CLANG
+#else
         asm volatile(COMPUTE LEAKY_RELU STORE
                      : [r0] "+r"(inr0),
                        [r1] "+r"(inr1),
@@ -711,6 +719,7 @@ void act_switch_3x3s1(const float* inr0,
                        "r3",
                        "r4",
                        "r5");
+#endif
 #endif
         break;
       default:
@@ -769,6 +778,8 @@ void act_switch_3x3s1(const float* inr0,
                    "x6",
                    "x7");
 #else
+#if 1  // def LITE_WITH_ARM_CLANG
+#else
     asm volatile(COMPUTE STORE
                  : [r0] "+r"(inr0),
                    [r1] "+r"(inr1),
@@ -801,6 +812,7 @@ void act_switch_3x3s1(const float* inr0,
                    "r3",
                    "r4",
                    "r5");
+#endif
 #endif
   }
 }
@@ -989,6 +1001,8 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                            vbias,
                            act_param);
 #else
+#if 1  // def LITE_WITH_ARM_CLANG
+#else
           act_switch_3x3s1(inr0,
                            inr1,
                            inr2,
@@ -1008,6 +1022,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                            vbias,
                            vbias,
                            act_param);
+#endif
 #endif
           outl[0] += 4;
           outl[1] += 4;

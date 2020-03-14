@@ -31,21 +31,12 @@ class SearchAlignedMatMulCompute
   using param_t = operators::MatMulParam;
 
   void PrepareForRun() override {
-    auto& param = this->Param<param_t>();
-    CHECK(ctx_) << "running context should be set first";
-    auto& cuda_ctx = ctx_->template As<CUDAContext>();
-    bool x_transpose = param.transpose_X;
-    bool y_transpose = param.transpose_Y;
-    int seq_num = param.X->lod()[0].size() - 1;
     batched_gemm_impl_.reset(new lite::cuda::math::BatchedGemm<float, float>);
-    CHECK(
-        batched_gemm_impl_->init(x_transpose, y_transpose, seq_num, &cuda_ctx));
-    A_ = static_cast<float**>(malloc(3 * seq_num * sizeof(float*)));
-    CHECK(A_);
   }
 
   void Run() override {
     auto& param = this->Param<param_t>();
+    auto& cuda_ctx = ctx_->template As<CUDAContext>();
     auto x = param.X;
     auto y = param.Y;
     auto out = param.Out;
@@ -76,25 +67,25 @@ class SearchAlignedMatMulCompute
     auto x_stride = x_batch_size * x_inner_size;
     auto y_stride = y_batch_size * y_inner_size;
     auto out_stride = M * N;
-    for (int seq = 0; seq < seq_num; seq++) {
+
+    float* A_[seq_num * 3];
+    for (int seq = 0; seq < seq_num; ++seq) {
       A_[seq] = const_cast<float*>(x_data) + seq * x_stride;
       A_[seq + seq_num] = const_cast<float*>(y_data) + seq * y_stride;
       A_[seq + seq_num * 2] = out_data + seq * out_stride;
     }
+
+    CHECK(
+        batched_gemm_impl_->init(x_transpose, y_transpose, seq_num, &cuda_ctx));
     batched_gemm_impl_->run(
         alpha, 0.0f, const_cast<const float**>(A_), M, N, K, seq_num);
   }
 
-  ~SearchAlignedMatMulCompute() {
-    if (A_ != nullptr) {
-      free(A_);
-    }
-  }
+  ~SearchAlignedMatMulCompute() { batched_gemm_impl_.reset(); }
 
  private:
   std::unique_ptr<lite::cuda::math::BatchedGemm<float, float>>
       batched_gemm_impl_;
-  float** A_{nullptr};
 };
 
 }  // namespace cuda

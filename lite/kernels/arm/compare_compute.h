@@ -46,6 +46,17 @@ class CompareCompute_int32
   ~CompareCompute_int32() {}
 };
 
+template <template <typename T> class Functor>
+class CompareCompute_int64
+    : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
+ public:
+  using param_t = operators::LogicalParam;
+
+  void Run() override;
+
+  ~CompareCompute_int64() {}
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

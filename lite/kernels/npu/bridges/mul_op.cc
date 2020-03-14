@@ -33,21 +33,21 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-  auto x = scope->FindMutableTensor(x_name);
+  auto x = scope->FindTensor(x_name);
   auto x_dims = x->dims();
+
   auto y_name = op_info->Input("Y").front();
-  auto y_type = kernel->GetInputDeclType("Y");
-  CHECK(y_type->precision() == PRECISION(kFloat));
-  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
-  auto y = scope->FindMutableTensor(y_name);
+  auto y = scope->FindTensor(y_name);
   auto y_dims = y->dims();
+
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto out = scope->FindTensor(out_name);
+  auto out_dims = out->dims();
+  if (out_dims.size() > 4) {
+    LOG(WARNING) << "[NPU] not supported above 4-D.";
+    return FAILED;
+  }
+
   int x_num_col_dims = op_info->GetAttr<int>("x_num_col_dims");
   int y_num_col_dims = op_info->GetAttr<int>("y_num_col_dims");
   int m = x_dims.Slice(0, x_num_col_dims).production();
@@ -56,45 +56,59 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       << "[NPU] columns of X must be equal with rows of Y";
   int n = y_dims.Slice(y_num_col_dims, y_dims.size()).production();
   VLOG(3) << "m:" << m << ",n:" << n << ",k:" << k;
-  VLOG(3) << "x_name:" << x_name << ", is data: " << graph->HasNode(x_name);
-  VLOG(3) << "y_name:" << y_name << ", is data: " << graph->HasNode(y_name);
-  CHECK(graph->HasNode(x_name))
-      << "[NPU] MatMul in HiAI DDK only support X is data, Y is const yet.";
+  VLOG(3) << "x_name:" << x_name << ", is data: " << graph->Has(x_name);
+  VLOG(3) << "y_name:" << y_name << ", is data: " << graph->Has(y_name);
 
   // X node which supports persistable and non-persistable tensor, and
   // reshape to (m, k)
-  std::shared_ptr<ge::Operator> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
-    auto reshaped_x_node = graph->AddNode<ge::op::Reshape>(x_name + "/reshape");
-    reshaped_x_node->set_input_tensor(*x_node);
-    reshaped_x_node->set_attr_shape({m, k});
-    reshaped_x_node->set_attr_axis(0);
-    x_node = reshaped_x_node;
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+    if (x_dims.size() != 2) {
+      auto reshaped_x_node = graph->Add<ge::op::Reshape>(x_name + "/reshape");
+      auto reshaped_x_op = reshaped_x_node->data<ge::op::Reshape>();
+      reshaped_x_op->set_input_tensor(*x_node->data());
+      reshaped_x_op->set_attr_shape({m, k});
+      reshaped_x_op->set_attr_axis(0);
+      x_node = reshaped_x_node;
+    }
   } else {
-    auto x_const_node = graph->AddNode(x_name, *x, {m, k});
-    x_node = x_const_node;
+    x_node = graph->Add(x_name, *x, {m, k});
   }
 
   // Y node which only supports persistable tensor, and reshape to
   // (k,n)
-  std::shared_ptr<ge::Operator> y_node = nullptr;
-  if (graph->HasNode(y_name)) {
-    y_node = graph->GetNode(y_name);
-    auto reshaped_y_node = graph->AddNode<ge::op::Reshape>(y_name + "/reshape");
-    reshaped_y_node->set_input_tensor(*y_node);
-    reshaped_y_node->set_attr_shape({k, n});
-    reshaped_y_node->set_attr_axis(0);
-    y_node = reshaped_y_node;
+  std::shared_ptr<Node> y_node = nullptr;
+  if (graph->Has(y_name)) {
+    y_node = graph->Get(y_name);
+    if (y_dims.size() != 2) {
+      auto reshaped_y_node = graph->Add<ge::op::Reshape>(y_name + "/reshape");
+      auto reshaped_y_op = reshaped_y_node->data<ge::op::Reshape>();
+      reshaped_y_op->set_input_tensor(*y_node->data());
+      reshaped_y_op->set_attr_shape({k, n});
+      reshaped_y_op->set_attr_axis(0);
+      y_node = reshaped_y_node;
+    }
   } else {
-    auto y_const_node = graph->AddNode(y_name, *y, {k, n});
-    y_node = y_const_node;
+    y_node = graph->Add(y_name, *y, {k, n});
   }
 
   // Matmul node
-  auto mul_node = graph->AddNode<ge::op::MatMul>(out_name);
-  mul_node->set_input_x1(*x_node);
-  mul_node->set_input_x2(*y_node);
+  auto mul_node = graph->Add<ge::op::MatMul>(out_name);
+  auto mul_op = mul_node->data<ge::op::MatMul>();
+  mul_op->set_input_x1(*x_node->data());
+  mul_op->set_input_x2(*y_node->data());
+
+  if (out_dims.size() != 2) {
+    auto reshaped_out_node = graph->Add<ge::op::Reshape>(out_name);
+    auto reshaped_out_op = reshaped_out_node->data<ge::op::Reshape>();
+    reshaped_out_op->set_input_tensor(*mul_node->data());
+    auto out_shape = out_dims.Vectorize();
+    reshaped_out_op->set_attr_shape(
+        ge::AttrValue::LIST_INT(out_shape.begin(), out_shape.end()));
+    reshaped_out_op->set_attr_axis(0);
+  }
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -103,4 +117,4 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(NPU, mul, paddle::lite::subgraph::npu::MulConverter);
+REGISTER_SUBGRAPH_BRIDGE(mul, kNPU, paddle::lite::subgraph::npu::MulConverter);

@@ -32,35 +32,29 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto dropout_prob = op_info->GetAttr<float>("dropout_prob");
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");
 
   // X node
-  std::shared_ptr<xtcl::xExpr> x_node = nullptr;
-  if (graph->HasNode(x_name)) {
-    x_node = graph->GetNode(x_name);
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
-    x_node = graph->AddNode(x_name, x_dims);
+    x_node = graph->Add(x_name, *x);
   }
 
   // Dropout node
   if (dropout_implementation == "downgrade_in_infer") {
-    graph->AddNode(
-        out_name,
-        graph->builder_.CreateScale(*x_node, 1.f - dropout_prob, 0.0f, false));
+    graph->Add(out_name,
+               graph->builder_.CreateScale(
+                   *x_node->data(), 1.f - dropout_prob, 0.0f, false));
   } else if (dropout_implementation == "upscale_in_train") {
-    graph->AddNode(out_name,
-                   graph->builder_.CreateScale(*x_node, 1.0f, 0.0f, false));
+    graph->Add(out_name,
+               graph->builder_.CreateScale(*x_node->data(), 1.0f, 0.0f, false));
   } else {
     LOG(WARNING) << "[XPU] Unsupported dropout_implementation == "
                  << dropout_implementation << " for dropout";
@@ -74,6 +68,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         dropout,
+REGISTER_SUBGRAPH_BRIDGE(dropout,
+                         kXPU,
                          paddle::lite::subgraph::xpu::DropoutConverter);

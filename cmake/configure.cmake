@@ -122,6 +122,9 @@ if (LITE_WITH_ARM)
     endif()
 endif()
 
+if (LITE_WITH_TRAIN)
+    add_definitions("-DLITE_WITH_TRAIN")
+endif()
 
 if (WITH_ARM_DOTPROD)
     add_definitions("-DWITH_ARM_DOTPROD")
@@ -141,6 +144,10 @@ endif()
 
 if (LITE_WITH_FPGA)
 add_definitions("-DLITE_WITH_FPGA")
+endif()
+
+if (LITE_WITH_BM)
+add_definitions("-DLITE_WITH_BM")
 endif()
 
 if (LITE_WITH_PROFILE)

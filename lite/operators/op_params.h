@@ -57,11 +57,13 @@ struct FetchParam {
 struct IoCopyParam {
   const lite::Tensor* x{};
   lite::Tensor* y{};
+  int process_type{0};
 };
 
 struct LayoutParam {
   const lite::Tensor* x{};
   lite::Tensor* y{};
+  int process_type{0};
 };
 
 struct CalibParam {
@@ -288,6 +290,8 @@ struct ConvParam {
   ActivationParam activation_param;
   // support var_length or not
   bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -415,35 +419,26 @@ struct MeanGradParam {
 struct FillConstantParam {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
-  lite::Tensor* shape_tensor;
+  lite::Tensor* shape_tensor{nullptr};
   std::vector<lite::Tensor*> shape_tensor_list{};
 
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
-  lite::Tensor* Out{};
-};
-struct FillConstantBatchLikeParam {
-  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
-  std::vector<int64_t> shape{};
-  float value{0.0f};
-  // useless for x86, keep it for compatibility
-  bool force_cpu{false};
   lite::Tensor* out{};
-  const lite::Tensor* input{};
-  int input_dim_idx{0};
-  int output_dim_idx{0};
 };
 
 struct FillConstantBatchSizeLikeParam {
-  lite::Tensor* Input;
-  lite::Tensor* Out;
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* out{nullptr};
 
-  std::vector<int> shape;
+  std::vector<int> shape{};
   int input_dim_idx{0};
   int output_dim_idx{0};
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   float value{0.0f};
+  // useless for x86, keep it for compatibility
+  bool force_cpu{false};
 };
 
 //
@@ -660,6 +655,13 @@ struct BeamSearchDecodeParam {
 
 /// ----------------------- LookupTable operators ----------------------f
 struct LookupTableParam {
+  const lite::Tensor* W{nullptr};
+  const lite::Tensor* Ids{nullptr};
+  lite::Tensor* Out{nullptr};
+  int64_t padding_idx{-1};
+};
+
+struct LookupTableDequantParam {
   lite::Tensor* W{nullptr};
   lite::Tensor* Ids{nullptr};
   lite::Tensor* Out{nullptr};
@@ -735,15 +737,15 @@ struct IncrementParam {
 };
 
 struct WriteToArrayParam {
-  const lite::Tensor* X{};
-  const lite::Tensor* I{};
-  std::vector<lite::Tensor>* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* I{nullptr};
+  std::vector<lite::Tensor>* Out{nullptr};
 };
 
 struct ReadFromArrayParam {
-  std::vector<lite::Tensor>* X{};
-  lite::Tensor* I{};
-  lite::Tensor* Out{};
+  const std::vector<lite::Tensor>* X{nullptr};
+  const lite::Tensor* I{nullptr};
+  lite::Tensor* Out{nullptr};
 };
 
 struct BeamSearchParam {
@@ -768,6 +770,15 @@ struct SequencePoolParam {
   float pad_value{0.0};
   lite::Tensor* MaxIndex{};
 #endif
+};
+
+struct SequenceConvParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Filter{};
+  lite::Tensor* Out{};
+  int contextStart{0};
+  int contextStride{1};
+  int contextLength;
 };
 
 struct SequencePoolConcatParam {
@@ -1130,6 +1141,22 @@ struct GridSamplerParam {
   lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* grid{};
+};
+struct LstmParam {
+  lite::Tensor* Input{};
+  lite::Tensor* Weight{};
+  lite::Tensor* Bias{};
+  lite::Tensor* Hidden{};
+  lite::Tensor* Cell{};
+  lite::Tensor* BatchGate{};
+  lite::Tensor* BatchCellPreAct{};
+  lite::Tensor* H0{nullptr};
+  lite::Tensor* C0{nullptr};
+  bool use_peepholes;
+  bool is_reverse;
+  std::string gate_activation;
+  std::string cell_activation;
+  std::string candidate_activation;
 };
 
 }  // namespace operators

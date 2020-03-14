@@ -1,5 +1,4 @@
-if(LITE_WITH_CV AND (NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA) AND LITE_WITH_ARM)
-    set(lite_cv_deps)
+if(LITE_WITH_CV AND (NOT LITE_WITH_FPGA) AND LITE_WITH_ARM)
     lite_cc_library(paddle_cv_arm SRCS
             image_convert.cc
             paddle_image_preprocess.cc
@@ -7,5 +6,5 @@ if(LITE_WITH_CV AND (NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA) AND LITE_WITH_
             image_flip.cc
             image_rotate.cc
             image_resize.cc
-            DEPS ${lite_cv_deps} paddle_api place)
+            DEPS paddle_api place)
 endif()

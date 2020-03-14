@@ -29,11 +29,15 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#define CL_COMPUTE_DTYPE half
+#define CL_COMPUTE_DTYPE_CHAR h
 #endif
 
 #ifdef CL_DTYPE_half
 #define CL_DTYPE half
 #define CL_DTYPE_CHAR h
+#define CL_COMPUTE_DTYPE half
+#define CL_COMPUTE_DTYPE_CHAR h
 #endif
 
 /////////////////////////////////
@@ -43,6 +47,7 @@ limitations under the License. */
 #define GET_VEC_TYPE(type__, size__) type__##size__
 #define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
 #define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+#define CL_COMPUTE_DTYPE4 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 4)
 
 /////////////////////////////////
 // CONVERT_TYPE_TO
@@ -72,13 +77,17 @@ inline CL_DTYPE activation(CL_DTYPE in
                            CL_DTYPE prelu_alpha
 #endif
                            ) {
-  CL_DTYPE output;
+  CL_DTYPE output = in;
 #ifdef PRELU
   output = select(prelu_alpha * in, in, in >= (CL_DTYPE)0);
 #endif
 
 #ifdef RELU
   output = fmax(in, (CL_DTYPE)0);
+#endif
+
+#ifdef RELU6
+  output = clamp(in, (CL_DTYPE)0, (CL_DTYPE)6);
 #endif
   return output;
 }
@@ -89,13 +98,17 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
                                   CL_DTYPE4 prelu_alpha
 #endif
                                   ) {
-  CL_DTYPE4 output;
+  CL_DTYPE4 output = in;
 #ifdef PRELU
   output = select(prelu_alpha * in, in, in >= (CL_DTYPE4)0.0);
 #endif
 
 #ifdef RELU
   output = fmax(in, (CL_DTYPE4)0);
+#endif
+
+#ifdef RELU6
+  output = clamp(in, (CL_DTYPE4)0, (CL_DTYPE4)6);
 #endif
   return output;
 }

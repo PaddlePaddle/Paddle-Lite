@@ -88,4 +88,4 @@ class VBroadcastCreator : public JitCodeCreator<int64_t> {
 
 namespace gen = paddle::lite::jit::gen;
 
-REGISTER_JITKERNEL_GEN(kVBroadcast, gen::VBroadcastCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVBroadcast, gen::VBroadcastCreator);

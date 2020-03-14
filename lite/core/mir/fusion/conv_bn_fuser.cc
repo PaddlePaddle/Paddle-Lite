@@ -100,14 +100,17 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto eps = matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
 
   // conv
-  auto conv_weight_t = scope->FindVar(matched.at("conv_weight")->arg()->name)
-                           ->GetMutable<lite::Tensor>();
+  std::string conv_weight_name = matched.at("conv_weight")->arg()->name;
+  auto conv_weight_t =
+      scope->FindVar(conv_weight_name)->GetMutable<lite::Tensor>();
   CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
            static_cast<size_t>(conv_weight_t->dims()[0]))
       << "The BN bias's size should be equal to the size of the first "
       << "dim size of the conv weights";
   size_t weight_num = conv_weight_t->data_size();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
+  bool is_weight_quantization =
+      conv_op_desc->HasAttr("quantize_weight_bits") ? true : false;
 
   // comupte BN alpha and beta
   Tensor alpha_tensor, beta_tensor;
@@ -160,6 +163,16 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       }
     }
     conv_op_desc->SetAttr("weight_scale", weight_scale);
+  } else if (is_weight_quantization) {
+    std::string scale_name = conv_weight_name + "_quant_scale";
+    if (conv_op_desc->HasAttr(scale_name)) {
+      auto scale = conv_op_desc->GetAttr<std::vector<float>>(scale_name);
+      CHECK_EQ(scale.size(), alpha_tensor.numel());
+      for (size_t i = 0; i < scale.size(); i++) {
+        scale[i] *= alpha_data[i];
+      }
+      conv_op_desc->SetAttr(scale_name, scale);
+    }
   } else {
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();

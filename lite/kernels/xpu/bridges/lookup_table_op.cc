@@ -32,22 +32,13 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto ids_name = op_info->Input("Ids").front();
-  auto ids_type = kernel->GetInputDeclType("Ids");
-  CHECK(ids_type->precision() == PRECISION(kInt64));
-  CHECK(ids_type->layout() == DATALAYOUT(kNCHW));
   auto ids = scope->FindMutableTensor(ids_name);
   auto ids_dims = ids->dims();
   auto w_name = op_info->Input("W").front();
-  auto w_type = kernel->GetInputDeclType("W");
-  CHECK(w_type->precision() == PRECISION(kFloat));
-  CHECK(w_type->layout() == DATALAYOUT(kNCHW));
   auto w = scope->FindMutableTensor(w_name);
   auto w_dims = w->dims();
   CHECK_EQ(w_dims.size(), 2);
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
   auto padding_idx = op_info->GetAttr<int64_t>("padding_idx");
@@ -57,30 +48,37 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Ids node
-  std::shared_ptr<xtcl::xExpr> ids_node = nullptr;
-  if (graph->HasNode(ids_name)) {
-    ids_node = graph->GetNode(ids_name);
+  std::shared_ptr<Node> ids_node = nullptr;
+  if (graph->Has(ids_name)) {
+    ids_node = graph->Get(ids_name);
   } else {
-    ids_node = graph->AddNode(
-        ids_name, ids_dims, ids_type->precision(), ids_type->layout());
+    ids_node = graph->Add(ids_name, *ids);
   }
   // Flatten Ids node
   if (ids_dims.size() != 1) {
-    ids_node = graph->AddNode(ids_name + "/reshape",
-                              graph->builder_.CreateReshape(*ids_node, {-1}),
-                              ids_type->precision(),
-                              ids_type->layout());
+    ids_node =
+        graph->Add(ids_name + "/reshape",
+                   graph->builder_.CreateReshape(*ids_node->data(), {-1}),
+                   ids_node->precision(),
+                   ids_node->layout());
   }
-  auto w_const_node = graph->AddNode(w_name, *w);
+
+  // W node
+  auto w_node = graph->Add(w_name, *w);
 
   // Reshape the gather node with the inferred shape as the output node
-  auto gather_node = graph->AddNode(
-      out_name,
-      graph->builder_.CreateGather(*w_const_node, *ids_node, /* axis= */ 0));
+  auto gather_node =
+      graph->Add(out_name,
+                 graph->builder_.CreateGather(
+                     *w_node->data(), *ids_node->data(), /* axis= */ 0),
+                 w_node->precision(),
+                 w_node->layout());
   if (out_dims.size() != 2) {
-    graph->AddNode(out_name,
-                   graph->builder_.CreateReshape(
-                       *gather_node, CvtShape<xtcl::Integer>(out_dims)));
+    graph->Add(out_name,
+               graph->builder_.CreateReshape(*gather_node->data(),
+                                             CvtShape<xtcl::Integer>(out_dims)),
+               gather_node->precision(),
+               gather_node->layout());
   }
   return SUCCESS;
 }
@@ -90,6 +88,6 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         lookup_table,
+REGISTER_SUBGRAPH_BRIDGE(lookup_table,
+                         kXPU,
                          paddle::lite::subgraph::xpu::LookupTableConverter);

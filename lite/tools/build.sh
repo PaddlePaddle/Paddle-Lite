@@ -21,6 +21,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 SHUTDOWN_LOG=ON
+LITE_WITH_ARM_LANG=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -37,16 +38,37 @@ fi
 function prepare_workspace {
     local root_dir=$1
     local build_dir=$2
+    # ARM LANG
+    if [ ${ARM_LANG} == "clang" ]; then
+        LITE_WITH_ARM_LANG=ON
+    else
+        LITE_WITH_ARM_LANG=OFF
+    fi
+    echo "ARM_LANG is  ${ARM_LANG}"
+    echo "LITE_WITH_ARM_LANG is ${LITE_WITH_ARM_LANG}"
     # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
     mkdir -p ${GEN_CODE_PATH_PREFIX}
     touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-
     # 2.Prepare debug tool
     DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
     mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
     cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
+}
+
+
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
 }
 
 function prepare_thirdparty {
@@ -62,17 +84,17 @@ function prepare_thirdparty {
     fi
 }
 
-function build_model_optimize_tool {
+function build_opt {
     cd $workspace
     prepare_thirdparty
-    mkdir -p build.model_optimize_tool
-    cd build.model_optimize_tool
+    mkdir -p build.opt
+    cd build.opt
     cmake .. -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DWITH_MKL=OFF
-    make model_optimize_tool -j$NUM_PROC
+    make opt -j$NUM_PROC
 }
 
 function make_tiny_publish_so {
@@ -93,7 +115,7 @@ function make_tiny_publish_so {
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
-
+  
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
@@ -105,12 +127,53 @@ function make_tiny_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
+}
+
+function make_opencl {
+  local os=$1
+  local abi=$2
+  local lang=$3
+  #git submodule update --init --recursive
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_dir=$root_dir/build.lite.${os}.${abi}.${lang}.opencl
+  if [ -d $build_directory ]
+  then
+  rm -rf $build_directory
+  fi
+  mkdir -p $build_dir
+  cd $build_dir
+  prepare_workspace $root_dir $build_dir
+  prepare_opencl_source_code $root_dir $build_dir
+  # $1: ARM_TARGET_OS in "android" , "armlinux"
+  # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
+  # $3: ARM_TARGET_LANG in "gcc" "clang"
+  cmake .. \
+      -DLITE_WITH_OPENCL=ON \
+      -DWITH_GPU=OFF \
+      -DWITH_MKL=OFF \
+      -DWITH_LITE=ON \
+      -DLITE_WITH_CUDA=OFF \
+      -DLITE_WITH_X86=OFF \
+      -DLITE_WITH_ARM=ON \
+      -DWITH_ARM_DOTPROD=ON   \
+      -DLITE_ON_TINY_PUBLISH=ON \
+      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_CV=$BUILD_CV \
+      -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
+
+    make opencl_clhpp -j$NUM_PROC
+    make publish_inference -j$NUM_PROC
 }
 
 function make_full_publish_so {
@@ -147,11 +210,12 @@ function make_full_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -170,13 +234,14 @@ function make_all_tests {
   fi
   mkdir -p $build_directory
   cd $build_directory
-
+ 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -215,7 +280,7 @@ function make_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make -j4 publish_inference
+    make publish_inference -j$NUM_PROC
     cd -
 }
 
@@ -246,7 +311,7 @@ function make_cuda {
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
  
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd -
 }
 
@@ -275,7 +340,7 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON
 
-  make publish_inference -j4
+  make publish_inference -j$NUM_PROC
   cd -
 }
 
@@ -337,13 +402,6 @@ function main {
                 ;;
             --arm_lang=*)
                 ARM_LANG="${i#*=}"
-                if [ ${ARM_LANG} == "clang" ]; then
-                     set +x
-                     echo
-                     echo -e "error: only support gcc now, clang will be supported in future."
-                     echo
-                     exit 1
-                fi
                 shift
                 ;;
             --android_stl=*)
@@ -352,6 +410,10 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_cv=*)
+                BUILD_CV="${i#*=}"
                 shift
                 ;;
             --build_python=*)
@@ -395,7 +457,11 @@ function main {
                 shift
                 ;;
             build_optimize_tool)
-                build_model_optimize_tool
+                build_opt
+                shift
+                ;;
+            opencl)
+                make_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
                 ;;
             cuda)

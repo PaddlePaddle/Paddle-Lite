@@ -47,7 +47,6 @@ void Relu(float* out, int num, int channel) {
 DDim ComputeOutDim(const DDim& dim_in, const DDim& wdim, int in_num_col_dim) {
   std::vector<int64_t> out_dim;
   out_dim.resize(in_num_col_dim + 1);
-  auto in_mat_dims = dim_in.Flatten2D(in_num_col_dim);
   for (int i = 0; i < in_num_col_dim; ++i) {
     out_dim[i] = dim_in[i];
   }
@@ -131,7 +130,7 @@ class FcOPTest : public arena::TestCase {
                  1.f,
                  0.f,
                  true,
-                 flag_bias,
+                 static_cast<int>(flag_bias),
                  false);
     } else {
       basic_gemm(false,
@@ -193,7 +192,7 @@ class FcOPTest : public arena::TestCase {
     fill_data_rand(bin.data(), -1.f, 1.f, bdims_.production());
 
     SetCommonTensor(input_, dims_, din.data());
-    SetCommonTensor(weight_, wdims_, win.data());
+    SetCommonTensor(weight_, wdims_, win.data(), {}, true);
     if (padding_weights_) {
       std::vector<float> win_padding(wdims_padding_.production());
       for (int64_t i = 0; i < wdims_[0]; ++i) {
@@ -204,15 +203,15 @@ class FcOPTest : public arena::TestCase {
       SetCommonTensor(weight_padding_, wdims_padding_, win_padding.data());
     }
     if (flag_bias) {
-      SetCommonTensor(bias_, bdims_, bin.data());
+      SetCommonTensor(bias_, bdims_, bin.data(), {}, true);
     }
   }
 };
 
-void TestFCMain(Place place,
-                float abs_error,
-                bool with_relu = false,
-                bool padding = false) {
+void TestFC2D(Place place,
+              float abs_error,
+              bool with_relu = false,
+              bool padding = false) {
   for (auto& m : {1, 3, 16}) {
     for (auto& n : {1, 4, 16, 128, 256, 1024}) {
       for (auto& k : {1, 16, 128, 1024}) {
@@ -243,9 +242,35 @@ void TestFCMain(Place place,
   }
 }
 
+void TestFCHelper(Place place,
+                  float abs_error,
+                  std::vector<int64_t> xdims,
+                  std::vector<int64_t> wdims,
+                  std::vector<int64_t> bdims,
+                  int in_num_col_dims) {
+  std::unique_ptr<arena::TestCase> tester(new FcOPTest(place,
+                                                       "def",
+                                                       DDim(xdims),
+                                                       DDim(wdims),
+                                                       DDim(bdims),
+                                                       in_num_col_dims,
+                                                       false,
+                                                       false));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+void TestFCnD(Place place, float abs_error) {
+  TestFCHelper(place, abs_error, {2, 3, 4}, {4, 5}, {5}, 2);
+  TestFCHelper(place, abs_error, {2, 3, 4}, {12, 5}, {5}, 1);
+  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {5, 6}, {6}, 3);
+  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {20, 6}, {6}, 2);
+  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {60, 6}, {6}, 1);
+}
+
 TEST(FcOP, precision) {
   Place place;
-  float abs_error = 6e-5;
+  float abs_error = 1e-4;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 2e-1;  // Using fp16 in NPU
@@ -257,7 +282,9 @@ TEST(FcOP, precision) {
 #else
   return;
 #endif
-  TestFCMain(place, abs_error);
+
+  TestFC2D(place, abs_error);
+  TestFCnD(place, abs_error);
 }
 
 #ifdef LITE_WITH_X86
@@ -265,7 +292,7 @@ TEST(FcOP, padding_and_parallel) {
   Place place(TARGET(kX86));
   float abs_error = 1e-4;
   x86::SetNumThreads(4);
-  TestFCMain(place, abs_error, true, true);
+  TestFC2D(place, abs_error, true, true);
 }
 #endif
 

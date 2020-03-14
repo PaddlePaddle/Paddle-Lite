@@ -43,6 +43,7 @@ void Predictor::SaveModel(const std::string &dir,
       LOG(FATAL) << "Unknown model type";
   }
   if (record_info) {
+    MkDirRecur(dir);
     SaveOpKernelInfo(dir);
   }
 }
@@ -121,6 +122,7 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
             << kpf_path;
 }
 
+#ifndef LITE_WITH_FPGA
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -130,6 +132,17 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
+#else
+lite::Tensor *Predictor::GetInput(size_t offset) {
+  auto *_feed_list = exec_scope_->FindVar("feed");
+  CHECK(_feed_list) << "no feed variable in exec_scope";
+  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  if (offset >= feed_list->size()) {
+    feed_list->resize(offset + 1);
+  }
+  return &feed_list->at(offset);
+}
+#endif
 
 // get inputs names
 std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
@@ -167,6 +180,8 @@ void Predictor::PrepareFeedFetch() {
   }
 }
 
+#ifndef LITE_WITH_FPGA
+
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -186,6 +201,29 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   }
   return outputs;
 }
+#else
+
+const lite::Tensor *Predictor::GetOutput(size_t offset) const {
+  auto *_fetch_list = exec_scope_->FindVar("fetch");
+  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
+  return &fetch_list.at(offset);
+}
+
+std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
+  auto *_fetch_list = exec_scope_->FindVar("fetch");
+  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+
+  std::vector<const lite::Tensor *> outputs;
+  for (auto out : fetch_list) {
+    outputs.push_back(&out);
+  }
+  return outputs;
+}
+
+#endif
 
 const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
@@ -239,7 +277,7 @@ void Predictor::Build(const std::string &model_path,
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())
           << "NaiveBuffer backend only supported combined param";
-      LoadModelNaive(model_path, scope_.get(), &program_desc_);
+      LoadModelNaiveFromFile(model_path, scope_.get(), &program_desc_);
       break;
     default:
       LOG(FATAL) << "Unknown model type";
@@ -295,16 +333,16 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   }
 }
 
-#ifdef LITE_WITH_TRAIN
-void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
-  auto var = scope_->FindVar("feed");
-  auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
-  feed_list.resize(tensors.size());
+// #ifdef LITE_WITH_TRAIN
+// void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
+//   auto var = scope_->FindVar("feed");
+//   auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
+//   feed_list.resize(tensors.size());
 
-  for (size_t i = 0; i < tensors.size(); ++i)
-    feed_list[i].ShareDataWith(tensors[i]);
-}
-#endif
+//   for (size_t i = 0; i < tensors.size(); ++i)
+//     feed_list[i].ShareDataWith(tensors[i]);
+// }
+// #endif
 
 }  // namespace lite
 }  // namespace paddle

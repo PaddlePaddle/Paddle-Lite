@@ -32,25 +32,19 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, output and op attributes
   auto input_name = op_info->Input("Input").front();
-  auto input_type = kernel->GetInputDeclType("Input");
-  CHECK(input_type->precision() == PRECISION(kFloat));
-  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axes = op_info->GetAttr<std::vector<int>>("axes");
   auto starts = op_info->GetAttr<std::vector<int>>("starts");
   auto ends = op_info->GetAttr<std::vector<int>>("ends");
 
   // Input node
-  std::shared_ptr<xtcl::xExpr> input_node = nullptr;
-  if (graph->HasNode(input_name)) {
-    input_node = graph->GetNode(input_name);
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    input_node = graph->Get(input_name);
   } else {
-    input_node = graph->AddNode(input_name, input_dims);
+    input_node = graph->Add(input_name, *input);
   }
 
   // Calculate the begin and end of the slice in all of
@@ -74,9 +68,9 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       strides.push_back(1);
     }
   }
-  graph->AddNode(
-      out_name,
-      graph->builder_.CreateStridedSlice(*input_node, begin, end, strides));
+  graph->Add(out_name,
+             graph->builder_.CreateStridedSlice(
+                 *input_node->data(), begin, end, strides));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -85,6 +79,6 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(XPU,
-                         slice,
+REGISTER_SUBGRAPH_BRIDGE(slice,
+                         kXPU,
                          paddle::lite::subgraph::xpu::SliceConverter);

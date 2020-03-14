@@ -47,8 +47,10 @@ class GRUPE : public PE {
     zynqmp::Shape hidden_shape{zynqmp::NCHW, {1, frame_size, 1, 1}};
     float16* prev_hidden_data =
         prev_hidden_.mutableData<float16>(zynqmp::FP16, hidden_shape);
+    // set previous hidden data to 0;
     memset(prev_hidden_data, 0, hidden_shape.numel() * sizeof(float16));
 
+    // copy 2/3 weight from param.weight;
     zynqmp::Shape weight_shape{zynqmp::NC, {frame_size, frame_size * 2}};
     float* weight_data = weight_.mutableData<float>(zynqmp::FP32, weight_shape);
     memset(weight_data, 0, weight_shape.numel() * sizeof(float));
@@ -74,7 +76,9 @@ class GRUPE : public PE {
     reset_hidden_.mutableData<void>(FP16, hidden_shape);
 
     ElementwiseMulParam& mul_param = mul_pe_.param();
-    mul_param.inputs = {&reset_gate_, &prev_hidden_};
+    // mul_param.inputs = {&reset_gate_, &prev_hidden_};
+    mul_param.input_x = &reset_gate_;
+    mul_param.input_y = &prev_hidden_;
     mul_param.output = &reset_hidden_;
     mul_pe_.init();
     mul_pe_.apply();
@@ -115,11 +119,8 @@ class GRUPE : public PE {
       if (hidden_prev) {
         // TODO(chonwhite): change to pre_out;
         prev_hidden_.copyFrom(value.pre_output);
-        prev_hidden_.saveToFile("prev_.txt");
       }
-
       mul_pe_.dispatch();
-      reset_hidden_.saveToFile("reset_hidden_.txt");
       update_gate_data += stride_update;
       reset_gate_data += stride_update;
 

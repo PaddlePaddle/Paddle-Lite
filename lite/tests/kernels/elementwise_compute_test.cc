@@ -16,654 +16,228 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
 
+#define ELT(MATHOP)                                                        \
+  for (int n = 0; n < xn; n++) {                                           \
+    for (int c = 0; c < xc; c++) {                                         \
+      for (int h = 0; h < xh; h++) {                                       \
+        for (int w = 0; w < xw; w++) {                                     \
+          int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;      \
+          int y_offset = 0;                                                \
+          if (yn != 1) y_offset += n * yc * yh * yw;                       \
+          if (yc != 1) y_offset += c * yh * yw;                            \
+          if (yh != 1) y_offset += h * yw;                                 \
+          if (yw != 1) y_offset += w;                                      \
+          out_data[x_offset] = out_data[x_offset] MATHOP y_data[y_offset]; \
+        }                                                                  \
+      }                                                                    \
+    }                                                                      \
+  }
+
 class ElementwiseComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  DDim dims_{{1, 2, 3, 4}};
+  std::string x_ = "x";
+  std::string y_ = "y";
+  std::string out_ = "out";
+  // add, sub, mul, div, max
+  std::string elt_type_ = "";
+  DDim x_dims_{{1, 2, 3, 4}};
+  DDim y_dims_{{1, 2, 3, 4}};
+  int axis_ = 1;
+  std::string act_type_ = "";
 
  public:
   ElementwiseComputeTester(const Place& place,
                            const std::string& alias,
-                           int axis)
-      : TestCase(place, alias), axis_(axis) {}
+                           std::string elt_type = "add",
+                           std::vector<int64_t> x_shape = {1, 2, 3, 4},
+                           std::vector<int64_t> y_shape = {1, 2, 3, 4},
+                           int axis = 1,
+                           std::string act_type = "")
+      : TestCase(place, alias),
+        elt_type_(elt_type),
+        x_dims_(DDim(x_shape)),
+        y_dims_(DDim(y_shape)),
+        axis_(axis),
+        act_type_(act_type) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] + y_data[i];
+    if (axis_ < 0) {
+      axis_ = x_dims_.size() - y_dims_.size();
     }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("elementwise_add");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+    auto x_shape = x_dims_.Vectorize();
+    while (x_shape.size() < 4) {
+      x_shape.push_back(1);
     }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class ElementwiseSubComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  ElementwiseSubComputeTester(const Place& place,
-                              const std::string& alias,
-                              int axis)
-      : TestCase(place, alias), axis_(axis) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] - y_data[i];
+    auto y_shape = y_dims_.Vectorize();
+    y_shape.insert(y_shape.begin(), axis_, 1);
+    while (y_shape.size() < 4) {
+      y_shape.push_back(1);
     }
-  }
+    CHECK_EQ(x_shape.size(), 4);
+    CHECK_EQ(y_shape.size(), 4);
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("elementwise_sub");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-  }
+    auto x = scope->FindTensor(x_);
+    auto y = scope->FindTensor(y_);
+    auto x_data = x->data<float>();
+    auto y_data = y->data<float>();
+    auto out = scope->NewTensor(out_);
+    out->Resize(x_dims_);
+    auto out_data = out->mutable_data<float>();
+    memcpy(out_data, x_data, sizeof(float) * x_dims_.production());
 
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
+    int xn = x_shape[0];
+    int xc = x_shape[1];
+    int xh = x_shape[2];
+    int xw = x_shape[3];
 
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+    int yn = y_shape[0];
+    int yc = y_shape[1];
+    int yh = y_shape[2];
+    int yw = y_shape[3];
+
+    if (elt_type_ == "add") {
+      ELT(+);
+    } else if (elt_type_ == "sub") {
+      ELT(-);
+    } else if (elt_type_ == "mul") {
+      ELT(*);
+    } else if (elt_type_ == "div") {
+      ELT(/);
+    } else if (elt_type_ == "max") {
+      for (int n = 0; n < xn; n++) {
+        for (int c = 0; c < xc; c++) {
+          for (int h = 0; h < xh; h++) {
+            for (int w = 0; w < xw; w++) {
+              int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;
+              int y_offset = 0;
+              if (yn != 1) y_offset += n * yc * yh * yw;
+              if (yc != 1) y_offset += c * yh * yw;
+              if (yh != 1) y_offset += h * yw;
+              if (yw != 1) y_offset += w;
+              out_data[x_offset] =
+                  std::max(out_data[x_offset], y_data[y_offset]);
+            }
+          }
+        }
+      }
+    } else {
+      LOG(FATAL) << "unsupported";
     }
 
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class ElementwiseMulComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  ElementwiseMulComputeTester(const Place& place,
-                              const std::string& alias,
-                              int axis)
-      : TestCase(place, alias), axis_(axis) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] * y_data[i];
-    }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("elementwise_mul");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class ElementwiseMaxComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  ElementwiseMaxComputeTester(const Place& place,
-                              const std::string& alias,
-                              int axis)
-      : TestCase(place, alias), axis_(axis) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = std::max(x_data[i], y_data[i]);
-    }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("elementwise_max");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class FusionElementwiseAddActivationComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  std::string act_type_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  FusionElementwiseAddActivationComputeTester(const Place& place,
-                                              const std::string& alias,
-                                              int axis,
-                                              std::string act_type)
-      : TestCase(place, alias), axis_(axis), act_type_(act_type) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] + y_data[i];
+    if (!act_type_.empty()) {
       if (act_type_ == "relu") {
-        out_data[i] = out_data[i] > 0 ? out_data[i] : 0;
+        for (int i = 0; i < x_dims_.production(); i++) {
+          out_data[i] = std::max(0.f, out_data[i]);
+        }
       } else {
-        LOG(FATAL) << "unsupported Activation type: " << act_type_;
+        LOG(FATAL) << "unsupported";
       }
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("fusion_elementwise_add_activation");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
+    std::string op_type = "elementwise_" + elt_type_;
+    if (!act_type_.empty()) {
+      op_type = "fusion_" + op_type + "_activation";
+    }
+    op_desc->SetType(op_type);
+    op_desc->SetInput("X", {x_});
+    op_desc->SetInput("Y", {y_});
+    op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("axis", axis_);
-    op_desc->SetAttr("act_type", act_type_);
+    if (!act_type_.empty()) {
+      op_desc->SetAttr("act_type", act_type_);
+    }
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+    std::vector<float> dx(x_dims_.production());
+    for (size_t i = 0; i < dx.size(); i++) {
+      dx[i] = (i % 3) * 1.1f;
+      dx[i] = dx[i] == 0 ? 1.f : dx[i];
     }
+    SetCommonTensor(x_, x_dims_, dx.data());
 
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
+    std::vector<float> dy(y_dims_.production());
+    for (size_t i = 0; i < dy.size(); i++) {
+      dy[i] = (i % 5) * 1.1f;
+      dy[i] = dy[i] == 0 ? 1.f : dy[i];
+    }
+    SetCommonTensor(y_, y_dims_, dy.data());
   }
 };
 
-class FusionElementwiseSubActivationComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  std::string act_type_;
-  DDim dims_{{1, 2, 3, 4}};
+// add sub mul div max   +act
 
- public:
-  FusionElementwiseSubActivationComputeTester(const Place& place,
-                                              const std::string& alias,
-                                              int axis,
-                                              std::string act_type)
-      : TestCase(place, alias), axis_(axis), act_type_(act_type) {}
+void TestElt(Place place,
+             float abs_error,
+             std::string elt_type,
+             std::vector<int64_t> x_shape,
+             std::vector<int64_t> y_shape,
+             int axis,
+             std::string act_type = "") {
+  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester(
+      place, "def", elt_type, x_shape, y_shape, axis, act_type));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
 
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
+void TestEltDims(Place place, float abs_error) {
+  TestElt(place, abs_error, "add", {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+  TestElt(place, abs_error, "add", {2, 3, 4}, {2, 3, 4}, 0);
+  TestElt(place, abs_error, "add", {2, 3, 4}, {2, 3}, 0);
+  TestElt(place, abs_error, "add", {2, 3}, {2}, 0);
+  TestElt(place, abs_error, "add", {2, 3, 4, 5}, {3, 4}, 1);
+  TestElt(place, abs_error, "add", {2, 3, 4}, {3, 4}, 1);
+  TestElt(place, abs_error, "add", {2, 3}, {3}, 1);
+  TestElt(place, abs_error, "add", {2, 3, 4, 5}, {4, 5}, 2);
+  TestElt(place, abs_error, "add", {2, 3, 4}, {4}, 2);
+  TestElt(place, abs_error, "add", {2, 3, 4, 5}, {5}, 3);
+  TestElt(place, abs_error, "add", {2, 3, 4, 5}, {3, 4, 5}, -1);
+  TestElt(place, abs_error, "add", {2, 3, 4}, {3, 4}, -1);
+}
 
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] - y_data[i];
-      if (act_type_ == "relu") {
-        out_data[i] = out_data[i] > 0 ? out_data[i] : 0;
-      } else {
-        LOG(FATAL) << "unsupported Activation type: " << act_type_;
-      }
-    }
+void TestEltTypes(Place place, float abs_error) {
+  for (auto elt_type :
+       std::vector<std::string>{"add", "sub", "mul", "div", "max"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
   }
+}
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("fusion_elementwise_sub_activation");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-    op_desc->SetAttr("act_type", act_type_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class FusionElementwiseMulActivationComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  std::string act_type_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  FusionElementwiseMulActivationComputeTester(const Place& place,
-                                              const std::string& alias,
-                                              int axis,
-                                              std::string act_type)
-      : TestCase(place, alias), axis_(axis), act_type_(act_type) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] * y_data[i];
-      if (act_type_ == "relu") {
-        out_data[i] = out_data[i] > 0 ? out_data[i] : 0;
-      } else {
-        LOG(FATAL) << "unsupported Activation type: " << act_type_;
-      }
-    }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("fusion_elementwise_mul_activation");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-    op_desc->SetAttr("act_type", act_type_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class FusionElementwiseMaxActivationComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  std::string act_type_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  FusionElementwiseMaxActivationComputeTester(const Place& place,
-                                              const std::string& alias,
-                                              int axis,
-                                              std::string act_type)
-      : TestCase(place, alias), axis_(axis), act_type_(act_type) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    const auto* y_data = x->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = std::max(x_data[i], y_data[i]);
-      if (act_type_ == "relu") {
-        out_data[i] = out_data[i] > 0 ? out_data[i] : 0;
-      } else {
-        LOG(FATAL) << "unsupported Activation type: " << act_type_;
-      }
-    }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("fusion_elementwise_max_activation");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-    op_desc->SetAttr("act_type", act_type_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data.data());
-  }
-};
-
-class ElementwiseDivComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  ElementwiseDivComputeTester(const Place& place,
-                              const std::string& alias,
-                              int axis)
-      : TestCase(place, alias), axis_(axis) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
-    const auto* y_data = y->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] / y_data[i];
-    }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("elementwise_div");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    std::vector<float> data2(dims_.production());
-    for (int i = 0; i < dims_.production(); i++) {
-      data2[i] = (i + 1) * 1.1;
-    }
-
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data2.data());
-  }
-};
-
-class FusionElementwiseDivActivationComputeTester : public arena::TestCase {
- protected:
-  // common attributes for this op.
-  std::string inputx_ = "x";
-  std::string inputy_ = "y";
-  std::string output_ = "out";
-  int axis_;
-  std::string act_type_;
-  DDim dims_{{1, 2, 3, 4}};
-
- public:
-  FusionElementwiseDivActivationComputeTester(const Place& place,
-                                              const std::string& alias,
-                                              int axis,
-                                              std::string act_type)
-      : TestCase(place, alias), axis_(axis), act_type_(act_type) {}
-
-  void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
-    out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
-
-    auto* x = scope->FindTensor(inputx_);
-    const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(inputy_);
-    const auto* y_data = y->data<float>();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = x_data[i] / y_data[i];
-      if (act_type_ == "relu") {
-        out_data[i] = out_data[i] > 0 ? out_data[i] : 0;
-      } else {
-        LOG(FATAL) << "unsupported Activation type: " << act_type_;
-      }
-    }
-  }
-
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("fusion_elementwise_div_activation");
-    op_desc->SetInput("X", {inputx_});
-    op_desc->SetInput("Y", {inputy_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("axis", axis_);
-    op_desc->SetAttr("act_type", act_type_);
-  }
-
-  void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-    std::vector<float> data2(dims_.production());
-    for (int i = 0; i < dims_.production(); i++) {
-      data2[i] = (i + 1) * 1.1;
-    }
-    SetCommonTensor(inputx_, dims_, data.data());
-    SetCommonTensor(inputy_, dims_, data2.data());
-  }
-};
-
-void test_elementwise(Place place) {
-  for (int axis : {-1, 0, 1, 3}) {
-    std::unique_ptr<arena::TestCase> tester(
-        new ElementwiseComputeTester(place, "def", axis));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    arena.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_sub(
-        new ElementwiseSubComputeTester(place, "def", axis));
-    arena::Arena arena_sub(std::move(tester_sub), place, 2e-5);
-    arena_sub.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_mul(
-        new ElementwiseMulComputeTester(place, "def", axis));
-    arena::Arena arena_mul(std::move(tester_mul), place, 2e-5);
-    arena_mul.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_max(
-        new ElementwiseMaxComputeTester(place, "def", axis));
-    arena::Arena arena_max(std::move(tester_max), place, 2e-5);
-    arena_max.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_div(
-        new ElementwiseDivComputeTester(place, "def", axis));
-    arena::Arena arena_div(std::move(tester_div), place, 2e-5);
-    arena_div.TestPrecision();
+void TestEltFuseAct(Place place, float abs_error) {
+  for (auto elt_type :
+       std::vector<std::string>{"add", "sub", "mul", "div", "max"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
   }
 }
 
 TEST(Elementwise, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_elementwise(place);
-#endif
+
+  TestEltDims(place, abs_error);
+  TestEltTypes(place, abs_error);
+  TestEltFuseAct(place, abs_error);
 }
-
-void test_fusion_elementwise(Place place) {
-  for (int axis : {-1, 0, 1, 3}) {
-    std::unique_ptr<arena::TestCase> tester_add_act(
-        new FusionElementwiseAddActivationComputeTester(
-            place, "def", axis, "relu"));
-    arena::Arena arena_add_act(std::move(tester_add_act), place, 2e-5);
-    arena_add_act.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_sub_act(
-        new FusionElementwiseSubActivationComputeTester(
-            place, "def", axis, "relu"));
-    arena::Arena arena_sub_act(std::move(tester_sub_act), place, 2e-5);
-    arena_sub_act.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_mul_act(
-        new FusionElementwiseMulActivationComputeTester(
-            place, "def", axis, "relu"));
-    arena::Arena arena_mul_act(std::move(tester_mul_act), place, 2e-5);
-    arena_mul_act.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_max_act(
-        new FusionElementwiseMaxActivationComputeTester(
-            place, "def", axis, "relu"));
-    arena::Arena arena_max_act(std::move(tester_max_act), place, 2e-5);
-    arena_max_act.TestPrecision();
-
-    std::unique_ptr<arena::TestCase> tester_div_act(
-        new FusionElementwiseDivActivationComputeTester(
-            place, "def", axis, "relu"));
-    arena::Arena arena_div_act(std::move(tester_div_act), place, 2e-5);
-    arena_div_act.TestPrecision();
-  }
-}
-
-TEST(FusionElementwise, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_fusion_elementwise(place);
-#endif
-}
-
-#ifdef LITE_WITH_XPU
-TEST(Elementwise_XPU, precision) {
-  Place place(TARGET(kXPU));
-  for (int axis : {-1, 1}) {
-    std::unique_ptr<arena::TestCase> tester(
-        new ElementwiseComputeTester(place, "def", axis));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    arena.TestPrecision();
-  }
-}
-#endif
 
 }  // namespace lite
 }  // namespace paddle

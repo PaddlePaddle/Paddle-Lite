@@ -37,7 +37,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "gemv: M");
@@ -285,7 +285,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
     paddle::lite::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
-    for (auto& m : {1, 3, 8, 32, 397}) {
+    for (auto& m : {1, 3, 8, 32}) {  // ,397
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& tra : {false}) {
           for (auto& has_bias : {false, true}) {

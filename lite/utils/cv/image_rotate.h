@@ -16,10 +16,20 @@
 
 #include <stdint.h>
 #include <vector>
+#include "lite/utils/cv/paddle_image_preprocess.h"
 namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+class ImageRotate {
+ public:
+  void choose(const uint8_t* src,
+              uint8_t* dst,
+              ImageFormat srcFormat,
+              int srcw,
+              int srch,
+              float degree);
+};
 void rotate_hwc1(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree);
 void rotate_hwc3(

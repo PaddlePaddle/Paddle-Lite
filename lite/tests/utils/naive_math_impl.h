@@ -177,7 +177,9 @@ static void basic_gemv(int m,
                        type2 beta,
                        bool trans_a = false,
                        bool flag_bias = false,
-                       bool flag_relu = false) {
+                       int flag_act = false,
+                       float six = 6.f,
+                       float leakey_relu_alpha = 1.f) {
 #pragma omp parallel for
   for (int i = 0; i < m; ++i) {
     auto bias_data = static_cast<type2>(0);
@@ -195,8 +197,15 @@ static void basic_gemv(int m,
       sum += av * b[j];
     }
     type2 tmp = alpha * sum + beta * c[i] + bias_data;
-    if (flag_relu) {
-      c[i] = tmp > (type2)0 ? tmp : (type2)0;
+    if (flag_act > 0) {
+      if (flag_act == 1) {  // relu
+        c[i] = tmp > (type2)0 ? tmp : (type2)0;
+      } else if (flag_act == 2) {  // relu 6
+        c[i] = tmp > (type2)0 ? tmp : (type2)0;
+        c[i] = c[i] < six ? c[i] : six;
+      } else if (flag_act == 4) {  // leakey relu
+        c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
+      }
     } else {
       c[i] = tmp;
     }
@@ -230,7 +239,9 @@ static void conv_basic(const Dtype1* din,
                        int pad_w,
                        int pad_h,
                        bool flag_bias,
-                       bool flag_relu) {
+                       int act_type,
+                       float six = 6.f,
+                       float scale = 1.f) {
   Dtype2 beta = 0;
   auto src_data = din;
   auto dst_data_ref = dout;
@@ -280,10 +291,27 @@ static void conv_basic(const Dtype1* din,
                 }
               }
             }
-            if (flag_relu) {
-              dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
-                                          ? dst_data_ref[out_idx]
-                                          : (Dtype2)0;
+            if (act_type > 0) {
+              // 1-relu 2-relu6 4-leakyrelu
+              if (act_type == 1) {
+                dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
+                                            ? dst_data_ref[out_idx]
+                                            : (Dtype2)0;
+              } else if (act_type == 2) {
+                dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
+                                            ? dst_data_ref[out_idx]
+                                            : (Dtype2)0;
+                dst_data_ref[out_idx] = dst_data_ref[out_idx] < (Dtype2)six
+                                            ? dst_data_ref[out_idx]
+                                            : (Dtype2)six;
+              } else if (act_type == 4) {
+                dst_data_ref[out_idx] =
+                    dst_data_ref[out_idx] > (Dtype2)0
+                        ? dst_data_ref[out_idx]
+                        : (Dtype2)(dst_data_ref[out_idx] * scale);
+              } else {
+                printf("this act type: %d does not support \n", act_type);
+              }
             }
           }
         }
@@ -407,7 +435,6 @@ void deconv_basic(const Dtype1* din,
   int k = chin / group;
 
   int group_size_in = win * hin * chin / group;
-  int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
   int group_size_weights = chin * chout * kernel_w * kernel_h / (group * group);
   bool flag_1x1s1p1 = (kernel_w == 1) && (kernel_h == 1) && (stride_h == 1) &&

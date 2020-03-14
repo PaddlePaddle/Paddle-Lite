@@ -39,6 +39,16 @@ namespace paddle {
 namespace lite {
 namespace utils {
 namespace cv {
+class ImageResize {
+ public:
+  void choose(const uint8_t* src,
+              uint8_t* dst,
+              ImageFormat srcFormat,
+              int srcw,
+              int srch,
+              int dstw,
+              int dsth);
+};
 void resize(const uint8_t* src,
             uint8_t* dst,
             ImageFormat srcFormat,

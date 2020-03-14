@@ -24,18 +24,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static void UpdateInputTo(cpp::OpDesc* desc,
-                          const std::string& from,
-                          const std::string& to) {
-  for (auto& item : *desc->mutable_inputs()) {
-    for (auto& input : item.second) {
-      if (input == from) {
-        input = to;
-      }
-    }
-  }
-}
-
 class TypeLayoutTransformPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
@@ -52,6 +40,15 @@ class TypeLayoutTransformPass : public ProgramPass {
   void SetValidPlaces(const std::vector<Place>& valid_places);
 
   const std::vector<Place>& valid_places() const { return valid_places_; }
+
+ private:
+  std::vector<Place> valid_places_;
+};
+
+// add preprocess and postprocess attribute for layout op
+class OpenCLTypeLayoutTransformPass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
   std::vector<Place> valid_places_;

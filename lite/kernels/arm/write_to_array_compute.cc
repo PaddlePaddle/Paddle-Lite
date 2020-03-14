@@ -20,28 +20,16 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void WriteToArrayCompute::PrepareForRun() {}
-
 void WriteToArrayCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::WriteToArrayParam>();
-
+  auto& param = this->template Param<operators::WriteToArrayParam>();
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
-  const auto* x_data = param.X->data<float>();
-  int id = param.I->data<float>()[0];
-  int id_test = param.I->data<int64_t>()[0];
-  if (id >= param.Out->size()) {
-    for (int i = param.Out->size(); i < id + 1; i++) {
-      lite::Tensor tmp;
-      param.Out->push_back(tmp);
-    }
+
+  int id = param.I->data<int64_t>()[0];
+  if (param.Out->size() < id + 1) {
+    param.Out->resize(id + 1);
   }
-  (*param.Out)[id].Resize(param.X->dims());
-  auto out_lod = (*param.Out)[id].mutable_lod();
-  *out_lod = param.X->lod();
-  auto* o_data = (*param.Out)[id].mutable_data<float>(TARGET(kHost));
-  int input_size = param.X->numel();
-  memcpy(o_data, x_data, sizeof(float) * input_size);
+  param.Out->at(id).CopyDataFrom(*param.X);
 }
 
 }  // namespace arm
@@ -51,11 +39,12 @@ void WriteToArrayCompute::Run() {
 
 REGISTER_LITE_KERNEL(write_to_array,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::WriteToArrayCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out",
+                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

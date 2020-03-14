@@ -11,10 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "lite/operators/conv_transpose_op.h"
 #include <memory>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
+#include "lite/operators/conv_op.h"
 
 namespace paddle {
 namespace lite {
@@ -50,34 +52,6 @@ inline int ConvTransposeOutputSize(int input_size,
   return output_size;
 }
 
-inline void UpdatePaddingAndDilation(std::vector<int>* paddings,
-                                     std::vector<int>* dilations,
-                                     const std::vector<int>& strides,
-                                     const std::string padding_algorithm,
-                                     const lite::DDim data_dims,
-                                     const lite::DDim& ksize) {
-  // when padding_desc is "VALID" or "SAME"
-  if (padding_algorithm == "SAME") {
-    for (size_t i = 0; i < strides.size(); ++i) {
-      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
-      int pad_sum = std::max(
-          (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
-          (int64_t)0);
-      int pad_0 = pad_sum / 2;
-      int pad_1 = pad_sum - pad_0;
-      // pad
-      *(paddings->begin() + i * 2) = pad_0;
-      *(paddings->begin() + i * 2 + 1) = pad_1;
-      // dilation
-      *(dilations->begin() + i) = 1;
-    }
-  } else if (padding_algorithm == "VALID") {
-    for (auto& it : *paddings) {
-      it = 0;
-    }
-  }
-}
-
 bool ConvTransposeOpLite::InferShape() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
@@ -101,6 +75,19 @@ bool ConvTransposeOpLite::InferShape() const {
                                                    paddings[i * 2],
                                                    paddings[i * 2 + 1],
                                                    param_.strides[i]));
+  }
+  if (!param_.output_size.empty()) {
+    for (size_t i = 0; i < param_.output_size.size(); ++i) {
+      CHECK_LT(param_.output_size[i], output_shape[i + 2] + param_.strides[i])
+          << "set output_size error, the output_size should less than "
+          << output_shape[i + 2] + param_.strides[i] << ", but the value is "
+          << param_.output_size[i];
+      CHECK_GE(param_.output_size[i], output_shape[i + 2])
+          << "set output_size error, the output_size should greater than or "
+          << "equal to " << output_shape[i + 2] << ", but the value is "
+          << param_.output_size[i];
+      output_shape[i + 2] = param_.output_size[i];
+    }
   }
 
   // Set output dims
@@ -156,6 +143,10 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   }
   if (op_desc.HasAttr("fuse_relu")) {
     param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
+    param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+  }
+  if (op_desc.HasAttr("output_size")) {
+    param_.output_size = op_desc.GetAttr<std::vector<int>>("output_size");
   }
   return true;
 }
