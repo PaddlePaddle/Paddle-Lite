@@ -1223,7 +1223,14 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
   int tile_w = w_out >> 2;
   int cnt_remain = w_out % 4;
 
-  unsigned int size_right_remain = (unsigned int)(w_in - (tile_w << 3));
+  unsigned int size_right_remain = (unsigned int)(8 + (tile_w << 3) - w_in);
+  size_right_remain = 8 - size_right_remain;
+
+  if (cnt_remain == 0 && size_right_remain == 0) {
+    cnt_remain = 4;
+    tile_w -= 1;
+    size_right_remain = 8;
+  }
 
   uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
                                    vld1q_s32(right_pad_idx));  // 0 2 4 6
