@@ -98,7 +98,7 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1;
-// # define DEPTH_CONV_USE_SPL
+// #define DEPTH_CONV_USE_SPL
 #ifdef DEPTH_CONV_USE_SPL
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h == 3 && kernel_w == 3 && groups > 1) {
@@ -142,7 +142,7 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::DepthwiseConv2d;
   } else if (kernel_h == 3 && kernel_h == 3) {
     // conv2d_3x3
-    kernel_func_names_.push_back("conv2d_3x3");
+    kernel_func_names_.push_back("conv2d_3x3_opt");
     kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
 
     CLImageConverterFolder converter;

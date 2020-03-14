@@ -14,23 +14,23 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void conv2d_3x3(__private const int item_ch, 
-                         __private const int item_w,
-                         __private const int item_h, 
-                         __read_only image2d_t input_image,
-                         __read_only image2d_t filter_image,
+__kernel void conv2d_3x3_opt(__private const int item_ch, 
+                             __private const int item_w,
+                             __private const int item_h, 
+                             __read_only image2d_t input_image,
+                             __read_only image2d_t filter_image,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
-                         __read_only image2d_t bias,
+                             __read_only image2d_t bias,
 #endif
-                         __write_only image2d_t output_image, 
-                         __private const int stride,
-                         __private const int pad, 
-                         __private const int dilation,
-                         __private const int in_ch, 
-                         __private const int in_w,
-                         __private const int in_h, 
-                         __private const int out_w,
-                         __private const int out_h) {
+                             __write_only image2d_t output_image, 
+                             __private const int stride,
+                             __private const int pad, 
+                             __private const int dilation,
+                             __private const int in_ch, 
+                             __private const int in_w,
+                             __private const int in_h, 
+                             __private const int out_w,
+                             __private const int out_h) {
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
