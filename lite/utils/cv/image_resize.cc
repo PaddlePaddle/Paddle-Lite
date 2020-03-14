@@ -330,12 +330,9 @@ void compute_xy(int srcw,
       sy = srch - 2;
       fy = 1.f;
     }
-
     yofs[dy] = sy;
-
     float b0 = (1.f - fy) * resize_coef_scale;
     float b1 = fy * resize_coef_scale;
-    
     ibeta[dy * 2] = SATURATE_CAST_SHORT(b0);
     ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
   }
