@@ -61,11 +61,9 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
 #ifdef __aarch64__
 #else
-  bool flag = (stride == 1 && (paddings[0] > 1 || paddings[2] > 1))
-          ? false
-          : true;
- flag_dw_3x3 = flag_dw_3x3 && flag; 
- printf("flag_dw_3x3: %d \n", flag_dw_3x3);
+  bool flag =
+      (stride == 1 && (paddings[0] > 1 || paddings[2] > 1)) ? false : true;
+  flag_dw_3x3 = flag_dw_3x3 && flag;
 #endif
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
