@@ -14,7 +14,6 @@
 
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_depthwise.h"
-#inlcude "lite/backends/arm/math/conv3x3s1p01_depthwise_fp32_relu.cc"
 
 namespace paddle {
 namespace lite {
@@ -76,62 +75,6 @@ void conv_depthwise_3x3s1p1_bias_s(float *dout,
                                    const int w_out,
                                    const operators::ActivationParam act_param,
                                    ARMContext *ctx);
-
-void conv_depthwise_3x3s1p0_bias_relu(float *dout,
-                                      const float *din,
-                                      const float *weights,
-                                      const float *bias,
-                                      bool flag_bias,
-                                      bool flag_relu,
-                                      const int num,
-                                      const int ch_in,
-                                      const int h_in,
-                                      const int w_in,
-                                      const int h_out,
-                                      const int w_out,
-                                      ARMContext *ctx);
-
-void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
-                                        const float *din,
-                                        const float *weights,
-                                        const float *bias,
-                                        bool flag_bias,
-                                        bool flag_relu,
-                                        const int num,
-                                        const int ch_in,
-                                        const int h_in,
-                                        const int w_in,
-                                        const int h_out,
-                                        const int w_out,
-                                        ARMContext *ctx);
-
-void conv_depthwise_3x3s1p1_bias_relu(float *dout,
-                                      const float *din,
-                                      const float *weights,
-                                      const float *bias,
-                                      bool flag_bias,
-                                      bool flag_relu,
-                                      const int num,
-                                      const int ch_in,
-                                      const int h_in,
-                                      const int w_in,
-                                      const int h_out,
-                                      const int w_out,
-                                      ARMContext *ctx);
-
-void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
-                                        const float *din,
-                                        const float *weights,
-                                        const float *bias,
-                                        bool flag_bias,
-                                        bool flag_relu,
-                                        const int num,
-                                        const int ch_in,
-                                        const int h_in,
-                                        const int w_in,
-                                        const int h_out,
-                                        const int w_out,
-                                        ARMContext *ctx);
 
 void conv_depthwise_3x3s1_fp32(const float *din,
                                float *dout,
