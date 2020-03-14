@@ -98,7 +98,7 @@ else()
   set_property(TARGET xpu_sdk_llvm PROPERTY IMPORTED_LOCATION ${XPU_SDK_LLVM_FILE})
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=0 -L/home/hongming/Work/xpu_toolchain_aarch64/XTDK/shlib -L/home/hongming/Work/xpu_toolchain_aarch64/XTCL/so")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=0")
 
 set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu runtime libs")
 set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu builder libs")
