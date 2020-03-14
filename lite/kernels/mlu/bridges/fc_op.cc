@@ -50,7 +50,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto input_scale = op_info->GetAttr<float>("input_scale");
 
-  std::vector<int64_t> output_shape_nhwc({1, 1, 1, w_dims[1]});
+  std::vector<int64_t> output_shape_nhwc({x_dims[0], 1, 1, w_dims[1]});
   auto output_tensor = graph->AddNode(output_var_name,
                                       output_shape_nhwc,
                                       CNML_TENSOR,
