@@ -457,7 +457,7 @@ void test_img(const std::vector<int>& cluster_id,
             max_ratio = 2.0 * max_diff / (a + b + eps);
           }
         }
-        if (1/*std::abs(max_ratio) >= 1e-5f*/) {
+        if (std::abs(max_ratio) >= 1e-5f) {
           int width = resize / dsth;
           printf("din: \n");
           print_int8(resize_tmp, resize, width);
@@ -560,17 +560,17 @@ void test_img(const std::vector<int>& cluster_id,
 }
 
 void test_rotate(const std::vector<int>& cluster_id,
-              const std::vector<int>& thread_num,
-              int srcw,
-              int srch,
-              int dstw,
-              int dsth,
-              ImageFormat srcFormat,
-              ImageFormat dstFormat,
-              float rotate,
-              FlipParam flip,
-              LayoutType layout,
-              int test_iter = 10) {
+                 const std::vector<int>& thread_num,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth,
+                 ImageFormat srcFormat,
+                 ImageFormat dstFormat,
+                 float rotate,
+                 FlipParam flip,
+                 LayoutType layout,
+                 int test_iter = 10) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -662,12 +662,8 @@ void test_rotate(const std::vector<int>& cluster_id,
       uint8_t* basic_dst = new uint8_t[out_size];
       uint8_t* lite_dst = new uint8_t[out_size];
       if (FLAGS_check_result) {
-        image_rotate_basic(src,
-                           basic_dst,
-                           (ImageFormat)dstFormat,
-                           srcw,
-                           srch,
-                           rotate);
+        image_rotate_basic(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, rotate);
       }
       Timer t_rotate;
 
@@ -731,17 +727,17 @@ void test_rotate(const std::vector<int>& cluster_id,
   }
 }
 void test_flip(const std::vector<int>& cluster_id,
-              const std::vector<int>& thread_num,
-              int srcw,
-              int srch,
-              int dstw,
-              int dsth,
-              ImageFormat srcFormat,
-              ImageFormat dstFormat,
-              float rotate,
-              FlipParam flip,
-              LayoutType layout,
-              int test_iter = 10) {
+               const std::vector<int>& thread_num,
+               int srcw,
+               int srch,
+               int dstw,
+               int dsth,
+               ImageFormat srcFormat,
+               ImageFormat dstFormat,
+               float rotate,
+               FlipParam flip,
+               LayoutType layout,
+               int test_iter = 10) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -833,12 +829,8 @@ void test_flip(const std::vector<int>& cluster_id,
       uint8_t* basic_dst = new uint8_t[out_size];
       uint8_t* lite_dst = new uint8_t[out_size];
       if (FLAGS_check_result) {
-        image_flip_basic(src,
-                           basic_dst,
-                           (ImageFormat)dstFormat,
-                           srcw,
-                           srch,
-                           flip);
+        image_flip_basic(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, flip);
       }
       Timer t_rotate;
 
@@ -902,17 +894,17 @@ void test_flip(const std::vector<int>& cluster_id,
   }
 }
 void test_resize(const std::vector<int>& cluster_id,
-              const std::vector<int>& thread_num,
-              int srcw,
-              int srch,
-              int dstw,
-              int dsth,
-              ImageFormat srcFormat,
-              ImageFormat dstFormat,
-              float rotate,
-              FlipParam flip,
-              LayoutType layout,
-              int test_iter = 10) {
+                 const std::vector<int>& thread_num,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth,
+                 ImageFormat srcFormat,
+                 ImageFormat dstFormat,
+                 float rotate,
+                 FlipParam flip,
+                 LayoutType layout,
+                 int test_iter = 10) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -1005,14 +997,9 @@ void test_resize(const std::vector<int>& cluster_id,
       uint8_t* basic_dst = new uint8_t[out_size];
       uint8_t* lite_dst = new uint8_t[out_size];
       if (FLAGS_check_result) {
-          LOG(INFO) << "image_resize_basic";
-          image_resize_basic(src,
-                           basic_dst,
-                           (ImageFormat)dstFormat,
-                           srcw,
-                           srch,
-                           dstw,
-                           dsth);
+        LOG(INFO) << "image_resize_basic";
+        image_resize_basic(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, dstw, dsth);
       }
       Timer t_rotate;
 
@@ -1045,11 +1032,11 @@ void test_resize(const std::vector<int>& cluster_id,
         for (int i = 0; i < out_size; i++) {
           uint8_t a = lite_dst[i];
           uint8_t b = basic_dst[i];
-          int diff1 = a - b; // basic resize and saber resize 在float ->
-                         // int转换时存在误差，误差范围是{-1, 1}
+          int diff1 = a - b;  // basic resize and saber resize 在float ->
+          // int转换时存在误差，误差范围是{-1, 1}
           int diff = 0;
           if (diff1 < -1 || diff1 > 1) diff = diff1 < 0 ? -diff1 : diff1;
-            diff_v[i] = diff;
+          diff_v[i] = diff;
           if (diff > 1 && max_diff < diff) {
             max_diff = diff;
             printf("i: %d, lite: %d, basic: %d \n", i, a, b);
@@ -1079,17 +1066,17 @@ void test_resize(const std::vector<int>& cluster_id,
   }
 }
 void test_convert(const std::vector<int>& cluster_id,
-              const std::vector<int>& thread_num,
-              int srcw,
-              int srch,
-              int dstw,
-              int dsth,
-              ImageFormat srcFormat,
-              ImageFormat dstFormat,
-              float rotate,
-              FlipParam flip,
-              LayoutType layout,
-              int test_iter = 10) {
+                  const std::vector<int>& thread_num,
+                  int srcw,
+                  int srch,
+                  int dstw,
+                  int dsth,
+                  ImageFormat srcFormat,
+                  ImageFormat dstFormat,
+                  float rotate,
+                  FlipParam flip,
+                  LayoutType layout,
+                  int test_iter = 10) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -1182,12 +1169,12 @@ void test_convert(const std::vector<int>& cluster_id,
       uint8_t* lite_dst = new uint8_t[out_size];
       if (FLAGS_check_result) {
         image_convert_basic(src,
-                           basic_dst,
-                           (ImageFormat)srcFormat,
-                           (ImageFormat)dstFormat,
-                           srcw,
-                           srch,
-                           out_size);
+                            basic_dst,
+                            (ImageFormat)srcFormat,
+                            (ImageFormat)dstFormat,
+                            srcw,
+                            srch,
+                            out_size);
       }
       Timer t_rotate;
 
@@ -1256,28 +1243,28 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 4, 8, 16, 112, 224, 1092}) {
       for (auto h : {1, 4, 16, 112, 224}) {
-            for (auto rotate : {180}) {
-              for (auto flip : {0}) {
-                for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
-                  for (auto dstFormat : {0, 1, 2, 3, 4}) {
-                    for (auto layout : {1}) {
-                      if ((srcFormat == ImageFormat::NV12 ||
-                           srcFormat == ImageFormat::NV21) &&
-                          (dstFormat == ImageFormat::GRAY)) {
-                        continue;
-                      }
-                      if ((dstFormat == ImageFormat::NV12 ||
-                           dstFormat == ImageFormat::NV21) &&
-                          (srcFormat == ImageFormat::GRAY)) {
-                        continue;
-                      }
-                      if (srcFormat == ImageFormat::NV12 ||
-                          srcFormat == ImageFormat::NV21) {
-                        if (w % 2) {  
-                          continue;
-                        }
-                      }
-                      test_convert({FLAGS_cluster},
+        for (auto rotate : {180}) {
+          for (auto flip : {0}) {
+            for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
+              for (auto dstFormat : {0, 1, 2, 3, 4}) {
+                for (auto layout : {1}) {
+                  if ((srcFormat == ImageFormat::NV12 ||
+                       srcFormat == ImageFormat::NV21) &&
+                      (dstFormat == ImageFormat::GRAY)) {
+                    continue;
+                  }
+                  if ((dstFormat == ImageFormat::NV12 ||
+                       dstFormat == ImageFormat::NV21) &&
+                      (srcFormat == ImageFormat::GRAY)) {
+                    continue;
+                  }
+                  if (srcFormat == ImageFormat::NV12 ||
+                      srcFormat == ImageFormat::NV21) {
+                    if (w % 2) {
+                      continue;
+                    }
+                  }
+                  test_convert({FLAGS_cluster},
                                {1},
                                w,
                                h,
@@ -1300,7 +1287,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
 #endif
 #if 1
 TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
-  if (1/*FLAGS_basic_test*/) {
+  if (FLAGS_basic_test) {
     for (auto w : {8, 16, 112, 224, 1092}) {
       for (auto h : {4, 16, 112, 224}) {
         for (auto ww : {8, 32, 112}) {
@@ -1308,25 +1295,25 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
             for (auto rotate : {180}) {
               for (auto flip : {0}) {
                 for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
-                    for (auto layout : {1}) {
-                      auto dstFormat = srcFormat;
-                      if (srcFormat == ImageFormat::NV12 ||
-                          srcFormat == ImageFormat::NV21) {
-                        if (w % 2) { 
-                          continue;
-                        }
+                  for (auto layout : {1}) {
+                    auto dstFormat = srcFormat;
+                    if (srcFormat == ImageFormat::NV12 ||
+                        srcFormat == ImageFormat::NV21) {
+                      if (w % 2) {
+                        continue;
                       }
-                      test_resize({FLAGS_cluster},
-                               {1, 2, 4},
-                               w,
-                               h,
-                               ww,
-                               hh,
-                               (ImageFormat)srcFormat,
-                               (ImageFormat)dstFormat,
-                               rotate,
-                               (FlipParam)flip,
-                               (LayoutType)layout);
+                    }
+                    test_resize({FLAGS_cluster},
+                                {1, 2, 4},
+                                w,
+                                h,
+                                ww,
+                                hh,
+                                (ImageFormat)srcFormat,
+                                (ImageFormat)dstFormat,
+                                rotate,
+                                (FlipParam)flip,
+                                (LayoutType)layout);
                   }
                 }
               }
@@ -1343,40 +1330,40 @@ TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 8, 16, 112, 224, 1092}) {
       for (auto h : {1, 16, 112, 224}) {
-            for (auto rotate : {90, 180, 270}) {
-              for (auto flip : {-1, 0, 1}) {
-                  for (auto srcFormat : {0, 1, 2, 3, 4}) {
-                    for (auto layout : {1, 3}) {
-                      auto dstFormat = srcFormat;
-                      if (srcFormat == ImageFormat::NV12 ||
-                          srcFormat == ImageFormat::NV21) {
-                        if (w % 2) {  
-                          continue;
-                        }
-                      }
-                      test_flip({FLAGS_cluster},
-                               {1, 2, 4},
-                               w,
-                               h,
-                               w,
-                               h,
-                               (ImageFormat)srcFormat,
-                               (ImageFormat)dstFormat,
-                               rotate,
-                               (FlipParam)flip,
-                               (LayoutType)layout);
+        for (auto rotate : {90, 180, 270}) {
+          for (auto flip : {-1, 0, 1}) {
+            for (auto srcFormat : {0, 1, 2, 3, 4}) {
+              for (auto layout : {1, 3}) {
+                auto dstFormat = srcFormat;
+                if (srcFormat == ImageFormat::NV12 ||
+                    srcFormat == ImageFormat::NV21) {
+                  if (w % 2) {
+                    continue;
+                  }
+                }
+                test_flip({FLAGS_cluster},
+                          {1, 2, 4},
+                          w,
+                          h,
+                          w,
+                          h,
+                          (ImageFormat)srcFormat,
+                          (ImageFormat)dstFormat,
+                          rotate,
+                          (FlipParam)flip,
+                          (LayoutType)layout);
 
-                      test_rotate({FLAGS_cluster},
-                               {1, 2, 4},
-                               w,
-                               h,
-                               w,
-                               h,
-                               (ImageFormat)srcFormat,
-                               (ImageFormat)dstFormat,
-                               rotate,
-                               (FlipParam)flip,
-                               (LayoutType)layout);
+                test_rotate({FLAGS_cluster},
+                            {1, 2, 4},
+                            w,
+                            h,
+                            w,
+                            h,
+                            (ImageFormat)srcFormat,
+                            (ImageFormat)dstFormat,
+                            rotate,
+                            (FlipParam)flip,
+                            (LayoutType)layout);
               }
             }
           }
