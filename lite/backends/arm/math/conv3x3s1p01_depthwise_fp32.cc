@@ -14,6 +14,7 @@
 
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_depthwise.h"
+#inlcude "lite/backends/arm/math/conv3x3s1p01_depthwise_fp32_relu.cc"
 
 namespace paddle {
 namespace lite {
@@ -91,23 +92,20 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                bool flag_bias,
                                const operators::ActivationParam act_param,
                                ARMContext *ctx) {
+  bool has_active = act_param.has_active;
+  bool flag_relu = false;
+  bool relu6 = false;
+  if (has_active) {
+    if (act_param.active_type == lite_api::ActivationType::kRelu) {
+      flag_relu = true;
+    } else {
+      relu6 = true;
+    }
+  }
   if (pad == 0) {
     if (w_in > 5) {
-      conv_depthwise_3x3s1p0_bias(dout,
-                                  din,
-                                  weights,
-                                  bias,
-                                  flag_bias,
-                                  num,
-                                  ch_in,
-                                  h_in,
-                                  w_in,
-                                  h_out,
-                                  w_out,
-                                  act_param,
-                                  ctx);
-    } else {
-      conv_depthwise_3x3s1p0_bias_s(dout,
+      if (relu6) {
+        conv_depthwise_3x3s1p0_bias(dout,
                                     din,
                                     weights,
                                     bias,
@@ -120,25 +118,57 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                     w_out,
                                     act_param,
                                     ctx);
+      } else {
+        conv_depthwise_3x3s1p0_bias_relu(dout,
+                                         din,
+                                         weights,
+                                         bias,
+                                         flag_bias,
+                                         flag_relu,
+                                         num,
+                                         ch_in,
+                                         h_in,
+                                         w_in,
+                                         h_out,
+                                         w_out,
+                                         ctx);
+      }
+    } else {
+      if (relu6) {
+        conv_depthwise_3x3s1p0_bias_s(dout,
+                                      din,
+                                      weights,
+                                      bias,
+                                      flag_bias,
+                                      num,
+                                      ch_in,
+                                      h_in,
+                                      w_in,
+                                      h_out,
+                                      w_out,
+                                      act_param,
+                                      ctx);
+      } else {
+        conv_depthwise_3x3s1p0_bias_s_relu(dout,
+                                           din,
+                                           weights,
+                                           bias,
+                                           flag_bias,
+                                           flag_relu,
+                                           num,
+                                           ch_in,
+                                           h_in,
+                                           w_in,
+                                           h_out,
+                                           w_out,
+                                           ctx);
+      }
     }
   }
   if (pad == 1) {
     if (w_in > 4) {
-      conv_depthwise_3x3s1p1_bias(dout,
-                                  din,
-                                  weights,
-                                  bias,
-                                  flag_bias,
-                                  num,
-                                  ch_in,
-                                  h_in,
-                                  w_in,
-                                  h_out,
-                                  w_out,
-                                  act_param,
-                                  ctx);
-    } else {
-      conv_depthwise_3x3s1p1_bias_s(dout,
+      if (relu6) {
+        conv_depthwise_3x3s1p1_bias(dout,
                                     din,
                                     weights,
                                     bias,
@@ -151,6 +181,51 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                     w_out,
                                     act_param,
                                     ctx);
+      } else {
+        conv_depthwise_3x3s1p1_bias_relu(dout,
+                                         din,
+                                         weights,
+                                         bias,
+                                         flag_bias,
+                                         flag_relu,
+                                         num,
+                                         ch_in,
+                                         h_in,
+                                         w_in,
+                                         h_out,
+                                         w_out,
+                                         ctx);
+      }
+    } else {
+      if (relu6) {
+        conv_depthwise_3x3s1p1_bias_s(dout,
+                                      din,
+                                      weights,
+                                      bias,
+                                      flag_bias,
+                                      num,
+                                      ch_in,
+                                      h_in,
+                                      w_in,
+                                      h_out,
+                                      w_out,
+                                      act_param,
+                                      ctx);
+      } else {
+        conv_depthwise_3x3s1p1_bias_s_relu(dout,
+                                           din,
+                                           weights,
+                                           bias,
+                                           flag_bias,
+                                           flag_relu,
+                                           num,
+                                           ch_in,
+                                           h_in,
+                                           w_in,
+                                           h_out,
+                                           w_out,
+                                           ctx);
+      }
     }
   }
 }
