@@ -188,13 +188,12 @@ __kernel void conv2d_3x3(__private const int item_ch,
     }
   }
 
-#ifdef RELU
   output[0] = activation_type4(output[0]);
   output[1] = activation_type4(output[1]);
   output[2] = activation_type4(output[2]);
   output[3] = activation_type4(output[3]);
   output[4] = activation_type4(output[4]);
-#endif
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, (int2)(out_w_base_id + out_w_id0, item_h_id),
                output[0]);
   if (out_w_id1 < out_w) {
