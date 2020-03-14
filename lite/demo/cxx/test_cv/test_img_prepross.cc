@@ -413,7 +413,7 @@ bool test_resize(bool cv_run,
     resize_cv = im_resize.data;
     uint8_t* diff_v = new uint8_t[out_size];
     double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
-    if (0 /*diff > 1*/) {
+    if (diff > 10) {
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
       std::cout << "cv out: " << std::endl;
