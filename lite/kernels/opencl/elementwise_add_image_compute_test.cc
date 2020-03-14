@@ -87,7 +87,7 @@ void elementwise_compute_ref(const dtype *x_data,
       }
     }
   } else {
-    LOG(FATAL) << "unsupported Elementwise type: " << elt_type << std::endl;
+    LOG(FATAL) << "unsupported Elementwise type: " << elt_type;
   }
 }
 

@@ -224,7 +224,7 @@ TEST(grid_samler_image2d, compute) {
 #ifdef GRID_FP16_PRINT_RESULT
           LOG(INFO) << "---- print kernel result (input -> output) ----";
           for (int eidx = 0; eidx < in_dim.production(); ++eidx) {
-            std::cout << input_v[eidx] << " -> " << out_data[eidx] << std::endl;
+            std::cout << input_v[eidx] << " -> " << out_data[eidx] << "\n";
           }
 #endif  // GRID_FP16_PRINT_RESULT
           for (int i = 0; i < out_dim.production(); i++) {
