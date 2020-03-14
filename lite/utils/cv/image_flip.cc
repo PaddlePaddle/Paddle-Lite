@@ -221,7 +221,6 @@ void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
 }
 
 /*
@@ -376,7 +375,6 @@ void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
 }
 
 /*
@@ -531,7 +529,6 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
 }
 
 void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
@@ -697,8 +694,6 @@ void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
-  delete[] zerobuff2;
 }
 
 void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
@@ -950,8 +945,6 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
-  delete[] zerobuff2;
 }
 
 void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
@@ -1203,8 +1196,6 @@ void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
-  delete[] zerobuff2;
 }
 
 void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
@@ -1383,8 +1374,6 @@ void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
-  delete[] zerobuff2;
 }
 
 void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
@@ -1679,8 +1668,6 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
-  delete[] zerobuff2;
 }
 
 void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
@@ -1977,8 +1964,6 @@ void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
-  delete[] zerobuff;
-  delete[] zerobuff2;
 }
 }  // namespace cv
 }  // namespace utils
