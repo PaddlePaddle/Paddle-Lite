@@ -2256,7 +2256,9 @@ void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
               doutr1 = trash_buf;
             case 0:
               dr3 = zero_ptr;
-              doutr1 = trash_buf;
+              if (j + 2 > h_out) {
+                doutr1 = trash_buf;
+              }
             default:
               break;
           }
