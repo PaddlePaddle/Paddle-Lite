@@ -2923,7 +2923,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fmax   v29.4s, v29.4s, v0.4s  \n"    /* relu6 */
             "fmax   v30.4s, v30.4s, v0.4s  \n"    /* relu6 */
             "fmax   v31.4s, v31.4s, v0.4s  \n"    /* relu6 */
-
             "fmin   v8.4s,  v8.4s,  v1.4s  \n"    /* relu6 */
             "fmin   v9.4s,  v9.4s,  v1.4s  \n"    /* relu6 */
             "fmin   v10.4s, v10.4s, v1.4s  \n"    /* relu6 */
@@ -2965,7 +2964,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fcmge  v2.4s,    v11.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v11.4s,   v1.4s   \n" /* vmulq_f32 */      
             "bif    v11.16b,  v3.16b,   v2.16b  \n" /* choose*/
-
             "fcmge  v2.4s,    v12.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v12.4s,   v1.4s   \n" /* vmulq_f32 */ 
             "fcmge  v4.4s,    v13.4s,   v0.4s   \n" /* vcgeq_f32 */ 
@@ -2978,7 +2976,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fcmge  v2.4s,    v15.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v15.4s,   v1.4s   \n" /* vmulq_f32 */      
             "bif    v15.16b,  v3.16b,   v2.16b  \n" /* choose*/
-
             "fcmge  v2.4s,    v16.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v16.4s,   v1.4s   \n" /* vmulq_f32 */ 
             "fcmge  v4.4s,    v17.4s,   v0.4s   \n" /* vcgeq_f32 */ 
@@ -2991,7 +2988,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fcmge  v2.4s,    v19.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v19.4s,   v1.4s   \n" /* vmulq_f32 */      
             "bif    v19.16b,  v3.16b,   v2.16b  \n" /* choose*/
-
             "fcmge  v2.4s,    v20.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v20.4s,   v1.4s   \n" /* vmulq_f32 */ 
             "fcmge  v4.4s,    v21.4s,   v0.4s   \n" /* vcgeq_f32 */ 
@@ -3004,7 +3000,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fcmge  v2.4s,    v23.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v23.4s,   v1.4s   \n" /* vmulq_f32 */    
             "bif    v23.16b,  v3.16b,   v2.16b  \n" /* choose*/
-
             "fcmge  v2.4s,    v24.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v24.4s,   v1.4s   \n" /* vmulq_f32 */ 
             "fcmge  v4.4s,    v25.4s,   v0.4s   \n" /* vcgeq_f32 */ 
@@ -3017,7 +3012,6 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fcmge  v2.4s,    v27.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v27.4s,   v1.4s   \n" /* vmulq_f32 */      
             "bif    v27.16b,  v3.16b,   v2.16b  \n" /* choose*/
-
             "fcmge  v2.4s,    v28.4s,   v0.4s   \n" /* vcgeq_f32 */ 
             "fmul   v3.4s,    v28.4s,   v1.4s   \n" /* vmulq_f32 */ 
             "fcmge  v4.4s,    v29.4s,   v0.4s   \n" /* vcgeq_f32 */ 
@@ -3916,47 +3910,36 @@ void sgemm_prepacked_6x8(bool is_transB,
             "vcge.f32   q2, q4, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q4, q1                @ vmulq_f32 \n"  
             "vbif       q4, q3, q2                @ choose    \n" 
-
             "vcge.f32   q2, q5, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q5, q1                @ vmulq_f32 \n"  
             "vbif       q5, q3, q2                @ choose    \n"
-
             "vcge.f32   q2, q6, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q6, q1                @ vmulq_f32 \n"  
             "vbif       q6, q3, q2                @ choose    \n" 
-
             "vcge.f32   q2, q7, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q7, q1                @ vmulq_f32 \n"  
             "vbif       q7, q3, q2                @ choose    \n" 
-
             "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"  
             "vbif       q8, q3, q2                @ choose    \n"     
-
             "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"  
             "vbif       q9, q3, q2                @ choose    \n"
-
             "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"  
             "vbif       q10, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"  
             "vbif       q11, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"  
             "vbif       q12, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"  
             "vbif       q13, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"  
             "vbif       q14, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"  
             "vbif       q15, q3, q2               @ choose    \n" 
@@ -4365,31 +4348,24 @@ void sgemm_prepacked_4x8(bool is_transB,
             "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"  
             "vbif       q8, q3, q2                @ choose    \n"     
-
             "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"  
             "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"  
             "vbif       q9, q3, q2                @ choose    \n"
-
             "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"  
             "vbif       q10, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"  
             "vbif       q11, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"  
             "vbif       q12, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"  
             "vbif       q13, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"  
             "vbif       q14, q3, q2               @ choose    \n" 
-
             "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"  
             "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"  
             "vbif       q15, q3, q2               @ choose    \n" 
