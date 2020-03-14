@@ -857,6 +857,7 @@ void rotate_hwc1_180(const uint8_t* src,
       }
     }
   }
+  delete[] zerobuff;
 }
 /*
 1 2 3
@@ -1387,6 +1388,7 @@ void rotate_hwc3_180(const uint8_t* src,
       }
     }
   }
+  delete[] zerobuff;
 }
 
 void rotate_hwc3_270(const uint8_t* src,
@@ -1916,6 +1918,7 @@ void rotate_hwc4_180(const uint8_t* src,
       }
     }
   }
+  delete[] zerobuff;
 }
 
 void rotate_hwc4_270(const uint8_t* src,
