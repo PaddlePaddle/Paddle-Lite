@@ -23,10 +23,6 @@ __kernel void depth_conv2d_3x3(__private const int global_size_dim0,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
 #endif
-#ifdef BATCH_NORM
-                                              __read_only image2d_t new_scale,
-                                              __read_only image2d_t new_biase,
-#endif
                                               __write_only image2d_t output_image,
                                               __private const int stride,
                                               __private const int offset,
@@ -137,13 +133,8 @@ __kernel void depth_conv2d_3x3(__private const int global_size_dim0,
     for(int i = 0 ;i < 9 ; i++){
      output += inputs[i] * filters[i];
     }
-#ifdef BATCH_NORM
-    output = output * READ_IMG_TYPE(CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) + READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
-#endif
 
-#ifdef RELU
     output = activation_type4(output);
-#endif
 
 
     /*
@@ -179,10 +170,6 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
                                               __read_only image2d_t filter,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
                                               __read_only image2d_t bias,
-#endif
-#ifdef BATCH_NORM
-                                              __read_only image2d_t new_scale,
-                                              __read_only image2d_t new_biase,
 #endif
                                               __write_only image2d_t output_image,
                                               __private const int stride,
@@ -299,19 +286,9 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
 
     output[0] = mad(inputs[10], filters[8], output[0]);
     output[1] = mad(inputs[11], filters[8], output[1]);
-#ifdef BATCH_NORM
-    CL_DTYPE4 scale = READ_IMG_TYPE(CL_DTYPE_CHAR, new_scale, sampler, (int2)(ou_ch_blk_id, 0));
-    CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(ou_ch_blk_id, 0));
-    output[0] = mad(scale, output[0], biase);
-    if (ou_col_id + 1 < ou_w) {
-        output[1] = mad(scale, output[1], biase);
-    }
-#endif
 
-#ifdef RELU
     output[0] = activation_type4(output[0]);
     output[1] = activation_type4(output[1]);
-#endif
 
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, (int2)(ou_x, ou_nh_id), output[0]);
     if (ou_col_id + 1 < ou_w) {
