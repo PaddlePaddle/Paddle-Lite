@@ -69,10 +69,8 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
       (tile_block * ((ic + 3) / 4 + (oc + 3) / 4) * 4 * wino_iw * wino_iw +
        8 * wino_iw * wino_iw) *
       threads;
-  ctx.ExtendWorkspace((temp_size + new_input_size) * sizeof(float));
-
+  workspace_size_ = (temp_size + new_input_size) * sizeof(float);
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
-  ctx.ExtendWorkspace((temp_size + new_input_size) * sizeof(float));
   void* trans_tmp_ptr = malloc(sizeof(float) * wino_iw * wino_iw * oc * ic);
   auto weights_data_ = weights_.mutable_data<float>();
   if (!choose_small_) {
@@ -96,6 +94,7 @@ template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
+  ctx.ExtendWorkspace(workspace_size_);
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;

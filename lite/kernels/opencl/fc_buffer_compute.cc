@@ -57,6 +57,7 @@ class FcCompute
       global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                       static_cast<size_t>((n_ + 3) / 4)};
     }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
     if (param.activation_type == "relu") {
       build_options_ += "-DRELU";

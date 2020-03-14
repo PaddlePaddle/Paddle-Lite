@@ -78,45 +78,45 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_TRAIN
+// #ifdef LITE_WITH_TRAIN
 
-bool ActivationGradOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X_grad);
-  CHECK_OR_FALSE(param_.Out_grad);
-  return true;
-}
+// bool ActivationGradOp::CheckShape() const {
+//   CHECK_OR_FALSE(param_.X_grad);
+//   CHECK_OR_FALSE(param_.Out_grad);
+//   return true;
+// }
 
-bool ActivationGradOp::InferShape() const {
-  param_.X_grad->Resize(param_.Out_grad->dims());
-  return true;
-}
+// bool ActivationGradOp::InferShape() const {
+//   param_.X_grad->Resize(param_.Out_grad->dims());
+//   return true;
+// }
 
-bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                  lite::Scope* scope) {
-  auto Out_grad_name = opdesc.Input(framework::GradVarName("Out")).front();
-  auto X_grad_name = opdesc.Output(framework::GradVarName("X")).front();
+// bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
+//                                   lite::Scope* scope) {
+//   auto Out_grad_name = opdesc.Input(framework::GradVarName("Out")).front();
+//   auto X_grad_name = opdesc.Output(framework::GradVarName("X")).front();
 
-  param_.Out_grad = GetVar<lite::Tensor>(scope, Out_grad_name);
-  param_.X_grad = GetMutableVar<Tensor>(scope, X_grad_name);
+//   param_.Out_grad = GetVar<lite::Tensor>(scope, Out_grad_name);
+//   param_.X_grad = GetMutableVar<Tensor>(scope, X_grad_name);
 
-  if (opdesc.HasInput("X")) {
-    auto X_name = opdesc.Input("X").front();
-    param_.X = GetVar<lite::Tensor>(scope, X_name);
-  } else {
-    param_.X = param_.X_grad;
-  }
+//   if (opdesc.HasInput("X")) {
+//     auto X_name = opdesc.Input("X").front();
+//     param_.X = GetVar<lite::Tensor>(scope, X_name);
+//   } else {
+//     param_.X = param_.X_grad;
+//   }
 
-  if (opdesc.HasInput("Out")) {
-    auto Out_name = opdesc.Input("Out").front();
-    param_.Out = GetVar<lite::Tensor>(scope, Out_name);
-  } else {
-    param_.Out = param_.Out_grad;
-  }
+//   if (opdesc.HasInput("Out")) {
+//     auto Out_name = opdesc.Input("Out").front();
+//     param_.Out = GetVar<lite::Tensor>(scope, Out_name);
+//   } else {
+//     param_.Out = param_.Out_grad;
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
-#endif
+// #endif
 
 }  // namespace operators
 }  // namespace lite
@@ -139,6 +139,6 @@ REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
 
-#ifdef LITE_WITH_TRAIN
-REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
-#endif
+// #ifdef LITE_WITH_TRAIN
+// REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
+// #endif
