@@ -68,6 +68,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemv_arm_int8.cc
       conv3x3s1_direct_fp32.cc
       conv3x3s2_direct_fp32.cc
+      conv3x3s1p01_depthwise_fp32_relu.cc
+      conv3x3s2p01_depthwise_fp32_relu.cc
       conv3x3s1p01_depthwise_fp32.cc
       conv3x3s2p01_depthwise_fp32.cc
       conv3x3s1px_depthwise_fp32.cc

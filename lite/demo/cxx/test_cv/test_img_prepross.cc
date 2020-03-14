@@ -60,17 +60,18 @@ void fill_with_mat(cv::Mat& mat, uint8_t* src, int num) {  // NOLINT
   }
 }
 
-double compare_diff(uint8_t* data1, uint8_t* data2, int size) {
+double compare_diff(uint8_t* data1, uint8_t* data2, int size, uint8_t* diff_v) {
   double diff = 0.0;
   for (int i = 0; i < size; i++) {
     double val = abs(data1[i] - data2[i]);
+    diff_v[i] = val;
     diff = val > diff ? val : diff;
   }
   return diff;
 }
 void print_data(const uint8_t* data, int size) {
   for (int i = 0; i < size; i++) {
-    std::cout << data[i] << " ";
+    printf("%d ", data[i]);
     if ((i + 1) % 10 == 0) {
       std::cout << std::endl;
     }
@@ -139,7 +140,8 @@ bool test_convert(bool cv_run,
 
   if (cv_run) {
     resize_cv = im_resize.data;
-    double diff = compare_diff(resize_cv, resize_lite, out_size);
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
     if (diff > 1) {
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
@@ -147,6 +149,8 @@ bool test_convert(bool cv_run,
       print_data(resize_cv, out_size);
       std::cout << "lite out: " << std::endl;
       print_data(resize_lite, out_size);
+      std::cout << "lite out: " << std::endl;
+      print_data(diff_v, out_size);
       return false;
     } else {
       // save_img
@@ -225,7 +229,8 @@ bool test_flip(bool cv_run,
 
   if (cv_run) {
     resize_cv = im_resize.data;
-    double diff = compare_diff(resize_cv, resize_lite, out_size);
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
     if (diff > 1) {
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
@@ -233,6 +238,8 @@ bool test_flip(bool cv_run,
       print_data(resize_cv, out_size);
       std::cout << "lite out: " << std::endl;
       print_data(resize_lite, out_size);
+      std::cout << "diff out: " << std::endl;
+      print_data(diff_v, out_size);
       return false;
     } else {
       // save_img
@@ -316,7 +323,8 @@ bool test_rotate(bool cv_run,
   std::cout << "compare diff: " << std::endl;
   if (cv_run) {
     resize_cv = im_resize.data;
-    double diff = compare_diff(resize_cv, resize_lite, out_size);
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
     if (diff > 1) {
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
@@ -324,6 +332,8 @@ bool test_rotate(bool cv_run,
       print_data(resize_cv, out_size);
       std::cout << "lite out: " << std::endl;
       print_data(resize_lite, out_size);
+      std::cout << "diff out: " << std::endl;
+      print_data(diff_v, out_size);
       return false;
     } else {
       // save_img
@@ -401,14 +411,17 @@ bool test_resize(bool cv_run,
 
   if (cv_run) {
     resize_cv = im_resize.data;
-    double diff = compare_diff(resize_cv, resize_lite, out_size);
-    if (diff > 1) {
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
+    if (diff > 10) {
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
       std::cout << "cv out: " << std::endl;
       print_data(resize_cv, out_size);
       std::cout << "lite out: " << std::endl;
       print_data(resize_lite, out_size);
+      std::cout << "diff out: " << std::endl;
+      print_data(diff_v, out_size);
       return false;
     } else {
       // save_img
@@ -545,7 +558,7 @@ void test_custom(bool has_img,  // input is image
   tparam1.rotate_param = rotate;
 
   ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
-  std::cout << "image convert testing";
+  std::cout << "image convert testing" << std::endl;
   bool re = test_convert(cv_run,
                          src,
                          img,
@@ -561,7 +574,7 @@ void test_custom(bool has_img,  // input is image
   if (!re) {
     return;
   }
-  std::cout << "image resize testing";
+  std::cout << "image resize testing" << std::endl;
   tparam.oh = dsth;
   tparam.ow = dstw;
   ImagePreprocess image_preprocess1(srcFormat, srcFormat, tparam1);
@@ -580,7 +593,7 @@ void test_custom(bool has_img,  // input is image
     return;
   }
 
-  std::cout << "image rotate testing";
+  std::cout << "image rotate testing" << std::endl;
   if (rotate == 90 || rotate == 270) {
     tparam.oh = srcw;
     tparam.ow = srch;
@@ -611,7 +624,7 @@ void test_custom(bool has_img,  // input is image
   tparam.oh = srch;
   tparam.ow = srcw;
   ImagePreprocess image_preprocess3(srcFormat, srcFormat, tparam);
-  std::cout << "image flip testing";
+  std::cout << "image flip testing" << std::endl;
   re = test_flip(cv_run,
                  src,
                  img,
