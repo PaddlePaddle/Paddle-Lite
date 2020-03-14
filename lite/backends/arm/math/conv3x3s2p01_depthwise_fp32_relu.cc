@@ -1036,19 +1036,38 @@ void conv_depthwise_3x3s2p1_bias_s_relu(float* dout,
                                         ARMContext* ctx) {
   int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
   int out_pad_idx[4] = {0, 1, 2, 3};
-  float zeros[8] = {0.0f};
+  int size_pad_bottom = h_out * 2 - h_in;
 
-  uint32x4_t vmask_rp1 =
-      vcgtq_s32(vdupq_n_s32(w_in), vld1q_s32(right_pad_idx));  // 0 2 4 6
-  uint32x4_t vmask_rp2 =
-      vcgtq_s32(vdupq_n_s32(w_in), vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
+  int tile_w = w_out >> 2;
+  int cnt_remain = w_out % 4;
+  unsigned int size_right_remain = (unsigned int)(7 + (tile_w << 3) - w_in);
+  size_right_remain = 8 - size_right_remain;
 
+  if (cnt_remain == 0 && size_right_remain == 0) {
+    cnt_remain = 4;
+    tile_w -= 1;
+    size_right_remain = 8;
+  }
+  int cnt_col = tile_w - 1;
+
+  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
+  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
+  uint32x4_t wmask =
+      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
 
-  unsigned int dmask[8];
+  float* zero_ptr = ctx->workspace_data<float>();
+  memset(zero_ptr, 0, w_in * sizeof(float));
+  float* write_ptr = zero_ptr + w_in;
+
+  unsigned int dmask[12];
+
   vst1q_u32(dmask, vmask_rp1);
   vst1q_u32(dmask + 4, vmask_rp2);
+  vst1q_u32(dmask + 8, wmask);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
