@@ -1228,17 +1228,29 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  int tile_w = (w_in + 3) >> 2;
-  int cnt_col = tile_w - 2;
+  int tile_w = w_out >> 2;
+  int remain = w_out % 4;
+  int cnt_col = tile_w - 1;
 
-  unsigned int size_pad_right = (unsigned int)(1 + (tile_w << 2) - w_in);
+  unsigned int size_pad_right = (unsigned int)(5 + (tile_w << 2) - w_in);
+  const unsigned int remian_idx[4] = {0, 1, 2, 3};
+
+  if (remain == 0 && size_pad_right == 5) {
+    size_pad_right = 1;
+    cnt_col -= 1;
+    remain = 4;
+  } else if (remain == 0 && size_pad_right == 6) {
+    size_pad_right = 2;
+    cnt_col -= 1;
+    remain = 4;
+  }
 
   uint32x4_t vmask_rp1 =
       vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
   uint32x4_t vmask_rp2 =
       vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
   uint32x4_t vmask_result =
-      vcgtq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
+      vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(remian_idx));
 
   unsigned int vmask[8];
   vst1q_u32(vmask, vmask_rp1);
