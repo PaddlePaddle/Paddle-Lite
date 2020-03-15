@@ -174,7 +174,7 @@ endif()
 ########################################################################################
 
 if(LITE_WITH_XPU)
-    include(xpu)
+    include(device/xpu)
 endif()
 
 include(external/mklml)     # download mklml package

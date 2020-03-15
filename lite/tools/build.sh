@@ -21,9 +21,9 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 SHUTDOWN_LOG=ON
-WITH_NPU=OFF
-NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
-WITH_XPU=OFF
+BUILD_NPU=OFF
+NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
+BUILD_XPU=OFF
 XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
 LITE_WITH_ARM_LANG=OFF
 
@@ -134,9 +134,9 @@ function make_tiny_publish_so {
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$WITH_NPU \
-      -DNPU_SDK_ROOT=$NPU_SDK_ROOT \
-      -DLITE_WITH_XPU=$WITH_XPU \
+      -DLITE_WITH_NPU=$BUILD_NPU \
+      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_XPU=$BUILD_XPU \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -221,9 +221,9 @@ function make_full_publish_so {
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$WITH_NPU \
-      -DNPU_SDK_ROOT=$NPU_SDK_ROOT \
-      -DLITE_WITH_XPU=$WITH_XPU \
+      -DLITE_WITH_NPU=$BUILD_NPU \
+      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_XPU=$BUILD_XPU \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -254,9 +254,9 @@ function make_all_tests {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
-      -DLITE_WITH_NPU=$WITH_NPU \
-      -DNPU_SDK_ROOT=$NPU_SDK_ROOT \
-      -DLITE_WITH_XPU=$WITH_XPU \
+      -DLITE_WITH_NPU=$BUILD_NPU \
+      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_XPU=$BUILD_XPU \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -354,7 +354,9 @@ function make_x86 {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DWITH_GPU=OFF \
-            -DLITE_BUILD_EXTRA=ON
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_XPU=$BUID_XPU \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -456,16 +458,16 @@ function main {
                 SHUTDOWN_LOG="${i#*=}"
                 shift
                 ;;
-            --with_npu=*)
-                WITH_NPU="${i#*=}"
+            --build_npu=*)
+                BUILD_NPU="${i#*=}"
                 shift
                 ;;
-           --npu_sdk_root=*)
+           --npu_ddk_root=*)
                 NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
-            --with_xpu=*)
-                WITH_XPU="${i#*=}"
+            --build_xpu=*)
+                BUILD_XPU="${i#*=}"
                 shift
                 ;;
             --xpu_sdk_root=*)
