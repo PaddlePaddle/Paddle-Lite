@@ -79,7 +79,6 @@ void rotate_hwc1(
 void rotate_hwc3(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, float degree) {
   if (degree == 90) {
-    printf("rotate_hwc3_90 \n");
     rotate_hwc3_90(src, dst, srcw, srch, srch, srcw);
   } else if (degree == 180) {
     rotate_hwc3_180(src, dst, srcw, srch, srcw, srch);
@@ -857,7 +856,6 @@ void rotate_hwc1_180(const uint8_t* src,
       }
     }
   }
-  delete[] zerobuff;
 }
 /*
 1 2 3
@@ -1388,7 +1386,6 @@ void rotate_hwc3_180(const uint8_t* src,
       }
     }
   }
-  delete[] zerobuff;
 }
 
 void rotate_hwc3_270(const uint8_t* src,
@@ -1918,7 +1915,6 @@ void rotate_hwc4_180(const uint8_t* src,
       }
     }
   }
-  delete[] zerobuff;
 }
 
 void rotate_hwc4_270(const uint8_t* src,
