@@ -367,11 +367,24 @@ void ConvImageCompute::Conv2d1x1() {
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
+  size_t max_work_group_size = 0;
+  kernel.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                  CL_KERNEL_WORK_GROUP_SIZE,
+                                  &max_work_group_size);
+  cl::NDRange local_work_size = cl::NullRange;
+  VLOG(4) << "max_work_group_size: " << max_work_group_size;
+  if (max_work_group_size > 0 && use_lws) {
+    local_work_size = context.cl_context()->LocalWorkSize(global_work_size,
+                                                          max_work_group_size);
+    VLOG(4) << "local_work_size[3D]: {" << local_work_size[0] << ","
+            << local_work_size[1] << "," << local_work_size[2] << "}";
+  }
+
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
       global_work_size,
-      cl::NullRange,
+      local_work_size,
       nullptr,
       event_.get());
   CL_CHECK_FATAL(status);
@@ -688,11 +701,24 @@ void ConvImageCompute::Conv2d3x3opt() {
   VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
           << global_work_size[1] << "," << global_work_size[2] << "}";
 
+  size_t max_work_group_size = 0;
+  kernel.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                  CL_KERNEL_WORK_GROUP_SIZE,
+                                  &max_work_group_size);
+  cl::NDRange local_work_size = cl::NullRange;
+  VLOG(4) << "max_work_group_size: " << max_work_group_size;
+  if (max_work_group_size > 0 && use_lws) {
+    local_work_size = context.cl_context()->LocalWorkSize(global_work_size,
+                                                          max_work_group_size);
+    VLOG(4) << "local_work_size[3D]: {" << local_work_size[0] << ","
+            << local_work_size[1] << "," << local_work_size[2] << "}";
+  }
+
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
       global_work_size,
-      cl::NullRange,
+      local_work_size,
       nullptr,
       event_.get());
   CL_CHECK_FATAL(status);
@@ -1068,11 +1094,24 @@ void ConvImageCompute::DepthwiseConv2d3x3s1() {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
+  size_t max_work_group_size = 0;
+  kernel.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                  CL_KERNEL_WORK_GROUP_SIZE,
+                                  &max_work_group_size);
+  cl::NDRange local_work_size = cl::NullRange;
+  VLOG(4) << "max_work_group_size: " << max_work_group_size;
+  if (max_work_group_size > 0 && use_lws) {
+    local_work_size = context.cl_context()->LocalWorkSize(global_work_size,
+                                                          max_work_group_size);
+    VLOG(4) << "local_work_size[3D]: {" << local_work_size[0] << ","
+            << local_work_size[1] << "," << local_work_size[2] << "}";
+  }
+
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
       global_work_size,
-      cl::NullRange,
+      local_work_size,
       nullptr,
       event_.get());
   CL_CHECK_FATAL(status);
