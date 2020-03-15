@@ -757,13 +757,16 @@ function arm_push_necessary_file {
 function build_test_arm_opencl {
     ########################################################################
     cur=$PWD
+    os=$1
+    abi=$2
+    lang=$3
 
     # job 1
-    build_opencl "android" "armv8" "gcc"
+    build_opencl ${os} "armv8" ${lang}
     cd $cur
 
     # job 2
-    build_opencl "android" "armv7" "gcc"
+    build_opencl ${os} "armv7" ${lang}
     cd $cur
 
     echo "Done"
@@ -1097,7 +1100,7 @@ function main {
                 shift
                 ;;
             build_test_arm_opencl)
-                build_test_arm_opencl
+                build_test_arm_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
                 ;;
             build_test_arm_subtask_android)
