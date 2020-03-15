@@ -133,7 +133,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(cross_compiling/postproject)
     include(device/npu) # check and prepare NPU DDK
-    include(device/xpu) # check and prepare NPU DDK
+    include(device/xpu) # check and prepare XPU SDK
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
