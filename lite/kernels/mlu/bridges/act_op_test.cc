@@ -134,7 +134,7 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
 
 TEST(MLUBridges, activation) {
   std::vector<std::vector<int64_t>> shapes{{1}, {2, 3}, {1, 2, 3, 4}};
-  std::vector<std::string> types{"sigmoid", "relu", "tanh"};
+  std::vector<std::string> types{"sigmoid", "relu", "tanh", "leaky_relu"};
   for (auto x_shape : shapes) {
     for (auto op_type : types) {
       test_act(x_shape, op_type);
@@ -150,3 +150,4 @@ TEST(MLUBridges, activation) {
 USE_SUBGRAPH_BRIDGE(sigmoid, kMLU)
 USE_SUBGRAPH_BRIDGE(relu, kMLU)
 USE_SUBGRAPH_BRIDGE(tanh, kMLU)
+USE_SUBGRAPH_BRIDGE(leaky_relu, kMLU)
