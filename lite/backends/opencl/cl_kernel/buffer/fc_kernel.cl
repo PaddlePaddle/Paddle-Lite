@@ -305,7 +305,8 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
         // store res
 #ifdef RELU
        if (col % 4 == 0) {
-            vstore4(fmax(c0, (CL_DTYPE4)0.f), 0, c + col);
+            float4 act_res = convert_float4(fmax(c0, (half4)0.f));
+            vstore4(act_res, 0, c + col);
         } else {
             switch (col % 4) {
                 case 3:
