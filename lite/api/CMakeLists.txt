@@ -383,16 +383,19 @@ if(NOT IOS)
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
-    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
-        ${ops} ${host_kernels}
-        ARM_DEPS ${arm_kernels}
-        CV_DEPS paddle_cv_arm
-        NPU_DEPS ${npu_kernels}
-        XPU_DEPS ${xpu_kernels}
-        CL_DEPS ${opencl_kernels}
-        FPGA_DEPS ${fpga_kernels}
-        X86_DEPS ${x86_kernels}
-        CUDA_DEPS ${cuda_kernels})
+
+    if (WITH_TESTING)
+        lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+            ${ops} ${host_kernels}
+            ARM_DEPS ${arm_kernels}
+            CV_DEPS paddle_cv_arm
+            NPU_DEPS ${npu_kernels}
+            XPU_DEPS ${xpu_kernels}
+            CL_DEPS ${opencl_kernels}
+            FPGA_DEPS ${fpga_kernels}
+            X86_DEPS ${x86_kernels}
+            CUDA_DEPS ${cuda_kernels})
+    endif()
 endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
