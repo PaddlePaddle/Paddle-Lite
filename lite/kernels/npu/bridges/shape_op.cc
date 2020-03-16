@@ -45,8 +45,8 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Shape node
-  auto shape_node = graph->Add<ge::op::Size>(out_name);
-  auto shape_op = shape_node->data<ge::op::Size>();
+  auto shape_node = graph->Add<ge::op::Shape>(out_name);
+  auto shape_op = shape_node->data<ge::op::Shape>();
   shape_op->set_input_x(*x_node->data());
 
   return REBUILD_WHEN_SHAPE_CHANGED;
