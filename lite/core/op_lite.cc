@@ -47,18 +47,19 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     return kernels;
   }
 
-  std::set<Place> place_set;
-  for (auto place : places) {
-    place_set.insert(place);
-    // Pick kernels those support any Precision and any DataLayout
-    place.precision = PRECISION(kAny);
-    place_set.insert(place);
-    place.layout = DATALAYOUT(kAny);
-    place_set.insert(place);
+  std::set<Place> expanded_places(places.begin(), places.end());
+  for (auto &place : places) {
+    // Pick kernels those support any Precision and any DataLayout, For example:
+    // kARM,kFloat,kNCHW -> kARM,kFloat,kAny; kARM,kAny,kNCHW; kARM,kAny,kAny
+    expanded_places.insert(
+        Place(place.target, place.precision, DATALAYOUT(kAny)));
+    expanded_places.insert(Place(place.target, PRECISION(kAny), place.layout));
+    expanded_places.insert(
+        Place(place.target, PRECISION(kAny), DATALAYOUT(kAny)));
   }
 
   std::set<TargetType> targets;
-  for (auto place : place_set) {
+  for (auto place : expanded_places) {
     pick_kernel(place);
     targets.insert(place.target);
   }

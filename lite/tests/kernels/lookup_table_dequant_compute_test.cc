@@ -129,7 +129,7 @@ class LookupTableDequantComputeTest : public arena::TestCase {
 TEST(LookupTableDequant, precision) {
 #ifdef LITE_WITH_ARM
   float abs_error = 2e-5;
-  Place place = {TARGET(kARM), PRECISION(kAny)};
+  Place place = TARGET(kARM);
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
     for (auto w_dims :
