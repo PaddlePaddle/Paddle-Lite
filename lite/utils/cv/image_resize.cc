@@ -117,11 +117,10 @@ void resize(const uint8_t* src,
   int16_t* ialpha1 = nullptr;
   if (orih < dsth) {  // uv
     int tmp = dsth - orih;
-    int w = dstw / 2;
-    xofs1 = new int[w];
+    xofs1 = new int[dstw];
     yofs1 = new int[tmp];
     ialpha1 = new int16_t[dstw];
-    compute_xy(srcw / 2,
+    compute_xy(srcw,
                srch / 2,
                w,
                tmp,
@@ -137,7 +136,6 @@ void resize(const uint8_t* src,
   int remain = w_out % 8;
   int32x4_t _v2 = vdupq_n_s32(2);
   int prev_sy1 = -1;
-  int offset = srch * srcw;
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
     int16_t* rowsbuf0 = new int16_t[w_out + 1];
@@ -149,7 +147,6 @@ void resize(const uint8_t* src,
       ialpha = ialpha1;
       num = 2;
       sy = yofs1[dy - orih] + srch;
-      src = src + offset;
     }
 
     // hresize two rows
