@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <fstream>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -37,8 +39,18 @@ class Debugger {
     }
   }
 
+  void tick(std::string key) {
+    float value = 0;
+    if (tick_tock_map.count(key) > 0) {
+      value += tick_tock_map[key] = value;
+    }
+  }
+
+  void tock(std::string key) {}
+
  private:
   std::unordered_map<std::string, bool> op_config;
+  std::unordered_map<std::string, float> tick_tock_map;
   Debugger() {
     op_config["concat"] = true;
     op_config["pooling"] = true;

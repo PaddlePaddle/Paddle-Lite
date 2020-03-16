@@ -29,19 +29,28 @@ class InputPE : public PE {
   }
 
   bool dispatch() {
+    std::cout << "input_dispatch()\n";
     Tensor* input = param_.input;
     Tensor* output = param_.output;
 
     Tensor* src = input;
+    // std::cout << "input:" << input << std::endl;
     input->flush();
+    // std::cout << "input_flush()\n";
     Tensor half_tensor;
     if (input->dataType() == DataType::FP32) {
+      // std::cout << "2()\n";
       half_tensor.mutableData<void*>(DataType::FP16, input->shape());
+      // std::cout << "3()\n";
       half_tensor.copyFrom(input);
+      // std::cout << "4()\n";
       src = &half_tensor;
     }
+    // std::cout << "5()\n";
     output->mutableData<void>();
+    // std::cout << "6()\n";
     src->alignImage(output, true);
+    // std::cout << "7()\n";
     return true;
   }
 

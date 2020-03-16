@@ -15,29 +15,36 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
-
-#include "lite/backends/fpga/KD/llapi/filter.h"
-#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+// #include <condition_variable>
+// #include <mutex>
 
 namespace paddle {
 namespace zynqmp {
 
-class DLEngine {
+class FpgaIO {
  public:
-  static DLEngine& get_instance() {
-    static DLEngine s_instance;
+  static FpgaIO& get_instance() {
+    static FpgaIO s_instance;
     return s_instance;
   }
 
-  DeviceInfo& deviceInfo();
+  void allocData(size_t s) { data_ = new float[s]; }
 
-  bool isZU3() { return info_.device_type / 100 == 3; }
+  float* getData() { return data_; }
 
-  float* out_data = nullptr;
+  // void setMutex(std::mutex* mtx);
+  // void setConditionVariable(std::condition_variable* condition);
+  // void lock();
+  // void unlock();
 
  private:
-  DLEngine();
-  DeviceInfo info_;
+  std::mutex* mtx_ = nullptr;
+  std::condition_variable* condition_ = nullptr;
+  bool locked_ = false;
+
+  float* data_ = nullptr;
+
+  FpgaIO();
 };
 }  // namespace zynqmp
 }  // namespace paddle

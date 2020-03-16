@@ -81,6 +81,10 @@ class DDimLite {
     return !(a == b);
   }
 
+  ~DDimLite() {
+    // std::cout << "free DDimLite\n";
+  }
+
  private:
   std::vector<value_type> data_;
 };
@@ -109,7 +113,12 @@ class TensorLite {
     return zynq_tensor_->data<R>() + offset_;
   }
 
-  void Resize(const DDimLite &ddim) { dims_ = ddim; }
+  void Resize(const DDimLite &ddim) {
+    // std::cout << "Resize \n";
+    // std::cout << "ddim:" << & ddim << std::endl;
+    dims_ = ddim;
+    // std::cout << "after Reize \n";
+  }
   void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
 
   const DDimLite &dims() const { return dims_; }
@@ -142,7 +151,9 @@ class TensorLite {
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
-  const void *raw_data() const { return buffer_->data(); }
+  const void *raw_data() const {
+    return buffer_->data();
+  }  // TODO(chonwhite) delete buffer;
 
   size_t data_size() const { return this->dims().production(); }
 
@@ -150,7 +161,9 @@ class TensorLite {
 
   size_t offset() const { return offset_; }
 
-  bool IsInitialized() const { return buffer_->data(); }
+  bool IsInitialized() const {
+    return buffer_->data();
+  }  // TODO(chonwhite) delete buffer;
 
   // Other share data to this.
   void ShareDataWith(const TensorLite &other);
@@ -168,7 +181,7 @@ class TensorLite {
   // template <typename T>
   // TensorLite Slice(int64_t begin, int64_t end) const;
 
-  zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_; }
+  zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_.get(); }
 
   friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
@@ -197,7 +210,8 @@ class TensorLite {
   size_t memory_size_{};
   size_t offset_{0};
 
-  zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
+  // zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
+  std::shared_ptr<zynqmp::Tensor> zynq_tensor_;
 
   template <typename T>
   void mutable_data_internal();
@@ -206,6 +220,7 @@ class TensorLite {
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
   std::vector<int> v;
+  // std::cout << "mutable_data \n";
   for (int i = 0; i < dims_.size(); i++) {
     v.push_back(dims_[i]);
   }
@@ -228,7 +243,7 @@ R *TensorLite::mutable_data() {
       break;
   }
   zynqmp::Shape input_shape(layout_type, v);
-
+  // std::cout << "input_shape \n";
   zynqmp::DataType data_type = zynqmp::FP32;
   if (typeid(T) == typeid(float)) {
     data_type = zynqmp::FP32;
@@ -236,6 +251,13 @@ R *TensorLite::mutable_data() {
   if (typeid(T) == typeid(zynqmp::float16)) {
     data_type = zynqmp::FP16;
   }
+  // std::cout << "mutableData \n";
+  // std::cout << "zynq_tensor_:" << zynq_tensor_.get() << std::endl;
+
+  if (zynq_tensor_.get() == nullptr) {
+    zynq_tensor_.reset(new zynqmp::Tensor());
+  }
+
   return zynq_tensor_->mutableData<R>(data_type, input_shape);
 }
 
@@ -276,6 +298,7 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
 
 template <typename T>
 void TensorLite::Slice(TensorLite &dst, int64_t begin, int64_t end) const {
+  // TODO(chonwhite) delete this function;
   CHECK_GE(begin, 0);
   CHECK_LE(end, dims_[0]);
   CHECK_LT(begin, end);
