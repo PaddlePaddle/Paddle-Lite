@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,31 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/core/op_lite.h"
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace arm {
 
-class ActivationOp : public OpLite {
+class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  explicit ActivationOp(const std::string& type) : OpLite(type) {}
+  using param_t = operators::ActivationGradParam;
 
-  bool CheckShape() const override;
+  void Run() override;
 
-  bool InferShape() const override;
-
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
-
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "activation_op"; }
-
- private:
-  mutable operators::ActivationParam param_;
+  virtual ~SquareGradCompute() = default;
 };
 
-}  // namespace operators
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
