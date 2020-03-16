@@ -13,40 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/compare_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
+  using param_t = operators::ActivationGradParam;
+
   void Run() override;
 
-  ~CompareCompute() {}
-};
-
-template <template <typename T> class Functor>
-class CompareCompute_int32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int32() {}
-};
-
-template <template <typename T> class Functor>
-class CompareCompute_int64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int64() {}
+  virtual ~SquareGradCompute() = default;
 };
 
 }  // namespace arm

@@ -104,6 +104,7 @@ add_operator(sequence_arithmetic_op_lite extra SRCS sequence_arithmetic_op.cc DE
 add_operator(conditional_block_op_lite extra SRCS conditional_block_op.cc DEPS ${op_DEPS})
 add_operator(collect_fpn_proposals_op_lite extra SRCS collect_fpn_proposals_op.cc DEPS ${op_DEPS})
 add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposals_op.cc DEPS ${op_DEPS})
+add_operator(crf_decoding_op_lite extra SRCS crf_decoding_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -142,6 +143,7 @@ add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
 add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})
 if (LITE_WITH_TRAIN)
   add_operator(mean_grad_op extra SRCS mean_grad_op.cc DEPS ${op_DEPS})
+  add_operator(activation_grad_ops basic SRCS activation_grad_ops.cc DEPS ${op_DEPS})
 endif()
 
 if (NOT LITE_WITH_X86)
