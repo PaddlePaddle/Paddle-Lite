@@ -49,11 +49,13 @@ void test_shared_memory_tensor() {
 TEST(tensor, shared_memory) {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   test_shared_memory_tensor<float, TargetType::kHost>();
-  test_shared_memory_tensor<float, TargetType::kCUDA>();
   test_shared_memory_tensor<int64_t, TargetType::kHost>();
-  test_shared_memory_tensor<int64_t, TargetType::kCUDA>();
   test_shared_memory_tensor<int8_t, TargetType::kHost>();
+#ifdef LITE_WITH_CUDA
+  test_shared_memory_tensor<float, TargetType::kCUDA>();
+  test_shared_memory_tensor<int64_t, TargetType::kCUDA>();
   test_shared_memory_tensor<int8_t, TargetType::kCUDA>();
+#endif
 }
 
 }  // namespace lite
