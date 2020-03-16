@@ -29,7 +29,7 @@ lite_cc_library(subgraph_bridge_slice_op_bm SRCS slice_op.cc DEPS ${bm_subgraph_
 lite_cc_library(subgraph_bridge_conv_transpose_op_bm SRCS conv_transpose_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_reduce_full_op_bm SRCS reduce_full_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_squeeze_op_bm SRCS squeeze_op.cc DEPS ${bm_subgraph_bridge_deps})
-
+lite_cc_library(subgraph_bridge_cast_op_bm SRCS cast_op.cc DEPS ${bm_subgraph_bridge_deps})
 
 set(bm_subgraph_bridges
         subgraph_bridge_registry
@@ -57,4 +57,5 @@ set(bm_subgraph_bridges
         subgraph_bridge_conv_transpose_op_bm
         subgraph_bridge_reduce_full_op_bm
         subgraph_bridge_squeeze_op_bm
+        subgraph_bridge_cast_op_bm
         CACHE INTERNAL "bm_subgraph_bridges")
