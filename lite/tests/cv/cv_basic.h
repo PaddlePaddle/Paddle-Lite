@@ -550,7 +550,7 @@ void image_resize_basic(const uint8_t* in_data,
                xofs1,
                yofs1,
                ialpha1,
-               ibeta + orih);
+               ibeta + orih * 2);
   }
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
