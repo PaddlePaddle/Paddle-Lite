@@ -131,7 +131,7 @@ void resize(const uint8_t* src,
                xofs1,
                yofs1,
                ialpha1,
-               ibeta + orih * 2);
+               ibeta + orih);
   }
   int cnt = w_out >> 3;
   int remain = w_out % 8;
