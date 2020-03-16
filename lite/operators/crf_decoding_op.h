@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,27 +15,32 @@
 #pragma once
 #include <string>
 #include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class ActivationOp : public OpLite {
+class CrfDecodingOpLite : public OpLite {
  public:
-  explicit ActivationOp(const std::string& type) : OpLite(type) {}
+  CrfDecodingOpLite() {}
+
+  explicit CrfDecodingOpLite(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
   bool InferShape() const override;
 
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "activation_op"; }
+  std::string DebugString() const override { return "crf_decoding"; }
 
  private:
-  mutable operators::ActivationParam param_;
+  mutable CrfDecodingParam param_;
 };
 
 }  // namespace operators
