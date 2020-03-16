@@ -198,6 +198,8 @@ function build_opencl {
     make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
+
+
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
@@ -760,10 +762,16 @@ function build_test_arm_opencl {
 
     # job 1
     build_opencl "android" "armv8" "gcc"
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv8}
+    test_arm "android" "armv8" "gcc" ${device_armv8}
     cd $cur
 
     # job 2
     build_opencl "android" "armv7" "gcc"
+    adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv7}
+    test_arm "android" "armv7" "gcc" ${device_armv7}
     cd $cur
 
     echo "Done"
