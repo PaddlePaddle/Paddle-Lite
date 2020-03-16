@@ -143,6 +143,7 @@ void RunModel(std::string det_model_file,
   // Create Predictor For Detction Model
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
+  std::cout << "Load detecion model succeed." << std::endl;
 
   // Get Input Tensor
   std::unique_ptr<Tensor> input_tensor0(std::move(predictor->GetInput(0)));
@@ -163,6 +164,7 @@ void RunModel(std::string det_model_file,
   auto* outptr = output_tensor0->data<float>();
   auto shape_out = output_tensor0->shape();
   int64_t out_len = ShapeProduction(shape_out);
+  std::cout << "Detecting face succeed." << std::endl;
 
   // Filter Out Detection Box
   float detect_threshold = 0.7;
@@ -189,6 +191,7 @@ void RunModel(std::string det_model_file,
 
   // Create Predictor For Classification Model
   predictor = CreatePaddlePredictor<MobileConfig>(config);
+  std::cout << "Load classification model succeed." << std::endl;
 
   // Get Input Tensor
   std::unique_ptr<Tensor> input_tensor1(std::move(predictor->GetInput(0)));
@@ -221,7 +224,7 @@ void RunModel(std::string det_model_file,
 
     // Get Output Tensor
     std::unique_ptr<const Tensor> output_tensor1(
-        std::move(predictor->GetOutput(1)));
+        std::move(predictor->GetOutput(0)));
     auto* outptr = output_tensor1->data<float>();
     float prob = outptr[1];
 
