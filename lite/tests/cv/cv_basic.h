@@ -565,7 +565,8 @@ void image_resize_basic(const uint8_t* in_data,
       ialpha = ialpha1;
       xofs = xofs1;
       yofs = yofs1;
-      y_in_start = yofs[dy - orih];
+      y_in_start = yofs[dy - orih] + srch;
+      in_data = in_data + srch * srcw;
     }
     int y_in_end = y_in_start + 1;
     if (y_in_start < 0) {
