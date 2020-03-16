@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class ActivationOp : public OpLite {
+class ActivationGradOp : public OpLite {
  public:
-  explicit ActivationOp(const std::string& type) : OpLite(type) {}
+  explicit ActivationGradOp(const std::string& type) : OpLite(type) {}
 
   bool CheckShape() const override;
 
@@ -32,10 +32,10 @@ class ActivationOp : public OpLite {
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "activation_op"; }
+  std::string DebugString() const override { return "activation_grad_op"; }
 
  private:
-  mutable operators::ActivationParam param_;
+  mutable operators::ActivationGradParam param_;
 };
 
 }  // namespace operators
