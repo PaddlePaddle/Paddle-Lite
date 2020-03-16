@@ -23,30 +23,12 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType, template <typename U> class Functor>
+class CompareCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
   ~CompareCompute() {}
-};
-
-template <template <typename T> class Functor>
-class CompareCompute_int32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int32() {}
-};
-
-template <template <typename T> class Functor>
-class CompareCompute_int64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int64() {}
 };
 
 }  // namespace arm
