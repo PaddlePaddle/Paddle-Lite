@@ -57,6 +57,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::shared_ptr<cl::Event> event_{new cl::Event};
   Tensor filter_gpu_image_;
   Tensor bias_gpu_image_;
+  bool use_lws{true};
 };
 
 }  // namespace opencl

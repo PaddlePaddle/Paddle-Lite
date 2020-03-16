@@ -69,7 +69,7 @@ void resize(const uint8_t* src,
   int size = srcw * srch;
   if (srcw == dstw && srch == dsth) {
     if (srcFormat == NV12 || srcFormat == NV21) {
-      size = srcw * (floor(1.5 * srch));
+      size = srcw * (static_cast<int>(1.5 * srch));
     } else if (srcFormat == BGR || srcFormat == RGB) {
       size = 3 * srcw * srch;
     } else if (srcFormat == BGRA || srcFormat == RGBA) {
@@ -81,7 +81,7 @@ void resize(const uint8_t* src,
   double scale_x = static_cast<double>(srcw) / dstw;
   double scale_y = static_cast<double>(srch) / dsth;
 
-  int* buf = new int[dstw * 2 + dsth * 2];
+  int* buf = new int[dstw * 2 + dsth * 3];
 
   int* xofs = buf;
   int* yofs = buf + dstw;
@@ -110,7 +110,7 @@ void resize(const uint8_t* src,
   }
 
   compute_xy(
-      srcw, srch, dstw, dsth, num, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
+      srcw, srch, dstw, orih, num, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
 
   int* xofs1 = nullptr;
   int* yofs1 = nullptr;
@@ -131,7 +131,7 @@ void resize(const uint8_t* src,
                xofs1,
                yofs1,
                ialpha1,
-               ibeta + orih);
+               ibeta + orih * 2);
   }
   int cnt = w_out >> 3;
   int remain = w_out % 8;
@@ -160,7 +160,6 @@ void resize(const uint8_t* src,
       int sx = xofs[dx / num];
       int16_t a0 = ialphap[0];
       int16_t a1 = ialphap[1];
-
       const uint8_t* S0pl = S0 + sx;
       const uint8_t* S0pr = S0 + sx + num;
       const uint8_t* S1pl = S1 + sx;
@@ -323,7 +322,6 @@ void compute_xy(int srcw,
     fy = static_cast<float>((dy + 0.5) * scale_y - 0.5);
     sy = floor(fy);
     fy -= sy;
-
     if (sy < 0) {
       sy = 0;
       fy = 0.f;
@@ -332,12 +330,9 @@ void compute_xy(int srcw,
       sy = srch - 2;
       fy = 1.f;
     }
-
     yofs[dy] = sy;
-
     float b0 = (1.f - fy) * resize_coef_scale;
     float b1 = fy * resize_coef_scale;
-
     ibeta[dy * 2] = SATURATE_CAST_SHORT(b0);
     ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
   }

@@ -1159,6 +1159,14 @@ struct LstmParam {
   std::string candidate_activation;
 };
 
+struct CrfDecodingParam {
+  lite::Tensor* emission{};
+  lite::Tensor* transition{};
+  lite::Tensor* label{};
+  lite::Tensor* length{};
+  lite::Tensor* viterbi_path{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

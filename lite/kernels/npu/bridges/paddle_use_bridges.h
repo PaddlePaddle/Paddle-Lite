@@ -23,6 +23,7 @@ USE_SUBGRAPH_BRIDGE(softsign, kNPU);
 USE_SUBGRAPH_BRIDGE(hard_sigmoid, kNPU);
 
 USE_SUBGRAPH_BRIDGE(batch_norm, kNPU);
+USE_SUBGRAPH_BRIDGE(less_than, kNPU);
 USE_SUBGRAPH_BRIDGE(concat, kNPU);
 USE_SUBGRAPH_BRIDGE(conv2d, kNPU);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kNPU);
@@ -40,9 +41,12 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fill_constant, kNPU)
 USE_SUBGRAPH_BRIDGE(fill_constant_batch_size_like, kNPU)
 
+USE_SUBGRAPH_BRIDGE(increment, kNPU);
+USE_SUBGRAPH_BRIDGE(instance_norm, kNPU);
 USE_SUBGRAPH_BRIDGE(fc, kNPU);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kNPU);
 USE_SUBGRAPH_BRIDGE(nearest_interp, kNPU);
+USE_SUBGRAPH_BRIDGE(layer_norm, kNPU);
 USE_SUBGRAPH_BRIDGE(matmul, kNPU);
 USE_SUBGRAPH_BRIDGE(mul, kNPU);
 USE_SUBGRAPH_BRIDGE(pad2d, kNPU);
@@ -60,5 +64,3 @@ USE_SUBGRAPH_BRIDGE(transpose, kNPU);
 USE_SUBGRAPH_BRIDGE(transpose2, kNPU);
 USE_SUBGRAPH_BRIDGE(unsqueeze, kNPU);
 USE_SUBGRAPH_BRIDGE(unsqueeze2, kNPU);
-USE_SUBGRAPH_BRIDGE(instance_norm, kNPU);
-USE_SUBGRAPH_BRIDGE(layer_norm, kNPU);
