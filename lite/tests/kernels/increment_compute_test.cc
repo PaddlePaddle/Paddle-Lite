@@ -66,12 +66,14 @@ class IncrementComputeTester : public arena::TestCase {
 };
 
 void test_increment(Place place, float abs_error) {
-  DDimLite dims_0{{3, 5, 4, 4}};
-  DDimLite dims_1{{3, 5}};
-  for (auto dims : {dims_0, dims_1}) {
+  std::vector<std::vector<int64_t>> x_dims{{3, 5, 4, 4}, {3, 5}, {1}};
+  for (auto dims : x_dims) {
     for (float step : {1, 2}) {
+#if LITE_WITH_NPU
+      if (dims.size() != 1) continue;
+#endif
       std::unique_ptr<arena::TestCase> tester(
-          new IncrementComputeTester(place, "def", step, dims));
+          new IncrementComputeTester(place, "def", step, DDim(dims)));
       arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
@@ -81,8 +83,11 @@ void test_increment(Place place, float abs_error) {
 TEST(Increment, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_ARM)
-  place = {TARGET(kARM), PRECISION(kAny)};
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif
