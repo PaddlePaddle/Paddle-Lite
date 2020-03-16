@@ -759,6 +759,8 @@ function arm_push_necessary_file {
 function build_test_arm_opencl {
     ########################################################################
     cur=$PWD
+    # job 1-4 must be in one runner
+    prepare_adb_devices
 
     # job 1
     build_opencl "android" "armv8" "gcc"
