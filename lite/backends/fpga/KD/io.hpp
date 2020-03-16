@@ -38,9 +38,9 @@ class FpgaIO {
   // void unlock();
 
  private:
-  std::mutex* mtx_ = nullptr;
-  std::condition_variable* condition_ = nullptr;
-  bool locked_ = false;
+  // std::mutex* mtx_ = nullptr;
+  // std::condition_variable* condition_ = nullptr;
+  // bool locked_ = false;
 
   float* data_ = nullptr;
 
