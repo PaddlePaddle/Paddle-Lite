@@ -88,7 +88,10 @@ std::vector<Place> ParserValidPlaces() {
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
-      valid_places.emplace_back(TARGET(kARM));
+      valid_places.emplace_back(
+          Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kNCHW)});
     } else if (target_repr == "opencl") {
       valid_places.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});

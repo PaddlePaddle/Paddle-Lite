@@ -220,8 +220,8 @@ TEST(Subgraph, detect_custom_model) {
   };
   std::vector<std::vector<mir::Node*>> subgraphs =
       mir::SubgraphDetector(graph.get(), teller)();
-  ASSERT_EQ(subgraphs.size(), 1);
   mir::SubgraphVisualizer(graph.get(), subgraphs)();
+  ASSERT_EQ(subgraphs.size(), 1);
 }
 
 }  // namespace lite

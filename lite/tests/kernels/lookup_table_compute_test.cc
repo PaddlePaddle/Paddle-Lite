@@ -112,7 +112,7 @@ TEST(LookupTable, precision) {
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_ARM)
-  place = {TARGET(kARM), PRECISION(kAny)};
+  place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else
