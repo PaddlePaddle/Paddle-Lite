@@ -127,7 +127,29 @@ if (LITE_WITH_X86)
 endif()
 
 if(LITE_WITH_CUDA)
-    add_dependencies(publish_inference paddle_full_api_shared)
+    add_custom_target(publish_inference_cuda_cxx_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        )
+    add_dependencies(publish_inference_cuda_cxx_lib bundle_full_api)
+    add_dependencies(publish_inference_cuda_cxx_lib bundle_light_api)
+    add_dependencies(publish_inference_cuda_cxx_lib paddle_full_api_shared)
+    add_dependencies(publish_inference_cuda_cxx_lib paddle_light_api_shared)
+    add_dependencies(publish_inference publish_inference_cuda_cxx_lib)
+
+    add_custom_target(publish_inference_cuda_cxx_demos ${TARGET}
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/cuda_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           )
+    add_dependencies(publish_inference_cuda_cxx_lib publish_inference_cuda_cxx_demos)
+    add_dependencies(publish_inference_cuda_cxx_demos paddle_full_api_shared)
 endif(LITE_WITH_CUDA) 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)

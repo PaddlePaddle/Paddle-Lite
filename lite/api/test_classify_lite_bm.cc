@@ -80,7 +80,7 @@ void TestModel(const std::vector<Place>& valid_places) {
   fclose(fp);
 }
 
-TEST(ResNet50, test_bm) {
+TEST(Classify, test_bm) {
   std::vector<Place> valid_places({Place{TARGET(kBM), PRECISION(kFloat)},
                                    Place{TARGET(kX86), PRECISION(kFloat)}});
 
