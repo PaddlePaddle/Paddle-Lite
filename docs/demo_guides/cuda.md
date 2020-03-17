@@ -28,14 +28,33 @@ cd Paddle-Lite
 ./lite/tools/build.sh --build_python=ON cuda
 ```
 
-编译结束会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite_core.so`。
+## 编译结果说明
+
+cuda的编译结果位于 `build_cuda/inference_lite_lib`
+**具体内容**说明：
+
+1、 `bin`文件夹：可执行工具文件，目前为空
+
+2、 `cxx`文件夹：包含c++的库文件与相应的头文件
+
+- `include`  : 头文件
+- `lib` : 库文件
+  - 打包的静态库文件：
+    - `libpaddle_api_full_bundled.a`  ：包含 full_api 和 light_api 功能的静态库
+  - 打包的动态态库文件：
+    - `libpaddle_full_api_shared.so` ：包含 full_api 和 light_api 功能的动态库
+
+3、 `third_party` 文件夹：第三方库文件
+
+4、 `demo` 文件夹：c++ demo.
+
+如果编译打开了python选项，则会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite_core.so`。
 
 ## 运行
 
 以下以Yolov3模型为例，介绍如何在Nvidia GPU硬件上运行模型。
 
 一： 下载darknet_yolov3模型，模型信息请参考[这里](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/yolov3)
-
 
 ```
 # 下载模型
@@ -47,7 +66,7 @@ wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/kite.jpg
 
 二： 运行   
 
-**NOTE:**此处示例使用的是python接口，后续会开放C++接口以及示例。
+**NOTE:**此处示例使用的是python接口。
 
 ``` python
 #-*- coding: utf-8 -*-
@@ -107,4 +126,14 @@ print (output_tensor.float_data()[:6])
 
 ```
 
-**NOTE：** 对CUDA的支持还在持续开发中。
+**NOTE：** 此处示例使用的是C++接口。
+
+```
+cd build_cuda/inference_lite_lib/demo/cxx/
+mkdir build && cd build
+cmake ..
+make
+wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/yolov3_infer.tar.gz
+tar -zxf yolov3_infer.tar.gz
+./demo yolov3_infer
+```
