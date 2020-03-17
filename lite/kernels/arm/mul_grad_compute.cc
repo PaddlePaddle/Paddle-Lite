@@ -58,51 +58,62 @@ void MulGradCompute::Run() {
   const auto* out_grad_data = param.output_grad->data<float>();
   const auto* x_data = param.x->data<float>();
   const auto* y_data = param.y->data<float>();
-  auto* x_grad_data = param.x_grad->mutable_data<float>();
-  auto* y_grad_data = param.y_grad->mutable_data<float>();
+  float* x_grad_data;
+  float* y_grad_data;
+  if (param.x_grad) {
+    x_grad_data = param.x_grad->mutable_data<float>();
+  }
+
+  if (param.y_grad) {
+    y_grad_data = param.y_grad->mutable_data<float>();
+  }
 
   paddle::lite::operators::ActivationParam act_param;
   act_param.has_active = false;
   // out_grad  * y^T = x_grad
   // (m, n), (n, k) -> (m, k)
   auto& ctx = this->ctx_->template As<ARMContext>();
-  paddle::lite::arm::math::sgemm(false,
-                                 true,           // is_transB,
-                                 m_,             // M
-                                 k_,             // N
-                                 n_,             // K
-                                 1.0f,           // alpha
-                                 out_grad_data,  // A
-                                 n_,             // lda
-                                 y_data,         // B
-                                 n_,             // ldb
-                                 0.f,            // beta
-                                 x_grad_data,    // C
-                                 k_,             // ldc
-                                 NULL,           // bias
-                                 false,          // is_bias
-                                 act_param,      // act_param
-                                 &ctx);          // ctx
+  if (param.x_grad) {
+    paddle::lite::arm::math::sgemm(false,
+                                   true,           // is_transB,
+                                   m_,             // M
+                                   k_,             // N
+                                   n_,             // K
+                                   1.0f,           // alpha
+                                   out_grad_data,  // A
+                                   n_,             // lda
+                                   y_data,         // B
+                                   n_,             // ldb
+                                   0.f,            // beta
+                                   x_grad_data,    // C
+                                   k_,             // ldc
+                                   NULL,           // bias
+                                   false,          // is_bias
+                                   act_param,      // act_param
+                                   &ctx);          // ctx
+  }
 
   // x^T * out_grad = y_grad
   // (k, m) (m, n) -> (k, n)
-  paddle::lite::arm::math::sgemm(true,           // is_transA
-                                 false,          // is_transB,
-                                 k_,             // M
-                                 n_,             // N
-                                 m_,             // K
-                                 1.0f,           // alpha
-                                 x_data,         // A
-                                 k_,             // lda
-                                 out_grad_data,  // B
-                                 n_,             // ldb
-                                 0.f,            // beta
-                                 y_grad_data,    // C
-                                 n_,             // ldc
-                                 NULL,           // bias
-                                 false,          // is_bias
-                                 act_param,      // act_param
-                                 &ctx);          // ctx
+  if (param.y_grad) {
+    paddle::lite::arm::math::sgemm(true,           // is_transA
+                                   false,          // is_transB,
+                                   k_,             // M
+                                   n_,             // N
+                                   m_,             // K
+                                   1.0f,           // alpha
+                                   x_data,         // A
+                                   k_,             // lda
+                                   out_grad_data,  // B
+                                   n_,             // ldb
+                                   0.f,            // beta
+                                   y_grad_data,    // C
+                                   n_,             // ldc
+                                   NULL,           // bias
+                                   false,          // is_bias
+                                   act_param,      // act_param
+                                   &ctx);          // ctx
+  }
 }
 
 }  // namespace arm

@@ -24,8 +24,7 @@ bool MulGradOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.y);
   CHECK_OR_FALSE(param_.output_grad);
-  CHECK_OR_FALSE(param_.x_grad);
-  CHECK_OR_FALSE(param_.y_grad);
+  CHECK_OR_FALSE(param_.x_grad || param_.y_grad);
   CHECK_OR_FALSE(param_.x_num_col_dims);
   CHECK_OR_FALSE(param_.y_num_col_dims);
 
@@ -50,18 +49,22 @@ bool MulGradOpLite::CheckShape() const {
 bool MulGradOpLite::InferShape() const {
   const auto x_dims = param_.x->dims();
   const auto y_dims = param_.y->dims();
-  param_.x_grad->Resize(x_dims);
-  param_.x_grad->set_lod(param_.x->lod());
-  param_.y_grad->Resize(y_dims);
-  param_.y_grad->set_lod(param_.y->lod());
+  if (param_.x_grad) {
+    param_.x_grad->Resize(x_dims);
+    param_.x_grad->set_lod(param_.x->lod());
+  }
+  if (param_.y_grad) {
+    param_.y_grad->Resize(y_dims);
+    param_.y_grad->set_lod(param_.y->lod());
+  }
 }
 
 bool MulGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   CHECK(!op_desc.Input("X").empty());
   CHECK(!op_desc.Input("Y").empty());
   CHECK(!op_desc.Input("Out@GRAD").empty());
-  CHECK(!op_desc.Output("X@GRAD").empty());
-  CHECK(!op_desc.Output("Y@GRAD").empty());
+  CHECK(!op_desc.Output("X@GRAD").empty() || !op_desc.Output("Y@GRAD").empty())
+      << "at least one of 'X@GRAD' and 'Y@GRAD' is not empty";
 
   auto *x_var = scope->FindVar(op_desc.Input("X").front());
   CHECK(x_var);
@@ -75,14 +78,17 @@ bool MulGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   CHECK(out_grad_var);
   param_.output_grad = &out_grad_var->Get<Tensor>();
 
-  auto *x_grad_var = scope->FindVar(op_desc.Output("X@GRAD").front());
-  CHECK(x_grad_var);
-  param_.x_grad = x_grad_var->GetMutable<Tensor>();
+  if (!op_desc.Output("X@GRAD").empty()) {
+    auto *x_grad_var = scope->FindVar(op_desc.Output("X@GRAD").front());
+    CHECK(x_grad_var);
+    param_.x_grad = x_grad_var->GetMutable<Tensor>();
+  }
 
-  auto *y_grad_var = scope->FindVar(op_desc.Output("X@GRAD").front());
-  CHECK(y_grad_var);
-  param_.y_grad = y_grad_var->GetMutable<Tensor>();
-
+  if (!op_desc.Output("Y@GRAD").empty()) {
+    auto *y_grad_var = scope->FindVar(op_desc.Output("Y@GRAD").front());
+    CHECK(y_grad_var);
+    param_.y_grad = y_grad_var->GetMutable<Tensor>();
+  }
   param_.x_num_col_dims = op_desc.GetAttr<int>("x_num_col_dims");
   param_.y_num_col_dims = op_desc.GetAttr<int>("y_num_col_dims");
   return true;
