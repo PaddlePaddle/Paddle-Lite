@@ -26,16 +26,25 @@ namespace fusion {
 class ShuffleChannelFuser : public FuseBase {
  public:
   explicit ShuffleChannelFuser(const std::string& reshape_type,
-                               const std::string& transpose_type)
-      : reshape_type_(reshape_type), transpose_type_(transpose_type) {}
+                               const std::string& transpose_type,
+                               const std::string& sub_structure)
+      : reshape_type_(reshape_type),
+        transpose_type_(transpose_type),
+        sub_structure_(sub_structure) {}
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  // reshape or reshape2
   std::string reshape_type_;
+  // transpose or transpose2
   std::string transpose_type_;
+  // r_t_r or t_r
+  // r_t_r: reshape + transpose + reshape
+  // s_t_r: stack + transpose + reshape
+  std::string sub_structure_;
 };
 
 }  // namespace fusion
