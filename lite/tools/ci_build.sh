@@ -193,9 +193,6 @@ function build_opencl {
     cmake_opencl ${os} ${abi} ${lang}
     make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
-
-    # test publish inference lib
-    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 
@@ -756,6 +753,41 @@ function arm_push_necessary_file {
     adb -s ${device} push ${testpath} ${adb_work_dir}
 }
 
+
+function test_opencl {
+    os=$1
+    abi=$2
+    lang=$3
+    device=$4
+
+    if [[ ${os} == "armlinux" ]]; then
+        # TODO(hongming): enable test armlinux on armv8, armv7 and armv7hf
+        echo "Skip test arm linux yet. armlinux must in another docker"
+        return 0
+    fi
+
+    if [[ ${os} == "android" && ${abi} == "armv7hf" ]]; then
+        echo "android do not need armv7hf"
+        return 0
+    fi
+
+    # prepare for CXXApi test
+    local adb="adb -s ${device}"
+    $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
+
+
+    echo "test file: ${TESTS_FILE}"
+    # opencl test should be marked with `opencl`
+    opencl_test_mark="opencl"
+
+    for _test in $(cat $TESTS_FILE); do
+        if [[ $_test == *$opencl_test_mark* ]]; then
+            test_arm_android $_test $device
+        fi
+    done
+
+}
+
 function build_test_arm_opencl {
     ########################################################################
     cur=$PWD
@@ -766,14 +798,14 @@ function build_test_arm_opencl {
     build_opencl "android" "armv8" "gcc"
     adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
     run_gen_code_test ${device_armv8}
-    test_arm "android" "armv8" "gcc" ${device_armv8}
+    test_opencl "android" "armv8" "gcc" ${device_armv8}
     cd $cur
 
     # job 2
     build_opencl "android" "armv7" "gcc"
     adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
     run_gen_code_test ${device_armv7}
-    test_arm "android" "armv7" "gcc" ${device_armv7}
+    test_opencl "android" "armv7" "gcc" ${device_armv7}
     cd $cur
 
     echo "Done"
@@ -1108,6 +1140,8 @@ function main {
                 ;;
             build_test_arm_opencl)
                 build_test_arm_opencl
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
             build_test_arm_subtask_android)
