@@ -13,7 +13,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
-    set_target_properties(paddle_full_api_shared PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
     target_link_libraries(paddle_full_api_shared framework_proto)
     if(LITE_WITH_X86)
@@ -34,7 +33,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
                   CV_DEPS paddle_cv_arm
                   NPU_DEPS ${npu_kernels}
                   )
-    set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
     set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
