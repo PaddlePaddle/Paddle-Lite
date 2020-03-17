@@ -289,7 +289,8 @@ function build_test_cuda_server {
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_cuda_for_CI
     make -j$NUM_CORES_FOR_COMPILE
-    ctest -R "/*_cuda_test" -V
+    # temporary remove cuda unittest because the ci PR_CI_Paddle-Lite-server-cuda10.1(ubt16-gcc5.4) is in cpu machine and only build.
+    # ctest -R "/*_cuda_test" -V
 }
 
 function build_test_train {
