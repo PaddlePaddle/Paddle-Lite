@@ -338,6 +338,7 @@ function make_x86 {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DWITH_GPU=OFF \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON
 
   make publish_inference -j$NUM_PROC

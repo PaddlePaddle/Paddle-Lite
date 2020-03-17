@@ -18,12 +18,13 @@ import logging
 from ast import RegisterLiteKernelParser
 from ast import RegisterLiteOpParser
 
-if len(sys.argv) != 4:
-    print("Error: record_supported_kernel_op.py requires three inputs!")
+if len(sys.argv) != 5:
+    print("Error: record_supported_kernel_op.py requires four inputs!")
     exit(1)
 kernels_list_path = sys.argv[1]
-ops_list_path = sys.argv[2]
-kernel_op_map_dest_path = sys.argv[3]
+faked_kernels_list_path = sys.argv[2]
+ops_list_path = sys.argv[3]
+kernel_op_map_dest_path = sys.argv[4]
 
 
 out_lines = [
@@ -80,6 +81,19 @@ with open(kernels_list_path) as f:
                 if hasattr(TargetType, k.target):
                     index=getattr(TargetType, k.target)
                     valid_ops[index].append(k.op_type)
+# record op_info of valid kernels into `valid_ops` according to different target type
+with open(faked_kernels_list_path) as f:
+    paths = set([path for path in f])
+    for path in paths:
+        with open(path.strip()) as g:
+            c = g.read()
+            kernel_parser = RegisterLiteKernelParser(c)
+            kernel_parser.parse()
+            for k in kernel_parser.kernels:
+                if hasattr(TargetType, k.target):
+                    index=getattr(TargetType, k.target)
+                    valid_ops[index].append(k.op_type)
+
 
 # clear the repeated ops
 for target in valid_targets:

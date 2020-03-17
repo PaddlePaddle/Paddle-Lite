@@ -26,13 +26,11 @@
 
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/cxx_api.h"
-#include "lite/api/paddle_use_passes.h"
+#include "lite/api/opt_base.h"
 #endif
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
 #include "lite/core/tensor.h"
 
 namespace py = pybind11;
@@ -50,10 +48,25 @@ using lite_api::PrecisionType;
 using lite_api::DataLayoutType;
 using lite_api::Place;
 using lite::LightPredictorImpl;
+using lite_api::OptBase;
 
 #ifndef LITE_ON_TINY_PUBLISH
 using lite::CxxPaddleApiImpl;
 static void BindLiteCxxPredictor(py::module *m);
+void BindLiteOpt(py::module *m) {
+  py::class_<OptBase> opt_base(*m, "opt");
+  opt_base.def(py::init<>())
+      .def("set_model_dir", &OptBase::SetModelDir)
+      .def("set_modelset_dir", &OptBase::SetModelSetDir)
+      .def("set_model_file", &OptBase::SetModelFile)
+      .def("set_param_file", &OptBase::SetParamFile)
+      .def("set_valid_places", &OptBase::SetValidPlaces)
+      .def("set_optimize_out", &OptBase::SetOptimizeOut)
+      .def("enable_int8_kernel", &OptBase::EnableInt8Kernel)
+      .def("set_model_type", &OptBase::SetModelType)
+      .def("run_optimize", &OptBase::RunOptimize)
+      .def("print_all_ops", &OptBase::PrintAllOps);
+}
 #endif
 static void BindLiteLightPredictor(py::module *m);
 static void BindLiteCxxConfig(py::module *m);
