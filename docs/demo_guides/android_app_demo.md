@@ -125,7 +125,7 @@ input.setData(inputBuffer);
 predictor.run();
 
 // 5. 获取输出数据
-Tensor output = predictor.getOutput(0);
+Tensor result = predictor.getOutput(0);
 float[] output = result.getFloatData();
 for (int i = 0; i < 1000; ++i) {
     System.out.println(output[i]);
