@@ -55,7 +55,6 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       shape[i][j] = static_cast<int32_t>(x_shape_data[j]);
     }
   }
-  LOG(INFO) << "aaaa " << output_dims;
   auto axis = op_info->GetAttr<int>("axis");
   add_concat_layer(graph->GetCompilerHandle(),
                    input_num,
