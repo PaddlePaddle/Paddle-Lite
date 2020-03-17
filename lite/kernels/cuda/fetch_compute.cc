@@ -50,24 +50,26 @@ void FetchCompute<T, Ptype>::Run() {
 typedef paddle::lite::kernels::cuda::FetchCompute<float, PRECISION(kFloat)>
     FetchFp32;
 
-REGISTER_LITE_KERNEL(fetch, kCUDA, kFloat, kNCHW, FetchFp32, nchw)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kCUDA),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(fetch, kCUDA, kFloat, kNHWC, FetchFp32, nhwc)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kCUDA),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNHWC))})
-    .Finalize();
+// When the model ends with a cpu kernel, adding cuda's fetch kernel will add
+// useless io_copy
+// REGISTER_LITE_KERNEL(fetch, kCUDA, kFloat, kNCHW, FetchFp32, nchw)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kCUDA),
+//                                       PRECISION(kFloat),
+//                                       DATALAYOUT(kNCHW))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kHost),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kNCHW))})
+//     .Finalize();
+//
+// REGISTER_LITE_KERNEL(fetch, kCUDA, kFloat, kNHWC, FetchFp32, nhwc)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kCUDA),
+//                                       PRECISION(kFloat),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kHost),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kNHWC))})
+//     .Finalize();
