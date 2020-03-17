@@ -21,12 +21,7 @@ limitations under the License. */
 // https://github.com/PaddlePaddle/Paddle/issues/3386
 
 // some platform-independent defintion
-#if defined(_WIN32)
-#define UNUSED
-#define __builtin_expect(EXP, C) (EXP)
-#else
-#define UNUSED __attribute__((unused))
-#endif
+#include "lite/utils/macros.h"
 
 #if !defined(_WIN32)
 #define UNLIKELY(condition) __builtin_expect(static_cast<bool>(condition), 0)

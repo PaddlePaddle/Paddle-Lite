@@ -24,7 +24,8 @@ namespace pybind {
 void BindLiteApi(pybind11::module *m);
 void BindLiteOpt(pybind11::module *m);
 
-PYBIND11_MODULE(lite, m) {
+PYBIND11_MODULE(lite_core, m) {
+  
   m.doc() = "C++ core of Paddle-Lite";
 
   BindLiteApi(&m);

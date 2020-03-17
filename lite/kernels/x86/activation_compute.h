@@ -16,6 +16,12 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+
+#include <cmath>
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"

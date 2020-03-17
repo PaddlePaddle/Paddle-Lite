@@ -81,6 +81,38 @@ message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
 # add python lib
 if (LITE_WITH_PYTHON)
+    if(WIN32)   
+        set(LITE_CORE "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd")
+        set(LITE_CORE_DEPS ${LITE_CORE})
+        add_custom_command(OUTPUT   ${LITE_CORE}
+            COMMAND cmake -E copy $<TARGET_FILE:lite_pybind> ${LITE_CORE}
+            DEPENDS lite_pybind)
+        add_custom_target(copy_lite_pybind ALL DEPENDS ${LITE_CORE_DEPS})
+        
+        add_custom_target(publish_inference_python_lib ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/lib"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/setup.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/python/__init__.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite_core.pyd"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite_core.pyd"
+            DEPENDS copy_lite_pybind
+            )
+            
+        add_custom_target(publish_inference_python_installer ${TARGET}
+            COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
+            WORKING_DIRECTORY ${INFER_LITE_PUBLISH_ROOT}/python/install/
+            DEPENDS  publish_inference_python_lib)
+        add_custom_target(publish_inference_python_light_demo ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/python"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
+            )
+        add_dependencies(publish_inference publish_inference_python_lib)
+        add_dependencies(publish_inference publish_inference_python_installer)
+        add_dependencies(publish_inference publish_inference_python_light_demo)
+    else()
     add_custom_target(publish_inference_python_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/lib"
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
@@ -106,6 +138,7 @@ if (LITE_WITH_PYTHON)
     add_dependencies(publish_inference publish_inference_python_lib)
     add_dependencies(publish_inference publish_inference_python_installer)
     add_dependencies(publish_inference publish_inference_python_light_demo)
+    endif(WIN32)
 endif()
 
 if (LITE_WITH_CUDA OR LITE_WITH_X86)
@@ -130,6 +163,36 @@ if (LITE_WITH_CUDA OR LITE_WITH_X86)
 endif()
 
 if (LITE_WITH_X86)
+  if(WIN32)
+        add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_use_passes.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_light_bundled.lib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        )
+
+        add_dependencies(publish_inference_x86_cxx_lib bundle_full_api)
+        add_dependencies(publish_inference_x86_cxx_lib bundle_light_api)
+        add_dependencies(publish_inference publish_inference_x86_cxx_lib)
+
+        add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/third_party"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/third_party/install" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+        )
+        add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
+        add_dependencies(publish_inference_x86_cxx_demos paddle_api_full_bundled eigen3)
+
+  else()
+
     add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
@@ -144,6 +207,7 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
     add_dependencies(publish_inference publish_inference_x86_cxx_lib)
     add_dependencies(publish_inference publish_inference_x86_cxx_demos)
+  endif()
 endif()
 
 if(LITE_WITH_CUDA)

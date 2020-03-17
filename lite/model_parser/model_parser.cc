@@ -253,7 +253,7 @@ void LoadModelPb(const std::string &model_dir,
       std::string file_path = model_dir + "/" + var.name();
       VLOG(4) << "reading weight " << var.name();
 
-      std::ifstream file(file_path);
+      std::ifstream file(file_path, std::ios::binary);
       switch (var.type().type()) {
         case framework::proto::VarType_Type_LOD_TENSOR:
           LoadLoDTensor(file, scope->Var(var.name()));

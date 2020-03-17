@@ -20,6 +20,13 @@
 #include "lite/core/device_info.h"
 #include "lite/core/version.h"
 
+//#include "paddle_use_kernels.h"  // NOLINT
+//#include "paddle_use_ops.h"      // NOLINT
+#ifndef LITE_ON_TINY_PUBLISH
+#include "lite/api/paddle_use_passes.h"
+#endif
+
+
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
 #include <omp.h>

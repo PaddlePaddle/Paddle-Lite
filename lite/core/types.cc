@@ -67,11 +67,11 @@ STL::ostream& operator<<(STL::ostream& os, const KernelPickFactor& k) {
 
 template <>
 Type StdTypeToRepr<int32_t>() {
-  return Type::_int32;
+  return Type::_int32_;
 }
 template <>
 Type StdTypeToRepr<int64_t>() {
-  return Type::_int64;
+  return Type::_int64_;
 }
 template <>
 Type StdTypeToRepr<float>() {

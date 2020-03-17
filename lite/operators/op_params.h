@@ -46,9 +46,9 @@ struct ParamBase {
 using param_t = Any;
 #define WITH_INT8_CONFIG             \
   bool enable_int8{false};           \
-  float input_scale{1.0};            \
+  float input_scale{1.0f};            \
   std::vector<float> weight_scale{}; \
-  float output_scale{1.0};           \
+  float output_scale{1.0f};           \
   int bit_length{8};
 
 /// ----------------------- Functional operators ------------------------------
@@ -342,8 +342,8 @@ struct ActivationParam : ParamBase {
       "channel"};  // prelu param, can be "all", "channel" or "element"
   lite::Tensor* Prelu_alpha{};  // prelu param
   float Swish_beta;             // swish param
-  float hard_sigmoid_slope{0.2};
-  float hard_sigmoid_offset{0.5};
+  float hard_sigmoid_slope{0.2f};
+  float hard_sigmoid_offset{0.5f};
   lite::Tensor* Out{};
   bool has_active{false};
   lite_api::ActivationType active_type;
@@ -649,7 +649,7 @@ struct FakeQuantizeMovingAvgMaxAbsParam : ParamBase {
   lite::Tensor* out_accum{};
   int bit_length;
   bool is_test{true};
-  float moving_rate{0.9};
+  float moving_rate{0.9f};
 };
 
 struct FakeDequantizeMaxAbsParam : ParamBase {
@@ -743,9 +743,9 @@ struct LrnParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   int n{5};
-  float alpha{1e-4};
-  float beta{0.75};
-  float k{1.};
+  float alpha{1e-4f};
+  float beta{0.75f};
+  float k{1.f};
   std::string norm_region{"AcrossChannels"};
 };
 
@@ -787,8 +787,8 @@ struct MulticlassNmsParam : ParamBase {
   int background_label{0};
   float score_threshold{};
   int nms_top_k{};
-  float nms_threshold{0.3};
-  float nms_eta{1.0};
+  float nms_threshold{0.3f};
+  float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
 };
@@ -899,7 +899,7 @@ struct NormParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* Norm{};
   int axis{1};
-  float epsilon{1e-10};
+  float epsilon{1e-10f};
 };
 struct LayerNormParam : ParamBase {
   const lite::Tensor* X{};
@@ -909,7 +909,7 @@ struct LayerNormParam : ParamBase {
   lite::Tensor* Mean{};
   lite::Tensor* Variance{};
   int begin_norm_axis{1};
-  float epsilon{1e-5};
+  float epsilon{1e-5f};
 };
 
 struct LogicalParam : ParamBase {
@@ -1152,8 +1152,8 @@ struct AnchorGeneratorParam : ParamBase {
   std::vector<float> anchor_sizes{};
   std::vector<float> aspect_ratios{};
   std::vector<float> stride{};
-  std::vector<float> variances{{0.1, 0.1, 0.2, 0.2}};
-  float offset{0.5};
+  std::vector<float> variances{{0.1f, 0.1f, 0.2f, 0.2f}};
+  float offset{0.5f};
 
   lite::Tensor* Anchors{};
   lite::Tensor* Variances{};
@@ -1170,9 +1170,9 @@ struct GenerateProposalsParam : ParamBase {
   // attrs
   int pre_nms_topN{6000};
   int post_nms_topN{1000};
-  float nms_thresh{0.5};
-  float min_size{0.1};
-  float eta{1.0};
+  float nms_thresh{0.5f};
+  float min_size{0.1f};
+  float eta{1.0f};
 
   // outputs
   lite::Tensor* RpnRois{};

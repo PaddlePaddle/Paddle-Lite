@@ -19,6 +19,7 @@
 #include <memory>  // For std::unique_ptr
 #include <string>
 #include <vector>
+#include <iterator>
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
