@@ -20,7 +20,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class FetchCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+class FetchCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::FeedParam;
 
@@ -42,7 +43,11 @@ class FetchCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fetch, kHost, kAny, kNCHW, paddle::lite::kernels::host::FetchCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    fetch, kHost, kAny, kAny, paddle::lite::kernels::host::FetchCompute, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();

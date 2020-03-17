@@ -509,7 +509,7 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
-#ifdef LITE_WITH_ARM_CLANG
+#if 1  // def LITE_WITH_ARM_CLANG
 #else
         asm volatile(COMPUTE RELU STORE
                      : [r0] "+r"(inr0),
@@ -597,7 +597,7 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
-#ifdef LITE_WITH_ARM_CLANG
+#if 1  // def LITE_WITH_ARM_CLANG
 #else
         asm volatile(COMPUTE RELU RELU6 STORE
                      : [r0] "+r"(inr0),
@@ -685,7 +685,7 @@ void act_switch_3x3s1(const float* inr0,
                        "x6",
                        "x7");
 #else
-#ifdef LITE_WITH_ARM_CLANG
+#if 1  // def LITE_WITH_ARM_CLANG
 #else
         asm volatile(COMPUTE LEAKY_RELU STORE
                      : [r0] "+r"(inr0),
@@ -778,7 +778,7 @@ void act_switch_3x3s1(const float* inr0,
                    "x6",
                    "x7");
 #else
-#ifdef LITE_WITH_ARM_CLANG
+#if 1  // def LITE_WITH_ARM_CLANG
 #else
     asm volatile(COMPUTE STORE
                  : [r0] "+r"(inr0),
@@ -1001,7 +1001,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                            vbias,
                            act_param);
 #else
-#ifdef LITE_WITH_ARM_CLANG
+#if 1  // def LITE_WITH_ARM_CLANG
 #else
           act_switch_3x3s1(inr0,
                            inr1,
