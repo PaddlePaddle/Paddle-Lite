@@ -23,11 +23,15 @@ namespace lite {
 namespace mir {
 
 void ShuffleChannelFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ShuffleChannelFuser fuser("reshape", "transpose");
-  fuser(graph.get());
-
-  fusion::ShuffleChannelFuser fuser2("reshape2", "transpose2");
-  fuser2(graph.get());
+  for (std::string reshape_type : {"reshape", "reshape2"}) {
+    for (std::string transpose_type : {"transpose", "transpose2"}) {
+      for (std::string sub_structure : {"r_t_r", "s_t_r"}) {
+        fusion::ShuffleChannelFuser fuser(
+            reshape_type, transpose_type, sub_structure);
+        fuser(graph.get());
+      }
+    }
+  }
 }
 
 }  // namespace mir
