@@ -122,7 +122,7 @@ void resize(const uint8_t* src,
     ialpha1 = new int16_t[dstw];
     compute_xy(srcw,
                srch / 2,
-               w,
+               dstw / 2,
                tmp,
                2,
                scale_x,
