@@ -26,13 +26,10 @@
 
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/cxx_api.h"
-#include "lite/api/paddle_use_passes.h"
 #endif
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
 #include "lite/core/tensor.h"
 
 namespace py = pybind11;

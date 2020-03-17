@@ -354,10 +354,11 @@ function make_x86 {
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_PYTHON=$BUILD_PYTHON \
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_XPU=$BUID_XPU \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
 
   make publish_inference -j$NUM_PROC
   cd -
