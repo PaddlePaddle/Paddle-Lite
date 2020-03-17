@@ -22,7 +22,7 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
-int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -55,6 +55,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       const_cast<const int64_t*>(&output_dims.data()[0]);
   std::vector<int32_t> i_input_shape_data(input_dims.size());
   std::vector<int32_t> i_output_shape_data(output_dims.size());
+
   for (size_t i = 0; i < input_dims.size(); i++) {
     i_input_shape_data[i] = static_cast<int32_t>(input_shape_data[i]);
   }
@@ -67,28 +68,34 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
-  add_conv_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_input_shape_data[0]),
-                 input_dims.size(),
-                 static_cast<const char*>(input_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 static_cast<const char*>(unique_op_name.c_str()),
-                 filter_data,
-                 bias_data,
-                 filter_dims.data()[2],
-                 filter_dims.data()[3],
-                 groups,
-                 paddings[0],
-                 paddings[0],
-                 paddings[1],
-                 paddings[1],
-                 strides[0],
-                 strides[1],
-                 dilations[0],
-                 dilations[1],
-                 static_cast<int>(has_bias));
+
+  bool fuse_relu = false;
+  if (op_info->HasAttr("fuse_relu")) {
+    fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  }
+  CHECK_EQ(fuse_relu, false);
+  add_deconv_layer(graph->GetCompilerHandle(),
+                   const_cast<const int*>(&i_input_shape_data[0]),
+                   input_dims.size(),
+                   static_cast<const char*>(input_var_name.c_str()),
+                   const_cast<const int*>(&i_output_shape_data[0]),
+                   output_dims.size(),
+                   static_cast<const char*>(output_var_name.c_str()),
+                   static_cast<const char*>(unique_op_name.c_str()),
+                   filter_data,
+                   bias_data,
+                   filter_dims.data()[2],
+                   filter_dims.data()[3],
+                   groups,
+                   paddings[0],
+                   paddings[0],
+                   paddings[1],
+                   paddings[1],
+                   strides[0],
+                   strides[1],
+                   dilations[0],
+                   dilations[1],
+                   static_cast<int>(has_bias));
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -98,9 +105,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(conv2d,
+REGISTER_SUBGRAPH_BRIDGE(conv2d_transpose,
                          kBM,
-                         paddle::lite::subgraph::bm::ConvConverter);
-REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
-                         kBM,
-                         paddle::lite::subgraph::bm::ConvConverter);
+                         paddle::lite::subgraph::bm::ConvTransposeConverter);
