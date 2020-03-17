@@ -52,8 +52,8 @@
 
 | 运行系统 |      下载       |
 | :---------: |  :--------------: |
-|    Linux    |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt) |
-|    MacOs   |  [release/v2.3](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt_mac) |
+|    Linux    | [release/v2.3](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt) |
+|    MacOs   | [release/v2.3](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac) |
 
 
 
