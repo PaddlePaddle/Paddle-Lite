@@ -177,7 +177,7 @@ REGISTER_LITE_KERNEL(
 
 // exp
 REGISTER_LITE_KERNEL(
-    exp_act,
+    exp,
     kOpenCL,
     kFP16,
     kImageDefault,
@@ -195,7 +195,7 @@ REGISTER_LITE_KERNEL(
 
 // tanh
 REGISTER_LITE_KERNEL(
-    tanh_act,
+    tanh,
     kOpenCL,
     kFP16,
     kImageDefault,
