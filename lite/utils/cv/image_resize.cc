@@ -47,6 +47,9 @@ void ImageResize::choose(const uint8_t* src,
                          int dsth) {
   resize(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
+void resize_three_channel(
+    const uint8_t* src, int w_in, int h_in, uint8_t* dst, int w_out, int h_out);
+
 void bgr_resize(const uint8_t* src,
                 uint8_t* dst,
                 int w_in,
