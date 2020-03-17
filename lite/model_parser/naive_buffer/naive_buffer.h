@@ -30,7 +30,6 @@
 namespace paddle {
 namespace lite {
 namespace naive_buffer {
-
 using core::Type;
 using byte_t = uint8_t;
 
@@ -116,7 +115,7 @@ class PrimaryBuilder : public FieldBuilder {
   /// Load information from the corresponding BinaryTable.
   void Load() override;
 
-  Type type() const override { return core::StdTypeToRepr<Primary>(); }
+  Type type() const override { return  core::StdTypeToRepr<Primary>(); }
 
   ~PrimaryBuilder() = default;
 };
@@ -159,7 +158,7 @@ class PrimaryListBuilder : public FieldBuilder {
   /// Number of elements.
   size_t size() const { return size_; }
 
-  Type type() const override { return core::StdTypeToRepr<const Primary*>(); }
+  Type type() const override { return  core::StdTypeToRepr<const Primary*>(); }
 
   /// clear builder
   void Clear() { size_ = 0; }

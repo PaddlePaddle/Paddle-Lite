@@ -31,8 +31,8 @@ namespace core {
 enum class Type {
   _unk = -1,
   // primary types
-  _int32,
-  _int64,
+  _int32_,
+  _int64_,
   _float32,
   _float64,
   _bool,
@@ -91,6 +91,8 @@ template <>
 Type StdTypeToRepr<float>();
 template <>
 Type StdTypeToRepr<bool>();
+template <>
+Type StdTypeToRepr<double>();
 template <>
 Type StdTypeToRepr<std::vector<char>>();
 template <>

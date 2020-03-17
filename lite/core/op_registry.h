@@ -419,6 +419,9 @@ class KernelRegistor : public lite::Registor<KernelType> {
     return LITE_OP_REGISTER_INSTANCE(op_type__).Touch();                  \
   }
 
+// some platform-independent defintion
+#include "lite/utils/macros.h"
+
 // Kernel registry
 #define LITE_KERNEL_REGISTER(op_type__, target__, precision__) \
   op_type__##__##target__##__##precision__##__registor__
@@ -450,7 +453,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   }                                                                            \
   static bool LITE_KERNEL_PARAM_INSTANCE(                                      \
       op_type__, target__, precision__, layout__, alias__)                     \
-      __attribute__((unused)) =                                                \
+      UNUSED =                                                \
           paddle::lite::ParamTypeRegistry::NewInstance<TARGET(target__),       \
                                                        PRECISION(precision__), \
                                                        DATALAYOUT(layout__)>(  \
