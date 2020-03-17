@@ -808,6 +808,12 @@ struct SequenceExpandParam {
   int ref_level{-1};
 };
 
+struct SequenceUnpadParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Length{};
+  lite::Tensor* Out{};
+};
+
 struct SequenceExpandAsParam {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* y{nullptr};
