@@ -538,10 +538,10 @@ void image_resize_basic(const uint8_t* in_data,
   int* yofs1 = nullptr;
   if (orih < dsth) {
     int tmp = dsth - orih;
-    ialpha1 = new float[srcw];
-    xofs1 = new int[dstw / 2];
+    ialpha1 = new float[dstw];
+    xofs1 = new int[dstw];
     yofs1 = new int[tmp];
-    compute_xy(srcw / 2,
+    compute_xy(srcw,
                srch / 2,
                dstw / 2,
                tmp,
@@ -565,7 +565,7 @@ void image_resize_basic(const uint8_t* in_data,
       ialpha = ialpha1;
       xofs = xofs1;
       yofs = yofs1;
-      y_in_start = yofs[dy - orih];
+      y_in_start = yofs[dy - orih] + srch;
     }
     int y_in_end = y_in_start + 1;
     if (y_in_start < 0) {

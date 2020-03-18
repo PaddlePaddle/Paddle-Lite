@@ -135,19 +135,18 @@ if(LITE_WITH_CUDA)
             COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-            #COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
         )
     add_dependencies(publish_inference_cuda_cxx_lib bundle_full_api)
     add_dependencies(publish_inference_cuda_cxx_lib bundle_light_api)
     add_dependencies(publish_inference_cuda_cxx_lib paddle_full_api_shared)
     add_dependencies(publish_inference_cuda_cxx_lib paddle_light_api_shared)
-    #add_dependencies(publish_inference_cuda_cxx_lib test_model_bin)
     add_dependencies(publish_inference publish_inference_cuda_cxx_lib)
 
     add_custom_target(publish_inference_cuda_cxx_demos ${TARGET}
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
            COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party"
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/cuda_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
            )
     add_dependencies(publish_inference_cuda_cxx_lib publish_inference_cuda_cxx_demos)
     add_dependencies(publish_inference_cuda_cxx_demos paddle_full_api_shared)
