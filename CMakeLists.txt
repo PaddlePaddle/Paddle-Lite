@@ -182,10 +182,6 @@ if(LITE_WITH_MLU)
     include(mlu)
 endif()
 
-if(LITE_WITH_MLU)
-    include(mlu)
-endif()
-
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 include(external/libxsmm)   # download, build, install libxsmm
