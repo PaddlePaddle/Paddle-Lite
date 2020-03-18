@@ -47,7 +47,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   const auto& bridges = subgraph::Registry::Instance();
   CHECK(bridges.Exists(op_type, TARGET(kMLU)));
 
-  // Convert all of input data vars and added into the MLU IR graph
+  // Convert input data var and add it into the MLU IR graph
   for (auto& input_name : input_var_names) {
     auto input_tensor = scope->FindMutableTensor(input_name);
     CHECK(input_tensor);
