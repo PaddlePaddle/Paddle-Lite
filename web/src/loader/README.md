@@ -1,7 +1,7 @@
 [中文版](./README_cn.md)
 # PaddleJS odel loader
 
-Baidu paddlejs uses this loader  to get the model to the browser. The model loader can load browser friendly JSON file types and binary file types, supports single file loading and file fragment loading, and Jida uses the characteristics of browser parallel request to load reasoning model.
+Baidu paddlejs uses this loader  to get the model to the browser. The model loader can load browser friendly JSON file types and binary file types, supports single file loading and file fragment loading, and greatly uses the characteristics of browser parallel request to load reasoning model.
 
 ## Demonstration
 
