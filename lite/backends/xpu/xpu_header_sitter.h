@@ -16,7 +16,10 @@
 #include <xpu/runtime.h>
 #include <xpu/api.h>
 #include <xpu/golden.h>
-#include <xtcl/xtcl.h>
+
+#if defined(LITE_WITH_XTCL)
+# include <xtcl/xtcl.h>
+#endif
 
 namespace paddle {
 namespace lite {
