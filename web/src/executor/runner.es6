@@ -9,7 +9,6 @@
  *      r.run(document.getElementById('test'));
  *  });
  */
-
 import IO from '../feed/ImageFeed';
 import DataFeed from '../feed/dataFeed';
 import Graph from './loader';
@@ -43,10 +42,12 @@ export default class Runner {
             shape: [1, 3, fh, fw]
         }];
         const MODEL_URL = `/${path}/model.json`;
+        let dir = `https://mms-graph.cdn.bcebos.com/activity/facegame/paddle/${path}/`;
+        if (location.href.indexOf('test=1') > -1) {
+            dir = `/src/view/common/lib/paddle/${path}/`;
+        }
         const MODEL_CONFIG = {
-            dir: `/${path}/`, // 存放模型的文件夹
-            // dir: `https://graph.baidu.com/mms/graph/static/asset/dll/${path}/`, // rd测试地址
-            // dir: `/src/view/common/lib/paddle/dist/${path}/`, // 本地测试地址
+            dir: dir,
             main: 'model.json' // 主文件
         };
         const graphModel = new Graph();
@@ -77,8 +78,8 @@ export default class Runner {
             console.warn('It\'s better to preheat the model before running.');
             await this.preheat();
         }
-        log.start('总耗时'); // eslint-disable-line
-        log.start('预处理'); // eslint-disable-line
+        // log.start('总耗时'); // eslint-disable-line
+        // log.start('预处理'); // eslint-disable-line
         let feed;
         if (typeof input === 'string') {
             const dfIO = new DataFeed();
@@ -103,13 +104,13 @@ export default class Runner {
                 }
             });
         }
-        log.end('预处理'); // eslint-disable-line
-        log.start('运行耗时'); // eslint-disable-line
+        // log.end('预处理'); // eslint-disable-line
+        // log.start('运行耗时'); // eslint-disable-line
         let inst = this.model.execute({
             input: feed
         });
         let result = await inst.read();
-        log.end('后处理-读取数据'); // eslint-disable-line
+        // log.end('后处理-读取数据'); // eslint-disable-line
         const newData = [];
         let newIndex = -1;
         const [w, h, c, b] = this.modelConfig.outputShapes.from;
@@ -126,15 +127,15 @@ export default class Runner {
                 }
             }
         }
-        this.postProcess.run(newData, input, callback);
-        log.end('后处理'); // eslint-disable-line
+        this.postProcess.run(newData, input, callback, feed[0].canvas);
+        // log.end('后处理'); // eslint-disable-line
         this.flags.isRunning = false;
-        log.end('总耗时'); // eslint-disable-line
+        // log.end('总耗时'); // eslint-disable-line
     }
 
     // 传入获取图片的function
     async runStream(getMedia, callback) {
-        await this.run(getMedia(), callback);
+        await this.run(getMedia, callback);
         if (!this.flags.runVideoPaused) {
             setTimeout(async () => {
                 await this.runStream(getMedia, callback);

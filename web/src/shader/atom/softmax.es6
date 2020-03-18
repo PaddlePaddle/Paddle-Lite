@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * @file softmax激活函数
- * @author yangmingming
+ * @author wangqun
  */
 export default `
 float softmax(float x, float p, float b) {

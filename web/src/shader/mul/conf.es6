@@ -1,4 +1,4 @@
-/* eslint-disable */
+graph.es6/* eslint-disable */
 /**
  * @file mul的配置文件
  * @author yangmingming zhangmiao06

@@ -3,7 +3,7 @@ import Gpu from '../gpu/gpu';
 import getMaxUniforms from '../test/getMaxUniforms';
 /**
  * @file gpu运行时
- * @author yangmingming
+ * @author wangqun@baidu.com, yangmingming@baidu.com
  *
  */
 export default {
@@ -73,10 +73,10 @@ export default {
     async read() {
         const pbo = this.gpu.createPBO();
         await this.gpu.createAndWaitForFence();
-        log.end('运行耗时');
-        log.start('后处理');
+        // log.end('运行耗时');
+        // log.start('后处理');
         // 其实这里应该有个fetch的执行调用或者fetch的输出
-        log.start('后处理-读取数据');
+        // log.start('后处理-读取数据');
         // 开始读数据
         return this.gpu.downloadFoat32TensorFromBuffer(pbo);
     },

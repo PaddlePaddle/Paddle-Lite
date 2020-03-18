@@ -3,7 +3,7 @@ import VSHADER from '../shader/v_shader';
 import VSHADER2 from '../shader/v_shader2';
 /**
  * @file gpu运算
- * @author yangmingming
+ * @author wangqun@baidu.com, yangmingming@baidu.com
  */
 const CONF = {
     alpha: false,
@@ -268,6 +268,7 @@ export default class gpu {
         // this.currentTexture = this.textureBuffer[this.textureBufferIndex % 2];
         // this.textureBufferIndex = (this.textureBufferIndex + 1) >= 2 ? 0 : 1;
         this.currentTexture = this.outTextures[iLayer];
+        console.log('this.currentTexture', this.currentTexture);
         const gl = this.gl;
         gl.framebufferTexture2D(gl.FRAMEBUFFER, // The target is always a FRAMEBUFFER.
             gl.COLOR_ATTACHMENT0, // We are providing the color buffer.
@@ -360,9 +361,16 @@ export default class gpu {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texImage2D(gl.TEXTURE_2D, 0, this.internalFormat, item.width_texture,
-                item.height_texture, 0,
-                this.textureFormat, gl.FLOAT, item.data, 0);
+            gl.texImage2D(gl.TEXTURE_2D,
+                0,
+                this.internalFormat,
+                item.width_texture,
+                item.height_texture,
+                0,
+                this.textureFormat,
+                gl.FLOAT,
+                item.data,
+                0);
         }
     }
 
@@ -404,14 +412,15 @@ export default class gpu {
 
     render(data = [], iLayer = 0, isRendered = false) {
         const gl = this.gl;
+        let that = this;
         let textureIndex = 0;
         data.forEach(item => {
             if (item.type === 'texture') {
-                this.initTexture(textureIndex, item, iLayer, isRendered);
-                gl.uniform1i(this.getUniformLoc(item.variable + '_' + item.tensor, iLayer, isRendered), textureIndex++);
+                that.initTexture(textureIndex, item, iLayer, isRendered);
+                gl.uniform1i(that.getUniformLoc(item.variable + '_' + item.tensor, iLayer, isRendered), textureIndex++);
             }
             else if (item.type === 'uniform') {
-                gl[item.setter](this.getUniformLoc(item.variable + '_' + item.tensor, iLayer, isRendered), item.data);
+                gl[item.setter](that.getUniformLoc(item.variable + '_' + item.tensor, iLayer, isRendered), item.data);
             }
         });
         // gl.clearColor(.0, .0, .0, 1);
@@ -437,7 +446,7 @@ export default class gpu {
         gl2.bindBuffer(gl2.PIXEL_PACK_BUFFER, buffer);
         gl2.getBufferSubData(gl2.PIXEL_PACK_BUFFER, 0, pixels);
         gl2.bindBuffer(gl2.PIXEL_PACK_BUFFER, null);
-        log.start('后处理-readloop');
+        // log.start('后处理-readloop');
         // let result = [];
         // let offset = 0;
         // for (let h = 0; h < this.height_texture_out; h++) {
@@ -460,7 +469,7 @@ export default class gpu {
         }
         // const result = Array.prototype.slice.call(pixels);
         // console.dir(['result', result]);
-        log.end('后处理-readloop');
+        // log.end('后处理-readloop');
         return result;
     }
 
@@ -517,20 +526,20 @@ export default class gpu {
 
     compute() {
         let gl = this.gl;
-        log.start('后处理-readinside');
+        // log.start('后处理-readinside');
         const tt = +Date.now();
         let pixels = new Float32Array(this.width_texture_out * this.height_texture_out * 4);
         // gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
         const tt2 = +Date.now();
         gl.readPixels(0, 0, this.width_texture_out, this.height_texture_out, gl.RGBA, gl.FLOAT, pixels, 0);
         // console.log('本次读取数据时间是' + (+Date.now() - tt2)+ ',' + (tt2 - tt));
-        log.end('后处理-readinside');
-        log.start('后处理-readloop');
+        // log.end('后处理-readinside');
+        // log.start('后处理-readloop');
         let result = [];
         for (let i = 0; i < this.width_texture_out * this.height_texture_out; i++) {
             result.push(pixels[4 * i]);
         }
-        log.end('后处理-readloop');
+        // log.end('后处理-readloop');
         return result;
     }
 

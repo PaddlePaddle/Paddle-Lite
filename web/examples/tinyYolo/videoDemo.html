@@ -1,0 +1,36 @@
+<!DOCYTPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>识别摄像头里的脸</title>
+  <style>
+      body {
+          margin: 0;
+          padding: 0;
+      }
+      #myDiv {
+          position: fixed;
+          border: 1px solid red;
+          box-sizing: border-box;
+      }
+      #video {
+        background: red;
+      }
+  </style>
+</head>
+<body>
+  <video id="video">
+  </video>
+  <p>
+    <button id="start">开始识别</button>
+    <button id="stop">结束</button>
+  </p>
+  <select id="videoSelect"></select>
+  <p id="tips">tips</p>
+  <div id="myDiv"></div>
+
+  <script src="./videoDemo.es6"></script>
+</body>
+</html>

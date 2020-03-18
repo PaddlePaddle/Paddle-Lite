@@ -1,8 +1,7 @@
 /**
  * @file 工具类
- * @author yangmingming
+ * @author wangqun, yangmingming
  */
-/* eslint-disable */
 export default {
     // todo: 适用2维矩阵乘法，以后实现通用版本
     getReshapeInPaddle(inputShape = [], counterShape = [], outShape = []) {
@@ -109,10 +108,10 @@ export default {
      * @return {{shape: *[], zeroNumber: number}} {Object} texture信息
      */
     getTextureInfoFromTensorShape(shape = [], isPacked = false) {
-        let b = shape[0];
-        let c = shape[1];
-        let h = shape[2];
-        let w = shape[3];
+        let b = shape[0] || 1;
+        let c = shape[1] || 1;
+        let h = shape[2] || 1;
+        let w = shape[3] || 1;
         let height = b * h;
         let width = c * w;
         let offsetX = 0;
@@ -179,12 +178,7 @@ export default {
             let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
             data[offset] = renderData.data[l];
             offset += 4;
-            // data.push(renderData.data[l]);
-            // data.push(0);
-            // data.push(0);
-            // data.push(0);
         }
         renderData.data = data;
     }
 };
-/* eslint-enable */

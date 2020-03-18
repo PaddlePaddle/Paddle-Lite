@@ -26,7 +26,7 @@ export default class Camera {
     }
 
     // 访问用户媒体设备的兼容方法
-    run(deviceId) {
+    run(deviceId, callback) {
         if (window.stream) {
             window.stream.getTracks().forEach(function (track) {
                 track.stop();
@@ -36,7 +36,9 @@ export default class Camera {
         let constraints = {
             video: {}
         };
-        const success = this.success.bind(this);
+        const success = stream => {
+            this.success(stream, callback);
+        };
         const error = this.error.bind(this);
         if (this.deviceInfos.length) {
             constraints.video.deviceId=  {exact: deviceId || this.deviceInfos[0]};
@@ -63,7 +65,7 @@ export default class Camera {
         }
     }
 
-    success(stream) {
+    success(stream, callback) {
         const domElement = this.video;
         // make stream available to console
         window.stream = stream;
@@ -88,6 +90,7 @@ export default class Camera {
                 domElement.height = $(domElement).height();
             }
             domElement.play();
+            callback && callback();
         }, false);
     }
 

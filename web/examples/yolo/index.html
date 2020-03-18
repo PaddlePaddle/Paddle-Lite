@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>paddle web demo</title>
+        <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+        <style>
+        .image-wrap {
+            position: relative;
+        }
+        #myDiv {
+            position: absolute;
+            border: 1px solid #f71111;
+            box-sizing: border-box;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="image-wrap">
+            <img id="mobilenet">
+        </div>
+        <p>原图片</p>
+        <div class="image-wrap">
+            <img id="image" src="pic.png">
+            <div id="myDiv"></div>
+        </div>
+        <p>画布</p>
+        <canvas id="myCanvas"></canvas>
+        <input type="file" id="uploadImg">
+        <div id="txt"></div>
+        <script src="index.es6"></script>
+    </body>
+
+</html>

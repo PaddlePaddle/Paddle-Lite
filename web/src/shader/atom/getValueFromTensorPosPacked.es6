@@ -2,6 +2,7 @@
 /**
  * @file 公共方法
  * @author yangmingming
+ * desc packed布局 根据tensor坐标获取这个tensor位置的值
  */
 export default `
 float getValueFromTensorPosPacked_TENSOR_NAME(int r, int g, int b, int a) {

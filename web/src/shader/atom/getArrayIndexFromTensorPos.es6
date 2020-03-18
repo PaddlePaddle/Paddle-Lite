@@ -2,6 +2,7 @@
 /**
  * @file 公共方法
  * @author yangmingming
+ *
  */
 export default `
 

@@ -1,7 +1,7 @@
 import ops from './ops';
 /**
  * @file 工厂类，生成fragment shader
- * @author yangmingming
+ * @author wangqun
  */
 export default class Factory {
     constructor(opts) {

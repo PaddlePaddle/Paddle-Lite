@@ -6,6 +6,7 @@
 export default class imageFeed {
     constructor() {
         this.fromPixels2DContext = document.createElement('canvas').getContext('2d');
+        this.fromPixels2DContext2 = document.createElement('canvas').getContext('2d');
         this.defaultWidth = 224;
         this.defaultHeight = 224;
         this.minPixels = 225;
@@ -32,7 +33,8 @@ export default class imageFeed {
         let output = [];
         if (!this.result) {
             const [b, c, h, w] = params.targetShape;
-            this.result = new Float32Array(h * w * 3);
+            // 计算确定targetShape所需Float32Array占用空间
+            this.result = new Float32Array(h * w * c);
         }
         output = this.fromPixels(input, params);
         return output;
@@ -49,14 +51,17 @@ export default class imageFeed {
         const vPadding = Math.ceil((sh - height) / 2);
 
         let data = imageData.data;
+        // channel RGB
         let red = [];
         let green = [];
         let blue = [];
+        // 平均数
         let mean = opt.mean;
+        // 标准差
         let std = opt.std;
+        // 考虑channel因素获取数据
         for (let i = 0; i < data.length; i += 4) {
-            // img_mean 0.485, 0.456, 0.406
-            //img_std 0.229, 0.224, 0.225
+
             let index = i / 4;
             let vIndex = Math.floor(index / sw);
             let hIndex = index - (vIndex * sw) - 1;
@@ -67,6 +72,7 @@ export default class imageFeed {
                 blue.push(((data[i + 2] / 255) - mean[2]) / std[2]); // blue
             }
         }
+        // 转成 GPU 加速 NCHW 格式
         let tmp = green.concat(blue);
         return red.concat(tmp);
     };
@@ -78,7 +84,7 @@ export default class imageFeed {
     allReshapeToRGB(imageData, opt, scaleSize) {
         const {sw, sh} = scaleSize;
         const [b, c, h, w] = opt.targetShape;
-        let data = imageData.data;
+        let data = imageData.data || imageData;
         let mean = opt.mean;
         let dataLength = data.length;
         // let result = new Float32Array(dataLength * 3);
@@ -127,6 +133,7 @@ export default class imageFeed {
         this.fromPixels2DContext.canvas.height = sh;
         this.fromPixels2DContext.drawImage(
             image, 0, 0, sw, sh);
+        this.setInputCanvas(image);
         return {sw, sh};
     };
 
@@ -167,9 +174,24 @@ export default class imageFeed {
                 image, 0, 0, sw, sh);
             // currentPic = this.fromPixels2DContext.canvas.toDataURL();
         }
+        this.setInputCanvas(image);
         // window.currentPic = this.fromPixels2DContext.canvas;// test only, demele me
         // document.getElementById('p-c').appendChild(this.fromPixels2DContext.canvas);// test only, demele me
         return {sw: targetWidth, sh: targetHeight};
+    }
+
+    /**
+     * 设置原始video画布
+     * @param image 原始video
+     */
+    setInputCanvas(image) {
+        // 原始图片宽高
+        const width = this.pixelWidth;
+        const height = this.pixelHeight;
+        // 画布设置
+        this.fromPixels2DContext2.canvas.width = width;
+        this.fromPixels2DContext2.canvas.height = height;
+        this.fromPixels2DContext2.drawImage(image, 0, 0, width, height);
     }
 
     /**
@@ -179,11 +201,12 @@ export default class imageFeed {
      */
     getImageData(pixels, scaleSize) {
         const {sw, sh} = scaleSize;
+        // 复制画布上指定矩形的像素数据
         let vals = this.fromPixels2DContext
             .getImageData(0, 0, sw, sh);
         // crop图像
-        const width = pixels.width;
-        const height = pixels.height;
+        // const width = pixels.width;
+        // const height = pixels.height;
         return vals;
     };
 
@@ -196,6 +219,7 @@ export default class imageFeed {
         let data = imageData.data;
 
         for (let i = 0; i < data.length; i += 4) {
+            // 3 channel 灰度处理无空间压缩
             let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             data[i] = avg; // red
             data[i + 1] = avg; // green
@@ -206,6 +230,8 @@ export default class imageFeed {
 
     fromPixels(pixels, opt) {
         let data;
+        // 原始video画布数据
+        let data2;
         let scaleSize;
         if (pixels instanceof HTMLImageElement || pixels instanceof HTMLVideoElement) {
             this.pixelWidth = pixels.naturalWidth || pixels.width;
@@ -213,10 +239,12 @@ export default class imageFeed {
             if (opt.scale) { // 兼容以前的，如果有scale就是短边缩放到scale模式
                 scaleSize = this.reSize(pixels, opt);
                 data = this.getImageData(opt, scaleSize);
+                data2 = this.fromPixels2DContext2.getImageData(0, 0, this.pixelWidth, this.pixelHeight);
             }
             else if (opt.targetSize) { // 如果有targetSize，就是装在目标宽高里的模式
                 scaleSize = this.fitToTargetSize(pixels, opt);
                 data = this.getImageData(opt, scaleSize);
+                data2 = this.fromPixels2DContext2.getImageData(0, 0, this.pixelWidth, this.pixelHeight);
             }
         }
 
@@ -224,14 +252,15 @@ export default class imageFeed {
             data = grayscale(data);
         }
 
-        if (opt.shape) {
+        if (opt.reShape) {
             data = this.reshape(data, opt, scaleSize);
         }
 
         if (opt.targetShape) {
             data = this.allReshapeToRGB(data, opt, scaleSize);
         }
-        return [{data: data, shape: opt.shape || opt.targetShape, name: 'image'}];
+        
+        return [{data: data, shape: opt.shape || opt.targetShape, name: 'image', canvas: data2}];
     }
 }
 /* eslint-enable */

@@ -11,7 +11,7 @@ export default `
     precision mediump float;
     precision mediump int;
 #endif
-
+    varying vec2 vCoord;
     void setOutput(float result) {
         gl_FragColor.r = result;
     }

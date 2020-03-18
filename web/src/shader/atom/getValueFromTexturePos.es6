@@ -2,6 +2,7 @@
 /**
  * @file 公共方法
  * @author yangmingming
+ * desc 根据材质坐标获取这个材质位置的值
  */
 // TEXTURE_NAME, tensor name
 // 获取材质中的数据

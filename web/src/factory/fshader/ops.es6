@@ -130,6 +130,11 @@ export default {
             func: dynamic_func,
             confs: dynamic_conf
         },
+        relu6: {
+            params: dynamic_params,
+            func: dynamic_func,
+            confs: dynamic_conf
+        },
         scale: {
             params: dynamic_params,
             func: dynamic_func,

@@ -4,14 +4,21 @@
   "description": "paddle",
   "main": "index.js",
   "scripts": {
-    "server": "parcel ./src/index.html",
-    "testDemo": "parcel ./demo/index.html",
-    "testSDemo": "parcel ./demo/index.html --port 8125 --https",
-    "testVideoDemo": "parcel ./demo/videoDemo.html --port 8123 --https",
+    "mnistdemo": "parcel ./examples/mnist/index.html",
+    "mobilenet": "parcel ./examples/mobileNet/index.html",
+    "tinyYolo": "parcel ./examples/tinyYolo/index.html",
+    "huangfan": "parcel ./examples/huangfan/index.html",
+    "yolo": "parcel ./examples/yolo/index.html",
+    "videoDemo": "parcel ./examples/videoDemo.html --port 8123 --https",
+    "unitTest": "parcel ./test/unitTest.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@babel/core": "^7.7.2",
+    "@babel/preset-env": "^7.7.1",
+    "axios": "^0.17.1",
     "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.6",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-decorators-legacy": "^1.3.5",
     "babel-plugin-transform-runtime": "^6.23.0",
@@ -20,7 +27,8 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "babel-runtime": "^6.26.0",
-    "parcel-bundler": "^1.10.3"
+    "parcel-bundler": "^1.10.3",
+    "webpack-cli": "^3.3.6"
   },
   "keywords": [],
   "author": "",

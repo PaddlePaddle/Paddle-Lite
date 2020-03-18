@@ -12,12 +12,10 @@ const int width_texture_origin = WIDTH_TEXTURE_ORIGIN;
 const int height_texture_origin = HEIGHT_TEXTURE_ORIGIN;
 const int channel_origin = CHANNEL_ORIGIN;
 const int total_shape_origin = TOTAL_SHAPE_ORIGIN;
-
 // 计算数据
 const float epsilon = float(EPSILON);
 const int width_texture_scale = WIDTH_TEXTURE_SCALE;
 const int height_texture_scale = HEIGHT_TEXTURE_SCALE;
-
 // 输入数据
 uniform sampler2D texture_origin;
 uniform sampler2D texture_scale;

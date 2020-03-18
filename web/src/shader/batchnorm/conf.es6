@@ -26,14 +26,12 @@ export default {
         'HEIGHT_TEXTURE_ORIGIN',
         'CHANNEL_ORIGIN',
         'TOTAL_SHAPE_ORIGIN',
-
         'WIDTH_SHAPE_OUT',
         'HEIGHT_SHAPE_OUT',
         'WIDTH_TEXTURE_OUT',
         'HEIGHT_TEXTURE_OUT',
         'CHANNEL_OUT',
         'OFFSET_Y_OUT',
-
         'EPSILON',
         'WIDTH_TEXTURE_SCALE',
         'HEIGHT_TEXTURE_SCALE',

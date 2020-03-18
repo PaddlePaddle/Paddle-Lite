@@ -1,8 +1,7 @@
-/* eslint-disable */
 import Utils from './utils';
 /**
  * @file Tensor类
- * @author yangmingming
+ * @author wangqun, yangmingming
  */
 export default class Tensor {
     constructor(opts = {}) {
@@ -33,6 +32,7 @@ export default class Tensor {
         // tensor数据
         let data;
         if (opts.type === 'image' || opts.type === 'x') {
+            console.log('image', this.data);
             this.data = opts.data;
         }
         else if (opts.data && opts.data.length) {
@@ -42,18 +42,27 @@ export default class Tensor {
                 let c = shape[1];
                 let h = shape[2];
                 let w = shape[3];
-
-                for (let i = 0; i < opts.data.length; i++) {
-                    let j = i / (c * w) | 0;
-                    let k = i % (c * w);
-                    let b1 = j / h | 0;
-                    let h1 = j % h;
-                    let c1 = k % c;
-                    let w1 = k / c | 0;
-                    let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
-                    data[i] = opts.data[l];
+                if (w) {
+                    for (let i = 0; i < opts.data.length; i++) {
+                        let j = i / (c * w) | 0;
+                        let k = i % (c * w);
+                        let b1 = j / h | 0;
+                        let h1 = j % h;
+                        let c1 = k % c;
+                        let w1 = k / c | 0;
+                        let l = b1 * (c * h * w) + c1 * (h * w) + h1 * (w) + w1;
+                        data[i] = opts.data[l];
+                    }
+                    this.data = data;
                 }
-                this.data = data;
+                else {
+                    if (opts.data.length > this.total) {
+                        opts.data = opts.data.slice(0, this.total);
+                    }
+                    this.data = new Float32Array(opts.data);
+                    debugger;
+                }
+
             } else {
                 // batchnorm的scale
                 this.shape_texture = [4, 1, this.total / 4];
@@ -158,4 +167,3 @@ export default class Tensor {
         }
     }
 }
-/* eslint-enable */

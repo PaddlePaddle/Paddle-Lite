@@ -3,7 +3,7 @@ import Utils from './utils';
 import Tensor from './tensor';
 /**
  * @file op的数据对象
- * @author yangmingming
+ * @author wangqun, yangmingming
  *
  */
 const keys = [
@@ -38,7 +38,7 @@ const shaderAttrs = {
         'pooling_type': 'type_pool'
     }
 };
-// model的名字和paddle web的tensor名字mapping
+// model的名字和paddleJS的tensor名字mapping
 const tensorName = {
     'input': 'origin',
     'x': 'origin',
@@ -80,6 +80,10 @@ const opBehavior = {
         'transToPrelu',
         'needBatch'
     ],
+    relu6: [
+        'transToRelu6',
+        'needBatch'
+    ],
     leaky_relu: [
         'transToLeakyrelu',
         'needBatch'
@@ -87,17 +91,25 @@ const opBehavior = {
     mul: [
         'reshape',
         'needBatch'
+    ],
+    softmax: [
     ]
 };
 const mergeType = 'conv2d-elementwise_add';
 export default class OpData {
     constructor(name, input = {}, output = {}, attrs = {}) {
+    console.log('now in constructor');
+    console.dir(name);
+    console.dir(input);
+    console.dir(output);
+
         this.realName = name;
         this.name = name;
         this.attrs = attrs;
         // 检查是否是融合op
         this.checkIsMerge();
         // 是否忽略当前当前op, 使用dropout
+        // dropout是指在深度学习网络的训练过程中,对于神经网络单元,按照一定的概率将其暂时从网络中丢弃。
         this.isPass = this.checkIsPass();
         if (this.isPass) {
             this.input = input;
@@ -172,6 +184,9 @@ export default class OpData {
             }
         });
         // console.dir(['tensors', this.tensor]);
+        // console.log('now in buildTensor show this and tensorData');
+        // console.log(this);
+        // console.log(tensorData);
     }
 
     buildAttrs() {
@@ -283,10 +298,14 @@ export default class OpData {
                 item.notTensor = true;
             }
         });
+
         return;
 
         // mobilenet model
         // todo: 默认y的shape length是1, 以后需要实现通用版本
+console.log('2. x and y is ');
+console.log(x);
+console.log(y);
         let shape = Utils.getBroadcastShapeInPaddle(x.shape, y.shape, this.attrs['axis']);
         // 填充shape数据
         if (small.shape.length === 1) {
@@ -314,6 +333,11 @@ export default class OpData {
     transToPrelu(tensorData = []) {
         this.data['multi_value'] = '0.0';
         this.data['active_function'] = 'prelu';
+    }
+
+    transToRelu6(tensorData = []) {
+        this.data['multi_value'] = this.attrs['threshold'];
+        this.data['active_function'] = 'relu6';
     }
 
     transToLeakyrelu(tensorData = []) {
@@ -347,6 +371,7 @@ export default class OpData {
 
     mergeTensor(tensorData = []) {
         // 融合scale、bias、variance、mean
+
         let constants = ['scale', 'bias', 'variance', 'mean'];
         let result = {};
         let data = [];
@@ -354,13 +379,18 @@ export default class OpData {
             result[tensor.tensorName] = tensor;
             result[tensor.tensorName + 'Index'] = index;
         });
-        for (let i = 0; i < result[constants[0]].shape[0]; i++) {
-            data.push(result[constants[0]].data[i]);
-            data.push(result[constants[1]].data[i]);
-            data.push(result[constants[2]].data[i]);
-            data.push(result[constants[3]].data[i]);
-        }
+
+       for (let i = 0; i < result[constants[0]].shape[0]; i++) {
+           data.push(result[constants[0]].data[i]);
+           data.push(result[constants[1]].data[i]);
+           data.push(result[constants[2]].data[i]);
+           data.push(result[constants[3]].data[i]);
+       }
+
         tensorData[result[constants[0] + 'Index']].data = data;
+        for (let i = 0; i < constants.length; i++){
+            tensorData[result[constants[i] + 'Index']].data = result[constants[i]].data;
+        }
         // 充分利用shader空间
         tensorData[result[constants[0] + 'Index']].notCompressed = true;
         tensorData[result[constants[0] + 'Index']].shape[0] *= 4;

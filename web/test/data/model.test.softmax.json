@@ -1,0 +1,43 @@
+{
+  "ops": [
+    {
+      "attrs": {
+        "data_format": "AnyLayout",
+        "is_test": 1,
+        "use_cudnn": false,
+        "use_mkldnn": false
+      },
+      "inputs": {
+        "X": [
+          "softmax_0.tmp_0"
+        ]
+      },
+      "outputs": {
+        "Out": [
+          "softmax_0.tmp_2"
+        ]
+      },
+      "type": "softmax"
+    }
+  ],
+  "vars": [
+
+    {
+      "data":
+      [0.0320586 , 0.08714432, 0.23688282, 0.64391426]
+    ,
+
+      "name": "softmax_0.tmp_2",
+      "persistable": 0,
+      "shape": [2, 3, 4]
+    },
+
+    {
+      "data": [2.0, 3.0, 4.0, 5.0]
+    ,
+      "name": "softmax_0.tmp_0",
+      "persistable": 0,
+      "shape": [2, 3, 4]
+    }
+  ]
+}

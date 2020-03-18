@@ -137,7 +137,7 @@ export default class PostProcess {
         this.lastRect = [0, 0, 0, 0]
     }
     
-    run(data, img, callback) {
+    run(data, img, callback, canavs) {
         let {from, to} = this.modelConfig.outputShapes;
         let shape = [].concat(from).reverse();
         // 1.从一维数组到1*25*19*19
@@ -167,7 +167,7 @@ export default class PostProcess {
         // console.log('final', finalData);
         // 5.处理画布
         // finalData.length && handleCanvas(finalData, img);
-        this.handleDiv(finalData, img, callback);
+        this.handleDiv(finalData, img, callback, canavs);
     }
 
     calSize(img) {
@@ -213,7 +213,7 @@ export default class PostProcess {
         return finalData;
     }
 
-    handleDiv(finalData, img, callback) {
+    handleDiv(finalData, img, callback, canavs) {
         if (finalData.length < 1) {
             callback();
             return false;
@@ -230,7 +230,7 @@ export default class PostProcess {
 
         let [demoLeft, demoTop, demoWidth, demoHeight] = finalData[maxIndex];
         if (!isSimilar(this.lastRect, [demoLeft, demoTop, demoWidth, demoHeight])) {
-            callback([demoWidth, demoHeight,demoLeft, demoTop]);
+            callback([demoWidth, demoHeight,demoLeft, demoTop], canavs);
         };
         this.lastRect = [demoLeft, demoTop, demoWidth, demoHeight];
     }
