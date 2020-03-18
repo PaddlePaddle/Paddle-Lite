@@ -108,6 +108,9 @@ class LITE_API PaddlePredictor {
   lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLU_270};
   int mlu_core_number_{1};
+  bool use_first_conv_{false};
+  std::vector<float> mean_vec_;
+  std::vector<float> std_vec_;
 };
 
 /// Base class for all the configs.

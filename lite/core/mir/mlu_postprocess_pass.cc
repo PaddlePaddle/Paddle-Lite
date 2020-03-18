@@ -15,7 +15,6 @@
 #include "lite/core/mir/mlu_postprocess_pass.h"
 #include <list>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -193,6 +192,10 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
   auto* cur_node = head_node;
   const auto name_prefix =
       head_node->AsArg().name + string_format("_%p", inst_node) + "/trans_";
+  bool is_first_conv_head =
+      std::find(first_conv_nodes_.begin(),
+                first_conv_nodes_.end(),
+                head_node->AsArg().name) != first_conv_nodes_.end();
 
   // layout cast node
   if (head_type->layout() != inst_type->layout()) {
@@ -207,7 +210,7 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
   }
 
   // precision cast node
-  if (head_type->precision() != inst_type->precision()) {
+  if (head_type->precision() != inst_type->precision() && !is_first_conv_head) {
     cur_node = InsertCastBefore(
         "cast",
         name_prefix + "cast",
@@ -415,6 +418,49 @@ void MLUPostprocessPass::RecreateOp(Node* inst_node, SSAGraph* graph) {
   }
 }
 
+bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node, Node* inst) {
+  auto* block_desc =
+      static_cast<operators::SubgraphOp*>(inst->AsStmt().op().get())
+          ->GetSubBlock();
+  for (int op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+    CHECK(op_desc);
+    if (op_desc->Type() == "conv2d") {
+      for (auto& names : op_desc->inputs()) {
+        if (std::find(names.second.begin(),
+                      names.second.end(),
+                      arg_node->AsArg().name) != names.second.end()) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool MLUPostprocessPass::IsFirstConvNode(Node* arg_node) {
+  CHECK(arg_node->IsArg());
+  for (auto& inst : arg_node->outlinks) {
+    if (inst->AsStmt().op_type() == "subgraph") {
+      return IsFirstConvInSubgraph(arg_node, inst);
+    }
+  }
+  return false;
+}
+
+void MLUPostprocessPass::GatherFirstConvNodes(SSAGraph* graph) {
+  for (auto& node : graph->mutable_nodes()) {
+    if (!node.IsStmt()) continue;
+    if (node.AsStmt().op_type() == "feed") {
+      for (auto& out : node.outlinks) {
+        if (IsFirstConvNode(out)) {
+          first_conv_nodes_.insert(out->AsArg().name);
+        }
+      }
+    }
+  }
+}
+
 void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
   for (auto& node : graph->mutable_nodes()) {
     if (!node.IsStmt()) continue;
@@ -468,6 +514,10 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // arg_in and arg_out are assumed to be NHWC which user should be aware of.
   // Thus here we change these args' layout to NHWC
   ModifyLayout(graph.get());
+
+  if (lite::DeviceInfo::Global().UseFirstConv()) {
+    GatherFirstConvNodes(graph.get());
+  }
 
   // insert io_copy, layout and precision cast of subgraph's inputs and outputs
   for (auto& node : graph->mutable_nodes()) {
