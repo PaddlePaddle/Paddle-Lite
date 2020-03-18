@@ -1,6 +1,6 @@
 # PaddleJS Examples
 
-百度PaddleJS使用现成的 JavaScript 模型或转换 Paddle 模型以在浏览器中运行。
+百度PaddleJS使用现成的或者通过转换工具转换的 JavaScript 友好的paddle模型以在浏览器中运行，在浏览器中实现在线推理能力。
 
 ## 演示
 

@@ -2,7 +2,7 @@
 
 # Web
 
-Web project is an open source deep learning framework designed to work on web browser. It could run on nearly every browser with WebGL support.
+Paddle.js is an Web project for Baidu Paddle, which is an an open source deep learning framework designed to work on web browser. Load a pretrained paddle.js SavedModel or Paddle Hub module into the browser and run inference through Paddle.js. It could run on nearly every browser with WebGL support.
 
 ## Key Features
 
@@ -20,24 +20,93 @@ Web project could run TinyYolo model in less than 30ms on chrome. This is fast e
 * Mac: Chrome
 * Android: Baidu App and QQ Browser
 
-## How To Build & Deploy Demo
+### Supported operations
+
+Currently Paddle.js only supports a limited set of Paddle Ops. See the full list. If your model uses unsupported ops, the Paddle.js script will fail and produce a list of the unsupported ops in your model. Please file issues to let us know what ops you need support with.
+
+[Supported operations Pages](./src/factory/fshader/README.md)
+
+
+## Loading and running in the browser
+
+If the original model was a SavedModel, use paddle.load(). 
 
 ```bash
-cd web                        # enter root directory for web project
-npm i                         # install dependencies for npm
-mkdir dist                    # create deployment directory
-cd dist                       # enter deployment directory
-git clone https://github.com/DerekYangMing/Paddle-Web-Models.git # get models
-mv Paddle-Web-Models/separablemodel .                            # move models to specific directory
-cd ..                         # return to root directory for web project
-npm run testVideoDemo         # start demo
+
+	import * as tf from 'paddlejs';
+
+
+	let feed = io.process({
+        input: document.getElementById('image'),
+        params: {
+            gapFillWith: '#000', // What to use to fill the square part after zooming
+            targetSize: {
+                height: fw,
+                width: fh
+            },
+            targetShape: [1, 3, fh, fw], // Target shape changed its name to be compatible with previous logic
+            // shape: [3, 608, 608], // Preset sensor shape
+            mean: [117.001, 114.697, 97.404], // Preset mean
+            // std: [0.229, 0.224, 0.225]  // Preset std
+        }
+    });
+
+	const MODEL_CONFIG = {
+        dir: `/${path}/`, // model URL
+        main: 'model.json', // main graph
+    };
+	
+	const paddle = new Paddle({
+        urlConf: MODEL_CONFIG,
+        options: {
+            multipart: true,
+            dataType: 'binary',
+            options: {
+                fileCount: 1, // How many model have been cut
+                getFileName(i) { 
+                    return 'chunk_' + i + '.dat';
+                }
+            }
+        }
+    });
+
+    model = await paddle.load();
+
+    // 
+	let inst = model.execute({
+        input: feed
+    });
+
+    // There should be a fetch execution call or a fetch output
+    let result = await inst.read();
+
+
 ```
 
-## How To Preview Demo
+Please see feed documentation for details.
 
-1. Open chrome with url: https://localhost:8123/
-2. Start demo by pressing the 【start detection】 button.
-3. Ensure at least one face is recorded by the camera. The face detection rectangle should be displayed if everything goes fine.
+Please see fetch documentation for details.
+
+
+## Run the converter script provided by the pip package:
+
+The converter expects a Paddlejs SavedModel, Paddle Hub module, Tpaddle.js JSON format for input.
+
+
+## Web-friendly format
+
+The conversion script above produces 2 types of files:
+
+ - model.json (the dataflow graph and weight manifest file)
+ - group1-shard\*of\* (collection of binary weight files)
+
+
+## Preview Demo
+
+Paddle.js has some pre-converted models to Paddle.js format .There are some demos in the following URL, open a browser page with the demo.
+
+[Supported Demo Pages](./examples/README.md)
+
 
 ## Feedback and Community Support
 
