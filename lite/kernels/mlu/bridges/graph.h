@@ -35,7 +35,7 @@ class Graph {
   Graph() { CNML_CALL(cnmlCreateFusionOp(&fusion_op_)); }
 
   ~Graph() {
-    void FreeConstData();
+    FreeConstData();
     CNML_CALL(cnmlDestroyFusionOp(&fusion_op_));
     for (auto op : ops_) {
       CNML_CALL(cnmlDestroyBaseOp(&op));
@@ -129,10 +129,6 @@ class Graph {
           nodes_[tensor_name]->mlu_tensor(), alloc_data, false));
     } else if (fp_type_ == CNML_DATA_FLOAT16) {
       void* data_fp16 = RegisterConstData<::paddle::lite::fluid::float16>(len);
-      //        for (size_t i = 0; i < len; ++i) {
-      //            static_cast<::paddle::lite::fluid::float16*>(data_fp16)[i]
-      //                = static_cast<::paddle::lite::fluid::float16>(data[i]);
-      //        }
       CNRT_CALL(
           cnrtCastDataType(const_cast<void*>(static_cast<const void*>(data)),
                            CNRT_FLOAT32,
