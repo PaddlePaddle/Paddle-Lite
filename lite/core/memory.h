@@ -76,6 +76,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_MLU
+    case TARGET(kMLU):
+      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
+      break;
+#endif
 #ifdef LITE_WITH_FPGA
     case TARGET(kFPGA):
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
