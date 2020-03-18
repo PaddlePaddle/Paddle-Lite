@@ -65,8 +65,10 @@ rm ./lite/api/paddle_use_ops.h
   --arm_os=android \
   --arm_abi=armv8 \
   --arm_lang=gcc \
-  build_test_arm_opencl
+  build_opencl
 ```
+
+注：如果要调试cl kernel，假设已经完成上述脚本编译(已生成cmake文件)。调试只需要修改`./lite/backends/opencl/cl_kernel/`下对应的kernel文件，保存后在项目根目录执行`python ./lite/tools/cmake_tools/gen_opencl_code.py ./lite/backends/opencl/cl_kernel ./lite/backends/opencl/opencl_kernels_source.cc`，该命令会自动将修改后的cl kernel文件打包到 .so 中或者对应单测可执行文件中。
 
 ### 编译产物说明
 
