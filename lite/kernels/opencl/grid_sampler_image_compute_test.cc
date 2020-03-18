@@ -106,7 +106,7 @@ TEST(grid_samler_image2d, compute) {
   const int n = 1;
   const int c = 2;
   const int h = 4;
-  const int w = 3;
+  const int w = 4;
 #endif  // GRID_FP16_LOOP_TEST
 
           LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
