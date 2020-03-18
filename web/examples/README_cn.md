@@ -29,7 +29,7 @@ npm run tinyYolo              # 启动 tinyYolo 在线推理服务
 
 ## 如何预览 demo
 
-1. 在浏览器中打开url: https://localhost:8123/
+1. 在浏览器中打开url: https://localhost:端口号/
 2. 点击【开始检测】按钮。
 3. 将人脸对准摄像头，没有问题的话，可以正常检测到人脸。
 
