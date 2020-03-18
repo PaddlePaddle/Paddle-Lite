@@ -1,11 +1,59 @@
 [中文版](./README_cn.md)
-# PaddleJS Examples
+# PaddleJS odel loader
 
-Baidu paddlejs uses the ready-made JavaScript model or transforms the paddle model to run in the browser.
+Baidu paddlejs uses this loader  to get the model to the browser. The model loader can load browser friendly JSON file types and binary file types, supports single file loading and file fragment loading, and Jida uses the characteristics of browser parallel request to load reasoning model.
 
 ## Demonstration
 
-At present, tiny Yolo model can run within 30ms for web project, which is enough for general real-time scenarios.
+Create the paddy object, specify the add model address, add configuration parameters, and load the model through the load method.
+
+``bash
+
+const MODEL_ADDRESS = {
+    dir: `/${path}/`, // 存放模型的文件夹
+    main: 'model.json', // 主文件
+};
+
+const paddle = new Paddle({
+	urlConf: MODEL_ADDRESS,
+	options: {
+	    multipart: true,
+	    dataType: 'binary',
+	    options: {
+	        fileCount: n, // 切成了n文件
+	        getFileName(i) { // 获取第i个文件的名称
+	            return 'chunk_0.dat';
+	        }
+	    }
+	}
+});
+
+model = await paddle.load();
+
+```
+## Parameter description
+
+
+| 表格      | 参数    | 描述     |
+| ---------- | :-----------:  | :-----------: |
+| MODEL_ADDRESS   |  dir    | 存放模型的文件夹    |
+| ---------- | :-----------:  | :-----------: |
+| MODEL_ADDRESS    | main     | 主文件     |
+
+| ---------- | :-----------:  | :-----------: |
+| options    | multipart     | 是否分片获取     |
+| ---------- | :-----------:  | :-----------: |
+| options    | dataType    | binary/json     |
+
+| ---------- | :-----------:  | :-----------: |
+| options    | fileCount     | 分片数量     |
+
+| ---------- | :-----------:  | :-----------: |
+| options    | ietest     | 是否开启测试输出     |
+
+| ---------- | :-----------:  | :-----------: |
+
+
 
 ## Browser coverage
 
@@ -13,24 +61,4 @@ At present, tiny Yolo model can run within 30ms for web project, which is enough
 * Mac: Chrome
 * Android: Baidu App and QQ Browser
 
-## Building deployment
 
-```bash
-cd web                        # Go to root
-npm i                         # Installation dependency
-mkdir dist                    # Create resource directory
-cd dist                       # Enter resource directory
-git clone https://github.com/DerekYangMing/Paddle-Web-Models.git # Get models
-mv Paddle-Web-Models/separablemodel .                            # Move the model to the designated location
-cd ..                         # Root directory
-npm run tinyYolo              # run tinyYolo 
-```
-
-## Preview
-
-1. Open url: https://localhost:端口号/
-2. Click the upload picture button。
-
-## Result
-
-![image](./tinyYolo/demoshow.png)

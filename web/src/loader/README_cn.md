@@ -1,38 +1,60 @@
 # PaddleJS Examples
 
-百度PaddleJS使用现成的 JavaScript 模型或转换 Paddle 模型以在浏览器中运行。
+百度 PaddleJS 的使用这个加载器进行模型获取到浏览器。模型加载器可以加载浏览器友好的json文件类型和二进制文件类型，支持单文件加载和文件分片加载，吉大的利用浏览器并行请求的特性加载推理模型。
 
-## 演示
+## 使用方法
 
-目前Web项目运行TinyYolo模型可以达到30ms以内，对于一般的实时场景已经足够应对。
+创建Paddle对象，指定加模型地址，添加配置参数，通过load方法加载模型。
 
-### 模块化
+``bash
+const MODEL_CONFIG = {
+    dir: `/${path}/`, // 存放模型的文件夹
+    main: 'model.json', // 主文件
+};
+
+const paddle = new Paddle({
+	urlConf: MODEL_CONFIG,
+	options: {
+	    multipart: true,
+	    dataType: 'binary',
+	    options: {
+	        fileCount: n, // 切成了n文件
+	        getFileName(i) { // 获取第i个文件的名称
+	            return 'chunk_0.dat';
+	        }
+	    }
+	}
+});
+
+model = await paddle.load();
+
+```
+## 参数说明
+
+
+| 表格      | 参数    | 描述     |
+| ---------- | :-----------:  | :-----------: |
+| MODEL_ADDRESS   |  dir    | 存放模型的文件夹    |
+| ---------- | :-----------:  | :-----------: |
+| MODEL_ADDRESS    | main     | 主文件     |
+
+| ---------- | :-----------:  | :-----------: |
+| options    | multipart     | 是否分片获取     |
+| ---------- | :-----------:  | :-----------: |
+| options    | dataType    | binary/json     |
+
+| ---------- | :-----------:  | :-----------: |
+| options    | fileCount     | 分片数量     |
+
+| ---------- | :-----------:  | :-----------: |
+| options    | ietest     | 是否开启测试输出     |
+
+| ---------- | :-----------:  | :-----------: |
+
+
 
 ## 浏览器覆盖面
 
 * PC: Chrome
 * Mac: Chrome
 * Android: Baidu App and QQ Browser
-
-## 构建部署
-
-```bash
-cd web                        # 进入根目录
-npm i                         # 安装依赖
-mkdir dist                    # 创建资源目录
-cd dist                       # 进入资源目录
-git clone https://github.com/DerekYangMing/Paddle-Web-Models.git # 获取模型
-mv Paddle-Web-Models/separablemodel .                            # 移动模型到制定地点
-cd ..                         # 返回根目录
-npm run tinyYolo              # 启动 tinyYolo 在线推理服务
-```
-
-## 如何预览 demo
-
-1. 在浏览器中打开url: https://localhost:端口号/
-2. 点击【开始检测】按钮。
-3. 将人脸对准摄像头，没有问题的话，可以正常检测到人脸。
-
-## 效果
-
-![image](./tinyYolo/demoshow.png)
