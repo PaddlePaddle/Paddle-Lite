@@ -1,3 +1,4 @@
+[中文版](./README_cn.md)
 # PaddleJS Examples
 
 Baidu paddlejs uses the ready-made JavaScript model or transforms the paddle model to run in the browser.
