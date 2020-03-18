@@ -232,6 +232,9 @@ void TestNormalCase(const std::vector<int64_t>& x_dims,
 TEST(mul_grad_arm, compute) {
   LOG(INFO) << "Test Mul grad";
   DeviceInfo::Init();
+  TestNormalCase({1, 3}, {3, 2}, 1, 1);
+  TestNormalCase({3, 2}, {2, 1}, 1, 1);
+  TestNormalCase({3, 1}, {1, 7}, 1, 1);
   TestNormalCase({2, 3}, {3, 2}, 1, 1);
   TestNormalCase({4, 5}, {5, 4}, 1, 1);
   TestNormalCase({4, 5}, {5, 4, 3, 2}, 1, 1);

@@ -74,45 +74,73 @@ void MulGradCompute::Run() {
   // (m, n), (n, k) -> (m, k)
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (param.x_grad) {
-    paddle::lite::arm::math::sgemm(false,
-                                   true,           // is_transB,
-                                   m_,             // M
-                                   k_,             // N
-                                   n_,             // K
-                                   1.0f,           // alpha
-                                   out_grad_data,  // A
-                                   n_,             // lda
-                                   y_data,         // B
-                                   n_,             // ldb
-                                   0.f,            // beta
-                                   x_grad_data,    // C
-                                   k_,             // ldc
-                                   NULL,           // bias
-                                   false,          // is_bias
-                                   act_param,      // act_param
-                                   &ctx);          // ctx
+    if (m_ == 1) {
+      lite::arm::math::sgemv(y_data,
+                             out_grad_data,
+                             x_grad_data,
+                             false,
+                             k_,  // M
+                             n_,  // N
+                             false,
+                             nullptr,
+                             false,
+                             lite_api::ActivationType::kIndentity,
+                             &ctx);
+    } else {
+      paddle::lite::arm::math::sgemm(false,
+                                     true,           // is_transB,
+                                     m_,             // M
+                                     k_,             // N
+                                     n_,             // K
+                                     1.0f,           // alpha
+                                     out_grad_data,  // A
+                                     n_,             // lda
+                                     y_data,         // B
+                                     n_,             // ldb
+                                     0.f,            // beta
+                                     x_grad_data,    // C
+                                     k_,             // ldc
+                                     NULL,           // bias
+                                     false,          // is_bias
+                                     act_param,      // act_param
+                                     &ctx);          // ctx
+    }
   }
 
   // x^T * out_grad = y_grad
   // (k, m) (m, n) -> (k, n)
   if (param.y_grad) {
-    paddle::lite::arm::math::sgemm(true,           // is_transA
-                                   false,          // is_transB,
-                                   k_,             // M
-                                   n_,             // N
-                                   m_,             // K
-                                   1.0f,           // alpha
-                                   x_data,         // A
-                                   k_,             // lda
-                                   out_grad_data,  // B
-                                   n_,             // ldb
-                                   0.f,            // beta
-                                   y_grad_data,    // C
-                                   n_,             // ldc
-                                   NULL,           // bias
-                                   false,          // is_bias
-                                   act_param,      // act_param
-                                   &ctx);          // ctx
+    if (n_ == 1) {
+      lite::arm::math::sgemv(x_data,
+                             out_grad_data,
+                             y_grad_data,
+                             true,
+                             k_,  // M
+                             m_,  // N
+                             false,
+                             nullptr,
+                             false,
+                             lite_api::ActivationType::kIndentity,
+                             &ctx);
+    } else {
+      paddle::lite::arm::math::sgemm(true,           // is_transA
+                                     false,          // is_transB,
+                                     k_,             // M
+                                     n_,             // N
+                                     m_,             // K
+                                     1.0f,           // alpha
+                                     x_data,         // A
+                                     k_,             // lda
+                                     out_grad_data,  // B
+                                     n_,             // ldb
+                                     0.f,            // beta
+                                     y_grad_data,    // C
+                                     n_,             // ldc
+                                     NULL,           // bias
+                                     false,          // is_bias
+                                     act_param,      // act_param
+                                     &ctx);          // ctx
+    }
   }
 }
 
