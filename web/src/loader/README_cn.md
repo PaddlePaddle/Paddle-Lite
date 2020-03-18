@@ -33,23 +33,12 @@ model = await paddle.load();
 
 
 | 表格      | 参数    | 描述     |
-| ---------- | :-----------:  | :-----------: |
-| MODEL_ADDRESS   |  dir    | 存放模型的文件夹    |
-| ---------- | :-----------:  | :-----------: |
+| MODEL_ADDRESS   |  dir    | 存放模型的文件夹 |
 | MODEL_ADDRESS    | main     | 主文件     |
-
-| ---------- | :-----------:  | :-----------: |
-| options    | multipart     | 是否分片获取     |
-| ---------- | :-----------:  | :-----------: |
-| options    | dataType    | binary/json     |
-
-| ---------- | :-----------:  | :-----------: |
+| options    | multipart     | 是否分片获取 |
+| options    | dataType    | binary/json   |
 | options    | fileCount     | 分片数量     |
-
-| ---------- | :-----------:  | :-----------: |
-| options    | ietest     | 是否开启测试输出     |
-
-| ---------- | :-----------:  | :-----------: |
+| options    | ietest     | 是否开启测试输出 |
 
 
 
