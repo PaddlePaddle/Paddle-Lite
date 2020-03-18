@@ -56,9 +56,16 @@ class DeviceInfo {
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
 #ifdef LITE_WITH_MLU
-  void SetMLURunMode(lite_api::MLUCoreVersion core_version, int core_number);
+  void SetMLURunMode(lite_api::MLUCoreVersion core_version,
+                     int core_number,
+                     bool use_first_conv,
+                     const std::vector<float>& mean_vec,
+                     const std::vector<float>& std_vec);
   cnmlCoreVersion_t MLUCoreVersion();
   int MLUCoreNumber();
+  bool UseFirstConv();
+  const std::vector<float>& MeanVec() const;
+  const std::vector<float>& StdVec() const;
 #endif
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
@@ -114,6 +121,9 @@ class DeviceInfo {
 #ifdef LITE_WITH_MLU
   static thread_local cnmlCoreVersion_t mlu_core_version_;
   static thread_local int mlu_core_number_;
+  static thread_local bool use_first_conv_;
+  static thread_local std::vector<float> mean_vec_;
+  static thread_local std::vector<float> std_vec_;
 #endif
 
   void SetDotInfo(int argc, ...);
