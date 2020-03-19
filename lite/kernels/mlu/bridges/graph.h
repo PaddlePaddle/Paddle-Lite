@@ -26,7 +26,7 @@
 #define PRINT_HW_TIME false
 
 #if PRINT_HW_TIME
-#include <mutex>
+#include <mutex>  //NOLINT
 #endif
 
 namespace paddle {
