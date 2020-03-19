@@ -64,6 +64,7 @@ add_kernel(search_fc_compute_x86 X86 basic SRCS search_fc_compute.cc DEPS ${lite
 
 add_kernel(matmul_compute_x86 X86 basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps} blas)
 add_kernel(yolo_box_compute_x86 X86 basic SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc DEPS ${lite_kernel_deps})
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS conv_compute_x86)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS mul_compute_x86)
@@ -104,3 +105,5 @@ lite_cc_test(test_sequence_arithmetic_compute_x86 SRCS sequence_arithmetic_compu
 lite_cc_test(test_leaky_relu_compute_x86 SRCS leaky_relu_compute_test.cc DEPS activation_compute_x86)
 lite_cc_test(test_yolo_box_compute_x86 SRCS yolo_box_compute_test.cc DEPS
   yolo_box_compute_x86)
+lite_cc_test(test_nearest_interp_comute_x86 SRCS interpolate_compute_test.cc
+  DEPS interpolate_compute_x86)
