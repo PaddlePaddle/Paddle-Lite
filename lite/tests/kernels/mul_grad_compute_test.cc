@@ -137,7 +137,7 @@ class MulGradTester {
     }
   }
 
-  void check_grad(float delta2, float max_grad_delta2) {
+  void check_grad() {
     std::vector<int64_t> out_shape;
     for (int i = 0; i < x_num_col_dims_; i++) {
       out_shape.push_back(x_dims_[i]);
@@ -227,20 +227,20 @@ class MulGradTester {
       EXPECT_NEAR(x_grad[i], sum / delta, max_grad_delta);
     }
 
-    //   for (int i = 0; i < y_dims_.production(); i++) {
-    //     for (int j = 0; j < y_dims_.production(); j++) {
-    //       y_delta[j] = i == j ? y[j] + delta : y[j];
-    //     }
-    //     this->run_forward(
-    //         &delta_param_, &delta_kernel_, x, y_delta, out_delta.data());
-    //     float sum = 0;
-    //     for (int j = 0; j < out_dims_.production(); j++) {
-    //       sum += out_delta[j] - out[j];
-    //     }
-    //     LOG(INFO) << "y_grad_" << i << ": " << y_grad[i];
-    //     LOG(INFO) << "y_grad_num_" << i << ": " << sum / delta;
-    //     EXPECT_NEAR(y_grad[i], sum / delta, max_grad_delta);
-    //   }
+    for (int i = 0; i < y_dims_.production(); i++) {
+      for (int j = 0; j < y_dims_.production(); j++) {
+        y_delta[j] = i == j ? y[j] + delta : y[j];
+      }
+      this->run_forward(
+          &delta_param_, &delta_kernel_, x, y_delta, out_delta.data());
+      float sum = 0;
+      for (int j = 0; j < out_dims_.production(); j++) {
+        sum += out_delta[j] - out[j];
+      }
+      LOG(INFO) << "y_grad_" << i << ": " << y_grad[i];
+      LOG(INFO) << "y_grad_num_" << i << ": " << sum / delta;
+      EXPECT_NEAR(y_grad[i], sum / delta, max_grad_delta);
+    }
   }
 
  private:
@@ -267,27 +267,27 @@ void TestNormalCase(const std::vector<int64_t>& x_dims,
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;
-  tester->check_grad(delta, max_grad_delta);
+  tester->check_grad();
 }
 
 TEST(mul_grad_arm, compute) {
   LOG(INFO) << "Test Mul grad";
   DeviceInfo::Init();
-  // TestNormalCase({1, 3}, {3, 2}, 1, 1);
+  TestNormalCase({1, 3}, {3, 2}, 1, 1);
   TestNormalCase({3, 2}, {2, 1}, 1, 1);
-  // TestNormalCase({3, 1}, {1, 7}, 1, 1);
-  // TestNormalCase({2, 3}, {3, 2}, 1, 1);
-  // TestNormalCase({4, 5}, {5, 4}, 1, 1);
-  // TestNormalCase({4, 5}, {5, 4, 3, 2}, 1, 1);
-  // TestNormalCase({3, 4}, {2, 2, 3}, 1, 2);
-  // TestNormalCase({4, 20}, {5, 4, 3, 2}, 1, 2);
-  // TestNormalCase({4, 60}, {5, 4, 3, 2}, 1, 3);
-  // TestNormalCase({2, 3, 4, 5}, {60, 4}, 1, 1);
-  // TestNormalCase({2, 3, 4, 5}, {20, 4}, 2, 1);
-  // TestNormalCase({2, 3, 4, 5}, {5, 4}, 3, 1);
-  // TestNormalCase({2, 3, 4, 5}, {60, 3, 4, 5}, 1, 1);
-  // TestNormalCase({2, 3, 4, 5}, {4, 5, 6, 2}, 2, 2);
-  // TestNormalCase({2, 3, 4, 5}, {5, 1, 4, 2}, 3, 2);
+  TestNormalCase({3, 1}, {1, 7}, 1, 1);
+  TestNormalCase({2, 3}, {3, 2}, 1, 1);
+  TestNormalCase({4, 5}, {5, 4}, 1, 1);
+  TestNormalCase({4, 5}, {5, 4, 3, 2}, 1, 1);
+  TestNormalCase({3, 4}, {2, 2, 3}, 1, 2);
+  TestNormalCase({4, 20}, {5, 4, 3, 2}, 1, 2);
+  TestNormalCase({4, 60}, {5, 4, 3, 2}, 1, 3);
+  TestNormalCase({2, 3, 4, 5}, {60, 4}, 1, 1);
+  TestNormalCase({2, 3, 4, 5}, {20, 4}, 2, 1);
+  TestNormalCase({2, 3, 4, 5}, {5, 4}, 3, 1);
+  TestNormalCase({2, 3, 4, 5}, {60, 3, 4, 5}, 1, 1);
+  TestNormalCase({2, 3, 4, 5}, {4, 5, 6, 2}, 2, 2);
+  TestNormalCase({2, 3, 4, 5}, {5, 1, 4, 2}, 3, 2);
 }
 
 }  // namespace arm

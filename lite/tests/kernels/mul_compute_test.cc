@@ -129,14 +129,9 @@ TEST(Mul, precision) {
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #else
   return;
 #endif
-  TestMul({1, 3}, {3, 2}, 1, 1, place, abs_error);
-  TestMul({3, 2}, {2, 1}, 1, 1, place, abs_error);
-  TestMul({3, 1}, {1, 7}, 1, 1, place, abs_error);
   TestMul({4, 5}, {5, 4}, 1, 1, place, abs_error);
   TestMul({4, 5}, {5, 4, 3, 2}, 1, 1, place, abs_error);
   TestMul({4, 20}, {5, 4, 3, 2}, 1, 2, place, abs_error);
