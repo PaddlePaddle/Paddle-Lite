@@ -664,15 +664,6 @@ void resize(const uint8_t* src,
     memcpy(dst, src, sizeof(uint8_t) * size);
     return;
   }
-  double scale_x = static_cast<double>(srcw) / dstw;
-  double scale_y = static_cast<double>(srch) / dsth;
-
-  int* buf = new int[dstw * 2 + dsth * 3];
-
-  int* xofs = buf;
-  int* yofs = buf + dstw;
-  int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw + dsth);
-  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + 2 * dstw + dsth);
 
   int w_out = dstw;
   int w_in = srcw;
@@ -698,6 +689,14 @@ void resize(const uint8_t* src,
     w_out = dstw * 4;
     num = 4;
   }
+  double scale_x = static_cast<double>(srcw) / dstw;
+  double scale_y = static_cast<double>(srch) / dsth;
+
+  int* buf = new int[dstw * 2 + dsth * 3];
+  int* xofs = buf;
+  int* yofs = buf + dstw;
+  int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw + dsth);
+  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + 2 * dstw + dsth);
 
   compute_xy(
       srcw, srch, dstw, orih, num, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
