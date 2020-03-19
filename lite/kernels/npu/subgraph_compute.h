@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -41,14 +42,17 @@ class SubgraphEngine : public subgraph::Engine {
  protected:
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
+  bool InputShapeChanged() override;
 
-  std::string model_name_;
-  hiai::AiContext model_context_;
-  std::vector<std::string> device_inames_;
-  std::vector<std::string> device_onames_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_;
-  std::unique_ptr<hiai::AiModelMngerClient> device_program_{nullptr};
+  std::string model_name_{"model.om"};
+  std::vector<std::vector<int64_t>> inputs_shape_{};
+  std::map<std::vector<std::vector<int64_t>>,
+           std::shared_ptr<hiai::AiModelMngerClient>>
+      device_program_map_{};
+  std::vector<std::string> device_inames_{};
+  std::vector<std::string> device_onames_{};
+  std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_{};
+  std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_{};
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kAny)> {
