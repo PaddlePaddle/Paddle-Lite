@@ -31,7 +31,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto* scope = op->scope();
   VLOG(3) << "[MLU] Converting " << op_info->Type() << "... ";
 
-  // Get input, filter and op attributes
+  // get input, filter and op attributes
   const auto input_var_name = op_info->Input("Input").front();
   const auto& input_dims_nhwc =
       scope->FindVar(input_var_name)->GetMutable<Tensor>()->dims();
