@@ -101,7 +101,7 @@ void RunModel(std::string model_dir,
   // 5. Get output
   std::cout << "\n====== output summary ====== " << std::endl;
   size_t output_tensor_num = predictor->GetOutputNames().size();
-  std::cout << "output tesnor num:" << output_tensor_num << std::endl;
+  std::cout << "output tensor num:" << output_tensor_num << std::endl;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
     std::unique_ptr<const paddle::lite_api::Tensor> output_tensor =
