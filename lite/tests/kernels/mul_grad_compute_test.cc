@@ -189,12 +189,20 @@ class MulGradTester {
 
     for (int i = 0; i < x_dims_.production(); i++) {
       LOG(INFO) << "--------------------";
+      LOG(INFO) << "delta: " << delta;
       for (int j = 0; j < x_dims_.production(); j++) {
-        x_delta[j] = i == j ? x[j] + delta : x[j];
+        // x_delta[j] = i == j ? x[j] + delta : x[j];
+
+        if (i == j) {
+          x_delta[j] = x[j] + delta;
+        } else {
+          x_delta[j] = x[j];
+        }
       }
       this->run_forward(
           &delta_param_, &delta_kernel_, x_delta, y, out_delta.data());
       for (int j = 0; j < x_dims_.production(); j++) {
+        LOG(INFO) << "x_" << j << ": " << x[j];
         LOG(INFO) << "x_delta_" << j << ": " << x_delta[j];
       }
 
