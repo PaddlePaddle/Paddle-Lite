@@ -20,7 +20,6 @@ function print_usage {
 # readonly variables with default value
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-                               -DWITH_PYTHON=OFF \
                                -DLITE_WITH_ARM=OFF"
 
 readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -71,6 +70,7 @@ function build_mlu {
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
         -DLITE_WITH_MLU=ON \
+        -DLITE_WITH_PYTHON=ON \
         -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
         -DNEUWARE_HOME=${NEUWARE_HOME}

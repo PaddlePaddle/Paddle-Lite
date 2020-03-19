@@ -31,9 +31,9 @@
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/core/tensor.h"
+// #include "lite/api/paddle_use_kernels.h"
+// #include "lite/api/paddle_use_ops.h"
+// #include "lite/core/tensor.h"
 
 namespace py = pybind11;
 
@@ -49,6 +49,7 @@ using lite_api::TargetType;
 using lite_api::PrecisionType;
 using lite_api::DataLayoutType;
 using lite_api::Place;
+using lite_api::MLUCoreVersion;
 using lite::LightPredictorImpl;
 
 #ifndef LITE_ON_TINY_PUBLISH
@@ -61,6 +62,7 @@ static void BindLiteMobileConfig(py::module *m);
 static void BindLitePowerMode(py::module *m);
 static void BindLitePlace(py::module *m);
 static void BindLiteTensor(py::module *m);
+static void BindLiteMLUCoreVersion(py::module *m);
 
 void BindLiteApi(py::module *m) {
   BindLiteCxxConfig(m);
@@ -68,6 +70,7 @@ void BindLiteApi(py::module *m) {
   BindLitePowerMode(m);
   BindLitePlace(m);
   BindLiteTensor(m);
+  BindLiteMLUCoreVersion(m);
 #ifndef LITE_ON_TINY_PUBLISH
   BindLiteCxxPredictor(m);
 #endif
@@ -113,6 +116,8 @@ void BindLiteCxxConfig(py::module *m) {
   cxx_config.def("set_use_firstconv", &CxxConfig::set_use_firstconv)
       .def("set_mean", &CxxConfig::set_mean)
       .def("set_std", &CxxConfig::set_std)
+      .def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
+      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number);
 #endif
 }
 
@@ -145,6 +150,12 @@ void BindLitePowerMode(py::module *m) {
       .value("LITE_POWER_RAND_LOW", PowerMode::LITE_POWER_RAND_LOW);
 }
 
+void BindLiteMLUCoreVersion(py::module *m) {
+  py::enum_<MLUCoreVersion>(*m, "MLUCoreVersion")
+      .value("LITE_MLU_220", MLUCoreVersion::MLU_220)
+      .value("LITE_MLU_270", MLUCoreVersion::MLU_270);
+}
+
 void BindLitePlace(py::module *m) {
   // TargetType
   py::enum_<TargetType>(*m, "TargetType")
@@ -155,9 +166,7 @@ void BindLitePlace(py::module *m) {
       .value("OpenCL", TargetType::kOpenCL)
       .value("FPGA", TargetType::kFPGA)
       .value("NPU", TargetType::kNPU)
-#ifdef LITE_WITH_MLU
       .value("MLU", TargetType::kMLU)
-#endif
       .value("Any", TargetType::kAny);
 
   // PrecisionType
