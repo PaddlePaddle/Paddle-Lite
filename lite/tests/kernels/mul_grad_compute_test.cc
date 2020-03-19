@@ -249,7 +249,7 @@ TEST(mul_grad_arm, compute) {
   LOG(INFO) << "Test Mul grad";
   DeviceInfo::Init();
   // TestNormalCase({1, 3}, {3, 2}, 1, 1);
-  // TestNormalCase({3, 2}, {2, 1}, 1, 1);
+  TestNormalCase({3, 2}, {2, 1}, 1, 1);
   // TestNormalCase({3, 1}, {1, 7}, 1, 1);
   // TestNormalCase({2, 3}, {3, 2}, 1, 1);
   // TestNormalCase({4, 5}, {5, 4}, 1, 1);
@@ -269,5 +269,5 @@ TEST(mul_grad_arm, compute) {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-USE_LITE_KERNEL(square, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(square_grad, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(mul, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(mul_grad, kARM, kFloat, kNCHW, def);
