@@ -137,7 +137,7 @@ class MulGradTester {
     }
   }
 
-  void check_grad(float delta, float max_grad_delta) {
+  void check_grad(float delta2, float max_grad_delta2) {
     std::vector<int64_t> out_shape;
     for (int i = 0; i < x_num_col_dims_; i++) {
       out_shape.push_back(x_dims_[i]);
@@ -187,9 +187,12 @@ class MulGradTester {
     std::vector<float> y_delta(y_dims_.production());
     std::vector<float> out_delta(out_dims_.production());
 
+    float delta = 0.001;
+    float max_grad_delta = 0.005;
     for (int i = 0; i < x_dims_.production(); i++) {
       LOG(INFO) << "--------------------";
       LOG(INFO) << "delta: " << delta;
+      LOG(INFO) << "max_grad_delta: " << max_grad_delta;
       for (int j = 0; j < x_dims_.production(); j++) {
         // x_delta[j] = i == j ? x[j] + delta : x[j];
 
