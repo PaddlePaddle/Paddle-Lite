@@ -775,14 +775,26 @@ function test_opencl {
     local adb="adb -s ${device}"
     $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
 
-
-    echo "test file: ${TESTS_FILE}"
+    # tests in skip_list will be skiped
+    local skip_list=("test_grid_sampler_image_opencl")
+    local to_skip=0
     # opencl test should be marked with `opencl`
     opencl_test_mark="opencl"
 
     for _test in $(cat $TESTS_FILE); do
+        # tell if this test is marked with `opencl`
         if [[ $_test == *$opencl_test_mark* ]]; then
-            test_arm_android $_test $device
+            # tests in `skip_list` will be skiped
+            to_skip=0
+            for skip_name in ${skip_list[@]}; do
+                if [ $skip_name == $_test ]; then
+                    echo "to skip " $skip_name
+                    to_skip=1
+                fi
+            done
+            if [ $to_skip -eq 0 ]; then
+                test_arm_android $_test $device
+            fi
         fi
     done
 
