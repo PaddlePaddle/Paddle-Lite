@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int LessThanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,10 +30,15 @@ int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NPU] Converting " + op_type + "...";
 
-  // Get input and output vars and op attributes
+  // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x = scope->FindMutableTensor(x_name);
+  auto x = scope->FindTensor(x_name);
   auto x_dims = x->dims();
+
+  auto y_name = op_info->Input("Y").front();
+  auto y = scope->FindTensor(y_name);
+  auto y_dims = y->dims();
+
   auto out_name = op_info->Output("Out").front();
 
   // X node
@@ -44,11 +49,21 @@ int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Add(x_name, *x);
   }
 
-  // Sqrt node
-  auto sqrt_node = graph->Add<ge::op::Sqrt>(out_name);
-  auto sqrt_op = sqrt_node->data<ge::op::Sqrt>();
-  sqrt_op->set_input_x(*x_node->data());
-  return SUCCESS;
+  // Y node
+  std::shared_ptr<Node> y_node = nullptr;
+  if (graph->Has(y_name)) {
+    y_node = graph->Get(y_name);
+  } else {
+    y_node = graph->Add(y_name, *y);
+  }
+
+  // add node
+  auto less_than_node = graph->Add<ge::op::Less>(out_name, PRECISION(kBool));
+  auto less_than_op = less_than_node->data<ge::op::Less>();
+  less_than_op->set_input_x1(*x_node->data());
+  less_than_op->set_input_x2(*y_node->data());
+
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace npu
@@ -56,6 +71,6 @@ int SqrtConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(sqrt,
+REGISTER_SUBGRAPH_BRIDGE(less_than,
                          kNPU,
-                         paddle::lite::subgraph::npu::SqrtConverter);
+                         paddle::lite::subgraph::npu::LessThanConverter);

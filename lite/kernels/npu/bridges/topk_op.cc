@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
-int SquareConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int TopkConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -32,9 +32,11 @@ int SquareConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x = scope->FindMutableTensor(x_name);
-  auto x_dims = x->dims();
+  auto x = scope->FindTensor(x_name);
+
   auto out_name = op_info->Output("Out").front();
+
+  int k = op_info->GetAttr<int>("k");
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
@@ -44,10 +46,16 @@ int SquareConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Add(x_name, *x);
   }
 
-  // Square node
-  auto square_node = graph->Add<ge::op::Square>(out_name);
-  auto square_op = square_node->data<ge::op::Square>();
-  square_op->set_input_x(*x_node->data());
+  // k node
+  std::shared_ptr<Node> k_node = graph->Add<int>(out_name + "/k", k);
+
+  // topk node
+  auto topk_node = graph->Add<ge::op::TopK>(out_name);
+  auto topk_op = topk_node->data<ge::op::TopK>();
+  topk_op->set_input_x(*x_node->data());
+  topk_op->set_input_k(*k_node->data());
+  topk_op->set_attr_format(0);
+
   return SUCCESS;
 }
 
@@ -56,6 +64,6 @@ int SquareConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(square,
+REGISTER_SUBGRAPH_BRIDGE(top_k,
                          kNPU,
-                         paddle::lite::subgraph::npu::SquareConverter);
+                         paddle::lite::subgraph::npu::TopkConverter);

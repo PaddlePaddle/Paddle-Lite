@@ -85,7 +85,7 @@ TEST(WriteToArray, precision) {
   Place place;
   float abs_error = 1e-5;
 #ifdef LITE_WITH_ARM
-  place = {TARGET(kARM), PRECISION(kAny)};
+  place = TARGET(kARM);
 #else
   return;
 #endif

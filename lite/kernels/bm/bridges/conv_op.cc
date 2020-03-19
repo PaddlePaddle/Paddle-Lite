@@ -55,7 +55,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       const_cast<const int64_t*>(&output_dims.data()[0]);
   std::vector<int32_t> i_input_shape_data(input_dims.size());
   std::vector<int32_t> i_output_shape_data(output_dims.size());
-
   for (size_t i = 0; i < input_dims.size(); i++) {
     i_input_shape_data[i] = static_cast<int32_t>(input_shape_data[i]);
   }

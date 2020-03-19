@@ -15,6 +15,7 @@
 #pragma once
 #include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/logging.h"
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
@@ -90,6 +91,9 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperMlu::MemcpySync(dst, src, size, dir);
       break;
 #endif
+    default:
+      LOG(FATAL)
+          << "The copy function of this target has not been implemented yet.";
   }
 }
 
@@ -98,13 +102,17 @@ class Buffer {
  public:
   Buffer() = default;
   Buffer(TargetType target, size_t size) : space_(size), target_(target) {}
+  Buffer(void* data, TargetType target, size_t size)
+      : space_(size), data_(data), own_data_(false), target_(target) {}
 
   void* data() const { return data_; }
   TargetType target() const { return target_; }
   size_t space() const { return space_; }
+  bool own_data() const { return own_data_; }
 
   void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
+      CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
       data_ = TargetMalloc(target, size);
       target_ = target;
@@ -124,6 +132,7 @@ class Buffer {
                   4;  // 4 for RGBA, un-used for opencl Image2D
     if (target != target_ || cl_image2d_width_ < img_w ||
         cl_image2d_height_ < img_h) {
+      CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
       target_ = target;
@@ -135,7 +144,7 @@ class Buffer {
 #endif
 
   void Free() {
-    if (space_ > 0) {
+    if (space_ > 0 && own_data_) {
       TargetFree(target_, data_);
     }
     data_ = nullptr;
@@ -158,6 +167,7 @@ class Buffer {
   size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
   void* data_{nullptr};
+  bool own_data_{true};
   TargetType target_{TargetType::kHost};
 };
 

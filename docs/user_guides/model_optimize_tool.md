@@ -12,9 +12,12 @@ Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中�
 
 1. **推荐！** 可以进入Paddle-Lite Github仓库的[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择release版本下载对应的转化工具`opt`    
    (release/v2.2.0之前的转化工具为model_optimize_tool、release/v2.3.0之后为opt)
+2. 本文提供`release/v2.3`和`release/v2.2.0`版本的优化工具下载
 
-2. 我们提供`release/v2.3`编译结果下载：[opt](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt)、[opt_mac](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt_mac)
-`release/v2.2.0`版本的model_optimize_tool: [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool)、[model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac)
+|版本 | Linux | MacOS|
+|---|---|---|
+| `release/v2.3`| [opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt) | [opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac) |
+|`release/v2.2.0`  | [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool) | [model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac) |
 
 
 3. 如果 release 列表里的工具不符合您的环境，可以下载Paddle-Lite 源码，源码编译出opt工具
