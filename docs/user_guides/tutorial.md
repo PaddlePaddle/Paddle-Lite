@@ -24,8 +24,7 @@ $ ./opt \
     --param_file=<param_path> \
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
-    --valid_targets=(arm|opencl|x86) \
-    --prefer_int8_kernel=(ture|false)
+    --valid_targets=(arm|opencl|x86)
 ```
 
 其中，optimize_out为您希望的优化模型的输出路径。optimize_out_type则可以指定输出模型的序列化方式，其目前支持Protobuf与Naive Buffer两种方式，其中Naive Buffer是一种更轻量级的序列化/反序列化实现。如果你需要使用Lite在mobile端进行预测，那么您需要设置optimize_out_type=naive_buffer。
