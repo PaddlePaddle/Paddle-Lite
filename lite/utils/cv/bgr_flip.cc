@@ -70,10 +70,10 @@ bgr1 bgr2 bgr3
 void flip_x_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int h = h_in - 1;
   int win = w_in * 3;
-  //   uint8_t zerobuff[win];
-  //   memset(zerobuff, 0, win * sizeof(uint8_t));
-  //   uint8_t zerobuff2[win];
-  //   memset(zerobuff2, 0, win * sizeof(uint8_t));
+  uint8_t zerobuff[win];
+  memset(zerobuff, 0, win * sizeof(uint8_t));
+  uint8_t zerobuff2[win];
+  memset(zerobuff2, 0, win * sizeof(uint8_t));
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
@@ -218,10 +218,10 @@ void flip_x_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
 #else
 void flip_x_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int win = w_in * 3;
-  //   uint8_t zerobuff[win];
-  //   memset(zerobuff, 0, win * sizeof(uint8_t));
-  //   uint8_t zerobuff2[win];
-  //   memset(zerobuff2, 0, win * sizeof(uint8_t));
+  uint8_t zerobuff[win];
+  memset(zerobuff, 0, win * sizeof(uint8_t));
+  uint8_t zerobuff2[win];
+  memset(zerobuff2, 0, win * sizeof(uint8_t));
   int h = h_in - 1;
   // 4*8
   for (int i = 0; i < h_in; i += 4) {
@@ -353,10 +353,10 @@ bgr9 bgr8 bgr7
 #ifdef __aarch64__
 void flip_y_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 3;
-  //   uint8_t zerobuff[w_in];
-  //   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  //   uint8_t zerobuff2[w_in];
-  //   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff[w_in];
+  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff2[w_in];
+  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   int64_t stride_w = 24;
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -552,10 +552,10 @@ void flip_y_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
 #else
 void flip_y_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 3;
-  //   uint8_t zerobuff[w_in];
-  //   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  //   uint8_t zerobuff2[w_in];
-  //   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff[w_in];
+  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff2[w_in];
+  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   int stride_w = 24;
   // 4*8
   for (int i = 0; i < h_in; i += 4) {
@@ -735,10 +735,10 @@ bgr3 bgr2 bgr1
 void flip_xy_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int64_t stride_w = 24;
   int w_in = w * 3;
-  //   uint8_t zerobuff[w_in];
-  //   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  //   uint8_t zerobuff2[w_in];
-  //   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff[w_in];
+  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff2[w_in];
+  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * w_in;
     const uint8_t* inptr1 = inptr0 + w_in;
@@ -933,10 +933,10 @@ void flip_xy_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
 #else
 void flip_xy_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 3;
-  //   uint8_t zerobuff[w_in];
-  //   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  //   uint8_t zerobuff2[w_in];
-  //   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff[w_in];
+  memset(zerobuff, 0, w_in * sizeof(uint8_t));
+  uint8_t zerobuff2[w_in];
+  memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   int stride_w = 24;
   // 4*8
   for (int i = 0; i < h_in; i += 4) {
