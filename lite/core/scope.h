@@ -45,8 +45,8 @@ class Scope final {
 
   const Scope* parent() const { return parent_; }
 
-  // Get all params in each scope.
-  std::vector<std::string> VarNames() const;
+  // Get attribute params stored in parent scopes.
+  std::vector<std::string> AttributeVarNames() const;
   // Following the legacy scope interface.
   std::vector<std::string> LocalVarNames() const;
 

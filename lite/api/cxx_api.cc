@@ -152,7 +152,7 @@ std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
 // get param names
 std::vector<std::string> Predictor::GetParamNames() {
-  return exec_scope_->VarNames();
+  return exec_scope_->AttributeVarNames();
 }
 
 // append the names of inputs and outputs into input_names_ and output_names_
