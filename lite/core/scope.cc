@@ -60,6 +60,19 @@ Variable *Scope::FindLocalVar(const std::string &name) const {
   return nullptr;
 }
 
+std::vector<std::string> Scope::VarNames() const {
+  std::vector<std::string> resulted_keys;
+  auto keys = LocalVarNames();
+  resulted_keys.insert(resulted_keys.end(), keys.begin(), keys.end());
+  const Scope *cur_scope = this;
+  while (cur_scope->parent()) {
+    cur_scope = cur_scope->parent();
+    keys = cur_scope->LocalVarNames();
+    resulted_keys.insert(resulted_keys.end(), keys.begin(), keys.end());
+  }
+  return resulted_keys;
+}
+
 std::vector<std::string> Scope::LocalVarNames() const {
   std::vector<std::string> keys;
   for (const auto &item : vars_) {
