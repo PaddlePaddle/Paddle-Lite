@@ -70,10 +70,16 @@ std::vector<std::string> Scope::AttributeVarNames() const {
     resulted_keys.insert(resulted_keys.end(), keys.begin(), keys.end());
   }
   // remove feed and fetch
-  auto iter=std::find(resulted_keys.begin(), resulted_keys.end(), "feed");
-  resulted_keys.erase(iter);
-  iter=std::find(resulted_keys.begin(), resulted_keys.end(), "fetch");
-  resulted_keys.erase(iter);
+  std::vector<std::string> skiped_vars = {"feed", "fetch"};
+  for (int i = 0; i < skiped_vars.size(); i++) {
+    auto iter =
+        std::find(resulted_keys.begin(), resulted_keys.end(), skiped_vars[i]);
+    while (iter != resulted_keys.end()) {
+      resulted_keys.erase(iter);
+      auto iter =
+          std::find(resulted_keys.begin(), resulted_keys.end(), skiped_vars[i]);
+    }
+  }
   return resulted_keys;
 }
 
