@@ -76,7 +76,7 @@ std::vector<std::string> Scope::AttributeVarNames() const {
         std::find(resulted_keys.begin(), resulted_keys.end(), skiped_vars[i]);
     while (iter != resulted_keys.end()) {
       resulted_keys.erase(iter);
-      auto iter =
+      iter =
           std::find(resulted_keys.begin(), resulted_keys.end(), skiped_vars[i]);
     }
   }
