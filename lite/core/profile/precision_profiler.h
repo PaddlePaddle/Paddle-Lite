@@ -47,8 +47,6 @@ static void write_tensorfile(const Tensor* tensor, const std::string& locate) {
   fclose(fp);
 }
 
-static bool is_first_run{true};  // for header
-
 class PrecisionProfiler {
  public:
   // TODO(ysh329): need to remove `explicit PrecisionProfiler`
@@ -67,8 +65,8 @@ class PrecisionProfiler {
     ss << "========================================= "
        << "Detailed Precision Profiler Summary "
        << "=========================================" << std::endl;
-    ss << setw(45) << left << "operator:(kernel info)"
-       << " " << setw(70) << left << "output_tensor_name:(tensor info)"
+    ss << setw(45) << left << "operator:(kernel_info)"
+       << " " << setw(70) << left << "output_tensor_name:(tensor_info)"
        << " " << setw(15) << left << "tensor_dims"
        << " " << setw(15) << left << "tensor_mean"
        << " " << setw(15) << left << "tensor_standard_deviation" << std::endl;
@@ -131,7 +129,7 @@ class PrecisionProfiler {
           // write_tensorfile<float>(in, name);
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
-              compute_standard_deviation<float>(ptr, in->numel(), true, mean);
+              compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
           return;
         }
         case PRECISION(kAny): {
@@ -139,7 +137,7 @@ class PrecisionProfiler {
           // write_tensorfile<float>(in, name);
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
-              compute_standard_deviation<float>(ptr, in->numel(), true, mean);
+              compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
           return;
         }
         case PRECISION(kInt8): {
@@ -147,15 +145,15 @@ class PrecisionProfiler {
           // write_tensorfile<int8_t>(in, name);
           *mean = compute_mean<int8_t>(ptr, in->numel());
           *std_dev =
-              compute_standard_deviation<int8_t>(ptr, in->numel(), true, mean);
+              compute_standard_deviation<int8_t>(ptr, in->numel(), true, *mean);
           return;
         }
         case PRECISION(kInt32): {
           auto ptr = in->data<int32_t>();
           // write_tensorfile<int32_t>(in, name);
           *mean = compute_mean<int32_t>(ptr, in->numel());
-          *std_dev =
-              compute_standard_deviation<int32_t>(ptr, in->numel(), true, mean);
+          *std_dev = compute_standard_deviation<int32_t>(
+              ptr, in->numel(), true, *mean);
           return;
         }
         default:
@@ -190,7 +188,7 @@ class PrecisionProfiler {
           CHECK(real_out_v.size() == in->numel());
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
-              real_out_v.data(), in->numel(), true, mean);
+              real_out_v.data(), in->numel(), true, *mean);
           return;
         }
         case DATALAYOUT(kNCHW): {
@@ -202,7 +200,7 @@ class PrecisionProfiler {
           VLOG(1) << name << ":" << in->numel();
           *mean = compute_mean<float>(in_data_v.data(), in->numel());
           *std_dev = compute_standard_deviation<float>(
-              in_data_v.data(), in->numel(), true, mean);
+              in_data_v.data(), in->numel(), true, *mean);
           return;
         }
         default:
