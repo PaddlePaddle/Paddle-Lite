@@ -274,7 +274,8 @@ void Instruction::Run() {
     return;
   }
 
-  op_->InferShape();
+  // op_->InferShape();
+  op_->SmartInferShape();
   kernel_->Launch();
   has_run_ = true;
 }
