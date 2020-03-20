@@ -147,13 +147,12 @@ with fluid.name_scope('skip_quant'):
 
 参考[模型转换](../user_guides/model_optimize_tool)准备模型转换工具，建议从Release页面下载。
 
-参考[模型转换](../user_guides/model_optimize_tool)使用模型转换工具。注意opt命令的输入参数--prefer_int8_kernel必须设置为true，其他参数按照实际情况参考文档设置。比如在安卓手机ARM端进行预测，模型转换的命令为：
+参考[模型转换](../user_guides/model_optimize_tool)使用模型转换工具，参数按照实际情况设置。比如在安卓手机ARM端进行预测，模型转换的命令为：
 ```bash
 ./opt --model_dir=./mobilenet_v1_quant \
       --optimize_out_type=naive_buffer \
       --optimize_out=mobilenet_v1_quant_opt \
-      --valid_targets=arm \
-      --prefer_int8_kernel=true
+      --valid_targets=arm
 ```
 
 ### 3.2 量化模型预测
