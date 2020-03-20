@@ -75,7 +75,6 @@ void rotate90_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_h = 4 * win;
   int64_t stride_h_w = 4 * win - 24;
   int ww = w_out - 8;
-  uint8_t* dst = new uint8_t[3000000];
   [w_out * h_out * 3];
   // block 8*8. -- 8*8
   int i = 0;
@@ -1328,6 +1327,7 @@ void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
 }
 #else
 void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
@@ -1498,6 +1498,7 @@ void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
 }
 #endif
 }  // namespace cv
