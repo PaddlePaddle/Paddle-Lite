@@ -60,6 +60,7 @@ Variable *Scope::FindLocalVar(const std::string &name) const {
   return nullptr;
 }
 
+// AttributeVarNames will get persistive attribute names stored in parent scope
 std::vector<std::string> Scope::AttributeVarNames() const {
   std::vector<std::string> resulted_keys;
   const Scope *cur_scope = this;
@@ -68,6 +69,11 @@ std::vector<std::string> Scope::AttributeVarNames() const {
     auto keys = cur_scope->LocalVarNames();
     resulted_keys.insert(resulted_keys.end(), keys.begin(), keys.end());
   }
+  // remove feed and fetch
+  auto iter=std::find(resulted_keys.begin(), resulted_keys.end(), "feed");
+  resulted_keys.erase(iter);
+  iter=std::find(resulted_keys.begin(), resulted_keys.end(), "fetch");
+  resulted_keys.erase(iter);
   return resulted_keys;
 }
 
