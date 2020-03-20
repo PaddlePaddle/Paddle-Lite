@@ -30,7 +30,6 @@ void ImageFlip::choose(const uint8_t* src,
     flip_hwc1(src, dst, srcw, srch, flip_param);
   } else if (srcFormat == BGR || srcFormat == RGB) {
     flip_hwc3(src, dst, srcw, srch, flip_param);
-    bgr_flip_hwc(src, dst, srcw, srch, static_cast<int>(flip_param));
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     flip_hwc4(src, dst, srcw, srch, flip_param);
   } else {
