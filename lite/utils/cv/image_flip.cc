@@ -15,7 +15,6 @@
 #include "lite/utils/cv/image_flip.h"
 #include <math.h>
 #include <string.h>
-#include "lite/utils/cv/bgr_flip.h"
 namespace paddle {
 namespace lite {
 namespace utils {
