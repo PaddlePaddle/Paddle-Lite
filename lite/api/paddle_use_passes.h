@@ -24,7 +24,7 @@ USE_MIR_PASS(generate_program_pass);
 USE_MIR_PASS(io_copy_kernel_pick_pass);
 USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
-USE_MIR_PASS(graph_visualze);
+USE_MIR_PASS(graph_visualize_pass);
 
 USE_MIR_PASS(lite_conv_bn_fuse_pass);
 USE_MIR_PASS(lite_fc_fuse_pass);
@@ -40,9 +40,11 @@ USE_MIR_PASS(lite_elementwise_add_activation_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
+USE_MIR_PASS(type_layout_cast_preprocess_pass);
 USE_MIR_PASS(memory_optimize_pass);
 USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
+USE_MIR_PASS(quantized_op_attributes_inference_pass);

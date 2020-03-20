@@ -37,6 +37,19 @@ function prepare_thirdparty {
     fi
 }
 
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+}
+
 # prepare adb devices
 # if USE_ADB_EMULATOR=ON , we create adb emulator port_armv8 and port_armv7 for usage, else we will use actual mobilephone according to adbindex.
 function prepare_adb_devices {
@@ -105,6 +118,8 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_SHUTDOWN_LOG=OFF \
+        -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -173,12 +188,14 @@ function build_opencl {
     mkdir -p $build_dir
     cd $build_dir
 
+    prepare_opencl_source_code $cur_dir $build_dir
+
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp
+    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 
     # test publish inference lib
-    make publish_inference
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
 
 # This method is only called in CI.
@@ -197,8 +214,7 @@ function cmake_x86_for_CI {
 
 function cmake_cuda_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF \
-        -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
+    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT} -DWITH_LITE=OFF
 }
 
 function cmake_gpu {
@@ -272,7 +288,9 @@ function build_test_cuda_server {
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_cuda_for_CI
-    build
+    make -j$NUM_CORES_FOR_COMPILE
+    # temporary remove cuda unittest because the ci PR_CI_Paddle-Lite-server-cuda10.1(ubt16-gcc5.4) is in cpu machine and only build.
+    # ctest -R "/*_cuda_test" -V
 }
 
 function build_test_train {
@@ -578,6 +596,7 @@ function cmake_arm {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -644,7 +663,7 @@ function build_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make -j4 publish_inference
+    make publish_inference -j$NUM_PROC
     cd -
 }
 

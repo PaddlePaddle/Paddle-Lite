@@ -76,6 +76,12 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
+           "quantized_op_attributes_inference_pass",  // Only for fully
+                                                      // quantized model, infer
+                                                      // the output scale and
+                                                      // fix the attribute
+                                                      // 'enable_int8' for all
+                                                      // of the quantized ops.
            "npu_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",

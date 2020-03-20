@@ -24,17 +24,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static void UpdateInputTo(cpp::OpDesc* desc,
-                          const std::string& from,
-                          const std::string& to) {
-  for (auto& item : *desc->mutable_inputs()) {
-    for (auto& input : item.second) {
-      if (input == from) {
-        input = to;
-      }
-    }
-  }
-}
+void UpdateInputs(OpLite* op, const std::string& from, const std::string& to);
 
 /*
  * The pass complement the necessary instruction to make data

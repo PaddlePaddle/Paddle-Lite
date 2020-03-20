@@ -46,9 +46,8 @@ static void CopyImageData(CLContext* context,
   delete[] image_data;
 }
 
-bool InitOpenCLRuntime(std::string cl_path) {
+bool InitOpenCLRuntime() {
   auto* runtime = CLRuntime::Global();
-  runtime->set_cl_path(cl_path);
   return runtime->IsInitSuccess();
 }
 

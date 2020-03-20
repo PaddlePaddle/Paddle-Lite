@@ -20,8 +20,6 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void GatherCompute::PrepareForRun() {}
-
 void GatherCompute::Run() {
   auto& param = this->Param<operators::GatherParam>();
 
@@ -49,7 +47,7 @@ void GatherCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    gather, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
+    gather, kARM, kAny, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

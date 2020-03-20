@@ -1,4 +1,4 @@
-# Benchmark 测试方法
+# 测试方法
 
 本文将会介绍，在**Ubuntu:16.04交叉编译环境**下，用安卓手机在终端测试Paddle-Lite的性能，并介绍两种Benchmark方法：
 
@@ -57,7 +57,7 @@ wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/bench
 
 #### 方式二：由源码编译benchmark_bin文件
 
-根据[源码编译](../installation/source_compile)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
+根据[源码编译](../user_guides/source_compile)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
 
 ```shell
 ###########################################
@@ -135,53 +135,53 @@ sh benchmark.sh ./benchmark_bin_v8 ./benchmark_models result_armv8.txt true
 > 不同手机，不同版本，测试模型的性能数据不同。
 
 ```shell
-run benchmark armv7
---------------------------------------
-PaddleLite Benchmark
-Threads=1 Warmup=10 Repeats=30
--- mnasnet               avg = 159.8427 ms
--- mobilenet_v1          avg = 235.0072 ms
--- mobilenet_v2          avg = 173.0387 ms
--- shufflenet_v2         avg = 76.0040 ms
--- squeezenet_v11        avg = 164.2957 ms
-
-Threads=2 Warmup=10 Repeats=30
--- mnasnet               avg = 83.1287 ms
--- mobilenet_v1          avg = 121.6029 ms
--- mobilenet_v2          avg = 86.6175 ms
--- shufflenet_v2         avg = 41.5761 ms
--- squeezenet_v11        avg = 87.8678 ms
-
-Threads=4 Warmup=10 Repeats=30
--- mnasnet               avg = 73.3880 ms
--- mobilenet_v1          avg = 119.0739 ms
--- mobilenet_v2          avg = 85.3050 ms
--- shufflenet_v2         avg = 38.0762 ms
--- squeezenet_v11        avg = 64.2201 ms
---------------------------------------
-
 run benchmark armv8
 --------------------------------------
 PaddleLite Benchmark
 Threads=1 Warmup=10 Repeats=30
--- mnasnet               avg = 165.3073 ms
--- mobilenet_v1          avg = 306.0188 ms
--- mobilenet_v2          avg = 195.1884 ms
--- shufflenet_v2         avg = 99.3692 ms
--- squeezenet_v11        avg = 156.6971 ms
+mnasnet                       min = 19.83500    max = 19.38500    average = 19.65503
+mobilenetv1                   min = 32.00600    max = 31.56900    average = 31.81983
+mobilenetv2                   min = 22.37900    max = 22.08700    average = 22.28623
+shufflenetv2                  min = 10.80400    max = 10.62900    average = 10.68890
+squeezenet                    min = 17.67400    max = 17.47900    average = 17.57677
 
 Threads=2 Warmup=10 Repeats=30
--- mnasnet               avg = 90.2290 ms
--- mobilenet_v1          avg = 157.0007 ms
--- mobilenet_v2          avg = 118.1607 ms
--- shufflenet_v2         avg = 68.6804 ms
--- squeezenet_v11        avg = 91.3090 ms
+mnasnet                       min = 11.85600    max = 11.72000    average = 11.77127
+mobilenetv1                   min = 18.75000    max = 18.64300    average = 18.70593
+mobilenetv2                   min = 14.05100    max = 13.59900    average = 13.71450
+shufflenetv2                  min = 6.67200     max = 6.58300     average = 6.63400
+squeezenet                    min = 12.07100    max = 11.33400    average = 11.41253
 
 Threads=4 Warmup=10 Repeats=30
--- mnasnet               avg = 179.9730 ms
--- mobilenet_v1          avg = 204.0684 ms
--- mobilenet_v2          avg = 181.6486 ms
--- shufflenet_v2         avg = 123.2728 ms
--- squeezenet_v11        avg = 412.9046 ms
+mnasnet                       min = 7.19300     max = 7.02600     average = 7.08480
+mobilenetv1                   min = 10.42000    max = 10.29100    average = 10.34267
+mobilenetv2                   min = 8.61900     max = 8.46900     average = 8.54707
+shufflenetv2                  min = 4.55200     max = 4.41900     average = 4.46477
+squeezenet                    min = 8.60000     max = 7.85200     average = 7.98407
+--------------------------------------
+
+run benchmark armv7
+--------------------------------------
+PaddleLite Benchmark
+Threads=1 Warmup=10 Repeats=30
+mnasnet                       min = 20.98300    max = 20.81400    average = 20.92527
+mobilenetv1                   min = 33.19000    max = 32.81700    average = 33.08490
+mobilenetv2                   min = 25.91400    max = 25.61700    average = 25.73097
+shufflenetv2                  min = 11.14300    max = 10.97600    average = 11.06757
+squeezenet                    min = 19.31800    max = 19.20000    average = 19.26530
+
+Threads=2 Warmup=10 Repeats=30
+mnasnet                       min = 12.59900    max = 12.46600    average = 12.52207
+mobilenetv1                   min = 19.05800    max = 18.94700    average = 18.97897
+mobilenetv2                   min = 15.28400    max = 15.11300    average = 15.19843
+shufflenetv2                  min = 6.97000     max = 6.81400     average = 6.90863
+squeezenet                    min = 12.87900    max = 12.12900    average = 12.22530
+
+Threads=4 Warmup=10 Repeats=30
+mnasnet                       min = 7.31400     max = 7.12900     average = 7.20357
+mobilenetv1                   min = 11.44000    max = 10.86900    average = 10.94383
+mobilenetv2                   min = 9.14900     max = 9.03800     average = 9.09907
+shufflenetv2                  min = 4.60600     max = 4.49400     average = 4.53360
+squeezenet                    min = 8.27000     max = 8.10600     average = 8.19000
 --------------------------------------
 ```

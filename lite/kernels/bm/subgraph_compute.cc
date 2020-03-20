@@ -52,7 +52,7 @@ int SubgraphEngine::BuildDeviceProgram() {
       return subgraph::FAILED;
     }
   }
-  std::string net_name = "paddle_bitmain";
+  std::string net_name = "bmnetc_f32umodel";
   __bmcompile_opt(
       graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 1);
   void* bmodel_data = nullptr;
@@ -71,7 +71,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_itensors_.resize(input_names_.size());
   device_inputs_.resize(input_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(input_names_[i]);
+    origin_itensors_[i] = scope_->FindMutableTensor(net_info_->input_names[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     bm_device_mem_t* p_mem =
@@ -90,19 +90,15 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_otensors_.resize(output_names_.size());
   device_outputs_.resize(output_names_.size());
   for (size_t i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = scope_->FindMutableTensor(output_names_[i]);
+    origin_otensors_[i] = scope_->FindMutableTensor(net_info_->output_names[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
-    output_map_.insert(std::pair<std::string, int>(output_names_[i], i));
     origin_otensors_[i]->mutable_data<float>();
-  }
-  for (size_t i = 0; i < output_names_.size(); i++) {
-    int mapping_index = output_map_.at(net_info_->output_names[i]);
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
     CHECK_EQ(bm_malloc_device_byte(
-                 bm_hd_, p_mem, origin_otensors_[mapping_index]->memory_size()),
+                 bm_hd_, p_mem, origin_otensors_[i]->memory_size()),
              BM_SUCCESS);
     bmrt_tensor_with_device(&device_outputs_[i],
                             *p_mem,

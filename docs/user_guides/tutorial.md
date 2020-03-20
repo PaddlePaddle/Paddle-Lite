@@ -24,8 +24,7 @@ $ ./opt \
     --param_file=<param_path> \
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
-    --valid_targets=(arm|opencl|x86) \
-    --prefer_int8_kernel=(ture|false)
+    --valid_targets=(arm|opencl|x86)
 ```
 
 其中，optimize_out为您希望的优化模型的输出路径。optimize_out_type则可以指定输出模型的序列化方式，其目前支持Protobuf与Naive Buffer两种方式，其中Naive Buffer是一种更轻量级的序列化/反序列化实现。如果你需要使用Lite在mobile端进行预测，那么您需要设置optimize_out_type=naive_buffer。
@@ -48,8 +47,8 @@ $ ./opt \
 
 ## 四. Lite API
 
-为了方便您的使用，我们提供了C++、Java、Python三种API，并且提供了相应的api的完整使用示例:[C++完整示例](cpp_demo)、[Java完整示例](java_demo)、[Python完整示例](../advanced_user_guides/cuda)，您可以参考示例中的说明快速了解C++/Java/Python的API使用方法，并集成到您自己的项目中去。需要说明的是，为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型，具体方法可参考第2节`模型优化`。
+为了方便您的使用，我们提供了C++、Java、Python三种API，并且提供了相应的api的完整使用示例:[C++完整示例](../demo_guides/cpp_demo)、[Java完整示例](../demo_guides/java_demo)、[Python完整示例](../demo_guides/cuda)，您可以参考示例中的说明快速了解C++/Java/Python的API使用方法，并集成到您自己的项目中去。需要说明的是，为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型，具体方法可参考第2节`模型优化`。
 
 ## 五. 测试工具
 
-为了使您更好的了解并使用Lite框架，我们向有进一步使用需求的用户开放了 [Lite Model Debug Tool](../advanced_user_guides/debug_tools) 和 [Profile Monitor Tool](../advanced_user_guides/test_tools)。Lite Model Debug Tool可以用来查找Lite框架与PaddlePaddle框架在执行预测时模型中的对应变量值是否有差异，进一步快速定位问题Op，方便复现与排查问题。Profile Monitor Tool可以帮助您了解每个Op的执行时间消耗，其会自动统计Op执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](../advanced_user_guides/debug_tools) 了解更多内容。
+为了使您更好的了解并使用Lite框架，我们向有进一步使用需求的用户开放了 [Debug工具](debug#debug) 和 [Profile工具](debug#profiler)。Lite Model Debug Tool可以用来查找Lite框架与PaddlePaddle框架在执行预测时模型中的对应变量值是否有差异，进一步快速定位问题Op，方便复现与排查问题。Profile Monitor Tool可以帮助您了解每个Op的执行时间消耗，其会自动统计Op执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](debug) 了解更多内容。

@@ -559,48 +559,722 @@ void test_img(const std::vector<int>& cluster_id,
   }
 }
 
-#if 0
+void test_rotate(const std::vector<int>& cluster_id,
+                 const std::vector<int>& thread_num,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth,
+                 ImageFormat srcFormat,
+                 ImageFormat dstFormat,
+                 float rotate,
+                 FlipParam flip,
+                 LayoutType layout,
+                 int test_iter = 10) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+  for (auto& cls : cluster_id) {
+    for (auto& th : thread_num) {
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      LOG(INFO) << "cluster: " << cls << ", threads: " << th;
+
+      LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
+                << ", height= " << srch << ", width= " << srcw
+                << ", srcFormat= " << (ImageFormat)srcFormat;
+      if (srcFormat == ImageFormat::NV21) {
+        LOG(INFO) << "srcFormat: NV21";
+      }
+      if (srcFormat == ImageFormat::NV12) {
+        LOG(INFO) << "srcFormat: NV12";
+      }
+      if (srcFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "srcFormat: GRAY";
+      }
+      if (srcFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "srcFormat: BGRA";
+      }
+      if (srcFormat == ImageFormat::BGR) {
+        LOG(INFO) << "srcFormat: BGR";
+      }
+      if (srcFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "srcFormat: RGBA";
+      }
+      if (srcFormat == ImageFormat::RGB) {
+        LOG(INFO) << "srcFormat: RGB";
+      }
+      LOG(INFO) << " output tensor size, num=" << 1 << ", channel=" << 1
+                << ", height=" << dsth << ", width=" << dstw
+                << ", dstFormat= " << (ImageFormat)dstFormat;
+
+      if (dstFormat == ImageFormat::NV21) {
+        LOG(INFO) << "dstFormat: NV21";
+      }
+      if (dstFormat == ImageFormat::NV12) {
+        LOG(INFO) << "dstFormat: NV12";
+      }
+      if (dstFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "dstFormat: GRAY";
+      }
+      if (dstFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "dstFormat: BGRA";
+      }
+      if (dstFormat == ImageFormat::BGR) {
+        LOG(INFO) << "dstFormat: BGR";
+      }
+      if (dstFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "dstFormat: RGBA";
+      }
+      if (dstFormat == ImageFormat::RGB) {
+        LOG(INFO) << "dstFormat: RGB";
+      }
+
+      LOG(INFO) << "Rotate = " << rotate << ", Flip = " << flip
+                << ", Layout = " << static_cast<int>(layout);
+
+      int size = 3 * srch * srcw;
+      if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
+        size = ceil(1.5 * srch) * srcw;
+      } else if (srcFormat == ImageFormat::BGRA ||
+                 srcFormat == ImageFormat::RGBA) {
+        size = 4 * srch * srcw;
+      } else if (srcFormat == ImageFormat::GRAY) {
+        size = srch * srcw;
+      }
+      uint8_t* src = new uint8_t[size];
+      fill_tensor_host_rand(src, size);
+
+      int out_size = srch * srcw;
+      if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
+        out_size = ceil(1.5 * srch) * srcw;
+      } else if (dstFormat == ImageFormat::BGR ||
+                 dstFormat == ImageFormat::RGB) {
+        out_size = 3 * srch * srcw;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        out_size = 4 * srch * srcw;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        out_size = srch * srcw;
+      }
+      uint8_t* basic_dst = new uint8_t[out_size];
+      uint8_t* lite_dst = new uint8_t[out_size];
+      if (FLAGS_check_result) {
+        image_rotate_basic(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, rotate);
+      }
+      Timer t_rotate;
+
+      LOG(INFO) << "saber cv compute";
+      TransParam tparam;
+      tparam.ih = srch;
+      tparam.iw = srcw;
+      tparam.oh = srch;
+      tparam.ow = srcw;
+      tparam.flip_param = flip;
+      tparam.rotate_param = rotate;
+
+      ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
+
+      for (int i = 0; i < test_iter; ++i) {
+        t_rotate.Start();
+        image_preprocess.imageRotate(src, lite_dst);
+        t_rotate.Stop();
+      }
+      LOG(INFO) << "image rotate avg time : " << t_rotate.LapTimes().Avg()
+                << ", min time: " << t_rotate.LapTimes().Min()
+                << ", max time: " << t_rotate.LapTimes().Max();
+
+      double max_ratio = 0;
+      double max_diff = 0;
+      const double eps = 1e-6f;
+      if (FLAGS_check_result) {
+        LOG(INFO) << "diff, image rotate size: " << out_size;
+        uint8_t* diff_v = new uint8_t[out_size];
+        for (int i = 0; i < out_size; i++) {
+          uint8_t a = lite_dst[i];
+          uint8_t b = basic_dst[i];
+          uint8_t diff1 = a - b;
+          uint8_t diff = diff1 > 0 ? diff1 : -diff1;
+          diff_v[i] = diff;
+          if (max_diff < diff) {
+            max_diff = diff;
+            max_ratio = 2.0 * max_diff / (a + b + eps);
+          }
+        }
+        if (std::abs(max_ratio) >= 1e-5f) {
+          int width = size / srch;
+          printf("din: %d \n", width);
+          print_int8(src, size, width);
+          width = srch * 3;
+          printf("saber result: %d\n", width);
+          print_int8(lite_dst, out_size, width);
+          printf("basic result: \n");
+          print_int8(basic_dst, out_size, width);
+          printf("diff result: \n");
+          print_int8(diff_v, out_size, width);
+        }
+        delete[] diff_v;
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        bool rst = std::abs(max_ratio) < 1e-5f;
+        CHECK_EQ(rst, true) << "compute result error";
+      }
+      LOG(INFO) << "image rotate end";
+    }
+  }
+}
+void test_flip(const std::vector<int>& cluster_id,
+               const std::vector<int>& thread_num,
+               int srcw,
+               int srch,
+               int dstw,
+               int dsth,
+               ImageFormat srcFormat,
+               ImageFormat dstFormat,
+               float rotate,
+               FlipParam flip,
+               LayoutType layout,
+               int test_iter = 10) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+  for (auto& cls : cluster_id) {
+    for (auto& th : thread_num) {
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      LOG(INFO) << "cluster: " << cls << ", threads: " << th;
+
+      LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
+                << ", height= " << srch << ", width= " << srcw
+                << ", srcFormat= " << (ImageFormat)srcFormat;
+      if (srcFormat == ImageFormat::NV21) {
+        LOG(INFO) << "srcFormat: NV21";
+      }
+      if (srcFormat == ImageFormat::NV12) {
+        LOG(INFO) << "srcFormat: NV12";
+      }
+      if (srcFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "srcFormat: GRAY";
+      }
+      if (srcFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "srcFormat: BGRA";
+      }
+      if (srcFormat == ImageFormat::BGR) {
+        LOG(INFO) << "srcFormat: BGR";
+      }
+      if (srcFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "srcFormat: RGBA";
+      }
+      if (srcFormat == ImageFormat::RGB) {
+        LOG(INFO) << "srcFormat: RGB";
+      }
+      LOG(INFO) << " output tensor size, num=" << 1 << ", channel=" << 1
+                << ", height=" << dsth << ", width=" << dstw
+                << ", dstFormat= " << (ImageFormat)dstFormat;
+
+      if (dstFormat == ImageFormat::NV21) {
+        LOG(INFO) << "dstFormat: NV21";
+      }
+      if (dstFormat == ImageFormat::NV12) {
+        LOG(INFO) << "dstFormat: NV12";
+      }
+      if (dstFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "dstFormat: GRAY";
+      }
+      if (dstFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "dstFormat: BGRA";
+      }
+      if (dstFormat == ImageFormat::BGR) {
+        LOG(INFO) << "dstFormat: BGR";
+      }
+      if (dstFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "dstFormat: RGBA";
+      }
+      if (dstFormat == ImageFormat::RGB) {
+        LOG(INFO) << "dstFormat: RGB";
+      }
+
+      LOG(INFO) << "Rotate = " << rotate << ", Flip = " << flip
+                << ", Layout = " << static_cast<int>(layout);
+
+      int size = 3 * srch * srcw;
+      if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
+        size = ceil(1.5 * srch) * srcw;
+      } else if (srcFormat == ImageFormat::BGRA ||
+                 srcFormat == ImageFormat::RGBA) {
+        size = 4 * srch * srcw;
+      } else if (srcFormat == ImageFormat::GRAY) {
+        size = srch * srcw;
+      }
+      uint8_t* src = new uint8_t[size];
+      fill_tensor_host_rand(src, size);
+
+      int out_size = srch * srcw;
+      if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
+        out_size = ceil(1.5 * srch) * srcw;
+      } else if (dstFormat == ImageFormat::BGR ||
+                 dstFormat == ImageFormat::RGB) {
+        out_size = 3 * srch * srcw;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        out_size = 4 * srch * srcw;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        out_size = srch * srcw;
+      }
+      uint8_t* basic_dst = new uint8_t[out_size];
+      uint8_t* lite_dst = new uint8_t[out_size];
+      if (FLAGS_check_result) {
+        image_flip_basic(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, flip);
+      }
+      Timer t_rotate;
+
+      LOG(INFO) << "saber cv compute";
+      TransParam tparam;
+      tparam.ih = srch;
+      tparam.iw = srcw;
+      tparam.oh = srch;
+      tparam.ow = srcw;
+      tparam.flip_param = flip;
+      tparam.rotate_param = rotate;
+
+      ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
+
+      for (int i = 0; i < test_iter; ++i) {
+        t_rotate.Start();
+        image_preprocess.imageFlip(src, lite_dst);
+        t_rotate.Stop();
+      }
+      LOG(INFO) << "image flip avg time : " << t_rotate.LapTimes().Avg()
+                << ", min time: " << t_rotate.LapTimes().Min()
+                << ", max time: " << t_rotate.LapTimes().Max();
+
+      double max_ratio = 0;
+      double max_diff = 0;
+      const double eps = 1e-6f;
+      if (FLAGS_check_result) {
+        LOG(INFO) << "diff, image flip size: " << out_size;
+        uint8_t* diff_v = new uint8_t[out_size];
+        for (int i = 0; i < out_size; i++) {
+          uint8_t a = lite_dst[i];
+          uint8_t b = basic_dst[i];
+          uint8_t diff1 = a - b;
+          uint8_t diff = diff1 > 0 ? diff1 : -diff1;
+          diff_v[i] = diff;
+          if (max_diff < diff) {
+            max_diff = diff;
+            max_ratio = 2.0 * max_diff / (a + b + eps);
+          }
+        }
+        if (std::abs(max_ratio) >= 1e-5f) {
+          int width = size / srch;
+          printf("din: \n");
+          print_int8(src, size, width);
+          width = out_size / srch;
+          printf("saber result: \n");
+          print_int8(lite_dst, out_size, width);
+          printf("basic result: \n");
+          print_int8(basic_dst, out_size, width);
+          printf("diff result: \n");
+          print_int8(diff_v, out_size, width);
+        }
+        delete[] diff_v;
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        bool rst = std::abs(max_ratio) < 1e-5f;
+        CHECK_EQ(rst, true) << "compute result error";
+      }
+      LOG(INFO) << "image flip end";
+    }
+  }
+}
+void test_resize(const std::vector<int>& cluster_id,
+                 const std::vector<int>& thread_num,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth,
+                 ImageFormat srcFormat,
+                 ImageFormat dstFormat,
+                 float rotate,
+                 FlipParam flip,
+                 LayoutType layout,
+                 int test_iter = 10) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+  test_iter = 1;
+  for (auto& cls : cluster_id) {
+    for (auto& th : thread_num) {
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      LOG(INFO) << "cluster: " << cls << ", threads: " << th;
+
+      LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
+                << ", height= " << srch << ", width= " << srcw
+                << ", srcFormat= " << (ImageFormat)srcFormat;
+      if (srcFormat == ImageFormat::NV21) {
+        LOG(INFO) << "srcFormat: NV21";
+      }
+      if (srcFormat == ImageFormat::NV12) {
+        LOG(INFO) << "srcFormat: NV12";
+      }
+      if (srcFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "srcFormat: GRAY";
+      }
+      if (srcFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "srcFormat: BGRA";
+      }
+      if (srcFormat == ImageFormat::BGR) {
+        LOG(INFO) << "srcFormat: BGR";
+      }
+      if (srcFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "srcFormat: RGBA";
+      }
+      if (srcFormat == ImageFormat::RGB) {
+        LOG(INFO) << "srcFormat: RGB";
+      }
+      LOG(INFO) << " output tensor size, num=" << 1 << ", channel=" << 1
+                << ", height=" << dsth << ", width=" << dstw
+                << ", dstFormat= " << (ImageFormat)dstFormat;
+
+      if (dstFormat == ImageFormat::NV21) {
+        LOG(INFO) << "dstFormat: NV21";
+      }
+      if (dstFormat == ImageFormat::NV12) {
+        LOG(INFO) << "dstFormat: NV12";
+      }
+      if (dstFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "dstFormat: GRAY";
+      }
+      if (dstFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "dstFormat: BGRA";
+      }
+      if (dstFormat == ImageFormat::BGR) {
+        LOG(INFO) << "dstFormat: BGR";
+      }
+      if (dstFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "dstFormat: RGBA";
+      }
+      if (dstFormat == ImageFormat::RGB) {
+        LOG(INFO) << "dstFormat: RGB";
+      }
+
+      LOG(INFO) << "Rotate = " << rotate << ", Flip = " << flip
+                << ", Layout = " << static_cast<int>(layout);
+
+      int size = 3 * srch * srcw;
+      if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
+        size = ceil(1.5 * srch) * srcw;
+      } else if (srcFormat == ImageFormat::BGRA ||
+                 srcFormat == ImageFormat::RGBA) {
+        size = 4 * srch * srcw;
+      } else if (srcFormat == ImageFormat::GRAY) {
+        size = srch * srcw;
+      }
+      uint8_t* src = new uint8_t[size];
+      fill_tensor_host_rand(src, size);
+
+      int out_size = dsth * dstw;
+      if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
+        out_size = ceil(1.5 * dsth) * dstw;
+      } else if (dstFormat == ImageFormat::BGR ||
+                 dstFormat == ImageFormat::RGB) {
+        out_size = 3 * dsth * dstw;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        out_size = 4 * dsth * dstw;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        out_size = dsth * dstw;
+      }
+      uint8_t* basic_dst = new uint8_t[out_size];
+      uint8_t* lite_dst = new uint8_t[out_size];
+      if (FLAGS_check_result) {
+        LOG(INFO) << "image_resize_basic";
+        image_resize_basic(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, dstw, dsth);
+      }
+      Timer t_rotate;
+
+      LOG(INFO) << "saber cv compute";
+      TransParam tparam;
+      tparam.ih = srch;
+      tparam.iw = srcw;
+      tparam.oh = dsth;
+      tparam.ow = dstw;
+      tparam.flip_param = flip;
+      tparam.rotate_param = rotate;
+
+      ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
+
+      for (int i = 0; i < test_iter; ++i) {
+        t_rotate.Start();
+        image_preprocess.imageResize(src, lite_dst);
+        t_rotate.Stop();
+      }
+      LOG(INFO) << "image Resize avg time : " << t_rotate.LapTimes().Avg()
+                << ", min time: " << t_rotate.LapTimes().Min()
+                << ", max time: " << t_rotate.LapTimes().Max();
+
+      double max_ratio = 0;
+      double max_diff = 0;
+      const double eps = 1e-6f;
+      if (FLAGS_check_result) {
+        LOG(INFO) << "diff, image Resize size: " << out_size;
+        int* diff_v = new int[out_size];
+        for (int i = 0; i < out_size; i++) {
+          uint8_t a = lite_dst[i];
+          uint8_t b = basic_dst[i];
+          int diff1 = a - b;  // basic resize and saber resize 在float ->
+          // int转换时存在误差，误差范围是{-1, 1}
+          int diff = 0;
+          if (diff1 < -1 || diff1 > 1) diff = diff1 < 0 ? -diff1 : diff1;
+          diff_v[i] = diff;
+          if (diff > 1 && max_diff < diff) {
+            max_diff = diff;
+            printf("i: %d, lite: %d, basic: %d \n", i, a, b);
+            max_ratio = 2.0 * max_diff / (a + b + eps);
+          }
+        }
+        if (std::abs(max_ratio) >= 1e-5f) {
+          int width = size / srcw;
+          printf("din: \n");
+          print_int8(src, size, width);
+          width = out_size / dstw;
+          printf("saber result: \n");
+          print_int8(lite_dst, out_size, width);
+          printf("basic result: \n");
+          print_int8(basic_dst, out_size, width);
+          printf("diff result: \n");
+          print_int(diff_v, out_size, width);
+        }
+        delete[] diff_v;
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        bool rst = std::abs(max_ratio) < 1e-5f;
+        CHECK_EQ(rst, true) << "compute result error";
+      }
+      LOG(INFO) << "image Resize end";
+    }
+  }
+}
+void test_convert(const std::vector<int>& cluster_id,
+                  const std::vector<int>& thread_num,
+                  int srcw,
+                  int srch,
+                  int dstw,
+                  int dsth,
+                  ImageFormat srcFormat,
+                  ImageFormat dstFormat,
+                  float rotate,
+                  FlipParam flip,
+                  LayoutType layout,
+                  int test_iter = 10) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+  for (auto& cls : cluster_id) {
+    for (auto& th : thread_num) {
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      LOG(INFO) << "cluster: " << cls << ", threads: " << th;
+
+      LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
+                << ", height= " << srch << ", width= " << srcw
+                << ", srcFormat= " << (ImageFormat)srcFormat;
+      if (srcFormat == ImageFormat::NV21) {
+        LOG(INFO) << "srcFormat: NV21";
+      }
+      if (srcFormat == ImageFormat::NV12) {
+        LOG(INFO) << "srcFormat: NV12";
+      }
+      if (srcFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "srcFormat: GRAY";
+      }
+      if (srcFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "srcFormat: BGRA";
+      }
+      if (srcFormat == ImageFormat::BGR) {
+        LOG(INFO) << "srcFormat: BGR";
+      }
+      if (srcFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "srcFormat: RGBA";
+      }
+      if (srcFormat == ImageFormat::RGB) {
+        LOG(INFO) << "srcFormat: RGB";
+      }
+      LOG(INFO) << " output tensor size, num=" << 1 << ", channel=" << 1
+                << ", height=" << dsth << ", width=" << dstw
+                << ", dstFormat= " << (ImageFormat)dstFormat;
+
+      if (dstFormat == ImageFormat::NV21) {
+        LOG(INFO) << "dstFormat: NV21";
+      }
+      if (dstFormat == ImageFormat::NV12) {
+        LOG(INFO) << "dstFormat: NV12";
+      }
+      if (dstFormat == ImageFormat::GRAY) {
+        LOG(INFO) << "dstFormat: GRAY";
+      }
+      if (dstFormat == ImageFormat::BGRA) {
+        LOG(INFO) << "dstFormat: BGRA";
+      }
+      if (dstFormat == ImageFormat::BGR) {
+        LOG(INFO) << "dstFormat: BGR";
+      }
+      if (dstFormat == ImageFormat::RGBA) {
+        LOG(INFO) << "dstFormat: RGBA";
+      }
+      if (dstFormat == ImageFormat::RGB) {
+        LOG(INFO) << "dstFormat: RGB";
+      }
+
+      LOG(INFO) << "Rotate = " << rotate << ", Flip = " << flip
+                << ", Layout = " << static_cast<int>(layout);
+
+      int size = 3 * srch * srcw;
+      if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
+        size = ceil(1.5 * srch) * srcw;
+      } else if (srcFormat == ImageFormat::BGRA ||
+                 srcFormat == ImageFormat::RGBA) {
+        size = 4 * srch * srcw;
+      } else if (srcFormat == ImageFormat::GRAY) {
+        size = srch * srcw;
+      }
+      uint8_t* src = new uint8_t[size];
+      fill_tensor_host_rand(src, size);
+
+      int out_size = srch * srcw;
+      if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
+        out_size = ceil(1.5 * srch) * srcw;
+      } else if (dstFormat == ImageFormat::BGR ||
+                 dstFormat == ImageFormat::RGB) {
+        out_size = 3 * srch * srcw;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        out_size = 4 * srch * srcw;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        out_size = srch * srcw;
+      }
+      uint8_t* basic_dst = new uint8_t[out_size];
+      uint8_t* lite_dst = new uint8_t[out_size];
+      if (FLAGS_check_result) {
+        image_convert_basic(src,
+                            basic_dst,
+                            (ImageFormat)srcFormat,
+                            (ImageFormat)dstFormat,
+                            srcw,
+                            srch,
+                            out_size);
+      }
+      Timer t_rotate;
+
+      LOG(INFO) << "saber cv compute";
+      TransParam tparam;
+      tparam.ih = srch;
+      tparam.iw = srcw;
+      tparam.oh = srch;
+      tparam.ow = srcw;
+      tparam.flip_param = flip;
+      tparam.rotate_param = rotate;
+
+      ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
+
+      for (int i = 0; i < test_iter; ++i) {
+        t_rotate.Start();
+        image_preprocess.imageConvert(src, lite_dst);
+        t_rotate.Stop();
+      }
+      LOG(INFO) << "image Convert avg time : " << t_rotate.LapTimes().Avg()
+                << ", min time: " << t_rotate.LapTimes().Min()
+                << ", max time: " << t_rotate.LapTimes().Max();
+
+      double max_ratio = 0;
+      double max_diff = 0;
+      const double eps = 1e-6f;
+      if (FLAGS_check_result) {
+        LOG(INFO) << "diff, image convert size: " << out_size;
+        uint8_t* diff_v = new uint8_t[out_size];
+        for (int i = 0; i < out_size; i++) {
+          uint8_t a = lite_dst[i];
+          uint8_t b = basic_dst[i];
+          uint8_t diff1 = a - b;
+          uint8_t diff = diff1 > 0 ? diff1 : -diff1;
+          diff_v[i] = diff;
+          if (max_diff < diff) {
+            max_diff = diff;
+            max_ratio = 2.0 * max_diff / (a + b + eps);
+          }
+        }
+        if (std::abs(max_ratio) >= 1e-5f) {
+          int width = size / srch;
+          printf("din: \n");
+          print_int8(src, size, width);
+          width = out_size / srch;
+          printf("saber result: \n");
+          print_int8(lite_dst, out_size, width);
+          printf("basic result: \n");
+          print_int8(basic_dst, out_size, width);
+          printf("diff result: \n");
+          print_int8(diff_v, out_size, width);
+        }
+        delete[] diff_v;
+        LOG(INFO) << "compare result, max diff: " << max_diff
+                  << ", max ratio: " << max_ratio;
+        bool rst = std::abs(max_ratio) < 1e-5f;
+        CHECK_EQ(rst, true) << "compute result error";
+      }
+      LOG(INFO) << "image convert end";
+    }
+  }
+}
+
+#if 1
 TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 4, 8, 16, 112, 224, 1092}) {
       for (auto h : {1, 4, 16, 112, 224}) {
-        for (auto ww : {66}) {
-          for (auto hh : {12}) {
-            for (auto rotate : {180}) {
-              for (auto flip : {0}) {
-                for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
-                  for (auto dstFormat : {0, 1, 2, 3, 4}) {
-                    for (auto layout : {1}) {
-                      if ((srcFormat == ImageFormat::NV12 ||
-                           srcFormat == ImageFormat::NV21) &&
-                              (dstFormat == ImageFormat::GRAY)) {
-                        continue;
-                      }
-                      if ((dstFormat == ImageFormat::NV12 ||
-                           dstFormat == ImageFormat::NV21) &&
-                              (srcFormat == ImageFormat::GRAY)) {
-                        continue;
-                      }
-                      if (srcFormat == ImageFormat::NV12 ||
-                          srcFormat == ImageFormat::NV21) {
-                        if (w % 2) {  // is not ou shu, two line y == one line
-                                      // uv
-                          continue;
-                        }
-                      }
-                      test_img({FLAGS_cluster},
+        for (auto rotate : {180}) {
+          for (auto flip : {0}) {
+            for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
+              for (auto dstFormat : {0, 1, 2, 3, 4}) {
+                for (auto layout : {1}) {
+                  if ((srcFormat == ImageFormat::NV12 ||
+                       srcFormat == ImageFormat::NV21) &&
+                      (dstFormat == ImageFormat::GRAY)) {
+                    continue;
+                  }
+                  if ((dstFormat == ImageFormat::NV12 ||
+                       dstFormat == ImageFormat::NV21) &&
+                      (srcFormat == ImageFormat::GRAY)) {
+                    continue;
+                  }
+                  if (srcFormat == ImageFormat::NV12 ||
+                      srcFormat == ImageFormat::NV21) {
+                    if (w % 2) {
+                      continue;
+                    }
+                  }
+                  test_convert({FLAGS_cluster},
                                {1},
                                w,
                                h,
-                               ww,
-                               hh,
+                               w,
+                               h,
                                (ImageFormat)srcFormat,
                                (ImageFormat)dstFormat,
                                rotate,
                                (FlipParam)flip,
                                (LayoutType)layout);
-                    }
-                  }
                 }
               }
             }
@@ -611,44 +1285,35 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   }
 }
 #endif
-#if 0
+#if 1
 TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 4, 8, 16, 112, 224, 1092}) {
-      for (auto h : {1, 4, 16, 112, 224}) {
-        for (auto ww : {1, 2, 8, 32, 112}) {
-          for (auto hh : {1, 2, 8, 112}) {
+    for (auto w : {8, 16, 112, 224, 1092}) {
+      for (auto h : {4, 16, 112, 224}) {
+        for (auto ww : {8, 32, 112}) {
+          for (auto hh : {8, 112}) {
             for (auto rotate : {180}) {
               for (auto flip : {0}) {
                 for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
-                  for (auto dstFormat : {0, 1, 2, 3, 4, 11}) {
-                    for (auto layout : {1}) {
-                      if (dstFormat == ImageFormat::NV12 ||
-                           dstFormat == ImageFormat::NV21 ||
-                          (srcFormat == ImageFormat::NV12 ||
-                           srcFormat == ImageFormat::NV21) &&
-                              dstFormat == ImageFormat::GRAY) {
+                  for (auto layout : {1}) {
+                    auto dstFormat = srcFormat;
+                    if (srcFormat == ImageFormat::NV12 ||
+                        srcFormat == ImageFormat::NV21) {
+                      if (w % 2) {
                         continue;
                       }
-                      if (srcFormat == ImageFormat::NV12 ||
-                          srcFormat == ImageFormat::NV21) {
-                        if (w % 2) {  // is not ou shu, two line y == one line
-                                      // uv
-                          continue;
-                        }
-                      }
-                      test_img({FLAGS_cluster},
-                               {1, 2, 4},
-                               w,
-                               h,
-                               ww,
-                               hh,
-                               (ImageFormat)srcFormat,
-                               (ImageFormat)dstFormat,
-                               rotate,
-                               (FlipParam)flip,
-                               (LayoutType)layout);
                     }
+                    test_resize({FLAGS_cluster},
+                                {1, 2, 4},
+                                w,
+                                h,
+                                ww,
+                                hh,
+                                (ImageFormat)srcFormat,
+                                (ImageFormat)dstFormat,
+                                rotate,
+                                (FlipParam)flip,
+                                (LayoutType)layout);
                   }
                 }
               }
@@ -665,34 +1330,40 @@ TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 8, 16, 112, 224, 1092}) {
       for (auto h : {1, 16, 112, 224}) {
-        for (auto ww : {32, 112}) {
-          for (auto hh : {112}) {
-            for (auto rotate : {90, 180, 270}) {
-              for (auto flip : {-1, 0, 1}) {
-                for (auto srcFormat : {0}) {
-                  for (auto dstFormat : {0, 1, 2, 3, 4}) {
-                    for (auto layout : {1, 3}) {
-                      if (srcFormat == ImageFormat::NV12 ||
-                          srcFormat == ImageFormat::NV21) {
-                        if (w % 2) {  // is not ou shu, two line y == one line
-                                      // uv
-                          continue;
-                        }
-                      }
-                      test_img({FLAGS_cluster},
-                               {1, 2, 4},
-                               w,
-                               h,
-                               ww,
-                               hh,
-                               (ImageFormat)srcFormat,
-                               (ImageFormat)dstFormat,
-                               rotate,
-                               (FlipParam)flip,
-                               (LayoutType)layout);
-                    }
+        for (auto rotate : {90, 180, 270}) {
+          for (auto flip : {-1, 0, 1}) {
+            for (auto srcFormat : {0, 1, 2, 3, 4}) {
+              for (auto layout : {1, 3}) {
+                auto dstFormat = srcFormat;
+                if (srcFormat == ImageFormat::NV12 ||
+                    srcFormat == ImageFormat::NV21) {
+                  if (w % 2) {
+                    continue;
                   }
                 }
+                test_flip({FLAGS_cluster},
+                          {1, 2, 4},
+                          w,
+                          h,
+                          w,
+                          h,
+                          (ImageFormat)srcFormat,
+                          (ImageFormat)dstFormat,
+                          rotate,
+                          (FlipParam)flip,
+                          (LayoutType)layout);
+
+                test_rotate({FLAGS_cluster},
+                            {1, 2, 4},
+                            w,
+                            h,
+                            w,
+                            h,
+                            (ImageFormat)srcFormat,
+                            (ImageFormat)dstFormat,
+                            rotate,
+                            (FlipParam)flip,
+                            (LayoutType)layout);
               }
             }
           }

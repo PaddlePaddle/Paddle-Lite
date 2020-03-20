@@ -19,6 +19,10 @@
 namespace paddle {
 namespace lite {
 
+const std::map<std::string, std::string> &GetOp2PathDict() {
+  return OpKernelInfoCollector::Global().GetOp2PathDict();
+}
+
 std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     const std::string &op_type,
     TargetType target,
@@ -150,10 +154,13 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kX86, kInt64, kNCHW);
 
   INIT_FOR(kARM, kFloat, kNCHW);
+  INIT_FOR(kARM, kFloat, kNHWC);
   INIT_FOR(kARM, kInt8, kNCHW);
+  INIT_FOR(kARM, kInt8, kNHWC);
   INIT_FOR(kARM, kAny, kNCHW);
   INIT_FOR(kARM, kAny, kAny);
   INIT_FOR(kARM, kInt32, kNCHW);
+  INIT_FOR(kARM, kInt64, kNCHW);
 
   INIT_FOR(kOpenCL, kFloat, kNCHW);
   INIT_FOR(kOpenCL, kFloat, kNHWC);
@@ -175,8 +182,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kAny, kImageNW);
 
   INIT_FOR(kNPU, kFloat, kNCHW);
+  INIT_FOR(kNPU, kFloat, kNHWC);
   INIT_FOR(kNPU, kInt8, kNCHW);
+  INIT_FOR(kNPU, kInt8, kNHWC);
   INIT_FOR(kNPU, kAny, kNCHW);
+  INIT_FOR(kNPU, kAny, kNHWC);
   INIT_FOR(kNPU, kAny, kAny);
 
   INIT_FOR(kXPU, kFloat, kNCHW);

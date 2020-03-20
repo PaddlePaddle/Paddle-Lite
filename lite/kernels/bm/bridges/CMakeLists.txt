@@ -21,6 +21,16 @@ lite_cc_library(subgraph_bridge_transpose_op_bm SRCS transpose_op.cc DEPS ${bm_s
 lite_cc_library(subgraph_bridge_reshape_op_bm SRCS reshape_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_norm_op_bm SRCS norm_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_prior_box_op_bm SRCS prior_box_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_box_coder_op_bm SRCS box_coder_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_multiclass_nms_op_bm SRCS multiclass_nms_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_interpolate_op_bm SRCS interpolate_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_yolo_box_op_bm SRCS yolo_box_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_slice_op_bm SRCS slice_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_conv_transpose_op_bm SRCS conv_transpose_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reduce_full_op_bm SRCS reduce_full_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_squeeze_op_bm SRCS squeeze_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_cast_op_bm SRCS cast_op.cc DEPS ${bm_subgraph_bridge_deps})
+
 set(bm_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_engine
@@ -39,4 +49,13 @@ set(bm_subgraph_bridges
         subgraph_bridge_reshape_op_bm
         subgraph_bridge_norm_op_bm
         subgraph_bridge_prior_box_op_bm
+        subgraph_bridge_box_coder_op_bm
+        subgraph_bridge_multiclass_nms_op_bm
+        subgraph_bridge_interpolate_op_bm
+        subgraph_bridge_yolo_box_op_bm
+        subgraph_bridge_slice_op_bm
+        subgraph_bridge_conv_transpose_op_bm
+        subgraph_bridge_reduce_full_op_bm
+        subgraph_bridge_squeeze_op_bm
+        subgraph_bridge_cast_op_bm
         CACHE INTERNAL "bm_subgraph_bridges")

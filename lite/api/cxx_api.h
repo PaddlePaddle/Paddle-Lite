@@ -104,14 +104,14 @@ class LITE_API Predictor {
       bool record_info = false);
   void SaveOpKernelInfo(const std::string& model_dir);
 
-#ifdef LITE_WITH_TRAIN
-  void Run(const std::vector<framework::Tensor>& tensors) {
-    FeedVars(tensors);
-    program_->Run();
-  }
+  // #ifdef LITE_WITH_TRAIN
+  //   void Run(const std::vector<framework::Tensor>& tensors) {
+  //     FeedVars(tensors);
+  //     program_->Run();
+  //   }
 
-  void FeedVars(const std::vector<framework::Tensor>& tensors);
-#endif
+  //   void FeedVars(const std::vector<framework::Tensor>& tensors);
+  // #endif
 
  private:
   Optimizer optimizer_;

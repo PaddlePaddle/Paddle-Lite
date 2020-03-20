@@ -28,362 +28,874 @@ typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 using namespace paddle::lite_api;  // NOLINT
 
-void fill_with_mat(cv::Mat& mat, uint8_t* src) {  // NOLINT
+void fill_with_mat(cv::Mat& mat, uint8_t* src, int num) {  // NOLINT
   for (int i = 0; i < mat.rows; i++) {
     for (int j = 0; j < mat.cols; j++) {
-      int tmp = (i * mat.cols + j) * 3;
-      cv::Vec3b& rgb = mat.at<cv::Vec3b>(i, j);
-      rgb[0] = src[tmp];
-      rgb[1] = src[tmp + 1];
-      rgb[2] = src[tmp + 2];
+      if (num == 1) {
+        int tmp = (i * mat.cols + j);
+      } else if (num == 2) {
+        int tmp = (i * mat.cols + j) * 2;
+        cv::Vec2b& rgb = mat.at<cv::Vec2b>(i, j);
+        rgb[0] = src[tmp];
+        rgb[1] = src[tmp + 1];
+        rgb[2] = src[tmp + 2];
+      } else if (num == 3) {
+        int tmp = (i * mat.cols + j) * 3;
+        cv::Vec3b& rgb = mat.at<cv::Vec3b>(i, j);
+        rgb[0] = src[tmp];
+        rgb[1] = src[tmp + 1];
+        rgb[2] = src[tmp + 2];
+      } else if (num == 4) {
+        int tmp = (i * mat.cols + j) * 4;
+        cv::Vec4b& rgb = mat.at<cv::Vec4b>(i, j);
+        rgb[0] = src[tmp];
+        rgb[1] = src[tmp + 1];
+        rgb[2] = src[tmp + 2];
+        rgb[3] = src[tmp + 3];
+      } else {
+        std::cout << "it is not support" << std::endl;
+        return;
+      }
     }
   }
 }
-void test_img(std::vector<int> cluster_id,
-              std::vector<int> thread_num,
-              std::string img_path,
-              std::string dst_path,
-              ImageFormat srcFormat,
-              ImageFormat dstFormat,
-              int width,
-              int height,
-              float rotate,
-              FlipParam flip,
-              LayoutType layout,
-              std::string model_dir,
-              int test_iter = 1) {
-  // init
-  // paddle::lite::DeviceInfo::Init();
-  // read img and pre-process
-  cv::Mat img = imread(img_path, cv::IMREAD_COLOR);
-  float means[3] = {0.485f, 0.456f, 0.406f};
-  float scales[3] = {0.229f, 0.224f, 0.225f};
-  int srch = img.rows;
-  int srcw = img.cols;
-  for (auto& cls : cluster_id) {
-    for (auto& th : thread_num) {
-      std::cout << "cluster: " << cls << ", threads: " << th << std::endl;
-      // 1. Set MobileConfig
-      MobileConfig config;
-      config.set_model_dir(model_dir);
-      config.set_power_mode((PowerMode)cls);
-      config.set_threads(th);
-      std::cout << "model: " << model_dir;
 
-      // 2. Create PaddlePredictor by MobileConfig
-      std::shared_ptr<PaddlePredictor> predictor =
-          CreatePaddlePredictor<MobileConfig>(config);
+double compare_diff(uint8_t* data1, uint8_t* data2, int size, uint8_t* diff_v) {
+  double diff = 0.0;
+  for (int i = 0; i < size; i++) {
+    double val = abs(data1[i] - data2[i]);
+    diff_v[i] = val;
+    diff = val > diff ? val : diff;
+  }
+  return diff;
+}
+void print_data(const uint8_t* data, int size) {
+  for (int i = 0; i < size; i++) {
+    printf("%d ", data[i]);
+    if ((i + 1) % 10 == 0) {
+      std::cout << std::endl;
+    }
+  }
+  std::cout << std::endl;
+}
+bool test_convert(bool cv_run,
+                  const uint8_t* src,
+                  cv::Mat img,
+                  ImagePreprocess image_preprocess,
+                  int in_size,
+                  int out_size,
+                  ImageFormat srcFormat,
+                  ImageFormat dstFormat,
+                  int dsth,
+                  int dstw,
+                  std::string dst_path,
+                  int test_iter = 1) {
+  // out
+  uint8_t* resize_cv = new uint8_t[out_size];
+  uint8_t* resize_lite = new uint8_t[out_size];
+  cv::Mat im_resize;
 
-      // 3. Prepare input data from image
-      std::unique_ptr<Tensor> input_tensor(predictor->GetInput(0));
+  double to_cv = 0.0;
+  double to_lite = 0.0;
+  std::cout << "opencv compute:" << std::endl;
+  if (cv_run) {
+    for (int i = 0; i < test_iter; i++) {
+      clock_t begin = clock();
+      // convert bgr-gray
+      if (dstFormat == srcFormat) {
+        im_resize = img;
+      } else if ((dstFormat == ImageFormat::BGR ||
+                  dstFormat == ImageFormat::RGB) &&
+                 srcFormat == ImageFormat::GRAY) {
+        cv::cvtColor(img, im_resize, cv::COLOR_GRAY2BGR);
+      } else if ((srcFormat == ImageFormat::BGR ||
+                  dstFormat == ImageFormat::RGBA) &&
+                 dstFormat == ImageFormat::GRAY) {
+        cv::cvtColor(img, im_resize, cv::COLOR_BGR2GRAY);
+      } else if (dstFormat == srcFormat) {
+        printf("convert format error \n");
+        return false;
+      }
+      clock_t end = clock();
+      to_cv += (end - begin);
+    }
+  }
 
-      /*
-        imread(img_path, param)
-        IMREAD_UNCHANGED(<0) 表示加载原图，不做任何改变
-        IMREAD_GRAYSCALE ( 0)表示把原图作为灰度图像加载进来
-        IMREAD_COLOR (>0) 表示把原图作为RGB图像加载进来
-      */
-      cv::Mat img;
-      if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-        img = imread(img_path, cv::IMREAD_COLOR);
-      } else if (srcFormat == ImageFormat::GRAY) {
-        img = imread(img_path, cv::IMREAD_GRAYSCALE);
-      } else {
-        printf("this format %d does not support \n", srcFormat);
-        return;
-      }
-      if (img.empty()) {
-        std::cout << "opencv read image " << img_path.c_str() << " failed"
-                  << std::endl;
-        return;
-      }
-      int srch = img.rows;
-      int srcw = img.cols;
-      int dsth = height;
-      int dstw = width;
+  std::cout << "lite compute:" << std::endl;
+  for (int i = 0; i < test_iter; i++) {
+    clock_t begin = clock();
+    // resize default linear
+    image_preprocess.imageConvert(src, resize_lite);
+    clock_t end = clock();
+    to_lite += (end - begin);
+  }
+  to_cv = 1000 * to_cv / CLOCKS_PER_SEC;
+  to_lite = 1000 * to_lite / CLOCKS_PER_SEC;
 
-      std::cout << " input tensor size, num= " << 1 << ", channel= " << 1
-                << ", height= " << srch << ", width= " << srcw
-                << ", srcFormat= " << (ImageFormat)srcFormat << std::endl;
-      // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12,
-      if (srcFormat == ImageFormat::GRAY) {
-        std::cout << "srcFormat: GRAY" << std::endl;
-      }
-      if (srcFormat == ImageFormat::BGR) {
-        std::cout << "srcFormat: BGR" << std::endl;
-      }
-      if (srcFormat == ImageFormat::RGB) {
-        std::cout << "srcFormat: RGB" << std::endl;
-      }
-      std::cout << " output tensor size, num=" << 1 << ", channel=" << 1
-                << ", height=" << dsth << ", width=" << dstw
-                << ", dstFormat= " << (ImageFormat)dstFormat << std::endl;
+  std::cout << "---opencv convert run time: " << to_cv
+            << "ms, avg: " << to_cv / test_iter << std::endl;
+  std::cout << "---lite convert run time: " << to_lite
+            << "ms, avg: " << to_lite / test_iter << std::endl;
+  std::cout << "compare diff: " << std::endl;
 
-      if (dstFormat == ImageFormat::GRAY) {
-        std::cout << "dstFormat: GRAY" << std::endl;
-      }
-      if (dstFormat == ImageFormat::BGR) {
-        std::cout << "dstFormat: BGR" << std::endl;
-      }
-      if (dstFormat == ImageFormat::RGB) {
-        std::cout << "dstFormat: RGB" << std::endl;
-      }
-
-      std::cout << "Rotate = " << rotate << ", Flip = " << flip
-                << ", Layout = " << static_cast<int>(layout) << std::endl;
-      if (static_cast<int>(layout) != 1 && static_cast<int>(layout) != 3) {
-        std::cout << "this layout" << static_cast<int>(layout)
-                  << " is no support" << std::endl;
-      }
-      int size = 3 * srch * srcw;
-      if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-        size = 3 * srch * srcw;
-      } else if (srcFormat == ImageFormat::GRAY) {
-        size = srch * srcw;
-      }
-      uint8_t* src = img.data;
-
-      int out_size = srch * srcw;
-      int resize = dstw * dsth;
+  if (cv_run) {
+    resize_cv = im_resize.data;
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
+    if (diff > 1) {
+      std::cout << "din: " << std::endl;
+      print_data(src, in_size);
+      std::cout << "cv out: " << std::endl;
+      print_data(resize_cv, out_size);
+      std::cout << "lite out: " << std::endl;
+      print_data(resize_lite, out_size);
+      std::cout << "lite out: " << std::endl;
+      print_data(diff_v, out_size);
+      return false;
+    } else {
+      // save_img
+      std::cout << "write image: " << std::endl;
+      std::string resize_name = dst_path + "/convert.jpg";
+      cv::Mat resize_mat;
+      int num = 1;
       if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
-        out_size = 3 * srch * srcw;
-        resize = 3 * dsth * dstw;
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
+        num = 3;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
+        num = 4;
       } else if (dstFormat == ImageFormat::GRAY) {
-        out_size = srch * srcw;
-        resize = dsth * dstw;
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
+        num = 1;
+      } else if (dstFormat == ImageFormat::NV12) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
+        num = 2;
       }
-      // out
-      uint8_t* lite_dst = new uint8_t[out_size];
-      uint8_t* resize_tmp = new uint8_t[resize];
-      uint8_t* tv_out_ratote = new uint8_t[out_size];
-      uint8_t* tv_out_flip = new uint8_t[out_size];
-      std::vector<int64_t> shape_out = {1, 3, srch, srcw};
+      fill_with_mat(resize_mat, resize_lite, num);
+      cv::imwrite(resize_name, resize_mat);
 
-      input_tensor->Resize(shape_out);
-      Tensor dst_tensor = *input_tensor;
-      std::cout << "opencv compute" << std::endl;
-      cv::Mat im_convert;
-      cv::Mat im_resize;
-      cv::Mat im_rotate;
-      cv::Mat im_flip;
-      double to_1 = 0;
-      double to_2 = 0;
-      double to_3 = 0;
-      double to_4 = 0;
-      double to1 = 0;
-      for (int i = 0; i < test_iter; i++) {
-        clock_t start = clock();
-        clock_t begin = clock();
-        // convert bgr-gray
-        if (dstFormat == srcFormat) {
-          im_convert = img;
-        } else if (dstFormat == ImageFormat::BGR &&
-                   srcFormat == ImageFormat::GRAY) {
-          cv::cvtColor(img, im_convert, cv::COLOR_GRAY2BGR);
-        } else if (srcFormat == ImageFormat::BGR &&
-                   dstFormat == ImageFormat::GRAY) {
-          cv::cvtColor(img, im_convert, cv::COLOR_BGR2GRAY);
-        } else if (dstFormat == srcFormat) {
-          printf("convert format error \n");
-          return;
-        }
-        clock_t end = clock();
-        to_1 += (end - begin);
+      std::cout << "convert successed!" << std::endl;
+      return true;
+    }
+  }
+}
 
-        begin = clock();
-        // resize default linear
-        cv::resize(im_convert, im_resize, cv::Size(dstw, dsth), 0.f, 0.f);
-        end = clock();
-        to_2 += (end - begin);
+bool test_flip(bool cv_run,
+               const uint8_t* src,
+               cv::Mat img,
+               ImagePreprocess image_preprocess,
+               int in_size,
+               int out_size,
+               FlipParam flip,
+               ImageFormat dstFormat,
+               int dsth,
+               int dstw,
+               std::string dst_path,
+               int test_iter = 1) {
+  // out
+  uint8_t* resize_cv = new uint8_t[out_size];
+  uint8_t* resize_lite = new uint8_t[out_size];
+  cv::Mat im_resize;
 
-        begin = clock();
-        // rotate 90
-        if (rotate == 90) {
-          cv::flip(im_convert.t(), im_rotate, 1);
-        } else if (rotate == 180) {
-          cv::flip(im_convert, im_rotate, -1);
-        } else if (rotate == 270) {
-          cv::flip(im_convert.t(), im_rotate, 0);
-        }
-        end = clock();
-        to_3 += (end - begin);
+  double to_cv = 0.0;
+  double to_lite = 0.0;
+  std::cout << "opencv compute:" << std::endl;
+  if (cv_run) {
+    for (int i = 0; i < test_iter; i++) {
+      clock_t begin = clock();
+      // resize default linear
+      cv::flip(img, im_resize, flip);
+      clock_t end = clock();
+      to_cv += (end - begin);
+    }
+  }
+  std::cout << "lite compute:" << std::endl;
+  for (int i = 0; i < test_iter; i++) {
+    clock_t begin = clock();
+    // resize default linear
+    image_preprocess.imageFlip(src, resize_lite);
+    clock_t end = clock();
+    to_lite += (end - begin);
+  }
+  to_cv = 1000 * to_cv / CLOCKS_PER_SEC;
+  to_lite = 1000 * to_lite / CLOCKS_PER_SEC;
 
-        begin = clock();
-        // flip
-        cv::flip(im_convert, im_flip, flip);
-        end = clock();
-        to_4 += (end - begin);
-        clock_t ovet = clock();
-        to1 += (ovet - start);
+  std::cout << "---opencv flip run time: " << to_cv
+            << "ms, avg: " << to_cv / test_iter << std::endl;
+  std::cout << "---lite flip run time: " << to_lite
+            << "ms, avg: " << to_lite / test_iter << std::endl;
+  std::cout << "compare diff: " << std::endl;
+
+  if (cv_run) {
+    resize_cv = im_resize.data;
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
+    if (diff > 1) {
+      std::cout << "din: " << std::endl;
+      print_data(src, in_size);
+      std::cout << "cv out: " << std::endl;
+      print_data(resize_cv, out_size);
+      std::cout << "lite out: " << std::endl;
+      print_data(resize_lite, out_size);
+      std::cout << "diff out: " << std::endl;
+      print_data(diff_v, out_size);
+      return false;
+    } else {
+      // save_img
+      std::cout << "write image: " << std::endl;
+      std::string resize_name = dst_path + "/flip.jpg";
+      cv::Mat resize_mat;
+      int num = 1;
+      if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
+        num = 3;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
+        num = 4;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
+        num = 1;
+      } else if (dstFormat == ImageFormat::NV12) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
+        num = 2;
       }
+      fill_with_mat(resize_mat, resize_lite, num);
+      cv::imwrite(resize_name, resize_mat);
+      std::cout << "flip successed!" << std::endl;
+      return true;
+    }
+  }
+}
 
-      std::cout << "Paddle-lite compute" << std::endl;
-      double lite_to = 0;
-      double lite_to_1 = 0;
-      double lite_to_2 = 0;
-      double lite_to_3 = 0;
-      double lite_to_4 = 0;
-      double lite_to_5 = 0;
-      TransParam tparam;
-      tparam.ih = srch;
-      tparam.iw = srcw;
-      tparam.oh = dsth;
-      tparam.ow = dstw;
-      tparam.flip_param = flip;
-      tparam.rotate_param = rotate;
+bool test_rotate(bool cv_run,
+                 const uint8_t* src,
+                 cv::Mat img,
+                 ImagePreprocess image_preprocess,
+                 int in_size,
+                 int out_size,
+                 float rotate,
+                 ImageFormat dstFormat,
+                 int dsth,
+                 int dstw,
+                 std::string dst_path,
+                 int test_iter = 1) {
+  // out
+  uint8_t* resize_cv = new uint8_t[out_size];
+  uint8_t* resize_lite = new uint8_t[out_size];
+  cv::Mat im_resize;
 
-      ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
-
-      for (int i = 0; i < test_iter; ++i) {
-        clock_t start = clock();
-        clock_t begin = clock();
-        image_preprocess.imageConvert(src, lite_dst);
-        clock_t end = clock();
-        lite_to_1 += (end - begin);
-
-        begin = clock();
-        image_preprocess.imageResize(lite_dst, resize_tmp);
-        end = clock();
-        lite_to_2 += (end - begin);
-
-        begin = clock();
-        image_preprocess.imageRotate(
-            lite_dst, tv_out_ratote, (ImageFormat)dstFormat, srcw, srch, 90);
-        end = clock();
-        lite_to_3 += (end - begin);
-
-        begin = clock();
-        image_preprocess.imageFlip(
-            lite_dst, tv_out_flip, (ImageFormat)dstFormat, srcw, srch, flip);
-        end = clock();
-        lite_to_4 += (end - begin);
-
-        clock_t over = clock();
-        lite_to += (over - start);
-
-        begin = clock();
-        image_preprocess.image2Tensor(lite_dst,
-                                      &dst_tensor,
-                                      (ImageFormat)dstFormat,
-                                      srcw,
-                                      srch,
-                                      layout,
-                                      means,
-                                      scales);
-        end = clock();
-        lite_to_5 += (end - begin);
+  double to_cv = 0.0;
+  double to_lite = 0.0;
+  std::cout << "opencv compute:" << std::endl;
+  if (cv_run) {
+    for (int i = 0; i < test_iter; i++) {
+      clock_t begin = clock();
+      // rotate 90
+      if (rotate == 90) {
+        cv::flip(img.t(), im_resize, 1);
+      } else if (rotate == 180) {
+        cv::flip(img, im_resize, -1);
+      } else if (rotate == 270) {
+        cv::flip(img.t(), im_resize, 0);
       }
-      to_1 = 1000 * to_1 / CLOCKS_PER_SEC;
-      to_2 = 1000 * to_2 / CLOCKS_PER_SEC;
-      to_3 = 1000 * to_3 / CLOCKS_PER_SEC;
-      to_4 = 1000 * to_4 / CLOCKS_PER_SEC;
-      to1 = 1000 * to1 / CLOCKS_PER_SEC;
-      std::cout << "opencv convert run time: " << to_1
-                << "ms, avg: " << to_1 / test_iter << std::endl;
-      std::cout << "opencv resize run time: " << to_2
-                << "ms, avg: " << to_2 / test_iter << std::endl;
-      std::cout << "opencv rotate run time: " << to_3
-                << "ms, avg: " << to_3 / test_iter << std::endl;
-      std::cout << "opencv flip  time: " << to_4
-                << "ms, avg: " << to_4 / test_iter << std::endl;
-      std::cout << "opencv total run time: " << to1
-                << "ms, avg: " << to1 / test_iter << std::endl;
-      std::cout << "------" << std::endl;
+      clock_t end = clock();
+      to_cv += (end - begin);
+    }
+  }
+  // lite
+  std::cout << "lite compute:" << std::endl;
+  for (int i = 0; i < test_iter; i++) {
+    clock_t begin = clock();
+    // resize default linear
+    image_preprocess.imageRotate(src, resize_lite);
+    clock_t end = clock();
+    to_lite += (end - begin);
+  }
+  to_cv = 1000 * to_cv / CLOCKS_PER_SEC;
+  to_lite = 1000 * to_lite / CLOCKS_PER_SEC;
 
-      lite_to_1 = 1000 * lite_to_1 / CLOCKS_PER_SEC;
-      lite_to_2 = 1000 * lite_to_2 / CLOCKS_PER_SEC;
-      lite_to_3 = 1000 * lite_to_3 / CLOCKS_PER_SEC;
-      lite_to_4 = 1000 * lite_to_4 / CLOCKS_PER_SEC;
-      lite_to_5 = 1000 * lite_to_5 / CLOCKS_PER_SEC;
-      lite_to = 1000 * lite_to / CLOCKS_PER_SEC;
-      std::cout << "lite convert run time: " << lite_to_1
-                << "ms, avg: " << lite_to_1 / test_iter << std::endl;
-      std::cout << "lite resize run time: " << lite_to_2
-                << "ms, avg: " << lite_to_2 / test_iter << std::endl;
-      std::cout << "lite rotate run time: " << lite_to_3
-                << "ms, avg: " << lite_to_3 / test_iter << std::endl;
-      std::cout << "lite flip  time: " << lite_to_4
-                << "ms, avg: " << lite_to_4 / test_iter << std::endl;
-      std::cout << "lite total run time: " << lite_to
-                << "ms, avg: " << lite_to / test_iter << std::endl;
-      std::cout << "lite img2tensor  time: " << lite_to_5
-                << "ms, avg: " << lite_to_5 / test_iter << std::endl;
-      std::cout << "------" << std::endl;
+  std::cout << "---opencv rotate run time: " << to_cv
+            << "ms, avg: " << to_cv / test_iter << std::endl;
+  std::cout << "---lite rotate run time: " << to_lite
+            << "ms, avg: " << to_lite / test_iter << std::endl;
+  std::cout << "compare diff: " << std::endl;
+  if (cv_run) {
+    resize_cv = im_resize.data;
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
+    if (diff > 1) {
+      std::cout << "din: " << std::endl;
+      print_data(src, in_size);
+      std::cout << "cv out: " << std::endl;
+      print_data(resize_cv, out_size);
+      std::cout << "lite out: " << std::endl;
+      print_data(resize_lite, out_size);
+      std::cout << "diff out: " << std::endl;
+      print_data(diff_v, out_size);
+      return false;
+    } else {
+      // save_img
+      std::cout << "write image: " << std::endl;
+      std::string resize_name = dst_path + "/rotate.jpg";
+      cv::Mat resize_mat;
+      int num = 1;
+      if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
+        num = 3;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
+        num = 4;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
+        num = 1;
+      } else if (dstFormat == ImageFormat::NV12) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
+        num = 2;
+      }
+      fill_with_mat(resize_mat, resize_lite, num);
+      cv::imwrite(resize_name, resize_mat);
+      std::cout << "rotate successed!" << std::endl;
+      return true;
+    }
+  }
+}
 
-      double max_ratio = 0;
-      double max_diff = 0;
-      const double eps = 1e-6f;
+bool test_resize(bool cv_run,
+                 const uint8_t* src,
+                 cv::Mat img,
+                 ImagePreprocess image_preprocess,
+                 int in_size,
+                 int out_size,
+                 ImageFormat dstFormat,
+                 int dsth,
+                 int dstw,
+                 std::string dst_path,
+                 int test_iter = 1) {
+  // out
+  uint8_t* resize_cv = new uint8_t[out_size];
+  uint8_t* resize_lite = new uint8_t[out_size];
+  cv::Mat im_resize;
+
+  double to_cv = 0.0;
+  double to_lite = 0.0;
+  std::cout << "opencv compute:" << std::endl;
+  if (cv_run) {
+    for (int i = 0; i < test_iter; i++) {
+      clock_t begin = clock();
+      // resize default linear
+      cv::resize(img, im_resize, cv::Size(dstw, dsth), 0.f, 0.f);
+      clock_t end = clock();
+      to_cv += (end - begin);
+    }
+  }
+  // param
+  std::cout << "lite compute:" << std::endl;
+  for (int i = 0; i < test_iter; i++) {
+    clock_t begin = clock();
+    // resize default linear
+    image_preprocess.imageResize(src, resize_lite);
+    clock_t end = clock();
+    to_lite += (end - begin);
+  }
+  to_cv = 1000 * to_cv / CLOCKS_PER_SEC;
+  to_lite = 1000 * to_lite / CLOCKS_PER_SEC;
+
+  std::cout << "---opencv resize run time: " << to_cv
+            << "ms, avg: " << to_cv / test_iter << std::endl;
+  std::cout << "---lite resize run time: " << to_lite
+            << "ms, avg: " << to_lite / test_iter << std::endl;
+  std::cout << "compare diff: " << std::endl;
+
+  if (cv_run) {
+    resize_cv = im_resize.data;
+    uint8_t* diff_v = new uint8_t[out_size];
+    double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
+    if (diff > 10) {
+      std::cout << "din: " << std::endl;
+      print_data(src, in_size);
+      std::cout << "cv out: " << std::endl;
+      print_data(resize_cv, out_size);
+      std::cout << "lite out: " << std::endl;
+      print_data(resize_lite, out_size);
+      std::cout << "diff out: " << std::endl;
+      print_data(diff_v, out_size);
+      return false;
+    } else {
       // save_img
       std::cout << "write image: " << std::endl;
       std::string resize_name = dst_path + "/resize.jpg";
-      std::string convert_name = dst_path + "/convert.jpg";
-      std::string rotate_name = dst_path + "/rotate.jpg";
-      std::string flip_name = dst_path + "/flip.jpg";
-      cv::Mat resize_mat(dsth, dstw, CV_8UC3);
-      cv::Mat convert_mat(srch, srcw, CV_8UC3);
-      cv::Mat rotate_mat;
-      if (rotate == 90 || rotate == 270) {
-        rotate_mat = cv::Mat(srcw, srch, CV_8UC3);
-      } else {
-        rotate_mat = cv::Mat(srch, srcw, CV_8UC3);
+      cv::Mat resize_mat;
+      int num = 1;
+      if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC3);
+        num = 3;
+      } else if (dstFormat == ImageFormat::BGRA ||
+                 dstFormat == ImageFormat::RGBA) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC4);
+        num = 4;
+      } else if (dstFormat == ImageFormat::GRAY) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC1);
+        num = 1;
+      } else if (dstFormat == ImageFormat::NV12) {
+        resize_mat = cv::Mat(dsth, dstw, CV_8UC2);
+        num = 2;
       }
-      cv::Mat flip_mat(srch, srcw, CV_8UC3);
-      fill_with_mat(resize_mat, resize_tmp);
-      fill_with_mat(convert_mat, lite_dst);
-      fill_with_mat(rotate_mat, tv_out_ratote);
-      fill_with_mat(flip_mat, tv_out_flip);
-      cv::imwrite(convert_name, convert_mat);
+      fill_with_mat(resize_mat, resize_lite, num);
       cv::imwrite(resize_name, resize_mat);
-      cv::imwrite(rotate_name, rotate_mat);
-      cv::imwrite(flip_name, flip_mat);
-      delete[] lite_dst;
-      delete[] resize_tmp;
-      delete[] tv_out_ratote;
-      delete[] tv_out_flip;
+      std::cout << "resize successed!" << std::endl;
+      return true;
     }
   }
 }
+
+void test_custom(bool has_img,  // input is image
+                 std::string img_path,
+                 std::string in_txt,
+                 std::string dst_path,
+                 ImageFormat srcFormat,
+                 ImageFormat dstFormat,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth,
+                 float rotate,
+                 FlipParam flip,
+                 int test_iter = 1) {
+  // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12,
+  cv::Mat img;
+  uint8_t* src = nullptr;
+  int in_size = 0;
+  if (has_img) {
+    if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
+      img = imread(img_path, cv::IMREAD_COLOR);
+    } else if (srcFormat == ImageFormat::GRAY) {
+      img = imread(img_path, cv::IMREAD_GRAYSCALE);
+    } else {
+      printf("this format %d does not support \n", srcFormat);
+      return;
+    }
+    srcw = img.cols;
+    srch = img.rows;
+    src = img.data;
+  }
+  bool cv_run = true;
+  if (srcFormat == ImageFormat::GRAY) {
+    std::cout << "srcFormat: GRAY" << std::endl;
+    cv_run = false;
+  } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
+    in_size = 3 * srch * srcw;
+    std::cout << "srcFormat: BGR/RGB" << std::endl;
+  } else if (srcFormat == ImageFormat::RGBA || srcFormat == ImageFormat::BGRA) {
+    in_size = 4 * srch * srcw;
+    std::cout << "srcFormat: BGRA/RGBA" << std::endl;
+  } else if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
+    in_size = (3 * srch * srcw) / 2;
+    cv_run = false;
+    std::cout << "srcFormat: NV12/NV12" << std::endl;
+  }
+  int out_size = dstw * dsth;
+  // out
+  if (dstFormat == ImageFormat::GRAY) {
+    std::cout << "dstFormat: GRAY" << std::endl;
+  } else if (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB) {
+    out_size = 3 * dsth * dstw;
+    std::cout << "dstFormat: BGR/RGB" << std::endl;
+  } else if (dstFormat == ImageFormat::RGBA || dstFormat == ImageFormat::BGRA) {
+    out_size = 4 * dsth * dstw;
+    std::cout << "dstFormat: BGRA/RGBA" << std::endl;
+  } else if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
+    out_size = (3 * dsth * dstw) / 2;
+    cv_run = false;
+    std::cout << "dstFormat: NV12/NV12" << std::endl;
+  }
+
+  if (!has_img) {
+    src = new uint8_t[in_size];
+    // read txt
+    FILE* fp = fopen(in_txt.c_str(), "r");
+    for (int i = 0; i < in_size; i++) {
+      fscanf(fp, "%d\n", &src[i]);
+    }
+    fclose(fp);
+    int num = 1;
+    if (srcFormat == ImageFormat::GRAY) {
+      img = cv::Mat(srch, srcw, CV_8UC1);
+    } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
+      img = cv::Mat(srch, srcw, CV_8UC3);
+      num = 3;
+    } else if (srcFormat == ImageFormat::BGRA ||
+               srcFormat == ImageFormat::RGBA) {
+      img = cv::Mat(srch, srcw, CV_8UC4);
+      num = 4;
+    } else if (srcFormat == ImageFormat::NV12 ||
+               srcFormat == ImageFormat::NV21) {
+      img = cv::Mat(srch, srcw, CV_8UC2);
+      num = 2;
+      std::cout << "CV not support NV12";
+    }
+    fill_with_mat(img, src, num);
+    std::string name = dst_path + "input.jpg";
+    cv::imwrite(name, img);  // shurutup
+  }
+
+  TransParam tparam;
+  tparam.ih = srch;
+  tparam.iw = srcw;
+  tparam.oh = srch;
+  tparam.ow = srcw;
+  tparam.flip_param = flip;
+  tparam.rotate_param = rotate;
+
+  TransParam tparam1;
+  tparam1.ih = srch;
+  tparam1.iw = srcw;
+  tparam1.oh = dsth;
+  tparam1.ow = dstw;
+  tparam1.flip_param = flip;
+  tparam1.rotate_param = rotate;
+
+  ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
+  std::cout << "image convert testing" << std::endl;
+  bool re = test_convert(cv_run,
+                         src,
+                         img,
+                         image_preprocess,
+                         in_size,
+                         out_size,
+                         srcFormat,
+                         dstFormat,
+                         srch,
+                         srcw,
+                         dst_path,
+                         test_iter);
+  if (!re) {
+    return;
+  }
+  std::cout << "image resize testing" << std::endl;
+  tparam.oh = dsth;
+  tparam.ow = dstw;
+  ImagePreprocess image_preprocess1(srcFormat, srcFormat, tparam1);
+  re = test_resize(cv_run,
+                   src,
+                   img,
+                   image_preprocess1,
+                   in_size,
+                   out_size,
+                   srcFormat,
+                   dsth,
+                   dstw,
+                   dst_path,
+                   test_iter);
+  if (!re) {
+    return;
+  }
+
+  std::cout << "image rotate testing" << std::endl;
+  if (rotate == 90 || rotate == 270) {
+    tparam.oh = srcw;
+    tparam.ow = srch;
+    dsth = srcw;
+    dstw = srch;
+  } else {
+    tparam.oh = srch;
+    tparam.ow = srcw;
+    dsth = srch;
+    dstw = srcw;
+  }
+  ImagePreprocess image_preprocess2(srcFormat, srcFormat, tparam);
+  re = test_rotate(cv_run,
+                   src,
+                   img,
+                   image_preprocess2,
+                   in_size,
+                   out_size,
+                   rotate,
+                   srcFormat,
+                   dsth,
+                   dstw,
+                   dst_path,
+                   test_iter);
+  if (!re) {
+    return;
+  }
+  tparam.oh = srch;
+  tparam.ow = srcw;
+  ImagePreprocess image_preprocess3(srcFormat, srcFormat, tparam);
+  std::cout << "image flip testing" << std::endl;
+  re = test_flip(cv_run,
+                 src,
+                 img,
+                 image_preprocess3,
+                 in_size,
+                 out_size,
+                 flip,
+                 srcFormat,
+                 srch,
+                 srcw,
+                 dst_path,
+                 test_iter);
+  if (!re) {
+    return;
+  }
+}
+
+#if 0
+void test_all_r(std::string dst_path, int test_iter = 1) {
+  // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12,
+  cv::Mat img;
+  uint8_t* src = nullptr;
+  int in_size = 0;
+  for (auto& srcFormat : {1, 3, 4, 11}) {
+    for (auto& dstFormat : {1, 3, 4, 11}) {
+      for (auto& srcw : {10, 112, 200}) {
+        for (auto& srch : {10, 224, 400}) {
+          for (auto& dstw : {12, 224, 180}) {
+            for (auto& dsth : {12, 224, 320}) {
+              for (auto& flip : {-1, 0, 1}) {
+                for (auto& rotate : {90, 180, 270}) {
+                  TransParam tparam;
+                  tparam.ih = srch;
+                  tparam.iw = srcw;
+                  tparam.oh = srch;
+                  tparam.ow = srcw;
+                  tparam.flip_param = (FlipParam)flip;
+                  tparam.rotate_param = rotate;
+
+                  TransParam tparam1;
+                  tparam1.ih = srch;
+                  tparam1.iw = srcw;
+                  tparam1.oh = dsth;
+                  tparam1.ow = dstw;
+                  tparam1.flip_param = (FlipParam)flip;
+                  tparam.rotate_param = rotate;
+
+                  ImagePreprocess image_preprocess(
+                      (ImageFormat)srcFormat, (ImageFormat)dstFormat, tparam);
+                  ImagePreprocess image_preprocess1(
+                      (ImageFormat)srcFormat, (ImageFormat)srcFormat, tparam1);
+                  ImagePreprocess image_preprocess2(
+                      (ImageFormat)srcFormat, (ImageFormat)srcFormat, tparam);
+                  int h = srch;
+                  int w = srcw;
+                  if (rotate == 90 || rotate == 270) {
+                    tparam.oh = srcw;
+                    h = srcw;
+                    tparam.ow = srch;
+                    w = srch;
+                  }
+                  ImagePreprocess image_preprocess3(
+                      (ImageFormat)srcFormat, (ImageFormat)srcFormat, tparam);
+                  int in_size = srcw * srch;
+                  int out_size = dstw * dsth;
+                  if (srcFormat == ImageFormat::GRAY) {
+                    std::cout << "srcFormat: GRAY" << std::endl;
+                  } else if (srcFormat == ImageFormat::BGR ||
+                             srcFormat == ImageFormat::RGB) {
+                    in_size = 3 * srch * srcw;
+                    std::cout << "srcFormat: BGR/RGB" << std::endl;
+                  } else if (srcFormat == ImageFormat::RGBA ||
+                             srcFormat == ImageFormat::BGRA) {
+                    in_size = 4 * srch * srcw;
+                    std::cout << "srcFormat: BGRA/RGBA" << std::endl;
+                  } else if (srcFormat == ImageFormat::NV12 ||
+                             srcFormat == ImageFormat::NV21) {
+                    in_size = (3 * srch * srcw) / 2;
+                    std::cout << "srcFormat: NV12/NV12" << std::endl;
+                  }
+                  // out
+                  if (dstFormat == ImageFormat::GRAY) {
+                    std::cout << "dstFormat: GRAY" << std::endl;
+                  } else if (dstFormat == ImageFormat::BGR ||
+                             dstFormat == ImageFormat::RGB) {
+                    out_size = 3 * dsth * dstw;
+                    std::cout << "dstFormat: BGR/RGB" << std::endl;
+                  } else if (dstFormat == ImageFormat::RGBA ||
+                             dstFormat == ImageFormat::BGRA) {
+                    out_size = 4 * dsth * dstw;
+                    std::cout << "dstFormat: BGRA/RGBA" << std::endl;
+                  } else if (dstFormat == ImageFormat::NV12 ||
+                             dstFormat == ImageFormat::NV21) {
+                    out_size = (3 * dsth * dstw) / 2;
+                    std::cout << "dstFormat: NV12/NV12" << std::endl;
+                  }
+                  // init
+                  uint8_t* src = new uint8_t[in_size];
+                  for (int i = 0; i < in_size; i++) {
+                    src[i] = i % 255;
+                  }
+                  cv::Mat img;
+                  int num = 1;
+                  bool cv_run = true;
+                  if (srcFormat == ImageFormat::GRAY) {
+                    img = cv::Mat(srch, srcw, CV_8UC1);
+                    cv_run = false;
+                  } else if (srcFormat == ImageFormat::BGR ||
+                             srcFormat == ImageFormat::RGB) {
+                    img = cv::Mat(srch, srcw, CV_8UC3);
+                    num = 3;
+                  } else if (srcFormat == ImageFormat::BGRA ||
+                             srcFormat == ImageFormat::RGBA) {
+                    img = cv::Mat(srch, srcw, CV_8UC4);
+                    num = 4;
+                  } else if (srcFormat == ImageFormat::NV12 ||
+                             srcFormat == ImageFormat::NV21) {
+                    img = cv::Mat(srch, srcw, CV_8UC2);
+                    num = 2;
+                    cv_run = false;
+                  }
+                  fill_with_mat(img, src, num);
+                  std::string name = dst_path + "input.jpg";
+                  cv::imwrite(name, img);  // shurutup
+                  // convert
+                  bool convert = true;
+                  if (srcFormat == 11 || dstFormat == 11) {
+                    // NV12, cv not support
+                    convert = false;
+                    cv_run = false;
+                  }
+                  if (convert) {
+                    std::cout << "image convert testing";
+                    bool re = test_convert(cv_run,
+                                           src,
+                                           img,
+                                           image_preprocess,
+                                           in_size,
+                                           out_size,
+                                           (ImageFormat)srcFormat,
+                                           (ImageFormat)dstFormat,
+                                           srch,
+                                           srcw,
+                                           dst_path,
+                                           test_iter);
+                    if (!re) {
+                      return;
+                    }
+                  }
+
+                  // resize
+                  std::cout << "image resize testing";
+                  bool re = test_resize(cv_run,
+                                        src,
+                                        img,
+                                        image_preprocess1,
+                                        in_size,
+                                        out_size,
+                                        (ImageFormat)srcFormat,
+                                        dsth,
+                                        dstw,
+                                        dst_path,
+                                        test_iter);
+                  if (convert && !re) {
+                    return;
+                  }
+                  // rotate
+                  std::cout << "image rotate testing";
+
+                  re = test_rotate(cv_run,
+                                   src,
+                                   img,
+                                   image_preprocess3,
+                                   in_size,
+                                   out_size,
+                                   rotate,
+                                   (ImageFormat)srcFormat,
+                                   h,
+                                   w,
+                                   dst_path,
+                                   test_iter);
+                  if (convert && !re) {
+                    return;
+                  }
+                  // flip
+                  std::cout << "image rotate testing";
+                  re = test_flip(cv_run,
+                                 src,
+                                 img,
+                                 image_preprocess2,
+                                 in_size,
+                                 out_size,
+                                 (FlipParam)flip,
+                                 (ImageFormat)srcFormat,
+                                 srch,
+                                 srcw,
+                                 dst_path,
+                                 test_iter);
+                  if (convert && !re) {
+                    return;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif
 
 int main(int argc, char** argv) {
   if (argc < 7) {
     std::cerr << "[ERROR] usage: " << argv[0]
-              << " image_path dst_apth srcFormat dstFormat width height\n";
+              << " has_img image_path/txt_path dst_apth srcFormat dstFormat "
+                 "dstw dsth "
+              << "[options] srcw srch flip rotate test_iter\n ";
     exit(1);
   }
-  std::string image_path = argv[1];
-  std::string dst_path = argv[2];
-  int srcFormat = atoi(argv[3]);
-  int dstFormat = atoi(argv[4]);
-  int width = atoi(argv[5]);
-  int height = atoi(argv[6]);
+  bool has_img = atoi(argv[1]);
+  std::string path = argv[2];
+  std::string dst_path = argv[3];
+  int srcFormat = atoi(argv[4]);
+  int dstFormat = atoi(argv[5]);
+  int dstw = atoi(argv[6]);
+  int dsth = atoi(argv[7]);
+  int srcw = 100;
+  int srch = 100;
   int flip = -1;
   float rotate = 90;
-  int layout = 1;
-  std::string model_dir = "mobilenet_v1";
-  if (argc > 7) {
-    model_dir = argv[7];
+  int test_iter = 10;
+  if (!has_img) {
+    std::cout << "It needs srcw and srch";
+    srcw = atoi(argv[8]);
+    srch = atoi(argv[9]);
+    if (argc > 10) {
+      flip = atoi(argv[10]);
+    }
+    if (argc > 11) {
+      rotate = atoi(argv[11]);
+    }
+    if (argc > 12) {
+      test_iter = atoi(argv[12]);
+    }
+  } else {
+    if (argc > 8) {
+      flip = atoi(argv[8]);
+    }
+    if (argc > 9) {
+      rotate = atoi(argv[9]);
+    }
+    if (argc > 10) {
+      test_iter = atoi(argv[10]);
+    }
   }
-  if (argc > 8) {
-    flip = atoi(argv[8]);
-  }
-  if (argc > 9) {
-    rotate = atoi(argv[9]);
-  }
-  if (argc > 10) {
-    layout = atoi(argv[10]);
-  }
-  test_img({3},
-           {1, 2, 4},
-           image_path,
-           dst_path,
-           (ImageFormat)srcFormat,
-           (ImageFormat)dstFormat,
-           width,
-           height,
-           rotate,
-           (FlipParam)flip,
-           (LayoutType)layout,
-           model_dir,
-           20);
+  test_custom(has_img,
+              path,
+              path,
+              dst_path,
+              (ImageFormat)srcFormat,
+              (ImageFormat)dstFormat,
+              srcw,
+              srch,
+              dstw,
+              dsth,
+              rotate,
+              (FlipParam)flip,
+              test_iter);
+#if 0
+  test_all_r(dst_path, test_iter);
+#endif
   return 0;
 }

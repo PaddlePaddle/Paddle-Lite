@@ -124,19 +124,9 @@ int SubgraphEngine::BuildDeviceProgram() {
             << device_idims[i].GetHeight() << "," << device_idims[i].GetWidth()
             << "}";
     // Prepare the device input tensors
-    if (!subgraph::npu::CheckShape(origin_idims_[i], device_idims[i])) {
-      LOG(WARNING) << "origin and device input's dims are mismatched.";
-      for (int j = 0; j < origin_idims_[i].size(); j++) {
-        LOG(WARNING) << "origin_idims_[" << i << "][" << j
-                     << "]: " << origin_idims_[i][j];
-      }
-      LOG(WARNING) << "device_idims[" << i << "]: {"
-                   << device_idims[i].GetNumber() << ", "
-                   << device_idims[i].GetChannel() << ", "
-                   << device_idims[i].GetHeight() << ", "
-                   << device_idims[i].GetWidth() << "}";
-      return subgraph::FAILED;
-    }
+    CHECK_EQ(origin_idims_[i].production(),
+             device_idims[i].GetNumber() * device_idims[i].GetChannel() *
+                 device_idims[i].GetHeight() * device_idims[i].GetWidth());
     device_itensors_[i].reset(new hiai::AiTensor);
     device_itensors_[i]->Init(&(device_idims[i]));
   }
@@ -159,6 +149,9 @@ int SubgraphEngine::BuildDeviceProgram() {
       case PRECISION(kFloat):
         origin_otensors_[i]->mutable_data<float>();
         break;
+      case PRECISION(kBool):
+        origin_otensors_[i]->mutable_data<bool>();
+        break;
       case PRECISION(kInt8):
         origin_otensors_[i]->mutable_data<int8_t>();
         break;
@@ -177,21 +170,9 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
-    /*
-    if (!subgraph::npu::CheckShape(origin_odims_[i], device_odims[i])) {
-      LOG(WARNING) << "origin and device output's dims are mismatched.";
-      for (int j = 0; j < origin_odims_[i].size(); j++) {
-        LOG(WARNING) << "origin_odims_[" << i << "][" << j
-                     << "]: " << origin_odims_[i][j];
-      }
-      LOG(WARNING) << "device_odims[" << i << "]: {"
-                   << device_odims[i].GetNumber() << ", "
-                   << device_odims[i].GetChannel() << ", "
-                   << device_odims[i].GetHeight() << ", "
-                   << device_odims[i].GetWidth() << "}";
-      return subgraph::FAILED;
-    }
-    */
+    CHECK_EQ(origin_odims_[i].production(),
+             device_odims[i].GetNumber() * device_odims[i].GetChannel() *
+                 device_odims[i].GetHeight() * device_odims[i].GetWidth());
     device_otensors_[i].reset(new hiai::AiTensor);
     device_otensors_[i]->Init(&(device_odims[i]));
   }
@@ -253,10 +234,12 @@ void SubgraphCompute::Run() {
 
 REGISTER_LITE_KERNEL(subgraph,
                      kNPU,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::npu::SubgraphCompute,
                      def)
-    .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Inputs",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Outputs",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();

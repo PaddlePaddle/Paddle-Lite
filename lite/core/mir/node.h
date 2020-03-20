@@ -91,7 +91,7 @@ class Node {
   struct Arg {
     std::string name;
     int id{0};
-    const Type* type{};
+    const Type* type{nullptr};
     // Weight is a special kind of argument, it is marked as weight explicitly
     // so that some weight related optimization can take place.
     bool is_weight{false};

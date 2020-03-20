@@ -37,6 +37,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/scale_kernel.cl", build_options_);
   }
@@ -48,13 +49,13 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const float scale = param.scale;
     const float bias = param.bias;
 
-    LOG(INFO) << "x_image" << x_img;
+    //    LOG(INFO) << "x_image" << x_img;
     auto out_image_shape = InitImageDimInfoWith(in_dims);
     LOG(INFO) << "out_image_shape = " << out_image_shape["width"] << " "
               << out_image_shape["height"];
     auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
-    LOG(INFO) << "out_image" << out_img;
+    //    LOG(INFO) << "out_image" << out_img;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);

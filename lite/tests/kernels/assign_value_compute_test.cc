@@ -95,10 +95,12 @@ class AssignValueComputeTester : public arena::TestCase {
 };
 
 TEST(AssignValue, precision) {
-  LOG(INFO) << "test argmax op";
+  Place place;
 #ifdef LITE_WITH_ARM
-  LOG(INFO) << "test argmax arm";
-  Place place(TARGET(kARM));
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
   for (int dtype : {2, 5}) {
     for (int n : {1}) {
@@ -114,7 +116,6 @@ TEST(AssignValue, precision) {
       }
     }
   }
-#endif
 }
 
 }  // namespace lite

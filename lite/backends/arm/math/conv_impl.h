@@ -359,6 +359,24 @@ void conv_compute_2x2_3x3_small(const float* input,
                                 const float* bias,
                                 const operators::ConvParam& param,
                                 ARMContext* ctx);
+
+template <typename Dtype>
+void im2col(const Dtype* data_im,
+            int channels,
+            int height,
+            int width,
+            int kernel_h,
+            int kernel_w,
+            int pad_top,
+            int pad_bottom,
+            int pad_left,
+            int pad_right,
+            int stride_h,
+            int stride_w,
+            int dilation_h,
+            int dilation_w,
+            Dtype* data_col);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
