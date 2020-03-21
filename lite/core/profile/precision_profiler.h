@@ -23,6 +23,8 @@
 #include "lite/core/program.h"
 
 #ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_image_converter.h"
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/kernels/opencl/image_helper.h"
 #endif
 
@@ -119,7 +121,6 @@ class PrecisionProfiler {
         "Unsupported precision profile for kernel registered on" +
         TargetToStr(target_type) + "/" + PrecisionToStr(precision_type) + "/" +
         DataLayoutToStr(layout_type);
-    double sum = 0.;
 
     if (target_type == TARGET(kARM) || target_type == TARGET(kHost) ||
         target_type == TARGET(kX86)) {
