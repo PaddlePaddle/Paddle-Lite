@@ -50,10 +50,9 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
     op_desc.SetAttr<int>("out_dtype", 4);  // FP16
     op_desc.SetInput("X", {cur_node->AsArg().name});
     op_desc.SetOutput("Out", {cast_arg_name});
-  } else if (op_type == "transpose") {
+  } else if (op_type == "layout") {
     // NCHW -> NHWC
-    op_desc.SetAttr<std::vector<int>>("axis", {0, 2, 3, 1});
-    op_desc.SetInput("X", {cur_node->AsArg().name});
+    op_desc.SetInput("Input", {cur_node->AsArg().name});
     op_desc.SetOutput("Out", {cast_arg_name});
   } else if (op_type == "io_copy") {
     op_desc.SetInput("Input", {cur_node->AsArg().name});
@@ -72,8 +71,13 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       if (PrecisionCompatibleTo(*in_arg_ty, *cur_node->AsArg().type)) {
         is_found = true;
       }
-    } else if (op_type == "transpose") {
-      is_found = true;
+    } else if (op_type == "layout") {
+      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+      if (DataLayoutCompatible(*in_arg_ty, *cur_node->AsArg().type) &&
+          DataLayoutCompatible(*out_arg_ty, *cast_type)) {
+        is_found = true;
+      }
     } else if (op_type == "io_copy") {
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
@@ -89,8 +93,13 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      stmt.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
+      if (op_type == "layout") {
+        stmt.picked_kernel().SetContext(
+            ContextScheduler::Global().NewContext(TARGET(kX86)));
+      } else {
+        stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+            stmt.picked_kernel().target()));
+      }
       break;
     }
   }
@@ -127,10 +136,9 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
     op_desc.SetAttr<int>("out_dtype", 5);  // FP16
     op_desc.SetInput("X", {cast_arg_name});
     op_desc.SetOutput("Out", {cur_node->AsArg().name});
-  } else if (op_type == "transpose") {
+  } else if (op_type == "layout") {
     // NHWC -> NCHW
-    op_desc.SetAttr<std::vector<int>>("axis", {0, 3, 1, 2});
-    op_desc.SetInput("X", {cast_arg_name});
+    op_desc.SetInput("Input", {cast_arg_name});
     op_desc.SetOutput("Out", {cur_node->AsArg().name});
   } else if (op_type == "io_copy") {
     op_desc.SetInput("Input", {cast_arg_name});
@@ -151,8 +159,13 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       if (PrecisionCompatibleTo(*in_arg_ty, *cast_type)) {
         is_found = true;
       }
-    } else if (op_type == "transpose") {
-      is_found = true;
+    } else if (op_type == "layout") {
+      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+      if (DataLayoutCompatible(*in_arg_ty, *cast_type) &&
+          DataLayoutCompatible(*out_arg_ty, *cur_node->AsArg().type)) {
+        is_found = true;
+      }
     } else if (op_type == "io_copy") {
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
@@ -168,8 +181,13 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      stmt.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
+      if (op_type == "layout") {
+        stmt.picked_kernel().SetContext(
+            ContextScheduler::Global().NewContext(TARGET(kX86)));
+      } else {
+        stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+            stmt.picked_kernel().target()));
+      }
       break;
     }
   }
@@ -197,8 +215,8 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
   // layout cast node
   if (head_type->layout() != inst_type->layout()) {
     cur_node = InsertCastBefore(
-        "transpose",
-        name_prefix + "transpose",
+        "layout",
+        name_prefix + "layout",
         graph,
         cur_node,
         inst_node,
@@ -346,8 +364,8 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
   // layout cast node
   if (tail_type->layout() != inst_type->layout()) {
     cur_node = InsertCastAfter(
-        "transpose",
-        name_prefix + "transpose",
+        "layout",
+        name_prefix + "layout",
         graph,
         cur_node,
         inst_node,

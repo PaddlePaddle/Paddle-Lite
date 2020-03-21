@@ -46,26 +46,37 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     input_dims.push_back(x->dims().Vectorize());
   }
 
-  auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
-  int axis = (param_axis < 0) ? (param_axis + output->dims().size()) : param_axis;
-  int nchw_to_nhwc_axis_map[4] = {0, 3, 1, 2};
-  int nhwc_axis = nchw_to_nhwc_axis_map[axis];
+  auto dims = input_dims[0].size();
+  int axis = (param_axis < 0) ? (param_axis + dims) : param_axis;
+  int nhwc_axis = -1;
+  if (dims == 4) {
+    int nchw_to_nhwc_axis_map[4] = {0, 3, 1, 2};
+    nhwc_axis = nchw_to_nhwc_axis_map[axis];
+  } else if (dims == 3) {
+    int nchw_to_nhwc_axis_map[3] = {0, 2, 1};
+    nhwc_axis = nchw_to_nhwc_axis_map[axis];
+  } else {
+    CHECK(0) << "Unsupport dims in mlu concat";
+  }
 
   std::vector<int64_t> output_dims;
-  output_dims.assign(output->dims().size(), 0);
+  output_dims.assign(dims, 0);
 
-  /* std::cout << string_format("concat axis: %d(NCHW), %d(NHWC)", axis, nhwc_axis) << std::endl; */
-  
+  /* std::cout << string_format("concat axis: %d(NCHW), %d(NHWC)", axis,
+   * nhwc_axis) << std::endl; */
+
   for (int i = 0; i < output_dims.size(); ++i) {
     if (i == nhwc_axis) {
-      for (auto &dim : input_dims) output_dims[i] += dim[i];
+      for (auto& dim : input_dims) output_dims[i] += dim[i];
     } else {
       output_dims[i] = input_dims[0][i];
     }
   }
 
-  /* std::cout << string_format("concat output dim: %ld, %ld, %ld, %ld") << std::endl; */
+  /* std::cout << string_format("concat output dim: %ld, %ld, %ld, %ld") <<
+   * std::endl; */
 
+  auto* output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   output->Resize(output_dims);
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());

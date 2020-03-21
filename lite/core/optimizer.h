@@ -116,11 +116,11 @@ class Optimizer {
            "argument_type_display_pass",
 
            "mlu_subgraph_pass",
-           "mlu_postprocess_pass",
-           // subgraph_cast_display_pass
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+
+           "mlu_postprocess_pass",
 
            "memory_optimize_pass"}};
 
