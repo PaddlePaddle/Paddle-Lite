@@ -163,6 +163,7 @@ class PrecisionProfiler {
           LOG(ERROR) << unsupported_error_log;
           return;
       }
+#ifdef LITE_WITH_OPENCL
     } else if (target_type == TARGET(kOpenCL)) {
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
@@ -210,6 +211,7 @@ class PrecisionProfiler {
           LOG(ERROR) << unsupported_error_log;
           return;
       }
+#endif
     } else {
       *mean = -111111111111;
       *std_dev = -11111111111;
