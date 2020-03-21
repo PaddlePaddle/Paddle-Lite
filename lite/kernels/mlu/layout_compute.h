@@ -86,9 +86,8 @@ class LayoutNchwToNhwcCompute
         CHECK(0) << "Unsupport dim in mlu layout nchw to nhwc";
     }
 
-    LayoutTransCompute<lite::TargetType::X86, float>(
+    LayoutTransCompute<lite::TargetType::kX86, float>(
         x_dims, context, *x, out, axis);
-    )
   }
 
   std::string doc() const override {
@@ -129,9 +128,8 @@ class LayoutNhwcToNchwCompute
         CHECK(0) << "Unsupport dim in mlu layout nhwc to nchw";
     }
 
-    LayoutTransCompute<lite::TargetType::X86, float>(
+    LayoutTransCompute<lite::TargetType::kX86, float>(
         x_dims, context, *x, out, axis);
-    )
   }
 
   std::string doc() const override {

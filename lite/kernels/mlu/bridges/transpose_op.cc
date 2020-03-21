@@ -75,7 +75,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int> axis_nhwc;
   if (axis.size() == 4) {
     axis_nhwc = axis_to_nhwc4d(axis);
-  } else if (axis.size(0 == 3)) {
+  } else if (axis.size() == 3) {
     axis_nhwc = axis_to_nhw3d(axis);
   } else {
     CHECK(0) << "Unsupport dim in mlu transpose";
