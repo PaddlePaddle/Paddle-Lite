@@ -37,6 +37,20 @@ namespace lite {
  */
 class Optimizer {
  public:
+  Optimizer() {}
+
+  Optimizer(Program* program, const std::vector<Place>& valid_places) {
+    program_ = program;
+    valid_places_ = valid_places;
+    CHECK(!valid_places.empty()) << "At least one valid_place should be set";
+    CHECK(!graph_) << "duplicate optimize found";
+
+    graph_.reset(new mir::SSAGraph);
+    graph_->Build(*program, valid_places);
+    graph_->SetValidPlaces(valid_places);
+    exec_scope_ = program->exec_scope();
+  }
+
   void Run(Program&& program,
            const std::vector<Place>& valid_places,
            core::KernelPickFactor kernel_pick_factor,

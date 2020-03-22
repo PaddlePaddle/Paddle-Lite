@@ -228,7 +228,6 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
 }
-
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const lite_api::CxxConfig &config,
@@ -294,7 +293,6 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   inner_places.emplace_back(
       TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-
   const std::vector<std::string> quant_dequant_op = {
       "fake_quantize_abs_max",
       "fake_quantize_range_abs_max",
@@ -321,6 +319,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   }
 
   Program program(desc, scope_, inner_places);
+  valid_places_ = inner_places;
 
   core::KernelPickFactor factor;
   factor.ConsiderTarget();

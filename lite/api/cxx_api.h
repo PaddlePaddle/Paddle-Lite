@@ -46,6 +46,17 @@ class LITE_API Predictor {
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}
+  Predictor(const cpp::ProgramDesc& desc,
+            const std::shared_ptr<Scope>& root,
+            const std::vector<Place>& valid_places)
+      : program_desc_(desc), scope_(root) {
+    optimizer_ =
+        Optimizer(new Program(desc, scope_, valid_places), valid_places);
+    exec_scope_ = optimizer_.exec_scope();
+    GenRuntimeProgram();
+    valid_places_ = valid_places;
+    PrepareFeedFetch();
+  }
 
   // Build from a model, with places set for hardware config.
   void Build(
@@ -66,6 +77,16 @@ class LITE_API Predictor {
   void Build(const cpp::ProgramDesc& desc,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
+
+  std::shared_ptr<Predictor> Clone() const {
+    //    CHECK(program_desc_) << "Both program and scope of current predicotr
+    //    should  be not be nullptr in Clone mode." ;
+    //    CHECK(scope_) << "Both program and scope of current predicotr should
+    //    be not be nullptr in Clone mode.";
+    auto predictor =
+        std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
+    return predictor;
+  }
 
   void GenRuntimeProgram();
 
@@ -119,11 +140,14 @@ class LITE_API Predictor {
   bool program_generated_{false};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
+  std::vector<Place> valid_places_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
  public:
   CxxPaddleApiImpl() {}
+  explicit CxxPaddleApiImpl(const std::shared_ptr<Predictor>& raw_predictor)
+      : raw_predictor_(raw_predictor) {}
 
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
@@ -155,9 +179,10 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       bool record_info = false) override;
 
  private:
-  Predictor raw_predictor_;
+  std::shared_ptr<Predictor> raw_predictor_;
   lite_api::CxxConfig config_;
   std::mutex mutex_;
+  bool status_is_cloned_{false};
 };
 
 /*

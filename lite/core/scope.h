@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/variable.h"
+#include "lite/fluid/rw_lock.h"
 
 namespace paddle {
 namespace lite {
@@ -73,6 +74,8 @@ class Scope final {
   mutable std::list<Scope*> kids_;
   const Scope* parent_{nullptr};
   std::unordered_map<std::string, std::unique_ptr<Variable>> vars_;
+  mutable lite::fluid::RWLock kids_lock_;
+  mutable lite::fluid::RWLock vars_lock_;
 };
 
 }  // namespace lite
