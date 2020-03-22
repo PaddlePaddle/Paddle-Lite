@@ -109,7 +109,6 @@ void TestMul(const std::vector<int64_t>& x_dims,
              int y_num_col_dims,
              const Place& place,
              float abs_error) {
-  LOG(INFO) << "run test arm";
   std::unique_ptr<arena::TestCase> tester(new MulComputeTester(place,
                                                                "def",
                                                                DDim(x_dims),
@@ -132,6 +131,7 @@ TEST(Mul, precision) {
 #else
   return;
 #endif
+
   TestMul({4, 5}, {5, 4}, 1, 1, place, abs_error);
   TestMul({4, 5}, {5, 4, 3, 2}, 1, 1, place, abs_error);
   TestMul({4, 20}, {5, 4, 3, 2}, 1, 2, place, abs_error);
