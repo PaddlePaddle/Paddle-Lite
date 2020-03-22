@@ -123,7 +123,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
 
   // non-tensor(like tensor_array) variables will not be reused
   for (auto& node : graph->nodes()) {
-    if (node.IsArg() && !node.arg()->type->IsTensor()) {
+    if (node.IsArg() && (node.arg()->type != nullptr) &&
+        !node.arg()->type->IsTensor()) {
       invalid_var_names.insert(node.arg()->name);
     }
   }
