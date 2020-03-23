@@ -888,12 +888,12 @@ function build_test_arm_subtask_ios {
 # this method need to invoke `build_test_arm_subtask_android` first.
 function build_test_arm_subtask_model {
     # We just test following single one environment to limit the CI time.
-    local os=android
+    local os=$1
     local abi=armv8
     local lang=gcc
 
-    local test_name=$1
-    local model_name=$2
+    local test_name=$2
+    local model_name=$3
 
     cur_dir=$(pwd)
     build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
@@ -1139,17 +1139,17 @@ function main {
                 ;;
             build_test_arm_opencl)
                 build_test_arm_opencl
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
-                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
+                build_test_arm_subtask_model opencl test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model opencl test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
             build_test_arm_subtask_android)
                 build_test_arm_subtask_android
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
-                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
-                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
-                build_test_arm_subtask_model test_resnet50 resnet50
-                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
+                build_test_arm_subtask_model android test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model android test_mobilenetv1_int8 MobileNetV1_quant
+                build_test_arm_subtask_model android test_mobilenetv2 mobilenet_v2_relu
+                build_test_arm_subtask_model android test_resnet50 resnet50
+                build_test_arm_subtask_model android test_inceptionv4 inception_v4_simple
                 shift
                 ;;
             build_test_arm_subtask_armlinux)
