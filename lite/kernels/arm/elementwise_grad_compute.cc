@@ -148,6 +148,7 @@ REGISTER_LITE_KERNEL(elementwise_add_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseAddGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -160,6 +161,7 @@ REGISTER_LITE_KERNEL(elementwise_sub_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseSubGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -172,6 +174,7 @@ REGISTER_LITE_KERNEL(elementwise_div_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseDivGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -180,6 +183,7 @@ REGISTER_LITE_KERNEL(elementwise_div_grad,
 
 REGISTER_LITE_KERNEL(
     elementwise_mul_grad, kARM, kFloat, kNCHW, elementwise_mul_grad_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -192,6 +196,7 @@ REGISTER_LITE_KERNEL(elementwise_max_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseMaxGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
