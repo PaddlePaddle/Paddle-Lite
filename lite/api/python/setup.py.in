@@ -17,16 +17,16 @@ else:
     paddlelite_version = paddlelite_tag
 
 lite_path='${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
-package_data = {'lite': ['lite_core.so']}
+package_data = {'paddlelite': ['lite.so']}
 # put all thirdparty libraries in paddle.libs
-package_data['libs']= []
+package_data['paddlelite.libs']= []
 libs_path='${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
 if '${WITH_MKL}' == 'ON':
     shutil.copy('${MKLML_SHARED_IOMP_LIB}', libs_path)
     shutil.copy('${MKLML_SHARED_LIB}', libs_path)
-    package_data['libs'] += ['libmklml_intel.so', 'libiomp5.so']
+    package_data['paddlelite.libs'] += ['libmklml_intel.so', 'libiomp5.so']
 
-command = "patchelf --set-rpath '$ORIGIN/../libs/' ${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite/lite_core.so"
+command = "patchelf --set-rpath '$ORIGIN/../libs/' ${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite/lite.so"
 if os.system(command) != 0:
     raise Exception("patch third_party libs failed, command: %s" % command)
 
@@ -38,8 +38,8 @@ if os.path.isfile(libs_path+'/__init__.py'):
 package_dir={
     # The paddle.fluid.proto will be generated while compiling.
     # So that package points to other directory.
-    'libs': libs_path,
-    'lite': lite_path
+    'paddlelite.libs': libs_path,
+    'paddlelite': lite_path
 }
 
 
@@ -47,7 +47,7 @@ setup(
     name = 'paddlelite',
     version = paddlelite_version,
     description = 'Paddle-Lite Library',
-    packages = ['lite','libs'],
+    packages = ['paddlelite','paddlelite.libs'],
     package_dir = package_dir,
     package_data = package_data,
     distclass = BinaryDistribution
