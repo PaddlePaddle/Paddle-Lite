@@ -46,7 +46,6 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
   const int item_h_id = get_global_id(2);
 
   // out_width_id_per_blk and out_batch_id
-  int out_batch_id = item_h_id / in_h;
   int out_w_base_id = item_ch_id * out_w;
   int out_w_id0 = item_w_id;
   int out_w_id1 = out_w_id0 + item_w;
@@ -124,11 +123,8 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
     int filter_w_val = ch * filter_w;
 
     for (int h = 0; h < filter_h; h++) {
-      int in_h_val = select(
-          out_batch_id * in_h + in_h_id + h,
-          -1,
-          (out_batch_id * in_h + in_h_id + h < out_batch_id * in_h ||
-           out_batch_id * in_h + in_h_id + h >= (out_batch_id + 1) * in_h));
+      int in_h_val =
+          select(in_h_id + h, -1, (in_h_id + h < 0 || in_h_id + h >= in_h));
 
       for (int w = 0; w < filter_w; w++) {
         int in_w_val0 = select(in_w_base_id + in_w_id0 + w,
