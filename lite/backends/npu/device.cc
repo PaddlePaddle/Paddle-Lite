@@ -19,8 +19,8 @@ namespace paddle {
 namespace lite {
 namespace npu {
 
-std::unique_ptr<hiai::AiModelMngerClient> Device::Build(
-    std::string& model_name,                 // NOLINT
+std::shared_ptr<hiai::AiModelMngerClient> Device::Build(
+    const std::string model_name,            // NOLINT
     std::vector<ge::Operator>& input_nodes,  // NOLINT
     std::vector<ge::Operator>& output_nodes  // NOLINT
     ) {
@@ -41,15 +41,15 @@ std::unique_ptr<hiai::AiModelMngerClient> Device::Build(
     ir_build.ReleaseModelBuff(om_model_buf);
     return nullptr;
   }
+
   // Create a HiAI model manager client to load the HiAI om model
-  std::unique_ptr<hiai::AiModelMngerClient> model_client(
+  std::shared_ptr<hiai::AiModelMngerClient> model_client(
       new hiai::AiModelMngerClient());
   if (model_client->Init(nullptr) != hiai::AI_SUCCESS) {
     LOG(WARNING) << "[NPU] AiModelMngerClient init failed)!";
     ir_build.ReleaseModelBuff(om_model_buf);
     return nullptr;
   }
-  model_name = "model_" + std::to_string(model_count_++) + ".om";
   auto model_desc = std::make_shared<hiai::AiModelDescription>(
       model_name, freq_level(), framework_type(), model_type(), device_type());
   model_desc->SetModelBuffer(om_model_buf.data, om_model_buf.length);
