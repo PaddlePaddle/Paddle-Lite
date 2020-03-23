@@ -154,7 +154,7 @@ class MulGradTester {
     fill_data_rand(x.data(), -1.f, 1.f, x_dims_.production());
     fill_data_rand(y.data(), -1.f, 1.f, y_dims_.production());
     this->run_forward(&param_, &kernel_, x, y, out.data());
-    
+
     // backward
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(x_dims_.production());
@@ -178,7 +178,7 @@ class MulGradTester {
     float delta = 0.001;
     float max_grad_delta = 0.005;
     for (int i = 0; i < x_dims_.production(); i++) {
-
+      for (int j = 0; j < x_dims_.production(); j++) {
         if (i == j) {
           x_delta[j] = x[j] + delta;
         } else {
