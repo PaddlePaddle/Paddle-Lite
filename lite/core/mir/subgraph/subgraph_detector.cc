@@ -223,6 +223,7 @@ std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
   std::vector<std::string> lines = ReadLines(config_file_path);
 
   for (std::string line : lines) {
+    if (line.empty()) continue;
     std::vector<std::string> node_info = Split(line, ":");
     std::string op_type = node_info.at(0);
     std::vector<std::string> in_vars_name;
