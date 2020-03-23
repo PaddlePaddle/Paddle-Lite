@@ -42,11 +42,13 @@ class IoCopyHostToOpenCLCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "param.x->memory_size():" << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
     VLOG(2) << "param.x->dims():" << param.x->dims();
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
+#endif
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -85,12 +87,14 @@ class IoCopykOpenCLToHostCompute
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "copy size " << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
     VLOG(2) << "param.x->dims():" << param.x->dims();
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
     VLOG(2) << "param.process_type:" << param.process_type;
+#endif
 
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     const cl::Buffer* x_ptr;
@@ -104,7 +108,9 @@ class IoCopykOpenCLToHostCompute
     auto* wait_list = context.cl_wait_list();
     auto it = wait_list->find(x_ptr);
     if (it != wait_list->end()) {
+#ifndef LITE_SHUTDOWN_LOG
       VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
+#endif
       auto& event = *(it->second);
       event.wait();
     } else {

@@ -101,6 +101,7 @@ class ActivationComputeImageDefault
     status = kernel.setArg(++arg_idx, scale_);
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
     VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
@@ -112,6 +113,7 @@ class ActivationComputeImageDefault
     VLOG(4) << "threshold:" << threshold_;
     VLOG(4) << "scale:" << scale_;
     VLOG(4) << "kernel func name:" << kernel_func_name_;
+#endif
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),

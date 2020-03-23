@@ -65,6 +65,7 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
     auto out_dims = out->dims();
     auto in_dims = x->dims();
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "x->target(): " << TargetToStr(x->target());
     VLOG(4) << "out->target(): " << TargetToStr(out->target());
     VLOG(4) << "x->dims(): " << in_dims;
@@ -74,6 +75,7 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "alpha: " << alpha_;
     VLOG(4) << "beta: " << beta_;
     VLOG(4) << "norm_region: " << norm_region_;
+#endif
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
     auto* x_img = x->data<half_t, cl::Image2D>();
@@ -81,9 +83,12 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
+
+#ifndef LITE_SHUTDOWN_LOG
     // VLOG(4) << "out_image" << out_img;
     VLOG(4) << "out_image_shape[w,h]:" << out_image_shape["width"] << " "
             << out_image_shape["height"];
+#endif
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
@@ -97,8 +102,10 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[3];
+#endif
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *out_img);
@@ -130,9 +137,10 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
         event_.get());
     CL_CHECK_FATAL(status);
     context.cl_wait_list()->emplace(out_img, event_);
-
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
+#endif
   }
 
  protected:
