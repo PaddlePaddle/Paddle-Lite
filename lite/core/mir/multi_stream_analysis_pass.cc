@@ -62,8 +62,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
       }
 
       // feed and io_copy_once op has no dependencies and can be launched
-      // directly.
-      // Other ops are put into the waiting queue.
+      // directly. Other ops are put into the waiting queue.
       if (op_node->AsStmt().op_type() == "feed" ||
           op_node->AsStmt().op_type() == "io_copy_once") {
         exec_que_.push(op_node);
