@@ -17,6 +17,7 @@
 #include <gflags/gflags.h>
 #include <sys/time.h>
 #include <time.h>
+#include <cmath>
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");

@@ -14,6 +14,7 @@
 
 #include <sys/time.h>
 #include <time.h>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
