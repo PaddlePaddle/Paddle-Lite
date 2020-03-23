@@ -19,6 +19,7 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -43,6 +44,9 @@ class MultiStreamAnalysisPass : public StmtPass {
   // stream id according to the numer of inputs.
   void Init(SSAGraph* graph);
 
+  // Clean state information of all member variables.
+  void CleanUp();
+
   // After launching, unlock the output resources of op.
   void Launch(Node* stmt_node);
 
@@ -59,8 +63,13 @@ class MultiStreamAnalysisPass : public StmtPass {
   // arg
   int SelectStreamId(const std::vector<int>& lanes);
 
+  // Check if the model's ops are all supported. If you encounter unsupported
+  // ops, exit
+  bool CheckOpSupport();
+
  private:
   std::list<Node*> wait_que_;
+  std::list<Node*> wait_que_cpu_;
   std::queue<Node*> exec_que_;
   std::vector<Node*> exec_ops_;
   std::vector<std::vector<Node*>> ops_in_streams_;
@@ -68,6 +77,7 @@ class MultiStreamAnalysisPass : public StmtPass {
   std::unordered_map<std::string, int> map_arg_to_lane_;
   int max_stream_;
   int io_copy_once_num_;
+  std::unordered_set<std::string> op_types_set_;
 };
 
 }  // namespace mir

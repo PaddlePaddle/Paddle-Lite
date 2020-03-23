@@ -126,7 +126,7 @@ class PrecisionProfiler {
         target_type == TARGET(kX86)) {
       switch (precision_type) {
         case PRECISION(kFloat): {
-          auto ptr = in.data<float>();
+          auto ptr = in->data<float>();
           // write_tensorfile<float>(in, name);
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
@@ -134,7 +134,7 @@ class PrecisionProfiler {
           return;
         }
         case PRECISION(kAny): {
-          auto ptr = in.data<float>();
+          auto ptr = in->data<float>();
           // write_tensorfile<float>(in, name);
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
@@ -142,7 +142,7 @@ class PrecisionProfiler {
           return;
         }
         case PRECISION(kInt8): {
-          auto ptr = in.data<int8_t>();
+          auto ptr = in->data<int8_t>();
           // write_tensorfile<int8_t>(in, name);
           *mean = compute_mean<int8_t>(ptr, in->numel());
           *std_dev =
@@ -150,18 +150,16 @@ class PrecisionProfiler {
           return;
         }
         case PRECISION(kInt32): {
-          auto ptr = in.data<int32_t>();
-          // write_tensorfile<int32_t>(in, name);
-          for (int i = 0; i < in.numel(); ++i) {
-            sum += ptr[i];
-          }
-          return sum / in.numel();
-        }
-        case PRECISION(kInt64): {
-          auto ptr = in.data<int64_t>();
-          // write_tensorfile<int32_t>(in, name);
+          auto ptr = in->data<int32_t>();
           *mean = compute_mean<int32_t>(ptr, in->numel());
           *std_dev = compute_standard_deviation<int32_t>(
+              ptr, in->numel(), true, *mean);
+          return;
+        }
+        case PRECISION(kInt64): {
+          auto ptr = in->data<int64_t>();
+          *mean = compute_mean<int64_t>(ptr, in->numel());
+          *std_dev = compute_standard_deviation<int64_t>(
               ptr, in->numel(), true, *mean);
           return;
         }

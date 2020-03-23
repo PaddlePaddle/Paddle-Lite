@@ -28,9 +28,10 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
+void MultiStreamAnalysisPass::CleanUp() {
   exec_ops_.clear();
   wait_que_.clear();
+  wait_que_cpu_.clear();
   std::queue<int> empty_queue;
   while (!exec_que_.empty()) {
     exec_que_.pop();
@@ -38,8 +39,13 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
   ops_in_streams_.clear();
   resources_.clear();
   map_arg_to_lane_.clear();
+  op_types_set_.clear();
   io_copy_once_num_ = 0;
+}
 
+void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
+  // If not cleaned, the clone will overlay the previous state
+  CleanUp();
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (op_node->IsStmt()) {
       // Set all outputs of op to inaccessible state.
@@ -67,8 +73,14 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
           op_node->AsStmt().op_type() == "io_copy_once") {
         exec_que_.push(op_node);
       } else {
-        wait_que_.push_back(op_node);
+        auto tgt = op_node->AsStmt().kernels().front()->target();
+        if (tgt == TargetType::kCUDA) {
+          wait_que_.push_back(op_node);
+        } else {
+          wait_que_cpu_.push_back(op_node);
+        }
       }
+      op_types_set_.insert(op_node->AsStmt().op_type());
     }
   }
 
@@ -111,6 +123,19 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
       }
     }
   }
+}
+
+bool MultiStreamAnalysisPass::CheckOpSupport() {
+  std::unordered_set<std::string> invalid_op = {
+      "while", "conditional_block", "conditional_block_infer", "graph_op"};
+  for (auto& op_type : op_types_set_) {
+    if (invalid_op.count(op_type)) {
+      LOG(INFO) << "multi_stream_analysis_pass don't support " << op_type
+                << ", just return.";
+      return false;
+    }
+  }
+  return true;
 }
 
 bool MultiStreamAnalysisPass::IsPrepared(Node* stmt_node) {
@@ -192,6 +217,10 @@ void MultiStreamAnalysisPass::Launch(Node* stmt_node) {
     }
     stmt_node->AsStmt().need_sync_ = true;
   }
+  // io_copy are nodes inserted across devices and need to be synced.
+  if (stmt_node->AsStmt().op_type() == "io_copy") {
+    stmt_node->AsStmt().need_sync_ = true;
+  }
   stmt_node->AsStmt().stream_id_ = stream_id;
 
   // set output lane and set the output of op to be accessible.
@@ -209,16 +238,20 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
   max_stream_ = devs[dev_id].max_stream();
 #else
-  max_stream_ = -1;
+  LOG(FATAL) << "Please re-compile by setting the cmake flag LITE_WITH_CUDA=ON";
 #endif
 
   // Find the correct startup sequence for op.
   Init(graph.get());
+  bool is_valid = CheckOpSupport();
+  if (!is_valid) {
+    return;
+  }
   size_t prev_size;
 
-  while (!(this->wait_que_.empty())) {
-    prev_size = this->wait_que_.size();
-    // launch the acessible op and remove it from wait que.
+  while (!(this->wait_que_.empty() && this->wait_que_cpu_.empty())) {
+    prev_size = this->wait_que_.size() + this->wait_que_cpu_.size();
+    // launch the acessible cuda kernel and remove it from wait que.
     for (auto it = this->wait_que_.begin(); it != this->wait_que_.end();) {
       if (IsPrepared(*it)) {
         Launch(*it);
@@ -227,8 +260,18 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         ++it;
       }
     }
+    // launch the accessible cpu kernel and remove it from wait que.
+    for (auto cpu_it = this->wait_que_cpu_.begin();
+         cpu_it != this->wait_que_cpu_.end();) {
+      if (IsPrepared(*cpu_it)) {
+        Launch(*cpu_it);
+        cpu_it = wait_que_cpu_.erase(cpu_it);
+      } else {
+        ++cpu_it;
+      }
+    }
 
-    if (this->wait_que_.size() == prev_size) {
+    if (this->wait_que_.size() + this->wait_que_cpu_.size() == prev_size) {
       LOG(FATAL) << "network topo error!";
     }
   }

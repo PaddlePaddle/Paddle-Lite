@@ -110,7 +110,12 @@ struct Instruction {
 
 #ifdef LITE_WITH_CUDA
   bool need_sync() const {
-    return kernel_->mutable_context()->As<CUDAContext>().need_sync();
+    if (kernel_->target() == TargetType::kCUDA) {
+      return kernel_->mutable_context()->As<CUDAContext>().need_sync();
+    } else {
+      // the io_copy kernel has synced, so cpu kernels don't need sync..
+      return false;
+    }
   }
   void sync() const { kernel_->mutable_context()->As<CUDAContext>().sync(); }
 #endif
