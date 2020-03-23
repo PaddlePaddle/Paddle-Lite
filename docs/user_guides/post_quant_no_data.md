@@ -86,7 +86,6 @@ WeightQuantization.quantize_weight_to_int(save_model_dir,
 参考[模型转换](../user_guides/model_optimize_tool)准备模型转换工具，建议从Release页面下载。
 
 参考[模型转换](../user_guides/model_optimize_tool)使用模型转换工具。
-因为该模型会将量化的权重反量化，然后实际加载并执行FP32预测模型，所以opt命令的输入参数--prefer_int8_kernel不需要设置为true，同时其他参数按照实际情况参考文档设置。
 比如在安卓手机ARM端进行预测，模型转换的命令为：
 ```bash
 ./opt --model_dir=./mobilenet_v1_quant \

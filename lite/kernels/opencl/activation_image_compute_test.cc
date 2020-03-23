@@ -109,13 +109,13 @@ TEST(act_image2d_fp16, compute) {
                     func_name = "sigmoid";
                     break;
                   case 6:  // tanh
-                    func_name = "tanh_act";
+                    func_name = "tanh";
                     break;
                   case 7:  // tanh
                     func_name = "swish";
                     break;
                   case 8:  // tanh
-                    func_name = "exp_act";
+                    func_name = "exp";
                     break;
                 }
                 LOG(INFO) << "func_name: " << func_name;
@@ -307,7 +307,7 @@ USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
 
 // exp
-USE_LITE_KERNEL(exp_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
+USE_LITE_KERNEL(exp, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // swish
 USE_LITE_KERNEL(swish, kOpenCL, kFP16, kImageDefault, ImageDefault);
@@ -316,7 +316,7 @@ USE_LITE_KERNEL(swish, kOpenCL, kFP16, kImageDefault, ImageDefault);
 USE_LITE_KERNEL(leaky_relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // tanh act
-USE_LITE_KERNEL(tanh_act, kOpenCL, kFP16, kImageDefault, ImageDefault);
+USE_LITE_KERNEL(tanh, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // relu image2d fp16
 USE_LITE_KERNEL(relu, kOpenCL, kFP16, kImageDefault, ImageDefault);
