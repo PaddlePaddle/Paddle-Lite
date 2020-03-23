@@ -1139,7 +1139,7 @@ function main {
                 ;;
             build_test_arm_opencl)
                 build_test_arm_opencl
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+#                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
                 build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
