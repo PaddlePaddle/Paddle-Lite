@@ -49,6 +49,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int n = w_dims[1];
   CHECK_EQ(k * n, w_dims.production());
 
+  bool enable_int8 = op_info->HasAttr("enable_int8")
+                         ? op_info->GetAttr<bool>("enable_int8")
+                         : false;
+
   // Create input node and reshape it to (m, k, 1, 1)
   std::shared_ptr<Node> input_node = nullptr;
   if (graph->Has(input_name)) {
@@ -63,39 +67,87 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   reshaped_input_op->set_attr_shape({m, k, 1, 1});
   reshaped_input_op->set_attr_axis(0);
 
-  // Create w const node, set its shape to (n, k, 1, 1) and fill with
-  // the transposed w tensor
-  Tensor transpose_w;
-  transpose_w.Resize({n, k, 1, 1});
-  transpose_w.set_persistable(true);
-  auto transpose_w_data = transpose_w.mutable_data<float>();
-  auto w_data = w->data<float>();
-  for (int i = 0; i < k; i++) {
-    for (int j = 0; j < n; j++) {
-      transpose_w_data[j * k + i] = w_data[i * n + j];
+  std::shared_ptr<Node> fc_node = nullptr;
+  if (!enable_int8) {
+    // Create w const node, set its shape to (n, k, 1, 1) and fill with
+    // the transposed w tensor
+    Tensor transpose_w;
+    transpose_w.Resize({n, k, 1, 1});
+    transpose_w.set_persistable(true);
+    auto transpose_w_data = transpose_w.mutable_data<float>();
+    auto w_data = w->data<float>();
+    for (int i = 0; i < k; i++) {
+      for (int j = 0; j < n; j++) {
+        transpose_w_data[j * k + i] = w_data[i * n + j];
+      }
+    }
+    auto trans_w_node = graph->Add(w_name, transpose_w);
+
+    // FC node
+    fc_node = graph->Add<ge::op::FullConnection>(out_name);
+    auto fc_op = fc_node->data<ge::op::FullConnection>();
+    fc_op->set_input_x(*reshaped_input_node->data());
+    fc_op->set_input_w(*trans_w_node->data());
+
+    // Add bias node if bias tensor exists
+    if (HasInputArg(op_info, scope, "Bias")) {
+      std::shared_ptr<Node> bias_node = nullptr;
+      auto bias_name = op_info->Input("Bias").front();
+      if (graph->Has(bias_name)) {
+        bias_node = graph->Get(bias_name);
+      } else {
+        auto bias = scope->FindTensor(bias_name);
+        auto bias_dims = bias->dims();
+        CHECK_EQ(bias_dims.production(), n);
+        bias_node = graph->Add(bias_name, *bias, {1, n, 1, 1});
+      }
+      fc_op->set_input_b(*bias_node->data());
     }
   }
-  auto trans_w_node = graph->Add(w_name, transpose_w);
 
-  // FC node
-  auto fc_node = graph->Add<ge::op::FullConnection>(out_name);
-  auto fc_op = fc_node->data<ge::op::FullConnection>();
-  fc_op->set_input_x(*reshaped_input_node->data());
-  fc_op->set_input_w(*trans_w_node->data());
-
-  // Add bias node if bias tensor exists
-  if (HasInputArg(op_info, scope, "Bias")) {
-    std::shared_ptr<Node> bias_node = nullptr;
-    auto bias_name = op_info->Input("Bias").front();
-    if (graph->Has(bias_name)) {
-      bias_node = graph->Get(bias_name);
-    } else {
-      auto bias = scope->FindTensor(bias_name);
-      auto bias_dims = bias->dims();
-      CHECK_EQ(bias_dims.production(), n);
-      bias_node = graph->Add(bias_name, *bias, {1, n, 1, 1});
+  if (enable_int8) {
+    // Create w const node, set its shape to (n, k, 1, 1) and fill with
+    // the transposed w tensor
+    Tensor transpose_w;
+    transpose_w.Resize({n, k, 1, 1});
+    transpose_w.set_persistable(true);
+    auto transpose_w_data = transpose_w.mutable_data<int8_t>();
+    auto w_data = w->data<int8_t>();
+    for (int i = 0; i < k; i++) {
+      for (int j = 0; j < n; j++) {
+        transpose_w_data[j * k + i] = w_data[i * n + j];
+      }
     }
-    fc_op->set_input_b(*bias_node->data());
+    auto trans_w_node = graph->Add(w_name, transpose_w);
+
+    // FC node
+    fc_node = graph->Add<ge::op::QuantizedFullConnection>(out_name);
+    auto fc_op = fc_node->data<ge::op::QuantizedFullConnection>();
+    fc_op->set_input_x(*reshaped_input_node->data());
+    fc_op->set_input_filter(*trans_w_node->data());
+
+    // Add bias node if bias tensor exists
+    if (HasInputArg(op_info, scope, "Bias")) {
+      std::shared_ptr<Node> bias_node = nullptr;
+      auto bias_name = op_info->Input("Bias").front();
+      if (graph->Has(bias_name)) {
+        bias_node = graph->Get(bias_name);
+      } else {
+        auto bias = scope->FindTensor(bias_name);
+        auto bias_dims = bias->dims();
+        CHECK_EQ(bias_dims.production(), n);
+        bias_node = graph->Add(bias_name, *bias, {1, n, 1, 1});
+      }
+      fc_op->set_input_bias(*bias_node->data());
+    }
+
+    fc_op->set_attr_x_quant_type(1);
+    fc_op->set_attr_filter_quant_type(1);
+    fc_op->set_attr_x_quant_scale(op_info->GetAttr<float>("input_scale"));
+    fc_op->set_attr_x_quant_offset(0);
+    auto weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
+    fc_op->set_attr_filter_quant_scales(
+        ge::AttrValue::LIST_FLOAT(weight_scale.begin(), weight_scale.end()));
   }
 
   // Reshape output of FC node from (m, n, 1, 1) to out_shape

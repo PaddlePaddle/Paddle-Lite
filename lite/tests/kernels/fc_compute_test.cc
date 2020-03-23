@@ -116,10 +116,6 @@ class FcOPTest : public arena::TestCase {
     int k = wdims_[0];
     int n = wdims_[1];
 
-    LOG(INFO) << "M=" << m << ", N=" << n << ", K=" << k
-              << ", bias=" << flag_bias << ", with_relu=" << with_relu_
-              << ", padding_weights=" << padding_weights_;
-
     if (m == 1) {
       basic_gemv(n,
                  k,
@@ -295,6 +291,125 @@ TEST(FcOP, padding_and_parallel) {
   TestFC2D(place, abs_error, true, true);
 }
 #endif
+
+class FcInt8OPTest : public arena::TestCase {
+ protected:
+  // common attributes for this op.
+  std::string input_ = "x";
+  std::string weight_ = "w";
+  std::string bias_ = "b";
+  std::string out_ = "out";
+  DDim dims_{{1, 128}};
+  DDim wdims_{{128, 4}};
+  DDim bdims_{{}};
+  int in_num_col_dims_{1};
+  float input_scale{1.1f};
+  std::vector<float> weight_scale{1.2f};
+
+ public:
+  FcInt8OPTest(const Place& place,
+               const std::string& alias,
+               DDim dim_in,
+               DDim dim_w,
+               DDim dim_b,
+               int in_num_col_dims)
+      : TestCase(place, alias),
+        dims_(dim_in),
+        wdims_(dim_w),
+        bdims_(dim_b),
+        in_num_col_dims_(in_num_col_dims) {}
+
+  void RunBaseline(Scope* scope) override {
+    auto x = scope->FindTensor(input_);
+    auto w = scope->FindTensor(weight_);
+    auto b = scope->FindTensor(bias_);
+    bool flag_bias = b;
+    auto out = scope->NewTensor(out_);
+    CHECK(out);
+    DDim out_dim = ComputeOutDim(x->dims(), w->dims(), in_num_col_dims_);
+    out->Resize(out_dim);
+
+    auto x_data = x->data<int8_t>();
+    auto w_data = w->data<int8_t>();
+    const float* b_data = nullptr;
+    if (flag_bias) {
+      b_data = b->data<float>();
+    }
+    auto out_data = out->mutable_data<float>();
+
+    int m = x->dims().count(0, in_num_col_dims_);
+    CHECK_EQ(wdims_[0], x->dims().count(in_num_col_dims_, x->dims().size()));
+    int k = wdims_[0];
+    int n = wdims_[1];
+
+    float scale = weight_scale[0] * input_scale;
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < n; j++) {
+        int8_t ret = 0;
+        for (int p = 0; p < k; p++) {
+          ret += x_data[i * k + p] * w_data[p * n + j];
+        }
+        out_data[i * n + j] = static_cast<float>(ret) * scale;
+        if (flag_bias) out_data[i * n + j] += b_data[j];
+      }
+    }
+  }
+
+  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+    op_desc->SetType("fc");
+    op_desc->SetInput("Input", {input_});
+    op_desc->SetInput("W", {weight_});
+    if (bdims_.size() > 0) {
+      op_desc->SetInput("Bias", {bias_});
+    }
+    op_desc->SetOutput("Out", {out_});
+    op_desc->SetAttr<int>("in_num_col_dims", in_num_col_dims_);
+    op_desc->SetAttr<bool>("enable_int8", true);
+    op_desc->SetAttr<float>("input_scale", input_scale);
+    op_desc->SetAttr<std::vector<float>>("weight_scale", weight_scale);
+  }
+
+  void PrepareData() override {
+    std::vector<int8_t> din(dims_.production());
+    fill_data_rand<int8_t>(din.data(), -5, 5, dims_.production());
+
+    std::vector<int8_t> win(wdims_.production());
+    fill_data_rand<int8_t>(win.data(), -5, 5, wdims_.production());
+
+    bool flag_bias = bdims_.size() > 0;
+    std::vector<float> bin(bdims_.production());
+    fill_data_rand(bin.data(), -1.f, 1.f, bdims_.production());
+
+    SetCommonTensor(input_, dims_, din.data());
+    SetCommonTensor(weight_, wdims_, win.data(), {}, true);
+    if (flag_bias) {
+      SetCommonTensor(bias_, bdims_, bin.data(), {}, true);
+    }
+  }
+};
+
+TEST(fc_int8, precision) {
+  Place place;
+  std::string alias{"def"};
+  float abs_error = 1e-4;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;
+#elif defined(LITE_WITH_ARM)
+  place = {TARGET(kARM), PRECISION(kInt8)};
+  alias = "fp32out";
+#else
+  return;
+#endif
+
+  std::vector<int64_t> x_shape{10, 12};
+  std::vector<int64_t> w_shape{12, 4};
+  std::vector<int64_t> b_shape{4};
+  std::unique_ptr<arena::TestCase> tester(new FcInt8OPTest(
+      place, alias, DDim(x_shape), DDim(w_shape), DDim(b_shape), 1));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
 
 }  // namespace lite
 }  // namespace paddle
