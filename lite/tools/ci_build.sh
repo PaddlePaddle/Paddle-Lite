@@ -385,7 +385,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -775,26 +775,13 @@ function test_opencl {
     local adb="adb -s ${device}"
     $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
 
-    # tests in skip_list will be skiped
-    local skip_list=("test_grid_sampler_image_opencl")
-    local to_skip=0
     # opencl test should be marked with `opencl`
     opencl_test_mark="opencl"
 
     for _test in $(cat $TESTS_FILE); do
         # tell if this test is marked with `opencl`
         if [[ $_test == *$opencl_test_mark* ]]; then
-            # tests in `skip_list` will be skiped
-            to_skip=0
-            for skip_name in ${skip_list[@]}; do
-                if [ $skip_name == $_test ]; then
-                    echo "to skip " $skip_name
-                    to_skip=1
-                fi
-            done
-            if [ $to_skip -eq 0 ]; then
-                test_arm_android $_test $device
-            fi
+            test_arm_android $_test $device
         fi
     done
 
