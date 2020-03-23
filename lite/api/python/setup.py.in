@@ -11,20 +11,22 @@ class BinaryDistribution(Distribution):
 # get paddle-lite version, if it's not based on a release tag, we use commit id instead
 paddlelite_commit = "@PADDLE_LITE_COMMIT@"
 paddlelite_tag = "@PADDLE_LITE_TAG@"
-if paddlelite_tag == ""
-    paddlelite_version = paddlelite_tag
-else
+if paddlelite_tag == "":
     paddlelite_version = paddlelite_commit
+else:
+    paddlelite_version = paddlelite_tag
 
-with_mkl        = '%(with_mkl)s'
+lite_path='${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
+package_data = {'lite': ['lite_core.so']}
 # put all thirdparty libraries in paddle.libs
+package_data['libs']= []
 libs_path='${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
 if '${WITH_MKL}' == 'ON':
     shutil.copy('${MKLML_SHARED_IOMP_LIB}', libs_path)
+    shutil.copy('${MKLML_SHARED_LIB}', libs_path)
+    package_data['libs'] += ['libmklml_intel.so', 'libiomp5.so']
 
-lite_path='${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
 command = "patchelf --set-rpath '$ORIGIN/../libs/' ${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite/lite_core.so"
-#os.system(command)
 if os.system(command) != 0:
     raise Exception("patch third_party libs failed, command: %s" % command)
 
@@ -47,9 +49,6 @@ setup(
     description = 'Paddle-Lite Library',
     packages = ['lite','libs'],
     package_dir = package_dir,
-    package_data = {
-        'lite': ['lite_core.so'],
-        'libs': ['libiomp5.so'],
-    },
+    package_data = package_data,
     distclass = BinaryDistribution
 )

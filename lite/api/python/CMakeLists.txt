@@ -3,6 +3,20 @@ if (NOT LITE_WITH_PYTHON)
 endif()
 
 # to create setup.py for packeting whl for Paddle-Lite and opt
+
+execute_process(
+  COMMAND git describe --tags --exact-match
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_TAG
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE PADDLE_LITE_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
 
