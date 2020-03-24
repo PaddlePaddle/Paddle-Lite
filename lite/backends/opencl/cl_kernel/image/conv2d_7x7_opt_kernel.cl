@@ -14,7 +14,8 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void conv2d_3x3_opt(__private const int item_ch,
+// opt version of con7x7
+__kernel void conv2d_7x7_opt(__private const int item_ch,
                              __private const int item_w,
                              __private const int item_h,
                              __read_only image2d_t input_image,
@@ -35,6 +36,9 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+  // filter
+  const int filter_w = 7;
+  const int filter_h = 7;
 
   // item_id
   const int item_ch_id = get_global_id(0);
@@ -42,7 +46,6 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
   const int item_h_id = get_global_id(2);
 
   // out_width_id_per_blk and out_batch_id
-  int out_batch_id = item_h_id / in_h;
   int out_w_base_id = item_ch_id * out_w;
   int out_w_id0 = item_w_id;
   int out_w_id1 = out_w_id0 + item_w;
@@ -107,25 +110,23 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
   CL_DTYPE4 filter_trans[4] = {0.0f};
   CL_DTYPE4 input[5] = {0.0f};
 
-  int filter_h_val0 = item_ch_id * 4 * 3;
-  int filter_h_val1 = filter_h_val0 + 3;
-  int filter_h_val2 = filter_h_val1 + 3;
-  int filter_h_val3 = filter_h_val2 + 3;
+  int filter_h_val0 = item_ch_id * 4 * filter_h;
+  int filter_h_val1 = filter_h_val0 + filter_h;
+  int filter_h_val2 = filter_h_val1 + filter_h;
+  int filter_h_val3 = filter_h_val2 + filter_h;
 
   for (int ch = 0; ch < (in_ch + 3) / 4; ch++) {
     int ch_surplus = (ch + 1) * 4 - in_ch > 0 ? (ch + 1) * 4 - in_ch : 0;
 
     const int in_w_base_id = mul24(ch, in_w);
 
-    int filter_w_val = ch * 3;
+    int filter_w_val = ch * filter_w;
 
-    for (int h = 0; h < 3; h++) {
-      int in_h_val = select(out_batch_id * in_h + in_h_id + h,
-                            -1,
-                            (out_batch_id * in_h + in_h_id + h < 0 ||
-                             out_batch_id * in_h + in_h_id + h >= in_h));
+    for (int h = 0; h < filter_h; h++) {
+      int in_h_val =
+          select(in_h_id + h, -1, (in_h_id + h < 0 || in_h_id + h >= in_h));
 
-      for (int w = 0; w < 3; w++) {
+      for (int w = 0; w < filter_w; w++) {
         int in_w_val0 = select(in_w_base_id + in_w_id0 + w,
                                -1,
                                (in_w_id0 + w < 0 || in_w_id0 + w >= in_w));
@@ -142,26 +143,30 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
                                -1,
                                (in_w_id4 + w < 0 || in_w_id4 + w >= in_w));
 
-        filter[0] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val0 + h));  // in_ch:0-3,out_ch:0
-        filter[1] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val1 + h));  // in_ch:0-3,out_ch:1
-        filter[2] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val2 + h));  // in_ch:0-3,out_ch:2
-        filter[3] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val3 + h));  // in_ch:0-3,out_ch:3
+        filter[0] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val0 + h));  // in_ch:0-3,out_ch:0
+        filter[1] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val1 + h));  // in_ch:0-3,out_ch:1
+        filter[2] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val2 + h));  // in_ch:0-3,out_ch:2
+        filter[3] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val3 + h));  // in_ch:0-3,out_ch:3
 
         filter_trans[0] = (CL_DTYPE4)(filter[0].x,
                                       filter[1].x,
@@ -257,9 +262,8 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
                    output[4]);
   }
 }
-
 // support batch > 1
-__kernel void conv2d_3x3_multi_batch(__private const int item_ch,
+__kernel void conv2d_7x7_multi_batch(__private const int item_ch,
                                      __private const int item_w,
                                      __private const int item_h,
                                      __read_only image2d_t input_image,
@@ -280,6 +284,9 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+  // filter
+  const int filter_w = 7;
+  const int filter_h = 7;
 
   // item_id
   const int item_ch_id = get_global_id(0);
@@ -352,26 +359,26 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
   CL_DTYPE4 filter_trans[4] = {0.0f};
   CL_DTYPE4 input[5] = {0.0f};
 
-  int filter_h_val0 = item_ch_id * 4 * 3;
-  int filter_h_val1 = filter_h_val0 + 3;
-  int filter_h_val2 = filter_h_val1 + 3;
-  int filter_h_val3 = filter_h_val2 + 3;
+  int filter_h_val0 = item_ch_id * 4 * filter_h;
+  int filter_h_val1 = filter_h_val0 + filter_h;
+  int filter_h_val2 = filter_h_val1 + filter_h;
+  int filter_h_val3 = filter_h_val2 + filter_h;
 
   for (int ch = 0; ch < (in_ch + 3) / 4; ch++) {
     int ch_surplus = (ch + 1) * 4 - in_ch > 0 ? (ch + 1) * 4 - in_ch : 0;
 
     const int in_w_base_id = mul24(ch, in_w);
 
-    int filter_w_val = ch * 3;
+    int filter_w_val = ch * filter_w;
 
-    for (int h = 0; h < 3; h++) {
+    for (int h = 0; h < filter_h; h++) {
       int in_h_val = select(
           out_batch_id * in_h + in_h_id + h,
           -1,
           (out_batch_id * in_h + in_h_id + h < out_batch_id * in_h ||
            out_batch_id * in_h + in_h_id + h >= (out_batch_id + 1) * in_h));
 
-      for (int w = 0; w < 3; w++) {
+      for (int w = 0; w < filter_w; w++) {
         int in_w_val0 = select(in_w_base_id + in_w_id0 + w,
                                -1,
                                (in_w_id0 + w < 0 || in_w_id0 + w >= in_w));
@@ -388,26 +395,30 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
                                -1,
                                (in_w_id4 + w < 0 || in_w_id4 + w >= in_w));
 
-        filter[0] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val0 + h));  // in_ch:0-3,out_ch:0
-        filter[1] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val1 + h));  // in_ch:0-3,out_ch:1
-        filter[2] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val2 + h));  // in_ch:0-3,out_ch:2
-        filter[3] = READ_IMG_TYPE(
-            CL_DTYPE_CHAR,
-            filter_image,
-            sampler,
-            (int2)(filter_w_val + w, filter_h_val3 + h));  // in_ch:0-3,out_ch:3
+        filter[0] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val0 + h));  // in_ch:0-3,out_ch:0
+        filter[1] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val1 + h));  // in_ch:0-3,out_ch:1
+        filter[2] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val2 + h));  // in_ch:0-3,out_ch:2
+        filter[3] =
+            READ_IMG_TYPE(CL_DTYPE_CHAR,
+                          filter_image,
+                          sampler,
+                          (int2)(filter_w_val + w,
+                                 filter_h_val3 + h));  // in_ch:0-3,out_ch:3
 
         filter_trans[0] = (CL_DTYPE4)(filter[0].x,
                                       filter[1].x,

@@ -87,6 +87,7 @@ class NearestInterpComputeImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
     VLOG(4) << "out_image_shape(w,h):" << out_image_shape["width"] << " "
@@ -95,6 +96,7 @@ class NearestInterpComputeImageDefault
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+#endif
 
     const std::vector<size_t>& default_work_size =
         DefaultWorkSize(y_dims,
