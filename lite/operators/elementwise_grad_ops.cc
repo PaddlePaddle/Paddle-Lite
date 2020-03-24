@@ -21,8 +21,7 @@ namespace lite {
 namespace operators {
 
 bool ElementwiseGradOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.XGrad);
-  CHECK_OR_FALSE(param_.YGrad);
+  CHECK_OR_FALSE(param_.XGrad || param_.YGrad);
   CHECK_OR_FALSE(param_.OutGrad);
   return true;
 }
@@ -30,8 +29,12 @@ bool ElementwiseGradOp::CheckShape() const {
 bool ElementwiseGradOp::InferShape() const {
   auto x_dim = param_.X->dims();
   auto y_dim = param_.Y->dims();
-  param_.XGrad->Resize(x_dim);
-  param_.YGrad->Resize(y_dim);
+  if (param_.XGrad) {
+    param_.XGrad->Resize(x_dim);
+  }
+  if (param_.YGrad) {
+    param_.YGrad->Resize(y_dim);
+  }
   return true;
 }
 
@@ -39,14 +42,21 @@ bool ElementwiseGradOp::AttachImpl(const cpp::OpDesc& opdesc,
                                    lite::Scope* scope) {
   auto Y_name = opdesc.Input("Y").front();
   auto X_name = opdesc.Input("X").front();
-  auto Out_name = opdesc.Input("Out@Grad").front();
-  auto x_grad_name = opdesc.Output("X@Grad").front();
-  auto y_grad_name = opdesc.Output("Y@Grad").front();
+  auto Out_name = opdesc.Input("Out@GRAD").front();
+  CHECK(!opdesc.Output("X@GRAD").empty() || !opdesc.Output("Y@GRAD").empty())
+      << "at least one of 'X@GRAD' and 'Y@GRAD' is not empty";
+
+  if (!opdesc.Output("X@GRAD").empty()) {
+    auto x_grad_name = opdesc.Output("X@GRAD").front();
+    param_.XGrad = GetMutableVar<lite::Tensor>(scope, x_grad_name);
+  }
+  if (!opdesc.Output("Y@GRAD").empty()) {
+    auto y_grad_name = opdesc.Output("Y@GRAD").front();
+    param_.YGrad = GetMutableVar<lite::Tensor>(scope, y_grad_name);
+  }
 
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Y = GetVar<lite::Tensor>(scope, Y_name);
-  param_.XGrad = GetMutableVar<lite::Tensor>(scope, x_grad_name);
-  param_.YGrad = GetMutableVar<lite::Tensor>(scope, y_grad_name);
   param_.OutGrad = GetVar<lite::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
   return true;
