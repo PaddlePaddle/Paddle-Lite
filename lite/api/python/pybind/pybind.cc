@@ -64,7 +64,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
       .def("run_optimize", &OptBase::RunOptimize)
-      .def("print_help_info", &OptBase::PrintHelpInfo)
+      .def("help", &OptBase::PrintHelpInfo)
       .def("print_supported_ops", &OptBase::PrintSupportedOps)
       .def("display_kernels_info", &OptBase::DisplayKernelsInfo)
       .def("print_all_ops", &OptBase::PrintAllOps);

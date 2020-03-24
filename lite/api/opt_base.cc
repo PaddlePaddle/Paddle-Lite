@@ -175,24 +175,26 @@ void OptBase::PrintHelpInfo() {
   const char help_info[] =
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"
+      "  Arguments of help information:\n"
+      "        `help()`   Print help infomation\n"
       "  Arguments of model optimization:\n"
-      "        `--model_dir=<model_param_dir>`\n"
-      "        `--model_file=<model_path>`\n"
-      "        `--param_file=<param_path>`\n"
-      "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
-      "        `--optimize_out=<output_optimize_model_dir>`\n"
-      "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
-      "        `--prefer_int8_kernel=(true|false)`\n"
-      "        `--record_tailoring_info=(true|false)`\n"
+      "        `set_model_dir(model_dir)`\n"
+      "        `set_model_file(model_file_path)`\n"
+      "        `set_param_file(param_file_path)`\n"
+      "        `set_model_type(protobuf|naive_buffer)`\n"
+      "        `set_optimize_out(output_optimize_model_dir)`\n"
+      "        `set_valid_places(arm|opencl|x86|npu|xpu)`\n"
+      "        `run_optimize(false|true)`\n"
+      "        `  ----fasle&true refer to whether to record ops info for "
+      "tailoring lib, false by default`\n"
       "  Arguments of model checking and ops information:\n"
-      "        `--print_all_ops=true`   Display all the valid operators of "
+      "        `print_all_ops()`   Display all the valid operators of "
       "Paddle-Lite\n"
-      "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
-      "  Display valid operators of input targets\n"
-      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
-      "  Display operators in the input model\n";
+      "        `print_supported_ops`   Display supported operators of valid "
+      "places\n"
+      "        `check_if_model_supported()`   Check if the input model is "
+      "supported\n";
+
   std::cout << "opt version:" << opt_version << std::endl
             << help_info << std::endl;
 }
