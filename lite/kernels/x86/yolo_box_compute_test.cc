@@ -112,7 +112,7 @@ void RunBaseline(const lite::Tensor* X,
   Scores->Resize({in->dims()[0], box_num, class_num});
   auto* boxes = Boxes;
   auto* scores = Scores;
-  const int b_num = boxes->dims()[0];
+  const int b_num = boxes->dims()[1];
 
   const int stride = h * w;
   const int an_stride = (class_num + 5) * stride;
@@ -180,14 +180,14 @@ TEST(yolo_box_x86, retrive_op) {
 }
 
 TEST(yolo_box_x86, init) {
-  YoloBoxCompute<float> yolo_box;
+  YoloBoxCompute yolo_box;
   ASSERT_EQ(yolo_box.precision(), PRECISION(kFloat));
   ASSERT_EQ(yolo_box.target(), TARGET(kX86));
 }
 
 TEST(yolo_box_x86, run_test) {
   lite::Tensor X, ImgSize, Boxes, Scores, Boxes_base, Scores_base;
-  YoloBoxCompute<float> yolo_box;
+  YoloBoxCompute yolo_box;
   operators::YoloBoxParam param;
   int s = 3, cls = 4;
   int n = 1, c = s * (5 + cls), h = 16, w = 16;
@@ -197,7 +197,7 @@ TEST(yolo_box_x86, run_test) {
   param.class_num = cls;
   int m = h * w * param.anchors.size() / 2;
   X.Resize({n, c, h, w});
-  ImgSize.Resize({1, 2});
+  ImgSize.Resize({n, 2});
   Boxes.Resize({n, m, 4});
   Boxes_base.Resize({n, m, 4});
   Scores.Resize({n, cls, m});
