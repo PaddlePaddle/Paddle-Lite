@@ -146,7 +146,7 @@ std::vector<Object> detect_object(const float* data,
       if (w > 0 && h > 0 && obj.prob <= 1) {
         rect_out.push_back(obj);
         cv::rectangle(image, rec_clip, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
-        std::string str_prob = std::to_string(obj.prob);
+        std::string str_prob = paddle::lite::to_string(obj.prob);
         std::string text = std::string(class_names[obj.class_id]) + ": " +
                            str_prob.substr(0, str_prob.find(".") + 4);
         int font_face = cv::FONT_HERSHEY_COMPLEX_SMALL;

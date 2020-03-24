@@ -155,7 +155,7 @@ TEST(ListBuilder, basic) {
 
   for (int i = 0; i < num_elems; i++) {
     auto* elem = li.New();
-    elem->set("elem-" + std::to_string(i));
+    elem->set("elem-" + paddle::lite::to_string(i));
   }
   li.Save();
   table.SaveToFile("2.bf");
@@ -169,7 +169,7 @@ TEST(ListBuilder, basic) {
   li1.Load();
 
   for (int i = 0; i < num_elems; i++) {
-    ASSERT_EQ(li1.Get(i).data(), "elem-" + std::to_string(i));
+    ASSERT_EQ(li1.Get(i).data(), "elem-" + paddle::lite::to_string(i));
   }
 }
 
