@@ -180,49 +180,6 @@ class Graph {
     }
   }
 
-  template <typename T>
-  void* RegisterConstData(size_t len) {
-    void* addr = malloc(len * sizeof(T));
-    const_data_storage_.push_back(addr);
-    return addr;
-  }
-
-  void FreeConstData() {
-    for (auto& addr : const_data_storage_) {
-      free(addr);
-    }
-  }
-
-  void BindConstRawData(std::string tensor_name,
-                        const float* data,
-                        size_t len,
-                        bool alloc = true) {
-    void* alloc_data;
-    if (fp_type_ == CNML_DATA_FLOAT32) {
-      if (alloc) {
-        alloc_data = RegisterConstData<float>(len);
-        memcpy(alloc_data, data, len * sizeof(float));
-      } else {
-        alloc_data = const_cast<void*>(static_cast<const void*>(data));
-      }
-      CNML_CALL(cnmlBindConstData_V2(
-          nodes_[tensor_name]->mlu_tensor(), alloc_data, false));
-    } else if (fp_type_ == CNML_DATA_FLOAT16) {
-      void* data_fp16 = RegisterConstData<::paddle::lite::fluid::float16>(len);
-      CNRT_CALL(
-          cnrtCastDataType(const_cast<void*>(static_cast<const void*>(data)),
-                           CNRT_FLOAT32,
-                           data_fp16,
-                           CNRT_FLOAT16,
-                           len,
-                           nullptr));
-      CNML_CALL(cnmlBindConstData_V2(
-          nodes_[tensor_name]->mlu_tensor(), data_fp16, false));
-    } else {
-      CHECK(0);
-    }
-  }
-
   void BindConstData(std::string tensor_name, ::paddle::lite::Tensor* tensor) {
     const float* data = tensor->data<float>();
     size_t len = tensor->data_size();
