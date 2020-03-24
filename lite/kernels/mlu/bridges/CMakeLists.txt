@@ -38,4 +38,4 @@ set(mlu_subgraph_bridges
 # lite_cc_test(test_softmax_converter_mlu SRCS softmax_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 # lite_cc_test(test_fc_converter_mlu SRCS fc_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 
-message(STATUS "+++++ mlu_subgraph_bridges: ${mlu_subgraph_bridges}")
+message(STATUS "+++++++ mlu_subgraph_bridges: ${mlu_subgraph_bridges}")
