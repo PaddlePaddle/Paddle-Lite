@@ -56,9 +56,9 @@ bool ElementwiseGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(elementwise_grad_sub,
+REGISTER_LITE_OP(elementwise_sub_grad,
                  paddle::lite::operators::ElementwiseGradOp);
-REGISTER_LITE_OP(elementwise_grad_add,
+REGISTER_LITE_OP(elementwise_add_grad,
                  paddle::lite::operators::ElementwiseGradOp);
 
 REGISTER_LITE_OP(elementwise_grad_mul,
