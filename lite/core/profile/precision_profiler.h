@@ -71,9 +71,10 @@ class PrecisionProfiler {
        << "=========================================" << std::endl;
     ss << setw(45) << left << "operator:(kernel_info)"
        << " " << setw(70) << left << "output_tensor_name:(tensor_info)"
-       << " " << setw(15) << left << "tensor_dims"
-       << " " << setw(15) << left << "tensor_mean"
-       << " " << setw(15) << left << "tensor_standard_deviation" << std::endl;
+       << " " << setw(15) << left << "dims"
+       << " " << setw(15) << left << "mean"
+       << " " << setw(15) << left << "std_deviation"
+       << " " << setw(15) << left << "ave_grow_rate*" << std::endl;
 
     return ss.str();
   }
@@ -104,6 +105,17 @@ class PrecisionProfiler {
     return sqrt(variance);
   }
 
+  template <typename T>
+  double compute_average_grow_rate(const T* in, const size_t length) {
+    const double eps = 1e-5;
+    double ave_grow_rate = 0.0f;
+    for (size_t i = 1; i < length; ++i) {
+      ave_grow_rate += (in[i] - in[i - 1]) / (in[i - 1] + eps);
+    }
+    ave_grow_rate /= length;
+    return ave_grow_rate;
+  }
+
   // check if output tensor unused
   bool is_unused(const Tensor* in) {
     if (!in->data<int8_t>()) {
@@ -118,6 +130,7 @@ class PrecisionProfiler {
                                      DataLayoutType layout_type,
                                      double* mean,
                                      double* std_dev,
+                                     double* ave_grow_rate,
                                      std::string name = "inst",
                                      bool write_result_to_file = false) {
     std::string unsupported_error_log =
@@ -133,6 +146,7 @@ class PrecisionProfiler {
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
               compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<float>(ptr, in->numel());
           write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
@@ -141,6 +155,7 @@ class PrecisionProfiler {
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
               compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<float>(ptr, in->numel());
           write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
@@ -149,6 +164,7 @@ class PrecisionProfiler {
           *mean = compute_mean<int8_t>(ptr, in->numel());
           *std_dev =
               compute_standard_deviation<int8_t>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<int8_t>(ptr, in->numel());
           write_result_to_file&& write_tensorfile<int8_t>(in, name);
           return;
         }
@@ -157,12 +173,14 @@ class PrecisionProfiler {
           *mean = compute_mean<int32_t>(ptr, in->numel());
           *std_dev = compute_standard_deviation<int32_t>(
               ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<int32_t>(ptr, in->numel());
           write_result_to_file&& write_tensorfile<int32_t>(in, name);
           return;
         }
         default:
           *mean = -333333333333;
           *std_dev = -33333333333;
+          *ave_grow_rate = -33333333333;
           LOG(ERROR) << unsupported_error_log;
           return;
       }
@@ -193,6 +211,8 @@ class PrecisionProfiler {
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
               real_out_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
+                                                            real_out_v.size());
           write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
@@ -206,12 +226,15 @@ class PrecisionProfiler {
           *mean = compute_mean<float>(in_data_v.data(), in->numel());
           *std_dev = compute_standard_deviation<float>(
               in_data_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate =
+              compute_average_grow_rate<float>(in_data_v.data(), in->numel());
           write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
         default:
           *mean = -222222222222;
           *std_dev = -22222222222;
+          *ave_grow_rate = -22222222222;
           LOG(ERROR) << unsupported_error_log;
           return;
       }
@@ -219,6 +242,7 @@ class PrecisionProfiler {
     } else {
       *mean = -111111111111;
       *std_dev = -11111111111;
+      *ave_grow_rate = -11111111111;
       LOG(ERROR) << unsupported_error_log;
       return;
     }
@@ -257,8 +281,10 @@ class PrecisionProfiler {
               op_scope->FindVar(out_name)->GetMutable<Tensor>();
           double mean = -999999;
           double std_dev = -100000;
+          double ave_grow_rate = 99999;
           std::string mean_str{"unused"};
           std::string std_dev_str{"unused"};
+          std::string ave_grow_rate_str{"unused"};
 
           if (!is_unused(tout)) {
             compute_tensor_precision_info(tout,
@@ -267,10 +293,12 @@ class PrecisionProfiler {
                                           type->layout(),
                                           &mean,
                                           &std_dev,
+                                          &ave_grow_rate,
                                           out_name,
                                           write_result_to_file);
             mean_str = std::to_string(mean);
             std_dev_str = std::to_string(std_dev);
+            ave_grow_rate_str = std::to_string(ave_grow_rate);
           }
           std::string kernel_info = op_name + ":" + kernel_place;
           std::string output_arg_info = out_name + ":" +
@@ -281,7 +309,8 @@ class PrecisionProfiler {
           ss << setw(45) << left << kernel_info << " " << setw(70) << left
              << output_arg_info << " " << setw(15) << left << tout->dims()
              << " " << setw(15) << left << mean_str << " " << setw(15) << left
-             << std_dev_str << std::endl;
+             << std_dev_str << " " << setw(15) << left << ave_grow_rate_str
+             << std::endl;
         } else if (type->IsTensorList()) {
           auto touts =
               op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
@@ -289,8 +318,10 @@ class PrecisionProfiler {
             const Tensor* tout = &t;
             double mean = -999999;
             double std_dev = -100000;
+            double ave_grow_rate = 99999;
             std::string mean_str{"unused"};
             std::string std_dev_str{"unused"};
+            std::string ave_grow_rate_str{"unused"};
 
             if (!is_unused(tout)) {
               compute_tensor_precision_info(tout,
@@ -299,10 +330,12 @@ class PrecisionProfiler {
                                             type->layout(),
                                             &mean,
                                             &std_dev,
+                                            &ave_grow_rate,
                                             out_name,
                                             write_result_to_file);
               mean_str = std::to_string(mean);
               std_dev_str = std::to_string(std_dev);
+              ave_grow_rate_str = std::to_string(ave_grow_rate);
             }
             std::string kernel_info = op_name + ":" + kernel_place;
             std::string output_arg_info = out_name + ":" +
@@ -313,7 +346,8 @@ class PrecisionProfiler {
             ss << setw(45) << left << kernel_info << " " << setw(70) << left
                << output_arg_info << " " << setw(15) << left << tout->dims()
                << " " << setw(15) << left << mean_str << " " << setw(15) << left
-               << std_dev_str << std::endl;
+               << std_dev_str << " " << setw(15) << left << ave_grow_rate_str
+               << std::endl;
           }
         }
       }
