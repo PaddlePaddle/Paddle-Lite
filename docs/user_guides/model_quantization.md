@@ -245,7 +245,6 @@ python compress.py \
 --optimize_out_type=naive_buffer              \
 --optimize_out=mobilenet_v1_quant_opt         \
 --valid_targets=arm                           \
---prefer_int8_kernel=true
 ```
 
 如前所述，量化训练后，float目录下的模型参数范围为int8，但参数数据类型仍为float32类型，这样确实没有起到模型参数压缩的效果。但是，经过model\_optimize\_tool工具优化后对应的量化参数均会以int8类型重新存储达到参数压缩的效果，且模型结构也被优化（如进行了各种operator fuse操作）。

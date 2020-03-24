@@ -291,6 +291,8 @@ function make_ios {
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
+            -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+            -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \

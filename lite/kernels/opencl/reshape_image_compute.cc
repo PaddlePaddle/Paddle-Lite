@@ -41,8 +41,6 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    VLOG(4) << "reshape_compute run ... ";
-
     auto& param = *param_.get_mutable<param_t>();
     const Tensor* const x = param.x;
 
@@ -64,8 +62,9 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
         InitImageDimInfoWith(out_dims);
     cl::Image2D* const out_image = output->mutable_data<half_t, cl::Image2D>(
         out_image_shape.at("width"), out_image_shape.at("height"));
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "out_dims=   " << out_dims;
-
+#endif
     const std::vector<size_t>& default_work_size = DefaultWorkSize(
         out_dims,
         DDim(std::vector<DDim::value_type>{
@@ -94,6 +93,8 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     int out_Stride0 = out_W;
     int out_Stride1 = out_H * out_W;
     int out_Stride2 = out_C * out_H * out_W;
+
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "out_C=" << out_C;
     VLOG(4) << "out_H=" << out_H;
     VLOG(4) << "out_W=" << out_W;
@@ -104,17 +105,20 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "in_Stride1=" << in_Stride1;
     VLOG(4) << "out_Stride0=" << out_Stride0;
     VLOG(4) << "out_Stride1=" << out_Stride1;
+#endif
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(x->target());
     VLOG(4) << TargetToStr(param.output->target());
+#endif
 
     int arg_idx = 0;
-
     cl_int status;
     status = kernel.setArg(arg_idx, *x_image);
     CL_CHECK_FATAL(status);

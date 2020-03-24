@@ -103,7 +103,6 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
     --valid_targets=npu,arm \
-    --prefer_int8_kernel=(true|false) \
     --record_tailoring_info =(true|false)
 ```
 - model_optimize_tool生成的模型只是标记了NPU支持的Paddle算子，并没有真正生成NPU HiAI模型，只有在执行时才会将标记的Paddle算子转成HiAI IR，最终生成并执行HiAI模型，具体实现参考PR[2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)。

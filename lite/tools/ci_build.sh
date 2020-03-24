@@ -184,7 +184,7 @@ function build_opencl {
         return 0
     fi
 
-    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}.opencl
+    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
     mkdir -p $build_dir
     cd $build_dir
 
@@ -193,10 +193,9 @@ function build_opencl {
     cmake_opencl ${os} ${abi} ${lang}
     make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
-
-    # test publish inference lib
-    make publish_inference -j$NUM_CORES_FOR_COMPILE
 }
+
+
 
 # This method is only called in CI.
 function cmake_x86_for_CI {
@@ -387,7 +386,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -755,16 +754,58 @@ function arm_push_necessary_file {
     adb -s ${device} push ${testpath} ${adb_work_dir}
 }
 
+
+function test_opencl {
+    os=$1
+    abi=$2
+    lang=$3
+    device=$4
+
+    if [[ ${os} == "armlinux" ]]; then
+        # TODO(hongming): enable test armlinux on armv8, armv7 and armv7hf
+        echo "Skip test arm linux yet. armlinux must in another docker"
+        return 0
+    fi
+
+    if [[ ${os} == "android" && ${abi} == "armv7hf" ]]; then
+        echo "android do not need armv7hf"
+        return 0
+    fi
+
+    # prepare for CXXApi test
+    local adb="adb -s ${device}"
+    $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
+
+    # opencl test should be marked with `opencl`
+    opencl_test_mark="opencl"
+
+    for _test in $(cat $TESTS_FILE); do
+        # tell if this test is marked with `opencl`
+        if [[ $_test == *$opencl_test_mark* ]]; then
+            test_arm_android $_test $device
+        fi
+    done
+
+}
+
 function build_test_arm_opencl {
     ########################################################################
     cur=$PWD
+    # job 1-4 must be in one runner
+    prepare_adb_devices
 
     # job 1
     build_opencl "android" "armv8" "gcc"
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv8}
+    test_opencl "android" "armv8" "gcc" ${device_armv8}
     cd $cur
 
     # job 2
     build_opencl "android" "armv7" "gcc"
+    adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv7}
+    test_opencl "android" "armv7" "gcc" ${device_armv7}
     cd $cur
 
     echo "Done"
@@ -1099,6 +1140,8 @@ function main {
                 ;;
             build_test_arm_opencl)
                 build_test_arm_opencl
+#                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+#                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
             build_test_arm_subtask_android)

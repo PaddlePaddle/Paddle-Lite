@@ -51,8 +51,10 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
     //    LOG(INFO) << "x_image" << x_img;
     auto out_image_shape = InitImageDimInfoWith(in_dims);
-    LOG(INFO) << "out_image_shape = " << out_image_shape["width"] << " "
-              << out_image_shape["height"];
+#ifndef LITE_SHUTDOWN_LOG
+    VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
+            << out_image_shape["height"];
+#endif
     auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
     //    LOG(INFO) << "out_image" << out_img;
