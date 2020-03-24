@@ -142,9 +142,10 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::DepthwiseConv2d;
-  } else if (kernel_h == 3 && kernel_h == 3) {
+  } else if (kernel_w == 3 && kernel_h == 3) {
     // conv2d_3x3
-    kernel_func_names_.push_back("conv2d_3x3_opt");
+    kernel_func_names_.push_back(bs > 1 ? "conv2d_3x3_multi_batch"
+                                        : "conv2d_3x3_opt");
     kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
 
     CLImageConverterFolder converter;
@@ -174,7 +175,9 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::Conv2d5x5;
 #else
     // conv2d_5x5_opt
-    kernel_func_names_.push_back("conv2d_5x5_opt");
+
+    kernel_func_names_.push_back(bs > 1 ? "conv2d_5x5_multi_batch"
+                                        : "conv2d_5x5_opt");
     kernel_func_paths_.push_back("image/conv2d_5x5_opt_kernel.cl");
 
     CLImageConverterFolder converter;
@@ -207,7 +210,8 @@ void ConvImageCompute::PrepareForRun() {
 
 #else
     // conv2d_7x7
-    kernel_func_names_.push_back("conv2d_7x7_opt");
+    kernel_func_names_.push_back(bs > 1 ? "conv2d_7x7_multi_batch"
+                                        : "conv2d_7x7_opt");
     kernel_func_paths_.push_back("image/conv2d_7x7_opt_kernel.cl");
 
     CLImageConverterFolder converter;
