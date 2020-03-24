@@ -33,13 +33,14 @@ namespace lite {
 namespace profile {
 
 template <typename dtype>
-static void write_tensorfile(const Tensor* tensor, const std::string& locate) {
+static bool write_tensorfile(const Tensor* tensor, const std::string& locate) {
   if (locate.find('/') != std::string::npos) {
-    return;
+    return false;
   }
   FILE* fp = fopen(locate.c_str(), "w");
   if (fp == nullptr) {
     LOG(ERROR) << "file open field " << locate;
+    return false;
   } else {
     const dtype* data = tensor->data<dtype>();
     for (int i = 0; i < tensor->numel(); ++i) {
@@ -47,6 +48,7 @@ static void write_tensorfile(const Tensor* tensor, const std::string& locate) {
     }
   }
   fclose(fp);
+  return true;
 }
 
 class PrecisionProfiler {
