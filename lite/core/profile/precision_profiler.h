@@ -229,7 +229,7 @@ class PrecisionProfiler {
     using std::left;
     using std::fixed;
     STL::stringstream ss;
-    bool write_result_to_file = true;
+    bool write_result_to_file = false;
 
     VLOG(1) << ">> Running kernel: " << inst->op()->op_info()->Repr()
             << " registered on " << TargetToStr(inst->kernel()->target()) << "/"
