@@ -29,6 +29,7 @@
 #include <cstring>
 #include <string>
 #include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 #ifdef LITE_WITH_ANDROID
 #include <android/log.h>
@@ -171,7 +172,7 @@ class VLogMessage {
     if (GLOG_v_int < level_int) {
       return;
     }
-    const char* level = std::to_string(level_int).c_str();
+    const char* level = paddle::lite::to_string(level_int).c_str();
     paddle::lite::gen_log(log_stream_, file, func, lineno, level);
   }
 

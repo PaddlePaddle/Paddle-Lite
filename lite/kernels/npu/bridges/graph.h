@@ -87,7 +87,8 @@ class Graph {
     auto idx = Add(name, node);
     CHECK_GE(idx, 1);
     // Generate a unique name for the created HiAI IR
-    node->set_data(std::make_shared<T>(name + "__" + std::to_string(idx)));
+    node->set_data(
+        std::make_shared<T>(name + "__" + paddle::lite::to_string(idx)));
     return node;
   }
 
