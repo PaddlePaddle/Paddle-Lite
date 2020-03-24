@@ -116,7 +116,8 @@ class PrecisionProfiler {
                                      DataLayoutType layout_type,
                                      double* mean,
                                      double* std_dev,
-                                     std::string name = "inst") {
+                                     std::string name = "inst",
+                                     bool write_result_to_file = false) {
     std::string unsupported_error_log =
         "Unsupported precision profile for kernel registered on" +
         TargetToStr(target_type) + "/" + PrecisionToStr(precision_type) + "/" +
@@ -127,34 +128,34 @@ class PrecisionProfiler {
       switch (precision_type) {
         case PRECISION(kFloat): {
           auto ptr = in->data<float>();
-          // write_tensorfile<float>(in, name);
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
               compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
         case PRECISION(kAny): {
           auto ptr = in->data<float>();
-          // write_tensorfile<float>(in, name);
           *mean = compute_mean<float>(ptr, in->numel());
           *std_dev =
               compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
         case PRECISION(kInt8): {
           auto ptr = in->data<int8_t>();
-          // write_tensorfile<int8_t>(in, name);
           *mean = compute_mean<int8_t>(ptr, in->numel());
           *std_dev =
               compute_standard_deviation<int8_t>(ptr, in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<int8_t>(in, name);
           return;
         }
         case PRECISION(kInt32): {
           auto ptr = in->data<int32_t>();
-          // write_tensorfile<int32_t>(in, name);
           *mean = compute_mean<int32_t>(ptr, in->numel());
           *std_dev = compute_standard_deviation<int32_t>(
               ptr, in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<int32_t>(in, name);
           return;
         }
         default:
@@ -186,11 +187,11 @@ class PrecisionProfiler {
                                       IoDirection::DtoH);
           default_convertor.ImageToNCHW(
               in_data_v.data(), real_out_v.data(), image_shape, in->dims());
-          // write_tensorfile<float>(in, name);
           CHECK(real_out_v.size() == in->numel());
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
               real_out_v.data(), in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
         case DATALAYOUT(kNCHW): {
@@ -203,6 +204,7 @@ class PrecisionProfiler {
           *mean = compute_mean<float>(in_data_v.data(), in->numel());
           *std_dev = compute_standard_deviation<float>(
               in_data_v.data(), in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<float>(in, name);
           return;
         }
         default:
@@ -225,6 +227,7 @@ class PrecisionProfiler {
     using std::left;
     using std::fixed;
     STL::stringstream ss;
+    bool write_result_to_file = true;
 
     VLOG(1) << ">> Running kernel: " << inst->op()->op_info()->Repr()
             << " registered on " << TargetToStr(inst->kernel()->target()) << "/"
@@ -262,7 +265,8 @@ class PrecisionProfiler {
                                           type->layout(),
                                           &mean,
                                           &std_dev,
-                                          out_name);
+                                          out_name,
+                                          write_result_to_file);
             mean_str = std::to_string(mean);
             std_dev_str = std::to_string(std_dev);
           }
@@ -293,7 +297,8 @@ class PrecisionProfiler {
                                             type->layout(),
                                             &mean,
                                             &std_dev,
-                                            out_name);
+                                            out_name,
+                                            write_result_to_file);
               mean_str = std::to_string(mean);
               std_dev_str = std::to_string(std_dev);
             }
