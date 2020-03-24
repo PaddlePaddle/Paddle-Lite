@@ -80,12 +80,14 @@ class ElementwiseMulImageCompute
     auto* y = ele_param_->Y;
     auto* out = ele_param_->Out;
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "y->target():" << TargetToStr(y->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << x->dims();
     VLOG(4) << "y->dims():" << y->dims();
     VLOG(4) << "out->dims():" << out->dims();
+#endif
 
     paddle::lite::CLImageConverterDefault default_convertor;
     auto x_img_shape =
@@ -101,10 +103,12 @@ class ElementwiseMulImageCompute
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape[0],
                                                            out_img_shape[1]);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;
     VLOG(4) << "y_img_shape[w,h]:" << y_img_shape[0] << " " << y_img_shape[1];
     VLOG(4) << "out_img_shape[w,h]:" << out_img_shape[0] << " "
             << out_img_shape[1];
+#endif
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
@@ -123,7 +127,9 @@ class ElementwiseMulImageCompute
       CL_CHECK_FATAL(status);
     } else if (y_dims.size() == 1 || y_dims.size() == 4) {
       auto tensor_w = x_dims[x_dims.size() - 1];
+#ifndef LITE_SHUTDOWN_LOG
       VLOG(4) << "tensor_w:" << tensor_w;
+#endif
       // kernel: channel_mul_d1 / channel_mul_d4
       cl_int status = kernel.setArg(arg_idx, *x_img);
       CL_CHECK_FATAL(status);
@@ -136,7 +142,9 @@ class ElementwiseMulImageCompute
     } else if (y_dims.size() == 2) {
       if (x_dims[0] == y_dims[0] && x_dims[1] == y_dims[1]) {
         auto tensor_w = x_dims[x_dims.size() - 1];
+#ifndef LITE_SHUTDOWN_LOG
         VLOG(4) << "tensor_w:" << tensor_w;
+#endif
         // kernel: channel_mul_d2_nc
         cl_int status = kernel.setArg(arg_idx, *x_img);
         CL_CHECK_FATAL(status);
@@ -149,7 +157,9 @@ class ElementwiseMulImageCompute
       } else {
         auto y_tensor_h = y->dims()[0];
         auto y_tensor_w = y->dims()[1];
+#ifndef LITE_SHUTDOWN_LOG
         VLOG(4) << "y_tensor_w:" << y_tensor_w << " y_tensor_h:" << y_tensor_h;
+#endif
         // kernel: channel_mul_d2_hw
         cl_int status = kernel.setArg(arg_idx, *x_img);
         CL_CHECK_FATAL(status);
@@ -179,8 +189,9 @@ class ElementwiseMulImageCompute
         event_.get());
     CL_CHECK_FATAL(status);
     context.cl_wait_list()->emplace(out_img, event_);
-
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
+#endif
   }
 
  protected:

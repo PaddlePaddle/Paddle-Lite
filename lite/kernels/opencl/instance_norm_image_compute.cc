@@ -89,19 +89,23 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     int in_h = in_dims[2];
     int in_w = in_dims[3];
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
+#endif
 
     auto out_image_shape = InitImageDimInfoWith(in_dims);
     auto* x_img = x->data<half_t, cl::Image2D>();
-
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
+
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
     VLOG(4) << "in_h: " << in_h << ", in_w: " << in_w;
+#endif
 
     int threads = 512;
     int group_size_x = (channel + 3) / 4;
@@ -113,10 +117,13 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
         cl::NDRange{static_cast<cl::size_type>(group_size_x * threads),
                     static_cast<cl::size_type>(group_size_y),
                     static_cast<cl::size_type>(1)};
+
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "local_work_size:[2D]:" << local_work_size[0] << " "
             << local_work_size[1] << " " << local_work_size[2];
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
+#endif
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_;
