@@ -263,8 +263,8 @@ class PrecisionProfiler {
                                           &mean,
                                           &std_dev,
                                           out_name);
-            mean_str = std::to_string(mean);
-            std_dev_str = std::to_string(std_dev);
+            mean_str = paddle::lite::to_string(mean);
+            std_dev_str = paddle::lite::to_string(std_dev);
           }
           std::string kernel_info = op_name + ":" + kernel_place;
           std::string output_arg_info = out_name + ":" +
@@ -294,8 +294,8 @@ class PrecisionProfiler {
                                             &mean,
                                             &std_dev,
                                             out_name);
-              mean_str = std::to_string(mean);
-              std_dev_str = std::to_string(std_dev);
+              mean_str = paddle::lite::to_string(mean);
+              std_dev_str = paddle::lite::to_string(std_dev);
             }
             std::string kernel_info = op_name + ":" + kernel_place;
             std::string output_arg_info = out_name + ":" +
