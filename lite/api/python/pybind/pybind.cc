@@ -54,7 +54,7 @@ using lite_api::OptBase;
 using lite::CxxPaddleApiImpl;
 static void BindLiteCxxPredictor(py::module *m);
 void BindLiteOpt(py::module *m) {
-  py::class_<OptBase> opt_base(*m, "opt");
+  py::class_<OptBase> opt_base(*m, "Opt");
   opt_base.def(py::init<>())
       .def("set_model_dir", &OptBase::SetModelDir)
       .def("set_modelset_dir", &OptBase::SetModelSetDir)
@@ -62,9 +62,11 @@ void BindLiteOpt(py::module *m) {
       .def("set_param_file", &OptBase::SetParamFile)
       .def("set_valid_places", &OptBase::SetValidPlaces)
       .def("set_optimize_out", &OptBase::SetOptimizeOut)
-      .def("enable_int8_kernel", &OptBase::EnableInt8Kernel)
       .def("set_model_type", &OptBase::SetModelType)
       .def("run_optimize", &OptBase::RunOptimize)
+      .def("print_help_info", &OptBase::PrintHelpInfo)
+      .def("print_supported_ops", &OptBase::PrintSupportedOps)
+      .def("display_kernels_info", &OptBase::DisplayKernelsInfo)
       .def("print_all_ops", &OptBase::PrintAllOps);
 }
 #endif
