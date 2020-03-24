@@ -74,6 +74,7 @@ class LayoutComputeBufferChwToImageDefault
     const int Stride1 = out_H * out_W;
     const int Stride0 = out_W;
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
@@ -89,6 +90,7 @@ class LayoutComputeBufferChwToImageDefault
     VLOG(2) << "Stride2:" << Stride2;
     VLOG(2) << "Stride1:" << Stride1;
     VLOG(2) << "Stride0:" << Stride0;
+#endif
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -177,6 +179,7 @@ class LayoutComputeImageDefaultToBufferChw
       new_dims[4 - x_dims.size() + j] = x_dims[j];
     }
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
@@ -186,6 +189,7 @@ class LayoutComputeImageDefaultToBufferChw
             << new_dims[1] << " " << new_dims[2] << " " << new_dims[3];
     VLOG(2) << "y_dims:" << y_dims;
     VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
+#endif
 
     size_t C = new_dims[1];
     size_t in_height = new_dims[2];
@@ -217,8 +221,10 @@ class LayoutComputeImageDefaultToBufferChw
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(C));
     CL_CHECK_FATAL(status);
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
+#endif
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
