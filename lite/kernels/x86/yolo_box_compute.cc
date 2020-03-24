@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/kernels/x86/yolo_box_compute.h"
 
-USE_SUBGRAPH_BRIDGE(relu, kMLU);
-USE_SUBGRAPH_BRIDGE(conv2d, kMLU);
-USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kMLU);
-USE_SUBGRAPH_BRIDGE(elementwise_add, kMLU);
-USE_SUBGRAPH_BRIDGE(pool2d, kMLU);
-USE_SUBGRAPH_BRIDGE(softmax, kMLU);
-USE_SUBGRAPH_BRIDGE(batch_norm, kMLU);
-USE_SUBGRAPH_BRIDGE(fc, kMLU);
-USE_SUBGRAPH_BRIDGE(nearest_interp, kMLU);
-USE_SUBGRAPH_BRIDGE(leaky_relu, kMLU);
-USE_SUBGRAPH_BRIDGE(transpose, kMLU);
-USE_SUBGRAPH_BRIDGE(transpose2, kMLU);
-USE_SUBGRAPH_BRIDGE(concat, kMLU);
-USE_SUBGRAPH_BRIDGE(scale, kMLU);
+REGISTER_LITE_KERNEL(yolo_box,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::YoloBoxCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();

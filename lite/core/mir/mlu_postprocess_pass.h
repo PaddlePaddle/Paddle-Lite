@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "lite/core/mir/pass.h"
@@ -107,6 +108,15 @@ class MLUPostprocessPass : public ProgramPass {
                         const Type* cast_type);
 
   void RecreateOp(Node* inst_node, SSAGraph* graph);
+
+  void GatherFirstConvNodes(SSAGraph* graph);
+
+  bool IsFirstConvNode(Node* arg_node);
+
+  bool IsFirstConvInSubgraph(Node* arg_node, Node* inst);
+
+ private:
+  std::set<std::string> first_conv_nodes_;
 };
 
 }  // namespace mir

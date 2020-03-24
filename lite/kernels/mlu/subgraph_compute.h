@@ -97,9 +97,11 @@ class SubgraphEngine : public subgraph::Engine {
     for (auto& inst : origin_program_) {
       auto op = inst.op();
       CHECK(op);
-      op->CheckShape();
-      op->InferShape();
       std::string op_type = op->op_info()->Type();
+      op->CheckShape();
+      if (op_type != "concat") {
+        op->InferShape();
+      }
       if (!bridges.Exists(op_type, TARGET(kMLU))) {
         LOG(INFO) << "MLU bridges doesn't support op_type: " << op_type;
         return subgraph::FAILED;

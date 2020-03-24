@@ -53,7 +53,7 @@ class SubgraphCastDisplayPass : public DebugPass {
         for (auto p_in_stmt_node : p_in_arg_node->inlinks) {
           CHECK(p_in_stmt_node->IsStmt());
           std::string stmt_op_type = p_in_stmt_node->AsStmt().op_type();
-          if (stmt_op_type == "cast" || stmt_op_type == "transpose" ||
+          if (stmt_op_type == "cast" || stmt_op_type == "layout" ||
               stmt_op_type == "io_copy") {
             display_debug_info(*p_in_stmt_node, stmt_op_type, true, false);
           } else {
@@ -76,7 +76,7 @@ class SubgraphCastDisplayPass : public DebugPass {
         for (auto p_out_stmt_node : p_out_arg_node->outlinks) {
           CHECK(p_out_stmt_node->IsStmt());
           std::string stmt_op_type = p_out_stmt_node->AsStmt().op_type();
-          if (stmt_op_type == "cast" || stmt_op_type == "transpose" ||
+          if (stmt_op_type == "cast" || stmt_op_type == "layout" ||
               stmt_op_type == "io_copy") {
             display_debug_info(*p_out_stmt_node, stmt_op_type, false, true);
           } else {
