@@ -1,4 +1,4 @@
-# Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# this module will record kernels in unvalid_places into all_kernel_faked.cc
 
 from __future__ import print_function
 import sys
@@ -90,11 +91,11 @@ def parse_fake_kernels_from_path(list_path):
 
                 for k in kernel_parser.kernels:
                     kernel_name = "{op_type}_{target}_{precision}_{data_layout}_{alias}_class".format(
-                        op_type = k.op_type,
-                        target = k.target,
-                        precision = k.precision,
-                        data_layout = k.data_layout,
-                        alias = k.alias,
+                        op_type=k.op_type,
+                        target=k.target,
+                        precision=k.precision,
+                        data_layout=k.data_layout,
+                        alias=k.alias
                     )
 
                     kernel_define = fake_kernel % (
@@ -102,7 +103,7 @@ def parse_fake_kernels_from_path(list_path):
                         k.target,
                         k.precision,
                         k.data_layout,
-                        kernel_name,
+                        kernel_name
                     )
 
                     out_lines.append(kernel_define)
@@ -115,7 +116,7 @@ def parse_fake_kernels_from_path(list_path):
                         k.precision,
                         k.data_layout,
                         '::paddle::lite::' + kernel_name,
-                        k.alias,
+                        k.alias
                     )
                     out_lines.append(key)
 
