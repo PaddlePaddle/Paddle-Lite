@@ -148,38 +148,40 @@ if(WITH_TESTING)
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
     add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-        lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/googlenet)
-        add_dependencies(test_googlenet extern_lite_download_GoogleNet_inference_tar_gz)
-        lite_cc_test(test_mobilenetv1_lite_x86 SRCS test_mobilenetv1_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
-        add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
-        lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu)
-        add_dependencies(test_mobilenetv2_lite_x86 extern_lite_download_mobilenet_v2_relu_tar_gz)
-        lite_cc_test(test_inceptionv4_lite_x86 SRCS test_inceptionv4_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
-        add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
-        lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
-        add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
-        lite_cc_test(test_step_rnn_lite_x86 SRCS test_step_rnn_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
-        add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
+        if(LITE_WITH_X86)
+            lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/googlenet)
+            add_dependencies(test_googlenet extern_lite_download_GoogleNet_inference_tar_gz)
+            lite_cc_test(test_mobilenetv1_lite_x86 SRCS test_mobilenetv1_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
+            add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
+            lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu)
+            add_dependencies(test_mobilenetv2_lite_x86 extern_lite_download_mobilenet_v2_relu_tar_gz)
+            lite_cc_test(test_inceptionv4_lite_x86 SRCS test_inceptionv4_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
+            add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
+            lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+            add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
+            lite_cc_test(test_step_rnn_lite_x86 SRCS test_step_rnn_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
+            add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
+        endif()
         if(LITE_WITH_BM)
-           lite_cc_test(test_resnet50_lite_bm SRCS test_resnet50_lite_bm.cc
+           lite_cc_test(test_classify_lite_bm SRCS test_classify_lite_bm.cc
               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
               ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
