@@ -41,11 +41,13 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void Run() override;
 
  private:
-  void Conv2d1x1();
+  void Conv2d1x1opt();
   void Conv2d3x3();
   void Conv2d3x3opt();
   void Conv2d5x5();
+  void Conv2d5x5opt();
   void Conv2d7x7();
+  void Conv2d7x7opt();
   void DepthwiseConv2d3x3s1();
   void DepthwiseConv2d3x3();
   void DepthwiseConv2d();
@@ -57,7 +59,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::shared_ptr<cl::Event> event_{new cl::Event};
   Tensor filter_gpu_image_;
   Tensor bias_gpu_image_;
-  bool use_lws{true};
+  bool use_lws{false};
 };
 
 }  // namespace opencl
