@@ -30,11 +30,6 @@ void OptBase::SetParamFile(const std::string& param_path) {
   opt_config_.set_param_file(param_path);
 }
 
-void OptBase::EnableInt8Kernel() {
-  valid_places_.insert(valid_places_.begin(),
-                       Place{TARGET(kARM), PRECISION(kInt8)});
-}
-
 void OptBase::SetModelType(std::string optimize_out_type) {
   if (optimize_out_type == "protobuf") {
     model_type_ = LiteModelType::kProtobuf;

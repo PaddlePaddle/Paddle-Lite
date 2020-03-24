@@ -13,13 +13,9 @@
 // limitations under the License.
 
 /*
- * This file defines PaddlePredictor, the api for lite. It supports multiple
- * hardware including ARM, X86, OpenCL, CUDA and so on.
+ * This file defines Opt and basic functions about model transformation.
  */
 
-// "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
-// are created automatically during opt's compiling period
-// iomanip includes functions of std::cout format
 #ifndef PADDLE_LITE_OPT_H_  // NOLINT
 #define PADDLE_LITE_OPT_H_
 #include <algorithm>
@@ -53,8 +49,6 @@ class LITE_API OptBase {
   void SetParamFile(const std::string &param_path);
   void SetValidPlaces(const std::string &valid_places);
   void SetOptimizeOut(const std::string &optimized_out_path);
-  // enable int8 quantization kernels
-  void EnableInt8Kernel();
   // set optimized_model type
   void SetModelType(std::string model_type);
   // transform and save the optimized model
@@ -80,10 +74,7 @@ class LITE_API OptBase {
   std::string optimize_out_path_;
   // type of the optimized_model, kNaiveBuffer default.
   LiteModelType model_type_{LiteModelType::kNaiveBuffer};
-  // wether to record ops info of the input model for striping the inference
-  // lib.
-  // dir path of a set of models, this should be combined with model striping
-  // function.
+  // Dir path of a set of models, this should be combined with model
   std::string model_set_dir_;
 
   void RunOptimizeFromModelSet(bool record_strip_info = false);
