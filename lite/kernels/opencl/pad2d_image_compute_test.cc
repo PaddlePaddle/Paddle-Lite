@@ -89,7 +89,7 @@ void pad2d_ref(const float *x_data,
   }
 }
 
-#define LOOP_TEST
+// #define LOOP_TEST
 // #define PRINT_RESULT
 TEST(pad2d_image2d, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> "
