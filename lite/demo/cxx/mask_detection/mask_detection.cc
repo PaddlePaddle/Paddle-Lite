@@ -207,7 +207,8 @@ void RunModel(std::string det_model_file,
     cv::Mat roi = crop_img(img, rec_clip, classify_w, classify_h);
 
     // uncomment two lines below, save roi img to disk
-    // std::string roi_name = "roi_" + std::to_string(i) + ".jpg";
+    // std::string roi_name = "roi_" + paddle::lite::to_string(i)
+    // + ".jpg";
     // imwrite(roi_name, roi);
 
     // Do PreProcess
@@ -240,7 +241,7 @@ void RunModel(std::string det_model_file,
       roi_color = cv::Scalar(0, 0, 255);
       prob = 1 - prob;
     }
-    std::string prob_str = std::to_string(prob * 100);
+    std::string prob_str = paddle::lite::to_string(prob * 100);
     int point_idx = prob_str.find_last_of(".");
 
     text += prob_str.substr(0, point_idx + 3) + "%";
