@@ -76,12 +76,32 @@ void ElementwiseAddGradCompute::Run() {
   const float* x_data = param.X->data<float>();
   const float* y_data = param.Y->data<float>();
   const float* out_grad_data = param.OutGrad->data<float>();
-  float* x_grad_data = param.XGrad->mutable_data<float>();
-  float* y_grad_data = param.YGrad->mutable_data<float>();
+  float* x_grad_data;
+  float* y_grad_data;
+  if (param.XGrad) {
+    x_grad_data = param.XGrad->mutable_data<float>();
+  }
+  if (param.YGrad) {
+    y_grad_data = param.YGrad->mutable_data<float>();
+  }
   int axis = param.axis;
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
+  if (!param.XGrad) {
+    CHECK(param.YGrad);
+    lite::arm::math::elementwise_add_grad(
+        out_grad_data, y_grad_data, y_dims.production());
+    return;
+  }
+
+  if (!param.YGrad) {
+    CHECK(param.XGrad);
+    lite::arm::math::elementwise_add_grad(
+        out_grad_data, x_grad_data, x_dims.production());
+    return;
+  }
+
   if (x_dims.size() < y_dims.size() &&
       is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_add_grad_broadcast(
@@ -102,14 +122,28 @@ void ElementwiseSubGradCompute::Run() {
   const float* x_data = param.X->data<float>();
   const float* y_data = param.Y->data<float>();
   const float* out_data = param.OutGrad->data<float>();
-  float* x_grad_data = param.XGrad->mutable_data<float>();
-  float* y_grad_data = param.YGrad->mutable_data<float>();
+  float* x_grad_data;
+  float* y_grad_data;
+  if (param.XGrad) {
+    x_grad_data = param.XGrad->mutable_data<float>();
+  }
+  if (param.YGrad) {
+    y_grad_data = param.YGrad->mutable_data<float>();
+  }
   int axis = param.axis;
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
+
+  if (!param.XGrad || !param.YGrad) {
+    CHECK(param.XGrad || param.YGrad);
+    lite::arm::math::elementwise_sub_grad(
+        out_data, x_grad_data, y_grad_data, y_dims.production());
+    return;
+  }
+
   if (x_dims.size() < y_dims.size()) {
-    LOG(FATAL) << "elewise div grad don't support x_dims size < y_dims size";
+    LOG(FATAL) << "elewise sub grad don't support x_dims size < y_dims size";
   }
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_sub_grad_broadcast(
@@ -148,10 +182,11 @@ REGISTER_LITE_KERNEL(elementwise_add_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseAddGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_sub_grad,
@@ -160,10 +195,11 @@ REGISTER_LITE_KERNEL(elementwise_sub_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseSubGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_div_grad,
@@ -172,18 +208,20 @@ REGISTER_LITE_KERNEL(elementwise_div_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseDivGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
     elementwise_mul_grad, kARM, kFloat, kNCHW, elementwise_mul_grad_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_max_grad,
@@ -192,8 +230,9 @@ REGISTER_LITE_KERNEL(elementwise_max_grad,
                      kNCHW,
                      paddle::lite::kernels::arm::ElementwiseMaxGradCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y@Grad", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
