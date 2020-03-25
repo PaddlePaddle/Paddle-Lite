@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
+
 #include <gtest/gtest.h>
+
 #include <random>
+
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
@@ -329,6 +332,10 @@ TEST(MLUBridges, conv) {
   test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 2, 5);
   test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 0, 5);
 #endif
+}
+
+TEST(MLUBridges, depthwise_conv2d) {
+  test_conv(1, 8, 8, 14, 14, false, false, false, true, 1, 1, 2, 3);
 }
 
 }  // namespace mlu
