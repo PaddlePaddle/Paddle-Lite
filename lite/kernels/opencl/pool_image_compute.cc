@@ -59,10 +59,14 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     std::vector<int> paddings = *param.paddings;
     std::vector<int> strides = param.strides;
     std::vector<int> ksize = param.ksize;
+
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_pooling: " << global_pooling;
     VLOG(4) << "pooling_type: " << pooling_type;
     VLOG(4) << "paddings : " << paddings[0] << "  " << paddings[1] << "  "
             << paddings[2] << "  " << paddings[3] << "  ";
+#endif
+
     if (global_pooling) {
       for (size_t i = 0; i < ksize.size(); ++i) {
         paddings[2 * i] = 0;
@@ -70,6 +74,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         ksize[i] = static_cast<int>(in_dims[i + 2]);
       }
     }
+
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
             << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
     VLOG(4) << "out_dims : [" << out_dims.size() << "]" << out_dims[0] << "  "
@@ -82,6 +88,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
             << ksize[1] << "  " << ksize[2] << "  " << ksize[3];
     VLOG(4) << "paddings : [" << paddings.size() << "]" << paddings[0] << "  "
             << paddings[1] << "  " << paddings[2] << "  " << paddings[3];
+#endif
+
     bool pads_equal =
         (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
     if (!pads_equal) {
@@ -95,8 +103,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     //    VLOG(4) << "x_image" << x_img;
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
             << out_image_shape["height"];
+#endif
     auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
     //    VLOG(4) << "out_image" << out_img;
@@ -109,8 +119,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int w = out_dims[3];
     int nh = out_dims[0] * out_dims[2];
     auto global_work_size = cl::NDRange(c_block, w, nh);
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_work_size : [" << 3 << "]" << c_block << "  " << w
             << "  " << nh << "  ";
+#endif
     cl_int status;
     int arg_idx = 0;
     status = kernel.setArg(arg_idx, *x_img);

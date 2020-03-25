@@ -39,7 +39,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 例如：
 
 ```bash
-./lite/tools/build.sh   --arm_os=android   --arm_abi=armv7   --arm_lang=gcc   --android_stl=c++_static   --build_extra=ON --build_tailor=ON --opt_model_dir=../mobilenet_v1NB full_publish
+./lite/tools/build.sh   --arm_os=android   --arm_abi=armv7   --arm_lang=gcc   --android_stl=c++_static   --build_extra=ON --build_tailor=ON --opt_model_dir=../mobilenet_v1NB tiny_publish
 ```
 **注意**：上面命令中的`../mobilenet_v1NB`是第1步得到的转化模型的输出路径
 
@@ -88,9 +88,6 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 #include <stdio.h>
 #include <vector>
 #include "paddle_api.h"          // NOLINT
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
-#include "paddle_use_passes.h"   // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -182,4 +179,4 @@ int main(int argc, char** argv) {
 1. 模型集合**必须**均为combined参数模型或均为非combined参数模型。
 2. 使用非combined参数模型时，模型拓扑文件名应为`__model__`，使用非combined参数模型时，集合中各模型的拓扑与参数名应相同，分别由`--model_filename`和`--param_filename`指定。
 3. 模型集合**必须**均为INT8量化模型或均为非INT8量化模型。
-4. 需要使用Paddle-Lite 最新版本（release/v2.1.0之后）代码编译出的model_optimize_tool。
+4. 需要使用Paddle-Lite  `release/v2.1.0`之后版本代码编译出的模型优化工具。

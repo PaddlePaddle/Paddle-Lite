@@ -85,22 +85,31 @@ int SubgraphEngine::BuildDeviceProgram() {
       << "[NPU] No input nodes found for building NPU model";
   CHECK(!device_onames_.empty())
       << "[NPU] No output nodes found for building NPU model";
+
   // Build the HiAI IR graph to HiAI om model as the device program
-  device_program_ = lite::npu::Device::Global().Build(
+  if (device_program_map_.count(inputs_shape_) > 0) {
+    return status;
+  }
+  auto device_client = lite::npu::Device::Global().Build(
       model_name_, device_inodes, device_onodes);
-  if (device_program_ == nullptr) {
+  if (device_client == nullptr) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return subgraph::FAILED;
   }
+  auto device_program = std::make_shared<device_program_t>(device_client);
+  device_program_map_[inputs_shape_] = device_program;
 
   // Query and check the dimensions of valid input and output tensors
   std::vector<hiai::TensorDimension> device_idims, device_odims;
-  if (device_program_->GetModelIOTensorDim(
+  if (device_program->client->GetModelIOTensorDim(
           model_name_, device_idims, device_odims) != hiai::AI_SUCCESS) {
     LOG(WARNING)
         << "[NPU] Get the dimensions of input and output tensors failed!";
     return subgraph::FAILED;
   }
+  device_program->device_idims = device_idims;
+  device_program->device_odims = device_odims;
+
   CHECK_EQ(device_idims.size(), device_inames_.size());
   CHECK_EQ(device_odims.size(), device_onames_.size());
   origin_idims_.resize(device_inames_.size());
@@ -109,6 +118,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_odims_.resize(device_onames_.size());
   origin_otensors_.resize(device_onames_.size());
   device_otensors_.resize(device_onames_.size());
+
   for (int i = 0; i < device_inames_.size(); i++) {
     auto node = graph.Get(device_inames_[i]);
     auto precision = node->precision();
@@ -130,6 +140,8 @@ int SubgraphEngine::BuildDeviceProgram() {
     device_itensors_[i].reset(new hiai::AiTensor);
     device_itensors_[i]->Init(&(device_idims[i]));
   }
+  device_program->origin_idims = origin_idims_;
+
   for (int i = 0; i < device_onames_.size(); i++) {
     auto node = graph.Get(device_onames_[i]);
     auto precision = node->precision();
@@ -170,6 +182,8 @@ int SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
+    device_program->origin_odims = origin_odims_;
+
     CHECK_EQ(origin_odims_[i].production(),
              device_odims[i].GetNumber() * device_odims[i].GetChannel() *
                  device_odims[i].GetHeight() * device_odims[i].GetWidth());
@@ -181,14 +195,25 @@ int SubgraphEngine::BuildDeviceProgram() {
 
 int SubgraphEngine::LaunchDeviceProgram() {
   // Copy the data of origin input tensors to the buffer of input HiAI tensors
+  // init device_itensors_, device_otensors_, origin_otensors_
+  auto device_program = device_program_map_[inputs_shape_];
   for (size_t i = 0; i < device_itensors_.size(); i++) {
+    device_itensors_[i]->Init(&(device_program->device_idims[i]));
     std::memcpy(device_itensors_[i]->GetBuffer(),
                 origin_itensors_[i]->raw_data(),
                 origin_itensors_[i]->memory_size());
   }
+  for (size_t i = 0; i < device_otensors_.size(); i++) {
+    device_otensors_[i]->Init(&(device_program->device_odims[i]));
+  }
+  for (size_t i = 0; i < origin_otensors_.size(); i++) {
+    origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+  }
+
   // Run the HiAI model by name
   std::string key = "model_name";  // Note: key seems must be model_name
-  model_context_.AddPara(key, model_name_);
+  hiai::AiContext model_context;
+  model_context.AddPara(key, model_name_);
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
@@ -196,11 +221,11 @@ int SubgraphEngine::LaunchDeviceProgram() {
   };
   int istamp;
   auto start_time = GetCurrentUS();
-  CHECK_EQ(
-      device_program_->Process(
-          model_context_, device_itensors_, device_otensors_, 1000, istamp),
-      hiai::AI_SUCCESS);
+  CHECK_EQ(device_program->client->Process(
+               model_context, device_itensors_, device_otensors_, 1000, istamp),
+           hiai::AI_SUCCESS);
   VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
+
   // Copy the data of output HiAI tensor to the buffer of origin output tensors
   for (size_t i = 0; i < device_otensors_.size(); i++) {
     std::memcpy(const_cast<void*>(origin_otensors_[i]->raw_data()),
@@ -208,6 +233,18 @@ int SubgraphEngine::LaunchDeviceProgram() {
                 device_otensors_[i]->GetSize());
   }
   return 0;
+}
+
+bool SubgraphEngine::InputShapeChanged() {
+  std::vector<std::vector<int64_t>> new_shape;
+  for (auto origin_itensor : origin_itensors_) {
+    new_shape.push_back(origin_itensor->dims().Vectorize());
+  }
+  inputs_shape_ = new_shape;
+  if (device_program_map_.count(inputs_shape_) > 0) {
+    return false;
+  }
+  return true;
 }
 
 void SubgraphCompute::PrepareForRun() {
