@@ -45,7 +45,8 @@ class ReshapeComputeTester : public arena::TestCase {
       : TestCase(place, alias), dims_(dims) {
     if (is_shape_tensor_vct) {
       for (size_t i = 0; i < shape.size(); i++) {
-        shape_tensor_vct_.emplace_back(op_type_ + "/shape" + std::to_string(i));
+        shape_tensor_vct_.emplace_back(op_type_ + "/shape" +
+                                       paddle::lite::to_string(i));
       }
     } else if (is_shape_tensor) {
       shape_tensor_ = op_type_ + "/shape";

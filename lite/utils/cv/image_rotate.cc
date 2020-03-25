@@ -15,6 +15,7 @@
 #include "lite/utils/cv/image_rotate.h"
 #include <math.h>
 #include <string.h>
+#include "lite/utils/cv/bgr_rotate.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -31,7 +32,8 @@ void ImageRotate::choose(const uint8_t* src,
   if (srcFormat == GRAY) {
     rotate_hwc1(src, dst, srcw, srch, degree);
   } else if (srcFormat == BGR || srcFormat == RGB) {
-    rotate_hwc3(src, dst, srcw, srch, degree);
+    // rotate_hwc3(src, dst, srcw, srch, degree);
+    bgr_rotate_hwc(src, dst, srcw, srch, static_cast<int>(degree));
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     rotate_hwc4(src, dst, srcw, srch, degree);
   } else {

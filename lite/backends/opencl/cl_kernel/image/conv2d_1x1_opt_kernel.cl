@@ -1,6 +1,6 @@
 #include <cl_common.h>
 
-__kernel void conv2d_1x1(__private const int global_size_dim0,
+__kernel void conv2d_1x1_opt(__private const int global_size_dim0,
                          __private const int global_size_dim1,
                          __private const int global_size_dim2,
                          __read_only image2d_t input_image,

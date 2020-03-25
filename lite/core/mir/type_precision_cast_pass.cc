@@ -71,21 +71,22 @@ static bool InferScaleFromSubgraph(std::string var_name,
                                    const OpInfo* op_info,
                                    float* scale,
                                    bool reverse = false) {
-  bool found = false;
-  auto input_or_output_names = op_info->GetAttr<std::vector<std::string>>(
-      reverse ? "output_data_names" : "input_data_names");
-  auto input_or_output_scales = op_info->GetAttr<std::vector<float>>(
-      reverse ? "output_data_scales" : "input_data_scales");
+  std::string attr_name = reverse ? "output_data_names" : "input_data_names";
+  if (!op_info->HasAttr(attr_name)) return false;
+  auto input_or_output_names =
+      op_info->GetAttr<std::vector<std::string>>(attr_name);
+  attr_name = reverse ? "output_data_scales" : "input_data_scales";
+  if (!op_info->HasAttr(attr_name)) return false;
+  auto input_or_output_scales = op_info->GetAttr<std::vector<float>>(attr_name);
   auto size = input_or_output_names.size();
   CHECK(size == input_or_output_scales.size());
   for (int i = 0; i < size; i++) {
     if (input_or_output_names[i] == var_name) {
       *scale = input_or_output_scales[i];
-      found = true;
-      break;
+      return true;
     }
   }
-  return found;
+  return false;
 }
 
 // Infer the scale value for the new calib op from the input_scale of the
@@ -200,7 +201,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   CHECK(in->IsArg());
   // auto node_id = [&] { return graph->nodes().size(); };
   auto cast_op_output_name = in->AsArg().name + "/precision_trans";
-  // in->AsArg().name + "/precision_trans/" + std::to_string(node_id());
+  // in->AsArg().name + "/precision_trans/" +
+  // paddle::lite::to_string(node_id());
   auto* cast_op_output_arg = graph->NewArgumentNode(cast_op_output_name);
   cast_op_output_arg->AsArg().type =
       LiteType::GetTensorTy(from.target(), to.precision(), from.layout());

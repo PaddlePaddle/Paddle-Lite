@@ -358,6 +358,8 @@ void NCHW2NHWC<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
                        "v14",
                        "v15");
 #else
+#if 0  // TOOD(ysh329): caused assembly code error with register for armv7
+       // **clang** compile
         asm volatile(TRANS_C8
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
@@ -375,6 +377,7 @@ void NCHW2NHWC<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
                        [stride_w] "+r"(stride_w)
                      :
                      : "cc", "memory", "q0", "q1", "q2", "q3");
+#endif
 #endif
       }
       // const int8_t* din_ptr = din + 8 * cnt * size + s; // remain channel
@@ -478,6 +481,8 @@ void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
                        "v10",
                        "v11");
 #else
+#if 0  // TOOD(ysh329): caused assembly code error with register for armv7
+       // **clang** compile
         asm volatile(TRANS_C4
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
@@ -491,6 +496,7 @@ void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
                        [stride] "+r"(stride)
                      :
                      : "cc", "memory", "q0", "q1", "q2", "q3");
+#endif
 #endif
       }
       for (int i = 0; i < remain; i++) {
@@ -593,6 +599,8 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
                        "v14",
                        "v15");
 #else
+#if 0  // TOOD(ysh329): caused assembly code error with register for armv7
+       // **clang** compile
         asm volatile(TRANS_C8
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
@@ -610,6 +618,7 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
                        [stride_w] "+r"(stride_w)
                      :
                      : "cc", "memory", "q0", "q1", "q2", "q3");
+#endif
 #endif
       }
       for (int i = 0; i < remain; i++) {

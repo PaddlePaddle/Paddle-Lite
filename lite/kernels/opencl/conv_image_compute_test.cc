@@ -510,7 +510,7 @@ TEST(conv2d, compute_image2d_3x3) {
   const int dilation = 1;
   const int stride = 2;
   const int group = 1;
-  for (int batch_size = 1; batch_size < 2; ++batch_size) {
+  for (int batch_size = 1; batch_size < 4; ++batch_size) {
     for (int oc = 1; oc < 10; oc += 1) {   // oc
       for (int ih = 5; ih < 9; ih += 1) {  // ih
         int iw = ih;
@@ -532,7 +532,7 @@ const int stride = 2;
 #else  // big scale with group
   const int stride = 1;
   const int group = 32 / 1;
-  const int batch_size = 1;
+  const int batch_size = 2;
   const int ic = 32 / 1;
   const int ih = 112 / 1;
   const int iw = 112 / 1;
@@ -558,7 +558,8 @@ const int stride = 2;
                                                   PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
-              CHECK(batch_size == 1) << "conv3x3 only supprt batch_size == 1";
+              //              CHECK(batch_size == 1) << "conv3x3 only supprt
+              //              batch_size == 1";
 
               auto kernel = std::move(kernels.front());
               SHADOW_LOG << "created conv2d kernel";
@@ -886,13 +887,14 @@ TEST(conv2d, compute_image2d_5x5) {
 //  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
-  for (int batch_size = 2; batch_size < 4; ++batch_size) {
-    for (int oc = 1; oc < 10; oc += 1) {   // oc
-      for (int ih = 5; ih < 9; ih += 1) {  // ih
+  for (int batch_size = 1; batch_size < 4; ++batch_size) {
+    for (int oc = 1; oc < 5; oc += 1) {    // oc
+      for (int ih = 5; ih < 8; ih += 1) {  // ih
         int iw = ih;
-        for (int ic = 2; ic < 10; ic += 1) {  // ic
+        for (int ic = 2; ic < 6; ic += 1) {  // ic
           for (bool bias_flag : {true, false}) {
-            for (std::string relu_flag : {/*true,*/ "relu"}) {
+            for (std::string relu_flag : {""
+                                          "relu"}) {
 #else
   const int batch_size = 2;
   const int oc = 1;
@@ -1006,10 +1008,10 @@ TEST(conv2d, compute_image2d_5x5) {
 
               SHADOW_LOG << "gen input and filter ...";
               for (auto& i : input_v) {
-                i = 0.01 * gen(engine);
+                i = 0.5 * gen(engine);
               }
               for (auto& f : filter_v) {
-                f = 0.01 * gen(engine);
+                f = 0.5 * gen(engine);
               }
 
               SHADOW_LOG << "after gen input and filter ...";
@@ -1216,9 +1218,10 @@ TEST(conv2d, compute_image2d_5x5) {
 #undef LOOP_TEST
 #undef PRINT_RESULT
 #endif
+
 #ifdef TEST_CONV_IMAGE_7x7
-#undef FP16_ABS_DIFF
-#define FP16_ABS_DIFF (1e0)
+// #undef FP16_ABS_DIFF
+// #define FP16_ABS_DIFF (1e-1)
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_7x7) {
   // conv infos
@@ -1230,13 +1233,13 @@ TEST(conv2d, compute_image2d_7x7) {
 //  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
-  for (int batch_size = 2; batch_size < 4; ++batch_size) {
-    for (int oc = 1; oc < 10; oc += 1) {    // oc
-      for (int ih = 7; ih < 15; ih += 1) {  // ih
+  for (int batch_size = 1; batch_size < 4; ++batch_size) {
+    for (int oc = 1; oc < 6; oc += 1) {    // oc
+      for (int ih = 7; ih < 8; ih += 1) {  // ih
         int iw = ih;
-        for (int ic = 2; ic < 10; ic += 1) {  // ic
-          for (bool bias_flag : {true, false}) {
-            for (std::string relu_flag : {"relu"}) {
+        for (int ic = 2; ic < 4; ic += 1) {  // ic
+          for (bool bias_flag : {false, true}) {
+            for (std::string relu_flag : {"", "relu"}) {
 #else
   const int batch_size = 2;
   const int oc = 1;
@@ -1343,14 +1346,16 @@ TEST(conv2d, compute_image2d_7x7) {
 
               SHADOW_LOG << "gen input and filter ...";
               for (auto& i : input_v) {
-                i = gen(engine);
+                i = 0.1 * gen(engine);
 #ifdef TEST_CONV_IMAGE_ALL_1
                 i = 1;
 #endif
               }
+              int fiii = 1;
               for (auto& f : filter_v) {
-                f = gen(engine);
+                f = 0.1 * gen(engine);
 #ifdef TEST_CONV_IMAGE_ALL_1
+                // f = fiii++;
                 f = 1;
 #endif
               }
@@ -1424,7 +1429,8 @@ TEST(conv2d, compute_image2d_7x7) {
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
 
-              //              auto* filter_image2d = filter.mutable_data<float,
+              //              auto* filter_image2d =
+              // filter.mutable_data < float,
               //              cl::Image2D>(
               //                  filter_image_width,
               //                  filter_image_height,
