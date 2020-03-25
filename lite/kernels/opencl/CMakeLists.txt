@@ -89,8 +89,8 @@ lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_comput
 lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
 	         DEPS slice_opencl op_registry program context)
              
-lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
-                 DEPS instance_norm_opencl op_registry program context)             
+	     #lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
+	     #             DEPS instance_norm_opencl op_registry program context)
 
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
                  DEPS dropout_opencl op_registry program context)  
