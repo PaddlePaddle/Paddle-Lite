@@ -58,6 +58,11 @@ void QuantizedOpAttributesInferencePass::Apply(
     }
     if (found) {
       inst.mutable_op_info()->SetAttr("output_scale", output_scale);
+    } else if (op_info->HasAttr("output_scale")) {
+      int bit_length = op_info->GetAttr<int>("bit_length");
+      int range = (1 << (bit_length - 1)) - 1;
+      output_scale = op_info->GetAttr<float>("output_scale");
+      inst.mutable_op_info()->SetAttr("output_scale", output_scale / range);
     }
     if (op_info->HasAttr("output_scale")) {
       inst.mutable_op_info()->SetAttr("enable_int8", true);

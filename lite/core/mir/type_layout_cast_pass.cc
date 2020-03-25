@@ -41,8 +41,9 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
     if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
     auto inlinks = node->inlinks;
-    VLOG(4) << "node->AsStmt().desc:" << node->AsStmt().desc
-            << " inlinks.size():" << inlinks.size();
+    VLOG(4) << "============== node->AsStmt().op_type():"
+            << node->AsStmt().op_type() << " inlinks.size():" << inlinks.size()
+            << " ================";
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);
     }
@@ -68,12 +69,24 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &inst_in_tensor_name));
   auto decl_arg_type =
       inst.picked_kernel().GetInputDeclType(inst_in_tensor_name);
+
   CHECK(in->AsArg().type);
-  VLOG(5) << "\n inst_in_tensor_name:" << inst_in_tensor_name
+  VLOG(3) << "\n inst_in_tensor_name:" << inst_in_tensor_name
           << "\n in->AsArg().name:" << in->AsArg().name
           << "\n *in->AsArg().type:" << *in->AsArg().type
           << "\n *decl_arg_type:" << *decl_arg_type
           << "\n inst.op()->DebugString():" << inst.op()->DebugString();
+
+  // TODO(ysh329): conflict if tensor with kARM target but kImageDefault(OpenCL
+  // layout).
+  // not a good judge, but don't find the source of this issue from
+  // static_pick_kernel_pass
+  // to this pass.
+  auto* in_arg_type = const_cast<Type*>(in->AsArg().type);
+  if (in_arg_type->target() == TARGET(kARM) &&
+      in_arg_type->layout() == DATALAYOUT(kImageDefault)) {
+    return;
+  }
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
