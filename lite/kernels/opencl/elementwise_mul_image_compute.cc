@@ -56,7 +56,7 @@ class ElementwiseMulImageCompute
       } else {
         kernel_func_name_ = "channel_mul_d2_hw";
       }
-    } else if (y_dims.size() == 4) {
+    } else if (y_dims.size() == 4 || x_dims.size() == 4) {
       kernel_func_name_ = "channel_mul_d4";
     } else {
       LOG(FATAL) << "ElementwiseMul not supported y_dims.size():"
@@ -172,6 +172,18 @@ class ElementwiseMulImageCompute
         status = kernel.setArg(++arg_idx, static_cast<const int>(y_tensor_h));
         CL_CHECK_FATAL(status);
       }
+    } else if (x_dims.size() == 4) {
+      auto tensor_w = y_dims[y_dims.size() - 1];
+      VLOG(4) << "tensor_w:" << tensor_w;
+      // kernel: channel_mul_d4
+      cl_int status = kernel.setArg(arg_idx, *y_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *x_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *out_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(tensor_w));
+      CL_CHECK_FATAL(status);
     } else {
       LOG(FATAL) << "ElementwiseMul not supported y_dims.size():"
                  << y_dims.size();
