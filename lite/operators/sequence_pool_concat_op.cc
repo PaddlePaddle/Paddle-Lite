@@ -26,6 +26,48 @@ bool SequencePoolConcatOp::CheckShape() const {
   return true;
 }
 
+bool SequencePoolConcatOp::SmartInferShape() const {
+  if (!last_input_shapes.empty()){
+    const std::vector<Tensor *> &inputs = param_.X;
+    bool same = true;
+    for (int i = 0; i < inputs.size(); i++){
+      if (last_input_shapes[i] == inputs[i]->dims() && 
+          last_input_lods[i] == inputs[i]->od()){
+        continue;
+      } else{
+        same = false;
+        break;
+      }
+    }
+    if (same)) {
+      param_.output->Resize(last_output_shapes[0]);
+      param_.output->set_lod(last_output_lods[0]);
+      return true;
+    }
+  }
+
+  this->InferShape();
+  
+  if (!last_input_shapes.empty()) {
+    last_input_shapes.clear();
+    last_input_lods.clear();
+  }
+  const std::vector<Tensor *> &inputs = param_.X;
+  for (int i = 0; i < inputs.size(); i++){
+    last_input_shapes.push_back(inputs[i]->dims());
+    last_input_lods.push_back(inputs[i]->lod());
+  }
+
+  if (!last_output_shapes.empty()) {
+    last_output_shapes.clear();
+    last_output_lods.clear();
+  }
+  last_output_shapes.push_back(param_.output->dims());
+  last_output_lods.push_back(param_.output->lod());
+
+  return true;
+}
+
 bool SequencePoolConcatOp::InferShape() const {
   int out_dim = 0;
   for (int i = 0; i < param_.X.size(); ++i) {

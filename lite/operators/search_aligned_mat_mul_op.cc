@@ -27,6 +27,39 @@ bool SearchAlignedMatMulOpLite::CheckShape() const {
   return true;
 }
 
+bool SearchAlignedMatMulOpLite::SmartInferShape() const {
+  if (!last_input_shapes.empty()) {
+    if (last_input_shapes[0] == param_.X->dims() &&
+        last_input_shapes[1] == param_.Y->dims() &&
+        last_input_lods[0] == param_.X->lod() &&
+        last_input_lods[1] == param_.Y->lod()) {
+      param_.Out->Resize(last_output_shapes[0]);
+      param_.Out->set_lod(last_output_lods[0]);
+      return true;
+    }
+  }
+
+  this->InferShape();
+
+  if (!last_input_shapes.empty()) {
+    last_input_shapes.clear();
+    last_input_lods.clear();
+  }
+
+  last_input_shapes.push_back(param_.X->dims());
+  last_input_lods.push_back(param_.X->lod());
+  last_input_shapes.push_back(param_.Y->dims());
+  last_input_lods.push_back(param_.Y->lod());
+
+  if (!last_output_shapes.empty()) {
+    last_output_shapes.clear();
+    last_output_lods.clear();
+  }
+  last_output_shapes.push_back(param_.Out->dims());
+  last_output_lods.push_back(param_.Out->lod());
+  return true;
+}
+
 bool SearchAlignedMatMulOpLite::InferShape() const {
   const auto x_dims = param_.X->dims();
   const auto y_dims = param_.Y->dims();

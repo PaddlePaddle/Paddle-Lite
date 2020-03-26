@@ -35,6 +35,39 @@ bool MulOpLite::CheckShape() const {
   return true;
 }
 
+bool MulOpLite::SmartInferShape() const {
+  if (!last_input_shapes.empty()) {
+    if (last_input_shapes[0] == param_.x->dims() &&
+        last_input_shapes[1] == param_.y->dims() &&
+        last_input_lods[0] == param_.x->lod() &&
+        last_input_lods[1] == param_.y->lod()) {
+      param_.Out->Resize(last_output_shapes[0]);
+      param_.Out->set_lod(last_output_lods[0]);
+      return true;
+    }
+  }
+
+  this->InferShape();
+
+  if (!last_input_shapes.empty()) {
+    last_input_shapes.clear();
+    last_input_lods.clear();
+  }
+
+  last_input_shapes.push_back(param_.x->dims());
+  last_input_lods.push_back(param_.x->lod());
+  last_input_shapes.push_back(param_.y->dims());
+  last_input_lods.push_back(param_.y->lod());
+
+  if (!last_output_shapes.empty()) {
+    last_output_shapes.clear();
+    last_output_lods.clear();
+  }
+  last_output_shapes.push_back(param_.Out->dims());
+  last_output_lods.push_back(param_.Out->lod());
+  return true;
+}
+
 bool MulOpLite::InferShape() const {
   const auto x_dims = param_.x->dims();
   const auto y_dims = param_.y->dims();

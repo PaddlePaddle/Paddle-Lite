@@ -33,6 +33,8 @@ class TransposeOp : public OpLite {
 
   bool InferShape() const override;
 
+  bool SmartInferShape() const override;
+
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }

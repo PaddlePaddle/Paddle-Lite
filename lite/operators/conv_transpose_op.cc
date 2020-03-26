@@ -52,6 +52,35 @@ inline int ConvTransposeOutputSize(int input_size,
   return output_size;
 }
 
+bool ConvTransposeOpLite::SmartInferShape() {
+  if (!last_input_shapes.empty()) {
+    if (last_input_shapes[0] == param_.x->dims() &&
+        last_input_lods[0] == param_.x->lod()) {
+      param_.output->Resize(last_output_shapes[0]);
+      param_.output->set_lod(last_output_lods[0]);
+      return true;
+    }
+  }
+
+  this->InferShape();
+
+  if (!last_input_shapes.empty()) {
+    last_input_shapes.clear();
+    last_input_lods.clear();
+  }
+  last_input_shapes.push_back(param_.x->dims());
+  last_input_lods.push_back(param_.x->lod());
+
+  if (!last_output_shapes.empty()) {
+    last_output_shapes.clear();
+    last_output_lods.clear();
+  }
+  last_output_shapes.push_back(param_.output->dims());
+  last_output_lods.push_back(param_.output->lod());
+
+  return true;
+}
+
 bool ConvTransposeOpLite::InferShape() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();

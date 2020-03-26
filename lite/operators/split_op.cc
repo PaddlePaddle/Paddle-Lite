@@ -29,6 +29,42 @@ bool SplitOp::CheckShape() const {
   return true;
 }
 
+bool SplitOp::SmartInferShape() const {
+  if (!last_input_shapes.empty()) {
+    if (last_input_shapes[0] == param_.X->dims() &&
+        last_input_lods[0] == param_.X->lod()) {
+      int i = 0;
+      for (auto out: param_.output){
+        out->Resize(last_output_shapes[i]);
+        out->set_lod(last_output_lods[i]);
+        i++;
+      }
+      return true;
+    }
+  }
+
+  this->InferShape();
+
+  if (!last_input_shapes.empty()) {
+    last_input_shapes.clear();
+    last_input_lods.clear();
+  }
+  last_input_shapes.push_back(param_.X->dims());
+  last_input_lods.push_back(param_.X->lod());
+
+  if (!last_output_shapes.empty()) {
+    last_output_shapes.clear();
+    last_output_lods.clear();
+  }
+  int i = 0;
+  for (auto out: param_.output){
+    last_output_shapes.push_back(out->dims());
+    last_output_lods.push_back(out->lod());
+  }
+
+  return true;
+}
+
 bool SplitOp::InferShape() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();

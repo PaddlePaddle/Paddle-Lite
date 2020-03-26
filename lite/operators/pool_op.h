@@ -39,6 +39,8 @@ class PoolOpLite : public OpLite {
 
   bool InferShape() const override;
 
+  bool SmartInferShape() const override;
+  
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
     auto x = op_desc.Input("X").front();
