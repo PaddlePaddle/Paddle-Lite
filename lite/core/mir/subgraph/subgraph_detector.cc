@@ -449,6 +449,9 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   for (auto &var_node : output_var_nodes) {
     output_var_names.push_back(var_node->AsArg().name);
   }
+  for (auto &var_node : local_var_nodes) {
+    output_var_names.push_back(var_node->AsArg().name);
+  }
   subgraph_op_desc.SetAttr<std::vector<std::string>>("input_data_names",
                                                      input_var_names);
   subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
@@ -489,9 +492,6 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
   for (auto &var_node : weight_var_nodes) {
     input_var_names.push_back(var_node->AsArg().name);
-  }
-  for (auto &var_node : local_var_nodes) {
-    output_var_names.push_back(var_node->AsArg().name);
   }
   for (auto &var_node : unused_var_nodes) {
     output_var_names.push_back(var_node->AsArg().name);

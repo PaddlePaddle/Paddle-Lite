@@ -413,6 +413,14 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
     auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
     UpdateOutputTo(
         sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
+    /* graph like this
+     *        subgraph_op_0
+     *          /       \
+     *         /         \
+     * subgraph_op_1   host_op
+     */
+    UpdateInputTo(
+        sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
   }
 
   // recreate the op
