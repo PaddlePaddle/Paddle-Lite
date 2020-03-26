@@ -44,8 +44,8 @@ bool SequenceExpandOp::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_lods[0] == param_.X->lod()) {
-      param_.output->Resize(last_output_shapes[0]);
-      param_.output->set_lod(last_output_lods[0]);
+      param_.Out->Resize(last_output_shapes[0]);
+      param_.Out->set_lod(last_output_lods[0]);
       return true;
     }
   }
@@ -63,8 +63,8 @@ bool SequenceExpandOp::SmartInferShape() {
     last_output_shapes.clear();
     last_output_lods.clear();
   }
-  last_output_shapes.push_back(param_.output->dims());
-  last_output_lods.push_back(param_.output->lod());
+  last_output_shapes.push_back(param_.Out->dims());
+  last_output_lods.push_back(param_.Out->lod());
 
   return true;
 }
