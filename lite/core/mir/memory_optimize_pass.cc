@@ -238,7 +238,7 @@ void MemoryOptimizePass::PerformReusePlan(
       if (reuse_table.count(name) && reuse_table.at(name) != name) {
         auto replace_name = reuse_table.at(name);
         input_node->AsArg().name =
-            replace_name + "(" + std::to_string(node_append_idx) + ")";
+            replace_name + "(" + paddle::lite::to_string(node_append_idx) + ")";
         node_append_idx++;
       }
     }
@@ -262,7 +262,7 @@ void MemoryOptimizePass::PerformReusePlan(
       if (reuse_table.count(name) && reuse_table.at(name) != name) {
         auto replace_name = reuse_table.at(name);
         out_node->AsArg().name =
-            replace_name + "(" + std::to_string(node_append_idx) + ")";
+            replace_name + "(" + paddle::lite::to_string(node_append_idx) + ")";
         node_append_idx++;
       }
     }

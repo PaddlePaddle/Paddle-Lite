@@ -207,7 +207,8 @@ void RunModel(std::string det_model_file,
     cv::Mat roi = crop_img(img, rec_clip, classify_w, classify_h);
 
     // uncomment two lines below, save roi img to disk
-    // std::string roi_name = "roi_" + std::to_string(i) + ".jpg";
+    // std::string roi_name = "roi_" + paddle::lite::to_string(i)
+    // + ".jpg";
     // imwrite(roi_name, roi);
 
     // Do PreProcess
