@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/core/scope.h"
-#define SCOPE_KIDS_READER_LOCK lite::fluid::AutoRDLock auto_lock(&kids_lock_);
-#define SCOPE_KIDS_WRITER_LOCK lite::fluid::AutoWRLock auto_lock(&kids_lock_);
-#define SCOPE_VARS_READER_LOCK lite::fluid::AutoRDLock auto_lock(&vars_lock_);
-#define SCOPE_VARS_WRITER_LOCK lite::fluid::AutoWRLock auto_lock(&vars_lock_);
+#define SCOPE_KIDS_READER_LOCK lite::fluid::AutoRDLock auto_lock(kids_lock_);
+#define SCOPE_KIDS_WRITER_LOCK lite::fluid::AutoWRLock auto_lock(kids_lock_);
+#define SCOPE_VARS_READER_LOCK lite::fluid::AutoRDLock auto_lock(vars_lock_);
+#define SCOPE_VARS_WRITER_LOCK lite::fluid::AutoWRLock auto_lock(vars_lock_);
 
 namespace paddle {
 namespace lite {
@@ -41,7 +41,6 @@ Variable *Scope::Var(const std::string &name) {
   SCOPE_VARS_WRITER_LOCK
   auto *var = FindVar(name);
   if (var) return var;
-
   // create a new variable.
   vars_.emplace(name, std::unique_ptr<Variable>(new Variable));
   return vars_[name].get();
@@ -51,31 +50,34 @@ Variable *Scope::FindVar(const std::string &name) const {
   Variable *var{nullptr};
   var = FindLocalVar(name);
   const Scope *cur_scope = this;
+  rwlock_->RDLock();
   while (!var && cur_scope->parent()) {
-    //    SCOPE_VARS_READER_LOCK
     cur_scope = cur_scope->parent();
     var = cur_scope->FindLocalVar(name);
   }
-
+  rwlock_->UNLock();
   return var;
 }
 
 Variable *Scope::FindLocalVar(const std::string &name) const {
-  //  SCOPE_VARS_READER_LOCK
+  rwlock_->RDLock();
   auto it = vars_.find(name);
   if (it != vars_.end()) {
+    rwlock_->UNLock();
     return it->second.get();
   }
+  rwlock_->UNLock();
   return nullptr;
 }
 
 std::vector<std::string> Scope::LocalVarNames() const {
   std::vector<std::string> keys;
   {
-    //    SCOPE_VARS_READER_LOCK
+    rwlock_->RDLock();
     for (const auto &item : vars_) {
       keys.push_back(item.first);
     }
+    rwlock_->UNLock();
   }
   return keys;
 }

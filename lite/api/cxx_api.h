@@ -42,16 +42,19 @@ static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 class LITE_API Predictor {
  public:
   // Create an empty predictor.
-  Predictor() { scope_ = std::make_shared<Scope>(); }
+  Predictor() {
+    scope_ = std::make_shared<Scope>();
+    program_desc_ = std::make_shared<cpp::ProgramDesc>();
+  }
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}
-  Predictor(const cpp::ProgramDesc& desc,
+  Predictor(const std::shared_ptr<cpp::ProgramDesc>& desc,
             const std::shared_ptr<Scope>& root,
             const std::vector<Place>& valid_places)
       : program_desc_(desc), scope_(root) {
-    optimizer_ =
-        Optimizer(new Program(desc, scope_, valid_places), valid_places);
+    Program program(*desc.get(), scope_, valid_places);
+    optimizer_ = Optimizer(std::move(program), valid_places);
     exec_scope_ = optimizer_.exec_scope();
     GenRuntimeProgram();
     valid_places_ = valid_places;
@@ -74,7 +77,7 @@ class LITE_API Predictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
-  void Build(const cpp::ProgramDesc& desc,
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& desc,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
@@ -133,7 +136,7 @@ class LITE_API Predictor {
 
  private:
   Optimizer optimizer_;
-  cpp::ProgramDesc program_desc_;
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
