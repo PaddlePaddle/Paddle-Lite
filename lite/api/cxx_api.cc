@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 #include "lite/utils/io.h"
+#include "lite/api/paddle_use_passes.h"
 
 namespace paddle {
 namespace lite {
