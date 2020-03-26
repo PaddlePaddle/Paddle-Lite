@@ -34,6 +34,8 @@
 ## Step2 生成训练模型
 
 ```shell
+git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+cd Paddle-Lite/lite/demo/cxx/train_demo/
 python train.py --save_model
 ```
 
