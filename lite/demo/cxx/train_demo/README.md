@@ -42,8 +42,7 @@ cd Paddle-Lite
   --build_extra=ON \
   --arm_lang=gcc \
   --android_stl=c++_static \
-  --build_train=ON \
-  --shutdown_log=OFF full_publish
+  --build_train=ON full_publish
 ```
 
 产物:
@@ -125,15 +124,6 @@ md5sum fc_0.w_0: 2c7b3649b2a9cf7bcd19f8b256ce795d
 ```
 
 如果你想生成自己的模型用于训练，可以参考`train.py`中保存模型的方式。
-
-## Step3 准备训练数据
-
-```shell
-wget http://paddlemodels.bj.bcebos.com/uci_housing/housing.data
-```
-
-
-
 
 # 与Paddle训练结果做校对
 
