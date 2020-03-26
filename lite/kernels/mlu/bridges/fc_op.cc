@@ -37,6 +37,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
   auto x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
   auto w = scope->FindVar(w_var_name)->GetMutable<Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<Tensor>();
   auto x_dims = x->dims();
   auto w_dims = w->dims();
 
@@ -50,15 +51,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto input_scale = op_info->GetAttr<float>("input_scale");
 
-  std::vector<int64_t> output_shape_nhwc({x_dims[0], 1, 1, w_dims[1]});
   auto output_tensor = graph->AddNode(output_var_name,
-                                      output_shape_nhwc,
+                                      output->dims().Vectorize(),
                                       CNML_TENSOR,
-                                      CNML_NHWC,
+                                      CNML_NCHW,
                                       graph->FPType());
-  scope->FindVar(output_var_name)
-      ->GetMutable<::paddle::lite::Tensor>()
-      ->Resize(output_shape_nhwc);
 
   std::string bias_var_name;
   std::shared_ptr<MLUTensor> bias_tensor;

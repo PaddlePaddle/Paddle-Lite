@@ -21,8 +21,30 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-std::vector<int> axis_to_nhwc4d(const std::vector<int>& axis) {
-  CHECK_EQ(axis.size(), 4);
+// std::vector<int> axis_to_nhwc4d(const std::vector<int>& axis) {
+//  CHECK_EQ(axis.size(), 4);
+//  std::vector<int> new_axis(4, 0);
+//  const std::vector<int> axis_map1 = {0, 2, 3, 1};
+//  const std::vector<int> axis_map2 = {0, 3, 1, 2};
+//  for (size_t i = 0; i < new_axis.size(); ++i) {
+//    new_axis[i] = axis_map2[axis[axis_map1[i]]];
+//  }
+//  return new_axis;
+//}
+//
+// std::vector<int> axis_to_nhw3d(const std::vector<int>& axis) {
+//  CHECK_EQ(axis.size(), 3);
+//  std::vector<int> new_axis(3, 0);
+//  const std::vector<int> axis_map = {0, 2, 1};
+//  for (size_t i = 0; i < new_axis.size(); ++i) {
+//    new_axis[i] = axis_map[axis[axis_map[i]]];
+//  }
+//  new_axis.push_back(3);
+//  return new_axis;
+//}
+
+std::vector<int> axis_to_nhwc(const std::vector<int>& axis) {
+  CHECK_EQ(axis.size(), 4) << "Unsupport dim in mlu transpose";
   std::vector<int> new_axis(4, 0);
   const std::vector<int> axis_map1 = {0, 2, 3, 1};
   const std::vector<int> axis_map2 = {0, 3, 1, 2};
@@ -30,26 +52,6 @@ std::vector<int> axis_to_nhwc4d(const std::vector<int>& axis) {
     new_axis[i] = axis_map2[axis[axis_map1[i]]];
   }
   return new_axis;
-}
-
-std::vector<int> axis_to_nhw3d(const std::vector<int>& axis) {
-  CHECK_EQ(axis.size(), 3);
-  std::vector<int> new_axis(3, 0);
-  const std::vector<int> axis_map = {0, 2, 1};
-  for (size_t i = 0; i < new_axis.size(); ++i) {
-    new_axis[i] = axis_map[axis[axis_map[i]]];
-  }
-  new_axis.push_back(3);
-  return new_axis;
-}
-
-std::vector<int64_t> infer_shape(const std::vector<int64_t>& x_dims,
-                                 const std::vector<int>& axis_nhwc) {
-  std::vector<int64_t> out_dims(x_dims);
-  for (size_t i = 0; i < out_dims.size(); ++i) {
-    out_dims[i] = x_dims[axis_nhwc[i]];
-  }
-  return out_dims;
 }
 
 int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
@@ -71,21 +73,13 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_dims = output->dims().Vectorize();
 
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
-
-  std::vector<int> axis_nhwc;
-  if (axis.size() == 4) {
-    axis_nhwc = axis_to_nhwc4d(axis);
-  } else if (axis.size() == 3) {
-    axis_nhwc = axis_to_nhw3d(axis);
-  } else {
-    CHECK(0) << "Unsupport dim in mlu transpose";
+  while (axis.size() < 4) {
+    axis.push_back(axis.size());
   }
-
-  auto output_dims_nhwc = infer_shape(x_dims, axis_nhwc);
-  output->Resize(output_dims_nhwc);
+  std::vector<int> axis_nhwc = axis_to_nhwc(axis);
 
   auto output_tensor = graph->AddNode(
-      out_var_name, output_dims_nhwc, CNML_TENSOR, CNML_NHWC, graph->FPType());
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
 
   CHECK(graph->HasNode(x_var_name));
   auto input_tensor = graph->GetNode(x_var_name);
@@ -113,7 +107,6 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(transpose,
                          kMLU,
                          paddle::lite::subgraph::mlu::TransposeConverter);
-
 REGISTER_SUBGRAPH_BRIDGE(transpose2,
                          kMLU,
                          paddle::lite::subgraph::mlu::TransposeConverter);

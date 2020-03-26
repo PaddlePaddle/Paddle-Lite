@@ -37,7 +37,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
   auto output_tensor = graph->AddNode(
-      out_var_name, output_dims, CNML_TENSOR, CNML_NHWC, fp_type);
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, fp_type);
   CHECK(graph->HasNode(x_var_name));
   auto input_tensor = graph->GetNode(x_var_name);
   cnmlBaseOp_t activation_op;

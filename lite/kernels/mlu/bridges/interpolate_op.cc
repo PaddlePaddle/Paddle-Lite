@@ -45,8 +45,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(graph->HasNode(x_var_name));
   auto input_tensor = graph->GetNode(x_var_name);
 
-  auto in_h = x_dims[1];
-  auto in_w = x_dims[2];
+  auto in_h = x_dims[2];
+  auto in_w = x_dims[3];
 
   // Priority: SizeTensor > OutSize > Scale > scale > out_h/out_w
   if (HasInputArg(op_info, scope, "SizeTensor")) {
@@ -69,25 +69,13 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  out->Resize({x_dims[0], out_h, out_w, x_dims[3]});
-
   auto output_tensor = graph->AddNode(out_var_name,
                                       out->dims().Vectorize(),
                                       CNML_TENSOR,
-                                      CNML_NHWC,
+                                      CNML_NCHW,
                                       graph->FPType());
 
   cnmlBaseOp_t interp_op;
-  /* if (interp_method == "bilinear") { */
-  /*   cnmlInterpOpParam_t interp_param; */
-  /*   CNML_CALL(cnmlCreateInterpOpParam(&interp_param, out_w, out_h,
-   * align_corners)); */
-  /*   CNML_CALL(cnmlCreateInterpOp(&interp_op, */
-  /*                                input_tensor->mlu_tensor(), */
-  /*                                output_tensor->mlu_tensor(), */
-  /*                                interp_param)); */
-  /*   CNML_CALL(cnmlDestroyInterpOpParam(&interp_param)); */
-  /* } else if (interp_method == "nearest") { */
   cnmlNearestNeighborOpParam_t nn_param;
   CNML_CALL(cnmlCreateNearestNeighborOpParam(&nn_param, out_w, out_h));
   CNML_CALL(cnmlSetNearestNeighborAlignCorner(&nn_param, align_corners));
@@ -96,11 +84,6 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                         output_tensor->mlu_tensor(),
                                         nn_param));
   CNML_CALL(cnmlDestroyNearestNeighborOpParam(&nn_param));
-  /* } else { */
-  /*   LOG(WARNING) << "[MLU] Unsupported interpolate method: " <<
-   * interp_method; */
-  /*   return FAILED; */
-  /* } */
   graph->FuseOp(interp_op);
 
   return SUCCESS;
