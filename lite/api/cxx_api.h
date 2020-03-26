@@ -42,10 +42,24 @@ static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 class LITE_API Predictor {
  public:
   // Create an empty predictor.
-  Predictor() { scope_ = std::make_shared<Scope>(); }
+  Predictor() {
+    scope_ = std::make_shared<Scope>();
+    program_desc_ = std::make_shared<cpp::ProgramDesc>();
+  }
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}
+  Predictor(const std::shared_ptr<cpp::ProgramDesc>& desc,
+            const std::shared_ptr<Scope>& root,
+            const std::vector<Place>& valid_places)
+      : program_desc_(desc), scope_(root) {
+    Program program(*desc.get(), scope_, valid_places);
+    optimizer_ = Optimizer(std::move(program), valid_places);
+    exec_scope_ = optimizer_.exec_scope();
+    GenRuntimeProgram();
+    valid_places_ = valid_places;
+    PrepareFeedFetch();
+  }
 
   // Build from a model, with places set for hardware config.
   void Build(
@@ -63,9 +77,19 @@ class LITE_API Predictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
-  void Build(const cpp::ProgramDesc& desc,
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& desc,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
+
+  std::shared_ptr<Predictor> Clone() const {
+    //    CHECK(program_desc_) << "Both program and scope of current predicotr
+    //    should  be not be nullptr in Clone mode." ;
+    //    CHECK(scope_) << "Both program and scope of current predicotr should
+    //    be not be nullptr in Clone mode.";
+    auto predictor =
+        std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
+    return predictor;
+  }
 
   void GenRuntimeProgram();
 
@@ -118,18 +142,21 @@ class LITE_API Predictor {
 
  private:
   Optimizer optimizer_;
-  cpp::ProgramDesc program_desc_;
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
+  std::vector<Place> valid_places_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
  public:
   CxxPaddleApiImpl() {}
+  explicit CxxPaddleApiImpl(const std::shared_ptr<Predictor>& raw_predictor)
+      : raw_predictor_(raw_predictor) {}
 
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
@@ -167,9 +194,10 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       bool record_info = false) override;
 
  private:
-  Predictor raw_predictor_;
+  std::shared_ptr<Predictor> raw_predictor_;
   lite_api::CxxConfig config_;
   std::mutex mutex_;
+  bool status_is_cloned_{false};
 };
 
 /*
