@@ -34,7 +34,7 @@ bool SplitOp::SmartInferShape() {
     if (last_input_shapes[0] == param_.x->dims() &&
         last_input_lods[0] == param_.x->lod()) {
       int i = 0;
-      for (auto out: param_.output) {
+      for (auto out : param_.output) {
         out->Resize(last_output_shapes[i]);
         out->set_lod(last_output_lods[i]);
         i++;
@@ -56,8 +56,7 @@ bool SplitOp::SmartInferShape() {
     last_output_shapes.clear();
     last_output_lods.clear();
   }
-  int i = 0;
-  for (auto out: param_.output) {
+  for (auto out : param_.output) {
     last_output_shapes.push_back(out->dims());
     last_output_lods.push_back(out->lod());
   }

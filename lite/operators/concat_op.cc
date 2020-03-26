@@ -31,7 +31,7 @@ bool ConcatOpLite::SmartInferShape() {
     const std::vector<Tensor *> &inputs = param_.x;
     bool same = true;
     for (int i = 0; i < inputs.size(); i++) {
-      if (last_input_shapes[i] == inputs[i]->dims() && 
+      if (last_input_shapes[i] == inputs[i]->dims() &&
           last_input_lods[i] == inputs[i]->lod()) {
         continue;
       } else {
