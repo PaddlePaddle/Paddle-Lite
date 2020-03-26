@@ -490,7 +490,7 @@ class ContextScheduler {
       } break;
 #endif
       default:
-#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
+#if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
 #endif
         break;

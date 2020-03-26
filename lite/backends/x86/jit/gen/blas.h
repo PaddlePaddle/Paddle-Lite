@@ -17,6 +17,7 @@
 #include <string>
 #include "glog/logging.h"
 #include "lite/backends/x86/jit/gen/jitcode.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -64,7 +65,7 @@ class VXXJitCode : public JitCode {
       base += "_Vec";
     }
     base += (with_relu_ ? "_Relu" : "");
-    base += "_D" + std::to_string(num_);
+    base += "_D" + paddle::lite::to_string(num_);
     return base;
   }
   void genCode() override;

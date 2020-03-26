@@ -387,10 +387,11 @@ struct ElementwiseParam {
 };
 
 struct ElementwiseGradParam {
+  const lite::Tensor* X{};
   const lite::Tensor* Y{};
-  const lite::Tensor* Out_grad{};
-  lite::Tensor* X_grad{};
-  lite::Tensor* Y_grad{};
+  const lite::Tensor* OutGrad{};
+  lite::Tensor* XGrad{};
+  lite::Tensor* YGrad{};
   int axis{-1};  // for broadcasting.
 };
 

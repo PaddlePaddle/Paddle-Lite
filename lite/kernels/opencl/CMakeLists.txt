@@ -1,4 +1,4 @@
-if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_OPENCL))
+if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_WITH_OPENCL))
     return ()
 endif()
 
@@ -127,6 +127,9 @@ add_kernel(io_copy_opencl OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${ten
 
 #lite_cc_test(test_conv_buffer_opencl SRCS conv_buffer_compute_test.cc
 #             DEPS conv_opencl op_registry program context)
+
+#lite_cc_test(test_im2col_buffer_opencl SRCS im2col_buffer_test.cc
+#             DEPS tensor cl_context cl_wrapper cl_target_wrapper)
 
 #lite_cc_test(test_depthwise_conv2d_buffer_opencl SRCS depthwise_conv2d_buffer_compute_test.cc
 #             DEPS depthwise_conv2d_opencl op_registry program context)
