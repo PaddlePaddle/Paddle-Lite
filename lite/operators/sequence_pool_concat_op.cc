@@ -26,7 +26,7 @@ bool SequencePoolConcatOp::CheckShape() const {
   return true;
 }
 
-bool SequencePoolConcatOp::SmartInferShape() const {
+bool SequencePoolConcatOp::SmartInferShape() {
   if (!last_input_shapes.empty()){
     const std::vector<Tensor *> &inputs = param_.X;
     bool same = true;

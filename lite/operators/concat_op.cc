@@ -26,7 +26,7 @@ bool ConcatOpLite::CheckShape() const {
   return true;
 }
 
-bool ConcatOpLite::SmartInferShape() const {
+bool ConcatOpLite::SmartInferShape() {
   if (!last_input_shapes.empty()){
     const std::vector<Tensor *> &inputs = param_.x;
     bool same = true;

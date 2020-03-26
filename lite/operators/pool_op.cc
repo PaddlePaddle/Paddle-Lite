@@ -59,7 +59,7 @@ int PoolOutputSize(int input_size,
   }
   return output_size;
 }
-bool PoolOpLite::SmartInferShape() const {
+bool PoolOpLite::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.x->dims() &&
         last_input_lods[0] == param_.x->lod()) {

@@ -25,7 +25,7 @@ bool FlattenOp::CheckShape() const {
   return true;
 }
 
-bool FlattenOp::SmartInferShape() const {
+bool FlattenOp::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.x->dims() &&
         last_input_lods[0] == param_.x->lod()) {
@@ -97,6 +97,36 @@ bool FlattenOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 bool Flatten2Op::CheckShape() const {
   FlattenOp::CheckShape();
   CHECK_OR_FALSE(param_.xshape);
+  return true;
+}
+
+bool Flatten2Op::SmartInferShape() {
+  FlattenOp::SmartInferShape();
+  if (!last_input_shapes.empty()) {
+    if (last_input_shapes[0] == param_.x->dims() &&
+        last_input_lods[0] == param_.x->lod()) {
+      param_.output->Resize(last_output_shapes[0]);
+      param_.output->set_lod(last_output_lods[0]);
+      return true;
+    }
+  }
+
+  this->InferShape();
+
+  if (!last_input_shapes.empty()) {
+    last_input_shapes.clear();
+    last_input_lods.clear();
+  }
+  last_input_shapes.push_back(param_.x->dims());
+  last_input_lods.push_back(param_.x->lod());
+
+  if (!last_output_shapes.empty()) {
+    last_output_shapes.clear();
+    last_output_lods.clear();
+  }
+  last_output_shapes.push_back(param_.output->dims());
+  last_output_lods.push_back(param_.output->lod());
+
   return true;
 }
 

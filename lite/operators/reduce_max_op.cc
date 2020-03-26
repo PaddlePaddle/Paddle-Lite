@@ -39,7 +39,7 @@ bool ReduceMaxOp::CheckShape() const {
   return true;
 }
 
-bool ReduceMaxOp::SmartInferShape() const {
+bool ReduceMaxOp::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_lods[0] == param_.X->lod()) {

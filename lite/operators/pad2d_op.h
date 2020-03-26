@@ -32,7 +32,7 @@ class Pad2dOpLite : public OpLite {
 
   bool InferShape() const override;
 
-  bool SmartInferShape() const override;
+  bool SmartInferShape() override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 

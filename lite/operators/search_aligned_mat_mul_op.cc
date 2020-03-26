@@ -27,7 +27,7 @@ bool SearchAlignedMatMulOpLite::CheckShape() const {
   return true;
 }
 
-bool SearchAlignedMatMulOpLite::SmartInferShape() const {
+bool SearchAlignedMatMulOpLite::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_shapes[1] == param_.Y->dims() &&

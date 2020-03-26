@@ -40,7 +40,7 @@ bool SequenceExpandOp::CheckShape() const {
   return true;
 }
 
-bool SequenceExpandOp::SmartInferShape() const {
+bool SequenceExpandOp::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_lods[0] == param_.X->lod()) {

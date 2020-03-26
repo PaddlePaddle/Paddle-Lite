@@ -27,7 +27,7 @@ bool MatMulOpLite::CheckShape() const {
   return true;
 }
 
-bool MatMulOpLite::SmartInferShape() const {
+bool MatMulOpLite::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_shapes[1] == param_.Y->dims() &&

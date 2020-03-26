@@ -62,7 +62,7 @@ bool UnsqueezeOp::CheckShape() const {
   return true;
 }
 
-bool UnsqueezeOp::SmartInferShape() const {
+bool UnsqueezeOp::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_lods[0] == param_.X->lod()) {

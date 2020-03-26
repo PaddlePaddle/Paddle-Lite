@@ -30,7 +30,7 @@ bool Pad2dOpLite::CheckShape() const {
   return true;
 }
 
-bool Pad2dOpLite::InferShape() const {
+bool Pad2dOpLite::SmartInferShape() {
   if (!last_input_shapes.empty()) {
     if (last_input_shapes[0] == param_.X->dims() &&
         last_input_lods[0] == param_.X->lod()) {
