@@ -140,26 +140,61 @@ bool CLRuntime::InitializeDevice() {
 
   auto device_name = device_->getInfo<CL_DEVICE_NAME>();
   LOG(INFO) << "Using device: " << device_name;
+
   auto image_support = device_->getInfo<CL_DEVICE_IMAGE_SUPPORT>();
   if (image_support) {
     LOG(INFO) << "The chosen device supports image processing.";
+    device_info_["CL_DEVICE_IMAGE_SUPPORT"] = 1;
   } else {
     LOG(INFO) << "The chosen device doesn't support image processing!";
+    device_info_["CL_DEVICE_IMAGE_SUPPORT"] = 0;
     return false;
   }
+
   auto ext_data = device_->getInfo<CL_DEVICE_EXTENSIONS>();
   VLOG(4) << "The extensions supported by this device: " << ext_data;
   if (ext_data.find("cl_khr_fp16") != std::string::npos) {
     LOG(INFO) << "The chosen device supports the half data type.";
+    device_info_["CL_DEVICE_EXTENSIONS_FP16"] = 1;
   } else {
     LOG(INFO) << "The chosen device doesn't support the half data type!";
+    device_info_["CL_DEVICE_EXTENSIONS_FP16"] = 0;
   }
+
   auto max_units = device_->getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
   LOG(INFO) << "The chosen device has " << max_units << " compute units.";
-  auto local_mem = device_->getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
-  LOG(INFO) << "The local memory size of the chosen device is "
-            << static_cast<float>(local_mem) / 1024 << " KB.";
+  device_info_["CL_DEVICE_MAX_COMPUTE_UNITS"] = max_units;
+
+  auto local_mem_kb =
+      static_cast<float>(device_->getInfo<CL_DEVICE_LOCAL_MEM_SIZE>()) / 1024;
+  LOG(INFO) << "The local memory size of the chosen device is " << local_mem_kb
+            << " KB.";
+  device_info_["CL_DEVICE_LOCAL_MEM_SIZE_KB"] = local_mem_kb;
+
+  auto max_work_group_size = device_->getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+  LOG(INFO) << "CL_DEVICE_MAX_WORK_GROUP_SIZE:" << max_work_group_size;
+  device_info_["CL_DEVICE_MAX_WORK_GROUP_SIZE"] = max_work_group_size;
+
+  auto max_dims_num = device_->getInfo<CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS>();
+  LOG(INFO) << "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:" << max_dims_num;
+  device_info_["CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS"] = max_dims_num;
+
+  auto max_work_item_sizes = device_->getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>();
+  for (size_t i = 0; i < max_work_item_sizes.size(); ++i) {
+    LOG(INFO) << "max_work_item_sizes[" << i << "]:" << max_work_item_sizes[i];
+    std::string key = "CL_DEVICE_MAX_WORK_ITEM_SIZES_" + std::to_string(i);
+    device_info_[key] = max_work_item_sizes[i];
+  }
+
   return true;
+}
+
+std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
+  if (0 != device_info_.size()) {
+    return device_info_;
+  }
+  InitializeDevice();
+  return device_info_;
 }
 
 }  // namespace lite
