@@ -46,16 +46,21 @@ class LRModel {
         data[FEATURE_NUM * i + j] = features[i][j];
       }
     }
+    cout << "after prepare input_tensor" << endl;
     std::unique_ptr<Tensor> y_tensor(std::move(predictor_->GetInput(1)));
     y_tensor->Resize(shape_t({batch_size, 1}));
     auto* y_data = y_tensor->mutable_data<float>();
     for (int i = 0; i < batch_size; i++) {
       y_data[i] = labels[i];
     }
+    cout << "after prepare y_tensor" << endl;
     predictor_->Run();
+    cout << "after Run()" << endl;
     std::unique_ptr<const Tensor> output_tensor(
         std::move(predictor_->GetOutput(0)));
+    cout << "before get output tensor" << endl;
     return output_tensor->data<float>()[0];
+    cout << "after get output tensor" << endl;
   }
 
  private:
@@ -106,6 +111,7 @@ int main(int argc, char* argv[]) {
   if (is_small == "true") {
     cout << "small mode" << endl;
     for (int i; i < 10; i++) {
+      cout << "start a batch" << endl;
       vector<vector<float>> batch_feature;
       vector<float> batch_label;
       batch_feature.push_back(features[i]);

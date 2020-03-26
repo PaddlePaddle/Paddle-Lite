@@ -226,6 +226,7 @@ function make_full_publish_so {
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_TRAIN=$BUILD_TRAIN \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -386,6 +387,7 @@ function print_usage {
     echo -e "optional argument:"
     echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--build_train: (OFF|ON); controls whether to publish training operators and kernels, build_train is only for full_publish library now"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
@@ -432,6 +434,10 @@ function main {
                 ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
+                shift
+                ;;
+            --build_train=*)
+                BUILD_TRAIN="${i#*=}"
                 shift
                 ;;
             --build_cv=*)
