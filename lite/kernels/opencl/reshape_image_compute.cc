@@ -203,8 +203,8 @@ REGISTER_LITE_KERNEL(reshape2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -221,7 +221,7 @@ REGISTER_LITE_KERNEL(flatten,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -239,7 +239,7 @@ REGISTER_LITE_KERNEL(flatten2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

@@ -64,10 +64,12 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   split_op->create_dynamic_output_y(out_names.size());
   int idx = 1;
   for (auto& out_name : out_names) {
-    auto zero_node = graph->Add(out_name + "/zero" + std::to_string(idx), 0);
+    auto zero_node =
+        graph->Add(out_name + "/zero" + paddle::lite::to_string(idx), 0);
     auto add_node = graph->Add<ge::op::Add>(out_name);
     auto add_op = add_node->data<ge::op::Add>();
-    add_op->set_input_x1(*split_node->data(), "y" + std::to_string(idx));
+    add_op->set_input_x1(*split_node->data(),
+                         "y" + paddle::lite::to_string(idx));
     add_op->set_input_x2(*zero_node->data());
     idx++;
   }
