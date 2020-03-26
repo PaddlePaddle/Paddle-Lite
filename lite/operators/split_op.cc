@@ -31,8 +31,8 @@ bool SplitOp::CheckShape() const {
 
 bool SplitOp::SmartInferShape() {
   if (!last_input_shapes.empty()) {
-    if (last_input_shapes[0] == param_.X->dims() &&
-        last_input_lods[0] == param_.X->lod()) {
+    if (last_input_shapes[0] == param_.x->dims() &&
+        last_input_lods[0] == param_.x->lod()) {
       int i = 0;
       for (auto out: param_.output){
         out->Resize(last_output_shapes[i]);
@@ -49,8 +49,8 @@ bool SplitOp::SmartInferShape() {
     last_input_shapes.clear();
     last_input_lods.clear();
   }
-  last_input_shapes.push_back(param_.X->dims());
-  last_input_lods.push_back(param_.X->lod());
+  last_input_shapes.push_back(param_.x->dims());
+  last_input_lods.push_back(param_.x->lod());
 
   if (!last_output_shapes.empty()) {
     last_output_shapes.clear();

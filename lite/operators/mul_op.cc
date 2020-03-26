@@ -41,8 +41,8 @@ bool MulOpLite::SmartInferShape() {
         last_input_shapes[1] == param_.y->dims() &&
         last_input_lods[0] == param_.x->lod() &&
         last_input_lods[1] == param_.y->lod()) {
-      param_.Out->Resize(last_output_shapes[0]);
-      param_.Out->set_lod(last_output_lods[0]);
+      param_.output->Resize(last_output_shapes[0]);
+      param_.output->set_lod(last_output_lods[0]);
       return true;
     }
   }
@@ -63,8 +63,8 @@ bool MulOpLite::SmartInferShape() {
     last_output_shapes.clear();
     last_output_lods.clear();
   }
-  last_output_shapes.push_back(param_.Out->dims());
-  last_output_lods.push_back(param_.Out->lod());
+  last_output_shapes.push_back(param_.output->dims());
+  last_output_lods.push_back(param_.output->lod());
   return true;
 }
 
@@ -87,7 +87,7 @@ bool MulOpLite::InferShape() const {
   *out_lod = param_.x->lod();
 
   // share LoD
-  // param_.output->set_lod(param_.input->lod());
+  param_.output->set_lod(param_.x->lod());
   return true;
 }
 

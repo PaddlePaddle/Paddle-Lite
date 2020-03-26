@@ -32,14 +32,14 @@ bool ConcatOpLite::SmartInferShape() {
     bool same = true;
     for (int i = 0; i < inputs.size(); i++){
       if (last_input_shapes[i] == inputs[i]->dims() && 
-          last_input_lods[i] == inputs[i]->od()){
+          last_input_lods[i] == inputs[i]->lod()){
         continue;
       } else{
         same = false;
         break;
       }
     }
-    if (same)) {
+    if (same) {
       param_.output->Resize(last_output_shapes[0]);
       param_.output->set_lod(last_output_lods[0]);
       return true;
@@ -101,6 +101,7 @@ bool ConcatOpLite::InferShape() const {
   }
   // Set output dims
   param_.output->Resize(out_dims);
+  param_.output->set_lod(param_.x[0]->lod());
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x[0]->lod();
   return true;
