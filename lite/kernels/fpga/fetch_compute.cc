@@ -82,6 +82,6 @@ REGISTER_LITE_KERNEL(fetch,
                      kNHWC,
                      paddle::lite::kernels::fpga::FetchCompute,
                      host_host)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

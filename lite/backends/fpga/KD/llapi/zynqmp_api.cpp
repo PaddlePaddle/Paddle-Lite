@@ -187,7 +187,7 @@ int get_device_info(const struct DeviceInfo &args) {
 int perform_bypass(const struct BypassArgs &args) {
   int ret = -1;
   int size = args.image.channels * args.image.width * args.image.height;
-  int max_size = 1 << 21;
+  int max_size = 1 << 22;
 
   float times = 1.0 * size / max_size;
   int count = static_cast<int>(times);

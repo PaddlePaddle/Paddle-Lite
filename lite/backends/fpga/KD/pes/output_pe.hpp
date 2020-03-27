@@ -54,8 +54,10 @@ class OutputPE : public PE {
            output->data<void>(),
            output->shape().numel() * sizeof(float));
 
-    // auto max = fpga_get_memory_size_max();
-    // std::cout << "===== Max: ===== :: " << max << std::endl;
+    fpga_reset();
+
+    auto max = fpga_get_memory_size_max();
+    std::cout << "PL ===== Max: ===== :: " << max << std::endl;
 
     return true;
   }
