@@ -17,7 +17,9 @@
 namespace paddle {
 namespace lite {
 
+#ifdef LITE_WITH_XPU
 thread_local xdnn::Context* Context<TargetType::kXPU>::_tls_raw_ctx{nullptr};
+#endif
 
 }  // namespace lite
 }  // namespace paddle
