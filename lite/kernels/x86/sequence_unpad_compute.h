@@ -13,9 +13,9 @@
 // limitations under the License.
 #pragma once
 
+#include "lite/backends/x86/math/sequence_padding.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/backends/x86/math/sequence_padding.h"
 
 namespace paddle {
 namespace lite {
@@ -31,10 +31,10 @@ class SequenceUnpadCompute
   using param_t = operators::SequenceUnpadParam;
 
   void Run() override {
-    auto& param = this->Param<param_t>();
-    auto& ctx = this->ctx_->As<X86Context>();
+    auto& param = this->template Param<param_t>();
+    auto& ctx = this->ctx_->template As<X86Context>();
 
-    param.Out->mutable_data<T>();
+    param.Out->template mutable_data<T>();
     int64_t padded_length = param.X->dims()[1];
     math::UnpaddingLoDTensorFunctor<lite::TargetType::kX86, T>()(
         ctx,
