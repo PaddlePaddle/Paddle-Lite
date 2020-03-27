@@ -21,28 +21,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-// std::vector<int> axis_to_nhwc4d(const std::vector<int>& axis) {
-//  CHECK_EQ(axis.size(), 4);
-//  std::vector<int> new_axis(4, 0);
-//  const std::vector<int> axis_map1 = {0, 2, 3, 1};
-//  const std::vector<int> axis_map2 = {0, 3, 1, 2};
-//  for (size_t i = 0; i < new_axis.size(); ++i) {
-//    new_axis[i] = axis_map2[axis[axis_map1[i]]];
-//  }
-//  return new_axis;
-//}
-//
-// std::vector<int> axis_to_nhw3d(const std::vector<int>& axis) {
-//  CHECK_EQ(axis.size(), 3);
-//  std::vector<int> new_axis(3, 0);
-//  const std::vector<int> axis_map = {0, 2, 1};
-//  for (size_t i = 0; i < new_axis.size(); ++i) {
-//    new_axis[i] = axis_map[axis[axis_map[i]]];
-//  }
-//  new_axis.push_back(3);
-//  return new_axis;
-//}
-
 std::vector<int> axis_to_nhwc(const std::vector<int>& axis) {
   CHECK_EQ(axis.size(), 4) << "Unsupport dim in mlu transpose";
   std::vector<int> new_axis(4, 0);
