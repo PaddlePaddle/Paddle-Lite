@@ -30,11 +30,13 @@ class IoCopyHostToXPUCompute
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
-          param.x->target() == TARGET(kX86));
+          param.x->target() == TARGET(kX86) ||
+          param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
     VLOG(4) << "host to xpu, copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kXPU), mem_size);
-    TargetWrapperXPU::MemcpySync(data, param.x->raw_data(), mem_size, IoDirection::HtoD);
+    TargetWrapperXPU::MemcpySync(
+        data, param.x->raw_data(), mem_size, IoDirection::HtoD);
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -72,7 +74,8 @@ class IoCopyXPUToHostCompute
     auto mem_size = param.x->memory_size();
     VLOG(4) << "xpu to host, copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
-    TargetWrapperXPU::MemcpySync(data, param.x->raw_data(), mem_size, IoDirection::DtoH);
+    TargetWrapperXPU::MemcpySync(
+        data, param.x->raw_data(), mem_size, IoDirection::DtoH);
   }
 
   std::string doc() const override { return "Copy IO from XPU to HOST"; }
@@ -147,6 +150,38 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(io_copy,
+                     kXPU,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
+                     arm_to_xpu)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy,
+                     kXPU,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
+                     xpu_to_arm)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(io_copy_once,
                      kXPU,
                      kAny,
@@ -203,6 +238,38 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      xpu_to_x86)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kX86),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kXPU,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
+                     arm_to_xpu)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kXPU,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
+                     xpu_to_arm)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
