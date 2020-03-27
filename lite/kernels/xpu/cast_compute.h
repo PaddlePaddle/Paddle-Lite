@@ -21,11 +21,11 @@ namespace kernels {
 namespace xpu {
 
 template <typename InType>
-class CastCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class CastCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
   using param_t = operators::CastParam;
 
-  virtual void Run() override;
+  void Run() override;
 
   virtual ~CastCompute() = default;
 };

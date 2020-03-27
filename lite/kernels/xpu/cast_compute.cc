@@ -59,10 +59,10 @@ void CastCompute<InType>::Run() {
 
 REGISTER_LITE_KERNEL(cast,
                      kXPU,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::xpu::CastCompute<float>,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
