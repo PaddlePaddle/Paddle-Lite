@@ -379,7 +379,8 @@ void ConvImageCompute::PrepareForRun() {
   std::stringstream kernel_key;
   kernel_key << kernel_func_names_[0] << build_options_[0];
   kernel_ = context.cl_context()->GetKernel(kernel_key.str());
-
+  VLOG(4) << "kernel_key: " << kernel_key.str();
+  VLOG(4) << "kernel ready ... " << kernel_key.str();
   size_t max_work_group_size = 0;
   kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                    CL_KERNEL_WORK_GROUP_SIZE,
@@ -490,12 +491,6 @@ void ConvImageCompute::Conv2d1x1opt() {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-  VLOG(4) << "maped_w: " << maped_w;
-  VLOG(4) << "hasbias: " << has_bias;
-#endif
   auto kernel = kernel_;
   cl_int status;
   int arg_idx = 0;
@@ -838,11 +833,6 @@ void ConvImageCompute::Conv2d3x3opt() {
 
   auto kernel = kernel_;
 
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-#endif
-
   cl_int status;
   int arg_idx = 0;
   status = kernel.setArg(arg_idx, c_blk_);
@@ -1094,10 +1084,6 @@ void ConvImageCompute::Conv2d5x5opt() {
   }
 
   auto kernel = kernel_;
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-#endif
   cl_int status;
   int arg_idx = 0;
   status = kernel.setArg(arg_idx, c_blk_);
@@ -1221,12 +1207,6 @@ void ConvImageCompute::Conv2d7x7() {
 
   auto kernel = kernel_;
 
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-  VLOG(4) << "w: " << w;
-#endif
-
   cl_int status;
   int arg_idx = 0;
   status = kernel.setArg(arg_idx, c_blk_);
@@ -1345,11 +1325,6 @@ void ConvImageCompute::Conv2d7x7opt() {
   }
 
   auto kernel = kernel_;
-
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-#endif
 
   cl_int status;
   int arg_idx = 0;
@@ -1646,11 +1621,6 @@ void ConvImageCompute::DepthwiseConv2d() {
   }
 
   auto kernel = kernel_;
-
-#ifndef LITE_SHUTDOWN_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-#endif
 
   cl_int status;
   int arg_idx = 0;
