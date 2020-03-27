@@ -13,11 +13,13 @@
 // limitations under the License.
 #pragma once
 
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/backends/x86/math/math_function.h"
+#include <algorithm>
+#include <vector>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/context_project.h"
+#include "lite/backends/x86/math/math_function.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
@@ -27,19 +29,18 @@ namespace x86 {
 namespace math = paddle::lite::x86::math;
 
 template <typename T>
-class SequenceConvCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+class SequenceConvCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::SequenceConvParam;
 
   void Run() override {
-    auto& param = this->Param<param_t>();
-    auto& ctx = this->ctx_->As<X86Context>();
+    auto& param = this->template Param<param_t>();
+    auto& ctx = this->ctx_->template As<X86Context>();
 
     auto* in = param.X;
     auto* filter = param.Filter;
     auto* out = param.Out;
-    out->mutable_data<T>();
+    out->template mutable_data<T>();
     CHECK(in->lod().size() == 1) << "Only support one level sequence now";
 
     int context_start = param.contextStart;
@@ -52,7 +53,8 @@ class SequenceConvCompute
     int down_pad = std::max(0, context_start + context_length - 1);
     auto sequence_width = static_cast<int64_t>(in->dims()[1]);
 
-    std::vector<int64_t> col_shape{in->dims()[0], context_length * sequence_width};
+    std::vector<int64_t> col_shape{in->dims()[0],
+                                   context_length * sequence_width};
     Tensor col;
     col.Resize(col_shape);
     col.mutable_data<T>();
@@ -63,9 +65,16 @@ class SequenceConvCompute
     set_zero(ctx, &col, static_cast<T>(0));
     math::ContextProjectFunctor<TARGET(kX86), T> seq_project_functor;
 
-    seq_project_functor(ctx, *in, padding_data, padding_trainable,
-                        context_start, context_length, context_stride, up_pad,
-                        down_pad, &col);
+    seq_project_functor(ctx,
+                        *in,
+                        padding_data,
+                        padding_trainable,
+                        context_start,
+                        context_length,
+                        context_stride,
+                        up_pad,
+                        down_pad,
+                        &col);
 
     blas.MatMul(col, *filter, out);
   }
