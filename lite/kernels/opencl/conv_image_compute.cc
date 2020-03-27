@@ -21,8 +21,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
-#define LITE_SHUTDOWN_LOG
-#define PROFILE_CONV_KERNEL
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -538,6 +537,16 @@ void ConvImageCompute::Conv2d1x1opt() {
   status = kernel.setArg(++arg_idx, default_w_blk_);
   CL_CHECK_FATAL(status);
 
+  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+      kernel,
+      cl::NullRange,
+      global_work_size_,
+      local_work_size_,
+      nullptr,
+      event_.get());
+  CL_CHECK_FATAL(status);
+  context.cl_wait_list()->emplace(out_image, event_);
+
 #ifdef PROFILE_CONV_KERNEL
   bool use_profile = false;
   auto GetCurrentUS = []() -> double {
@@ -546,7 +555,6 @@ void ConvImageCompute::Conv2d1x1opt() {
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
   double start = GetCurrentUS();
-#endif
 
   if (use_profile) {
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -601,6 +609,7 @@ void ConvImageCompute::Conv2d1x1opt() {
       dims_string(input_dims);
     }
   }
+#endif
 }
 
 void ConvImageCompute::Conv2d3x3() {
