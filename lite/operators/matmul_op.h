@@ -36,7 +36,7 @@ class MatMulOpLite : public OpLite {
   bool InferShape() const override;
 
   bool SmartInferShape() override;
-  
+
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;

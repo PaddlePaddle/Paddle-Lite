@@ -47,7 +47,7 @@ bool SequencePoolConcatOp::SmartInferShape() {
   }
 
   this->InferShape();
-  
+
   if (!last_input_shapes.empty()) {
     last_input_shapes.clear();
     last_input_lods.clear();

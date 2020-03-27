@@ -33,7 +33,7 @@ class ReshapeOp : public OpLite {
   bool InferShape() const override;
 
   bool SmartInferShape() override;
-  
+
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
