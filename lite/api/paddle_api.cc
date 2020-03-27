@@ -126,11 +126,13 @@ template void Tensor::CopyFromCpu<int, TargetType::kHost>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kHost>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kHost>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kHost>(const uint8_t *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kHost>(const int64_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kARM>(const int64_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
@@ -141,6 +143,7 @@ template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
 template void Tensor::CopyToCpu(int8_t *) const;
 template void Tensor::CopyToCpu(uint8_t *) const;
+template void Tensor::CopyToCpu(int64_t *) const;
 
 shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();
