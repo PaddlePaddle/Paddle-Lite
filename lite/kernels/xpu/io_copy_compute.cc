@@ -91,7 +91,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      kAny,
                      paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
-                     host_to_xpu)
+                     host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -107,7 +107,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      kAny,
                      paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
-                     xpu_to_host)
+                     device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
@@ -118,76 +118,12 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
-                     x86_to_xpu)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kX86),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kXPU),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
-                     xpu_to_x86)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kXPU),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kX86),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
-                     arm_to_xpu)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kXPU),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
-                     xpu_to_arm)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kXPU),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
 REGISTER_LITE_KERNEL(io_copy_once,
                      kXPU,
                      kAny,
                      kAny,
                      paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
-                     host_to_xpu)
+                     host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -203,77 +139,13 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      kAny,
                      paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
-                     xpu_to_host)
+                     device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy_once,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
-                     x86_to_xpu)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kX86),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kXPU),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy_once,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
-                     xpu_to_x86)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kXPU),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kX86),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy_once,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyHostToXPUCompute,
-                     arm_to_xpu)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kXPU),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy_once,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
-                     xpu_to_arm)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kXPU),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kARM),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();
