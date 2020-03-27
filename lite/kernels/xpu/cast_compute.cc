@@ -15,7 +15,6 @@
 #include "lite/kernels/xpu/cast_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/framework.pb.h"
 
 namespace paddle {
 namespace lite {
@@ -24,32 +23,33 @@ namespace xpu {
 
 template <typename InType>
 void CastCompute<InType>::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* x = param.X;
   auto* out = param.Out;
   int out_dtype = param.out_dtype;
-  auto* in_data = x->data<InType>();
+  auto* in_data = x->template data<InType>();
   int numel = x->numel();
 
   int r = 0;
-  if (out_dtype == framework::proto::VarType::FP32) {
-    auto* out_data = out->mutable_data<float>(TARGET(kXPU));
+  // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
+  // SIZE_T = 19;UINT8 = 20;INT8 = 21;
+  if (out_dtype == 5) {
+    auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
     r = xdnn::cast<InType, float>(
         ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == framework::proto::VarType::INT32) {
-    auto* out_data = out->mutable_data<int>(TARGET(kXPU));
-    r = xdnn::cast<InType, int>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == framework::proto::VarType::INT64) {
-    auto* out_data = out->mutable_data<int64_t>(TARGET(kXPU));
+  } else if (out_dtype == 2) {
+    auto* out_data = out->template mutable_data<int>(TARGET(kXPU));
+    r = xdnn::cast<InType, int>(ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (out_dtype == 3) {
+    auto* out_data = out->template mutable_data<int64_t>(TARGET(kXPU));
     r = xdnn::cast<InType, int64_t>(
         ctx.GetRawContext(), in_data, out_data, numel);
   } else {
     CHECK(false);
   }
-  CHECK(r == 0);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
