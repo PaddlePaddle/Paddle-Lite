@@ -59,7 +59,7 @@ class SearchSeqFcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       int N = w_dims[0];
       for (int i = 0; i < M; i++) {
         blas.AXPY(
-            N, static_cast<T>(1), b->data<T>(), out->mutable_data<T>() + i * N);
+            N, static_cast<T>(1), b->template data<T>(), out->template mutable_data<T>() + i * N);
       }
     }
   }

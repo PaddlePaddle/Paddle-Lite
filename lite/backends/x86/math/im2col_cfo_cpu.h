@@ -42,7 +42,7 @@ inline void im2col_common(const lite::Tensor& im,
   int channels_col = im_channels * filter_height * filter_width;
 
   const T* im_data = im.data<T>();
-  T* col_data = col->mutable_data<T>();
+  T* col_data = col->template mutable_data<T>();
   for (int c = 0; c < channels_col; ++c) {
     int w_offset = c % filter_width;
     int h_offset = (c / filter_width) % filter_height;
@@ -77,7 +77,7 @@ inline void im2col_sh1sw1dh1dw1ph0pw0(const lite::Tensor& im,
   int output_width = col->dims()[4];
 
   const T* im_data = im.data<T>();
-  T* col_data = col->mutable_data<T>();
+  T* col_data = col->template mutable_data<T>();
   int col_matrix_width = output_width * output_height;
   int im_size = im_height * im_width;
   size_t copy_size = sizeof(T) * output_width;
@@ -123,7 +123,7 @@ inline void im2col_sh1sw1dh1dw1ph1pw1(const lite::Tensor& im,
   constexpr int prw = 1;
 
   const T* im_data = im.data<T>();
-  T* col_data = col->mutable_data<T>();
+  T* col_data = col->template mutable_data<T>();
   int im_size = im_height * im_width;
   int col_matrix_width = output_width * output_height;
   int col_block_fh = filter_width * col_matrix_width;  // fw*oh*ow

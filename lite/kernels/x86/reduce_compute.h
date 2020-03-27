@@ -49,7 +49,7 @@ class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     bool reduce_all = param.reduce_all;
     auto* input = param.x;
     auto* output = param.output;
-    param.output->mutable_data<T>();
+    param.output->template mutable_data<T>();
 
     const auto& dims = param.dim;
     bool keep_dim = param.keep_dim;

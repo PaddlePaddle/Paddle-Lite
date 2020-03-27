@@ -35,7 +35,7 @@ class UniformRandomCompute
     auto *param_out = &param.Out->raw_tensor();
 
     T *data =
-        param_out->mutable_data<T>(context.x86_device_context()->GetPlace());
+        param_out->template mutable_data<T>(context.x86_device_context()->GetPlace());
 
     unsigned int seed = static_cast<unsigned int>(param.seed);
     std::minstd_rand engine;
