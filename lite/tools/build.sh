@@ -356,7 +356,7 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DWITH_GPU=OFF \
             -DLITE_BUILD_EXTRA=ON \
-            -DLITE_WITH_XPU=$BUID_XPU \
+            -DLITE_WITH_XPU=$BUILD_XPU \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
 
   make publish_inference -j$NUM_PROC
