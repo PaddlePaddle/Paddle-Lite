@@ -269,11 +269,11 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      paddle::lite::kernels::xpu::IoCopyXPUToHostCompute,
                      xpu_to_arm)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM),
+               {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kX86),
+                {LiteType::GetTensorTy(TARGET(kARM),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();
