@@ -115,6 +115,7 @@ void test_transpose(const std::vector<int64_t>& input_shape,
   }
 }
 
+// TODO(pmshst): fix the transpose test
 TEST(MLUBridges, transpose) {
   std::vector<int64_t> input_shape = {2, 3, 4, 5};
   test_transpose(input_shape, std::vector<int>{0, 1, 3, 2});

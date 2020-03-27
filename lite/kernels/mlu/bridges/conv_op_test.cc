@@ -244,10 +244,6 @@ void test_conv(int bs,
     }
   }
 
-  input->Resize({bs, ih, iw, ic});
-  output->Resize(
-      {output_shape[0], output_shape[2], output_shape[3], output_shape[1]});
-
   // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::ConvOpLite>(opdesc_mlu, &scope);
   LaunchOp(op, {input_var_name}, {output_var_name});

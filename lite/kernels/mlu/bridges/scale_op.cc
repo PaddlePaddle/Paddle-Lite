@@ -36,7 +36,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
   auto output_tensor = graph->AddNode(
-      out_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
   auto bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
   auto scale = op_info->GetAttr<float>("scale");
   auto bias = op_info->GetAttr<float>("bias");

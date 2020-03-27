@@ -83,7 +83,7 @@ class SubgraphEngine : public subgraph::Engine {
           graph_.AddNode(input_name,
                          input_tensor->dims().Vectorize(),
                          CNML_TENSOR,
-                         CNML_NHWC,
+                         CNML_NCHW,
                          graph_.FPType(),
                          const_cast<void*>(input_tensor->raw_data()));
       CHECK(input_node);
@@ -99,9 +99,7 @@ class SubgraphEngine : public subgraph::Engine {
       CHECK(op);
       std::string op_type = op->op_info()->Type();
       op->CheckShape();
-      if (op_type != "concat") {
-        op->InferShape();
-      }
+      op->InferShape();
       if (!bridges.Exists(op_type, TARGET(kMLU))) {
         LOG(INFO) << "MLU bridges doesn't support op_type: " << op_type;
         return subgraph::FAILED;

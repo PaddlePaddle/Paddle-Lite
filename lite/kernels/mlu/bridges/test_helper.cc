@@ -58,7 +58,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
         graph.AddNode(input_name,
                       input_tensor->dims().Vectorize(),
                       CNML_TENSOR,
-                      CNML_NHWC,
+                      CNML_NCHW,
                       graph.FPType(),
                       reinterpret_cast<void*>(
                           input_tensor->mutable_data<float>(TARGET(kMLU))));
@@ -68,6 +68,8 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
                           sizeof(float) * input_tensor->dims().production(),
                           CNRT_MEM_TRANS_DIR_HOST2DEV));
   }
+  op->CheckShape();
+  op->InferShape();
   bridges.Select(op_type, TARGET(kMLU))(
       reinterpret_cast<void*>(&graph), const_cast<OpLite*>(op.get()), nullptr);
 

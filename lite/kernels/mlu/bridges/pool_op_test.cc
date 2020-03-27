@@ -180,12 +180,7 @@ void test_pool(int bs,
             {0, 2, 3, 1});
 
   auto os = out->dims();
-  out->Resize({static_cast<int>(os[0]),
-               static_cast<int>(os[2]),
-               static_cast<int>(os[3]),
-               static_cast<int>(os[1])});
   x->CopyDataFrom(input_trans);
-  x->Resize({bs, ih, iw, ic});
 
   LaunchOp(op, {x_var_name}, {out_var_name});
 

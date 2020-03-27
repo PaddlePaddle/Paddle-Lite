@@ -113,21 +113,8 @@ void test_concat(std::vector<std::vector<int64_t>> input, int axis) {
              static_cast<int>(input[1][2]),
              static_cast<int>(input[1][3])},
             {0, 2, 3, 1});
-  auto os = out->dims();
-  out->Resize({static_cast<int>(os[0]),
-               static_cast<int>(os[2]),
-               static_cast<int>(os[3]),
-               static_cast<int>(os[1])});
   x->CopyDataFrom(input_x);
   y->CopyDataFrom(input_y);
-  x->Resize({static_cast<int>(input[0][0]),
-             static_cast<int>(input[0][2]),
-             static_cast<int>(input[0][3]),
-             static_cast<int>(input[0][1])});
-  y->Resize({static_cast<int>(input[1][0]),
-             static_cast<int>(input[1][2]),
-             static_cast<int>(input[1][3]),
-             static_cast<int>(input[1][1])});
 
   LaunchOp(op, {x_var_name, y_var_name}, {out_var_name});
 
@@ -136,6 +123,7 @@ void test_concat(std::vector<std::vector<int64_t>> input, int axis) {
 
   Tensor output_trans;
   output_trans.Resize(out->dims());
+  auto os = out->dims();
   transpose(out_data,
             output_trans.mutable_data<float>(),
             {static_cast<int>(os[0]),

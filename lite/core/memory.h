@@ -91,11 +91,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
       break;
 #endif
-#ifdef LITE_WITH_MLU
-    case TARGET(kMLU):
-      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
-      break;
-#endif
     default:
       LOG(FATAL)
           << "The copy function of this target has not been implemented yet.";

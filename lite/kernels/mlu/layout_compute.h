@@ -67,6 +67,8 @@ class LayoutNchwToNhwcCompute
     auto x_dims = param.x->dims().size();
     auto& context = this->ctx_->template As<X86Context>();
 
+    const auto origin_dims = out->dims().Vectorize();
+
     std::vector<int> axis;
     switch (x_dims) {
       case 2:
@@ -88,6 +90,10 @@ class LayoutNchwToNhwcCompute
 
     LayoutTransCompute<lite::TargetType::kX86, float>(
         x_dims, context, *x, out, axis);
+
+    if (x_dims > 2) {
+      out->Resize(origin_dims);
+    }
   }
 
   std::string doc() const override {
@@ -109,20 +115,22 @@ class LayoutNhwcToNchwCompute
     auto x_dims = param.x->dims().size();
     auto& context = this->ctx_->template As<X86Context>();
 
+    const auto origin_dims = out->dims().Vectorize();
+
     std::vector<int> axis;
     switch (x_dims) {
       case 2:
         axis = {0, 1};
         break;
       case 3:
-        axis = {0, 2, 1};
         out->Resize(std::vector<int64_t>{
             out->dims()[0], out->dims()[2], out->dims()[1]});
+        axis = {0, 2, 1};
         break;
       case 4:
-        axis = {0, 3, 1, 2};
         out->Resize(std::vector<int64_t>{
             out->dims()[0], out->dims()[3], out->dims()[1], out->dims()[2]});
+        axis = {0, 3, 1, 2};
         break;
       default:
         CHECK(0) << "Unsupport dim in mlu layout nhwc to nchw";
@@ -130,6 +138,10 @@ class LayoutNhwcToNchwCompute
 
     LayoutTransCompute<lite::TargetType::kX86, float>(
         x_dims, context, *x, out, axis);
+
+    if (x_dims > 2) {
+      out->Resize(origin_dims);
+    }
   }
 
   std::string doc() const override {

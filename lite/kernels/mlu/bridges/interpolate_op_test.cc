@@ -237,7 +237,6 @@ class InterpComputeTester {
     /* printf("----output tensor dims: %ld, %d, %d, %ld\n", dims_[0], out_h,
      * out_w, dims_[1]); */
     std::vector<int64_t> out_shape_nchw = {dims_[0], dims_[1], out_h, out_w};
-    out->Resize(DimNCHW2NHWC(out_shape_nchw));
     outref->Resize(out_shape_nchw);
     outsize->Resize({2});
 
@@ -283,7 +282,6 @@ class InterpComputeTester {
               {in, ic, ih, iw},
               {0, 2, 3, 1});
     x->CopyDataFrom(input_trans);
-    x->Resize(DimNCHW2NHWC(dims_.Vectorize()));
     if (use_outsize_) {
       LaunchOp(op, {x_var_name, outsize_var_name}, {out_var_name});
     } else {

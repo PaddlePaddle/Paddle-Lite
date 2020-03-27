@@ -137,9 +137,7 @@ void test_batch_norm(
             {bs, ic, ih, iw},
             {0, 2, 3, 1});
 
-  out->Resize({bs, ih, iw, ic});
   x->CopyDataFrom(input_trans);
-  x->Resize({bs, ih, iw, ic});
 
   LaunchOp(op, {x_var_name}, {out_var_name});
 
