@@ -48,11 +48,11 @@ REGISTER_LITE_KERNEL(
     def_layout_nhwc2nchw_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
@@ -82,11 +82,11 @@ REGISTER_LITE_KERNEL(
     def_layout_nchw2nhwc_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 

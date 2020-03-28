@@ -217,23 +217,23 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
                 first_conv_nodes_.end(),
                 head_node->AsArg().name) != first_conv_nodes_.end();
 
-  // layout cast node
-  if (head_type->layout() != inst_type->layout()) {
-    cur_node = InsertCastBefore(
-        "layout",
-        name_prefix + "layout",
-        graph,
-        cur_node,
-        inst_node,
-        LiteType::GetTensorTy(
-            head_type->target(), head_type->precision(), inst_type->layout()));
-  }
-
   // precision cast node
   if (head_type->precision() != inst_type->precision() && !is_first_conv_head) {
     cur_node = InsertCastBefore(
         "cast",
         name_prefix + "cast",
+        graph,
+        cur_node,
+        inst_node,
+        LiteType::GetTensorTy(
+            head_type->target(), inst_type->precision(), head_type->layout()));
+  }
+
+  // layout cast node
+  if (head_type->layout() != inst_type->layout()) {
+    cur_node = InsertCastBefore(
+        "layout",
+        name_prefix + "layout",
         graph,
         cur_node,
         inst_node,
@@ -366,23 +366,23 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
   const auto name_prefix =
       tail_node->AsArg().name + string_format("_%p", inst_node) + "/trans_";
 
-  // layout cast node
-  if (tail_type->layout() != inst_type->layout()) {
-    cur_node = InsertCastAfter(
-        "layout",
-        name_prefix + "layout",
-        graph,
-        cur_node,
-        inst_node,
-        LiteType::GetTensorTy(
-            tail_type->target(), tail_type->precision(), inst_type->layout()));
-  }
-
   // precision cast node
   if (tail_type->precision() != inst_type->precision()) {
     cur_node = InsertCastAfter(
         "cast",
         name_prefix + "cast",
+        graph,
+        cur_node,
+        inst_node,
+        LiteType::GetTensorTy(
+            tail_type->target(), inst_type->precision(), tail_type->layout()));
+  }
+
+  // layout cast node
+  if (tail_type->layout() != inst_type->layout()) {
+    cur_node = InsertCastAfter(
+        "layout",
+        name_prefix + "layout",
         graph,
         cur_node,
         inst_node,
