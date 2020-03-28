@@ -111,6 +111,9 @@ class Buffer {
       data_ = TargetMalloc(target, size);
       target_ = target;
       space_ = size;
+#ifdef LITE_WITH_OPENCL
+      cl_use_image2d_ = false;
+#endif
     }
   }
 
@@ -122,15 +125,14 @@ class Buffer {
                         const size_t img_w,
                         const size_t img_h,
                         void* host_ptr = nullptr) {
-    size_t size = sizeof(T) * img_w * img_h *
-                  4;  // 4 for RGBA, un-used for opencl Image2D
     if (target != target_ || cl_image2d_width_ < img_w ||
         cl_image2d_height_ < img_h) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
       target_ = target;
-      space_ = size;  // un-used for opencl Image2D
+      space_ = sizeof(T) * img_w * img_h *
+               4;  // un-used for opencl Image2D, 4 for RGBA,
       cl_use_image2d_ = true;
       cl_image2d_width_ = img_w;
       cl_image2d_height_ = img_h;
