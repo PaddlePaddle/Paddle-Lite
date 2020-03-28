@@ -72,6 +72,7 @@ thread_local int DeviceInfo::mlu_core_number_{1};
 thread_local bool DeviceInfo::use_first_conv_{false};
 thread_local std::vector<float> DeviceInfo::mean_vec_;
 thread_local std::vector<float> DeviceInfo::std_vec_;
+thread_local DataLayoutType DeviceInfo::input_layout_{DATALAYOUT(kNCHW)};
 #endif
 
 #ifdef TARGET_IOS
@@ -1123,7 +1124,7 @@ const std::vector<float>& DeviceInfo::MeanVec() const { return mean_vec_; }
 
 const std::vector<float>& DeviceInfo::StdVec() const { return std_vec_; }
 
-const DataLayoutType InputLayout() const { return input_layout_; }
+DataLayoutType DeviceInfo::InputLayout() const { return input_layout_; }
 
 #endif  // LITE_WITH_MLU
 

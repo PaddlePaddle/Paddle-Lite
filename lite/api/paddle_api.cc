@@ -203,23 +203,22 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
-void CxxConfig::mlu_set_mlu_core_version(
-    lite_api::MLUCoreVersion core_version) {
+void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
   mlu_core_version_ = core_version;
 }
-void CxxConfig::mlu_set_mlu_core_number(int core_number) {
+void CxxConfig::set_mlu_core_number(int core_number) {
   mlu_core_number_ = core_number;
 }
-void CxxConfig::mlu_set_input_layout()(DataLayoutType layout) {
+void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
   mlu_input_layout_ = layout;
 }
-void CxxConfig::mlu_set_use_first_conv(bool use_first_conv) {
+void CxxConfig::set_mlu_use_first_conv(bool use_first_conv) {
   mlu_use_first_conv_ = use_first_conv;
 }
-void CxxConfig::mlu_set_first_conv_mean(const std::vector<float> &mean) {
+void CxxConfig::set_mlu_first_conv_mean(const std::vector<float> &mean) {
   mlu_first_conv_mean_ = mean;
 }
-void CxxConfig::mlu_set_first_conv_std(const std::vector<float> &std) {
+void CxxConfig::set_mlu_first_conv_std(const std::vector<float> &std) {
   mlu_first_conv_std_ = std;
 }
 lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {

@@ -29,6 +29,24 @@ namespace lite {
 namespace kernels {
 namespace mlu {
 
+template <paddle::lite_api::PrecisionType>
+struct FPTypeTraits {};
+
+template <>
+struct FPTypeTraits<paddle::lite_api::PrecisionType::kFloat> {
+  typedef float T;
+};
+
+template <>
+struct FPTypeTraits<paddle::lite_api::PrecisionType::kFP16> {
+  typedef paddle::lite::fluid::float16 T;
+};
+
+template <>
+struct FPTypeTraits<paddle::lite_api::PrecisionType::kInt8> {
+  typedef int8_t T;
+};
+
 template <lite::TargetType Target, typename T>
 inline void LayoutTransCompute(const int dim,
                                const lite::Context<Target>& context,
@@ -63,7 +81,7 @@ class LayoutNchwToNhwcCompute
     auto& param = this->template Param<param_t>();
     auto* x = param.x;
     auto* out = param.y;
-    out->template mutable_data<float>();
+    out->template mutable_data<typename FPTypeTraits<Precision>::T>();
     auto x_dims = param.x->dims().size();
     auto& context = this->ctx_->template As<X86Context>();
 
@@ -88,7 +106,8 @@ class LayoutNchwToNhwcCompute
         CHECK(0) << "Unsupport dim in mlu layout nchw to nhwc";
     }
 
-    LayoutTransCompute<lite::TargetType::kX86, float>(
+    LayoutTransCompute<lite::TargetType::kX86,
+                       typename FPTypeTraits<Precision>::T>(
         x_dims, context, *x, out, axis);
 
     if (x_dims > 2) {
@@ -111,7 +130,7 @@ class LayoutNhwcToNchwCompute
     auto& param = this->template Param<param_t>();
     auto* x = param.x;
     auto* out = param.y;
-    out->template mutable_data<float>();
+    out->template mutable_data<typename FPTypeTraits<Precision>::T>();
     auto x_dims = param.x->dims().size();
     auto& context = this->ctx_->template As<X86Context>();
 
@@ -136,7 +155,8 @@ class LayoutNhwcToNchwCompute
         CHECK(0) << "Unsupport dim in mlu layout nhwc to nchw";
     }
 
-    LayoutTransCompute<lite::TargetType::kX86, float>(
+    LayoutTransCompute<lite::TargetType::kX86,
+                       typename FPTypeTraits<Precision>::T>(
         x_dims, context, *x, out, axis);
 
     if (x_dims > 2) {

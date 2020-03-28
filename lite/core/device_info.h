@@ -67,7 +67,7 @@ class DeviceInfo {
   bool UseFirstConv();
   const std::vector<float>& MeanVec() const;
   const std::vector<float>& StdVec() const;
-  const DataLayoutType InputLayout() const;
+  DataLayoutType InputLayout() const;
 #endif
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }

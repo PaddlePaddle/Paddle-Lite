@@ -136,7 +136,6 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
-
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
   DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
@@ -171,12 +170,12 @@ class LITE_API CxxConfig : public ConfigBase {
   }
 #endif
 
-  void mlu_set_mlu_core_version(lite_api::MLUCoreVersion core_version);
-  void mlu_set_mlu_core_number(int core_number);
-  void mlu_set_input_layout()(DataLayoutType layout);
-  void mlu_set_use_first_conv(bool use_first_conv);
-  void mlu_set_first_conv_mean(const std::vector<float>& mean);
-  void mlu_set_first_conv_std(const std::vector<float>& std);
+  void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
+  void set_mlu_core_number(int core_number);
+  void set_mlu_input_layout(DataLayoutType layout);
+  void set_mlu_use_first_conv(bool use_first_conv);
+  void set_mlu_first_conv_mean(const std::vector<float>& mean);
+  void set_mlu_first_conv_std(const std::vector<float>& std);
 
   lite_api::MLUCoreVersion mlu_core_version() const;
   int mlu_core_number() const;
