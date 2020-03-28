@@ -52,6 +52,7 @@ using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
+using Ascend310Context = Context<TargetType::kAscend310>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -63,6 +64,21 @@ class Context<TargetType::kHost> {
 
   std::string name() const { return "HostContext"; }
 };
+
+#ifdef LITE_WITH_ASCEND310
+template <>
+class Context<TargetType::kAscend310> {
+ public:
+  Context() {}
+  explicit Context(const Ascend310Context& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(NPUContext* ctx) {}
+
+  Ascend310Context& operator=(const Ascend310Context& ctx) {}
+  std::string name() const { return "AscendContext"; }
+};
+#endif
 
 #ifdef LITE_WITH_NPU
 template <>
@@ -394,6 +410,13 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
+#ifdef LITE_WITH_ASCEND310
+      case TARGET(kAscend310):
+        kernel_contexts_[TargetType::kAscend310]
+            .As<Ascend310Context>()
+            .CopySharedTo(&ctx->As<Ascend310Context>());
+        break;
+#endif
       default:
 #if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
@@ -428,6 +451,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_ASCEND310
+    InitContext<TargetType::kAscend310, Ascend310Context>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
