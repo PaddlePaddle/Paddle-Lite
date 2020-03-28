@@ -60,12 +60,14 @@ class DeviceInfo {
                      int core_number,
                      bool use_first_conv,
                      const std::vector<float>& mean_vec,
-                     const std::vector<float>& std_vec);
+                     const std::vector<float>& std_vec,
+                     DataLayoutType input_layout);
   cnmlCoreVersion_t MLUCoreVersion();
   int MLUCoreNumber();
   bool UseFirstConv();
   const std::vector<float>& MeanVec() const;
   const std::vector<float>& StdVec() const;
+  const DataLayoutType InputLayout() const;
 #endif
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
@@ -124,6 +126,7 @@ class DeviceInfo {
   static thread_local bool use_first_conv_;
   static thread_local std::vector<float> mean_vec_;
   static thread_local std::vector<float> std_vec_;
+  static thread_local DataLayoutType input_layout_;
 #endif
 
   void SetDotInfo(int argc, ...);

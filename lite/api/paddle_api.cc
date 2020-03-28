@@ -203,6 +203,38 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+void CxxConfig::mlu_set_mlu_core_version(
+    lite_api::MLUCoreVersion core_version) {
+  mlu_core_version_ = core_version;
+}
+void CxxConfig::mlu_set_mlu_core_number(int core_number) {
+  mlu_core_number_ = core_number;
+}
+void CxxConfig::mlu_set_input_layout()(DataLayoutType layout) {
+  mlu_input_layout_ = layout;
+}
+void CxxConfig::mlu_set_use_first_conv(bool use_first_conv) {
+  mlu_use_first_conv_ = use_first_conv;
+}
+void CxxConfig::mlu_set_first_conv_mean(const std::vector<float> &mean) {
+  mlu_first_conv_mean_ = mean;
+}
+void CxxConfig::mlu_set_first_conv_std(const std::vector<float> &std) {
+  mlu_first_conv_std_ = std;
+}
+lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
+  return mlu_core_version_;
+}
+int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
+DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
+bool CxxConfig::mlu_use_first_conv() const { return mlu_use_first_conv_; }
+std::vector<float> CxxConfig::mlu_first_conv_mean() const {
+  return mlu_first_conv_mean_;
+}
+std::vector<float> CxxConfig::mlu_first_conv_std() const {
+  return mlu_first_conv_std_;
+}
+
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory
 // buffer

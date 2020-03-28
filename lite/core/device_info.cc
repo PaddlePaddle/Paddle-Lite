@@ -1093,7 +1093,8 @@ void DeviceInfo::SetMLURunMode(lite_api::MLUCoreVersion core_version,
                                int core_number,
                                bool use_first_conv,
                                const std::vector<float>& mean_vec,
-                               const std::vector<float>& std_vec) {
+                               const std::vector<float>& std_vec,
+                               DataLayoutType input_layout) {
   switch (core_version) {
     case (lite_api::MLUCoreVersion::MLU_220):
       mlu_core_version_ = CNML_MLU220;
@@ -1109,6 +1110,7 @@ void DeviceInfo::SetMLURunMode(lite_api::MLUCoreVersion core_version,
   use_first_conv_ = use_first_conv;
   mean_vec_ = mean_vec;
   std_vec_ = std_vec;
+  input_layout_ = input_layout;
 }
 
 cnmlCoreVersion_t DeviceInfo::MLUCoreVersion() { return mlu_core_version_; }
@@ -1120,6 +1122,8 @@ bool DeviceInfo::UseFirstConv() { return use_first_conv_; }
 const std::vector<float>& DeviceInfo::MeanVec() const { return mean_vec_; }
 
 const std::vector<float>& DeviceInfo::StdVec() const { return std_vec_; }
+
+const DataLayoutType InputLayout() const { return input_layout_; }
 
 #endif  // LITE_WITH_MLU
 
