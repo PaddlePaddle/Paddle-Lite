@@ -24,6 +24,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/scope.h"
 #include "lite/model_parser/cpp/op_desc.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -64,8 +65,8 @@ class OpLite : public Registry {
   // Check the shape.
   virtual bool CheckShape() const { return true; }
   // Inference the outputs' shape.
-  virtual bool InferShape() const { return true; }
-  virtual bool SmartInferShape() { return this->InferShape(); }
+  virtual bool InferShapeImpl() const { return true; }
+  virtual bool InferShape();
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not
@@ -151,10 +152,12 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
+
   std::vector<DDimLite> last_input_shapes;
   std::vector<DDimLite> last_output_shapes;
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods;
   std::vector<std::vector<std::vector<uint64_t>>> last_input_lods;
+  mutable operators::ParamBase param_;
 };
 
 /*

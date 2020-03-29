@@ -22,6 +22,24 @@
 namespace paddle {
 namespace lite {
 
+bool OpLite::InferShape() {
+  if (!last_input_shapes.empty() && last_input_shapes == param_.inputs_dims() &&
+      last_input_lods == param_.inputs_lods()) {
+    for (int i = 0; i < param_.output_tensor_ptrs()->size(); i++) {
+      param_.output_tensor_ptrs()->at(i)->Resize(last_output_shapes[i]);
+      param_.output_tensor_ptrs()->at(i)->set_lod(last_output_lods[i]);
+    }
+    return true;
+  }
+
+  this->InferShapeImpl();
+  last_input_shapes = param_.inputs_dims();
+  last_input_lods = param_.inputs_lods();
+  last_output_shapes = param_.outputs_dims();
+  last_output_lods = param_.outputs_lods();
+  return true;
+}
+
 std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     const std::vector<Place> &places, const std::string &kernel_type) {
   std::vector<std::unique_ptr<KernelBase>> kernels;
