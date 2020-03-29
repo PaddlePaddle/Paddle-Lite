@@ -58,6 +58,7 @@ bool OpLite::InferShape() {
     }
   } else {
     // If current hash value is changed, InferShapeImpl is operated.
+    io_shape_lod_hash_ = new_hash;
     this->InferShapeImpl();
     auto current_outputs = param_.output_tensor_ptrs();
     for (int i = 0; i < current_outputs->size(); i++) {
