@@ -36,9 +36,10 @@ bool OpLite::InferShape() {
       new_hash =
           lite::hash_combine(new_hash, static_cast<int>(element_dims[i]));
     }
+    // combine lod value into new_hash valud.
     auto emement_lods = (*iter)->lod();
     for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
-         lod_iter++) {  // combine lod value into new_hash valud.
+         lod_iter++) {
       for (int i = 0; i < lod_iter->size(); i++) {
         new_hash =
             lite::hash_combine(new_hash, static_cast<int>(lod_iter->at(i)));
