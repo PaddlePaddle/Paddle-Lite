@@ -72,7 +72,7 @@ bool Flatten2Op::CheckShape() const {
 }
 
 bool Flatten2Op::InferShapeImpl() const {
-  FlattenOp::InferShape();
+  FlattenOp::InferShapeImpl();
   auto x_dims = param_.x->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
   for (size_t i = 0; i < x_dims.size(); i++) {

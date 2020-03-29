@@ -98,7 +98,7 @@ bool Reshape2Op::CheckShape() const {
 }
 
 bool Reshape2Op::InferShapeImpl() const {
-  ReshapeOp::InferShape();
+  ReshapeOp::InferShapeImpl();
   const auto &x_dims = param_.x->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1);
   xshape_dims[0] = 0;

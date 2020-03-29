@@ -106,7 +106,7 @@ bool Squeeze2Op::CheckShape() const {
 }
 
 bool Squeeze2Op::InferShapeImpl() const {
-  SqueezeOp::InferShape();
+  SqueezeOp::InferShapeImpl();
   auto x_dims = param_.X->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
   for (size_t i = 0; i < x_dims.size(); i++) {
