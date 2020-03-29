@@ -23,20 +23,47 @@ namespace paddle {
 namespace lite {
 
 bool OpLite::InferShape() {
-  if (!last_input_shapes.empty() && last_input_shapes == param_.inputs_dims() &&
-      last_input_lods == param_.inputs_lods()) {
-    for (int i = 0; i < param_.output_tensor_ptrs()->size(); i++) {
-      param_.output_tensor_ptrs()->at(i)->Resize(last_output_shapes[i]);
-      param_.output_tensor_ptrs()->at(i)->set_lod(last_output_lods[i]);
+  // 1. Get vector of current input tensors
+  auto current_inputs = param_.input_tensor_ptrs();
+
+  // 2. Get hash value of current inputs shape and lod
+  size_t new_hash = 0;
+  for (auto iter = current_inputs->begin(); iter != current_inputs->end();
+       iter++) {
+    // combined dims value into new_hash value.
+    auto element_dims = (*iter)->dims();
+    for (int i = 0; i < element_dims.size(); i++) {
+      new_hash =
+          lite::hash_combine(new_hash, static_cast<int>(element_dims[i]));
     }
-    return true;
+    auto emement_lods = (*iter)->lod();
+    for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
+         lod_iter++) {  // combine lod value into new_hash valud.
+      for (int i = 0; i < lod_iter->size(); i++) {
+        new_hash =
+            lite::hash_combine(new_hash, static_cast<int>(lod_iter->at(i)));
+      }
+    }
   }
 
-  this->InferShapeImpl();
-  last_input_shapes = param_.inputs_dims();
-  last_input_lods = param_.inputs_lods();
-  last_output_shapes = param_.outputs_dims();
-  last_output_lods = param_.outputs_lods();
+  // 3. infer shapes of output tensors
+  if (new_hash == io_shape_lod_hash_ && new_hash != 0) {
+    // if current hash value is consistent with io_shape_lod_hash_,
+    // previous outputs shape and lod is reused.
+    auto current_outputs = param_.output_tensor_ptrs();
+    for (int i = 0; i < current_outputs->size(); i++) {
+      current_outputs->at(i)->Resize(last_output_shapes[i]);
+      current_outputs->at(i)->set_lod(last_output_lods[i]);
+    }
+  } else {
+    // If current hash value is changed, InferShapeImpl is operated.
+    this->InferShapeImpl();
+    auto current_outputs = param_.output_tensor_ptrs();
+    for (int i = 0; i < current_outputs->size(); i++) {
+      last_output_shapes[i] = current_outputs->at(i)->dims();
+      last_output_lods[i] = current_outputs->at(i)->lod();
+    }
+  }
   return true;
 }
 
