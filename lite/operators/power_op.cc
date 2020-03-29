@@ -27,7 +27,7 @@ bool PowerOp::CheckShape() const {
   return true;
 }
 
-bool PowerOp::InferShape() const {
+bool PowerOp::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
   return true;
 }

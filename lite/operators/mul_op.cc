@@ -35,7 +35,7 @@ bool MulOpLite::CheckShape() const {
   return true;
 }
 
-bool MulOpLite::InferShape() const {
+bool MulOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   const auto y_dims = param_.y->dims();
 

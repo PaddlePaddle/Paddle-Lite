@@ -30,7 +30,7 @@ bool SequenceReverseOp::CheckShape() const {
   return true;
 }
 
-bool SequenceReverseOp::InferShape() const {
+bool SequenceReverseOp::InferShapeImpl() const {
   const auto *input = param_.X;
   auto out_dims = input->dims();
   param_.Out->Resize(out_dims);

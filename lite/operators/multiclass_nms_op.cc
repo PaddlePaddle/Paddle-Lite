@@ -41,7 +41,7 @@ bool MulticlassNmsOpLite::CheckShape() const {
   return true;
 }
 
-bool MulticlassNmsOpLite::InferShape() const {
+bool MulticlassNmsOpLite::InferShapeImpl() const {
   auto box_dims = param_.bboxes->dims();
   auto score_dims = param_.scores->dims();
   auto score_size = score_dims.size();

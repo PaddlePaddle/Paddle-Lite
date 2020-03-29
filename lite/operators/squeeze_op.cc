@@ -75,7 +75,7 @@ bool SqueezeOp::CheckShape() const {
   return true;
 }
 
-bool SqueezeOp::InferShape() const {
+bool SqueezeOp::InferShapeImpl() const {
   std::vector<int> squeeze_dims = param_.axes;
   DDim in_dims = param_.X->dims();
   DDim out_dim = GetOutputShape(squeeze_dims, in_dims, true);
@@ -105,7 +105,7 @@ bool Squeeze2Op::CheckShape() const {
   return true;
 }
 
-bool Squeeze2Op::InferShape() const {
+bool Squeeze2Op::InferShapeImpl() const {
   SqueezeOp::InferShape();
   auto x_dims = param_.X->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);

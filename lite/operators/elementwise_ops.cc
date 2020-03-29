@@ -105,7 +105,7 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 //  return true;
 //}
 
-// bool ElementwiseGradExplicitOp::InferShape() const {
+// bool ElementwiseGradExplicitOp::InferShapeImpl() const {
 //   param_.X_grad->Resize(param_.Out_grad->dims());
 //   if (param_.Y_grad) param_.Y_grad->Resize(param_.Y->dims());
 //   return true;
