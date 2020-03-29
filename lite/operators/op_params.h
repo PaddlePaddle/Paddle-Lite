@@ -34,48 +34,8 @@ namespace operators {
 
 struct ParamBase {
  public:
-  const std::vector<Tensor*>* input_tensor_ptrs() const;
-  std::vector<Tensor*>* output_tensor_ptrs();
-
-  std::vector<std::vector<std::vector<uint64_t>>> inputs_lods() {
-    input_lods_.clear();
-    if (input_tensor_ptrs_cache_) {
-      for (int i = 0; i < input_tensor_ptrs_cache_->size(); i++) {
-        input_lods_.push_back((input_tensor_ptrs_cache_->at(i))->lod());
-      }
-    }
-    return input_lods_;
-  }
-
-  std::vector<DDimLite> inputs_dims() {
-    input_lods_.clear();
-    if (input_tensor_ptrs_cache_) {
-      for (int i = 0; i < input_tensor_ptrs_cache_->size(); i++) {
-        input_dims_.push_back((input_tensor_ptrs_cache_->at(i))->dims());
-      }
-    }
-    return input_dims_;
-  }
-
-  std::vector<std::vector<std::vector<uint64_t>>> outputs_lods() {
-    output_lods_.clear();
-    if (output_tensor_ptrs_cache_) {
-      for (int i = 0; i < output_tensor_ptrs_cache_->size(); i++) {
-        output_lods_.push_back((output_tensor_ptrs_cache_->at(i))->lod());
-      }
-    }
-    return output_lods_;
-  }
-
-  std::vector<DDimLite> outputs_dims() {
-    output_lods_.clear();
-    if (output_tensor_ptrs_cache_) {
-      for (int i = 0; i < output_tensor_ptrs_cache_->size(); i++) {
-        output_dims_.push_back((output_tensor_ptrs_cache_->at(i))->dims());
-      }
-    }
-    return output_dims_;
-  }
+  const std::vector<Tensor*>* input_tensor_ptrs() const { return {}; }
+  std::vector<Tensor*>* output_tensor_ptrs() { return {}; }
 
  protected:
   std::shared_ptr<std::vector<const Tensor*>> input_tensor_ptrs_cache_{nullptr};

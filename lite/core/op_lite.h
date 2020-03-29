@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
@@ -153,10 +154,9 @@ class OpLite : public Registry {
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
 
-  std::vector<DDimLite> last_input_shapes;
-  std::vector<DDimLite> last_output_shapes;
-  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods;
-  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods;
+  std::vector<DDimLite> last_output_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
+  size_t io_shape_lod_hash_{};
   mutable operators::ParamBase param_;
 };
 
