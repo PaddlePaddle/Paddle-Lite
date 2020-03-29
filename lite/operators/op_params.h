@@ -39,11 +39,7 @@ struct ParamBase {
 
  protected:
   std::shared_ptr<std::vector<const Tensor*>> input_tensor_ptrs_cache_{nullptr};
-  std::vector<std::vector<std::vector<uint64_t>>> input_lods_;
-  std::vector<DDimLite> input_dims_;
   std::shared_ptr<std::vector<Tensor*>> output_tensor_ptrs_cache_{nullptr};
-  std::vector<std::vector<std::vector<uint64_t>>> output_lods_;
-  std::vector<DDimLite> output_dims_;
 };
 
 using param_t = Any;
