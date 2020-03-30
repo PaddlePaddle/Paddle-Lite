@@ -55,6 +55,8 @@ class CLRuntime {
 
   void set_cl_path(std::string cl_path) { cl_path_ = cl_path; }
 
+  std::map<std::string, size_t>& GetDeviceInfo();
+
  private:
   CLRuntime() = default;
 
@@ -83,6 +85,8 @@ class CLRuntime {
     CL_CHECK_FATAL(status_);
     return queue;
   }
+
+  std::map<std::string, size_t> device_info_;
 
   std::string cl_path_;
 

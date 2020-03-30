@@ -67,8 +67,8 @@ lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
 lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
              DEPS concat_opencl layout_opencl op_registry program context)
 
-lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_compute_test.cc
-             DEPS elementwise_mul_opencl op_registry program context)
+#lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_compute_test.cc
+#             DEPS elementwise_mul_opencl op_registry program context)
 
 lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
              DEPS layout_opencl op_registry program context)
@@ -89,8 +89,8 @@ lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_comput
 lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
 	         DEPS slice_opencl op_registry program context)
              
-lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
-                 DEPS instance_norm_opencl op_registry program context)             
+	     #lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
+	     #             DEPS instance_norm_opencl op_registry program context)
 
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
                  DEPS dropout_opencl op_registry program context)  
