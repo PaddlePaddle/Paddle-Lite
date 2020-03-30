@@ -34,8 +34,8 @@ namespace operators {
 
 struct ParamBase {
  public:
-  const std::vector<Tensor*>* input_tensor_ptrs() const { return {}; }
-  std::vector<Tensor*>* output_tensor_ptrs() { return {}; }
+  const std::vector<Tensor*>* input_tensor_ptrs() const { return nullptr; }
+  std::vector<Tensor*>* output_tensor_ptrs() { return nullptr; }
 
  protected:
   std::shared_ptr<std::vector<const Tensor*>> input_tensor_ptrs_cache_{nullptr};
