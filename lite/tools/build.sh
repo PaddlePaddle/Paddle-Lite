@@ -358,7 +358,9 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_PYTHON=$BUILD_PYTHON \
             -DWITH_GPU=OFF \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
+            -DCMAKE_BUILD_TYPE=Release \
             -DLITE_WITH_XPU=$BUID_XPU \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT
 
