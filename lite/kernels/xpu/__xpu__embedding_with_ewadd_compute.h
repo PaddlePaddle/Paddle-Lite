@@ -24,19 +24,20 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUEmbeddingWithEwaddCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::StackParam;
+  using param_t = operators::XPUEmbeddingWithEwaddParam;
 
-  virtual void PrepareForRun();
+  void PrepareForRun() override;
 
-  virtual void Run();
-
-  virtual ~StackCompute() = default;
+  void Run() override;
 
  private:
-  std::unique_ptr<void, XPUFreeDeleter> x_ptr_guard_;
-  std::vector<const float*> x_ptr_cpu_;
+  std::vector<const int64_t*> arg_ids_;
+  std::vector<const float*> arg_tables_;
+  std::unique_ptr<void, XPUFreeDeleter> table_lens_guard_;
+  std::vector<int> table_lens_cpu_;
 };
 
 }  // namespace xpu

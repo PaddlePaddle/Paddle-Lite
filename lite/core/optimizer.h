@@ -77,6 +77,7 @@ class Optimizer {
 #endif
            "__xpu__resnet_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
+           "__xpu__embedding_with_ewadd_fuse_pass",
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and

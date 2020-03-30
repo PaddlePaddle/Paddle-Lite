@@ -1491,6 +1491,13 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string act_type{};
 };
 
+struct XPUEmbeddingWithEwaddParam {
+  std::vector<lite::Tensor*> Ids;
+  std::vector<lite::Tensor*> Tables;
+  lite::Tensor* Out{};
+  int64_t padding_idx{-1};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
