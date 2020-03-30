@@ -1133,7 +1133,7 @@ bgr3 bgr2 bgr1
 #ifdef __aarch64__
 void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 3;
-  uint8_t zerobuff[30000];  // [w_in];
+  uint8_t zerobuff = new uint8_t[w_in];
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int64_t stride_w = 24;
   for (int i = 0; i < h_in; i += 4) {
@@ -1331,7 +1331,7 @@ void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
 #else
 void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 3;
-  uint8_t zerobuff[30000];  // w_in
+  uint8_t* zerobuff = new uint8_t[w_in];
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int stride_w = 24;
   // 4*8
