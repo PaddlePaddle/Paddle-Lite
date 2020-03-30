@@ -162,7 +162,7 @@ class OpLite : public Registry {
  private:
   // Infer Shape according to memory, if current input shapes are consistent
   // with that of previous inputs, output shapes of last time will be reused.
-  bool InferShapeByMemoryInternal();
+  bool InferShapeWithCache();
 };
 
 /*

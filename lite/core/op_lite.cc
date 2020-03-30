@@ -26,27 +26,27 @@ bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
   // InferShapeByMemoryInternal will be applied.
   if (param_.input_tensor_ptrs() && param_.output_tensor_ptrs()) {
-    return this->InferShapeByMemoryInternal();
+    return this->InferShapeWithCache();
   } else {
     // otherwise, InferShapeImpl is applied directly.
     return this->InferShapeImpl();
   }
 }
-bool OpLite::InferShapeByMemoryInternal() {
+bool OpLite::InferShapeWithCache() {
   // 1. Get vector of current input tensors
-  auto current_inputs = param_.input_tensor_ptrs();
+  auto *current_inputs = param_.input_tensor_ptrs();
   // 2. Get hash value of current inputs shape and lod
   size_t new_hash = 0;
   for (auto iter = current_inputs->begin(); iter != current_inputs->end();
        iter++) {
     // combined dims value into new_hash value.
-    auto element_dims = (*iter)->dims();
+    auto &element_dims = (*iter)->dims();
     for (int i = 0; i < element_dims.size(); i++) {
       new_hash =
           lite::hash_combine(new_hash, static_cast<int>(element_dims[i]));
     }
     // combine lod value into new_hash valud.
-    auto emement_lods = (*iter)->lod();
+    auto &emement_lods = (*iter)->lod();
     for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
          lod_iter++) {
       for (int i = 0; i < lod_iter->size(); i++) {
@@ -59,7 +59,7 @@ bool OpLite::InferShapeByMemoryInternal() {
   if (new_hash == io_shape_lod_hash_ && new_hash != 0) {
     // if current hash value is consistent with io_shape_lod_hash_,
     // previous outputs shape and lod are reused.
-    auto current_outputs = param_.output_tensor_ptrs();
+    auto *current_outputs = param_.output_tensor_ptrs();
     for (int i = 0; i < current_outputs->size(); i++) {
       current_outputs->at(i)->Resize(last_output_shapes[i]);
       current_outputs->at(i)->set_lod(last_output_lods[i]);
@@ -68,7 +68,7 @@ bool OpLite::InferShapeByMemoryInternal() {
     // otherwise, current hash value is changed, InferShapeImpl will apply.
     io_shape_lod_hash_ = new_hash;
     this->InferShapeImpl();
-    auto current_outputs = param_.output_tensor_ptrs();
+    auto *current_outputs = param_.output_tensor_ptrs();
     for (int i = 0; i < current_outputs->size(); i++) {
       last_output_shapes[i] = current_outputs->at(i)->dims();
       last_output_lods[i] = current_outputs->at(i)->lod();

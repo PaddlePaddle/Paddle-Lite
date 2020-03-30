@@ -24,6 +24,7 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
+#include "lite/utils/variant.h"
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -108,14 +109,14 @@ struct FcParam : ParamBase {
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (!input_tensor_ptrs_cache_) {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({input}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
   const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (!output_tensor_ptrs_cache_) {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -235,14 +236,14 @@ struct SoftmaxParam : ParamBase {
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (!input_tensor_ptrs_cache_) {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
   const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (!output_tensor_ptrs_cache_) {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -338,14 +339,14 @@ struct ConvParam : ParamBase {
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (!input_tensor_ptrs_cache_) {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
   const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (!output_tensor_ptrs_cache_) {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -443,14 +444,14 @@ struct ElementwiseParam : ParamBase {
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (!input_tensor_ptrs_cache_) {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X, Y}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
   const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (!output_tensor_ptrs_cache_) {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
