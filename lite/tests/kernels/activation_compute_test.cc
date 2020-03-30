@@ -425,19 +425,24 @@ TEST(Activation_swish, precision) {
 
 TEST(Activation_relu6, precision) {
   LOG(INFO) << "test relu6 op...";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    for (auto slope : {0.01, 0.1}) {
-      std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-          place, "def", 0.01, 6., "all", 0., DDim(dims), "relu6", RELU6));
-      arena::Arena arena(std::move(tester), place, 2e-5);
-      arena.TestPrecision();
-    }
+    std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+        place, "def", 0.01, 6., "all", 0., DDim(dims), "relu6", RELU6));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
   }
-#endif
 }
 
 TEST(Activation_log, precision) {
