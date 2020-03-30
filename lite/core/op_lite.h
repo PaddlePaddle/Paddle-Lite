@@ -158,6 +158,11 @@ class OpLite : public Registry {
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
   size_t io_shape_lod_hash_{};
   mutable operators::ParamBase param_;
+
+ private:
+  // Infer Shape according to memory, if current input shapes are consistent
+  // with that of previous inputs, output shapes of last time will be reused.
+  bool InferShapeByMemoryInternal();
 };
 
 /*
