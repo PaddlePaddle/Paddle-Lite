@@ -177,8 +177,9 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
   };
   if (a.IsVoid() || b.IsVoid()) return true;
-  if (a.IsTensor() || b.IsTensor()) {
-    if (a.IsTensor() && b.IsTensor()) {
+  if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
+    if ((a.IsTensor() && b.IsTensor()) ||
+        (a.IsTensorList() && b.IsTensorList())) {
       return is_host(a.target()) ? is_host(b.target())
                                  : a.target() == b.target();
     }

@@ -106,7 +106,7 @@ void elementwise_compute_ref(const dtype *x_data,
       out_data[x] = x_data[x] * y_data[y];
     }
   } else {
-    LOG(FATAL) << "unsupported Elementwise type: " << elt_type << std::endl;
+    LOG(FATAL) << "unsupported Elementwise type: " << elt_type;
   }
 }
 

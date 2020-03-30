@@ -2,7 +2,7 @@
 set -ex
 
 # global variables with default value
-BM_SDK_ROOT="$(pwd)/../BM_SDK"     # BM SDK
+BM_SDK_ROOT="$(pwd)/third-party/bmlibs/bm_sc3_libs"     # BM SDK
 TARGET_NAME="BM1682"     # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
 WITH_TESTING=ON                    # ON/OFF
@@ -23,7 +23,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DWITH_PYTHON=OFF \
                                -DLITE_WITH_ARM=OFF"
 
-readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THRLITE_BUILD_THREADSEADS:-1}
+readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$(pwd)
@@ -39,6 +39,11 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+
+    # clone bmlibs
+    if [ ! -d ${workspace}/third-party/bmlibs ]; then
+        git clone https://github.com/AnBaolei1984/bmlibs.git ${workspace}/third-party/bmlibs
+    fi     
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
@@ -70,8 +75,8 @@ function build_bm {
         ${CMAKE_COMMON_OPTIONS} \
         -DWITH_GPU=OFF \
         -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
+        -DLITE_WITH_X86=OFF \
+        -DWITH_MKL=OFF \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=OFF \
         -DLITE_WITH_BM=ON \
@@ -92,10 +97,10 @@ function main {
                 TARGET_NAME="${i#*=}"
                 shift
                 ;;
-            --bm_sdk_root=*)
-                BM_SDK_ROOT="${i#*=}"
-                shift
-                ;;
+            #--bm_sdk_root=*)
+            #    BM_SDK_ROOT="${i#*=}"
+            #    shift
+            #    ;;
             bm)
                 build_bm
                 shift

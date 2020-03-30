@@ -45,7 +45,7 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // delete quant_dequant_node
-  for (auto op_type : {"pool2d", "elementwise_add"}) {
+  for (auto op_type : {"pool2d", "softmax", "elementwise_add"}) {
     fusion::DeleteQuantDequantOpFuser fuser(op_type);
     fuser(graph.get());
   }

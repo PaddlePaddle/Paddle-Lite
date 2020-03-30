@@ -58,9 +58,9 @@ void AssignValueCompute::Run() {
 
 REGISTER_LITE_KERNEL(assign_value,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::AssignValueCompute,
                      def)
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -25,147 +25,7 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-class ReluComputeImageDefault : public KernelLite<TARGET(kOpenCL),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kImageDefault)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  std::string doc() const override {
-    return "Relu using cl::Image2D(ImageDefault/RGBA), kFP16";
-  }
-
-  void PrepareForRun() override {
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/activation_kernel.cl", build_options_);
-  }
-
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const auto& x_dims = param.X->dims();
-    auto* x_buf = param.X->data<half_t, cl::Image2D>();
-    auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(
-        image_shape["width"], image_shape["height"]);
-    const auto& y_dims = param.Out->dims();  // useless: check dim only
-
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
-    CL_CHECK_FATAL(status);
-
-    VLOG(4) << TargetToStr(param.X->target());
-    VLOG(4) << TargetToStr(param.Out->target());
-    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-            << image_shape["height"];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
-                    static_cast<cl::size_type>(image_shape["height"])};
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        event_.get());
-    CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
-  }
-
- private:
-  std::string kernel_func_name_{"relu"};
-  std::string build_options_{"-DCL_DTYPE_half -DRELU"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
-};
-
-class Relu6ComputeImageDefault : public KernelLite<TARGET(kOpenCL),
-                                                   PRECISION(kFP16),
-                                                   DATALAYOUT(kImageDefault)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  std::string doc() const override {
-    return "Relu6 using cl::Image2D(ImageDefault/RGBA), kFP16";
-  }
-
-  void PrepareForRun() override {
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/activation_kernel.cl", build_options_);
-  }
-
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const auto& x_dims = param.X->dims();
-    auto* x_buf = param.X->data<half_t, cl::Image2D>();
-    auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(
-        image_shape["width"], image_shape["height"]);
-    const auto& y_dims = param.Out->dims();  // useless: check dim only
-    auto threshold = param.Relu_clipped_coef;
-
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, threshold);
-    CL_CHECK_FATAL(status);
-
-    VLOG(4) << TargetToStr(param.X->target());
-    VLOG(4) << TargetToStr(param.Out->target());
-    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-            << image_shape["height"];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "threshold:" << threshold;
-
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
-                    static_cast<cl::size_type>(image_shape["height"])};
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        event_.get());
-    CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
-  }
-
- private:
-  std::string kernel_func_name_{"relu6"};
-  std::string build_options_{"-DCL_DTYPE_half -DRELU6"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
-};
-
-class SigmoidComputeImageDefault
+class ActivationComputeImageDefault
     : public KernelLite<TARGET(kOpenCL),
                         PRECISION(kFP16),
                         DATALAYOUT(kImageDefault)> {
@@ -173,11 +33,45 @@ class SigmoidComputeImageDefault
   using param_t = operators::ActivationParam;
 
   std::string doc() const override {
-    return "Sigmoid using cl::Image2D(ImageDefault/RGBA), kFP16";
+    return "Activation using cl::Image2D(ImageDefault/RGBA), kFP16";
   }
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    act_param_ = param_.get_mutable<param_t>();
+    int act_type = static_cast<int>(act_param_->active_type);
+    VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
+            << ActivationTypeToStr(act_param_->active_type);
+    switch (act_type) {
+      case 1:
+        kernel_func_name_ = "relu";
+        break;
+      case 2:
+        kernel_func_name_ = "relu6";
+        threshold_ = act_param_->Relu_clipped_coef;
+        break;
+      case 4:
+        kernel_func_name_ = "leaky_relu";
+        scale_ = act_param_->Leaky_relu_alpha;
+        break;
+      case 5:
+        kernel_func_name_ = "sigmoid";
+        break;
+      case 6:
+        kernel_func_name_ = "tanh_act";
+        break;
+      case 7:
+        kernel_func_name_ = "swish";
+        scale_ = act_param_->Swish_beta;
+        break;
+      case 8:
+        kernel_func_name_ = "exp_act";
+        break;
+      default:
+        LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
+        return;
+    }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/activation_kernel.cl", build_options_);
   }
@@ -185,14 +79,10 @@ class SigmoidComputeImageDefault
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
-    auto* x_buf =
-        param.X->data<half_t,
-                      cl::Image2D>();  // use half_t represents half float
+    auto* x_img = param.X->data<half_t, cl::Image2D>();
     auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
-        // represents half float
-        image_shape["width"],
-        image_shape["height"]);
+    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(
+        image_shape["width"], image_shape["height"]);
     const auto& y_dims = param.Out->dims();  // useless: check dim only
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -202,11 +92,16 @@ class SigmoidComputeImageDefault
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
+    cl_int status = kernel.setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
+    status = kernel.setArg(++arg_idx, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, threshold_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, scale_);
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
     VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
@@ -215,6 +110,10 @@ class SigmoidComputeImageDefault
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+    VLOG(4) << "threshold:" << threshold_;
+    VLOG(4) << "scale:" << scale_;
+    VLOG(4) << "kernel func name:" << kernel_func_name_;
+#endif
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(image_shape["width"]),
@@ -227,29 +126,101 @@ class SigmoidComputeImageDefault
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
-    // TODO(ysh329): io_copy(device->host) jammed if emplace to `cl_wait_list`
-    // context.cl_wait_list()->emplace(out_buf, event_);
-    context.cl_context()->GetCommandQueue().finish();
+    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:
-  std::string kernel_func_name_{"sigmoid"};
-  std::string build_options_{"-DCL_DTYPE_half -DSIGMOID"};
+  param_t* act_param_{nullptr};
+  std::string kernel_func_name_{};
+  float threshold_{6.f};
+  float scale_{1.f};
+  std::string build_options_{"-DCL_DTYPE_half"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
-
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+// leakyRelu
+REGISTER_LITE_KERNEL(
+    leaky_relu,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// swish
+REGISTER_LITE_KERNEL(
+    swish,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// exp
+REGISTER_LITE_KERNEL(
+    exp,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// tanh
+REGISTER_LITE_KERNEL(
+    tanh,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
 
 // Relu
-REGISTER_LITE_KERNEL(relu,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     paddle::lite::kernels::opencl::ReluComputeImageDefault,
-                     ImageDefault)
+REGISTER_LITE_KERNEL(
+    relu,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
@@ -261,12 +232,13 @@ REGISTER_LITE_KERNEL(relu,
     .Finalize();
 
 // Relu6
-REGISTER_LITE_KERNEL(relu6,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     paddle::lite::kernels::opencl::Relu6ComputeImageDefault,
-                     ImageDefault)
+REGISTER_LITE_KERNEL(
+    relu6,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
@@ -278,12 +250,13 @@ REGISTER_LITE_KERNEL(relu6,
     .Finalize();
 
 // Sigmoid
-REGISTER_LITE_KERNEL(sigmoid,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     paddle::lite::kernels::opencl::SigmoidComputeImageDefault,
-                     ImageDefault)
+REGISTER_LITE_KERNEL(
+    sigmoid,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

@@ -125,8 +125,8 @@ void pre_process(const cv::Mat& img,
   neon_mean_scale(dimg, data, width * height, mean, scale);
 }
 
-void RunModel(std::string det_model_dir,
-              std::string class_model_dir,
+void RunModel(std::string det_model_file,
+              std::string class_model_file,
               std::string img_path) {
   // Prepare
   cv::Mat img = imread(img_path, cv::IMREAD_COLOR);
@@ -138,11 +138,12 @@ void RunModel(std::string det_model_dir,
 
   // Detection
   MobileConfig config;
-  config.set_model_dir(det_model_dir);
+  config.set_model_from_file(det_model_file);
 
   // Create Predictor For Detction Model
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
+  std::cout << "Load detecion model succeed." << std::endl;
 
   // Get Input Tensor
   std::unique_ptr<Tensor> input_tensor0(std::move(predictor->GetInput(0)));
@@ -163,6 +164,7 @@ void RunModel(std::string det_model_dir,
   auto* outptr = output_tensor0->data<float>();
   auto shape_out = output_tensor0->shape();
   int64_t out_len = ShapeProduction(shape_out);
+  std::cout << "Detecting face succeed." << std::endl;
 
   // Filter Out Detection Box
   float detect_threshold = 0.7;
@@ -185,10 +187,11 @@ void RunModel(std::string det_model_dir,
   }
 
   // Classification
-  config.set_model_dir(class_model_dir);
+  config.set_model_from_file(class_model_file);
 
   // Create Predictor For Classification Model
   predictor = CreatePaddlePredictor<MobileConfig>(config);
+  std::cout << "Load classification model succeed." << std::endl;
 
   // Get Input Tensor
   std::unique_ptr<Tensor> input_tensor1(std::move(predictor->GetInput(0)));
@@ -204,7 +207,8 @@ void RunModel(std::string det_model_dir,
     cv::Mat roi = crop_img(img, rec_clip, classify_w, classify_h);
 
     // uncomment two lines below, save roi img to disk
-    // std::string roi_name = "roi_" + std::to_string(i) + ".jpg";
+    // std::string roi_name = "roi_" + paddle::lite::to_string(i)
+    // + ".jpg";
     // imwrite(roi_name, roi);
 
     // Do PreProcess
@@ -221,7 +225,7 @@ void RunModel(std::string det_model_dir,
 
     // Get Output Tensor
     std::unique_ptr<const Tensor> output_tensor1(
-        std::move(predictor->GetOutput(1)));
+        std::move(predictor->GetOutput(0)));
     auto* outptr = output_tensor1->data<float>();
     float prob = outptr[1];
 
@@ -290,12 +294,12 @@ void RunModel(std::string det_model_dir,
 int main(int argc, char** argv) {
   if (argc < 3) {
     std::cerr << "[ERROR] usage: " << argv[0]
-              << " detction_model_dir classification_model_dir image_path\n";
+              << " detction_model_file classification_model_file image_path\n";
     exit(1);
   }
-  std::string detect_model_dir = argv[1];
-  std::string classify_model_dir = argv[2];
+  std::string detect_model_file = argv[1];
+  std::string classify_model_file = argv[2];
   std::string img_path = argv[3];
-  RunModel(detect_model_dir, classify_model_dir, img_path);
+  RunModel(detect_model_file, classify_model_file, img_path);
   return 0;
 }

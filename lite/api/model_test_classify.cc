@@ -17,9 +17,6 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
 #include "lite/core/profile/timer.h"
@@ -253,7 +250,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     std::ofstream out(FLAGS_arg_name + ".txt");
     for (size_t i = 0; i < arg_num; ++i) {
       sum += arg_tensor->data<float>()[i];
-      out << std::to_string(arg_tensor->data<float>()[i]) << "\n";
+      out << paddle::lite::to_string(arg_tensor->data<float>()[i]) << "\n";
     }
     LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
               << ", mean value is " << sum * 1. / arg_num;

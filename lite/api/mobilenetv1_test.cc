@@ -53,9 +53,13 @@ void TestModel(const std::vector<Place>& valid_places,
     predictor.Run();
   }
 
-  auto start = GetCurrentUS();
+  double sum_duration = 0.0;  // millisecond;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start = GetCurrentUS();
     predictor.Run();
+    auto duration = (GetCurrentUS() - start) / 1000.0;
+    sum_duration += duration;
+    VLOG(1) << "run_idx:" << i << " " << duration << " ms";
   }
 
   if (save_model) {
@@ -68,8 +72,7 @@ void TestModel(const std::vector<Place>& valid_places,
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+            << ", spend " << sum_duration / FLAGS_repeats << " ms in average.";
 
   std::vector<std::vector<float>> ref;
   ref.emplace_back(std::vector<float>(
@@ -92,7 +95,7 @@ void TestModel(const std::vector<Place>& valid_places,
 
   if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
     ASSERT_EQ(out->dims().production(), 1000);
-    double eps = 0.1;
+    double eps = first_target == TARGET(kOpenCL) ? 0.12 : 0.1;
     for (int i = 0; i < ref.size(); ++i) {
       for (int j = 0; j < ref[i].size(); ++j) {
         auto result = pdata[j * step + (out->dims()[1] * i)];
@@ -115,24 +118,22 @@ void TestModel(const std::vector<Place>& valid_places,
   }
 
   // Get detailed result
-  auto* pred = &predictor;
-  size_t output_tensor_num = pred->GetOutputNames().size();
-  VLOG(1) << "output tesnor num:" << output_tensor_num;
+  size_t output_tensor_num = predictor.GetOutputNames().size();
+  VLOG(1) << "output tensor num:" << output_tensor_num;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
-    std::unique_ptr<const Tensor> output_tensor(
-        std::move(pred->GetOutput(tidx)));
+    auto* output_tensor = predictor.GetOutput(tidx);
     VLOG(1) << "============= output tensor " << tidx << " =============\n";
     auto out_dims = output_tensor->dims();
-    VLOG(1) << "out_dims:" << out_dims;
+    auto out_data = output_tensor->data<float>();
+    auto out_mean = compute_mean<float>(out_data, out_dims.production());
+    auto out_std_dev = compute_standard_deviation<float>(
+        out_data, out_dims.production(), true, out_mean);
 
-    float sum = 0.f;
-    for (int i = 0; i < out_dims.production(); ++i) {
-      sum += output_tensor->data<float>()[i];
-    }
-    VLOG(1) << "out_dims.production():" << out_dims.production();
-    VLOG(1) << "output tensor sum value:" << sum;
-    VLOG(1) << "output tensor mean value:" << sum / out_dims.production();
+    VLOG(1) << "output tensor dims:" << out_dims;
+    VLOG(1) << "output tensor elements num:" << out_dims.production();
+    VLOG(1) << "output tensor standard deviation:" << out_std_dev;
+    VLOG(1) << "output tensor mean value:" << out_mean;
 
     // print result
     for (int i = 0; i < out_dims.production(); ++i) {

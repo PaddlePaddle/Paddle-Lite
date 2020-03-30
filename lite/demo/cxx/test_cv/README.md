@@ -1,5 +1,5 @@
 # 图像预测库的使用
-1. 下载源码（https://github.com/PaddlePaddle/Paddle-Lite），打开LITE_WITH_CV=ON，编译full_publish模式
+1. 下载源码（https://github.com/PaddlePaddle/Paddle-Lite），打开LITE_WITH_CV=ON，编译full_publish or tiny_publish模式
 example:
 ```shell
 set BUILD_WITH_CV=ON or LITE_WITH_CV=ON
@@ -8,7 +8,7 @@ set BUILD_WITH_CV=ON or LITE_WITH_CV=ON
 --arm_abi=armv8
 --arm_lang=gcc
 --android_stl=c++_static
-full_publish
+tiny_publish
 ```
 
 2. 准备模型和优化模型
@@ -17,7 +17,7 @@ example:
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 ./lite/tools/build.sh build_optimize_tool
-./build.model_optimize_tool/lite/api/model_optimize_tool 
+./build.opt/lite/api/opt
 --optimize_out_type=naive_buffer 
 --optimize_out=model_dir 
 --model_dir=model_dir
@@ -68,7 +68,8 @@ make
 adb -s device_id push mobilenet_v1 /data/local/tmp/
 adb -s device_id push test_model_cv /data/local/tmp/
 adb -s device_id push test.jpg /data/local/tmp/
-adb -s device_id push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
+adb -s device_id push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+#adb -s device_id push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
 adb -s device_id shell chmod +x /data/local/tmp/test_model_cv
 adb -s device_id shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
 /data/local/tmp/test_model_cv /data/local/tmp/mobilenet_v1 /data/local/tmp/test.jpg 1 3 224 224 "
@@ -119,7 +120,8 @@ make
 adb -s device_id push mobilenet_v1 /data/local/tmp/
 adb -s device_id push test_img_propress /data/local/tmp/
 adb -s device_id push test.jpg /data/local/tmp/
-adb -s device_id push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
+adb -s device_id push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
+#adb -s device_id push ../../../cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/
 adb -s device_id shell chmod +x /data/local/tmp/test_model_cv
 adb -s device_id shell "export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH && 
 /data/local/tmp/test_img_propress /data/local/tmp/test.jpg /data/local/tmp/ 3 3 1 3 224 224 /data/local/tmp/mobilenet_v1  "

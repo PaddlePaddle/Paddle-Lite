@@ -128,7 +128,7 @@ class ConcateComputeTester : public arena::TestCase {
       for (int i = 0; i < x_dims_.production(); i++) {
         x_data[i] = static_cast<float>(i + n);
       }
-      const std::string x_name = "x_tensor_" + std::to_string(n);
+      const std::string x_name = "x_tensor_" + paddle::lite::to_string(n);
       x_vct_.push_back(x_name);
       SetCommonTensor(x_name, x_dims_, x_data.data());
     }

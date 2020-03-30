@@ -1,4 +1,4 @@
-# Java API 文档
+# Java API
 
 ## MobileConfig
 
@@ -301,6 +301,12 @@ Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并
 示例：
 
 ```java
+// 导入Java API
+import com.baidu.paddle.lite.MobileConfig;
+import com.baidu.paddle.lite.Tensor;
+import com.baidu.paddle.lite.Predictor;
+import com.baidu.paddle.lite.PowerMode;
+
 // 设置MobileConfig
 MobileConfig config = new MobileConfig();
 config.setModelDir(modelPath);
@@ -325,7 +331,7 @@ input.setData(inputBuffer);
 predictor.run();
 
 // 获取输出Tensor
-Tensor output = predictor.getOutput(0);
+Tensor result = predictor.getOutput(0);
 // 获取输出数据
 float[] output = result.getFloatData();
 for (int i = 0; i < 1000; ++i) {

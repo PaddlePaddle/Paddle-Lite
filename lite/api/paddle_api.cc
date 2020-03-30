@@ -38,6 +38,7 @@ void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }
 
+// Tensor::data
 template <>
 const float *Tensor::data() const {
   return ctensor(raw_tensor_)->data<float>();
@@ -47,15 +48,19 @@ const int8_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int8_t>();
 }
 template <>
+const uint8_t *Tensor::data() const {
+  return ctensor(raw_tensor_)->data<uint8_t>();
+}
+template <>
 const int64_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int64_t>();
 }
-
 template <>
 const int32_t *Tensor::data() const {
   return ctensor(raw_tensor_)->data<int32_t>();
 }
 
+// Tensor::mutable_data
 template <>
 int *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<int>(type);
@@ -67,6 +72,10 @@ float *Tensor::mutable_data(TargetType type) const {
 template <>
 int8_t *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<int8_t>(type);
+}
+template <>
+uint8_t *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<uint8_t>(type);
 }
 template <>
 int64_t *Tensor::mutable_data(TargetType type) const {
@@ -116,18 +125,22 @@ void Tensor::CopyToCpu(T *data) const {
 template void Tensor::CopyFromCpu<int, TargetType::kHost>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kHost>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kHost>(const int8_t *);
+template void Tensor::CopyFromCpu<uint8_t, TargetType::kHost>(const uint8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
+template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
+
 template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 
-template void Tensor::CopyToCpu(int8_t *) const;
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
+template void Tensor::CopyToCpu(int8_t *) const;
+template void Tensor::CopyToCpu(uint8_t *) const;
 
 shape_t Tensor::shape() const {
   return ctensor(raw_tensor_)->dims().Vectorize();

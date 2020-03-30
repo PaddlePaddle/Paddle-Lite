@@ -139,6 +139,15 @@ class RsqrtCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~RsqrtCompute() = default;
 };
 
+class SquareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SquareCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

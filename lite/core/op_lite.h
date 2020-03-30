@@ -65,6 +65,7 @@ class OpLite : public Registry {
   virtual bool CheckShape() const { return true; }
   // Inference the outputs' shape.
   virtual bool InferShape() const { return true; }
+  virtual bool SmartInferShape() { return this->InferShape(); }
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not
@@ -150,6 +151,10 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
+  std::vector<DDimLite> last_input_shapes;
+  std::vector<DDimLite> last_output_shapes;
+  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods;
+  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods;
 };
 
 /*
