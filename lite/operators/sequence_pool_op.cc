@@ -29,7 +29,7 @@ bool SequencePoolOp::CheckShape() const {
   return true;
 }
 
-bool SequencePoolOp::InferShape() const {
+bool SequencePoolOp::InferShapeImpl() const {
   const auto *input = param_.X;
   auto out_dims = input->dims();
   out_dims[0] = input->lod()[0].size() - 1;

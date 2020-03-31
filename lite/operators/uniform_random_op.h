@@ -33,7 +33,7 @@ class UniformRandomOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 

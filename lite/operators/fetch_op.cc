@@ -29,7 +29,7 @@ class FetchOp : public OpLite {
     return true;
   }
 
-  bool InferShape() const override { return true; }
+  bool InferShapeImpl() const override { return true; }
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
  protected:

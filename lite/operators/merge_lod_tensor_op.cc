@@ -34,7 +34,7 @@ bool MergeLodTensorOpLite::CheckShape() const {
   return true;
 }
 
-bool MergeLodTensorOpLite::InferShape() const {
+bool MergeLodTensorOpLite::InferShapeImpl() const {
   auto dims = param_.in_true->dims();
   param_.out->Resize(dims);
   return true;

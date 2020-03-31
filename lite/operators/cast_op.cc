@@ -25,7 +25,7 @@ bool CastOp::CheckShape() const {
   return true;
 }
 
-bool CastOp::InferShape() const {
+bool CastOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();

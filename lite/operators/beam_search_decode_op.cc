@@ -28,7 +28,7 @@ bool BeamSearchDecodeOpLite::CheckShape() const {
   return true;
 }
 
-bool BeamSearchDecodeOpLite::InferShape() const { return true; }
+bool BeamSearchDecodeOpLite::InferShapeImpl() const { return true; }
 
 bool BeamSearchDecodeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                         lite::Scope *scope) {

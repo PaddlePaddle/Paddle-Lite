@@ -34,7 +34,7 @@ bool InterpolateOp::CheckShape() const {
   return true;
 }
 
-bool InterpolateOp::InferShape() const {
+bool InterpolateOp::InferShapeImpl() const {
   auto X = param_.X;
 
   int n = X->dims()[0];

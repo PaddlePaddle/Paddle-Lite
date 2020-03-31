@@ -22,7 +22,7 @@ namespace operators {
 
 bool UniformRandomOpLite::CheckShape() const { return true; }
 
-bool UniformRandomOpLite::InferShape() const {
+bool UniformRandomOpLite::InferShapeImpl() const {
   param_.Out->Resize(param_.shape);
   return true;
 }
