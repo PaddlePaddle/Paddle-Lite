@@ -99,7 +99,7 @@ class SubgraphEngine : public subgraph::Engine {
       CHECK(op);
       std::string op_type = op->op_info()->Type();
       op->CheckShape();
-      op->InferShape();
+      const_cast<OpLite*>(op)->InferShape();
       if (!bridges.Exists(op_type, TARGET(kMLU))) {
         LOG(INFO) << "MLU bridges doesn't support op_type: " << op_type;
         return subgraph::FAILED;
