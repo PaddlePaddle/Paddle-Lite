@@ -109,7 +109,7 @@ class MLUPostprocessPass : public ProgramPass {
 
   void RecreateOp(Node* inst_node, SSAGraph* graph);
 
-  void GatherFirstConvNodes(SSAGraph* graph);
+  void GatherAndModifyFirstConvNodes(SSAGraph* graph);
 
   bool IsFirstConvNode(Node* arg_node);
 

@@ -128,11 +128,12 @@ void BindLiteCxxConfig(py::module *m) {
       .def("power_mode", &CxxConfig::power_mode);
 #endif
 #ifdef LITE_WITH_MLU
-  cxx_config.def("set_use_firstconv", &CxxConfig::set_use_firstconv)
-      .def("set_mean", &CxxConfig::set_mean)
-      .def("set_std", &CxxConfig::set_std)
-      .def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
-      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number);
+  cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
+      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
+      .def("set_mlu_input_layout", &CxxConfig::set_mlu_input_layout)
+      .def("set_mlu_use_first_conv", &CxxConfig::set_mlu_use_first_conv)
+      .def("set_mlu_first_conv_mean", &CxxConfig::set_mlu_first_conv_mean)
+      .def("set_mlu_first_conv_std", &CxxConfig::set_mlu_first_conv_std);
 #endif
 }
 

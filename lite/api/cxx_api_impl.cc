@@ -36,16 +36,12 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
 #ifdef LITE_WITH_MLU
   Env<TARGET(kMLU)>::Init();
-  mlu_core_version_ = config.mlu_core_version();
-  mlu_core_number_ = config.mlu_core_number();
-  use_first_conv_ = config.use_first_conv();
-  mean_vec_ = config.mean();
-  std_vec_ = config.std();
-  lite::DeviceInfo::Global().SetMLURunMode(mlu_core_version_,
-                                           mlu_core_number_,
-                                           use_first_conv_,
-                                           mean_vec_,
-                                           std_vec_);
+  lite::DeviceInfo::Global().SetMLURunMode(config.mlu_core_version(),
+                                           config.mlu_core_number(),
+                                           config.mlu_use_first_conv(),
+                                           config.mlu_first_conv_mean(),
+                                           config.mlu_first_conv_std(),
+                                           config.mlu_input_layout());
 #endif  // LITE_WITH_MLU
   auto places = config.valid_places();
   std::vector<std::string> passes{};
