@@ -181,8 +181,8 @@ class LITE_API CxxConfig : public ConfigBase {
   int mlu_core_number() const;
   DataLayoutType mlu_input_layout() const;
   bool mlu_use_first_conv() const;
-  std::vector<float> mlu_first_conv_mean() const;
-  std::vector<float> mlu_first_conv_std() const;
+  const std::vector<float>& mlu_first_conv_mean() const;
+  const std::vector<float>& mlu_first_conv_std() const;
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

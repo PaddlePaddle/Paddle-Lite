@@ -227,10 +227,10 @@ lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
 int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
 DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
 bool CxxConfig::mlu_use_first_conv() const { return mlu_use_first_conv_; }
-std::vector<float> CxxConfig::mlu_first_conv_mean() const {
+const std::vector<float> &CxxConfig::mlu_first_conv_mean() const {
   return mlu_first_conv_mean_;
 }
-std::vector<float> CxxConfig::mlu_first_conv_std() const {
+const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
   return mlu_first_conv_std_;
 }
 
