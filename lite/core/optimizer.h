@@ -44,7 +44,6 @@ class Optimizer {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
-    CHECK(!graph_) << "duplicate optimize found";
 
     core::KernelPickFactor factor;
     factor.ConsiderTarget();
