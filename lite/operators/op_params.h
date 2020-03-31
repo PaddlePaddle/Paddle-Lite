@@ -318,7 +318,7 @@ struct ConcatParam : ParamBase {
     if (UNLIKELY(input_tensor_ptrs_cache_)) {
       std::vector<const Tensor*> vec;
       for (auto in : x) {
-         vec.push_back(in);
+        vec.push_back(in);
       }
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>(vec));
     }
