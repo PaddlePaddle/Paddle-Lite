@@ -48,11 +48,11 @@ REGISTER_LITE_KERNEL(
     def_layout_nhwc2nchw_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
@@ -82,10 +82,27 @@ REGISTER_LITE_KERNEL(
     def_layout_nchw2nhwc_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    layout,
+    kMLU,
+    kInt8,
+    kNHWC,
+    paddle::lite::kernels::mlu::LayoutNchwToNhwcCompute<PRECISION(kInt8)>,
+    def_layout_nchw2nhwc_fp32_int8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt8),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
