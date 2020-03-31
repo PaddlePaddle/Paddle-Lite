@@ -26,7 +26,7 @@ inline int Im2SeqOutputSize(
 }
 
 bool Im2SequenceOp::CheckShape() const { return true; }
-bool Im2SequenceOp::InferShape() const {
+bool Im2SequenceOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();

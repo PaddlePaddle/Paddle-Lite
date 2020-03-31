@@ -27,7 +27,7 @@ bool SequenceReshapeOp::CheckShape() const {
   return true;
 }
 
-bool SequenceReshapeOp::InferShape() const {
+bool SequenceReshapeOp::InferShapeImpl() const {
   int new_dim = param_.new_dim;
   auto x_numel = param_.x->dims().production();
   std::vector<int64_t> out_shape{x_numel / new_dim,

@@ -25,7 +25,7 @@ bool NormOp::CheckShape() const {
   return true;
 }
 
-bool NormOp::InferShape() const {
+bool NormOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();

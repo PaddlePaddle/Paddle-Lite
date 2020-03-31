@@ -26,7 +26,7 @@ bool SequenceConcatOp::CheckShape() const {
   return true;
 }
 
-bool SequenceConcatOp::InferShape() const { return true; }
+bool SequenceConcatOp::InferShapeImpl() const { return true; }
 
 bool SequenceConcatOp::AttachImpl(const cpp::OpDesc &opdesc,
                                   lite::Scope *scope) {
