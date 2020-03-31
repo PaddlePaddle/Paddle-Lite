@@ -294,13 +294,13 @@ struct ReshapeParam : ParamBase {
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() {
     if (UNLIKELY(input_tensor_ptrs_cache_)) {
-       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
   const std::vector<Tensor*>* output_tensor_ptrs() {
-    if(UNLIKELY(output_tensor_ptrs_cache_)) {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -317,7 +317,7 @@ struct ConcatParam : ParamBase {
   const std::vector<const Tensor*>* input_tensor_ptrs() {
     if (UNLIKELY(input_tensor_ptrs_cache_)) {
       std::vector<const Tensor*> vec;
-      for (auto in : x){
+      for (auto in : x) {
           vec.push_back(in);
       }
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>(vec));
