@@ -80,7 +80,7 @@ std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
 }
 
 std::vector<std::string> CxxPaddleApiImpl::GetParamNames() {
-  return raw_predictor_.GetParamNames();
+  return raw_predictor_->GetParamNames();
 }
 
 std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
@@ -114,7 +114,7 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
     const std::string &name) {
   return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_.GetMutableTensor(name)));
+      new lite_api::Tensor(raw_predictor_->GetMutableTensor(name)));
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(

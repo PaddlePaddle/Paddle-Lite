@@ -154,7 +154,7 @@ class LITE_API Predictor {
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
  public:
-  CxxPaddleApiImpl() {}
+  CxxPaddleApiImpl() { raw_predictor_ = std::make_shared<Predictor>(); }
   explicit CxxPaddleApiImpl(const std::shared_ptr<Predictor>& raw_predictor)
       : raw_predictor_(raw_predictor) {}
 
