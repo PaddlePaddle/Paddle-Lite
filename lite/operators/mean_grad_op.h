@@ -27,7 +27,7 @@ class MeanGradOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
