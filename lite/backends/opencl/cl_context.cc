@@ -127,13 +127,13 @@ cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
                                          int divisor) {
   int preferred_lws = 0;
 #if 1
-  auto tmp0 = global_work_size[0];
-  auto tmp1 = global_work_size[1];
-  auto tmp2 = global_work_size[2];
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
 #else
-  auto tmp2 = global_work_size[0];
-  auto tmp1 = global_work_size[1];
-  auto tmp0 = global_work_size[2];
+  auto gws2 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws0 = global_work_size[2];
 #endif
   if (divisor > 1) {
     max_work_size /= divisor;
@@ -141,23 +141,23 @@ cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
   }
-  while (tmp1 > max_work_size && max_work_size > 0) {
-    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
   }
-  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
-    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
   }
-  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
-    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
   }
 #if 1
-  return cl::NDRange{static_cast<size_t>(tmp0),
-                     static_cast<size_t>(tmp1),
-                     static_cast<size_t>(tmp2)};
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
 #else
-  return cl::NDRange{static_cast<size_t>(tmp2),
-                     static_cast<size_t>(tmp1),
-                     static_cast<size_t>(tmp0)};
+  return cl::NDRange{static_cast<size_t>(gws2),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws0)};
 #endif
 }
 
@@ -166,9 +166,9 @@ cl::NDRange CLContext::LocalWorkSize(cl::NDRange global_work_size,
   int preferred_lws = 0;
   int divisor = 2;
 
-  auto tmp0 = global_work_size[0];
-  auto tmp1 = global_work_size[1];
-  auto tmp2 = global_work_size[2];
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
 
   if (divisor > 1) {
     max_work_size /= divisor;
@@ -176,46 +176,19 @@ cl::NDRange CLContext::LocalWorkSize(cl::NDRange global_work_size,
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
   }
-  while (tmp1 > max_work_size && max_work_size > 0) {
-    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
   }
-  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
-    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
   }
-  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
-    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
   }
-  return cl::NDRange{static_cast<size_t>(tmp0),
-                     static_cast<size_t>(tmp1),
-                     static_cast<size_t>(tmp2)};
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
 }
-#define ALIGN(x, y) (((x) + (y) - (1)) / (y) * (y))
-
-cl::NDRange CLContext::LocalWorkSizeConv1x1(cl::NDRange global_work_size,
-                                            size_t max_work_size) {
-  uint32_t compute_units;
-  CLRuntime::Global()->device().getInfo(CL_DEVICE_MAX_COMPUTE_UNITS,
-                                        &compute_units);
-
-  int waveSize = 32;  // could be 8, 16, 32, 64, 128 in Adreno GPU
-  int tmp0 = 4;
-  int tmp1 = 0;
-  int tmp2 = 1;
-
-  int groupSize = ALIGN(global_work_size[0] / (compute_units * 2), waveSize);
-
-  tmp0 = groupSize;
-  tmp0 = std::max<uint32_t>(std::min<uint32_t>(max_work_size, tmp0), 1);
-
-  int remain = ((max_work_size - tmp0) / waveSize) * waveSize;
-  groupSize = ALIGN(global_work_size[1] / (compute_units * 2), waveSize);
-  tmp1 = groupSize;
-  tmp1 = std::max<uint32_t>(std::min<uint32_t>(remain / tmp0, tmp1), tmp2);
-  return cl::NDRange{static_cast<size_t>(tmp0),
-                     static_cast<size_t>(tmp1),
-                     static_cast<size_t>(tmp2)};
-}
-#undef ALIGN
 
 }  // namespace lite
 }  // namespace paddle
