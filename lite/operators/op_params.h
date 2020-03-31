@@ -290,6 +290,21 @@ struct ReshapeParam : ParamBase {
 
   lite::Tensor* xshape{};
   bool inplace{false};
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  const std::vector<Tensor*>* output_tensor_ptrs() {
+    if(UNLIKELY(output_tensor_ptrs_cache_)) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 // For Concat op
@@ -301,7 +316,11 @@ struct ConcatParam : ParamBase {
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() {
     if (UNLIKELY(input_tensor_ptrs_cache_)) {
-      input_tensor_ptrs_cache_.reset(x);
+      std::vector<const Tensor*> vec;
+      for (auto in : x){
+          vec.push_back(in);
+      }
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>(vec));
     }
     return input_tensor_ptrs_cache_.get();
   }
@@ -425,7 +444,7 @@ struct BatchNormParam : ParamBase {
   // get a vector of output tensors
   const std::vector<Tensor*>* output_tensor_ptrs() {
     if (UNLIKELY(output_tensor_ptrs_cache_)) {
-      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({y}));
     }
     return output_tensor_ptrs_cache_.get();
   }
@@ -518,6 +537,21 @@ struct TransposeParam : ParamBase {
   std::vector<int> axis;
   bool use_mkldnn{false};
   std::string data_format{"AnyLayout"};
+  ///////////////////////////////////////////////////////////////////////////////////
+  //  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  const std::vector<Tensor*>* output_tensor_ptrs() {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 /// ----------------------- element wise operators ----------------------
@@ -843,6 +877,21 @@ struct Im2SequenceParam : ParamBase {
 struct SequenceSoftmaxParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  ///////////////////////////////////////////////////////////////////////////////////
+  //  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() {
+    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  const std::vector<Tensor*>* output_tensor_ptrs() {
+    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 struct NormParam : ParamBase {
