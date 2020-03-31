@@ -36,7 +36,7 @@ class FakeQuantizeMovingAvgMaxAbsOpLite : public OpLite {
 
   bool CheckShape() const override { return true; }
 
-  bool InferShape() const override { return true; }
+  bool InferShapeImpl() const override { return true; }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
     auto x = op_desc.Input("X").front();

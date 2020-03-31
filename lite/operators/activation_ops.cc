@@ -25,7 +25,7 @@ bool ActivationOp::CheckShape() const {
   return true;
 }
 
-bool ActivationOp::InferShape() const {
+bool ActivationOp::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
   auto out_lod = param_.Out->mutable_lod();
   *out_lod = param_.X->lod();

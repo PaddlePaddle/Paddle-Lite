@@ -28,7 +28,7 @@ bool AttentionPaddingMaskOp::CheckShape() const {
   return true;
 }
 
-bool AttentionPaddingMaskOp::InferShape() const {
+bool AttentionPaddingMaskOp::InferShapeImpl() const {
   auto src_len = param_.X->lod()[0][1];
   CHECK_EQ(src_len, param_.X->dims()[1])
       << "Mismatch source length, expect: " << src_len

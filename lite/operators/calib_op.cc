@@ -24,7 +24,7 @@ bool CalibOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.output);
   return true;
 }
-bool CalibOpLite::InferShape() const {
+bool CalibOpLite::InferShapeImpl() const {
   param_.output->Resize(param_.input->dims());
   return true;
 }

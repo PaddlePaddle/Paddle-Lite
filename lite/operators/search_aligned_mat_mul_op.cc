@@ -27,7 +27,7 @@ bool SearchAlignedMatMulOpLite::CheckShape() const {
   return true;
 }
 
-bool SearchAlignedMatMulOpLite::InferShape() const {
+bool SearchAlignedMatMulOpLite::InferShapeImpl() const {
   const auto x_dims = param_.X->dims();
   const auto y_dims = param_.Y->dims();
   const auto& x_lod = param_.X->lod();
