@@ -26,7 +26,7 @@ bool ReshapeOp::CheckShape() const {
   return true;
 }
 
-bool ReshapeOp::InferShape() const {
+bool ReshapeOp::InferShapeImpl() const {
   const auto &shape_tensor_vct = param_.shape_tensor_vct;
   auto *shape_tensor = param_.shape_tensor;
   const auto &shape_vct = param_.shape_vct;
@@ -97,8 +97,8 @@ bool Reshape2Op::CheckShape() const {
   return true;
 }
 
-bool Reshape2Op::InferShape() const {
-  ReshapeOp::InferShape();
+bool Reshape2Op::InferShapeImpl() const {
+  ReshapeOp::InferShapeImpl();
   const auto &x_dims = param_.x->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1);
   xshape_dims[0] = 0;

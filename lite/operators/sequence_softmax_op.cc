@@ -24,7 +24,7 @@ bool SequenceSoftmaxOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Out);
   return true;
 }
-bool SequenceSoftmaxOp::InferShape() const {
+bool SequenceSoftmaxOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();

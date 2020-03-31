@@ -52,6 +52,7 @@ using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
+using MLUContext = Context<TargetType::kMLU>;
 
 template <>
 class Context<TargetType::kHost> {

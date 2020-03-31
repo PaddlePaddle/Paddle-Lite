@@ -30,7 +30,7 @@ bool Pad2dOpLite::CheckShape() const {
   return true;
 }
 
-bool Pad2dOpLite::InferShape() const {
+bool Pad2dOpLite::InferShapeImpl() const {
   // nchw
   auto x_dims = param_.X->dims();
   int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];

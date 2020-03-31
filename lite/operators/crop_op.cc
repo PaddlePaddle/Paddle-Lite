@@ -26,7 +26,7 @@ bool CropOpLite::CheckShape() const {
   return true;
 }
 
-bool CropOpLite::InferShape() const {
+bool CropOpLite::InferShapeImpl() const {
   // nchw
   auto x_dims = param_.X->dims();
   lite::DDim output_shape(x_dims);
