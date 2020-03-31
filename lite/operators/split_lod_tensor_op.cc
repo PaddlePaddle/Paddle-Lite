@@ -33,7 +33,7 @@ bool SplitLodTensorOpLite::CheckShape() const {
   return true;
 }
 
-bool SplitLodTensorOpLite::InferShape() const {
+bool SplitLodTensorOpLite::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   param_.out_true->Resize(x_dims);
   param_.out_false->Resize(x_dims);

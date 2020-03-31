@@ -27,7 +27,7 @@ bool ShuffleChannelOpLite::CheckShape() const {
   return true;
 }
 
-bool ShuffleChannelOpLite::InferShape() const {
+bool ShuffleChannelOpLite::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
   return true;
 }

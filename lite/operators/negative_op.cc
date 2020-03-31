@@ -26,7 +26,7 @@ bool NegativeOpLite::CheckShape() const {
   return true;
 }
 
-bool NegativeOpLite::InferShape() const {
+bool NegativeOpLite::InferShapeImpl() const {
   lite::DDim input_dims;
   input_dims = param_.X->dims();
   param_.Out->Resize(lite::DDim(input_dims));

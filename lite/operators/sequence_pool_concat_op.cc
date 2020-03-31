@@ -26,7 +26,7 @@ bool SequencePoolConcatOp::CheckShape() const {
   return true;
 }
 
-bool SequencePoolConcatOp::InferShape() const {
+bool SequencePoolConcatOp::InferShapeImpl() const {
   int out_dim = 0;
   for (int i = 0; i < param_.X.size(); ++i) {
     out_dim += param_.X[i]->dims().count(1, param_.X[i]->dims().size());
