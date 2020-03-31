@@ -388,13 +388,13 @@ void ConvImageCompute::PrepareForRun() {
 
   VLOG(4) << "max_work_group_size: " << max_work_group_size;
 
-  if (max_work_group_size > 0 && use_lws) {
+  if (max_work_group_size > 0 && use_lws_) {
     double min_turn_time = DBL_MAX;
     cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
         global_work_size_, max_work_group_size);
     cl::NDRange last_local_work_size = cl::NDRange{
         static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
-    if (use_turn) {
+    if (use_turn_) {
       for (size_t i = 1; i < 15; i++) {
         if (kernel_h == 1 && kernel_w == 1) {
           // todo use diff logics
