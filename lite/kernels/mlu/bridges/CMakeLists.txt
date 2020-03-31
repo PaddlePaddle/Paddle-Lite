@@ -18,7 +18,6 @@ lite_cc_library(subgraph_bridge_fc_op_mlu SRCS fc_op.cc DEPS ${subgraph_bridge_d
 lite_cc_library(subgraph_bridge_scale_op_mlu SRCS scale_op.cc DEPS ${subgraph_bridge_deps_mlu})
 lite_cc_library(subgraph_bridge_interp_op_mlu SRCS interpolate_op.cc DEPS ${subgraph_bridge_deps_mlu})
 lite_cc_library(subgraph_bridge_concat_op_mlu SRCS concat_op.cc DEPS ${subgraph_bridge_deps_mlu})
-lite_cc_library(subgraph_bridge_transpose_op_mlu SRCS transpose_op.cc DEPS ${subgraph_bridge_deps_mlu})
 set(mlu_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_utility_mlu
@@ -29,7 +28,6 @@ set(mlu_subgraph_bridges
         subgraph_bridge_pool_op_mlu
         subgraph_bridge_softmax_op_mlu
         subgraph_bridge_fc_op_mlu
-        subgraph_bridge_transpose_op_mlu
         subgraph_bridge_batch_norm_op_mlu
         subgraph_bridge_scale_op_mlu
         subgraph_bridge_interp_op_mlu
@@ -47,5 +45,4 @@ lite_cc_test(test_fc_converter_mlu SRCS fc_op_test.cc DEPS scope optimizer targe
 lite_cc_test(test_scale_converter_mlu SRCS scale_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 lite_cc_test(test_interp_converter_mlu SRCS interpolate_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 lite_cc_test(test_concat_converter_mlu SRCS concat_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
-lite_cc_test(test_transpose_converter_mlu SRCS transpose_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 message(STATUS "+++++ mlu_subgraph_bridges: ${mlu_subgraph_bridges}")

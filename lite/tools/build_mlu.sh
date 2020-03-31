@@ -5,7 +5,7 @@ set -ex
 NEUWARE_HOME="${NEUWARE_HOME}"
 TARGET_NAME="all"    # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
-WITH_TESTING=OFF                     # ON/OFF
+WITH_TESTING=ON                     # ON/OFF
 
 function print_usage {
     echo -e "\nUSAGE:"
@@ -28,13 +28,16 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 readonly workspace=$(pwd)
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
         rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+            wget $THIRDPARTY_TAR
+        fi
+        tar xzf third-party-05b862.tar.gz
+    else
+        git submodule update --init --recursive
     fi
-    if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
-        wget $THIRDPARTY_TAR
-    fi
-    tar xvf third-party-05b862.tar.gz
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
@@ -70,7 +73,7 @@ function build_mlu {
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
         -DLITE_WITH_MLU=ON \
-        -DLITE_WITH_PYTHON=ON \
+        -DLITE_WITH_PYTHON=OFF \
         -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
         -DNEUWARE_HOME=${NEUWARE_HOME}
