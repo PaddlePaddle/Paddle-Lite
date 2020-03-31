@@ -30,74 +30,96 @@ class FcCompute
  public:
   using param_t = operators::FcParam;
 
-  void PrepareForRun() override {
-    const auto& param = *param_.get_mutable<param_t>();
-    const auto x_dims = param.input->dims();
-    const auto w_dims = param.w->dims();
+  void PrepareForRun() override {}
 
-    CHECK_GE(x_dims.size(), 2UL);
-    CHECK_GE(w_dims.size(), 2UL);
-    CHECK_EQ(param.output->dims().size(), 2UL);
+  void ReInitWhenNeeded() override {
+    fc_param_ = param_.get_mutable<param_t>();
+    const auto x_dims = fc_param_->input->dims();
+    if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
+        first_epoch_for_reinit_) {
+      last_x_dims_ = x_dims;
+      first_epoch_for_reinit_ = false;
 
-    m_ = x_dims.Slice(0, param.in_num_col_dims).production();
-    k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
-    n_ = w_dims[1];
-    CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-    VLOG(4) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
-            << " " << x_dims[3];
-    VLOG(4) << "w_dims:" << w_dims[0] << " " << w_dims[1] << " " << w_dims[2]
-            << " " << w_dims[3];
-    VLOG(4) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+      // compute m,n,k
+      const auto w_dims = fc_param_->w->dims();
+      CHECK_GE(x_dims.size(), 2UL);
+      CHECK_GE(w_dims.size(), 2UL);
+      CHECK_EQ(fc_param_->output->dims().size(), 2UL);
 
+      m_ = x_dims.Slice(0, fc_param_->in_num_col_dims).production();
+      k_ = x_dims.Slice(fc_param_->in_num_col_dims, x_dims.size()).production();
+      n_ = w_dims[1];
+      CHECK_EQ(k_, static_cast<int>(w_dims[0]));
+
+#ifndef LITE_SHUTDOWN_LOG
+      VLOG(4) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
+              << " " << x_dims[3];
+      VLOG(4) << "w_dims:" << w_dims[0] << " " << w_dims[1] << " " << w_dims[2]
+              << " " << w_dims[3];
+      VLOG(4) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+#endif
+
+      // choose kernel
+      if (m_ == 1) {  // gemv
+        kernel_func_name_ = "fc_gemv_1x4";
+      } else {  // gemm
+        kernel_func_name_ = "fc_gemm_4x4";
+      }
+#ifndef LITE_SHUTDOWN_LOG
+      VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+#endif
+
+      if (fc_param_->activation_type == "relu") {
+        build_options_ += "-DRELU";
+      }
+
+      auto& context = ctx_->As<OpenCLContext>();
+      context.cl_context()->AddKernel(
+          kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
+      STL::stringstream kernel_key;
+      kernel_key << kernel_func_name_ << build_options_;
+      kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+
+      // compute global work size
+      GetGlobalWorkSize();
+    }
+  }
+
+  void GetGlobalWorkSize() {
     if (m_ == 1) {  // gemv
-      kernel_func_name_ = "fc_gemv_1x4";
       global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
     } else {  // gemm
-      kernel_func_name_ = "fc_gemm_4x4";
       global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                       static_cast<size_t>((n_ + 3) / 4)};
     }
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-
-    if (param.activation_type == "relu") {
-      build_options_ += "-DRELU";
-    }
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
   }
 
   void Run() override {
-    const auto& param = *param_.get_mutable<param_t>();
+    auto* x_buf = fc_param_->input->data<float, cl::Buffer>();
+    auto* w_buf = fc_param_->w->data<float, cl::Buffer>();
+    auto* bias_buf = fc_param_->bias->data<float, cl::Buffer>();
+    auto* out_buf =
+        fc_param_->output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+
+    auto kernel = kernel_;
+    cl_int status;
+    status = kernel.setArg(0, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *w_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, *bias_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(3, *out_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, static_cast<const int>(m_));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(5, static_cast<const int>(n_));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(6, static_cast<const int>(k_));
+    CL_CHECK_FATAL(status);
+
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    auto* x_buf = param.input->data<float, cl::Buffer>();
-    auto* w_buf = param.w->data<float, cl::Buffer>();
-    auto* bias_buf = param.bias->data<float, cl::Buffer>();
-    auto* out_buf =
-        param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
-    cl_int status;
-    int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *w_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *bias_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(m_));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(n_));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(k_));
-    CL_CHECK_FATAL(status);
-
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -111,9 +133,13 @@ class FcCompute
 
  private:
   int m_, n_, k_;
+  param_t* fc_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float "};
+  bool first_epoch_for_reinit_{true};
+  DDim last_x_dims_;
   cl::NDRange global_work_size_;
+  cl::Kernel kernel_;
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
