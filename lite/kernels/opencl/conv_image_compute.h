@@ -28,29 +28,29 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-
 class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
                                            PRECISION(kFP16),
                                            DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ConvParam;
-  using kernel_t = void (ConvImageCompute::*)();
+  using kernel_t = void (ConvImageCompute::*)(bool);
 
   void PrepareForRun() override;
 
   void Run() override;
+  double Turn(int times = 5);
 
  private:
-  void Conv2d1x1opt();
-  void Conv2d3x3();
-  void Conv2d3x3opt();
-  void Conv2d5x5();
-  void Conv2d5x5opt();
-  void Conv2d7x7();
-  void Conv2d7x7opt();
-  void DepthwiseConv2d3x3s1();
-  void DepthwiseConv2d3x3();
-  void DepthwiseConv2d();
+  void Conv2d1x1opt(bool is_turn = false);
+  void Conv2d3x3(bool is_turn = false);
+  void Conv2d3x3opt(bool is_turn = false);
+  void Conv2d5x5(bool is_turn = false);
+  void Conv2d5x5opt(bool is_turn = false);
+  void Conv2d7x7(bool is_turn = false);
+  void Conv2d7x7opt(bool is_turn = false);
+  void DepthwiseConv2d3x3s1(bool is_turn = false);
+  void DepthwiseConv2d3x3(bool is_turn = false);
+  void DepthwiseConv2d(bool is_turn = false);
 
   kernel_t impl_;
   std::vector<std::string> kernel_func_names_{};
@@ -73,6 +73,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws{true};
+  bool use_turn{false};
 };
 
 }  // namespace opencl
