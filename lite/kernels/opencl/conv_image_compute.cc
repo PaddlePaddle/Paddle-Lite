@@ -392,9 +392,8 @@ void ConvImageCompute::PrepareForRun() {
     double min_turn_time = DBL_MAX;
     cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
         global_work_size_, max_work_group_size);
-    cl::NDRange last_local_work_size = cl::NDRange{static_cast<size_t>(-1),
-                                                   static_cast<size_t>(-1),
-                                                   static_cast<size_t>(-1)};
+    cl::NDRange last_local_work_size = cl::NDRange{
+        static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
     if (use_turn) {
       for (size_t i = 1; i < 15; i++) {
         if (kernel_h == 1 && kernel_w == 1) {
@@ -418,10 +417,6 @@ void ConvImageCompute::PrepareForRun() {
         }
         last_local_work_size = local_work_size_;
       }
-
-    } else {
-      local_work_size_ = context.cl_context()->LocalWorkSize(
-          global_work_size_, max_work_group_size);
     }
     local_work_size_ = best_local_work_size;
     VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
