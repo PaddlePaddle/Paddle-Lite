@@ -68,6 +68,7 @@ bool BatchNormOp::InferShape() const {
     param_.saved_variance->Resize({channel_size});
   }
   param_.y->Resize(x_dims);
+  param_.y->set_lod(param_.x->lod());
   return true;
 }
 
