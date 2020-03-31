@@ -268,7 +268,32 @@ class KernelRegistry final {
                                       DATALAYOUT(kAny)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kAny),
-                                      DATALAYOUT(kAny)> *  //
+                                      DATALAYOUT(kAny)> *,  //
+
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt16),
+                                      DATALAYOUT(kNCHW)> *  //
               >;
 
   KernelRegistry();
