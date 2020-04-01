@@ -56,9 +56,7 @@ class LITE_API Predictor {
     Program program(*desc.get(), scope_, valid_places);
     optimizer_ = Optimizer(std::move(program), valid_places);
     exec_scope_ = optimizer_.exec_scope();
-    GenRuntimeProgram();
     valid_places_ = valid_places;
-    PrepareFeedFetch();
   }
 
   // Build from a model, with places set for hardware config.
