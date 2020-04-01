@@ -668,6 +668,13 @@ struct LookupTableParam {
   int64_t padding_idx{-1};
 };
 
+struct LookupTableDequantParam {
+  lite::Tensor* W{nullptr};
+  lite::Tensor* Ids{nullptr};
+  lite::Tensor* Out{nullptr};
+  int64_t padding_idx{-1};
+};
+
 struct Im2SequenceParam {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -770,6 +777,15 @@ struct SequencePoolParam {
   float pad_value{0.0};
   lite::Tensor* MaxIndex{};
 #endif
+};
+
+struct SequenceConvParam {
+  const lite::Tensor* X{};
+  const lite::Tensor* Filter{};
+  lite::Tensor* Out{};
+  int contextStart{0};
+  int contextStride{1};
+  int contextLength;
 };
 
 struct SequencePoolConcatParam {
