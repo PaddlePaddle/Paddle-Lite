@@ -32,6 +32,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto* op_info = op->op_info();
   const auto* scope = op->scope();
   VLOG(3) << "[MLU] Converting " << op_info->Type() << "... ";
+  CHECK(!op_info->HasAttr("act_type"));
 
   // get input, filter and op attributes
   const auto input_var_name = op_info->Input("Input").front();

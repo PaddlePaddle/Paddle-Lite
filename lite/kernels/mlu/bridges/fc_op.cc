@@ -34,7 +34,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto w_var_name = op_info->Input("W").front();
   auto output_var_name = op_info->Output("Out").front();
 
-  // int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
+  CHECK(!op_info->HasAttr("activation_type"));
   auto x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
   auto w = scope->FindVar(w_var_name)->GetMutable<Tensor>();
   auto output = scope->FindVar(output_var_name)->GetMutable<Tensor>();
