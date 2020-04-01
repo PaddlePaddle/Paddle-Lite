@@ -450,9 +450,6 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   for (auto &var_node : output_var_nodes) {
     output_var_names.push_back(var_node->AsArg().name);
   }
-  for (auto &var_node : local_var_nodes) {
-    output_var_names.push_back(var_node->AsArg().name);
-  }
   subgraph_op_desc.SetAttr<std::vector<std::string>>("input_data_names",
                                                      input_var_names);
   subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
@@ -493,6 +490,9 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
   for (auto &var_node : weight_var_nodes) {
     input_var_names.push_back(var_node->AsArg().name);
+  }
+  for (auto &var_node : local_var_nodes) {
+    output_var_names.push_back(var_node->AsArg().name);
   }
   for (auto &var_node : unused_var_nodes) {
     output_var_names.push_back(var_node->AsArg().name);
@@ -579,13 +579,14 @@ void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,
         unused_var_nodes->insert(var_node);
         continue;
       }
-      // Var can have more than one next op node, So, if any one in the
-      // op_nodes then continue
-      bool next_op_in_nodes = false;
+      // Var can have more than one next op node, So, if all next nodes are in
+      // op_nodes then it should be put into local_var_nodes
+      bool next_op_in_nodes = true;
       for (auto &next_op_node : var_node->outlinks) {
-        if (std::find(op_nodes.begin(), op_nodes.end(), next_op_node) !=
+        if (std::find(op_nodes.begin(), op_nodes.end(), next_op_node) ==
             op_nodes.end()) {
-          next_op_in_nodes = true;
+          next_op_in_nodes = false;
+          break;
         }
       }
       if (next_op_in_nodes) {
