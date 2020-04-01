@@ -9,7 +9,7 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
-if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
+if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     add_library(paddle_full_api_shared SHARED "")
     target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
@@ -25,6 +25,10 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGE
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
+
+    if(LITE_WITH_BM)
+        target_link_libraries(paddle_full_api_shared ${bm_kernels} "-Wl,--no-whole-archive" bmrt bmcompiler bmcpu bmlib)
+    endif(LITE_WITH_BM)
 
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared MODULE
@@ -262,7 +266,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         CL_DEPS ${opencl_kernels}
-        FPGA_DEPS ${fpga_kernels})
+        FPGA_DEPS ${fpga_kernels}
+        BM_DEPS ${bm_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     target_link_libraries(paddle_api_full ${cuda_deps})
