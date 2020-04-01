@@ -152,6 +152,18 @@ void ElementwiseAddComputeNHWC::Run() {
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
+void ElementwiseSubCompute::Run() {
+  ELEMENTWISE_COMPUTE(lite::cuda::math::BinaryOperation::kSUB, false)
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+}
+
+void ElementwiseSubComputeNHWC::Run() {
+  ELEMENTWISE_COMPUTE_NHWC(lite::cuda::math::BinaryOperation::kSUB, false)
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
+}
+
 void ElementwiseMulCompute::Run() {
   ELEMENTWISE_COMPUTE(lite::cuda::math::BinaryOperation::kMUL, false)
   cudaError_t error = cudaGetLastError();
@@ -204,11 +216,42 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(elementwise_sub,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::ElementwiseSubCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_add,
                      kCUDA,
                      kFloat,
                      kNHWC,
                      paddle::lite::kernels::cuda::ElementwiseAddComputeNHWC,
+                     nhwc_format)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_sub,
+                     kCUDA,
+                     kFloat,
+                     kNHWC,
+                     paddle::lite::kernels::cuda::ElementwiseSubComputeNHWC,
                      nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
