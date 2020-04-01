@@ -72,6 +72,13 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("adaptive")) {
     adaptive = op_info->GetAttr<bool>("adaptive");
   }
+  auto input_dims = x->dims();
+  if (global_pooling) {
+    ksize.resize(static_cast<size_t>(input_dims.size()) - 2);
+    for (size_t i = 0; i < ksize.size(); ++i) {
+      ksize[i] = static_cast<int>(input_dims[i + 2]);
+    }
+  }
   lite::operators::UpdatePadding(&paddings,
                                  global_pooling,
                                  adaptive,
