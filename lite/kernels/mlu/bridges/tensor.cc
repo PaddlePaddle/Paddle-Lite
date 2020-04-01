@@ -16,6 +16,7 @@
 #include <glog/logging.h>
 #include <algorithm>
 #include <climits>
+#include <string>
 #include <vector>
 
 namespace paddle {
@@ -256,6 +257,59 @@ void MLUTensor::Create() {
 cnmlTensor_t MLUTensor::mlu_tensor() {
   Create();
   return mlu_tensor_;
+}
+
+void MLUTensor::ToFile(std::string file_name) {
+  if (mlu_ptr_) {
+    VLOG(5) << "to dump mlu ptr: " << mlu_ptr_ << " to: " << file_name
+            << std::endl;
+    int count = 1;
+    for (size_t i = 0; i < shape_.size(); i++) {
+      count *= shape_[i];
+    }
+    VLOG(6) << " dump count: " << count << std::endl;
+    VLOG(6) << " dump shape: " << std::endl;
+    for (size_t i = 0; i < shape_.size(); i++) {
+      VLOG(6) << shape_[i] << " ";
+    }
+
+    VLOG(6) << std::endl;
+
+    std::vector<float> cpu_data_fp32(count);
+    // fp16 to fp32
+    if (mlu_dtype_ == CNML_DATA_FLOAT16) {
+      VLOG(6) << " convert fp16 to fp32 " << std::endl;
+      std::vector<uint16_t> cpu_data_fp16(count);
+      cnrtMemcpy(cpu_data_fp16.data(),
+                 mlu_ptr_,
+                 count * sizeof(uint16_t),
+                 CNRT_MEM_TRANS_DIR_DEV2HOST);
+      for (size_t i = 0; i < count; i++) {
+        cnrtConvertHalfToFloat(&(cpu_data_fp32[i]), cpu_data_fp16[i]);
+      }
+    } else {
+      cnrtMemcpy(cpu_data_fp32.data(),
+                 mlu_ptr_,
+                 count * sizeof(float),
+                 CNRT_MEM_TRANS_DIR_DEV2HOST);
+    }
+
+    // trans to nchw
+    std::vector<float> cpu_data_trans(count);
+    transpose(
+        cpu_data_fp32.data(), cpu_data_trans.data(), shape_, {0, 3, 1, 2});
+
+    // to file
+    std::ofstream of;
+    of.open(file_name, std::ios::out);
+    for (size_t i = 0; i < count; i++) {
+      of << cpu_data_trans[i] << std::endl;
+    }
+    of.close();
+  } else {
+    LOG(FATAL) << "mlu ptr is null ,can not dump mlu content to : " << file_name
+               << std::endl;
+  }
 }
 
 MLUTensor::~MLUTensor() {

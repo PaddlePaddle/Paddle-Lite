@@ -20,6 +20,21 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
+void transpose2d(float* input_data,
+                 float* output_data,
+                 std::vector<int> input_shape) {
+  CHECK_EQ(input_shape.size(), 2);
+  int old_index = -1;
+  int new_index = -1;
+  for (size_t i = 0; i < input_shape[0]; i++) {
+    for (size_t j = 0; j < input_shape[1]; j++) {
+      old_index = i * input_shape[1] + j;
+      new_index = j * input_shape[0] + i;
+      output_data[new_index] = input_data[old_index];
+    }
+  }
+}
+
 void transpose(float* input_data,
                float* output_data,
                std::vector<int> input_shape,

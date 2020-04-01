@@ -151,6 +151,32 @@ class SubgraphEngine : public subgraph::Engine {
     forward_param.affinity = &affinity;
     forward_param.end = CNRT_PARAM_END;
     graph_.Compute(forward_param, exec_queue);
+
+    // // =========== DUMP ===================
+    // for (auto input_name : input_names_) {
+    //   auto input_tensor = graph_.GetNode(input_name);
+    //   auto dump_name = input_name;
+    //   while (dump_name.find("/") != std::string::npos) {
+    //     dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
+    //   }
+    //   VLOG(6) << "dump_name: " << dump_name;
+    //   input_tensor->ToFile(dump_name);
+    // }
+    // for (auto output_name : output_names_) {
+    //   if (graph_.HasNode(output_name)) {
+    //     auto output_tensor = graph_.GetNode(output_name);
+    //     auto dump_name = output_name;
+    //     while (dump_name.find("/") != std::string::npos) {
+    //       dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
+    //     }
+    //     VLOG(6) << "dump_name: " << dump_name;
+    //     output_tensor->ToFile(dump_name);
+    //   } else {
+    //     VLOG(6) << "graph does not have " << output_name << " as output"
+    //             << std::endl;
+    //   }
+    // }
+    // // =========== DUMP END ================
     return 0;
   }
 

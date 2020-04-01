@@ -29,6 +29,9 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
+void transpose2d(float* input_data,
+                 float* output_data,
+                 std::vector<int> input_shape);
 void transpose(float* input_data,
                float* output_data,
                std::vector<int> input_shape,

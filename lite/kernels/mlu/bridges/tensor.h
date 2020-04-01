@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <fstream>
+#include <string>
 #include <vector>
 #include "lite/kernels/mlu/bridges/utility.h"
 
@@ -50,6 +52,8 @@ class MLUTensor {
   void set_mlu_dtype(cnmlDataType_t type) { mlu_dtype_ = type; }
 
   ~MLUTensor();
+
+  void ToFile(std::string file_name);
 
  private:
   cnmlTensor_t mlu_tensor_;

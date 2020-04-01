@@ -23,7 +23,7 @@ namespace mlu {
 
 std::vector<int64_t> CvtYShape(const Tensor& x, Tensor* y, int axis) {
   auto x_dims = x.dims();
-  CHECK_EQ(x_dims.size(), 4UL) << "[MLU] Only support 4-dimension x";
+  // CHECK_EQ(x_dims.size(), 4UL) << "[MLU] Only support 4-dimension x";
   auto y_dims = y->dims();
   CHECK_GE(x_dims.size(), y_dims.size());
 

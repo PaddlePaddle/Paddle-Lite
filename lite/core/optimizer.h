@@ -60,9 +60,12 @@ class Optimizer {
            "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",               //
            "lite_conv_elementwise_fuse_pass",      // conv-bn-elemwise
-           // TODO(Superjomn) Refine the fusion related design to select fusion
-           // kernels for devices automatically.
-           "lite_conv_activation_fuse_pass",              //
+// TODO(Superjomn) Refine the fusion related design to select fusion
+// kernels for devices automatically.
+#ifndef LITE_WITH_MLU  // mlu can not treat conv-conv parttern because kernel
+                       // picker expect a int8 conv2d kernel
+           "lite_conv_activation_fuse_pass",  //
+#endif
            "lite_var_conv_2d_activation_fuse_pass",       //
            "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //

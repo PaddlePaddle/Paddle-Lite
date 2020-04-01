@@ -74,10 +74,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       padding_algorithm,
                                       input_dims,
                                       filter_dims);
-  bool is_group_mode = false;
-  if (groups > 1) {
-    is_group_mode = true;
-  }
+  bool is_group_mode = groups > 1;
 
   bool is_depthwise_mode = false;
   if (filter_dims[0] == groups && filter_dims[1] == 1 && dilations[0] == 1 &&
@@ -86,26 +83,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     is_group_mode = false;
   }
 
-  // ================ DEBUG =======================
-
-  VLOG(4) << "conv2d op input_var_name : " << input_var_name  << std::endl;
-  VLOG(4) << "conv2d op : filter_var_name " << filter_var_name << std::endl;
-  VLOG(4) << "conv2d op : output_var_name " <<  output_var_name << std::endl;
-  VLOG(4) << "conv2d op : groups " <<  groups << std::endl;
-  VLOG(4) << "conv2d op : is_depthwise_mode " <<  is_depthwise_mode<< std::endl;
-  VLOG(4) << "conv2d op : is_group_mode " <<  is_group_mode << std::endl;
-
-  // ================ DEBUG EDN =======================
-  const auto output_shape_nhwc = DimNCHW2NHWC(output_shape);
-  const auto output_tensor = graph->AddNode(output_var_name,
-                                            output_shape,
-                                            CNML_TENSOR,
-                                            CNML_NHWC,
-                                            graph->FPType());
-  scope->FindVar(output_var_name)
-      ->GetMutable<::paddle::lite::Tensor>()
-      ->Resize(output_shape_nhwc);
-
+  const auto output_tensor = graph->AddNode(
+      output_var_name, output_shape, CNML_TENSOR, CNML_NCHW, graph->FPType());
   std::vector<int64_t> cnml_filter_shape = {
       filter_dims[0], filter_dims[1], filter_dims[2], filter_dims[3]};
   if (is_depthwise_mode) {
@@ -118,11 +97,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Create filter node
-  std::shared_ptr<MLUTensor> filter_tensor = graph->AddNode(filter_var_name,
-                                                            cnml_filter_shape,
-                                                            CNML_FILTER,
-                                                            CNML_NCHW,
-                                                            graph->FPType());
+  const auto filter_tensor = graph->AddNode(filter_var_name,
+                                            cnml_filter_shape,
+                                            CNML_FILTER,
+                                            CNML_NCHW,
+                                            graph->FPType());
   const auto weight_scale =
       op_info->GetAttr<std::vector<float>>("weight_scale");
 
