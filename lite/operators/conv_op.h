@@ -34,8 +34,7 @@ class ConvOpLite : public OpLite {
   explicit ConvOpLite(const std::string& type) : OpLite(type) {}
 
   bool CheckShape() const override;
-
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {

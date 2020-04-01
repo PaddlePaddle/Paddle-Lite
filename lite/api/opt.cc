@@ -30,6 +30,7 @@
 #include "lite/model_parser/compatible_pb.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/io.h"
 #include "lite/utils/string.h"
 #include "supported_kernel_op_info.h"  // NOLINT
 
@@ -66,7 +67,6 @@ DEFINE_string(valid_targets,
               "arm",
               "The targets this model optimized for, should be one of (arm, "
               "opencl, x86), splitted by space");
-DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
 DEFINE_bool(print_supported_ops,
             false,
             "Print supported operators on the inputed target");
@@ -87,10 +87,13 @@ std::vector<Place> ParserValidPlaces() {
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
-      valid_places.emplace_back(TARGET(kARM));
+      valid_places.emplace_back(
+          Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kNCHW)});
     } else if (target_repr == "opencl") {
       valid_places.emplace_back(
-          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kImageDefault)});
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
       valid_places.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
@@ -117,11 +120,6 @@ std::vector<Place> ParserValidPlaces() {
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
 
-  if (FLAGS_prefer_int8_kernel) {
-    LOG(WARNING) << "Int8 mode is only support by ARM target";
-    valid_places.insert(valid_places.begin(),
-                        Place{TARGET(kARM), PRECISION(kInt8)});
-  }
   return valid_places;
 }
 
@@ -251,7 +249,6 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
-      "        `--prefer_int8_kernel=(true|false)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
@@ -400,6 +397,7 @@ void Main() {
     return;
   }
 
+  lite::MkDirRecur(FLAGS_optimize_out);
   auto model_dirs = lite::ListDir(FLAGS_model_set_dir, true);
   if (model_dirs.size() == 0) {
     LOG(FATAL) << "[" << FLAGS_model_set_dir << "] does not contain any model";
@@ -454,7 +452,9 @@ int main(int argc, char** argv) {
   }
   google::ParseCommandLineFlags(&argc, &argv, false);
   paddle::lite_api::ParseInputCommand();
-  paddle::lite_api::CheckIfModelSupported();
+  if (FLAGS_model_set_dir == "") {
+    paddle::lite_api::CheckIfModelSupported();
+  }
   paddle::lite_api::Main();
   return 0;
 }

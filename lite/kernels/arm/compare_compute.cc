@@ -73,8 +73,6 @@ inline void get_mid_dims(const lite::DDim &x_dims,
     (*post) *= x_dims[i];
   }
 }
-template <template <typename T> class Functor>
-void CompareCompute<Functor>::PrepareForRun() {}
 
 template <template <typename T> class Functor>
 void CompareCompute<Functor>::Run() {
@@ -148,22 +146,46 @@ void CompareCompute_int32<Functor>::Run() {
   }
 }
 
+template <template <typename T> class Functor>
+void CompareCompute_int64<Functor>::Run() {
+  auto &param = this->Param<operators::CompareParam>();
+
+  using CompareFunctor = Functor<int64_t>;
+
+  const size_t x_size = param.X->numel();
+  const size_t y_size = param.Y->numel();
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  bool *z = param.Out->template mutable_data<bool>();
+  const auto *x = param.X->template data<int64_t>();
+  const auto *y = param.Y->template data<int64_t>();
+  auto axis = param.axis;
+  bool force_cpu = param.force_cpu;
+  if (x_size == y_size) {
+    for (int i = 0; i < x_size; ++i) {
+      z[i] = CompareFunctor()(x[i], y[i]);
+    }
+  } else {
+    int axis = (param.axis == -1 ? x_dims.size() - y_dims.size() : param.axis);
+    int outer_num, mid_num, inner_num;
+    get_mid_dims(x_dims, y_dims, axis, &outer_num, &mid_num, &inner_num);
+    for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
+      for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
+        auto y_data = y[mid_id];
+        for (int inner_id = 0; inner_id < inner_num; ++inner_id) {
+          int index = (outer_id * mid_num + mid_id) * inner_num + inner_id;
+          z[index] = CompareFunctor()(x[index], y_data);
+        }
+      }
+    }
+  }
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(less_than,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::CompareCompute<
-                         paddle::lite::kernels::arm::_LessThanFunctor>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
-    .Finalize();
 REGISTER_LITE_KERNEL(equal,
                      kARM,
                      kFloat,
@@ -175,6 +197,19 @@ REGISTER_LITE_KERNEL(equal,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(equal,
+                     kARM,
+                     kInt32,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CompareCompute_int32<
+                         paddle::lite::kernels::arm::_EqualFunctor>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(not_equal,
                      kARM,
                      kFloat,
@@ -186,34 +221,13 @@ REGISTER_LITE_KERNEL(not_equal,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
-REGISTER_LITE_KERNEL(less_equal,
+
+REGISTER_LITE_KERNEL(less_than,
                      kARM,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::CompareCompute<
-                         paddle::lite::kernels::arm::_LessEqualFunctor>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
-    .Finalize();
-REGISTER_LITE_KERNEL(greater_than,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::CompareCompute<
-                         paddle::lite::kernels::arm::_GreaterThanFunctor>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
-    .Finalize();
-REGISTER_LITE_KERNEL(greater_equal,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::CompareCompute<
-                         paddle::lite::kernels::arm::_GreaterEqualFunctor>,
+                         paddle::lite::kernels::arm::_LessThanFunctor>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -232,14 +246,50 @@ REGISTER_LITE_KERNEL(less_than,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(equal,
+REGISTER_LITE_KERNEL(less_than,
                      kARM,
-                     kInt32,
+                     kInt64,
                      kNCHW,
-                     paddle::lite::kernels::arm::CompareCompute_int32<
-                         paddle::lite::kernels::arm::_EqualFunctor>,
+                     paddle::lite::kernels::arm::CompareCompute_int64<
+                         paddle::lite::kernels::arm::_LessThanFunctor>,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(less_equal,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CompareCompute<
+                         paddle::lite::kernels::arm::_LessEqualFunctor>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(greater_than,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CompareCompute<
+                         paddle::lite::kernels::arm::_GreaterThanFunctor>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(greater_equal,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CompareCompute<
+                         paddle::lite::kernels::arm::_GreaterEqualFunctor>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();

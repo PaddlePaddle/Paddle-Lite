@@ -294,6 +294,32 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   inner_places.emplace_back(
       TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+
+  const std::vector<std::string> quant_dequant_op = {
+      "fake_quantize_abs_max",
+      "fake_quantize_range_abs_max",
+      "fake_quantize_moving_average_abs_max",
+      "fake_quantize_dequantize_moving_average_abs_max",
+      "fake_dequantize_max_abs",
+      "fake_channel_wise_dequantize_max_abs"};
+  bool is_quantized_model = false;
+  for (size_t i = 0; i < program_desc_.BlocksSize() && !is_quantized_model;
+       ++i) {
+    auto *block_desc = program_desc_.GetBlock<cpp::BlockDesc>(i);
+    for (size_t j = 0; j < block_desc->OpsSize() && !is_quantized_model; ++j) {
+      auto *op_desc = block_desc->GetOp<cpp::OpDesc>(j);
+      std::string op_type = op_desc->Type();
+      if (std::find(quant_dequant_op.begin(),
+                    quant_dequant_op.end(),
+                    op_type) != quant_dequant_op.end()) {
+        is_quantized_model = true;
+      }
+    }
+  }
+  if (is_quantized_model) {
+    inner_places.emplace_back(Place{TARGET(kARM), PRECISION(kInt8)});
+  }
+
   Program program(desc, scope_, inner_places);
 
   core::KernelPickFactor factor;
@@ -333,16 +359,16 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   }
 }
 
-#ifdef LITE_WITH_TRAIN
-void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
-  auto var = scope_->FindVar("feed");
-  auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
-  feed_list.resize(tensors.size());
+// #ifdef LITE_WITH_TRAIN
+// void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
+//   auto var = scope_->FindVar("feed");
+//   auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
+//   feed_list.resize(tensors.size());
 
-  for (size_t i = 0; i < tensors.size(); ++i)
-    feed_list[i].ShareDataWith(tensors[i]);
-}
-#endif
+//   for (size_t i = 0; i < tensors.size(); ++i)
+//     feed_list[i].ShareDataWith(tensors[i]);
+// }
+// #endif
 
 }  // namespace lite
 }  // namespace paddle

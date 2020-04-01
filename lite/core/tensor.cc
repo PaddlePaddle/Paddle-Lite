@@ -75,6 +75,7 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  precision_ = other.precision_;
 }
 
 void TensorLite::CopyDataFrom(const TensorLite &other) {
@@ -82,6 +83,7 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  precision_ = other.precision_;
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 
@@ -96,6 +98,21 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
   return mutable_data(memory_size);
 }
 
+void TensorLite::ResetBuffer(std::shared_ptr<Buffer> buffer,
+                             size_t memory_size) {
+  CHECK_EQ(offset_, 0)
+      << "Only the offset is supported to zero when the Buffer is reset.";
+  if (buffer_) {
+    CHECK_LE(memory_size_, buffer->space())
+        << "The space of buffer is not enough to store the tensor.";
+    CHECK_LE(memory_size, buffer->space())
+        << "The buffer is smaller than the specified minimum size.";
+  }
+  buffer_ = buffer;
+  memory_size_ = memory_size;
+  target_ = buffer->target();
+}
+
 #ifdef LITE_WITH_OPENCL
 template <>
 const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
@@ -103,8 +120,8 @@ const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
   return static_cast<const cl::Image2D *>(buffer_->data());
 }
 
-template <>  // use int16_t represent half float
-const cl::Image2D *TensorLite::data<int16_t, cl::Image2D>() const {
+template <>  // use uint16_t represent half float
+const cl::Image2D *TensorLite::data<uint16_t, cl::Image2D>() const {
   if (nullptr == buffer_->data()) return nullptr;
   return static_cast<const cl::Image2D *>(buffer_->data());
 }

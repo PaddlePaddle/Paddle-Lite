@@ -52,7 +52,7 @@ inline int ConvTransposeOutputSize(int input_size,
   return output_size;
 }
 
-bool ConvTransposeOpLite::InferShape() const {
+bool ConvTransposeOpLite::InferShapeImpl() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
 

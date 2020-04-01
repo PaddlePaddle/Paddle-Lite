@@ -79,6 +79,7 @@ inline void write_gemv_out(const int* in,
     for (int i = 0; i < size; ++i) {
       out[0] =
           saturate_cast<signed char>(roundf(*(in++) * *(scale++) + *(bias++)));
+      out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
       if (flag_relu) {
         out[0] = out[0] > 0 ? out[0] : 0;
       }
@@ -87,6 +88,7 @@ inline void write_gemv_out(const int* in,
   } else {
     for (int i = 0; i < size; ++i) {
       out[0] = saturate_cast<signed char>(roundf(*(in++) * *(scale++)));
+      out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
       if (flag_relu) {
         out[0] = out[0] > 0 ? out[0] : 0;
       }

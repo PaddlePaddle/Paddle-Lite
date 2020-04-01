@@ -58,7 +58,7 @@ class StaticKernelPickPass : public mir::StmtPass {
       const std::unordered_map<std::string, PrecisionType>& out_types,
       const std::vector<std::string>& in_names,
       const std::vector<std::string>& out_names) {
-    CHECK_GT(places.size(), 0) << "valid_places is empty.";
+    CHECK_GT(places.size(), static_cast<size_t>(0)) << "valid_places is empty.";
     float final_score{-1.};
     Place winner_place{places[0]};
     const int kMax =
@@ -145,11 +145,12 @@ class StaticKernelPickPass : public mir::StmtPass {
     }
 
     VLOG(4) << "[score(final)]:" << final_score;
-    VLOG(4) << "-------- pick summary --------";
-    VLOG(4) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
+    VLOG(2) << "-------- pick summary for " << instruct.op_type()
+            << " --------";
+    VLOG(2) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
             << " " << DataLayoutToStr(winner_place.layout) << " "
             << TargetToStr(winner_place.target);
-    VLOG(4) << " ===> kernel.place():"
+    VLOG(2) << " ===> kernel.place():"
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);

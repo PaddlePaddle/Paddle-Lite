@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <fstream>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,6 +24,9 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
+
+extern const std::map<std::string, std::vector<unsigned char>>
+    opencl_kernels_files;
 
 class CLRuntime {
  public:
@@ -50,6 +54,8 @@ class CLRuntime {
   std::string cl_path() { return cl_path_; }
 
   void set_cl_path(std::string cl_path) { cl_path_ = cl_path; }
+
+  std::map<std::string, size_t>& GetDeviceInfo();
 
  private:
   CLRuntime() = default;
@@ -79,6 +85,8 @@ class CLRuntime {
     CL_CHECK_FATAL(status_);
     return queue;
   }
+
+  std::map<std::string, size_t> device_info_;
 
   std::string cl_path_;
 

@@ -46,7 +46,7 @@ bool BatchNormOp::CheckShape() const {
   return true;
 }
 
-bool BatchNormOp::InferShape() const {
+bool BatchNormOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   int64_t channel_size = 0;
   switch (param_.data_layout) {
@@ -68,6 +68,7 @@ bool BatchNormOp::InferShape() const {
     param_.saved_variance->Resize({channel_size});
   }
   param_.y->Resize(x_dims);
+  param_.y->set_lod(param_.x->lod());
   return true;
 }
 

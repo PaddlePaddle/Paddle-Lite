@@ -27,7 +27,7 @@ bool ConditionalBlockOpLite::CheckShape() const {
   return true;
 }
 
-bool ConditionalBlockOpLite::InferShape() const { return true; }
+bool ConditionalBlockOpLite::InferShapeImpl() const { return true; }
 
 bool ConditionalBlockOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                         lite::Scope *scope) {

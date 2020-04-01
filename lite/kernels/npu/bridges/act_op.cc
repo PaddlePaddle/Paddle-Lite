@@ -21,6 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace npu {
 
+template <typename ActType>
 int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
@@ -32,15 +33,9 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-  auto x = scope->FindMutableTensor(x_name);
-  auto x_dims = x->dims();
+  auto x = scope->FindTensor(x_name);
+
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
@@ -51,8 +46,42 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Act node
-  auto act_node = graph->Add<ge::op::Activation>(out_name);
-  auto act_op = act_node->data<ge::op::Activation>();
+  auto act_node = graph->template Add<ActType>(out_name);
+  auto act_op = act_node->template data<ActType>();
+  act_op->set_input_x(*x_node->data());
+
+  return SUCCESS;
+}
+
+template <>
+int ActConverter<ge::op::Activation>(void* ctx,
+                                     OpLite* op,
+                                     KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
+  auto op_type = op_info->Type();
+  auto scope = op->scope();
+  VLOG(3) << "[NPU] Converting " + op_type + "...";
+
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Act node
+  auto act_node = graph->template Add<ge::op::Activation>(out_name);
+  auto act_op = act_node->template data<ge::op::Activation>();
   act_op->set_input_x(*x_node->data());
   // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
   // clipped_relu etc.
@@ -80,27 +109,42 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu, kNPU, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh, kNPU, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu_clipped,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(abs, kNPU, paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(softsign,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(softplus,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(hard_sigmoid,
-                         kNPU,
-                         paddle::lite::subgraph::npu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    sigmoid,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    relu, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    tanh, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    relu_clipped,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    relu6, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    leaky_relu,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    abs, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    softsign,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    softplus,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    hard_sigmoid,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+
+REGISTER_SUBGRAPH_BRIDGE(
+    log, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Log>);
+REGISTER_SUBGRAPH_BRIDGE(
+    square, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Square>);
+REGISTER_SUBGRAPH_BRIDGE(
+    sqrt, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Sqrt>);

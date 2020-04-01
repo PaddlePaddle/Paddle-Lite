@@ -32,15 +32,9 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_names = op_info->Output("Out");
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axis = op_info->GetAttr<int>("axis");
   auto num = op_info->GetAttr<int>("num");
   auto sections = op_info->GetAttr<std::vector<int>>("sections");
@@ -70,10 +64,12 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   split_op->create_dynamic_output_y(out_names.size());
   int idx = 1;
   for (auto& out_name : out_names) {
-    auto zero_node = graph->Add(out_name + "/zero" + std::to_string(idx), 0);
+    auto zero_node =
+        graph->Add(out_name + "/zero" + paddle::lite::to_string(idx), 0);
     auto add_node = graph->Add<ge::op::Add>(out_name);
     auto add_op = add_node->data<ge::op::Add>();
-    add_op->set_input_x1(*split_node->data(), "y" + std::to_string(idx));
+    add_op->set_input_x1(*split_node->data(),
+                         "y" + paddle::lite::to_string(idx));
     add_op->set_input_x2(*zero_node->data());
     idx++;
   }

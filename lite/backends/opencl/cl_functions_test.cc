@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <memory>
@@ -26,22 +25,18 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
 
-DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
-
 namespace paddle {
 namespace lite {
 
 TEST(cl_test, runtime_test) {
   auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
-  runtime->set_cl_path(FLAGS_cl_path);
   runtime->platform();
   runtime->device();
   runtime->command_queue();
   auto &context = runtime->context();
-  auto program = runtime->CreateProgram(
-      context,
-      runtime->cl_path() + "/cl_kernel/" + "buffer/elementwise_add_kernel.cl");
+  auto program =
+      runtime->CreateProgram(context, "buffer/elementwise_add_kernel.cl");
   auto event = runtime->CreateEvent(context);
   const std::string build_option("-DCL_DTYPE_float");
   CHECK(runtime->BuildProgram(program.get(), build_option));
@@ -50,7 +45,6 @@ TEST(cl_test, runtime_test) {
 TEST(cl_test, context_test) {
   auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
-  runtime->set_cl_path(FLAGS_cl_path);
   CLContext context;
   context.AddKernel("pool_max", "image/pool_kernel.cl", "-DCL_DTYPE_float");
   context.AddKernel(
@@ -62,7 +56,6 @@ TEST(cl_test, context_test) {
 TEST(cl_test, kernel_test) {
   auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
-  runtime->set_cl_path(FLAGS_cl_path);
   std::unique_ptr<CLContext> context(new CLContext);
   context->AddKernel(
       "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_float");
@@ -121,7 +114,7 @@ TEST(cl_test, kernel_test) {
 }
 
 TEST(cl_test, target_wrapper_buffer_test) {
-  bool inited = InitOpenCLRuntime(FLAGS_cl_path);
+  bool inited = InitOpenCLRuntime();
   CHECK(inited) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
   std::string kernel_name = "elementwise_add";

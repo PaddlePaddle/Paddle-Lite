@@ -25,10 +25,6 @@ namespace arm {
 
 class BeamSearchCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BeamSearchParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
   ~BeamSearchCompute() {}

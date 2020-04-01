@@ -56,18 +56,22 @@ int Engine::BuildOriginProgram() {
     } else {
       VLOG(3) << "The attr '" << kKernelTypeAttr
               << "' not found, pick the first kernel for " << op_type;
+      std::vector<std::unique_ptr<KernelBase>> kernels;
 #if defined(LITE_WITH_ARM)
-      auto kernels =
-          op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
+      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
 #elif defined(LITE_WITH_X86)
-      auto kernels =
-          op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
+      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
 #endif
-      CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
-      picked_kernel = std::move(kernels.front());
+      if (kernels.size() > 0) {
+        picked_kernel = std::move(kernels.front());
+      } else {
+        LOG(WARNING) << "No kernels found for " << op_type;
+      }
     }
-    picked_kernel->SetContext(
-        ContextScheduler::Global().NewContext(picked_kernel->target()));
+    if (picked_kernel != nullptr) {
+      picked_kernel->SetContext(
+          ContextScheduler::Global().NewContext(picked_kernel->target()));
+    }
     origin_program_.emplace_back(std::move(op), std::move(picked_kernel));
   }
   return 0;

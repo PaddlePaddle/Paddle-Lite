@@ -54,7 +54,8 @@ enum class TargetType : int {
   kXPU = 9,
   kBM = 10,
   kAny = 6,  // any target
-  NUM = 11,  // number of fields.
+  kMLU = 11,
+  NUM = 12,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -96,7 +97,9 @@ enum class ActivationType : int {
   kLeakyRelu = 4,
   kSigmoid = 5,
   kTanh = 6,
-  kSwish = 7
+  kSwish = 7,
+  kExp = 8,
+  NUM = 9,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -147,6 +150,8 @@ _ForEachPrecisionType(DefinePrecisionTypeTrait);
 #define TARGET(item__) paddle::lite_api::TargetType::item__
 #define PRECISION(item__) paddle::lite_api::PrecisionType::item__
 #define DATALAYOUT(item__) paddle::lite_api::DataLayoutType::item__
+
+const std::string& ActivationTypeToStr(ActivationType act);
 
 const std::string& TargetToStr(TargetType target);
 

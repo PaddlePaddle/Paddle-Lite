@@ -19,6 +19,10 @@
 namespace paddle {
 namespace lite {
 
+const std::map<std::string, std::string> &GetOp2PathDict() {
+  return OpKernelInfoCollector::Global().GetOp2PathDict();
+}
+
 std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     const std::string &op_type,
     TargetType target,
@@ -103,6 +107,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kBM): {
       CREATE_KERNEL(kBM);
     } break;
+    case TARGET(kMLU): {
+      CREATE_KERNEL(kMLU);
+    } break;
     default:
       CHECK(false) << "not supported kernel target " << TargetToStr(target);
   }
@@ -135,6 +142,15 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kCUDA, kInt64, kNCHW);
   INIT_FOR(kCUDA, kInt64, kNHWC);
 
+  INIT_FOR(kMLU, kFloat, kNHWC);
+  INIT_FOR(kMLU, kFloat, kNCHW);
+  INIT_FOR(kMLU, kFP16, kNHWC);
+  INIT_FOR(kMLU, kFP16, kNCHW);
+  INIT_FOR(kMLU, kInt8, kNHWC);
+  INIT_FOR(kMLU, kInt8, kNCHW);
+  INIT_FOR(kMLU, kInt16, kNHWC);
+  INIT_FOR(kMLU, kInt16, kNCHW);
+
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
   INIT_FOR(kHost, kFloat, kNHWC);
@@ -150,10 +166,13 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kX86, kInt64, kNCHW);
 
   INIT_FOR(kARM, kFloat, kNCHW);
+  INIT_FOR(kARM, kFloat, kNHWC);
   INIT_FOR(kARM, kInt8, kNCHW);
+  INIT_FOR(kARM, kInt8, kNHWC);
   INIT_FOR(kARM, kAny, kNCHW);
   INIT_FOR(kARM, kAny, kAny);
   INIT_FOR(kARM, kInt32, kNCHW);
+  INIT_FOR(kARM, kInt64, kNCHW);
 
   INIT_FOR(kOpenCL, kFloat, kNCHW);
   INIT_FOR(kOpenCL, kFloat, kNHWC);
@@ -175,8 +194,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kOpenCL, kAny, kImageNW);
 
   INIT_FOR(kNPU, kFloat, kNCHW);
+  INIT_FOR(kNPU, kFloat, kNHWC);
   INIT_FOR(kNPU, kInt8, kNCHW);
+  INIT_FOR(kNPU, kInt8, kNHWC);
   INIT_FOR(kNPU, kAny, kNCHW);
+  INIT_FOR(kNPU, kAny, kNHWC);
   INIT_FOR(kNPU, kAny, kAny);
 
   INIT_FOR(kXPU, kFloat, kNCHW);

@@ -72,6 +72,8 @@ class OpKernelInfoCollector {
 namespace paddle {
 namespace lite {
 
+const std::map<std::string, std::string> &GetOp2PathDict();
+
 using KernelFunc = std::function<void()>;
 using KernelFuncCreator = std::function<std::unique_ptr<KernelFunc>()>;
 class LiteOpRegistry final : public Factory<OpLite, std::shared_ptr<OpLite>> {
@@ -144,6 +146,9 @@ class KernelRegistry final {
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kARM),
+                                      PRECISION(kInt64),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kInt32),
@@ -263,7 +268,32 @@ class KernelRegistry final {
                                       DATALAYOUT(kAny)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kAny),
-                                      DATALAYOUT(kAny)> *  //
+                                      DATALAYOUT(kAny)> *,  //
+
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt16),
+                                      DATALAYOUT(kNCHW)> *  //
               >;
 
   KernelRegistry();

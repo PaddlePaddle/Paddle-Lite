@@ -15,6 +15,7 @@
 #include "lite/utils/replace_stl/stream.h"
 #include <assert.h>
 #include <stdio.h>
+#include "lite/utils/string.h"
 
 #ifdef LITE_ON_TINY_PUBLISH
 
@@ -39,9 +40,9 @@ void ostream::pad(const std::string& text) {
 #ifdef LITE_SHUTDOWN_LOG
 #define ADD_DATA_AS_STRING(data_, obj_)
 #else
-#define ADD_DATA_AS_STRING(data_, obj_)    \
-  std::string text = std::to_string(obj_); \
-  pad(text);                               \
+#define ADD_DATA_AS_STRING(data_, obj_)             \
+  std::string text = paddle::lite::to_string(obj_); \
+  pad(text);                                        \
   data_ = data_ + text;
 
 #endif
@@ -96,6 +97,12 @@ ostream& ostream::operator<<(const long long& obj) {  // NOLINT
 
 template <>
 ostream& ostream::operator<<(const unsigned& obj) {
+  ADD_DATA_AS_STRING(data_, obj);
+  return *this;
+}
+
+template <>
+ostream& ostream::operator<<(const uint16_t& obj) {
   ADD_DATA_AS_STRING(data_, obj);
   return *this;
 }

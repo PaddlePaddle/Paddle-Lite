@@ -12,129 +12,69 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_lite.h"
+#include "lite/operators/fill_constant_op.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class FillConstantOp : public OpLite {
- public:
-  explicit FillConstantOp(const std::string& type) : OpLite(type) {}
+bool FillConstantOp::CheckShape() const {
+  CHECK(param_.out);
+  return true;
+}
 
-  bool CheckShape() const override {
-    CHECK_OR_FALSE(param_.Out);
-    return true;
-  }
-
-  bool InferShape() const override {
-    lite::Tensor* shape_tensor_ = param_.shape_tensor;
-    if (param_.shape.empty() && shape_tensor_ != nullptr) {
-      param_.Out->Resize(shape_tensor_->dims());
-      return true;
+bool FillConstantOp::InferShapeImpl() const {
+  std::vector<int64_t> out_shape;
+  auto shape_tensor = param_.shape_tensor;
+  auto shape_tensor_list = param_.shape_tensor_list;
+  if (shape_tensor != nullptr) {
+    auto shape_tensor_data = shape_tensor->data<int>();
+    for (int i = 0; i < shape_tensor->numel(); i++) {
+      out_shape.push_back(shape_tensor_data[i]);
     }
-
-    param_.Out->Resize(param_.shape);
-    return true;
+  } else if (!shape_tensor_list.empty()) {
+    for (int i = 0; i < shape_tensor_list.size(); i++) {
+      out_shape.push_back(shape_tensor_list[i]->data<int>()[0]);
+    }
+  } else if (!param_.shape.empty()) {
+    out_shape = param_.shape;
+  } else {
+    LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
+                  "shape_tensor_list, or shape.";
   }
 
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override {
-    auto Out_name = opdesc.Output("Out").front();
+  param_.out->Resize(out_shape);
+  return true;
+}
 
-    param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
-    param_.dtype = opdesc.GetAttr<int>("dtype");
+bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+  auto out_name = opdesc.Output("Out").front();
+
+  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.dtype = opdesc.GetAttr<int>("dtype");
+  if (opdesc.HasAttr("shape")) {
     param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
-    param_.value = opdesc.GetAttr<float>("value");
-    param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");
-    param_.shape_tensor = nullptr;
-    param_.shape_tensor_list = {};
-
-    std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
-    if (opdesc.HasInput("ShapeTensor") &&
-        !opdesc.Input("ShapeTensor").empty()) {
-      auto args = opdesc.Input("ShapeTensor");
-      auto* var = scope->FindVar(args.front());
-      param_.shape_tensor = var->GetMutable<lite::Tensor>();
-    }
-    if (opdesc.HasAttr("ShapeTensorList")) {
-      auto args = opdesc.Input("ShapeTensorList");
-      auto* var = scope->FindVar(args.front());
-      param_.shape_tensor_list =
-          *(var->GetMutable<std::vector<lite::Tensor*>>());
-    }
-    return true;
   }
+  param_.value = opdesc.GetAttr<float>("value");
+  param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");
 
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "fill_constant"; }
-
- private:
-  mutable operators::FillConstantParam param_;
-};
-
-class FillConstantBatchLikeOp : public OpLite {
- public:
-  explicit FillConstantBatchLikeOp(const std::string& type) : OpLite(type) {}
-
-  bool CheckShape() const override {
-    CHECK_OR_FALSE(param_.out);
-    CHECK_OR_FALSE(param_.input);
-    CHECK_GT_OR_FALSE(param_.shape.size(), 0);
-    CHECK_GE_OR_FALSE(param_.input_dim_idx, 0);
-    CHECK_GE_OR_FALSE(param_.output_dim_idx, 0);
-    return true;
+  if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
+    auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
+    param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
   }
-
-  bool InferShape() const override {
-    auto output_dim = param_.shape;
-    output_dim[param_.output_dim_idx] =
-        param_.input->dims()[param_.input_dim_idx];
-    param_.out->Resize(output_dim);
-    return true;
+  if (opdesc.HasInput("ShapeTensorList") &&
+      !opdesc.Input("ShapeTensorList").empty()) {
+    for (auto shape_tensor_name : opdesc.Input("ShapeTensorList")) {
+      param_.shape_tensor_list.push_back(
+          GetMutableVar<lite::Tensor>(scope, shape_tensor_name));
+    }
   }
-
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override {
-    auto Out_name = opdesc.Output("Out").front();
-    auto In_name = opdesc.Input("Input").front();
-
-    param_.out = GetMutableVar<lite::Tensor>(scope, Out_name);
-    param_.input = GetMutableVar<lite::Tensor>(scope, In_name);
-    param_.dtype = opdesc.GetAttr<int>("dtype");
-    auto shape = opdesc.GetAttr<std::vector<int>>("shape");
-    std::vector<int64_t> outshape;
-    for (auto i : shape) {
-      outshape.push_back(i);
-    }
-    param_.shape = outshape;
-    if (opdesc.HasAttr("value")) {
-      param_.value = opdesc.GetAttr<float>("value");
-    }
-    if (opdesc.HasAttr("input_dim_idx")) {
-      param_.input_dim_idx = opdesc.GetAttr<int>("input_dim_idx");
-    }
-    if (opdesc.HasAttr("output_dim_idx")) {
-      param_.output_dim_idx = opdesc.GetAttr<int>("output_dim_idx");
-    }
-
-    return true;
-  }
-
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override {
-    return "fill_constant_batch_size_like";
-  }
-
- private:
-  mutable operators::FillConstantBatchLikeParam param_;
-};
+  return true;
+}
 
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_OP(fill_constant, paddle::lite::operators::FillConstantOp);
-REGISTER_LITE_OP(fill_constant_batch_size_like,
-                 paddle::lite::operators::FillConstantBatchLikeOp);

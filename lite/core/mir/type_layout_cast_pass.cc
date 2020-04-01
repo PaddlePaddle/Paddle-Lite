@@ -20,6 +20,8 @@
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
+#include "lite/core/mir/type_precision_cast_pass.h"
+#include "lite/operators/subgraph_op.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -39,8 +41,9 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
     if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
     auto inlinks = node->inlinks;
-    VLOG(4) << "node->AsStmt().desc:" << node->AsStmt().desc
-            << " inlinks.size():" << inlinks.size();
+    VLOG(4) << "============== node->AsStmt().op_type():"
+            << node->AsStmt().op_type() << " inlinks.size():" << inlinks.size()
+            << " ================";
     for (auto* in : inlinks) {
       ComplementInputs(graph.get(), node, in);
     }
@@ -66,12 +69,24 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &inst_in_tensor_name));
   auto decl_arg_type =
       inst.picked_kernel().GetInputDeclType(inst_in_tensor_name);
+
   CHECK(in->AsArg().type);
-  VLOG(5) << "\n inst_in_tensor_name:" << inst_in_tensor_name
+  VLOG(3) << "\n inst_in_tensor_name:" << inst_in_tensor_name
           << "\n in->AsArg().name:" << in->AsArg().name
           << "\n *in->AsArg().type:" << *in->AsArg().type
           << "\n *decl_arg_type:" << *decl_arg_type
           << "\n inst.op()->DebugString():" << inst.op()->DebugString();
+
+  // TODO(ysh329): conflict if tensor with kARM target but kImageDefault(OpenCL
+  // layout).
+  // not a good judge, but don't find the source of this issue from
+  // static_pick_kernel_pass
+  // to this pass.
+  auto* in_arg_type = const_cast<Type*>(in->AsArg().type);
+  if (in_arg_type->target() == TARGET(kARM) &&
+      in_arg_type->layout() == DATALAYOUT(kImageDefault)) {
+    return;
+  }
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
@@ -170,9 +185,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
   DirectedLink(layout_output_arg, inst_node);
 
   // reset opdesc and update kernel information
-  UpdateInputTo(inst_node->AsStmt().op()->mutable_op_info(),
-                in->AsArg().name,
-                layout_output_name);
+  UpdateInputs(
+      inst_node->AsStmt().op().get(), in->AsArg().name, layout_output_name);
   auto original_selected_kernel =
       std::move(inst_node->AsStmt().kernels().front());
   auto update_op_info = *inst_node->AsStmt().op_info();
@@ -204,12 +218,42 @@ void TypeLayoutTransformPass::SetValidPlaces(
   valid_places_ = valid_places;
 }
 
+void OpenCLTypeLayoutTransformPass::Apply(
+    const std::unique_ptr<SSAGraph>& graph) {
+  // Start from inputs of the graph, those should have place set.
+  VLOG(4) << "\n" << Visualize(graph.get());
+  std::list<Node*> nodes;
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    nodes.push_back(node);
+  }
+
+  VLOG(4) << "nodes.size():" << nodes.size();
+  for (auto& node : nodes) {
+    VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
+    if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
+    VLOG(1) << "node->AsStmt().op_type():" << node->AsStmt().op_type();
+    if (node->AsStmt().op_type() == "layout" ||
+        node->AsStmt().op_type() == "io_copy") {
+      auto new_op = node->AsStmt().mutable_op_info();
+      int process_type = 1;
+      new_op->SetAttr("process_type", process_type);
+    }
+  }
+  VLOG(4) << "\n" << Visualize(graph.get());
+}
+
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_layout_cast_pass,
                   paddle::lite::mir::TypeLayoutTransformPass)
+    .BindTargets({TARGET(kAny)})
+    .BindKernel("layout_once")
+    .BindKernel("layout");
+
+REGISTER_MIR_PASS(type_layout_cast_preprocess_pass,
+                  paddle::lite::mir::OpenCLTypeLayoutTransformPass)
     .BindTargets({TARGET(kAny)})
     .BindKernel("layout_once")
     .BindKernel("layout");

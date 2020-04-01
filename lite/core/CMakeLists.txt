@@ -34,9 +34,9 @@ lite_cc_library(scope SRCS scope.cc DEPS tensor)
 lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context gflags)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context)
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context gflags)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context)
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
@@ -67,6 +67,13 @@ message(STATUS "commit: ${PADDLE_LITE_COMMIT}")
 
 configure_file(version.h.in version.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
+# A trick to generate the opencl_kernels_source.cc
+#add_custom_command(
+#  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/gen_opencl_code.py
+#  ${CMAKE_SOURCE_DIR}/lite/backends/opencl/cl_kernel
+#  ${CMAKE_BINARY_DIR}/lite/backends/opencl/opencl_kernels_source.cc
+#  OUTPUT opencl_kernels_source.cc # not a real path to the output to force it execute every time.
+#  )
 # A trick to generate the paddle_use_kernels.h
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
@@ -86,9 +93,13 @@ add_custom_command(
   OUTPUT ops.h # not a real path to the output to force it execute every time.
   )
 # generate fake kernels for memory_optimize_tool
+
+#-------------------------------opt----------------------------------------------------------------
+# tricks to create headfiles for opt
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
   ${kernels_src_list}
+  ${fake_kernels_src_list}
   ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
   ${CMAKE_BINARY_DIR}/kernel_src_map.h
   OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
@@ -96,10 +107,12 @@ add_custom_command(
 add_custom_target(op_list_h DEPENDS ops.h)
 add_custom_target(kernel_list_h DEPENDS kernels.h)
 add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
+
 # create headfile to restore ops info sorted by suppported platforms
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
   ${kernels_src_list}
+  ${fake_kernels_src_list}
   ${ops_src_list}
   ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
   OUTPUT supported_kernel_op_info.h # not a real path to the output to force it execute every time.

@@ -922,7 +922,7 @@ void sgemv_trans(const int M,
   /* end */                                                 \
   "4:                           \n" /* end */               \
   "fmov   s1, %w[alpha]         \n" /* mov alpha to s1  */  \
-  "fcmp   s8, #0                \n" /* cmp with zero*/      \
+  "fcmp   s8, #0.0              \n" /* cmp with zero*/      \
   "bge    5f                    \n" /* if ge zero */        \
   "fmul   s8, s8, s1            \n" /* out * alpha */       \
   "5:                           \n" /* leakey relu label */ \
@@ -983,10 +983,12 @@ void sgemv_trans(const int M,
   "vld1.32 {d8-d11}, [%[in]]!     @ load input, q4, q5\n"                      \
   "vld1.32 {d12-d15}, [%[w0]]!    @ load weights r0, q6,q7\n"                  \
   "vld1.32 {d16-d19}, [%[w1]]!    @ load weights r1, q8,q9\n"                  \
-  "vld1.32 {d20-d23}, [%[w2]]!    @ load weights r2, q10,q11\n"                \
-  "vld1.32 {d24-d27}, [%[w3]]!    @ load weights r3, q12,q13\n"                \
   "vmla.f32 q0, q4, q6            @ mul add\n"                                 \
+  "vld1.32 {d20-d23}, [%[w2]]!    @ load weights r2, q10,q11\n"                \
   "vmla.f32 q1, q4, q8            @ mul add\n"                                 \
+  "vld1.32 {d24-d27}, [%[w3]]!    @ load weights r3, q12,q13\n"                \
+  /*"vmla.f32 q0, q4, q6            @ mul add\n" */                            \
+  /*"vmla.f32 q1, q4, q8            @ mul add\n" */                            \
   "vmla.f32 q2, q4, q10           @ mul add\n"                                 \
   "vmla.f32 q3, q4, q12           @ mul add\n"                                 \
   "subs %[cnt], #1                @ sub loop count \n"                         \

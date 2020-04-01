@@ -28,7 +28,7 @@ bool SequenceArithmeticOp::CheckShape() const {
   return true;
 }
 
-bool SequenceArithmeticOp::InferShape() const {
+bool SequenceArithmeticOp::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
   param_.Out->set_lod(param_.X->lod());
   return true;

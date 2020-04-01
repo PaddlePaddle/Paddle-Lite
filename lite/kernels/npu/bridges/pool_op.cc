@@ -33,15 +33,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
@@ -105,10 +99,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  ksize);
 
   // ceil mode
-  int ceil_mode = 0;
-  if (op_info->HasAttr("ceil_mode")) {
-    ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
-  }
+  bool ceil_mode =
+      op_info->HasAttr("ceil_mode") && op_info->GetAttr<bool>("ceil_mode");
 
   // Pooling node
   auto pool_node = graph->Add<ge::op::Pooling>(out_name);
@@ -118,12 +110,14 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   pool_op->set_attr_pad_mode(pad_mode);
   pool_op->set_attr_global_pooling(global_pooling);
   pool_op->set_attr_window(ge::AttrValue::LIST_INT(ksize.begin(), ksize.end()));
-  pool_op->set_attr_pad(ge::AttrValue::LIST_INT{
-      paddings[0], paddings[1], paddings[2], paddings[3]});
+  pool_op->set_attr_pad(
+      ge::AttrValue::LIST_INT(paddings.begin(), paddings.end()));
   pool_op->set_attr_stride(
       ge::AttrValue::LIST_INT(strides.begin(), strides.end()));
-  pool_op->set_attr_ceil_mode(ceil_mode);
-  // pool_op->set_attr_data_mode(data_mode);
+  if (ceil_mode) {
+    pool_op->set_attr_ceil_mode(1);
+    pool_op->set_attr_data_mode(0);
+  }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

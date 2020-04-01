@@ -15,11 +15,9 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/string.h"
 
 DEFINE_string(model_file, "", "model file path of combined protobuf model");
 DEFINE_string(params_file, "", "params file path of combined protobuf model");
@@ -34,43 +32,17 @@ namespace lite {
 // The helper functions for loading and running model from command line and
 // verifying output data
 std::vector<std::string> TypeParsing(std::string text) {
-  std::vector<std::string> types;
-  while (!text.empty()) {
-    size_t index = text.find_first_of(":");
-    std::string type = text.substr(0, index);
-    VLOG(3) << type;
-    types.push_back(type);
-    if (index == std::string::npos) {
-      break;
-    } else {
-      text = text.substr(index + 1);
-    }
-  }
-  return types;
+  return Split(text, ":");
 }
 
 std::vector<std::vector<int64_t>> ShapeParsing(std::string text) {
   std::vector<std::vector<int64_t>> shapes;
-  while (!text.empty()) {
-    size_t index = text.find_first_of(":");
-    std::string slice = text.substr(0, index);
-    std::vector<int64_t> shape;
-    while (!slice.empty()) {
-      size_t index = slice.find_first_of(",");
-      int d = atoi(slice.substr(0, index).c_str());
-      VLOG(3) << d;
-      shape.push_back(d);
-      if (index == std::string::npos) {
-        break;
-      } else {
-        slice = slice.substr(index + 1);
-      }
-    }
-    shapes.push_back(shape);
-    if (index == std::string::npos) {
-      break;
-    } else {
-      text = text.substr(index + 1);
+  std::vector<std::string> shape_strings = Split(text, ":");
+  shapes.resize(shape_strings.size());
+  for (int i = 0; i < shape_strings.size(); i++) {
+    std::vector<std::string> shape_nums = Split(shape_strings[i], ",");
+    for (auto shape_num : shape_nums) {
+      shapes[i].push_back(atoi(shape_num.c_str()));
     }
   }
   return shapes;
