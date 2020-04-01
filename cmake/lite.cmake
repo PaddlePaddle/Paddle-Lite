@@ -307,6 +307,9 @@ function(add_kernel TARGET device level)
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
+    if ("${level}" STREQUAL "train" AND (NOT LITE_WITH_TRAIN))
+        return()
+    endif()
 
 
     if ("${device}" STREQUAL "Host")
@@ -434,11 +437,13 @@ function(add_operator TARGET level)
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-
     if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
         return()
     endif()
 
+    if ("${level}" STREQUAL "train" AND (NOT LITE_WITH_TRAIN))
+        return()
+    endif()
 
     foreach(src ${args_SRCS})
       if(LITE_BUILD_TAILOR)
