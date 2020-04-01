@@ -82,27 +82,35 @@ message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 # add python lib
 if (LITE_WITH_PYTHON)
     if(WIN32)
+   
+        set(LITE_CORE "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd")
+        set(LITE_CORE_DEPS ${LITE_CORE})
+        add_custom_command(OUTPUT   ${LITE_CORE}
+            COMMAND cmake -E copy $<TARGET_FILE:lite_pybind> ${LITE_CORE}
+            DEPENDS lite_pybind)
+        add_custom_target(copy_lite_pybind ALL DEPENDS ${LITE_CORE_DEPS})
+        
+        message("------$<TARGET_FILE:lite_pybind>--1--------")
         add_custom_target(publish_inference_python_lib ${TARGET}
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/lib"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/setup.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/"
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/python/__init__.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.lib" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite.lib"
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.lib" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.lib")
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/lib"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/setup.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/python/__init__.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite_core.pyd"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite_core.pyd"
+            DEPENDS copy_lite_pybind
+            )
+            
         add_custom_target(publish_inference_python_installer ${TARGET}
             COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
             WORKING_DIRECTORY ${INFER_LITE_PUBLISH_ROOT}/python/install/
-            DEPENDS publish_inference_python_lib)
+            DEPENDS  publish_inference_python_lib)
         add_custom_target(publish_inference_python_light_demo ${TARGET}
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/python"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
-        if (NOT LITE_ON_TINY_PUBLISH)
-            add_custom_target(publish_inference_python_full_demo ${TARGET}
-                COMMAND${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/python"
-                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
-            add_dependencies(publish_inference publish_inference_python_full_demo)
-        endif()
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
+            )
         add_dependencies(publish_inference_python_lib lite_pybind)
         add_dependencies(publish_inference publish_inference_python_lib)
         add_dependencies(publish_inference publish_inference_python_installer)
