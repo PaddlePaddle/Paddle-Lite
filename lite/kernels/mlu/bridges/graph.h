@@ -125,10 +125,7 @@ class Graph {
                                             que));
 #if PRINT_HW_TIME
     CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));
-#endif
-
     CNRT_CALL(cnrtSyncQueue(que));
-#if PRINT_HW_TIME
     CNRT_CALL(cnrtNotifierDuration(notifier_start_, notifier_end_, &hw_time));
     hw_time /= 1000.0f;
     DLOG(INFO) << "cnml hardware time " << hw_time << "ms" << std::endl;
