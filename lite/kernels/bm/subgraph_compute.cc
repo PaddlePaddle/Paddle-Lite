@@ -35,7 +35,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
   for (auto& inst : origin_program_) {
-    auto op = inst.op();
+    auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
     op->InferShape();

@@ -51,3 +51,5 @@ USE_SUBGRAPH_BRIDGE(reduce_mean, kBM);
 USE_SUBGRAPH_BRIDGE(squeeze, kBM);
 USE_SUBGRAPH_BRIDGE(squeeze2, kBM);
 USE_SUBGRAPH_BRIDGE(cast, kBM);
+USE_SUBGRAPH_BRIDGE(fill_constant, kBM);
+USE_SUBGRAPH_BRIDGE(assign_value, kBM);
