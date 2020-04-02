@@ -291,7 +291,9 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     exec_que_.pop();
   }
 
-  graph.get()->SetNodeInOrder(exec_ops_);
+  // Set attribute parameters, for passing parameters between passes
+  const std::string attr_name{"nodes_in_order"};
+  SetAttr<std::vector<Node*>>(attr_name, &exec_ops_);
 
   LOG(INFO) << "stream " << 0 << " has "
             << ops_in_streams_[0].size() - io_copy_once_num_

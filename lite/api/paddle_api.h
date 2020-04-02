@@ -113,7 +113,6 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
-  std::vector<std::string> skip_passes_;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -126,9 +125,6 @@ class LITE_API ConfigBase {
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
-  // skip passes
-  void delete_pass(const std::string& pass) { skip_passes_.push_back(pass); }
-  std::vector<std::string> skip_passes() const { return skip_passes_; }
 };
 
 /// CxxConfig is the config for the Full feature predictor.

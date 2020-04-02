@@ -31,14 +31,15 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
-#ifdef LITE_WITH_CUDA
-  Env<TARGET(kCUDA)>::Init(config_.cuda_max_stream());
-  if (!config_.multi_stream()) {
-    config_.delete_pass("multi_stream_analysis_pass");
-  }
-#endif
   auto places = config.valid_places();
   std::vector<std::string> passes{};
+#ifdef LITE_WITH_CUDA
+  Env<TARGET(kCUDA)>::Init(config_.cuda_max_stream());
+  if (config_.multi_stream()) {
+    passes = {"multi_stream_analysis_pass"};
+    VLOG(3) << "add pass: " << passes[0];
+  }
+#endif
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
   VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
@@ -47,7 +48,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     passes = {"type_layout_cast_preprocess_pass"};
     VLOG(1) << "add pass:" << passes[0];
   }
-  raw_predictor_.Build(config, places, passes, config_.skip_passes());
+  raw_predictor_.Build(config, places, passes);
 
   mode_ = config.power_mode();
   threads_ = config.threads();

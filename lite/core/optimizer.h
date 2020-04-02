@@ -40,8 +40,7 @@ class Optimizer {
   void Run(Program&& program,
            const std::vector<Place>& valid_places,
            core::KernelPickFactor kernel_pick_factor,
-           const std::vector<std::string>& passes = {},
-           const std::vector<std::string>& skip_passes = {}) {
+           const std::vector<std::string>& passes = {}) {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
@@ -115,19 +114,30 @@ class Optimizer {
 
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
-#ifdef LITE_WITH_CUDA
-           // must be in the front of runtime_context_assign_pass
-           "multi_stream_analysis_pass",
-#endif
+
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "memory_optimize_pass"}};
       if (passes.size() == 1) {
-        passes_local.push_back(passes[0]);
+        // multi_stream_analysis_pass must be in the front of
+        // runtime_context_assign_pass
+        const std::string msa_pass{"multi_stream_analysis_pass"};
+        const std::string depend_pass{"runtime_context_assign_pass"};
+        if (passes[0] == msa_pass) {
+          auto iter =
+              std::find(passes_local.begin(), passes_local.end(), depend_pass);
+          if (iter != passes_local.end()) {
+            passes_local.insert(iter, msa_pass);
+          } else {
+            CHECK(false) << "Not find " << depend_pass;
+          }
+        } else {
+          passes_local.push_back(passes[0]);
+        }
       }
-      RunPasses(passes_local, skip_passes);
+      RunPasses(passes_local);
     } else {
-      RunPasses(passes, skip_passes);
+      RunPasses(passes);
     }
     exec_scope_ = program.exec_scope();
   }
@@ -173,8 +183,7 @@ class Optimizer {
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
 
   // Specify the passes and run them.
-  void RunPasses(const std::vector<std::string>& passes,
-                 const std::vector<std::string>& skip_passes) {
+  void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);
@@ -192,12 +201,6 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        if (std::find(skip_passes.begin(), skip_passes.end(), x) !=
-            skip_passes.end()) {
-          LOG(INFO) << "   - Skip " << x
-                    << " because the pass has been deleted.";
-          continue;
-        }
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
       }

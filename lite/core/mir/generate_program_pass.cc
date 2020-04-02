@@ -14,6 +14,7 @@
 
 #include "lite/core/mir/generate_program_pass.h"
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
@@ -25,7 +26,20 @@ namespace mir {
 
 void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   VLOG(4) << "final program \n" << Visualize(graph.get());
-  for (auto& item : graph->GetNodesInOrder()) {
+  std::vector<Node*> nodes_in_order;
+#ifdef LITE_WITH_CUDA
+  const std::string depend_pass = "multi_stream_analysis_pass";
+  const std::string attr_name = "nodes_in_order";
+  mir::Pass* pass = mir::PassManager::Global().LookUp(depend_pass);
+  if (pass->HasAttr(attr_name)) {
+    nodes_in_order = pass->GetAttr<std::vector<Node*>>(attr_name);
+  }
+#endif
+  if (nodes_in_order.empty()) {
+    nodes_in_order = graph->StmtTopologicalOrder();
+  }
+
+  for (auto& item : nodes_in_order) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
       VLOG(4) << stmt;

@@ -69,19 +69,6 @@ class SSAGraph : GraphBase {
   const std::vector<Place> &valid_places() const { return valid_places_; }
   void SetValidPlaces(const std::vector<Place> &x) { valid_places_ = x; }
 
-  // Set Node order.
-  void SetNodeInOrder(const std::vector<mir::Node *> nodes) {
-    nodes_in_order_.clear();
-    nodes_in_order_.assign(nodes.begin(), nodes.end());
-  }
-  std::vector<mir::Node *> GetNodesInOrder() {
-    if (!nodes_in_order_.empty()) {
-      return nodes_in_order_;
-    } else {
-      return StmtTopologicalOrder();
-    }
-  }
-
  private:
   mir::Node *Argument(const std::string &name);
   // Check the bidirectional connection.
@@ -106,7 +93,6 @@ class SSAGraph : GraphBase {
 
  private:
   std::list<mir::Node> node_storage_;
-  std::vector<mir::Node *> nodes_in_order_;
   std::map<std::string, mir::Node *> arguments_;
   std::vector<Place> valid_places_;
 };
