@@ -26,10 +26,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
 
-    if(LITE_WITH_BM)
-        target_link_libraries(paddle_full_api_shared ${bm_kernels} "-Wl,--no-whole-archive" bmrt bmcompiler bmcpu bmlib)
-    endif(LITE_WITH_BM)
-
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared MODULE
         SRCS light_api_shared.cc
