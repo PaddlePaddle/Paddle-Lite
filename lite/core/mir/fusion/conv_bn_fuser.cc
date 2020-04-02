@@ -103,10 +103,17 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   std::string conv_weight_name = matched.at("conv_weight")->arg()->name;
   auto conv_weight_t =
       scope->FindVar(conv_weight_name)->GetMutable<lite::Tensor>();
-  CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
-           static_cast<size_t>(conv_weight_t->dims()[0]))
-      << "The BN bias's size should be equal to the size of the first "
-      << "dim size of the conv weights";
+  if (conv_type_ == "conv2d_transpose") {
+    CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
+             static_cast<size_t>(conv_weight_t->dims()[1]))
+        << "The BN bias's size should be equal to the size of the first "
+        << "dim size of the conv weights";
+  } else {
+    CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
+             static_cast<size_t>(conv_weight_t->dims()[0]))
+        << "The BN bias's size should be equal to the size of the first "
+        << "dim size of the conv weights";
+  }
   size_t weight_num = conv_weight_t->data_size();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
   bool is_weight_quantization =
