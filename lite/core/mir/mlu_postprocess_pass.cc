@@ -105,13 +105,8 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      if (op_type == "layout") {
-        stmt.picked_kernel().SetContext(
-            ContextScheduler::Global().NewContext(TARGET(kX86)));
-      } else {
-        stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
-            stmt.picked_kernel().target()));
-      }
+      stmt.picked_kernel().SetContext(
+          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
       break;
     }
   }
@@ -185,7 +180,8 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
       if (DataLayoutCompatible(*in_arg_ty, *cast_type) &&
-          DataLayoutCompatible(*out_arg_ty, *cur_node->AsArg().type)) {
+          DataLayoutCompatible(*out_arg_ty, *cur_node->AsArg().type) &&
+          PrecisionCompatibleTo(*in_arg_ty, *cast_type)) {
         is_found = true;
       }
     } else if (op_type == "io_copy") {
@@ -203,13 +199,8 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      if (op_type == "layout") {
-        stmt.picked_kernel().SetContext(
-            ContextScheduler::Global().NewContext(TARGET(kX86)));
-      } else {
-        stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
-            stmt.picked_kernel().target()));
-      }
+      stmt.picked_kernel().SetContext(
+          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
       break;
     }
   }
@@ -517,6 +508,50 @@ void MLUPostprocessPass::GatherAndModifyFirstConvNodes(SSAGraph* graph) {
   }
 }
 
+void MLUPostprocessPass::ModifyInputOutputDataType(SSAGraph* graph) {
+  for (auto& node : graph->mutable_nodes()) {
+    if (node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
+      for (auto& in_node : node.inlinks) {
+        const auto* in_node_type = in_node->AsArg().type;
+        VLOG(4) << "MLU subgraph input type: " << in_node->AsArg().name
+                << *in_node_type;
+        if (in_node->AsArg().is_weight || in_node->AsArg().is_persist) {
+          CHECK(in_node_type->target() == TARGET(kHost) &&
+                in_node_type->precision() == PRECISION(kAny) &&
+                in_node_type->layout() == DATALAYOUT(kNCHW))
+              << "MLU subgraph unexpected persistent input type!";
+          in_node->AsArg().type = LiteType::GetTensorTy(
+              TARGET(kMLU), PRECISION(kAny), DATALAYOUT(kNHWC));
+        } else {
+          CHECK((in_node_type->target() == TARGET(kHost) ||
+                 in_node_type->target() == TARGET(kX86)) &&
+                in_node_type->precision() == PRECISION(kFloat) &&
+                in_node_type->layout() == DATALAYOUT(kNCHW))
+              << "MLU subgraph unexpected common input type!";
+        }
+      }
+      for (auto& out_node : node.outlinks) {
+        const auto* out_node_type = out_node->AsArg().type;
+        VLOG(4) << "MLU subgraph output type: " << out_node->AsArg().name
+                << *out_node_type;
+        if (out_node->AsArg().is_weight || out_node->AsArg().is_persist) {
+          CHECK(out_node_type->target() == TARGET(kHost) &&
+                out_node_type->precision() == PRECISION(kAny) &&
+                out_node_type->layout() == DATALAYOUT(kNCHW))
+              << "MLU subgraph unexpected persistent input type!";
+          out_node->AsArg().type = LiteType::GetTensorTy(
+              TARGET(kMLU), PRECISION(kAny), DATALAYOUT(kNHWC));
+        } else {
+          CHECK(out_node_type->precision() == PRECISION(kFloat))
+              << "MLU subgraph unexpected common output type!";
+          out_node->AsArg().type = LiteType::GetTensorTy(
+              TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        }
+      }
+    }
+  }
+}
+
 void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
   for (auto& node : graph->mutable_nodes()) {
     if (!node.IsStmt()) continue;
@@ -562,14 +597,16 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
 }
 
 void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-// currently for non-persistent input and output args, mlu subgraph op
-// only support float16/float32 data type
+  // currently for non-persistent input and output args, mlu subgraph op
+  // only support float16/float32 data type
 
-// in two situations as folllows:
-// 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
-// arg_in and arg_out are assumed to be NHWC which user should be aware of.
-// Thus here we change these args' layout to NHWC
+  // in two situations as folllows:
+  // 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
+  // arg_in and arg_out are assumed to be NHWC which user should be aware of.
+  // Thus here we change these args' layout to NHWC
 #ifdef LITE_WITH_MLU
+  ModifyInputOutputDataType(graph.get());
+
   if (lite::TargetWrapperMlu::InputLayout() == DATALAYOUT(kNHWC)) {
     ModifyLayout(graph.get());
   }

@@ -79,6 +79,8 @@ class MLUPostprocessPass : public ProgramPass {
                             const Type** arg_type,
                             SSAGraph* graph);
 
+  void ModifyInputOutputDataType(SSAGraph* graph);
+
   void ModifyLayout(SSAGraph* graph);
 
   bool NeedInsert(Node* node, const Type* inst_type);
