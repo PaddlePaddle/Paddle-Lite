@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/multiclass_nms_compute.h"
-#include <map>
-#include <utility>
-#include <vector>
+#include <gtest/gtest.h>
+#include <cmath>
+#include <string>
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
+#include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace host {
 
 template <class T>
 bool SortScorePairDescend(const std::pair<float, T>& pair1,
@@ -87,14 +88,6 @@ static T JaccardOverlap(const T* box1, const T* box2, const bool normalized) {
 }
 
 template <class T>
-T PolyIoU(const T* box1,
-          const T* box2,
-          const size_t box_size,
-          const bool normalized) {
-  LOG(FATAL) << "PolyIoU not implement.";
-}
-
-template <class T>
 void SliceOneClass(const Tensor& items,
                    const int class_id,
                    Tensor* one_class_item) {
@@ -153,14 +146,8 @@ void NMSFast(const Tensor& bbox,
           overlap = JaccardOverlap<T>(bbox_data + idx * box_size,
                                       bbox_data + kept_idx * box_size,
                                       normalized);
-        }
-        // 8: [x1 y1 x2 y2 x3 y3 x4 y4] or 16, 24, 32
-        if (box_size == 8 || box_size == 16 || box_size == 24 ||
-            box_size == 32) {
-          overlap = PolyIoU<T>(bbox_data + idx * box_size,
-                               bbox_data + kept_idx * box_size,
-                               box_size,
-                               normalized);
+        } else {
+          LOG(FATAL) << "not support";
         }
         keep = overlap <= adaptive_threshold;
       } else {
@@ -178,20 +165,18 @@ void NMSFast(const Tensor& bbox,
 }
 
 template <typename T>
-void MultiClassNMS(const operators::MulticlassNmsParam& param,
-                   const Tensor& scores,
+void MultiClassNMS(const Tensor& scores,
                    const Tensor& bboxes,
                    const int scores_size,
                    std::map<int, std::vector<int>>* indices,
-                   int* num_nmsed_out) {
-  int64_t background_label = param.background_label;
-  int64_t nms_top_k = param.nms_top_k;
-  int64_t keep_top_k = param.keep_top_k;
-  bool normalized = param.normalized;
-  T nms_threshold = static_cast<T>(param.nms_threshold);
-  T nms_eta = static_cast<T>(param.nms_eta);
-  T score_threshold = static_cast<T>(param.score_threshold);
-
+                   int* num_nmsed_out,
+                   int64_t background_label,
+                   int64_t nms_top_k,
+                   int64_t keep_top_k,
+                   bool normalized,
+                   T nms_threshold,
+                   T nms_eta,
+                   T score_threshold) {
   int num_det = 0;
 
   int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
@@ -320,127 +305,187 @@ void MultiClassOutput(const Tensor& scores,
   }
 }
 
-void MulticlassNmsCompute::Run() {
-  auto& param = Param<operators::MulticlassNmsParam>();
-  auto* boxes = param.bboxes;
-  auto* scores = param.scores;
-  auto* outs = param.out;
-  bool return_index = param.index ? true : false;
-  auto* index = param.index;
-  auto score_dims = scores->dims();
-  auto score_size = score_dims.size();
+class MulticlassNmsComputeTester : public arena::TestCase {
+ protected:
+  // common attributes for this op.
+  std::string type_ = "multiclass_nms";
+  std::string bboxes_ = "bboxes";
+  std::string scores_ = "scores";
+  std::string out_ = "out";
+  DDim bboxes_dims_{};
+  DDim scores_dims_{};
+  int keep_top_k_{2};
+  float nms_threshold_{0.45f};
+  float nms_eta_{1.f};
+  int nms_top_k_{1};
+  int background_label_{-1};
+  float score_threshold_{0.01f};
+  bool normalized_{false};
 
-  std::vector<std::map<int, std::vector<int>>> all_indices;
-  std::vector<uint64_t> batch_starts = {0};
-  int64_t batch_size = score_dims[0];
-  int64_t box_dim = boxes->dims()[2];
-  int64_t out_dim = box_dim + 2;
-  int num_nmsed_out = 0;
-  Tensor boxes_slice, scores_slice;
-  int n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
-  for (int i = 0; i < n; ++i) {
-    if (score_size == 3) {
-      scores_slice = scores->Slice<float>(i, i + 1);
-      scores_slice.Resize({score_dims[1], score_dims[2]});
-      boxes_slice = boxes->Slice<float>(i, i + 1);
-      boxes_slice.Resize({score_dims[2], box_dim});
-    } else {
-      auto boxes_lod = boxes->lod().back();
-      scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-      boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-    }
-    std::map<int, std::vector<int>> indices;
-    MultiClassNMS<float>(
-        param, scores_slice, boxes_slice, score_size, &indices, &num_nmsed_out);
-    all_indices.push_back(indices);
-    batch_starts.push_back(batch_starts.back() + num_nmsed_out);
-  }
+ public:
+  MulticlassNmsComputeTester(const Place& place,
+                             const std::string& alias,
+                             DDim bboxes_dims,
+                             DDim scores_dims,
+                             int keep_top_k = 2,
+                             float nms_threshold = 0.45f,
+                             float nms_eta = 1.f,
+                             int nms_top_k = 1,
+                             int background_label = 1,
+                             float score_threshold = 0.01f,
+                             bool normalized = false)
+      : TestCase(place, alias),
+        bboxes_dims_(bboxes_dims),
+        scores_dims_(scores_dims),
+        keep_top_k_(keep_top_k),
+        nms_threshold_(nms_threshold),
+        nms_eta_(nms_eta),
+        nms_top_k_(nms_top_k),
+        background_label_(background_label),
+        score_threshold_(score_threshold),
+        normalized_(normalized) {}
 
-  uint64_t num_kept = batch_starts.back();
-  if (num_kept == 0) {
-    if (return_index) {
-      outs->Resize({0, out_dim});
-      index->Resize({0, 1});
-    } else {
-      outs->Resize({1, 1});
-      float* od = outs->mutable_data<float>();
-      od[0] = -1;
-      batch_starts = {0, 1};
-    }
-  } else {
-    outs->Resize({static_cast<int64_t>(num_kept), out_dim});
-    outs->mutable_data<float>();
-    int offset = 0;
-    int* oindices = nullptr;
+  void RunBaseline(Scope* scope) override {
+    auto* boxes = scope->FindTensor(bboxes_);
+    auto* scores = scope->FindTensor(scores_);
+    auto* outs = scope->NewTensor(out_);
+    CHECK(outs);
+    outs->set_precision(PRECISION(kFloat));
+
+    auto score_size = scores_dims_.size();
+    std::vector<std::map<int, std::vector<int>>> all_indices;
+    std::vector<uint64_t> batch_starts = {0};
+    int64_t batch_size = scores_dims_[0];
+    int64_t box_dim = bboxes_dims_[2];
+    int64_t out_dim = box_dim + 2;
+    int num_nmsed_out = 0;
+    Tensor boxes_slice, scores_slice;
+    int n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
     for (int i = 0; i < n; ++i) {
       if (score_size == 3) {
         scores_slice = scores->Slice<float>(i, i + 1);
+        scores_slice.Resize({scores_dims_[1], scores_dims_[2]});
         boxes_slice = boxes->Slice<float>(i, i + 1);
-        scores_slice.Resize({score_dims[1], score_dims[2]});
-        boxes_slice.Resize({score_dims[2], box_dim});
-        if (return_index) {
-          offset = i * score_dims[2];
-        }
+        boxes_slice.Resize({scores_dims_[2], box_dim});
       } else {
         auto boxes_lod = boxes->lod().back();
         scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-        if (return_index) {
-          offset = boxes_lod[i] * score_dims[1];
-        }
       }
-      int64_t s = static_cast<int64_t>(batch_starts[i]);
-      int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
-      if (e > s) {
-        Tensor out = outs->Slice<float>(s, e);
-        if (return_index) {
-          index->Resize({static_cast<int64_t>(num_kept), 1});
-          int* output_idx = index->mutable_data<int>();
-          oindices = output_idx + s;
+      std::map<int, std::vector<int>> indices;
+      MultiClassNMS<float>(scores_slice,
+                           boxes_slice,
+                           score_size,
+                           &indices,
+                           &num_nmsed_out,
+                           background_label_,
+                           nms_top_k_,
+                           keep_top_k_,
+                           normalized_,
+                           nms_threshold_,
+                           nms_eta_,
+                           score_threshold_);
+      all_indices.push_back(indices);
+      batch_starts.push_back(batch_starts.back() + num_nmsed_out);
+    }
+
+    uint64_t num_kept = batch_starts.back();
+    if (num_kept == 0) {
+      outs->Resize({1, 1});
+      float* od = outs->mutable_data<float>();
+      od[0] = -1;
+      batch_starts = {0, 1};
+    } else {
+      outs->Resize({static_cast<int64_t>(num_kept), out_dim});
+      outs->mutable_data<float>();
+      int offset = 0;
+      int* oindices = nullptr;
+      for (int i = 0; i < n; ++i) {
+        if (score_size == 3) {
+          scores_slice = scores->Slice<float>(i, i + 1);
+          boxes_slice = boxes->Slice<float>(i, i + 1);
+          scores_slice.Resize({scores_dims_[1], scores_dims_[2]});
+          boxes_slice.Resize({scores_dims_[2], box_dim});
+        } else {
+          auto boxes_lod = boxes->lod().back();
+          scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
+          boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         }
-        MultiClassOutput<float>(scores_slice,
-                                boxes_slice,
-                                all_indices[i],
-                                score_dims.size(),
-                                &out,
-                                oindices,
-                                offset);
+        int64_t s = static_cast<int64_t>(batch_starts[i]);
+        int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
+        if (e > s) {
+          Tensor out = outs->Slice<float>(s, e);
+          MultiClassOutput<float>(scores_slice,
+                                  boxes_slice,
+                                  all_indices[i],
+                                  scores_dims_.size(),
+                                  &out,
+                                  oindices,
+                                  offset);
+        }
       }
     }
+
+    LoD lod;
+    lod.emplace_back(batch_starts);
+    outs->set_lod(lod);
   }
 
-  LoD lod;
-  lod.emplace_back(batch_starts);
-  if (return_index) {
-    index->set_lod(lod);
+  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+    op_desc->SetType(type_);
+    op_desc->SetInput("BBoxes", {bboxes_});
+    op_desc->SetInput("Scores", {scores_});
+    op_desc->SetOutput("Out", {out_});
+    op_desc->SetAttr("keep_top_k", keep_top_k_);
+    op_desc->SetAttr("nms_threshold", nms_threshold_);
+    op_desc->SetAttr("nms_eta", nms_eta_);
+    op_desc->SetAttr("nms_top_k", nms_top_k_);
+    op_desc->SetAttr("background_label", background_label_);
+    op_desc->SetAttr("score_threshold", score_threshold_);
+    op_desc->SetAttr("normalized", normalized_);
   }
-  outs->set_lod(lod);
+
+  void PrepareData() override {
+    std::vector<float> bboxes(bboxes_dims_.production());
+    for (int i = 0; i < bboxes_dims_.production(); ++i) {
+      bboxes[i] = i * 1. / bboxes_dims_.production();
+    }
+    SetCommonTensor(bboxes_, bboxes_dims_, bboxes.data());
+
+    std::vector<float> scores(scores_dims_.production());
+    for (int i = 0; i < scores_dims_.production(); ++i) {
+      scores[i] = i * 1. / scores_dims_.production();
+    }
+    SetCommonTensor(scores_, scores_dims_, scores.data());
+  }
+};
+
+void TestMulticlassNms(Place place, float abs_error) {
+  int N = 3;
+  int M = 2500;
+  for (int class_num : {2, 4, 10}) {
+    std::vector<int64_t> bbox_shape{N, M, 4};
+    std::vector<int64_t> score_shape{N, class_num, M};
+    std::unique_ptr<arena::TestCase> tester(new MulticlassNmsComputeTester(
+        place, "def", DDim(bbox_shape), DDim(score_shape)));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
 }
-}  // namespace host
-}  // namespace kernels
+
+TEST(multiclass_nms, precision) {
+  float abs_error = 2e-5;
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
+
+  TestMulticlassNms(place, abs_error);
+}
+
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(multiclass_nms,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::MulticlassNmsCompute,
-                     def)
-    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(multiclass_nms2,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::MulticlassNmsCompute,
-                     def)
-    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Index",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .Finalize();
