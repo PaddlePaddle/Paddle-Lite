@@ -193,16 +193,16 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   } else {
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
-  if (conv_type_ == "conv2d_transpose") {
+    if (conv_type_ == "conv2d_transpose") {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] * 
                    conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       for (unsigned int k = 0; k < conv_weight_t->dims()[0]; ++k) {
         for (unsigned int i = 0; i < h; ++i) {
-            auto ptr_row = conv_weight_d + k * c_size + i * hw;
-            for (unsigned int j = 0; j < hw; ++j) {
-              ptr_row[j] *= alpha_data[i];
-            }
+          auto ptr_row = conv_weight_d + k * c_size + i * hw;
+          for (unsigned int j = 0; j < hw; ++j) {
+            ptr_row[j] *= alpha_data[i];
+          }
         }
       }
     } else {
