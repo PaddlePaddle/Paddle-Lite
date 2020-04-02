@@ -79,6 +79,11 @@ class IoCopyMluToHostCompute
     CHECK(param.x->target() == TARGET(kMLU));
     auto mem_size = param.x->memory_size();
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+
+    // sync queue to ensure process done
+    auto& mlu_context = this->ctx_->template As<MLUContext>();
+    CNRT_CALL(cnrtSyncQueue(mlu_context.exec_queue()));
+
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
 
