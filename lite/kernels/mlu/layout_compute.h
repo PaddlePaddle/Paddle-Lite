@@ -73,7 +73,7 @@ inline void LayoutTransCompute(const int dim,
 
 template <PrecisionType Precision>
 class LayoutNchwToNhwcCompute
-    : public KernelLite<TARGET(kMLU), Precision, DATALAYOUT(kNHWC)> {
+    : public KernelLite<TARGET(kX86), Precision, DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::LayoutParam;
 
@@ -122,7 +122,7 @@ class LayoutNchwToNhwcCompute
 
 template <PrecisionType Precision>
 class LayoutNhwcToNchwCompute
-    : public KernelLite<TARGET(kMLU), Precision, DATALAYOUT(kNHWC)> {
+    : public KernelLite<TARGET(kX86), Precision, DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::LayoutParam;
 

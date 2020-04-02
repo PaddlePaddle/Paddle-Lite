@@ -102,8 +102,14 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFloat)>,
     host_to_device_kFloat)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMLU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -113,8 +119,14 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFP16)>,
     host_to_device_kFP16)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMLU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -124,8 +136,14 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFloat)>,
     device_to_host_kFloat)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMLU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -135,6 +153,12 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFP16)>,
     device_to_host_kFP16)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMLU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
