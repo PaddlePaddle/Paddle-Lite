@@ -30,8 +30,6 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // start fuse using params
   for (auto conv_has_bias : conv_has_bias_cases) {
     for (auto conv_type : conv_type_cases) {
-      std::cout << "conv_has_bias:" << conv_has_bias
-              << " conv_type:" << conv_type << std::endl;
       VLOG(4) << "conv_has_bias:" << conv_has_bias
               << " conv_type:" << conv_type;
       fusion::ConvBNFuser fuser(conv_type, conv_has_bias);
