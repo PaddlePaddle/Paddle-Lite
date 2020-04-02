@@ -314,14 +314,14 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
 
 std::vector<std::vector<Node *>> SubgraphDetector::ExtractSubgraphs(
     node_map_t *nodes) {
-  for (auto &n_tpo : graph_->NodeTopologicalOrder()) {
+  for (auto &ordered_node : graph_->NodeTopologicalOrder()) {
     // different orders when traversing nodes in graph may lead to
     // different subgraph division, which may generate different result
     // with device such as MLU. These different results are all "right"
     // but a little confusing. Thus the topological order is used instead
     // of the address of the node in graph.
-    CHECK(nodes->find(n_tpo) != nodes->end());
-    node_dat_t *node = (*nodes)[n_tpo];
+    CHECK(nodes->find(ordered_node) != nodes->end());
+    node_dat_t *node = (*nodes)[ordered_node];
     if (!node->marked) {
       continue;
     }
