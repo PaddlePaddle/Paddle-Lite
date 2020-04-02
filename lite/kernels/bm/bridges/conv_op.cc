@@ -39,6 +39,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto filter_var_name = op_info->Input("Filter").front();
   auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
+
   CHECK_EQ(input_dims.size(), 4);
   CHECK_EQ(output_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
