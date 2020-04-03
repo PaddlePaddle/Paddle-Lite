@@ -47,9 +47,6 @@ class CLContext {
   cl::NDRange LocalWorkSize(cl::NDRange global_work_size, size_t max_work_size);
 
  private:
-  std::unordered_map<std::string, std::unique_ptr<cl::Program>> programs_;
-  std::vector<std::unique_ptr<cl::Kernel>> kernels_;
-  std::map<std::string, int> kernel_offset_;
 };
 
 }  // namespace lite

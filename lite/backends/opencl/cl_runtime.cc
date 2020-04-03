@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/opencl/cl_runtime.h"
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/utils/cp_logging.h"
@@ -29,10 +30,26 @@ CLRuntime* CLRuntime::Global() {
 
 CLRuntime::~CLRuntime() {
   if (command_queue_ != nullptr) {
+    command_queue_->flush();
     command_queue_->finish();
   }
-  // For controlling the destruction order:
+
+  for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
+    clReleaseKernel(kernels_[kidx]->get());
+    kernels_[kidx].reset();
+  }
+  kernels_.clear();
+  kernel_offset_.clear();
+
+  for (auto& p : programs_) {
+    clReleaseProgram(p.second->get());
+  }
+  programs_.clear();
+
+  // For controlling the destruction order
+  clReleaseCommandQueue(command_queue_->get());
   command_queue_.reset();
+  clReleaseContext(context_->get());
   context_.reset();
   device_.reset();
   platform_.reset();
@@ -73,14 +90,14 @@ cl::CommandQueue& CLRuntime::command_queue() {
   return *command_queue_;
 }
 
-std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
+std::shared_ptr<cl::Program> CLRuntime::CreateProgram(
     const cl::Context& context, std::string file_name) {
   auto cl_file = opencl_kernels_files.find(file_name);
   std::string content(cl_file->second.begin(), cl_file->second.end());
   cl::Program::Sources sources;
   sources.push_back(content);
   auto prog =
-      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+      std::shared_ptr<cl::Program>(new cl::Program(context, sources, &status_));
   VLOG(4) << "OpenCL kernel file name: " << file_name;
   VLOG(4) << "Program source size: " << content.size();
   CL_CHECK_FATAL(status_);

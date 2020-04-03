@@ -35,6 +35,9 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   STL::stringstream program_key_ss;
   program_key_ss << file_name << options;
   std::string program_key = program_key_ss.str();
+#if 1
+  auto &programs_ = CLRuntime::Global()->programs();
+#endif
   auto it = programs_.find(program_key);
   if (it != programs_.end()) {
     VLOG(3) << " --- program -> " << program_key << " has been built --- ";
@@ -64,13 +67,24 @@ void CLContext::AddKernel(const std::string &kernel_name,
       new cl::Kernel(program, kernel_name.c_str(), &status));
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
+
+#if 1
+  auto &kernels_ = CLRuntime::Global()->kernels();
+  auto &kernel_offset_ = CLRuntime::Global()->kernel_offset();
+#endif
+
   kernels_.emplace_back(std::move(kernel));
   STL::stringstream kernel_key;
   kernel_key << kernel_name << options;
+  // TODO(ysh329): kernel may overlapp
   kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {
+#if 1
+  auto &kernels_ = CLRuntime::Global()->kernels();
+#endif
+
   VLOG(3) << " --- kernel count: " << kernels_.size() << " --- ";
   CHECK(static_cast<size_t>(index) < kernels_.size())
       << "The index must be less than the size of kernels.";
@@ -80,6 +94,9 @@ cl::Kernel &CLContext::GetKernel(const int index) {
 }
 
 cl::Kernel &CLContext::GetKernel(const std::string &name) {
+#if 1
+  auto &kernel_offset_ = CLRuntime::Global()->kernel_offset();
+#endif
   auto it = kernel_offset_.find(name);
   CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
                                     << name;
