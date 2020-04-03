@@ -92,6 +92,7 @@ T PolyIoU(const T* box1,
           const size_t box_size,
           const bool normalized) {
   LOG(FATAL) << "PolyIoU not implement.";
+  return *box1;
 }
 
 template <class T>
