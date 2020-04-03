@@ -43,11 +43,6 @@ void LITE_API TargetFree(TargetType target, void* data);
 
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);
-void TargetCopy(TargetType dst_target,
-                TargetType src_target,
-                void* dst,
-                const void* src,
-                size_t size);
 #ifdef LITE_WITH_OPENCL
 void TargetCopyImage2D(TargetType target,
                        void* dst,
@@ -153,11 +148,6 @@ class Buffer {
     ResizeLazy(nbytes);
     // TODO(Superjomn) support copy between different targets.
     TargetCopy(target_, data_, other.data_, nbytes);
-  }
-
-  void CopyDataFromDevices(const Buffer& other, size_t nbytes) {
-    ResizeLazy(nbytes);
-    TargetCopy(target_, other.target_, data_, other.data_, nbytes);
   }
 
   ~Buffer() { Free(); }

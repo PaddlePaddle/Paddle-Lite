@@ -120,33 +120,6 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
   }
 }
 
-void TargetCopy(TargetType dst_target,
-                TargetType src_target,
-                void* dst,
-                const void* src,
-                size_t size) {
-  if (dst_target == TargetType::kHost) {
-    switch (src_target) {
-      case TargetType::kHost:
-      case TargetType::kX86:
-      case TargetType::kARM:
-        TargetWrapper<TARGET(kHost)>::MemcpySync(
-            dst, src, size, IoDirection::HtoH);
-        break;
-#ifdef LITE_WITH_CUDA
-      case TargetType::kCUDA:
-        TargetWrapper<TARGET(kCUDA)>::MemcpySync(
-            dst, src, size, IoDirection::DtoH);
-        break;
-#endif
-      default:
-        LOG(FATAL) << "unsupported type";
-    }
-  } else {
-    LOG(FATAL) << "unsupported type";
-  }
-}
-
 #ifdef LITE_WITH_OPENCL
 void TargetCopyImage2D(TargetType target,
                        void* dst,
