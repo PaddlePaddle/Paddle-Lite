@@ -225,6 +225,32 @@ class OpInfo : public cpp::OpDesc {
     return false;
   }
 
+  // For the input variable name, find the index of the corresponding
+  // input argname
+  bool GetInputIndex(const std::string &value_name, int *out) const {
+    for (auto &item : inputs_) {
+      auto it = std::find(item.second.begin(), item.second.end(), value_name);
+      if (it != item.second.end()) {
+        *out = it - item.second.begin();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // For the output variable name, find the index of the corresponding
+  // output argname
+  bool GetOutputIndex(const std::string &value_name, int *out) const {
+    for (auto &item : outputs_) {
+      auto it = std::find(item.second.begin(), item.second.end(), value_name);
+      if (it != item.second.end()) {
+        *out = it - item.second.begin();
+        return true;
+      }
+    }
+    return false;
+  }
+
   void UpdateAllInputs(const std::string &from, const std::string &to) {
     for (auto &item : inputs_) {
       for (auto &var : item.second) {
