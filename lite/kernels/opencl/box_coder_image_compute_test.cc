@@ -181,7 +181,8 @@ TEST(box_coder_image2d, compute) {
                   default_converter->NCHWToImage(
                       prior_box_var_data.data(), prior_box_var_image_data.data(), prior_box_var_dims);
                   auto* prior_box_var_image = prior_box_var.mutable_data<half_t, cl::Image2D>(
-                      prior_box_var_image_shape[0], prior_box_var_image_shape[1], prior_box_var_image_data.data());
+                      prior_box_var_image_shape[0], prior_box_var_image_shape[1],
+                      prior_box_var_image_data.data());
 
                   DDim target_box_image_shape =
                       default_converter->InitImageDimInfoWith(target_box_dims);
@@ -192,7 +193,8 @@ TEST(box_coder_image2d, compute) {
                   default_converter->NCHWToImage(
                       target_box_data.data(), target_box_image_data.data(), target_box_dims);
                   auto* target_box_image = target_box.mutable_data<half_t, cl::Image2D>(
-                      target_box_image_shape[0], target_box_image_shape[1], target_box_image_data.data());
+                      target_box_image_shape[0], target_box_image_shape[1],
+                      target_box_image_data.data());
 
                   DDim out_image_shape =
                       default_converter->InitImageDimInfoWith(out_dim);
@@ -217,8 +219,9 @@ TEST(box_coder_image2d, compute) {
 
                   lite::Tensor out_ref_tensor;
                   out_ref_tensor.Resize(out_dim);
-                  box_coder_ref(out_ref_tensor.mutable_data<float>(), prior_box_data.data(), target_box_data.data(),
-                                prior_box_var_data.data(), axis, norm, code_type, target_box_dims[0], target_box_dims[1]);
+                  box_coder_ref(out_ref_tensor.mutable_data<float>(), prior_box_data.data(),
+                                target_box_data.data(), prior_box_var_data.data(),
+                                axis, norm, code_type, target_box_dims[0], target_box_dims[1]);
 
                   const size_t cl_image2d_row_pitch{0};
                   const size_t cl_image2d_slice_pitch{0};
