@@ -49,9 +49,6 @@ class Graph {
   ~Graph() {
     FreeConstData();
     CNML_CALL(cnmlDestroyFusionOp(&fusion_op_));
-    for (auto op : ops_) {
-      CNML_CALL(cnmlDestroyBaseOp(&op));
-    }
 #if PRINT_HW_TIME
     CNRT_CALL(cnrtDestroyNotifier(&notifier_start_));
     CNRT_CALL(cnrtDestroyNotifier(&notifier_end_));
@@ -234,7 +231,6 @@ class Graph {
   std::vector<void*> output_addrs_;
   std::vector<std::shared_ptr<MLUTensor>> input_tensors_;
   std::vector<std::shared_ptr<MLUTensor>> output_tensors_;
-  std::vector<cnmlBaseOp_t> ops_;
   cnmlFusionOp_t fusion_op_;
   std::vector<void*> const_data_storage_;
 #if PRINT_HW_TIME

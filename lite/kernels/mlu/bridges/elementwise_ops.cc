@@ -117,6 +117,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   graph->FuseOp(elementwise_op);
+  CNML_CALL(cnmlDestroyBaseOp(&elementwise_op));
   cnmlBaseOp_t act_op;
   if (op_type == "fusion_elementwise_add_activation") {
     auto mid_tensor = graph->GetNode(out_var_name + "_mid");
@@ -127,6 +128,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  mid_tensor->mlu_tensor(),
                                  output_tensor->mlu_tensor()));
     graph->FuseOp(act_op);
+    CNML_CALL(cnmlDestroyBaseOp(&act_op));
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

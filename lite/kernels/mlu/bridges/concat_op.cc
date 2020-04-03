@@ -60,6 +60,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  &outputs,
                                  1));
   graph->FuseOp(concat_op);
+  CNML_CALL(cnmlDestroyBaseOp(&concat_op));
   return SUCCESS;
 }
 

@@ -60,6 +60,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  output_tensor->mlu_tensor()));
   }
   graph->FuseOp(activation_op);
+  CNML_CALL(cnmlDestroyBaseOp(&activation_op));
   return SUCCESS;
 }
 

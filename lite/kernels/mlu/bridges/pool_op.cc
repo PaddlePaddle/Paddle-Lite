@@ -121,6 +121,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                              output_tensor->mlu_tensor()));
   CNML_CALL(cnmlDestroyPoolOpParam(&pool_param));
   graph->FuseOp(pool_op);
+  CNML_CALL(cnmlDestroyBaseOp(&pool_op));
   return SUCCESS;
 }
 

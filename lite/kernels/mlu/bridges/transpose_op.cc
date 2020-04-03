@@ -61,7 +61,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   CHECK(graph->HasNode(x_var_name));
   auto input_tensor = graph->GetNode(x_var_name);
-  cnmlBaseOp_t transpose_op_{nullptr};
+  cnmlBaseOp_t transpose_op{nullptr};
 
   cnmlNdTransposeOpParam_t transpose_param{nullptr};
 
@@ -69,12 +69,13 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       &transpose_param, axis_nhwc.data(), axis_nhwc.size()));
 
   // Use cnmlCreatexxxOpForward to create op.
-  CNML_CALL(cnmlCreateNdTransposeProOp(&transpose_op_,
+  CNML_CALL(cnmlCreateNdTransposeProOp(&transpose_op,
                                        input_tensor->mlu_tensor(),
                                        output_tensor->mlu_tensor(),
                                        transpose_param));
 
-  graph->FuseOp(transpose_op_);
+  graph->FuseOp(transpose_op);
+  CNML_CALL(cnmlDestroyBaseOp(&transpose_op));
   return SUCCESS;
 }
 
