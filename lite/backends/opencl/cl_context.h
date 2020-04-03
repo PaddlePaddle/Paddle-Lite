@@ -36,7 +36,8 @@ class CLContext {
 
   void AddKernel(const std::string &kernel_name,
                  const std::string &file_name,
-                 const std::string &options = "");
+                 const std::string &options = "",
+                 const std::string &time_stamp = "");
 
   cl::Kernel &GetKernel(const int index);
 
@@ -45,8 +46,6 @@ class CLContext {
   cl::NDRange DefaultWorkSize(const CLImage &image);
 
   cl::NDRange LocalWorkSize(cl::NDRange global_work_size, size_t max_work_size);
-
- private:
 };
 
 }  // namespace lite

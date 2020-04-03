@@ -17,6 +17,7 @@
 #include <string>
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/core/kernel.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/cp_logging.h"
 
@@ -44,6 +45,7 @@ class ElementwiseAddImageCompute
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{"elementwise_add"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

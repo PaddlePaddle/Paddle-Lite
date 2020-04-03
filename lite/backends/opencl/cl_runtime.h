@@ -50,6 +50,12 @@ class CLRuntime {
 
   bool BuildProgram(cl::Program* program, const std::string& options = "");
 
+  std::unordered_map<std::string, std::shared_ptr<cl::Program>>& programs() {
+    return programs_;
+  }
+  std::vector<std::unique_ptr<cl::Kernel>>& kernels() { return kernels_; }
+  std::map<std::string, int>& kernel_offset() { return kernel_offset_; }
+
   bool IsInitSuccess() { return is_init_success_; }
 
   std::string cl_path() { return cl_path_; }

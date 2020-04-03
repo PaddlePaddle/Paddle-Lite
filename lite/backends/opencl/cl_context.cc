@@ -35,11 +35,10 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   STL::stringstream program_key_ss;
   program_key_ss << file_name << options;
   std::string program_key = program_key_ss.str();
-#if 1
-  auto &programs_ = CLRuntime::Global()->programs();
-#endif
-  auto it = programs_.find(program_key);
-  if (it != programs_.end()) {
+
+  auto &programs = CLRuntime::Global()->programs();
+  auto it = programs.find(program_key);
+  if (it != programs.end()) {
     VLOG(3) << " --- program -> " << program_key << " has been built --- ";
     return *(it->second);
   }
@@ -50,14 +49,15 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   CLRuntime::Global()->BuildProgram(program.get(), options);
   VLOG(3) << " --- end build program -> " << program_key << " --- ";
 
-  programs_[program_key] = std::move(program);
+  programs[program_key] = std::move(program);
 
-  return *(programs_[program_key]);
+  return *(programs[program_key]);
 }
 
 void CLContext::AddKernel(const std::string &kernel_name,
                           const std::string &file_name,
-                          const std::string &options) {
+                          const std::string &options,
+                          const std::string &time_stamp) {
   cl_int status{CL_SUCCESS};
   VLOG(3) << " --- to get program " << file_name << " --- ";
   auto program = GetProgram(file_name, options);
@@ -68,38 +68,29 @@ void CLContext::AddKernel(const std::string &kernel_name,
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
 
-#if 1
-  auto &kernels_ = CLRuntime::Global()->kernels();
-  auto &kernel_offset_ = CLRuntime::Global()->kernel_offset();
-#endif
-
-  kernels_.emplace_back(std::move(kernel));
+  auto &kernels = CLRuntime::Global()->kernels();
+  auto &kernel_offset_map = CLRuntime::Global()->kernel_offset();
+  kernels.emplace_back(std::move(kernel));
   STL::stringstream kernel_key;
-  kernel_key << kernel_name << options;
-  // TODO(ysh329): kernel may overlapp
-  kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
+  kernel_key << kernel_name << options << time_stamp;
+  kernel_offset_map[kernel_key.str()] = kernels.size() - 1;
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {
-#if 1
-  auto &kernels_ = CLRuntime::Global()->kernels();
-#endif
-
-  VLOG(3) << " --- kernel count: " << kernels_.size() << " --- ";
-  CHECK(static_cast<size_t>(index) < kernels_.size())
+  auto &kernels = CLRuntime::Global()->kernels();
+  VLOG(3) << " --- kernel count: " << kernels.size() << " --- ";
+  CHECK(static_cast<size_t>(index) < kernels.size())
       << "The index must be less than the size of kernels.";
-  CHECK(kernels_[index] != nullptr)
+  CHECK(kernels[index] != nullptr)
       << "The target kernel pointer cannot be null.";
-  return *(kernels_[index]);
+  return *(kernels[index]);
 }
 
 cl::Kernel &CLContext::GetKernel(const std::string &name) {
-#if 1
-  auto &kernel_offset_ = CLRuntime::Global()->kernel_offset();
-#endif
-  auto it = kernel_offset_.find(name);
-  CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
-                                    << name;
+  auto &kernel_offset_map = CLRuntime::Global()->kernel_offset();
+  auto it = kernel_offset_map.find(name);
+  CHECK(it != kernel_offset_map.end()) << "Cannot find the kernel function: "
+                                       << name;
   return GetKernel(it->second);
 }
 

@@ -16,6 +16,7 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
@@ -64,7 +65,7 @@ class FcCompute
     }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
+        kernel_func_name_, "buffer/fc_kernel.cl", build_options_, time_stamp_);
   }
 
   void Run() override {
@@ -78,7 +79,7 @@ class FcCompute
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status;
@@ -113,6 +114,7 @@ class FcCompute
   int m_, n_, k_;
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float "};
+  std::string time_stamp_{GetTimeStamp()};
   cl::NDRange global_work_size_;
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };

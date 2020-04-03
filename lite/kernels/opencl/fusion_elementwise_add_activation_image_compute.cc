@@ -16,6 +16,7 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/elementwise_add_image_compute.h"
+#include "lite/kernels/opencl/image_helper.h"
 
 namespace paddle {
 namespace lite {
@@ -30,8 +31,10 @@ class FusionElementwiseAddActivationImageCompute
   void PrepareForRun() override {
     build_options_ += " -DRELU";
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/elementwise_add_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/elementwise_add_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     ele_param_ = param_.get_mutable<param_t>();
     auto act_t = static_cast<param_t*>(ele_param_)->act_type;
     VLOG(4) << "act: " << act_t;
