@@ -388,18 +388,43 @@ void ConvImageCompute::PrepareForRun() {
 
   VLOG(4) << "max_work_group_size: " << max_work_group_size;
 
-  if (max_work_group_size > 0 && use_lws) {
-    // local_work_size_ = context.cl_context()->LocalWorkSizeConv1x1(
-    //     global_work_size_, max_work_group_size);
-    local_work_size_ = context.cl_context()->LocalWorkSize(global_work_size_,
-                                                           max_work_group_size);
-
+  if (max_work_group_size > 0 && use_lws_) {
+    double min_turn_time = DBL_MAX;
+    cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
+        global_work_size_, max_work_group_size);
+    cl::NDRange last_local_work_size = cl::NDRange{
+        static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
+    if (use_turn_) {
+      for (size_t i = 1; i < 15; i++) {
+        if (kernel_h == 1 && kernel_w == 1) {
+          // todo use diff logics
+          local_work_size_ = context.cl_context()->LocalWorkSizeTurn(
+              global_work_size_, max_work_group_size, i);
+        } else {
+          local_work_size_ = context.cl_context()->LocalWorkSizeTurn(
+              global_work_size_, max_work_group_size, i);
+        }
+        if (last_local_work_size[0] == local_work_size_[0] &&
+            last_local_work_size[1] == local_work_size_[1] &&
+            last_local_work_size[2] == local_work_size_[2]) {
+          // skiped turned lws
+          continue;
+        }
+        auto turn_time = this->Turn(5);
+        if (min_turn_time > turn_time) {
+          min_turn_time = turn_time;
+          best_local_work_size = local_work_size_;
+        }
+        last_local_work_size = local_work_size_;
+      }
+    }
+    local_work_size_ = best_local_work_size;
     VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
             << local_work_size_[1] << "," << local_work_size_[2] << "}";
   }
 }
 
-void ConvImageCompute::Conv2d1x1opt() {
+void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -430,23 +455,6 @@ void ConvImageCompute::Conv2d1x1opt() {
   int input_c_block = input_image_shape["width"] / input_dims[3];
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
-
-// const std::vector<size_t>& default_work_size =
-//     DefaultWorkSize(output_dims,
-//                     DDim(std::vector<DDim::value_type>{
-//                         static_cast<int64_t>(out_image_shape["width"]),
-//                         static_cast<int64_t>(out_image_shape["height"])}));
-
-// int c_block = default_work_size[0];
-// int w = default_work_size[1];
-// int nh = default_work_size[2];
-
-// int maped_w = maptofactor(w, 4);
-
-// auto global_work_size_ =
-//     cl::NDRange{static_cast<size_t>(default_work_size.data()[0]),
-//                 static_cast<size_t>(maped_w),
-//                 static_cast<size_t>(default_work_size.data()[2])};
 
 #ifndef LITE_SHUTDOWN_LOG
   //  VLOG(4) << "out_image: " << out_image;
@@ -541,73 +549,12 @@ void ConvImageCompute::Conv2d1x1opt() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
-
-#ifdef PROFILE_CONV_KERNEL
-  bool use_profile = false;
-  auto GetCurrentUS = []() -> double {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return 1e+6 * time.tv_sec + time.tv_usec;
-  };
-  double start = GetCurrentUS();
-
-  if (use_profile) {
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size_,
-        local_work_size_,
-        nullptr,
-        event_.get());
-    CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_image, event_);
-  } else {
-    int count = 50;
-    double sumtime = 0;
-    if (!use_profile) {
-      count = 1;
-    }
-    for (size_t i = 0; i < count; i++) {
-      start = GetCurrentUS();
-      status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
-          cl::NullRange,
-          global_work_size_,
-          local_work_size_,
-          nullptr,
-          event_.get());
-      CL_CHECK_FATAL(status);
-      context.cl_wait_list()->emplace(out_image, event_);
-      if (use_profile) {
-        event_->wait();
-        double duration = GetCurrentUS() - start;
-        sumtime += duration;
-      }
-    }
-
-    auto dims_string = [](DDimLite dims) -> std::string {
-      std::ostringstream stream;
-      stream << "[" << dims[0] << "," << dims[1] << "," << dims[2] << ","
-             << dims[3] << "]";
-      return stream.str();
-    };
-    if (use_profile) {
-      // LOG(INFO) << "input: " << input_dims;
-      // LOG(INFO) << "filter: " << filter_dims;
-      // LOG(INFO) << "output: " << output_dims;
-
-      std::cout << std::setw(25) << std::left << dims_string(input_dims)
-                << std::setw(25) << std::left << dims_string(filter_dims)
-                << std::setw(25) << std::left << dims_string(output_dims)
-                << std::setw(25) << std::left << sumtime / count << std::endl;
-    } else {
-      dims_string(input_dims);
-    }
+  if (is_turn) {
+    event_->wait();
   }
-#endif
 }
 
-void ConvImageCompute::Conv2d3x3() {
+void ConvImageCompute::Conv2d3x3(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -767,9 +714,13 @@ void ConvImageCompute::Conv2d3x3() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
+
+  if (is_turn) {
+    event_->wait();
+  }
 }
 
-void ConvImageCompute::Conv2d3x3opt() {
+void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -890,9 +841,12 @@ void ConvImageCompute::Conv2d3x3opt() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
+  if (is_turn) {
+    event_->wait();
+  }
 }
 
-void ConvImageCompute::Conv2d5x5() {
+void ConvImageCompute::Conv2d5x5(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1018,9 +972,12 @@ void ConvImageCompute::Conv2d5x5() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
+  if (is_turn) {
+    event_->wait();
+  }
 }
 
-void ConvImageCompute::Conv2d5x5opt() {
+void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1134,9 +1091,12 @@ void ConvImageCompute::Conv2d5x5opt() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
+  if (is_turn) {
+    event_->wait();
+  }
 }
 
-void ConvImageCompute::Conv2d7x7() {
+void ConvImageCompute::Conv2d7x7(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1262,8 +1222,12 @@ void ConvImageCompute::Conv2d7x7() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
+
+  if (is_turn) {
+    event_->wait();
+  }
 }
-void ConvImageCompute::Conv2d7x7opt() {
+void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1374,8 +1338,12 @@ void ConvImageCompute::Conv2d7x7opt() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(out_image, event_);
+
+  if (is_turn) {
+    event_->wait();
+  }
 }
-void ConvImageCompute::DepthwiseConv2d3x3s1() {
+void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1454,9 +1422,13 @@ void ConvImageCompute::DepthwiseConv2d3x3s1() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(output_img, event_);
+
+  if (is_turn) {
+    event_->wait();
+  }
 }
 
-void ConvImageCompute::DepthwiseConv2d3x3() {
+void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1548,9 +1520,13 @@ void ConvImageCompute::DepthwiseConv2d3x3() {
       event_.get());
   CL_CHECK_FATAL(status);
   context.cl_wait_list()->emplace(output_img, event_);
+
+  if (is_turn) {
+    event_->wait();
+  }
 }
 
-void ConvImageCompute::DepthwiseConv2d() {
+void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();
@@ -1683,8 +1659,22 @@ void ConvImageCompute::DepthwiseConv2d() {
   context.cl_wait_list()->emplace(out_image, event_);
 }
 
-void ConvImageCompute::Run() { (this->*impl_)(); }
-#undef PROFILE_CONV_KERNEL
+void ConvImageCompute::Run() { (this->*impl_)(false); }
+
+double ConvImageCompute::Turn(int times) {
+  auto GetCurrentUS = []() -> double {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return 1e+6 * time.tv_sec + time.tv_usec;
+  };
+  auto start = GetCurrentUS();
+  for (size_t i = 0; i < times; i++) {
+    (this->*impl_)(true);
+  }
+  auto time_diff = (GetCurrentUS() - start) / times;
+  return time_diff;
+}
+
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
