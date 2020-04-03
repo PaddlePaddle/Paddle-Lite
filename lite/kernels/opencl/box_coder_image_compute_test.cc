@@ -104,11 +104,10 @@ TEST(box_coder_image2d, compute) {
             LOG(INFO) << "======== parameters: norm = " << norm
                       << ", axis = " << axis << "code_type: " << code_type;
 
-            auto kernels = KernelRegistry::Global().Create(
-                "box_coder",
-                TARGET(kOpenCL),
-                PRECISION(kFP16),
-                DATALAYOUT(kImageDefault));
+            auto kernels = KernelRegistry::Global().Create("box_coder",
+                                                           TARGET(kOpenCL),
+                                                           PRECISION(kFP16),
+                                                           DATALAYOUT(kImageDefault));
             ASSERT_FALSE(kernels.empty());
             auto kernel = std::move(kernels.front());
             LOG(INFO) << "get kernel:" << kernel->doc();
@@ -147,7 +146,8 @@ TEST(box_coder_image2d, compute) {
             output_box.Resize(out_dim);
 
             std::vector<float> prior_box_data(prior_box_dims.production());
-            std::vector<float> prior_box_var_data(prior_box_var_dims.production());
+            std::vector<float> prior_box_var_data(
+                prior_box_var_dims.production());
             std::vector<float> target_box_data(target_box_dims.production());
             for (int i = 0; i < prior_box_dims.production(); i++) {
               prior_box_data[i] = i * 1.1 / prior_box_dims.production();
@@ -164,14 +164,13 @@ TEST(box_coder_image2d, compute) {
                 new CLImageConverterDefault();
             DDim prior_box_image_shape =
                 default_converter->InitImageDimInfoWith(prior_box_dims);
-            LOG(INFO) << "prior_box_image_shape = " << prior_box_image_shape[0] << " "
-                      << prior_box_image_shape[1];
+            LOG(INFO) << "prior_box_image_shape = " << prior_box_image_shape[0]
+                      << " " << prior_box_image_shape[1];
             std::vector<half_t> prior_box_image_data(
                 prior_box_image_shape.production() * 4);  // 4 : RGBA
-            default_converter->NCHWToImage(
-                prior_box_data.data(),
-                prior_box_image_data.data(),
-                prior_box_dims);
+            default_converter->NCHWToImage(prior_box_data.data(),
+                                           prior_box_image_data.data(),
+                                           prior_box_dims);
             auto* prior_box_image = prior_box.mutable_data<half_t, cl::Image2D>(
                 prior_box_image_shape[0],
                 prior_box_image_shape[1],
@@ -179,33 +178,34 @@ TEST(box_coder_image2d, compute) {
 
             DDim prior_box_var_image_shape =
                 default_converter->InitImageDimInfoWith(prior_box_var_dims);
-            LOG(INFO) << "prior_box_var_image_shape = " << prior_box_var_image_shape[0] << " "
-                      << prior_box_var_image_shape[1];
+            LOG(INFO) << "prior_box_var_image_shape = " << prior_box_var_image_shape[0]
+                      << " " << prior_box_var_image_shape[1];
             std::vector<half_t> prior_box_var_image_data(
                 prior_box_var_image_shape.production() * 4);  // 4 : RGBA
-            default_converter->NCHWToImage(
-                prior_box_var_data.data(),
-                prior_box_var_image_data.data(),
-                prior_box_var_dims);
-            auto* prior_box_var_image = prior_box_var.mutable_data<half_t, cl::Image2D>(
-                prior_box_var_image_shape[0],
-                prior_box_var_image_shape[1],
-                prior_box_var_image_data.data());
+            default_converter->NCHWToImage(prior_box_var_data.data(),
+                                           prior_box_var_image_data.data(),
+                                           prior_box_var_dims);
+            auto* prior_box_var_image = 
+                prior_box_var.mutable_data<half_t, cl::Image2D>(
+                    prior_box_var_image_shape[0],
+                    prior_box_var_image_shape[1],
+                    prior_box_var_image_data.data());
 
             DDim target_box_image_shape =
                 default_converter->InitImageDimInfoWith(target_box_dims);
-            LOG(INFO) << "target_box_image_shape = " << target_box_image_shape[0] << " "
+            LOG(INFO) << "target_box_image_shape = "
+                      << target_box_image_shape[0] << " "
                       << target_box_image_shape[1];
             std::vector<half_t> target_box_image_data(
                 target_box_image_shape.production() * 4);  // 4 : RGBA
-            default_converter->NCHWToImage(
-                target_box_data.data(),
-                target_box_image_data.data(),
-                target_box_dims);
-            auto* target_box_image = target_box.mutable_data<half_t, cl::Image2D>(
-                target_box_image_shape[0],
-                target_box_image_shape[1],
-                target_box_image_data.data());
+            default_converter->NCHWToImage(target_box_data.data(),
+                                           target_box_image_data.data(),
+                                           target_box_dims);
+            auto* target_box_image =
+                target_box.mutable_data<half_t, cl::Image2D>(
+                    target_box_image_shape[0],
+                    target_box_image_shape[1],
+                    target_box_image_data.data());
 
             DDim out_image_shape =
                 default_converter->InitImageDimInfoWith(out_dim);
@@ -220,12 +220,12 @@ TEST(box_coder_image2d, compute) {
             auto it = wait_list->find(out_ptr);
             if (it != wait_list->end()) {
               VLOG(4) << "--- Find the sync event for the target cl "
-                        "tensor. ---";
+                         "tensor. ---";
               auto& event = *(it->second);
               event.wait();
             } else {
               LOG(FATAL) << "Could not find the sync event for the "
-                                  "target cl tensor.";
+                            "target cl tensor.";
             }
 
             lite::Tensor out_ref_tensor;
@@ -243,7 +243,7 @@ TEST(box_coder_image2d, compute) {
             const size_t cl_image2d_row_pitch{0};
             const size_t cl_image2d_slice_pitch{0};
             half_t* out_image_data =
-                new half_t[out_image_shape.production() * 4];
+                new half_t[40000]; // [out_image_shape.production() * 4];
             TargetWrapperCL::ImgcpySync(out_image_data,
                                         out_image,
                                         out_image_shape[0],
@@ -269,24 +269,23 @@ TEST(box_coder_image2d, compute) {
                   COMPUTE_RELATIVE_DIFF(out_data[i], out_ref[i]);
               EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
                             (abs_diff <= FP16_MAX_DIFF),
-                            true);
+                         true);
               if ((relative_diff > FP16_MAX_DIFF) &&
                   (abs_diff > FP16_MAX_DIFF)) {
                 LOG(ERROR) << "error idx:" << i << ", in_data[" << i
                            << "]: " << target_box_data[i] << ", out_data[" << i
                            << "]: " << out_data[i] << ", out_ref[" << i
-                           << "]: " << out_ref[i]
-                           << ", abs_diff: " << abs_diff
+                           << "]: " << out_ref[i] << ", abs_diff: " << abs_diff
                            << ", relative_diff: " << relative_diff
                            << ", FP16_MAX_DIFF: " << FP16_MAX_DIFF;
               }
-           }
+            }
 #ifdef BOXCODER_FP16_LOOP_TEST
-        }        // axis
-      }          // code_type
-    }            // norm
-  }              // m
-}                // n
+          }        // axis
+        }          // code_type
+      }            // norm
+    }              // m
+  }                // n
 #else
 // nothing to do.
 #endif

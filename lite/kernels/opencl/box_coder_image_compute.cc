@@ -41,7 +41,8 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->box_normalized == true) {
       kernel_func_name_ = "decode_center_size";
     } else {
-      printf("This code_type %s doesn't support \n", boxcoder_param_->code_type.c_str());
+      printf("This code_type %s doesn't support \n",
+             boxcoder_param_->code_type.c_str());
       return;
     }
     CHECK(context.cl_context() != nullptr);
@@ -69,7 +70,8 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
     const auto& code_type = boxcoder_param_->code_type;
     if (code_type == "decode_center_size") {
       auto* prior_box_image = input_priorbox->data<half_t, cl::Image2D>();
-      auto* prior_box_var_image = input_priorboxvar->data<half_t, cl::Image2D>();
+      auto* prior_box_var_image =
+          input_priorboxvar->data<half_t, cl::Image2D>();
       auto* target_box_image = input_targetbox->data<half_t, cl::Image2D>();
 
       int new_dims[4] = {1, 1, 1, 1};
@@ -82,19 +84,18 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
       kernel_key << kernel_func_name_ << build_options_;
       auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-      auto default_work_size = DefaultWorkSize(out_dims,
-          DDim(std::vector<DDim::value_type>{
-              static_cast<int64_t>(image_shape["width"]),
-              static_cast<int64_t>(image_shape["height"])}));
+      auto default_work_size = 
+          DefaultWorkSize(out_dims,
+                          DDim(std::vector<DDim::value_type>{
+                               static_cast<int64_t>(image_shape["width"]),
+                               static_cast<int64_t>(image_shape["height"])}));
 
       int out_C = new_dims[1];
       int out_H = new_dims[2];
 #ifndef LITE_SHUTDOWN_LOG
       VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
-      VLOG(4) << "output shape: " << out_dims[0] << ", "
-              << out_dims[1] << ", "
-              << out_dims[2] << ", "
-              << out_dims[3];
+      VLOG(4) << "output shape: " << out_dims[0] << ", " << out_dims[1] << ", "
+              << out_dims[2] << ", " << out_dims[3];
       VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
               << image_shape["height"];
       VLOG(4) << "out_C = " << out_C;
