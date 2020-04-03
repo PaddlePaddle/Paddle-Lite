@@ -81,8 +81,7 @@ message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
 # add python lib
 if (LITE_WITH_PYTHON)
-    if(WIN32)
-   
+    if(WIN32)   
         set(LITE_CORE "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd")
         set(LITE_CORE_DEPS ${LITE_CORE})
         add_custom_command(OUTPUT   ${LITE_CORE}
@@ -111,7 +110,6 @@ if (LITE_WITH_PYTHON)
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_full_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/"
             )
-        add_dependencies(publish_inference_python_lib lite_pybind)
         add_dependencies(publish_inference publish_inference_python_lib)
         add_dependencies(publish_inference publish_inference_python_installer)
         add_dependencies(publish_inference publish_inference_python_light_demo)

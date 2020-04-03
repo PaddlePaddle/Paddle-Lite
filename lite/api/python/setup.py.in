@@ -45,6 +45,8 @@ if '${WITH_MKL}' == 'ON':
         PACKAGE_DATA['paddlelite.libs'] += ['libmklml_intel.so', 'libiomp5.so']
     else:
         PACKAGE_DATA['paddlelite.libs'] += ['libiomp5md.dll', 'mklml.dll']
+        shutil.copy('${MKLML_SHARED_LIB_DEPS}', LIB_PATH)
+        PACKAGE_DATA['paddlelite.libs'] += ['msvcr120.dll']
 # link lite.so to paddlelite.libs
 if os.name != 'nt':
     COMMAND = "patchelf --set-rpath '$ORIGIN/../libs/' ${PADDLE_BINARY_DIR}\
