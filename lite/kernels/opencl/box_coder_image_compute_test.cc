@@ -138,7 +138,6 @@ TEST(box_coder_image2d, compute) {
                 DDim(std::vector<DDim::value_type>{1, 1, m, 4});
             const DDim target_box_dims =
                 DDim(std::vector<DDim::value_type>{1, n, m, 4});
-                  
             const DDim out_dim =
                 DDim(std::vector<DDim::value_type>{1, n, m, 4});
             prior_box.Resize(prior_box_dims);
