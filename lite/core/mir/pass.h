@@ -127,21 +127,21 @@ class Pass {
     return pass_attrs_.count(attr_name) > 0;
   }
 
-  // Set a pointer to the attribute. Specific pass itself take ownership of the
+  // Set a pointer to the attribute. Specific pass itself takes ownership of the
   // attribute.
   template <typename AttrType>
-  void SetAttr(const std::string& attr_name, AttrType* attr) {
+  void SetAttr(const std::string& attr_name, const AttrType* attr) {
     VLOG(4) << "Setting the attribute " << attr_name << " for the pass "
             << name_;
-    pass_attrs_[attr_name].set<AttrType*>(attr);
+    pass_attrs_[attr_name].set<const AttrType>(*attr);
   }
 
   // Get a reference to the attribute previously set.
   template <typename AttrType>
-  AttrType& GetAttr(const std::string& attr_name) const {
+  const AttrType& GetAttr(const std::string& attr_name) const {
     CHECK(pass_attrs_.count(attr_name))
         << attr_name << " attr not register for pass " << name_;
-    return *pass_attrs_.at(attr_name).get<AttrType*>();
+    return pass_attrs_.at(attr_name).get<const AttrType>();
   }
 
  private:
@@ -151,7 +151,7 @@ class Pass {
   std::set<TargetType> bound_targets_;
   std::set<TargetType> excluded_targets_;
   std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_;
-  std::unordered_map<std::string, variant<Node*, std::vector<Node*>*>>
+  std::unordered_map<std::string, variant<Node, std::vector<Node*>>>
       pass_attrs_;
 };
 
