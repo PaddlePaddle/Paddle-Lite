@@ -55,8 +55,7 @@ class Optimizer {
 
     if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
-          {"lite_quant_dequant_fuse_pass",         //
-           "weight_quantization_preprocess_pass",  //
+          {"weight_quantization_preprocess_pass",  //
            "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",               //
            "lite_conv_elementwise_fuse_pass",      // conv-bn-elemwise
@@ -71,19 +70,7 @@ class Optimizer {
            "identity_scale_eliminate_pass",               //
            "elementwise_mul_constant_eliminate_pass",     //
            "lite_sequence_pool_concat_fuse_pass",         //
-#if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
-    (defined LITE_WITH_ARM)
-           "lite_elementwise_add_activation_fuse_pass",  //
-#endif
-           "quantized_op_attributes_inference_pass",  // Only for fully
-                                                      // quantized model, infer
-                                                      // the output scale and
-                                                      // fix the attribute
-                                                      // 'enable_int8' for all
-                                                      // of the quantized ops.
-           "npu_subgraph_pass",
-           "xpu_subgraph_pass",
-           "bm_subgraph_pass",
+           "lite_elementwise_add_activation_fuse_pass",   //
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
@@ -118,9 +105,6 @@ class Optimizer {
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "memory_optimize_pass"}};
-      if (passes.size() == 1) {
-        passes_local.push_back(passes[0]);
-      }
       RunPasses(passes_local);
     } else {
       RunPasses(passes);
