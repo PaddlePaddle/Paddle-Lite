@@ -311,7 +311,7 @@ add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
-        DEPS gflags kernel op optimizer mir_passes utils)
+        DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
     add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
