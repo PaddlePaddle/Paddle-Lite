@@ -42,8 +42,10 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     grid_param_ = param_.get_mutable<param_t>();
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/grid_sampler_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/grid_sampler_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -79,7 +81,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
             << out_image_shape["height"];
 #endif
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -129,6 +131,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   param_t* grid_param_{nullptr};
   std::string kernel_func_name_{"grid_sampler"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
