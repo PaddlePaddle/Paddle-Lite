@@ -137,7 +137,6 @@ class LITE_API CxxConfig : public ConfigBase {
   int x86_math_library_math_threads_ = 1;
 #endif
 #ifdef LITE_WITH_CUDA
-  int cuda_max_stream_ = 4;
   bool multi_stream_{false};
 #endif
 
@@ -168,8 +167,6 @@ class LITE_API CxxConfig : public ConfigBase {
   }
 #endif
 #ifdef LITE_WITH_CUDA
-  void set_cuda_max_stream(int max_stream) { cuda_max_stream_ = max_stream; }
-  int cuda_max_stream() const { return cuda_max_stream_; }
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
   int multi_stream() const { return multi_stream_; }
 #endif

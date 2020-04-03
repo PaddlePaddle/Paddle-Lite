@@ -34,7 +34,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   auto places = config.valid_places();
   std::vector<std::string> passes{};
 #ifdef LITE_WITH_CUDA
-  Env<TARGET(kCUDA)>::Init(config_.cuda_max_stream());
+  Env<TARGET(kCUDA)>::Init();
   if (config_.multi_stream()) {
     passes = {"multi_stream_analysis_pass"};
     VLOG(3) << "add pass: " << passes[0];
