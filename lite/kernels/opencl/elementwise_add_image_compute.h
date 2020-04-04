@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/op_params.h"
@@ -34,6 +35,10 @@ class ElementwiseAddImageCompute
 
   void PrepareForRun() override;
 
+  void ReInitWhenNeeded() override;
+
+  void GetGlobalWorkSize();
+
   void Run() override;
 
   std::string doc() const override {
@@ -42,8 +47,19 @@ class ElementwiseAddImageCompute
 
  protected:
   param_t* ele_param_{nullptr};
+  DDim last_x_dims_;
+  DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
+  DDim y_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
+  DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   std::string kernel_func_name_{"elementwise_add"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  bool first_epoch_for_reinit_{true};
+  cl::Kernel kernel_;
+  cl::NDRange global_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
