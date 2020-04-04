@@ -110,6 +110,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kAscend310): {
       CREATE_KERNEL(kAscend310);
     } break;
+    case TARGET(kMLU): {
+      CREATE_KERNEL(kMLU);
+    } break;
     default:
       CHECK(false) << "not supported kernel target " << TargetToStr(target);
   }
@@ -141,6 +144,15 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kCUDA, kInt8, kNHWC);
   INIT_FOR(kCUDA, kInt64, kNCHW);
   INIT_FOR(kCUDA, kInt64, kNHWC);
+
+  INIT_FOR(kMLU, kFloat, kNHWC);
+  INIT_FOR(kMLU, kFloat, kNCHW);
+  INIT_FOR(kMLU, kFP16, kNHWC);
+  INIT_FOR(kMLU, kFP16, kNCHW);
+  INIT_FOR(kMLU, kInt8, kNHWC);
+  INIT_FOR(kMLU, kInt8, kNCHW);
+  INIT_FOR(kMLU, kInt16, kNHWC);
+  INIT_FOR(kMLU, kInt16, kNCHW);
 
   INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);

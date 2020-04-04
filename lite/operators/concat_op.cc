@@ -26,7 +26,7 @@ bool ConcatOpLite::CheckShape() const {
   return true;
 }
 
-bool ConcatOpLite::InferShape() const {
+bool ConcatOpLite::InferShapeImpl() const {
   const std::vector<Tensor *> &inputs = param_.x;
   const size_t n = inputs.size();
   CHECK_GT_OR_FALSE(n, 0);

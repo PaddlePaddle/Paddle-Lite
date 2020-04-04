@@ -44,7 +44,7 @@ bool AffineChannelOpLite::CheckShape() const {
   return true;
 }
 
-bool AffineChannelOpLite::InferShape() const {
+bool AffineChannelOpLite::InferShapeImpl() const {
   const auto x_dims = param_.X->dims();
   param_.Out->Resize(x_dims);
   return true;

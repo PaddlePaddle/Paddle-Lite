@@ -53,6 +53,7 @@ using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using Ascend310Context = Context<TargetType::kAscend310>;
+using MLUContext = Context<TargetType::kMLU>;
 
 template <>
 class Context<TargetType::kHost> {

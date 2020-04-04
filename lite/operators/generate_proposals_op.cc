@@ -43,7 +43,7 @@ bool GenerateProposalsOpLite::CheckShape() const {
   return true;
 }
 
-bool GenerateProposalsOpLite::InferShape() const {
+bool GenerateProposalsOpLite::InferShapeImpl() const {
   param_.RpnRois->Resize(std::vector<int64_t>({-1, 4}));
   param_.RpnRoiProbs->Resize(std::vector<int64_t>({-1, 1}));
   return true;

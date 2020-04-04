@@ -35,7 +35,7 @@ bool AssignValueOpLite::CheckShape() const {
   return true;
 }
 
-bool AssignValueOpLite::InferShape() const {
+bool AssignValueOpLite::InferShapeImpl() const {
   std::vector<int> shape = param_.shape;
   std::vector<int64_t> out_shape;
   for (size_t i = 0; i < shape.size(); i++) out_shape.push_back(shape[i]);

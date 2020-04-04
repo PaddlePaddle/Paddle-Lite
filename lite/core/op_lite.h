@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
@@ -24,6 +25,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/scope.h"
 #include "lite/model_parser/cpp/op_desc.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -64,8 +66,8 @@ class OpLite : public Registry {
   // Check the shape.
   virtual bool CheckShape() const { return true; }
   // Inference the outputs' shape.
-  virtual bool InferShape() const { return true; }
-  virtual bool SmartInferShape() { return this->InferShape(); }
+  virtual bool InferShapeImpl() const { return true; }
+  virtual bool InferShape();
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not
@@ -151,10 +153,16 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
-  std::vector<DDimLite> last_input_shapes;
-  std::vector<DDimLite> last_output_shapes;
-  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods;
-  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods;
+
+  std::vector<DDimLite> last_output_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
+  size_t io_shape_lod_hash_{};
+  mutable operators::ParamBase param_;
+
+ private:
+  // Infer Shape according to memory, if current input shapes are consistent
+  // with that of previous inputs, output shapes of last time will be reused.
+  bool InferShapeWithCache();
 };
 
 /*
@@ -211,6 +219,32 @@ class OpInfo : public cpp::OpDesc {
       auto it = std::find(item.second.begin(), item.second.end(), value_name);
       if (it != item.second.end()) {
         *out = item.first;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // For the input variable name, find the index of the corresponding
+  // input argname
+  bool GetInputIndex(const std::string &value_name, int *out) const {
+    for (auto &item : inputs_) {
+      auto it = std::find(item.second.begin(), item.second.end(), value_name);
+      if (it != item.second.end()) {
+        *out = it - item.second.begin();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // For the output variable name, find the index of the corresponding
+  // output argname
+  bool GetOutputIndex(const std::string &value_name, int *out) const {
+    for (auto &item : outputs_) {
+      auto it = std::find(item.second.begin(), item.second.end(), value_name);
+      if (it != item.second.end()) {
+        *out = it - item.second.begin();
         return true;
       }
     }
