@@ -44,7 +44,10 @@ DEFINE_string(input_shape,
               "set input shapes according to the model, "
               "separated by colon and comma, "
               "such as 1,3,244,244");
-DEFINE_string(input_img_path, "", "the path of input image");
+DEFINE_string(input_img_path,
+              "",
+              "the path of input image, if not set "
+              "input_img_path, the input of model will be 1.0.");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_int32(power_mode,
@@ -57,16 +60,11 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_string(result_filename,
               "result.txt",
-              "save benchmark "
-              "result to the file");
+              "save the inference time to the file.");
 DEFINE_bool(run_model_optimize,
             false,
             "if set true, apply model_optimize_tool to "
             "model and use optimized model to test. ");
-DEFINE_bool(is_quantized_model,
-            false,
-            "if set true, "
-            "test the performance of the quantized model. ");
 
 namespace paddle {
 namespace lite_api {
@@ -87,10 +85,6 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   std::vector<Place> vaild_places = {
       Place{TARGET(kARM), PRECISION(kFloat)},
   };
-  if (FLAGS_is_quantized_model) {
-    vaild_places.insert(vaild_places.begin(),
-                        Place{TARGET(kARM), PRECISION(kInt8)});
-  }
   config.set_valid_places(vaild_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -181,8 +175,8 @@ void Run(const std::vector<int64_t>& input_shape,
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_model_dir == "" || FLAGS_result_filename == "") {
-    LOG(INFO) << "please run ./benchmark_bin --help to obtain usage.";
+  if (FLAGS_model_dir == "") {
+    LOG(INFO) << "Please run ./benchmark_bin --help to obtain usage.";
     exit(0);
   }
 

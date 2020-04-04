@@ -39,97 +39,118 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
   void PrepareForRun() override {
-    grid_param_ = param_.get_mutable<param_t>();
-
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/grid_sampler_kernel.cl",
                                     build_options_,
                                     time_stamp_);
-    VLOG(4) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    VLOG(4) << "kernel_key: " << kernel_key.str();
+  }
+
+  void ReInitWhenNeeded() override {
+    grid_param_ = param_.get_mutable<param_t>();
+    auto x_dims = grid_param_->x->dims();
+    if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
+        first_epoch_for_reinit_) {
+      last_x_dims_ = x_dims;
+      first_epoch_for_reinit_ = false;
+
+      // compute image shape
+      paddle::lite::CLImageConverterDefault default_convertor;
+      out_img_shape_ =
+          default_convertor.InitImageDimInfoWith(grid_param_->out->dims());
+
+      // compute global work size
+      GetGlobalWorkSize();
+    }
+  }
+
+  void GetGlobalWorkSize() {
+    auto default_work_size =
+        DefaultWorkSize(grid_param_->out->dims(),
+                        DDim(std::vector<DDim::value_type>{
+                            static_cast<int64_t>(out_img_shape_[0]),
+                            static_cast<int64_t>(out_img_shape_[1])}));
+    global_work_size_ =
+        cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
+                    static_cast<cl::size_type>(default_work_size[1]),
+                    static_cast<cl::size_type>(default_work_size[2] / 4)};
+#ifndef LITE_SHUTDOWN_LOG
+    VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
+            << default_work_size[1] << ", " << default_work_size[2];
+    VLOG(4) << "global_work_size_:[2D]:" << global_work_size_[0] << " "
+            << global_work_size_[1] << " " << global_work_size_[2];
+#endif
   }
 
   void Run() override {
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-
     auto* x = grid_param_->x;
-    auto* out = grid_param_->out;
     auto* grid = grid_param_->grid;
+    auto* out = grid_param_->out;
+
     auto out_dims = out->dims();
-    auto in_dims = x->dims();
+    int out_height = out_dims[2];
+    int out_width = out_dims[3];
+
+    auto* x_img = x->data<half_t, cl::Image2D>();
+    auto* grid_img = x->data<half_t, cl::Image2D>();
+    auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape_[0],
+                                                           out_img_shape_[1]);
 
 #ifndef LITE_SHUTDOWN_LOG
+    auto in_dims = x->dims();
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
     VLOG(4) << "out->dims():" << out_dims;
-#endif
-
-    auto out_image_shape = InitImageDimInfoWith(out_dims);
-    auto* x_img = x->data<half_t, cl::Image2D>();
     // VLOG(4) << "x_image: " << x_img;
-
-    auto* grid_img = x->data<half_t, cl::Image2D>();
     // VLOG(4) << "grid_img: " << grid_img;
-
-    auto* out_img = out->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
-#ifndef LITE_SHUTDOWN_LOG
     // VLOG(4) << "out_image" << out_img;
-    VLOG(4) << "out_image_shape[w,h]:" << out_image_shape["width"] << " "
-            << out_image_shape["height"];
+    VLOG(4) << "out_img_shape_[w,h]:" << out_img_shape_[0] << " "
+            << out_img_shape_[1];
 #endif
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    int arg_idx = 0;
-    int out_height = out_dims[2];
-    int out_width = out_dims[3];
-    auto default_work_size =
-        DefaultWorkSize(out_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
-#ifndef LITE_SHUTDOWN_LOG
-    VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
-            << default_work_size[1] << ", " << default_work_size[2];
-#endif
-    cl_int status = kernel.setArg(arg_idx++, *x_img);
+    cl_int status;
+    auto kernel = kernel_;
+    status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *grid_img);
+    status = kernel.setArg(1, *grid_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *out_img);
+    status = kernel.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_height);
+    status = kernel.setArg(3, out_height);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_width);
+    status = kernel.setArg(4, out_width);
     CL_CHECK_FATAL(status);
 
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                    static_cast<cl::size_type>(default_work_size[1]),
-                    static_cast<cl::size_type>(default_work_size[2] / 4)};
-
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
-        global_work_size,
+        global_work_size_,
         cl::NullRange,
         nullptr,
         event_.get());
     CL_CHECK_FATAL(status);
     context.cl_wait_list()->emplace(out_img, event_);
-#ifndef LITE_SHUTDOWN_LOG
-    VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
-            << global_work_size[1] << " " << global_work_size[2];
-#endif
   }
 
  protected:
   param_t* grid_param_{nullptr};
+  bool first_epoch_for_reinit_{true};
+  DDim last_x_dims_;
+  DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   std::string kernel_func_name_{"grid_sampler"};
+  cl::Kernel kernel_;
+  cl::NDRange global_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
