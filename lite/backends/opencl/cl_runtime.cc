@@ -47,9 +47,9 @@ CLRuntime::~CLRuntime() {
   programs_.clear();
 
   // For controlling the destruction order
-  clReleaseCommandQueue(command_queue_->get());
+  command_queue_&& clReleaseCommandQueue(command_queue_->get());
   command_queue_.reset();
-  clReleaseContext(context_->get());
+  context_&& clReleaseContext(context_->get());
   context_.reset();
   device_.reset();
   platform_.reset();
