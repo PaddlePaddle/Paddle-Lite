@@ -369,15 +369,17 @@ void ConvImageCompute::PrepareForRun() {
   build_options_.push_back(build_options_single);
 
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
-    context.cl_context()->AddKernel(
-        kernel_func_names_[i], kernel_func_paths_[i], build_options_[i]);
+    context.cl_context()->AddKernel(kernel_func_names_[i],
+                                    kernel_func_paths_[i],
+                                    build_options_[i],
+                                    time_stamp_);
   }
 
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 
   std::stringstream kernel_key;
-  kernel_key << kernel_func_names_[0] << build_options_[0];
+  kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
   kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   VLOG(4) << "kernel_key: " << kernel_key.str();
   VLOG(4) << "kernel ready ... " << kernel_key.str();

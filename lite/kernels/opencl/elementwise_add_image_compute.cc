@@ -59,11 +59,13 @@ void ElementwiseAddImageCompute::ReInitWhenNeeded() {
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/elementwise_add_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/elementwise_add_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
     // compute image shape

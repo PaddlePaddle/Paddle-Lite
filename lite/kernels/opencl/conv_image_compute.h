@@ -22,6 +22,7 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {
@@ -56,6 +57,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::vector<std::string> kernel_func_names_{};
   std::vector<std::string> kernel_func_paths_{};
   std::vector<std::string> build_options_{};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
   Tensor filter_gpu_image_;
   Tensor bias_gpu_image_;

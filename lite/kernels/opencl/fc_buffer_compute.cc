@@ -16,6 +16,7 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
@@ -74,10 +75,12 @@ class FcCompute
       }
 
       auto& context = ctx_->As<OpenCLContext>();
-      context.cl_context()->AddKernel(
-          kernel_func_name_, "buffer/fc_kernel.cl", build_options_);
+      context.cl_context()->AddKernel(kernel_func_name_,
+                                      "buffer/fc_kernel.cl",
+                                      build_options_,
+                                      time_stamp_);
       STL::stringstream kernel_key;
-      kernel_key << kernel_func_name_ << build_options_;
+      kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
       // compute global work size
@@ -136,6 +139,7 @@ class FcCompute
   param_t* fc_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float "};
+  std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
