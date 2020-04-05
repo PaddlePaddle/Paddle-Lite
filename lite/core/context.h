@@ -52,7 +52,7 @@ using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
-using Ascend310Context = Context<TargetType::kAscend310>;
+using Ascend310Context = Context<TargetType::kHWAscendNPU>;
 using MLUContext = Context<TargetType::kMLU>;
 
 template <>
@@ -66,9 +66,9 @@ class Context<TargetType::kHost> {
   std::string name() const { return "HostContext"; }
 };
 
-#ifdef LITE_WITH_ASCEND310
+#ifdef LITE_WITH_HW_ASCEND_NPU
 template <>
-class Context<TargetType::kAscend310> {
+class Context<TargetType::kHWAscendNPU> {
  public:
   Context() {}
   explicit Context(const Ascend310Context& ctx);
@@ -411,9 +411,9 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
-#ifdef LITE_WITH_ASCEND310
-      case TARGET(kAscend310):
-        kernel_contexts_[TargetType::kAscend310]
+#ifdef LITE_WITH_HW_ASCEND_NPU
+      case TARGET(kHWAscendNPU):
+        kernel_contexts_[TargetType::kHWAscendNPU]
             .As<Ascend310Context>()
             .CopySharedTo(&ctx->As<Ascend310Context>());
         break;
@@ -453,8 +453,8 @@ class ContextScheduler {
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
 #endif
-#ifdef LITE_WITH_ASCEND310
-    InitContext<TargetType::kAscend310, Ascend310Context>();
+#ifdef LITE_WITH_HW_ASCEND_NPU
+    InitContext<TargetType::kHWAscendNPU, Ascend310Context>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

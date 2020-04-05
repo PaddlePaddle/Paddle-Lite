@@ -225,13 +225,13 @@ class KernelRegistry final {
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 
-              KernelRegistryForTarget<TARGET(kAscend310),
+              KernelRegistryForTarget<TARGET(kHWAscendNPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
-              KernelRegistryForTarget<TARGET(kAscend310),
+              KernelRegistryForTarget<TARGET(kHWAscendNPU),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
-              KernelRegistryForTarget<TARGET(kAscend310),
+              KernelRegistryForTarget<TARGET(kHWAscendNPU),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 

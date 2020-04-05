@@ -113,7 +113,7 @@ const std::string& TargetRepr(TargetType target) {
                                               "kNPU",
                                               "kXPU",
                                               "kBM",
-                                              "kAscend310"};
+                                              "kHWAscendNPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];

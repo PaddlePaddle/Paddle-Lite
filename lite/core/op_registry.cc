@@ -107,8 +107,8 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kBM): {
       CREATE_KERNEL(kBM);
     } break;
-    case TARGET(kAscend310): {
-      CREATE_KERNEL(kAscend310);
+    case TARGET(kHWAscendNPU): {
+      CREATE_KERNEL(kHWAscendNPU);
     } break;
     case TARGET(kMLU): {
       CREATE_KERNEL(kMLU);
@@ -204,13 +204,13 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kNPU, kAny, kNHWC);
   INIT_FOR(kNPU, kAny, kAny);
 
-  INIT_FOR(kAscend310, kFloat, kNCHW);
-  INIT_FOR(kAscend310, kFloat, kNHWC);
-  INIT_FOR(kAscend310, kInt8, kNCHW);
-  INIT_FOR(kAscend310, kInt8, kNHWC);
-  INIT_FOR(kAscend310, kAny, kNCHW);
-  INIT_FOR(kAscend310, kAny, kNHWC);
-  INIT_FOR(kAscend310, kAny, kAny);
+  INIT_FOR(kHWAscendNPU, kFloat, kNCHW);
+  INIT_FOR(kHWAscendNPU, kFloat, kNHWC);
+  INIT_FOR(kHWAscendNPU, kInt8, kNCHW);
+  INIT_FOR(kHWAscendNPU, kInt8, kNHWC);
+  INIT_FOR(kHWAscendNPU, kAny, kNCHW);
+  INIT_FOR(kHWAscendNPU, kAny, kNHWC);
+  INIT_FOR(kHWAscendNPU, kAny, kAny);
 
   INIT_FOR(kXPU, kFloat, kNCHW);
   INIT_FOR(kXPU, kInt8, kNCHW);
