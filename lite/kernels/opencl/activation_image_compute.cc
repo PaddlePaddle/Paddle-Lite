@@ -77,11 +77,13 @@ class ActivationComputeImageDefault
 #endif
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/activation_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/activation_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   }
 
@@ -171,6 +173,7 @@ class ActivationComputeImageDefault
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 }  // namespace opencl
