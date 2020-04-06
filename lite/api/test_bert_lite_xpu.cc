@@ -37,46 +37,13 @@ lite::Tensor GetTensorWithShape(std::vector<int64_t> shape) {
   return ret;
 }
 
-TEST(Ernie, test_ernie_lite_x86) {
-  lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-
-  int64_t batch_size = 1;
-  int64_t seq_len = 64;
-  Tensor sample_input = GetTensorWithShape<int64_t>({batch_size, seq_len, 1});
-  std::vector<int64_t> input_shape{batch_size, seq_len, 1};
-  predictor->GetInput(0)->Resize(input_shape);
-  predictor->GetInput(1)->Resize(input_shape);
-  predictor->GetInput(2)->Resize(input_shape);
-  predictor->GetInput(3)->Resize(input_shape);
-
-  memcpy(predictor->GetInput(0)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(1)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(2)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(3)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
-
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    predictor->Run();
-  }
-  for (int i = 0; i < FLAGS_repeats; ++i) {
-    predictor->Run();
-  }
-  LOG(INFO) << "cpu result[0] = " << *predictor->GetOutput(0)->data<float>();
-}
-
 TEST(Ernie, test_ernie_lite_xpu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   int64_t batch_size = 1;
@@ -89,44 +56,47 @@ TEST(Ernie, test_ernie_lite_xpu) {
   predictor->GetInput(3)->Resize(input_shape);
 
   memcpy(predictor->GetInput(0)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
+         sample_input.raw_data(),
+         sizeof(int64_t) * batch_size * seq_len);
   memcpy(predictor->GetInput(1)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
+         sample_input.raw_data(),
+         sizeof(int64_t) * batch_size * seq_len);
   memcpy(predictor->GetInput(2)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
+         sample_input.raw_data(),
+         sizeof(int64_t) * batch_size * seq_len);
   memcpy(predictor->GetInput(3)->mutable_data<int64_t>(),
-      sample_input.raw_data(), sizeof(int64_t) * batch_size * seq_len);
+         sample_input.raw_data(),
+         sizeof(int64_t) * batch_size * seq_len);
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->Run();
   }
 
-  //auto start = GetCurrentUS();
+  auto start = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor->Run();
   }
   LOG(INFO) << "xpu result[0] = " << *predictor->GetOutput(0)->data<float>();
 
-  //LOG(INFO) << "================== Speed Report ===================";
-  //LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            //<< ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            //<< ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            //<< " ms in average.";
+  LOG(INFO) << "================== Speed Report ===================";
+  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
+            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
+            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
+            << " ms in average.";
 
-  //std::vector<std::vector<float>> results;
-  //results.emplace_back(std::vector<float>(&g_raw_result_data[0], &g_raw_result_data[1000]));
-  //auto out = predictor->GetOutput(0);
-  //ASSERT_EQ(out->shape().size(), 2);
-  //ASSERT_EQ(out->shape()[0], 1);
-  //ASSERT_EQ(out->shape()[1], 1000);
+  std::vector<std::vector<float>> results;
+  results.emplace_back(std::vector<float>({0.278893, 0.330888, 0.39022}));
+  auto out = predictor->GetOutput(0);
+  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape()[0], 1);
+  ASSERT_EQ(out->shape()[1], 1000);
 
-  //for (size_t i = 0; i < results.size(); ++i) {
-    //for (size_t j = 0; j < results[i].size(); ++j) {
-      //EXPECT_NEAR(out->data<float>()[j + (out->shape()[1] * i)],
-                  //results[i][j],
-                  //1e-2);
-    //}
-  //}
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
+      EXPECT_NEAR(
+          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 1e-2);
+    }
+  }
 }
 
 }  // namespace lite

@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
+#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
 #include "lite/core/mir/ssa_graph.h"
@@ -27,7 +28,6 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
-#include "lite/core/mir/graph_visualize_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -194,8 +194,6 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        //Visualize(graph_.get());
-        //abort();
         pass->Apply(graph_);
         LOG(INFO) << "== Finished running: " << x;
       }

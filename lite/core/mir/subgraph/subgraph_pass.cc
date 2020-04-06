@@ -18,9 +18,9 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/subgraph/subgraph_detector.h"
-#include "lite/core/mir/graph_visualize_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -50,9 +50,6 @@ void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     auto& stmt = node->AsStmt();
     return supported_lists.count(stmt.op_type()) != 0;
   };
-  printf("-------------------------------------\n");
-  Visualize(graph.get());
-  printf("-------------------------------------\n");
   SubgraphFuser fuser(graph.get(), teller, 1 /* min_subgraph_size */);
   fuser();
 }

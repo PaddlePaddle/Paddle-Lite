@@ -61,6 +61,7 @@ struct LITE_API Tensor {
   // Set LoD of the tensor
   void SetLoD(const lod_t& lod);
 
+ private:
   void* raw_tensor_;
 };
 
