@@ -30,10 +30,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-using inference::analysis::Dot;
-
 std::string SubgraphVisualizer::operator()() {
-  inference::analysis::Dot dot;
+  Dot dot;
   const std::vector<std::string> subgraph_colors{
       "red",          "green",          "cyan",           "bisque3",
       "coral",        "darkseagreen1",  "goldenrod1",     "darkorchid",
