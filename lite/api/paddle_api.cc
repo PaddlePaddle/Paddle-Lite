@@ -245,13 +245,5 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
   model_from_memory_ = true;
 }
 
-void XPUSetWorkspaceL3SizePerThread(int l3_size) {
-  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
-}
-
-void XPUSetDevPerThread(int dev_no) {
-  lite::Context<TargetType::kXPU>::SetDev(dev_no);
-}
-
 }  // namespace lite_api
 }  // namespace paddle

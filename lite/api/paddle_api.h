@@ -209,9 +209,6 @@ class LITE_API MobileConfig : public ConfigBase {
 template <typename ConfigT>
 LITE_API std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT&);
 
-void XPUSetWorkspaceL3SizePerThread(int l3_size = 0xfffc00);
-void XPUSetDevPerThread(int dev_no = 0);
-
 }  // namespace lite_api
 }  // namespace paddle
 
