@@ -17,6 +17,7 @@ lite_cc_test(test_gen_code SRCS gen_code_test.cc
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
+        HW_ASCEND_NPU_DEPS ${hw_ascend_npu_kernels}
         FPGA_DEPS ${fpga_kernels}
         EXCLUDE_COMPILE_DEPS "ON"
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)

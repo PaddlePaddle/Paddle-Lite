@@ -60,6 +60,7 @@ lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
+lite_option(LITE_WITH_HW_ASCEND_NPU "Enable Huawei Ascend NPU in lite mode" OFF)
 lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
 lite_option(LITE_WITH_TRAIN "Enable training operators and kernels in lite" OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
@@ -175,6 +176,10 @@ endif()
 
 if(LITE_WITH_XPU)
     include(device/xpu)
+endif()
+
+if (LITE_WITH_HW_ASCEND_NPU)
+    include(device/ascend)
 endif()
 
 include(external/mklml)     # download mklml package
