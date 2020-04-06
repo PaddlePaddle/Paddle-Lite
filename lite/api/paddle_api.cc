@@ -204,14 +204,24 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
-#ifdef LITE_WITH_XPU
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+#ifdef LITE_WITH_XPU
   lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
-}
-void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
-  lite::Context<TargetType::kXPU>::SetDev(dev_no);
-}
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
 #endif
+}
+
+void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+#ifdef LITE_WITH_XPU
+  lite::Context<TargetType::kXPU>::SetDev(dev_no);
+#else
+  LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory

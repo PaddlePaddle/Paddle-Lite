@@ -162,10 +162,8 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
-#ifdef LITE_WITH_XPU
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
   void set_xpu_dev_per_thread(int dev_no = 0);
-#endif
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip
