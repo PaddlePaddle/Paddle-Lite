@@ -27,7 +27,7 @@ bool LayerNormOp::CheckShape() const {
   return true;
 }
 
-bool LayerNormOp::InferShape() const {
+bool LayerNormOp::InferShapeImpl() const {
   auto out_dims = param_.X->dims();
   param_.Y->Resize(out_dims);
   auto inner_size = out_dims.Flatten2D(param_.begin_norm_axis)[0];

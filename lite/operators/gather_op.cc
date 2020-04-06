@@ -26,7 +26,7 @@ bool GatherOp::CheckShape() const {
   return true;
 }
 
-bool GatherOp::InferShape() const {
+bool GatherOp::InferShapeImpl() const {
   auto index_dims = param_.Index->dims();
   CHECK(index_dims.size() == 1 ||
         (index_dims.size() == 2 && index_dims[1] == 1))

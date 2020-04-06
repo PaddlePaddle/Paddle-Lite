@@ -26,7 +26,7 @@ bool ElementwiseGradOp::CheckShape() const {
   return true;
 }
 
-bool ElementwiseGradOp::InferShape() const {
+bool ElementwiseGradOp::InferShapeImpl() const {
   auto x_dim = param_.X->dims();
   auto y_dim = param_.Y->dims();
   if (param_.XGrad) {
