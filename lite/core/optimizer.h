@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
-#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
 #include "lite/core/mir/ssa_graph.h"

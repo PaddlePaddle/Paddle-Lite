@@ -18,7 +18,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/subgraph/subgraph_detector.h"
 
