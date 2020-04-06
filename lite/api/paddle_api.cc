@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+#include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
-#include "lite/core/context.h"
 
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
@@ -203,6 +203,15 @@ void ConfigBase::set_threads(int threads) {
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
 }
+
+#ifdef LITE_WITH_XPU
+void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
+}
+void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+  lite::Context<TargetType::kXPU>::SetDev(dev_no);
+}
+#endif
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory
