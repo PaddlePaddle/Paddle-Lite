@@ -29,6 +29,7 @@ enum class BinaryOperation {
   kADD = 0,
   kMUL = 1,
   kDIV = 2,
+  kSUB = 3,
 };
 
 template <typename T>
@@ -41,6 +42,7 @@ __device__ __forceinline__ float binary_calc(float x,
   if (type == BinaryOperation::kADD) return x + y;
   if (type == BinaryOperation::kMUL) return x * y;
   if (type == BinaryOperation::kDIV) return x / y;
+  if (type == BinaryOperation::kSUB) return x - y;
 }
 
 template <typename T>

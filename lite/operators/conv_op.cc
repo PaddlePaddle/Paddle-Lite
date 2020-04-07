@@ -80,7 +80,7 @@ void UpdatePaddingAndDilation(std::vector<int>* paddings,
   }
 }
 
-bool ConvOpLite::InferShape() const {
+bool ConvOpLite::InferShapeImpl() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
 
@@ -104,9 +104,9 @@ bool ConvOpLite::InferShape() const {
 
   // Set output dims
   param_.output->Resize(lite::DDim(output_shape));
-
   // share LoD
-  // param_.output->set_lod(param_.x->lod());
+  param_.output->set_lod(param_.x->lod());
+
   return true;
 }
 

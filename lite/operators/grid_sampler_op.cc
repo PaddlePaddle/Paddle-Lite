@@ -42,7 +42,7 @@ bool GridSamplerOp::CheckShape() const {
   return true;
 }
 
-bool GridSamplerOp::InferShape() const {
+bool GridSamplerOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   param_.out->Resize(x_dims);
   return true;

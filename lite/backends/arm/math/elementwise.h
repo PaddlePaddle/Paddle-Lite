@@ -184,6 +184,13 @@ void elementwise_add_relu_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
 template <typename T>
+void elementwise_add_grad(const T* dout, T* dinx, int num);
+
+template <typename T>
+void elementwise_add_grad_broadcast(
+    const T* dout_grad, T* x_grad, T* y_grad, int pre, int n, int post);
+
+template <typename T>
 void elementwise_sub(const T* dinx, const T* diny, T* dout, int num);
 
 template <typename T>
@@ -196,6 +203,13 @@ void elementwise_sub_broadcast(
 template <typename T>
 void elementwise_sub_relu_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_sub_grad(const T* dout, T* dinx, T* diny, int num);
+
+template <typename T>
+void elementwise_sub_grad_broadcast(
+    const T* dout_grad, T* x_grad, T* y_grad, int pre, int n, int post);
 
 template <typename T>
 void elementwise_mul(const T* dinx, const T* diny, T* dout, int num);

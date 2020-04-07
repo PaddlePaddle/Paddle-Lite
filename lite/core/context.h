@@ -52,6 +52,7 @@ using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
+using MLUContext = Context<TargetType::kMLU>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -180,7 +181,11 @@ class Context<TargetType::kCUDA> {
       Env<TargetType::kCUDA>::Global();
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
-    cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+    if (devs.size() > 0) {
+      cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+    } else {
+      LOG(INFO) << "No cuda device(s) found, CUDAContext init failed.";
+    }
   }
   void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
     CHECK_GT(devs.size(), 0UL)
@@ -395,7 +400,7 @@ class ContextScheduler {
         break;
 #endif
       default:
-#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
+#if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
 #endif
         break;

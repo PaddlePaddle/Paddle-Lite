@@ -17,6 +17,7 @@
 #include <gflags/gflags.h>
 #include <sys/time.h>
 #include <time.h>
+#include <cmath>
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");
@@ -41,6 +42,32 @@ inline double GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
+}
+
+template <typename T>
+double compute_mean(const T* in, const size_t length) {
+  double sum = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    sum += in[i];
+  }
+  return sum / length;
+}
+
+template <typename T>
+double compute_standard_deviation(const T* in,
+                                  const size_t length,
+                                  bool has_mean = false,
+                                  double mean = 10000) {
+  if (!has_mean) {
+    mean = compute_mean<T>(in, length);
+  }
+
+  double variance = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    variance += pow((in[i] - mean), 2);
+  }
+  variance /= length;
+  return sqrt(variance);
 }
 
 }  // namespace lite

@@ -37,51 +37,66 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/scale_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/scale_kernel.cl", build_options_);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+  }
+
+  void ReInitWhenNeeded() override {
+    scale_param_ = param_.get_mutable<param_t>();
+    auto x_dims = scale_param_->x->dims();
+    if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
+        first_epoch_for_reinit_) {
+      last_x_dims_ = x_dims;
+      first_epoch_for_reinit_ = false;
+
+      // compute image shape
+      paddle::lite::CLImageConverterDefault default_convertor;
+      out_img_shape_ =
+          default_convertor.InitImageDimInfoWith(scale_param_->output->dims());
+
+      // compute global work size
+      GetGlobalWorkSize();
+    }
+  }
+
+  void GetGlobalWorkSize() {
+    global_work_size_ =
+        cl::NDRange{static_cast<cl::size_type>(out_img_shape_[0]),
+                    static_cast<cl::size_type>(out_img_shape_[1])};
   }
 
   void Run() override {
-    const auto& param = *param_.get_mutable<param_t>();
-    const auto& in_dims = param.x->dims();
-    auto* x_img = param.x->data<half_t, cl::Image2D>();
-    const float scale = param.scale;
-    const float bias = param.bias;
-
-    //    LOG(INFO) << "x_image" << x_img;
-    auto out_image_shape = InitImageDimInfoWith(in_dims);
-    LOG(INFO) << "out_image_shape = " << out_image_shape["width"] << " "
-              << out_image_shape["height"];
-    auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
-    //    LOG(INFO) << "out_image" << out_img;
+    auto* x_img = scale_param_->x->data<half_t, cl::Image2D>();
+    auto* out_img = scale_param_->output->mutable_data<half_t, cl::Image2D>(
+        out_img_shape_[0], out_img_shape_[1]);
+    const float scale = scale_param_->scale;
+    const float bias = scale_param_->bias;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(out_image_shape["width"]),
-                    static_cast<cl::size_type>(out_image_shape["height"])};
-
+    auto kernel = kernel_;
     cl_int status;
-    int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_img);
+    status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel.setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, scale);
+    status = kernel.setArg(2, scale);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, bias);
+    status = kernel.setArg(3, bias);
     CL_CHECK_FATAL(status);
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
-        global_work_size,
+        global_work_size_,
         cl::NullRange,
         nullptr,
         event_.get());
@@ -92,7 +107,17 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
  private:
   std::string kernel_func_name_{"scale"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+
+  param_t* scale_param_{nullptr};
+  cl::Kernel kernel_;
+  bool first_epoch_for_reinit_{true};
+  DDim last_x_dims_;
+  DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
+  cl::NDRange global_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
 };
 
 }  // namespace opencl

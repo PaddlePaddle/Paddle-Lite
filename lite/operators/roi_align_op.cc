@@ -38,7 +38,7 @@ bool RoiAlignOpLite::CheckShape() const {
   return true;
 }
 
-bool RoiAlignOpLite::InferShape() const {
+bool RoiAlignOpLite::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
   auto rois_dims = param_.ROIs->dims();
 
