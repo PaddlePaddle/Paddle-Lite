@@ -615,6 +615,7 @@ class XPUMultiEncoderFuser {
 class XPUMultiEncoderFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(miaotianxiang): backup graph, recover from failed match
     std::vector<std::string> act_types{"gelu", "relu"};
     for (auto& act_type : act_types) {

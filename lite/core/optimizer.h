@@ -75,10 +75,8 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
            "__xpu__resnet_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
-#endif
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and
@@ -86,9 +84,7 @@ class Optimizer {
                                                       // 'enable_int8' for all
                                                       // of the quantized ops.
            "npu_subgraph_pass",
-#if defined(LITE_WITH_XTCL)
            "xpu_subgraph_pass",
-#endif
            "bm_subgraph_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's

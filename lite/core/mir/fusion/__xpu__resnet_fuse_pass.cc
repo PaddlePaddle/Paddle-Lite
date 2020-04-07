@@ -931,6 +931,7 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
 class XPUResNet50FusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     fusion::XPUResNetBlock0Fuser block0_fuser;
     block0_fuser(graph.get());
     fusion::XPUResNetBlock1Fuser block1_fuser;
