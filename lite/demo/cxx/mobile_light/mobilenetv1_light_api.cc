@@ -14,6 +14,7 @@
 
 #include <sys/time.h>
 #include <time.h>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -34,6 +35,32 @@ std::string ShapePrint(const shape_t& shape) {
     shape_str += std::to_string(i) + " ";
   }
   return shape_str;
+}
+
+template <typename T>
+double compute_mean(const T* in, const size_t length) {
+  double sum = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    sum += in[i];
+  }
+  return sum / length;
+}
+
+template <typename T>
+double compute_standard_deviation(const T* in,
+                                  const size_t length,
+                                  bool has_mean = false,
+                                  double mean = 10000) {
+  if (!has_mean) {
+    mean = compute_mean<T>(in, length);
+  }
+
+  double variance = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    variance += pow((in[i] - mean), 2);
+  }
+  variance /= length;
+  return sqrt(variance);
 }
 
 inline double GetCurrentUS() {
@@ -101,24 +128,24 @@ void RunModel(std::string model_dir,
   // 5. Get output
   std::cout << "\n====== output summary ====== " << std::endl;
   size_t output_tensor_num = predictor->GetOutputNames().size();
-  std::cout << "output tesnor num:" << output_tensor_num << std::endl;
+  std::cout << "output tensor num:" << output_tensor_num << std::endl;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
     std::unique_ptr<const paddle::lite_api::Tensor> output_tensor =
         predictor->GetOutput(tidx);
     std::cout << "\n--- output tensor " << tidx << " ---" << std::endl;
     auto out_shape = output_tensor->shape();
-    std::cout << "out_shape(NCHW):" << ShapePrint(out_shape) << std::endl;
+    auto out_data = output_tensor->data<float>();
+    auto out_mean = compute_mean<float>(out_data, ShapeProduction(out_shape));
+    auto out_std_dev = compute_standard_deviation<float>(
+        out_data, ShapeProduction(out_shape), true, out_mean);
 
-    float sum = 0.f;
-    for (int i = 0; i < ShapeProduction(out_shape); ++i) {
-      sum += output_tensor->data<float>()[i];
-    }
+    std::cout << "output shape(NCHW):" << ShapePrint(out_shape) << std::endl;
     std::cout << "output tensor " << tidx
               << " elem num:" << ShapeProduction(out_shape) << std::endl;
-    std::cout << "output tensor " << tidx << " sum value:" << sum << std::endl;
     std::cout << "output tensor " << tidx
-              << " mean value:" << sum / ShapeProduction(out_shape)
+              << " standard deviation:" << out_std_dev << std::endl;
+    std::cout << "output tensor " << tidx << " mean value:" << out_mean
               << std::endl;
 
     // print output

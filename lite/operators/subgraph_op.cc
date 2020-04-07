@@ -22,7 +22,7 @@ namespace operators {
 
 bool SubgraphOp::CheckShape() const { return true; }
 
-bool SubgraphOp::InferShape() const { return CheckShape(); /* enrich me */ }
+bool SubgraphOp::InferShapeImpl() const { return CheckShape(); /* enrich me */ }
 
 bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.input_names = op_desc.Input("Inputs");

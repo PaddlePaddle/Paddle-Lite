@@ -29,7 +29,7 @@ bool SplitOp::CheckShape() const {
   return true;
 }
 
-bool SplitOp::InferShape() const {
+bool SplitOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
   int axis = param_.axis;

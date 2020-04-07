@@ -32,7 +32,7 @@ bool DistributeFpnProposalsOpLite::CheckShape() const {
   return true;
 }
 
-bool DistributeFpnProposalsOpLite::InferShape() const {
+bool DistributeFpnProposalsOpLite::InferShapeImpl() const {
   int num_out_rois = param_.max_level - param_.min_level + 1;
   for (int i = 0; i < num_out_rois; i++) {
     param_.multi_fpn_rois[i]->Resize({-1, 4});

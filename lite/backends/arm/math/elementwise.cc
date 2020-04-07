@@ -267,6 +267,72 @@ void elementwise_add_relu_broadcast<float>(const float* dinx,
 }
 
 template <>
+void elementwise_add_grad<float>(const float* dout_grad,
+                                 float* x_grad,
+                                 int num) {
+  int cnt = num >> 4;
+  int remain = num & 0x0f;
+#pragma omp parallel for
+  for (int i = 0; i < cnt; ++i) {
+    const float* out_data = dout_grad + 16 * i;
+    float* x_data = x_grad + 16 * i;
+    float32x4_t din0 = vld1q_f32(out_data);
+    float32x4_t din1 = vld1q_f32(out_data + 4);
+    float32x4_t din2 = vld1q_f32(out_data + 8);
+    float32x4_t din3 = vld1q_f32(out_data + 12);
+    vst1q_f32(x_data, din0);
+    vst1q_f32(x_data + 4, din1);
+    vst1q_f32(x_data + 8, din2);
+    vst1q_f32(x_data + 12, din3);
+  }
+  if (remain > 0) {
+    const float* out_data = dout_grad + 16 * cnt;
+    float* x_data = x_grad + 16 * cnt;
+    for (int i = 0; i < remain; ++i) {
+      x_data[i] = out_data[i];
+    }
+  }
+}
+// we assume that y_data numel less than x_data, otherwise, call this function
+// by change x_grad and y_grad position
+template <>
+void elementwise_add_grad_broadcast<float>(const float* dout_grad,
+                                           float* x_grad,
+                                           float* y_grad,
+                                           int pre,
+                                           int n,
+                                           int post) {
+  if (x_grad != nullptr) {
+    elementwise_add_grad(dout_grad, x_grad, pre * n * post);
+  }
+  if (y_grad != nullptr) {
+    memset(y_grad, 0, n * sizeof(float));
+#pragma omp parallel for
+    for (int i = 0; i < pre; ++i) {
+      for (int j = 0; j < n; ++j) {
+        float sum = 0;
+        int cnt = post >> 2;
+        int remain = post & 0x03;
+        const float* out_data = dout_grad + (i * n + j) * post;
+        float32x4_t sum_v = vdupq_n_f32(0);
+        for (int ci = 0; ci < cnt; ++ci) {
+          float32x4_t din = vld1q_f32(out_data + 4 * ci);
+          sum_v = vaddq_f32(sum_v, din);
+        }
+        out_data += 4 * cnt;
+        for (int ci = 0; ci < remain; ++ci) {
+          sum += out_data[ci];
+        }
+        float32x2_t high = vget_high_f32(sum_v);
+        float32x2_t low = vget_low_f32(sum_v);
+        sum += vget_lane_f32(high, 0) + vget_lane_f32(high, 1) +
+               vget_lane_f32(low, 0) + vget_lane_f32(low, 1);
+        y_grad[j] += sum;
+      }
+    }
+  }
+}
+template <>
 void elementwise_sub<float>(const float* dinx,
                             const float* diny,
                             float* dout,
@@ -506,6 +572,84 @@ void elementwise_sub_relu_broadcast<float>(const float* dinx,
           dout_ptr++;
           din_ptr++;
         }
+      }
+    }
+  }
+}
+// we assume the formula is x-y
+template <>
+void elementwise_sub_grad<float>(const float* dout_grad,
+                                 float* x_grad,
+                                 float* y_grad,
+                                 int num) {
+  if (x_grad != nullptr) {
+    elementwise_add_grad(dout_grad, x_grad, num);
+  }
+  if (y_grad != nullptr) {
+    int cnt = num >> 4;
+    int remain = num & 0x0f;
+    float32x4_t minus = vdupq_n_f32(-1);
+#pragma omp parallel for
+    for (int i = 0; i < cnt; ++i) {
+      const float* out_data = dout_grad + 16 * i;
+      float* y_data = y_grad + 16 * i;
+      float32x4_t din0 = vld1q_f32(out_data);
+      float32x4_t din1 = vld1q_f32(out_data + 4);
+      float32x4_t din2 = vld1q_f32(out_data + 8);
+      float32x4_t din3 = vld1q_f32(out_data + 12);
+      din0 = vmulq_f32(din0, minus);
+      din1 = vmulq_f32(din1, minus);
+      din2 = vmulq_f32(din2, minus);
+      din3 = vmulq_f32(din3, minus);
+      vst1q_f32(y_data, din0);
+      vst1q_f32(y_data + 4, din1);
+      vst1q_f32(y_data + 8, din2);
+      vst1q_f32(y_data + 12, din3);
+    }
+    if (remain > 0) {
+      const float* out_data = dout_grad + 16 * cnt;
+      float* y_data = y_grad + 16 * cnt;
+      for (int i = 0; i < remain; ++i) {
+        y_data[i] = -out_data[i];
+      }
+    }
+  }
+}
+// we assume that y_data numel less than x_data, otherwise, call this function
+// by change x_grad and y_grad position
+template <>
+void elementwise_sub_grad_broadcast<float>(const float* dout_grad,
+                                           float* x_grad,
+                                           float* y_grad,
+                                           int pre,
+                                           int n,
+                                           int post) {
+  if (x_grad != nullptr) {
+    elementwise_add_grad(dout_grad, x_grad, pre * n * post);
+  }
+  if (y_grad != nullptr) {
+    memset(y_grad, 0, n * sizeof(float));
+#pragma omp parallel for
+    for (int i = 0; i < pre; ++i) {
+      for (int j = 0; j < n; ++j) {
+        float sum = 0;
+        int cnt = post << 2;
+        int remain = post & 0x03;
+        const float* out_data = dout_grad + (i * n + j) * post;
+        float32x4_t sum_v = vdupq_n_f32(0);
+        for (int ci = 0; ci < cnt; ++ci) {
+          float32x4_t din = vld1q_f32(out_data + 4 * ci);
+          sum_v = vaddq_f32(sum_v, din);
+        }
+        out_data += 4 * cnt;
+        for (int ci = 0; ci < remain; ++ci) {
+          sum -= out_data[ci];
+        }
+        float32x2_t high = vget_high_f32(sum_v);
+        float32x2_t low = vget_low_f32(sum_v);
+        sum -= vget_lane_f32(high, 0) + vget_lane_f32(high, 1) +
+               vget_lane_f32(low, 0) + vget_lane_f32(low, 1);
+        y_grad[j] += sum;
       }
     }
   }

@@ -40,8 +40,8 @@ class Device {
 
   // Build the HiAI IR graph to om model, return HiAI model manager client to
   // load om model and run inference.
-  std::unique_ptr<hiai::AiModelMngerClient> Build(
-      std::string& model_name,                 // NOLINT
+  std::shared_ptr<hiai::AiModelMngerClient> Build(
+      const std::string model_name,            // NOLINT
       std::vector<ge::Operator>& input_nodes,  // NOLINT
       std::vector<ge::Operator>& output_nodes  // NOLINT
       );                                       // NOLINT
@@ -51,7 +51,6 @@ class Device {
   int framework_type_{0};
   int model_type_{0};
   int device_type_{0};
-  int model_count_{0};
 };
 
 }  // namespace npu

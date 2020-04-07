@@ -52,8 +52,10 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     }
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/pad2d_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/pad2d_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -71,10 +73,12 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     int out_h = out_dims[2];
     int out_w = out_dims[3];
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
     VLOG(4) << "out->dims():" << out_dims;
+#endif
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
     auto* x_img = x->data<half_t, cl::Image2D>();
@@ -82,14 +86,16 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
     VLOG(4) << "in_h: " << in_h << ", in_w: " << in_w;
     VLOG(4) << "out_h: " << out_h << ", out_w: " << out_w;
+#endif
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -98,9 +104,10 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
-
+#endif
     int pad_h0 = pad2d_param_->paddings[0];
     int pad_h1 = pad2d_param_->paddings[1];
     int pad_w0 = pad2d_param_->paddings[2];
@@ -144,15 +151,17 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
         event_.get());
     CL_CHECK_FATAL(status);
     context.cl_wait_list()->emplace(out_img, event_);
-
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
+#endif
   }
 
  protected:
   param_t* pad2d_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

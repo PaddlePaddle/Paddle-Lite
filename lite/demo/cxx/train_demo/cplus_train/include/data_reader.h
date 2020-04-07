@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/op_registry.h"
+#include <assert.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
-USE_LITE_KERNEL(feed, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape, kHost, kAny, kAny, def);
-USE_LITE_KERNEL(reshape2, kHost, kAny, kAny, def);
+using std::string;
+using std::vector;
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::min;
+using std::max;
+using std::fstream;
+
+extern int FEATURE_NUM;
+
+int get_samples(string line, const vector<float>& feature, float* label);
+int read_samples(const string fname,
+                 vector<vector<float>>* features,
+                 vector<float>* labels);

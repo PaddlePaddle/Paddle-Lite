@@ -8,8 +8,9 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
+
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
-if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
+if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
@@ -148,38 +149,40 @@ if(WITH_TESTING)
             --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
     add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-        lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/googlenet)
-        add_dependencies(test_googlenet extern_lite_download_GoogleNet_inference_tar_gz)
-        lite_cc_test(test_mobilenetv1_lite_x86 SRCS test_mobilenetv1_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
-        add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
-        lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu)
-        add_dependencies(test_mobilenetv2_lite_x86 extern_lite_download_mobilenet_v2_relu_tar_gz)
-        lite_cc_test(test_inceptionv4_lite_x86 SRCS test_inceptionv4_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
-        add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
-        lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
-        add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
-        lite_cc_test(test_step_rnn_lite_x86 SRCS test_step_rnn_lite_x86.cc
-           DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-           ${ops} ${host_kernels} ${x86_kernels}
-           ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
-        add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
+        if(LITE_WITH_X86)
+            lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/googlenet)
+            add_dependencies(test_googlenet extern_lite_download_GoogleNet_inference_tar_gz)
+            lite_cc_test(test_mobilenetv1_lite_x86 SRCS test_mobilenetv1_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
+            add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
+            lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu)
+            add_dependencies(test_mobilenetv2_lite_x86 extern_lite_download_mobilenet_v2_relu_tar_gz)
+            lite_cc_test(test_inceptionv4_lite_x86 SRCS test_inceptionv4_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
+            add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
+            lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+            add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
+            lite_cc_test(test_step_rnn_lite_x86 SRCS test_step_rnn_lite_x86.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${x86_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
+            add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
+        endif()
         if(LITE_WITH_BM)
-           lite_cc_test(test_resnet50_lite_bm SRCS test_resnet50_lite_bm.cc
+           lite_cc_test(test_classify_lite_bm SRCS test_classify_lite_bm.cc
               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
               ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
@@ -263,6 +266,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         FPGA_DEPS ${fpga_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels})
+        BM_DEPS ${bm_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     target_link_libraries(paddle_api_full ${cuda_deps})
@@ -303,10 +307,15 @@ if (LITE_ON_TINY_PUBLISH)
     return()
 endif()
 
+
+# add library for opt_base
+lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
+add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
+
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
-        DEPS gflags kernel op optimizer mir_passes utils)
+        DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
     add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 

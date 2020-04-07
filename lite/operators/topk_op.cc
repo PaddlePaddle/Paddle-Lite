@@ -20,34 +20,35 @@ namespace operators {
 
 bool TopkOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
+  CHECK_OR_FALSE(param_.Indices);
   return true;
 }
 
-bool TopkOp::InferShape() const {
+bool TopkOp::InferShapeImpl() const {
   auto out_dims = param_.X->dims();
   out_dims[out_dims.size() - 1] = param_.K;
   auto out = param_.Out;
   out->Resize(out_dims);
-  auto out_lod = out->mutable_lod();
-  *out_lod = param_.X->lod();
-  auto ind = param_.Indices;
-  ind->Resize(out_dims);
-  auto ind_lod = out->mutable_lod();
-  *ind_lod = param_.X->lod();
+  out->set_lod(param_.X->lod());
+
+  auto indices = param_.Indices;
+  indices->Resize(out_dims);
+  indices->set_lod(param_.X->lod());
+
   return true;
 }
 
 bool TopkOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
-  param_.X = scope->FindVar(x)->GetMutable<Tensor>();
+  param_.X = scope->FindTensor(x);
 
-  auto outputs0 = op_desc.Output("Out").front();
-  auto outputs1 = op_desc.Output("Indices").front();
-  param_.Out = scope->FindVar(outputs0)->GetMutable<lite::Tensor>();
-  param_.Indices = scope->FindVar(outputs1)->GetMutable<lite::Tensor>();
+  auto output0 = op_desc.Output("Out").front();
+  auto output1 = op_desc.Output("Indices").front();
+  param_.Out = scope->FindMutableTensor(output0);
+  param_.Indices = scope->FindMutableTensor(output1);
   param_.K = op_desc.GetAttr<int>("k");
 
-  CHECK(param_.X);
   CHECK_GE(param_.K, 1) << "topK param is not valid";
   return true;
 }

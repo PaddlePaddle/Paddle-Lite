@@ -38,8 +38,10 @@ class NearestInterpComputeImageDefault
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/nearest_interp_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/nearest_interp_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -66,7 +68,7 @@ class NearestInterpComputeImageDefault
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -87,6 +89,7 @@ class NearestInterpComputeImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
     VLOG(4) << "out_image_shape(w,h):" << out_image_shape["width"] << " "
@@ -95,6 +98,7 @@ class NearestInterpComputeImageDefault
             << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+#endif
 
     const std::vector<size_t>& default_work_size =
         DefaultWorkSize(y_dims,
@@ -119,6 +123,7 @@ class NearestInterpComputeImageDefault
  private:
   std::string kernel_func_name_{"nearest_interp"};
   std::string build_options_{" -DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

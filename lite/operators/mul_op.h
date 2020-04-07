@@ -33,7 +33,7 @@ class MulOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
@@ -65,28 +65,6 @@ class MulOpLite : public OpLite {
  private:
   mutable MulParam param_;
 };
-
-#ifdef LITE_WITH_TRAIN
-class MulGradOpLite : public OpLite {
- public:
-  MulGradOpLite() {}
-
-  explicit MulGradOpLite(const std::string &type) : OpLite(type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-
-  std::string DebugString() const override { return "mul_grad"; }
-
- private:
-  mutable MulGradParam param_;
-};
-#endif
 
 }  // namespace operators
 }  // namespace lite

@@ -20,7 +20,7 @@
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/operators/while_op.h"
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
 
@@ -136,25 +136,30 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 }
 
 void RuntimeProgram::Run() {
+#ifdef LITE_WITH_PRECISION_PROFILE
+  auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
+  std::string precision_profiler_summary =
+      inst_precision_profiler.GetSummaryHeader();
+#endif
+
   for (auto& inst : instructions_) {
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
 #endif
     inst.Run();
-#ifdef LITE_WITH_PROFILE
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-    LITE_PRECISION_PROFILE(inst)
+    precision_profiler_summary +=
+        inst_precision_profiler.GetInstPrecision(&inst);
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
-#endif  // LITE_WITH_PROFILE
   }
-#ifdef LITE_WITH_CUDA
-  TargetWrapperCuda::DeviceSync();
-#endif
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 0);
-#endif  // LITE_WITH_PROFILE
+#endif
+#ifdef LITE_WITH_PRECISION_PROFILE
+  LOG(INFO) << "\n" << precision_profiler_summary;
+#endif
 }
 
 void Program::Build(const cpp::ProgramDesc& prog) {

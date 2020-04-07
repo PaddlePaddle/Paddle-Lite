@@ -145,11 +145,12 @@ class StaticKernelPickPass : public mir::StmtPass {
     }
 
     VLOG(4) << "[score(final)]:" << final_score;
-    VLOG(4) << "-------- pick summary --------";
-    VLOG(4) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
+    VLOG(2) << "-------- pick summary for " << instruct.op_type()
+            << " --------";
+    VLOG(2) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
             << " " << DataLayoutToStr(winner_place.layout) << " "
             << TargetToStr(winner_place.target);
-    VLOG(4) << " ===> kernel.place():"
+    VLOG(2) << " ===> kernel.place():"
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);

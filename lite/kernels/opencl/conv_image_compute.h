@@ -22,42 +22,60 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-
 class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
                                            PRECISION(kFP16),
                                            DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ConvParam;
-  using kernel_t = void (ConvImageCompute::*)();
+  using kernel_t = void (ConvImageCompute::*)(bool);
 
   void PrepareForRun() override;
 
   void Run() override;
+  double Turn(int times = 5);
 
  private:
-  void Conv2d1x1();
-  void Conv2d3x3();
-  void Conv2d3x3opt();
-  void Conv2d5x5();
-  void Conv2d7x7();
-  void DepthwiseConv2d3x3s1();
-  void DepthwiseConv2d3x3();
-  void DepthwiseConv2d();
+  void Conv2d1x1opt(bool is_turn = false);
+  void Conv2d3x3(bool is_turn = false);
+  void Conv2d3x3opt(bool is_turn = false);
+  void Conv2d5x5(bool is_turn = false);
+  void Conv2d5x5opt(bool is_turn = false);
+  void Conv2d7x7(bool is_turn = false);
+  void Conv2d7x7opt(bool is_turn = false);
+  void DepthwiseConv2d3x3s1(bool is_turn = false);
+  void DepthwiseConv2d3x3(bool is_turn = false);
+  void DepthwiseConv2d(bool is_turn = false);
 
   kernel_t impl_;
   std::vector<std::string> kernel_func_names_{};
   std::vector<std::string> kernel_func_paths_{};
   std::vector<std::string> build_options_{};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
   Tensor filter_gpu_image_;
   Tensor bias_gpu_image_;
-  bool use_lws{true};
+  cl::NDRange global_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  int c_blk_ = 1;
+  int w_blk_ = 1;
+  int nh_blk_ = 1;
+
+  int default_c_blk_ = 1;
+  int default_w_blk_ = 1;
+  int default_nh_blk_ = 1;
+
+  cl::Kernel kernel_;
+  cl::NDRange local_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  bool use_lws_{true};
+  bool use_turn_{false};
 };
 
 }  // namespace opencl

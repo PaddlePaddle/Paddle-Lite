@@ -36,7 +36,8 @@ void TestModel(const std::vector<Place>& valid_places) {
   predictor.Build(FLAGS_model_dir, "", "", valid_places, passes);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(
+      std::vector<DDim::value_type>({1, 3, FLAGS_im_height, FLAGS_im_width})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   if (FLAGS_input_img_txt_path.empty()) {
@@ -67,20 +68,18 @@ void TestModel(const std::vector<Place>& valid_places) {
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
-  auto* out = predictor.GetOutput(0);
-  ASSERT_EQ(out->dims().size(), 2);
-  ASSERT_EQ(out->dims()[0], 1);
-  ASSERT_EQ(out->dims()[1], 1000);
-
-  auto* out_data = out->data<float>();
+  auto out = predictor.GetOutputs();
   FILE* fp = fopen("result.txt", "wb");
-  for (int i = 0; i < out->numel(); i++) {
-    fprintf(fp, "%f\n", out_data[i]);
+  for (int i = 0; i < out.size(); i++) {
+    auto* out_data = out[i]->data<float>();
+    for (int j = 0; j < out[i]->numel(); j++) {
+      fprintf(fp, "%f\n", out_data[j]);
+    }
   }
   fclose(fp);
 }
 
-TEST(ResNet50, test_bm) {
+TEST(Classify, test_bm) {
   std::vector<Place> valid_places({Place{TARGET(kBM), PRECISION(kFloat)},
                                    Place{TARGET(kX86), PRECISION(kFloat)}});
 

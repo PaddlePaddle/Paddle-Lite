@@ -39,6 +39,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto filter_var_name = op_info->Input("Filter").front();
   auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
+
   CHECK_EQ(input_dims.size(), 4);
   CHECK_EQ(output_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
@@ -55,7 +56,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       const_cast<const int64_t*>(&output_dims.data()[0]);
   std::vector<int32_t> i_input_shape_data(input_dims.size());
   std::vector<int32_t> i_output_shape_data(output_dims.size());
-
   for (size_t i = 0; i < input_dims.size(); i++) {
     i_input_shape_data[i] = static_cast<int32_t>(input_shape_data[i]);
   }
@@ -91,6 +91,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                  dilations[1],
                  static_cast<int>(has_bias));
   graph->AddNode(output_var_name);
+  LOG(INFO) << output_var_name << input_dims << " " << output_dims;
   return SUCCESS;
 }
 

@@ -141,10 +141,12 @@ add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
 
 # 4. training op
 add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})
-if (LITE_WITH_TRAIN)
-  add_operator(mean_grad_op extra SRCS mean_grad_op.cc DEPS ${op_DEPS})
-  add_operator(activation_grad_ops basic SRCS activation_grad_ops.cc DEPS ${op_DEPS})
-endif()
+
+add_operator(mean_grad_op train SRCS mean_grad_op.cc DEPS ${op_DEPS})
+add_operator(activation_grad_ops train SRCS activation_grad_ops.cc DEPS ${op_DEPS})
+add_operator(elementwise_grad_op train SRCS elementwise_grad_ops.cc DEPS ${op_DEPS})
+add_operator(mul_grad_op train SRCS mul_grad_op.cc DEPS ${op_DEPS})
+add_operator(sgd_op train SRCS sgd_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc

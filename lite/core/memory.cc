@@ -51,7 +51,7 @@ void* TargetMalloc(TargetType target, size_t size) {
   return data;
 }
 
-void TargetFree(TargetType target, void* data) {
+void TargetFree(TargetType target, void* data, std::string free_flag) {
   switch (target) {
     case TargetType::kHost:
     case TargetType::kX86:
@@ -66,7 +66,11 @@ void TargetFree(TargetType target, void* data) {
 #endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
-      TargetWrapperCL::Free(data);
+      if (free_flag == "cl_use_image2d_") {
+        TargetWrapperCL::FreeImage(data);
+      } else {
+        TargetWrapperCL::Free(data);
+      }
       break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_FPGA

@@ -36,7 +36,7 @@ bool LookupTableOpLite::CheckShape() const {
   return true;
 }
 
-bool LookupTableOpLite::InferShape() const {
+bool LookupTableOpLite::InferShapeImpl() const {
   const auto& table_dims = param_.W->dims();
   const auto& ids_dims = param_.Ids->dims();
 

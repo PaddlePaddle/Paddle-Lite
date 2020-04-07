@@ -40,8 +40,10 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       kernel_func_name_ = "concat_mul";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/concat_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/concat_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
 
     auto axis = concat_param_->axis;
     auto inputs = concat_param_->x;
@@ -117,13 +119,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
 
     auto inputs = param.x;
     int arg_idx = 0;
     int width = inputs[0]->dims()[inputs[0]->dims().size() - 1];
 
-    VLOG(4) << "concat 输入尺寸:  ";
+#ifndef LITE_SHUTDOWN_LOG
+    VLOG(4) << "concat input shape:  ";
     for (size_t i = 0; i < inputs.size(); i++) {
       VLOG(4) << "inputs [" << i << "]"
               << "[" << inputs[i]->dims().size() << "D]:"
@@ -132,12 +135,13 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
               << inputs[i]->dims()[3];
     }
 
-    VLOG(4) << "concat 输出尺寸:  ";
+    VLOG(4) << "concat output shape:  ";
     VLOG(4) << " out  dims:  "
             << "[" << x_dims.size() << "D]:" << x_dims[0] << " " << x_dims[1]
             << " " << x_dims[2] << " " << x_dims[3];
     VLOG(4) << "axis_: " << axis_;
     VLOG(4) << "flag_: " << flag_;
+#endif
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(x_dims[x_dims.size() - 1]),
@@ -145,6 +149,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                                                x_dims[x_dims.size() - 1]),
                     static_cast<cl::size_type>(image_shape["height"])};
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(param.output->target());
     VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
             << image_shape["height"];
@@ -157,6 +162,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "global_work_size: " << x_dims[x_dims.size() - 1] << "  "
             << (image_shape["width"] / x_dims[x_dims.size() - 1]) << "  "
             << (image_shape["height"]);
+#endif
 
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     int out_w = x_dims[x_dims.size() - 1];
@@ -198,8 +204,10 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         image_shape = InitImageDimInfoWith(in_dims);
         auto* x_buf = inputs[i]->data<half_t, cl::Image2D>();
         int in_w = in_dims[in_dims.size() - 1];
+#ifndef LITE_SHUTDOWN_LOG
         VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
                 << image_shape["height"];
+#endif
         global_work_size =
             cl::NDRange{static_cast<cl::size_type>(in_dims[in_dims.size() - 1]),
                         static_cast<cl::size_type>(image_shape["width"] /
@@ -245,6 +253,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
