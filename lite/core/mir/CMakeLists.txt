@@ -22,7 +22,7 @@ lite_cc_library(mir_passes
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
-      fusion/__xpu__encoder_fuse_pass.cc
+      fusion/__xpu__multi_encoder_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
       static_kernel_pick_pass.cc
