@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 #include "lite/backends/xpu/math.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 #include "lite/operators/subgraph_op.h"
@@ -556,7 +555,7 @@ class XPUMultiEncoderFuser {
 
       std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
       std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-      xpuapi_fp32_to_int16(
+      paddle::lite::xpu::math::ConvertFP32ToInt16(
           weight_on_host, weight_int16.get(), max_f, weight_len);
       paddle::lite::xpu::math::Transpose(weight_int16.get(),
                                          weight_trans_int16.get(),

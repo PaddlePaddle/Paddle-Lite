@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 #include "lite/backends/xpu/math.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 #include "lite/operators/subgraph_op.h"
@@ -890,7 +889,7 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
       std::unique_ptr<int16_t[]> filter_int16(new int16_t[filter_len]);
-      xpuapi_fp32_to_int16(
+      paddle::lite::xpu::math::ConvertFP32ToInt16(
           filter_on_host, filter_int16.get(), max_f, filter_len);
       memcpy(filter_on_host, filter_int16.get(), filter_len * sizeof(int16_t));
 
