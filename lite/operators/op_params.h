@@ -1444,7 +1444,7 @@ struct CrfDecodingParam : ParamBase {
   lite::Tensor* viterbi_path{};
 };
 
-struct ResNet50Param {
+struct ResNet50Param : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> filter;
   std::vector<lite::Tensor*> bias;
@@ -1452,7 +1452,7 @@ struct ResNet50Param {
   lite::Tensor* output{};
 };
 
-struct MultiEncoderParam {
+struct MultiEncoderParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;
   std::vector<lite::Tensor*> fc_bias;
