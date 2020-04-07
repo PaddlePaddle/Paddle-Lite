@@ -51,6 +51,8 @@ void ElementwiseAddActivationFuser::BuildPattern() {
 
 void ElementwiseAddActivationFuser::InsertNewNode(SSAGraph* graph,
                                                   const key2nodes_t& matched) {
+  LOG(INFO) << "lite_elementwise_add_activation_fuse_pass appiled: fused into "
+               "fusion_elementwise_add_activation";
   auto op_desc = GenOpDesc(matched);
   auto op =
       LiteOpRegistry::Global().Create("fusion_elementwise_add_activation");

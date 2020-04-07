@@ -64,6 +64,7 @@ void ConvElementwiseFuser::BuildPattern() {
 
 void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
                                          const key2nodes_t& matched) {
+  LOG(INFO) << "lite_conv_elementwise_fuse_pass applied: fused into conv2d";
   auto conv_instruct = matched.at("conv2d")->stmt();
   auto conv_op_desc = conv_instruct->mutable_op_info();
   auto* scope = conv_instruct->op()->scope();

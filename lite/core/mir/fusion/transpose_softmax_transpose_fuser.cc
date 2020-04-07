@@ -64,6 +64,8 @@ void TransposeSoftmaxTransposeFuser::BuildPattern() {
 
 void TransposeSoftmaxTransposeFuser::InsertNewNode(SSAGraph* graph,
                                                    const key2nodes_t& matched) {
+  LOG(INFO) << "lite_transpose_softmax_transpose_fuse_pass appiled: fused into "
+               "softmax";
   auto op_desc = GenOpDesc(matched);
   auto softmax_op = LiteOpRegistry::Global().Create(softmax_type_);
   auto softmax_old = matched.at("softmax")->stmt()->op();

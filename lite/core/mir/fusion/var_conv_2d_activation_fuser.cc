@@ -49,6 +49,8 @@ void VarConvActivationFuser::BuildPattern() {
 
 void VarConvActivationFuser::InsertNewNode(SSAGraph* graph,
                                            const key2nodes_t& matched) {
+  LOG(INFO) << "lite_var_conv_2d_activation_fuse_pass applied: fused into "
+               "var_conv_2d";
   auto op_desc = GenOpDesc(matched);
   auto conv_op = LiteOpRegistry::Global().Create(conv_type_);
   auto conv_old = matched.at("var_conv_2d")->stmt()->op();

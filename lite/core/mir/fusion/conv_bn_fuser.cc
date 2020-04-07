@@ -77,6 +77,8 @@ void ConvBNFuser::BuildPattern() {
 }
 
 void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
+  LOG(INFO) << "lite_conv_bn_fuse_pass applied: fused into `conv2d or "
+               "depthwise_conv2d`";
   auto conv_instruct = matched.at("conv2d")->stmt();
   auto conv_op_desc = conv_instruct->mutable_op_info();
   auto conv = conv_instruct->op();

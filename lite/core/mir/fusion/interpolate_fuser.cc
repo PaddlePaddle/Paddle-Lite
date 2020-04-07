@@ -67,6 +67,8 @@ void InterpolateFuser::BuildPattern() {
 
 void InterpolateFuser::InsertNewNode(SSAGraph* graph,
                                      const key2nodes_t& matched) {
+  LOG(INFO) << "lite_interpolate_fuse_pass appiled: fused into "
+               "`bilinear_interp or earest_interp`";
   auto op_desc = GenOpDesc(matched);
   auto interp_op = LiteOpRegistry::Global().Create(interp_type_);
   auto interp_old = matched.at("interpolate")->stmt()->op();

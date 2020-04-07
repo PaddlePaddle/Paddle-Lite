@@ -55,6 +55,7 @@ void FcFuser::BuildPattern() {
 }
 
 void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
+  LOG(INFO) << "lite_fc_fuse_pass applied: fused into fc";
   auto op_desc = GenOpDesc(matched);
   auto fc_op = LiteOpRegistry::Global().Create("fc");
   auto mul = matched.at("mul")->stmt()->op();

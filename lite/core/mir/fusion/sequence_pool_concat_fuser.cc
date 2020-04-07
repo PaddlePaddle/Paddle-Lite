@@ -77,6 +77,8 @@ void SequencePoolConcatFuser::BuildPattern() {
 
 void SequencePoolConcatFuser::InsertNewNode(SSAGraph* graph,
                                             const key2nodes_t& matched) {
+  LOG(INFO) << "lite_sequence_pool_concat_fuse_pass appiled: fused into "
+               "sequence_pool_concat";
   auto op_desc = GenOpDesc(matched);
   auto sequence_pool_concat_op =
       LiteOpRegistry::Global().Create("sequence_pool_concat");

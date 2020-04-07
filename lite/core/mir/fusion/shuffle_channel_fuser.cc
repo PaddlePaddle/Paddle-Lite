@@ -76,6 +76,8 @@ void ShuffleChannelFuser::BuildPattern() {
 
 void ShuffleChannelFuser::InsertNewNode(SSAGraph* graph,
                                         const key2nodes_t& matched) {
+  LOG(INFO)
+      << "lite_shuffle_channel_fuse_pass appiled: fused into shuffle_channel";
   auto op_desc = GenOpDesc(matched);
   auto shuffle_channel_op = LiteOpRegistry::Global().Create("shuffle_channel");
   auto transpose = matched.at("transpose_op")->stmt()->op();
