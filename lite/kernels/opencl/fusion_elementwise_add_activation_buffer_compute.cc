@@ -28,8 +28,10 @@ class FusionElementwiseAddActivationCompute : public ElementwiseAddCompute {
   void PrepareForRun() override {
     build_options_ += " -DRELU";
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/elementwise_add_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     ele_param_ = param_.get_mutable<param_t>();
     UpdateParams();
     auto act_t = static_cast<param_t*>(ele_param_)->act_type;
