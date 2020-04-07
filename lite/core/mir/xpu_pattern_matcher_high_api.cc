@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include <set>
+#include <unordered_set>
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -65,7 +67,8 @@ PMNode *XPUFuseBase::GetOrCreateNode(const std::string &key) {
   return it->second;
 }
 
-PMNode *XPUFuseBase::OpNode(const std::string &key, const std::string &op_type) {
+PMNode *XPUFuseBase::OpNode(const std::string &key,
+                            const std::string &op_type) {
   GetOrCreateNode(key)->set_op_type(op_type);
   GetOrCreateNode(key)->AsOp(op_type);
   return GetOrCreateNode(key);

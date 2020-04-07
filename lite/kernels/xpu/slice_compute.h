@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+
+#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -24,9 +26,9 @@ class SliceCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SliceParam;
 
-  virtual void PrepareForRun() override;
+  virtual void PrepareForRun();
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~SliceCompute() = default;
 

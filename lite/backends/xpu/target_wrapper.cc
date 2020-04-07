@@ -24,9 +24,7 @@ void* TargetWrapperXPU::Malloc(size_t size) {
   return ptr;
 }
 
-void TargetWrapperXPU::Free(void* ptr) {
-  xpu_free(ptr);
-}
+void TargetWrapperXPU::Free(void* ptr) { xpu_free(ptr); }
 
 void TargetWrapperXPU::MemcpySync(void* dst,
                                   const void* src,

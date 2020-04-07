@@ -47,14 +47,14 @@ void SliceCompute::Run() {
 
   int ndim = param.X->dims().size();
   int r = xdnn::slice_forward(
-    ctx.GetRawContext(), /* context */
-    &x_shape_[0], /* shape */
-    &x_dim_begin_[0], /* starts */
-    &x_dim_end_[0], /* ends */
-    ndim, /* n */
-    param.X->data<float>(), /* in */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),    /* context */
+      &x_shape_[0],           /* shape */
+      &x_dim_begin_[0],       /* starts */
+      &x_dim_end_[0],         /* ends */
+      ndim,                   /* n */
+      param.X->data<float>(), /* in */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -62,12 +62,8 @@ void SliceCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(slice,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::SliceCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    slice, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SliceCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
