@@ -33,6 +33,8 @@ class CLRuntime {
  public:
   static CLRuntime* Global();
 
+  void ReleaseResouces();
+
   bool Init();
 
   cl::Platform& platform();

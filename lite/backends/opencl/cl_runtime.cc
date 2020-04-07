@@ -29,30 +29,33 @@ CLRuntime* CLRuntime::Global() {
 }
 
 CLRuntime::~CLRuntime() {
-  if (command_queue_ != nullptr) {
-    command_queue_->flush();
-    command_queue_->finish();
-  }
-
-  for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
-    clReleaseKernel(kernels_[kidx]->get());
-    kernels_[kidx].reset();
-  }
-  kernels_.clear();
-  kernel_offset_.clear();
-
-  for (auto& p : programs_) {
-    clReleaseProgram(p.second->get());
-  }
-  programs_.clear();
-
-  // For controlling the destruction order
+  LOG(INFO) << "CLRuntime::~CLRuntime()";
+  // Note: do releaseResources() in predictor
   command_queue_&& clReleaseCommandQueue(command_queue_->get());
   command_queue_.reset();
   context_&& clReleaseContext(context_->get());
   context_.reset();
   device_.reset();
   platform_.reset();
+  initialized_ = false;
+}
+
+void CLRuntime::ReleaseResouces() {
+  if (command_queue_ != nullptr) {
+    command_queue_->flush();
+    command_queue_->finish();
+  }
+  for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
+    clReleaseKernel(kernels_[kidx]->get());
+    kernels_[kidx].reset();
+  }
+  kernels_.clear();
+  kernel_offset_.clear();
+  for (auto& p : programs_) {
+    clReleaseProgram(p.second->get());
+  }
+  programs_.clear();
+  LOG(INFO) << "release resources finished.";
 }
 
 bool CLRuntime::Init() {

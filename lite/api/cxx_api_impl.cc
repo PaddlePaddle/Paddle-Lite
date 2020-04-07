@@ -29,6 +29,12 @@
 namespace paddle {
 namespace lite {
 
+void CxxPaddleApiImp::~CxxPaddleApiImp() {
+#ifdef LITE_WITH_OPENCL
+  CLRuntime::Global()->ReleaseResources();
+#endif
+}
+
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
 #ifdef LITE_WITH_CUDA
