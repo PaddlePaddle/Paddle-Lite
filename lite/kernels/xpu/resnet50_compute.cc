@@ -72,14 +72,14 @@ void ResNet50Compute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   for (auto* filter : param.filter) {
-    arg_filter_.push_back(reinterpret_cast<int16_t*>(filter->data<float>()));
+    arg_filter_.push_back(
+        reinterpret_cast<const int16_t*>(filter->data<float>()));
   }
   for (auto* bias : param.bias) {
-    arg_bias_.push_back(reinterpret_cast<float*>(bias->data<float>()));
+    arg_bias_.push_back(bias->data<float>());
   }
   for (auto* max_filter : param.max_filter) {
-    arg_max_filter_.push_back(
-        reinterpret_cast<float*>(max_filter->data<float>()));
+    arg_max_filter_.push_back(max_filter->data<float>());
   }
 }
 

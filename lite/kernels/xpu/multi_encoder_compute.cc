@@ -87,7 +87,7 @@ void MultiEncoderCompute::PrepareForRun() {
 
   for (auto* fc_weight : param.fc_weight) {
     arg_fc_weight_.push_back(
-        reinterpret_cast<int16_t*>(fc_weight->data<float>()));
+        reinterpret_cast<const int16_t*>(fc_weight->data<float>()));
   }
   for (auto* fc_bias : param.fc_bias) {
     arg_fc_bias_.push_back(fc_bias->data<float>());
