@@ -30,7 +30,10 @@ CLRuntime* CLRuntime::Global() {
 
 CLRuntime::~CLRuntime() {
   LOG(INFO) << "CLRuntime::~CLRuntime()";
-  // Note: do releaseResources() in predictor
+// Note: do ReleaseResources() in predictor
+#ifdef PADDLE_WITH_TESTING
+  ReleaseResources();
+#endif
   command_queue_&& clReleaseCommandQueue(command_queue_->get());
   command_queue_.reset();
   context_&& clReleaseContext(context_->get());
