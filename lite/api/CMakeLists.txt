@@ -265,7 +265,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         CV_DEPS paddle_cv_arm
-        NPU_DEPS ${npu_kernels})
+        NPU_DEPS ${npu_kernels}
         BM_DEPS ${bm_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
