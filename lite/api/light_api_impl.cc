@@ -21,7 +21,7 @@
 namespace paddle {
 namespace lite {
 
-void LightPredictorImpl::~LightPredictorImpl() {
+LightPredictorImpl::~LightPredictorImpl() {
   raw_predictor_.reset();
 #ifdef LITE_WITH_OPENCL
   CLRuntime::Global()->ReleaseResources();

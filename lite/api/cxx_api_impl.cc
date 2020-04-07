@@ -29,7 +29,7 @@
 namespace paddle {
 namespace lite {
 
-void CxxPaddleApiImp::~CxxPaddleApiImp() {
+CxxPaddleApiImp::~CxxPaddleApiImp() {
 #ifdef LITE_WITH_OPENCL
   CLRuntime::Global()->ReleaseResources();
 #endif
