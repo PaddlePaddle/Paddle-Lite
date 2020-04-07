@@ -125,6 +125,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
  public:
   CxxPaddleApiImpl() {}
 
+  ~CxxPaddleApiImpl();
+
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
 

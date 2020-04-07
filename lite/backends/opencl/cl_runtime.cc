@@ -40,7 +40,7 @@ CLRuntime::~CLRuntime() {
   initialized_ = false;
 }
 
-void CLRuntime::ReleaseResouces() {
+void CLRuntime::ReleaseResources() {
   if (command_queue_ != nullptr) {
     command_queue_->flush();
     command_queue_->finish();

@@ -33,7 +33,7 @@ class CLRuntime {
  public:
   static CLRuntime* Global();
 
-  void ReleaseResouces();
+  void ReleaseResources();
 
   bool Init();
 
