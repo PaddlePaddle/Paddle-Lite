@@ -25,8 +25,10 @@ namespace opencl {
 
 void ElementwiseAddCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
-  context.cl_context()->AddKernel(
-      kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
+  context.cl_context()->AddKernel(kernel_func_name_,
+                                  "buffer/elementwise_add_kernel.cl",
+                                  build_options_,
+                                  time_stamp_);
   ele_param_ = param_.get_mutable<param_t>();
   UpdateParams();
 }
@@ -39,7 +41,7 @@ void ElementwiseAddCompute::Run() {
   auto* out_buf = ele_param_->Out->template mutable_data<float, cl::Buffer>(
       TARGET(kOpenCL));
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
+  kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 #ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << TargetToStr(ele_param_->X->target());
