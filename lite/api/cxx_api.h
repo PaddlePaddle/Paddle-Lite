@@ -125,7 +125,11 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
  public:
   CxxPaddleApiImpl() {}
 
-  ~CxxPaddleApiImpl();
+  ~CxxPaddleApiImpl() {
+#ifdef LITE_WITH_OPENCL
+    CLRuntime::Global()->ReleaseResources();
+#endif
+  }
 
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);

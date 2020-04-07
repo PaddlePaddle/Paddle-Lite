@@ -29,11 +29,13 @@
 namespace paddle {
 namespace lite {
 
+#if 0
 CxxPaddleApiImp::~CxxPaddleApiImp() {
 #ifdef LITE_WITH_OPENCL
   CLRuntime::Global()->ReleaseResources();
 #endif
 }
+#endif
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
