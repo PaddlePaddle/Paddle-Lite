@@ -44,7 +44,7 @@ bool SequenceConvOp::CheckShape() const {
   return true;
 }
 
-bool SequenceConvOp::InferShape() const {
+bool SequenceConvOp::InferShapeImpl() const {
   const auto *input = param_.X;
   const auto *filter = param_.Filter;
   auto in_dims = input->dims();

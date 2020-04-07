@@ -49,8 +49,10 @@ void ElementwiseSubImageCompute::PrepareForRun() {
   VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
   auto& context = ctx_->As<OpenCLContext>();
-  context.cl_context()->AddKernel(
-      kernel_func_name_, "image/elementwise_sub_kernel.cl", build_options_);
+  context.cl_context()->AddKernel(kernel_func_name_,
+                                  "image/elementwise_sub_kernel.cl",
+                                  build_options_,
+                                  time_stamp_);
 }
 
 void ElementwiseSubImageCompute::Run() {
@@ -62,6 +64,7 @@ void ElementwiseSubImageCompute::Run() {
   auto* out = ele_param_->Out;
   auto axis = ele_param_->axis;
 
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << "x->target():" << TargetToStr(x->target());
   VLOG(4) << "y->target():" << TargetToStr(y->target());
   VLOG(4) << "out->target():" << TargetToStr(out->target());
@@ -69,6 +72,7 @@ void ElementwiseSubImageCompute::Run() {
   VLOG(4) << "y->dims():" << y->dims();
   VLOG(4) << "out->dims():" << out->dims();
   VLOG(4) << "axis:" << axis;
+#endif
 
   paddle::lite::CLImageConverterDefault default_convertor;
   auto x_img_shape = default_convertor.InitImageDimInfoWith(x->dims());  // w, h
@@ -83,13 +87,15 @@ void ElementwiseSubImageCompute::Run() {
   auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape[0],
                                                          out_img_shape[1]);
 
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;
   VLOG(4) << "y_img_shape[w,h]:" << y_img_shape[0] << " " << y_img_shape[1];
   VLOG(4) << "out_img_shape[w,h]:" << out_img_shape[0] << " "
           << out_img_shape[1];
+#endif
 
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
+  kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
   int arg_idx = 0;
@@ -104,8 +110,9 @@ void ElementwiseSubImageCompute::Run() {
   } else if (y_dims.size() == 1) {
     if (axis == x->dims().size() - 1 || axis == x->dims().size() - 3) {
       int tensor_w = x->dims()[x->dims().size() - 1];
+#ifndef LITE_SHUTDOWN_LOG
       VLOG(4) << "tensor_w:" << tensor_w;
-
+#endif
       cl_int status = kernel.setArg(arg_idx, *x_img);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, *y_img);
@@ -127,7 +134,10 @@ void ElementwiseSubImageCompute::Run() {
 
   auto global_work_size = cl::NDRange{static_cast<cl::size_type>(x_img_width),
                                       static_cast<cl::size_type>(x_img_height)};
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
+#endif
+
   auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,

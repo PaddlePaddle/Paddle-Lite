@@ -40,8 +40,10 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/dropout_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/dropout_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -63,7 +65,7 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     cl_int status;
 
@@ -101,6 +103,7 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
  private:
   std::string kernel_func_name_{"dropout"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

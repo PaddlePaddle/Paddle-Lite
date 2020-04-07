@@ -48,13 +48,16 @@ std::string Visualize(mir::SSAGraph* graph) {
     auto attr_type = op_info->GetAttrType(attr_name);
     switch (attr_type) {
       case AttrType::INT:
-        os << ":int:" << std::to_string(op_info->GetAttr<int>(attr_name));
+        os << ":int:"
+           << paddle::lite::to_string(op_info->GetAttr<int>(attr_name));
         break;
       case AttrType::FLOAT:
-        os << ":float:" << std::to_string(op_info->GetAttr<float>(attr_name));
+        os << ":float:"
+           << paddle::lite::to_string(op_info->GetAttr<float>(attr_name));
         break;
       case AttrType::BOOLEAN:
-        os << ":int:" << std::to_string(op_info->GetAttr<bool>(attr_name));
+        os << ":int:"
+           << paddle::lite::to_string(op_info->GetAttr<bool>(attr_name));
         break;
       case AttrType::STRING:
         os << ":string: \""

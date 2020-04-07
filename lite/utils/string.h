@@ -48,7 +48,14 @@ template <typename T>
 static std::string to_string_with_precision(const T& v, const int n = 6) {
   STL::stringstream ss;
   ss.precision(n);
-  // ss << std::fixed << v;
+  ss << v;
+  return ss.str();
+}
+
+template <typename T>
+static std::string to_string(const T& v) {
+  STL::stringstream ss;
+  ss << v;
   return ss.str();
 }
 

@@ -54,7 +54,8 @@ enum class TargetType : int {
   kXPU = 9,
   kBM = 10,
   kAny = 6,  // any target
-  NUM = 11,  // number of fields.
+  kMLU = 11,
+  NUM = 12,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -98,7 +99,8 @@ enum class ActivationType : int {
   kTanh = 6,
   kSwish = 7,
   kExp = 8,
-  NUM = 9,
+  kAbs = 9,
+  NUM = 10,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
