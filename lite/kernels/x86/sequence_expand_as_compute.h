@@ -29,9 +29,10 @@ using Tensor = lite::Tensor;
 
 template <typename T>
 struct SequenceExpandFunctor {
-  void operator()(const Tensor &x,
-                  const std::vector<uint64_t> &ref_lod, /*expand referenced lod*/
-                  Tensor *out) {
+  void operator()(
+      const Tensor &x,
+      const std::vector<uint64_t> &ref_lod, /*expand referenced lod*/
+      Tensor *out) {
     int64_t hight = x.dims()[0];
     int64_t width = x.data_size() / hight;
 

@@ -72,7 +72,8 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
     auto* batch_hidden = param.batch_hidden;
     T* batch_gate_ptr = batch_gate->template mutable_data<T>();
-    T* batch_reset_hidden_prev_ptr = batch_reset_hidden_prev->template mutable_data<T>();
+    T* batch_reset_hidden_prev_ptr =
+        batch_reset_hidden_prev->template mutable_data<T>();
     T* batch_hidden_ptr = batch_hidden->template mutable_data<T>();
 
     auto* hidden = param.hidden;

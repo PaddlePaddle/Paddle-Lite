@@ -15,6 +15,10 @@
 #include "lite/api/light_api.h"
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
+#ifndef LITE_ON_TINY_PUBLISH
+#include "lite/api/paddle_use_passes.h"
+#endif
+
 #include <algorithm>
 
 namespace paddle {

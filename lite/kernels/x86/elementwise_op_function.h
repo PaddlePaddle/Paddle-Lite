@@ -484,8 +484,9 @@ void FusedElemwiseAndActComputeNoBroadcast(const lite::Context<Target> &ctx,
           y.data<T>(),
           compound_functor,
           out->template mutable_data<T>(),
-          intermediate_out == nullptr ? nullptr
-                                      : intermediate_out->template mutable_data<T>()});
+          intermediate_out == nullptr
+              ? nullptr
+              : intermediate_out->template mutable_data<T>()});
 }
 
 template <lite::TargetType Target,
@@ -524,8 +525,9 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
         h,
         w,
         out->template mutable_data<T>(),
-        intermediate_out == nullptr ? nullptr
-                                    : intermediate_out->template mutable_data<T>());
+        intermediate_out == nullptr
+            ? nullptr
+            : intermediate_out->template mutable_data<T>());
 
   } else {
     FusedElemwiseAndActBroadcast2CPU<T,
@@ -540,8 +542,9 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
         post,
         compound_functor,
         out->template mutable_data<T>(),
-        intermediate_out == nullptr ? nullptr
-                                    : intermediate_out->template mutable_data<T>());
+        intermediate_out == nullptr
+            ? nullptr
+            : intermediate_out->template mutable_data<T>());
   }
 }
 

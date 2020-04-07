@@ -62,7 +62,8 @@ class AttentionPaddingMaskCompute
            bottom0->dims()[0] * bottom0->dims()[1] * sizeof(T));
     for (int i = 0; i < att_batch; ++i) {
       for (int j = 0; j < att_len; ++j) {
-        top_data = top->template mutable_data<T>() + src_len * (att_len * i + j);
+        top_data =
+            top->template mutable_data<T>() + src_len * (att_len * i + j);
         int src_idx = i % src_batch;
         for (int k = pad_begin[src_idx]; k < src_len; ++k) {
           top_data[k] = _mask;

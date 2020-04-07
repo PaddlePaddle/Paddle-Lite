@@ -68,15 +68,15 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     }
     if (!global_stats) {
       // saved_xx is use just in this batch of data
-      EigenVectorArrayMap<T> saved_mean_e(param.saved_mean->template mutable_data<T>(),
-                                          C);
+      EigenVectorArrayMap<T> saved_mean_e(
+          param.saved_mean->template mutable_data<T>(), C);
       EigenVectorArrayMap<T> saved_variance_e(
           param.saved_variance->template mutable_data<T>(), C);
       saved_mean_e.setZero();
       saved_variance_e.setZero();
 
-      EigenVectorArrayMap<T> running_mean_arr(param.mean_out->template mutable_data<T>(),
-                                              C);
+      EigenVectorArrayMap<T> running_mean_arr(
+          param.mean_out->template mutable_data<T>(), C);
       EigenVectorArrayMap<T> running_var_arr(
           param.variance_out->template mutable_data<T>(), C);
 
@@ -89,7 +89,8 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
       switch (param.data_layout) {
         case DATALAYOUT(kNCHW): {
-          ConstEigenArrayMap<T> x_arr(x->template data<T>(), sample_size, N * C);
+          ConstEigenArrayMap<T> x_arr(
+              x->template data<T>(), sample_size, N * C);
           for (int nc = 0; nc < N * C; ++nc) {
             saved_mean_e(nc % C) += x_arr.col(nc).sum();
           }
@@ -115,7 +116,8 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // use SavedMean and SavedVariance to do normalize
     Eigen::Array<T, Eigen::Dynamic, 1> inv_std(C);
     if (global_stats) {
-      ConstEigenVectorArrayMap<T> var_arr(param.variance->template data<T>(), C);
+      ConstEigenVectorArrayMap<T> var_arr(param.variance->template data<T>(),
+                                          C);
       inv_std = (var_arr + param.epsilon).sqrt().inverse();
     } else {
       EigenVectorArrayMap<T> saved_inv_std(
@@ -126,7 +128,9 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     }
 
     ConstEigenVectorArrayMap<T> mean_arr(
-        global_stats ? param.mean->template data<T>() : param.saved_mean->template data<T>(), C);
+        global_stats ? param.mean->template data<T>()
+                     : param.saved_mean->template data<T>(),
+        C);
 
     //   ((x - est_mean) * (inv_var) * scale + bias
     //   formula transform ====>
@@ -140,7 +144,8 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     switch (param.data_layout) {
       case DATALAYOUT(kNCHW): {
-        EigenArrayMap<T> y_arr(param.y->template mutable_data<T>(), sample_size, N * C);
+        EigenArrayMap<T> y_arr(
+            param.y->template mutable_data<T>(), sample_size, N * C);
         ConstEigenArrayMap<T> x_arr(x->template data<T>(), sample_size, N * C);
         for (int nc = 0; nc < N * C; ++nc) {
           y_arr.col(nc) = x_arr.col(nc) * new_scale(nc % C) + new_bias(nc % C);
