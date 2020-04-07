@@ -46,13 +46,6 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
 
-    // xpu only
-    if (instruct.op_info()->HasAttr("xpu")) {
-      CHECK(!instruct.kernels().empty());
-      VLOG(4) << "Found xpu only op, kernel picked already";
-      continue;
-    }
-
     std::unordered_map<std::string, PrecisionType> in_types;
     std::unordered_map<std::string, PrecisionType> out_types;
     for (std::list<Node*>::iterator i = node.inlinks.begin();
