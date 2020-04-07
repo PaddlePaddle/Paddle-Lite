@@ -25,7 +25,7 @@ bool FlattenOp::CheckShape() const {
   return true;
 }
 
-bool FlattenOp::InferShape() const {
+bool FlattenOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
 
   auto out_lod = param_.output->mutable_lod();
@@ -71,8 +71,8 @@ bool Flatten2Op::CheckShape() const {
   return true;
 }
 
-bool Flatten2Op::InferShape() const {
-  FlattenOp::InferShape();
+bool Flatten2Op::InferShapeImpl() const {
+  FlattenOp::InferShapeImpl();
   auto x_dims = param_.x->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
   for (size_t i = 0; i < x_dims.size(); i++) {

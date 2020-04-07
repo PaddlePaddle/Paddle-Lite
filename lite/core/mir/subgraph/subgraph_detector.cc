@@ -64,11 +64,11 @@ std::string SubgraphVisualizer::operator()() {
     } else {
       exists_ops[op_type]++;
     }
-    auto op_name = op_type + std::to_string(exists_ops[op_type]);
+    auto op_name = op_type + paddle::lite::to_string(exists_ops[op_type]);
     std::string op_color = "white";
     if (subgraph_indices.count(node)) {
       auto subgraph_idx = subgraph_indices[node];
-      op_name += "_subgraph_" + std::to_string(subgraph_idx);
+      op_name += "_subgraph_" + paddle::lite::to_string(subgraph_idx);
       op_color = subgraph_colors[subgraph_idx % subgraph_colors.size()];
     }
     dot.AddNode(op_name,
@@ -221,6 +221,7 @@ std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
   std::vector<std::string> lines = ReadLines(config_file_path);
 
   for (std::string line : lines) {
+    if (line.empty()) continue;
     std::vector<std::string> node_info = Split(line, ":");
     std::string op_type = node_info.at(0);
     std::vector<std::string> in_vars_name;
@@ -405,7 +406,7 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   cpp::OpDesc subgraph_op_desc;
   subgraph_op_desc.SetType("subgraph");
 
-  // Create a new sub block desc for storing all of Ops an Vars of the target
+  // Create a new sub block desc for storing all of Ops and Vars of the target
   // subgraph and sub_block_idx is set as a attribute of subgraph op,
   // sub_block_idx < 0 means it's a new subgraph op
   int sub_block_idx = -(subgraph_idx + 1);

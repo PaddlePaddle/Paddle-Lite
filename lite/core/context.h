@@ -55,6 +55,7 @@ using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
+using MLUContext = Context<TargetType::kMLU>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -107,11 +108,9 @@ class Context<TargetType::kXPU> {
   explicit Context(const XPUContext& ctx);
 
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {
-  }
+  void InitOnce() {}
 
-  void CopySharedTo(XPUContext* ctx) {
-  }
+  void CopySharedTo(XPUContext* ctx) {}
 
   static xdnn::Context* GetRawContext() {
     if (_tls_raw_ctx == nullptr) {
@@ -427,7 +426,7 @@ class ContextScheduler {
         break;
 #endif
       default:
-#ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
+#if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
 #endif
         break;

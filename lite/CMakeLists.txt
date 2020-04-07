@@ -84,7 +84,16 @@ message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 if (LITE_WITH_PYTHON)
     add_custom_target(publish_inference_python_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/lib"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite_core.so")
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/setup.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/"
+            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/python/__init__.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite.so"
+            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.so")
+    add_custom_target(publish_inference_python_installer ${TARGET}
+        COMMAND python setup.py bdist_wheel
+        WORKING_DIRECTORY ${INFER_LITE_PUBLISH_ROOT}/python/install/
+        DEPENDS publish_inference_python_lib)
     add_custom_target(publish_inference_python_light_demo ${TARGET}
     	COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/python"
     	COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/python/mobilenetv1_light_api.py" "${INFER_LITE_PUBLISH_ROOT}/demo/python/")
@@ -96,6 +105,7 @@ if (LITE_WITH_PYTHON)
     endif()
     add_dependencies(publish_inference_python_lib lite_pybind)
     add_dependencies(publish_inference publish_inference_python_lib)
+    add_dependencies(publish_inference publish_inference_python_installer)
     add_dependencies(publish_inference publish_inference_python_light_demo)
 endif()
 
@@ -213,6 +223,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference tiny_publish_cxx_lib)
                 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
                     add_custom_command(TARGET tiny_publish_cxx_lib POST_BUILD
+                                COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_api_light_bundled.a
                                 COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_light_api_shared.so)
                 endif()
             endif()

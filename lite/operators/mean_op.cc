@@ -27,7 +27,7 @@ bool MeanOp::CheckShape() const {
   return true;
 }
 
-bool MeanOp::InferShape() const {
+bool MeanOp::InferShapeImpl() const {
   param_.Out->Resize(std::vector<int64_t>{1});
   return true;
 }

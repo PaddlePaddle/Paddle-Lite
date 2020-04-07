@@ -44,7 +44,7 @@ bool SearchSeqDepaddingOpLite::CheckShape() const {
   return true;
 }
 
-bool SearchSeqDepaddingOpLite::InferShape() const {
+bool SearchSeqDepaddingOpLite::InferShapeImpl() const {
   DDim pad_dims = param_.pad->dims();
   param_.out->Resize({-1, pad_dims[1]});
   return true;

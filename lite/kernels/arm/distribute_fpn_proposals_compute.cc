@@ -71,9 +71,9 @@ void DistributeFpnProposalsCompute::Run() {
     for (int j = 0; j < fpn_rois_slice.dims()[0]; ++j) {
       // get the target level of current rois
       float roi_scale = std::sqrt(BBoxArea(rois_data, false));
-      int tgt_lvl = std::floor(
-          std::log2(roi_scale / refer_scale + static_cast<float>(1e-6)) +
-          refer_level);
+      int tgt_lvl =
+          std::floor(log2(roi_scale / refer_scale + static_cast<float>(1e-6)) +
+                     refer_level);
       tgt_lvl = std::min(max_level, std::max(tgt_lvl, min_level));
       target_level.push_back(tgt_lvl);
       num_rois_level[tgt_lvl - min_level]++;

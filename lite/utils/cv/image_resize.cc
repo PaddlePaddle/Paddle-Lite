@@ -664,15 +664,6 @@ void resize(const uint8_t* src,
     memcpy(dst, src, sizeof(uint8_t) * size);
     return;
   }
-  double scale_x = static_cast<double>(srcw) / dstw;
-  double scale_y = static_cast<double>(srch) / dsth;
-
-  int* buf = new int[dstw * 2 + dsth * 3];
-
-  int* xofs = buf;
-  int* yofs = buf + dstw;
-  int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw + dsth);
-  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + 2 * dstw + dsth);
 
   int w_out = dstw;
   int w_in = srcw;
@@ -692,12 +683,19 @@ void resize(const uint8_t* src,
     w_in = srcw * 3;
     w_out = dstw * 3;
     num = 3;
-
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     w_in = srcw * 4;
     w_out = dstw * 4;
     num = 4;
   }
+  double scale_x = static_cast<double>(srcw) / dstw;
+  double scale_y = static_cast<double>(srch) / dsth;
+
+  int* buf = new int[dstw * 2 + dsth * 3];
+  int* xofs = buf;
+  int* yofs = buf + dstw;
+  int16_t* ialpha = reinterpret_cast<int16_t*>(buf + dstw + dsth);
+  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + 2 * dstw + dsth);
 
   compute_xy(
       srcw, srch, dstw, orih, num, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
@@ -726,10 +724,10 @@ void resize(const uint8_t* src,
   int remain = w_out % 8;
   int32x4_t _v2 = vdupq_n_s32(2);
   int prev_sy1 = -1;
+  int16_t* rowsbuf0 = new int16_t[w_out + 1];
+  int16_t* rowsbuf1 = new int16_t[w_out + 1];
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
-    int16_t* rowsbuf0 = new int16_t[w_out + 1];
-    int16_t* rowsbuf1 = new int16_t[w_out + 1];
     int sy = yofs[dy];
     if (dy >= orih) {
       xofs = xofs1;
@@ -853,8 +851,6 @@ void resize(const uint8_t* src,
                     2);
     }
     ibeta += 2;
-    delete[] rowsbuf0;
-    delete[] rowsbuf1;
   }
   if (orih < dsth) {  // uv
     delete[] xofs1;
@@ -862,6 +858,8 @@ void resize(const uint8_t* src,
     delete[] ialpha1;
   }
   delete[] buf;
+  delete[] rowsbuf0;
+  delete[] rowsbuf1;
 }
 // compute xofs, yofs, alpha, beta
 void compute_xy(int srcw,

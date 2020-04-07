@@ -35,7 +35,7 @@ bool BoxCoderOpLite::CheckShape() const {
   return true;
 }
 
-bool BoxCoderOpLite::InferShape() const {
+bool BoxCoderOpLite::InferShapeImpl() const {
   auto prior_box_dims = param_.prior_box->dims();
   auto target_box_dims = param_.target_box->dims();
   std::string code_type = param_.code_type;

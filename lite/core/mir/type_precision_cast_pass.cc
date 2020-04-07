@@ -201,7 +201,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   CHECK(in->IsArg());
   // auto node_id = [&] { return graph->nodes().size(); };
   auto cast_op_output_name = in->AsArg().name + "/precision_trans";
-  // in->AsArg().name + "/precision_trans/" + std::to_string(node_id());
+  // in->AsArg().name + "/precision_trans/" +
+  // paddle::lite::to_string(node_id());
   auto* cast_op_output_arg = graph->NewArgumentNode(cast_op_output_name);
   cast_op_output_arg->AsArg().type =
       LiteType::GetTensorTy(from.target(), to.precision(), from.layout());

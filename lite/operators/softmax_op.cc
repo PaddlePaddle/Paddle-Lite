@@ -29,10 +29,11 @@ bool SoftmaxOp::CheckShape() const {
   return true;
 }
 
-bool SoftmaxOp::InferShape() const {
+bool SoftmaxOp::InferShapeImpl() const {
   param_.output->Resize(param_.x->dims());
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
+
   return true;
 }
 
