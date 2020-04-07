@@ -203,6 +203,7 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+#ifdef LITE_WITH_MLU
 void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
   mlu_core_version_ = core_version;
 }
@@ -233,6 +234,7 @@ const std::vector<float> &CxxConfig::mlu_first_conv_mean() const {
 const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
   return mlu_first_conv_std_;
 }
+#endif
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory
