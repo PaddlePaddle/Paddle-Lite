@@ -18,6 +18,7 @@
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/operators/subgraph_op.h"
 
 namespace paddle {
 namespace lite {
@@ -417,6 +418,7 @@ class XPUSingleEncoderFuser : public FuseBase {
         ->SetSubBlock(sub_block_desc);
     auto* single_encoder_stmt = matched.at("q_mul")->stmt();
     fake_subgraph_op->Attach(op_desc, single_encoder_stmt->op()->scope());
+    fake_subgraph_op->SetValidPlaces(single_encoder_stmt->op()->valid_places());
     single_encoder_stmt->SetOp(fake_subgraph_op);
 
     std::vector<std::string> froms = {
@@ -581,8 +583,9 @@ class XPUMultiEncoderFuser {
 
     auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());
     multi_encoder_op->Attach(op_desc, scope);
+    multi_encoder_op->SetValidPlaces(multi_encoder_stmt->op()->valid_places());
     auto kernels =
-        multi_encoder_op->CreateKernels(multi_encoder_stmt->op()->valid_places);
+        multi_encoder_op->CreateKernels(multi_encoder_op->valid_places());
     multi_encoder_stmt->SetOp(multi_encoder_op);
     multi_encoder_stmt->SetKernels(std::move(kernels));
 

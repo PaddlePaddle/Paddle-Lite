@@ -18,6 +18,7 @@
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/operators/subgraph_op.h"
 
 namespace paddle {
 namespace lite {
@@ -320,6 +321,7 @@ class XPUResNetBlock0Fuser : public FuseBase {
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetSubBlock(sub_block_desc);
     fake_subgraph_op->Attach(op_desc, block0_stmt->op()->scope());
+    fake_subgraph_op->SetValidPlaces(block0_stmt->op()->valid_places());
     block0_stmt->SetOp(fake_subgraph_op);
 
     std::vector<std::string> froms = {
@@ -581,6 +583,7 @@ class XPUResNetBlock1Fuser : public FuseBase {
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetSubBlock(sub_block_desc);
     fake_subgraph_op->Attach(op_desc, block1_stmt->op()->scope());
+    fake_subgraph_op->SetValidPlaces(block1_stmt->op()->valid_places());
     block1_stmt->SetOp(fake_subgraph_op);
 
     std::vector<std::string> froms = {
@@ -911,8 +914,8 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
 
     auto resnet50_op = LiteOpRegistry::Global().Create(op_desc.Type());
     resnet50_op->Attach(op_desc, scope);
-    auto kernels =
-        resnet50_op->CreateKernels(resnet50_stmt->op()->valid_places);
+    resnet50_op->SetValidPlaces(resnet50_stmt->op()->valid_places());
+    auto kernels = resnet50_op->CreateKernels(resnet50_op->valid_places());
     resnet50_stmt->SetOp(resnet50_op);
     resnet50_stmt->SetKernels(std::move(kernels));
 
