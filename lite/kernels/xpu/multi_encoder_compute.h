@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
+#include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/operators/op_params.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
 
 namespace paddle {
 namespace lite {
@@ -30,7 +32,7 @@ class MultiEncoderOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
@@ -52,15 +54,15 @@ class MultiEncoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
   using param_t = operators::MultiEncoderParam;
 
-  virtual void PrepareForRun() override;
+  virtual void PrepareForRun();
 
-  virtual void Run() override;
+  virtual void Run();
 
  private:
-  std::vector<const int16_t*> arg_fc_weight_;
-  std::vector<const float*> arg_fc_bias_;
-  std::vector<const float*> arg_ln_scale_;
-  std::vector<const float*> arg_ln_bias_;
+  std::vector<const int16_t *> arg_fc_weight_;
+  std::vector<const float *> arg_fc_bias_;
+  std::vector<const float *> arg_ln_scale_;
+  std::vector<const float *> arg_ln_bias_;
   xdnn::Activation_t act_type_{xdnn::Activation_t::GELU};
 };
 

@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
+#include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/operators/op_params.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
 
 namespace paddle {
 namespace lite {
@@ -30,7 +32,7 @@ class ResNet50Op : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
@@ -52,14 +54,14 @@ class ResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
   using param_t = operators::ResNet50Param;
 
-  virtual void PrepareForRun() override;
+  virtual void PrepareForRun();
 
-  virtual void Run() override;
+  virtual void Run();
 
  private:
-  std::vector<const int16_t*> arg_filter_;
-  std::vector<const float*> arg_max_filter_;
-  std::vector<const float*> arg_bias_;
+  std::vector<const int16_t *> arg_filter_;
+  std::vector<const float *> arg_max_filter_;
+  std::vector<const float *> arg_bias_;
 };
 
 }  // namespace xpu

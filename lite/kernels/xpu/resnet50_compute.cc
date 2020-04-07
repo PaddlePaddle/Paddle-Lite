@@ -22,7 +22,7 @@ namespace operators {
 
 bool ResNet50Op::CheckShape() const { return true; }
 
-bool ResNet50Op::InferShape() const {
+bool ResNet50Op::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
   input_shape[1] = 2048;
   input_shape[2] = 1;
@@ -32,27 +32,27 @@ bool ResNet50Op::InferShape() const {
 }
 
 bool ResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  param_.input = const_cast<lite::Tensor *>(
+  param_.input = const_cast<lite::Tensor*>(
       &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.output =
-      scope->FindVar(op_desc.Output("Output").front())->GetMutable<lite::Tensor>();
+  param_.output = scope->FindVar(op_desc.Output("Output").front())
+                      ->GetMutable<lite::Tensor>();
 
   param_.filter.clear();
   for (auto& name : op_desc.Input("Filter")) {
-    auto t = const_cast<lite::Tensor *>(
-        &scope->FindVar(name)->Get<lite::Tensor>());
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
     param_.filter.push_back(t);
   }
   param_.bias.clear();
   for (auto& name : op_desc.Input("Bias")) {
-    auto t = const_cast<lite::Tensor *>(
-        &scope->FindVar(name)->Get<lite::Tensor>());
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
     param_.bias.push_back(t);
   }
   param_.max_filter.clear();
   for (auto& name : op_desc.Input("MaxFilter")) {
-    auto t = const_cast<lite::Tensor *>(
-        &scope->FindVar(name)->Get<lite::Tensor>());
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
     param_.max_filter.push_back(t);
   }
   return true;
@@ -72,13 +72,14 @@ void ResNet50Compute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   for (auto* filter : param.filter) {
-    arg_filter_.push_back((int16_t*)filter->data<float>());
+    arg_filter_.push_back(reinterpret_cast<int16_t*>(filter->data<float>()));
   }
   for (auto* bias : param.bias) {
-    arg_bias_.push_back((float*)bias->data<float>());
+    arg_bias_.push_back(reinterpret_cast<float*>(bias->data<float>()));
   }
   for (auto* max_filter : param.max_filter) {
-    arg_max_filter_.push_back((float*)max_filter->data<float>());
+    arg_max_filter_.push_back(
+        reinterpret_cast<float*>(max_filter->data<float>()));
   }
 }
 
@@ -88,14 +89,14 @@ void ResNet50Compute::Run() {
 
   int batch_size = param.input->dims()[0];
   int r = xdnn::conv2d_int16_resnet<float, int16_t>(
-      ctx.GetRawContext(), /* context */
-      batch_size, /* num */
-      param.input->data<float>(), /* bottom */
-      &arg_filter_[0], /* weight_list */
+      ctx.GetRawContext(),                             /* context */
+      batch_size,                                      /* num */
+      param.input->data<float>(),                      /* bottom */
+      &arg_filter_[0],                                 /* weight_list */
       param.output->mutable_data<float>(TARGET(kXPU)), /* top */
-      &arg_bias_[0], /* bias_list */
+      &arg_bias_[0],                                   /* bias_list */
       &arg_max_filter_[0] /* max_filter_list */);
-  CHECK(r == 0);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu

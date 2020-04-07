@@ -27,15 +27,16 @@ bool SequenceUnpadOp::CheckShape() const {
   auto len_dims = param_.Length->dims();
   CHECK(x_dims.size() >= 2) << "Rank of X can't be less than 2";
   CHECK(len_dims.size() == 1) << "Rank of Length should be 1";
-  CHECK(x_dims[0] ==  len_dims[0]) << "X and Length should have the same 1st dim";
+  CHECK(x_dims[0] == len_dims[0])
+      << "X and Length should have the same 1st dim";
   return true;
 }
 
-bool SequenceUnpadOp::InferShape() const {
+bool SequenceUnpadOp::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
   auto len_dims = param_.Length->dims();
 
-  auto* seq_len_ptr = param_.Length->data<int64_t>();
+  auto *seq_len_ptr = param_.Length->data<int64_t>();
   int64_t batch_size = len_dims[0];
   std::vector<uint64_t> out_lod0(batch_size + 1, 0);
   for (int64_t i = 0; i < batch_size; ++i) {
