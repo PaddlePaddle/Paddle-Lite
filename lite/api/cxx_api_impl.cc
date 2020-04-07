@@ -31,10 +31,17 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
-#ifdef LITE_WITH_CUDA
-  Env<TARGET(kCUDA)>::Init();
-#endif
   auto places = config.valid_places();
+#ifdef LITE_WITH_CUDA
+  // if kCUDA is included in valid places, it should be initialized first,
+  // otherwise skip this step.
+  for (auto &p : places) {
+    if (p.target == TARGET(kCUDA)) {
+      Env<TARGET(kCUDA)>::Init();
+      break;
+    }
+  }
+#endif
   std::vector<std::string> passes{};
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
