@@ -76,7 +76,6 @@ TEST(Ernie, test_ernie_lite_xpu) {
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor->Run();
   }
-  LOG(INFO) << "xpu result[0] = " << *predictor->GetOutput(0)->data<float>();
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
@@ -89,12 +88,12 @@ TEST(Ernie, test_ernie_lite_xpu) {
   auto out = predictor->GetOutput(0);
   ASSERT_EQ(out->shape().size(), 2);
   ASSERT_EQ(out->shape()[0], 1);
-  ASSERT_EQ(out->shape()[1], 1000);
+  ASSERT_EQ(out->shape()[1], 3);
 
   for (size_t i = 0; i < results.size(); ++i) {
     for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(
-          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 1e-2);
+          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 1e-5);
     }
   }
 }
