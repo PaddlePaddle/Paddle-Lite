@@ -29,19 +29,19 @@ void BatchNormCompute::Run() {
   auto& x_dims = param.x->dims();
 
   int r = xdnn::batch_norm_infer_forward(
-    ctx.GetRawContext(), /* context */
-    epsilon, /* epsilon */
-    x_dims[0], /* img_n */
-    x_dims[1], /* img_c */
-    x_dims[2], /* img_h */
-    x_dims[3], /* img_w */
-    param.x->data<float>(), /* img_gm */
-    param.y->mutable_data<float>(TARGET(kXPU)), /* out_gm */
-    param.scale->data<float>(), /* scale_gm */
-    param.bias->data<float>(), /* bias_gm */
-    param.mean->data<float>(), /* mean_gm */
-    param.variance->data<float>() /* var__gm */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),                        /* context */
+      epsilon,                                    /* epsilon */
+      x_dims[0],                                  /* img_n */
+      x_dims[1],                                  /* img_c */
+      x_dims[2],                                  /* img_h */
+      x_dims[3],                                  /* img_w */
+      param.x->data<float>(),                     /* img_gm */
+      param.y->mutable_data<float>(TARGET(kXPU)), /* out_gm */
+      param.scale->data<float>(),                 /* scale_gm */
+      param.bias->data<float>(),                  /* bias_gm */
+      param.mean->data<float>(),                  /* mean_gm */
+      param.variance->data<float>() /* var__gm */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu

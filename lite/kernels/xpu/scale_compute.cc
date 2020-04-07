@@ -27,15 +27,14 @@ void ScaleCompute::Run() {
 
   auto& x_dims = param.x->dims();
 
-  int r = xdnn::scale(
-    ctx.GetRawContext(), /* context */
-    x_dims.production(), /* len */
-    param.scale, /* alpha */
-    param.bias, /* beta */
-    param.bias_after_scale, /* bias_after_scale */
-    param.x->data<float>(), /* x */
-    param.output->mutable_data<float>(TARGET(kXPU)) /* y */);
-  CHECK(r == 0);
+  int r = xdnn::scale(ctx.GetRawContext(),    /* context */
+                      x_dims.production(),    /* len */
+                      param.scale,            /* alpha */
+                      param.bias,             /* beta */
+                      param.bias_after_scale, /* bias_after_scale */
+                      param.x->data<float>(), /* x */
+                      param.output->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -43,12 +42,8 @@ void ScaleCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(scale,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ScaleCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    scale, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ScaleCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

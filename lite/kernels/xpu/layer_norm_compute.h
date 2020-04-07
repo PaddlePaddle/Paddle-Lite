@@ -24,7 +24,7 @@ class LayerNormCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::LayerNormParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~LayerNormCompute() = default;
 };

@@ -26,12 +26,12 @@ void ReluCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
 
   int r = xdnn::activation_forward(
-    ctx.GetRawContext(), /* context */
-    xdnn::Activation_t::RELU, /* type */
-    param.X->numel(), /* len */
-    param.X->data<float>(), /* x */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),      /* context */
+      xdnn::Activation_t::RELU, /* type */
+      param.X->numel(),         /* len */
+      param.X->data<float>(),   /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
 }
 
 void TanhCompute::Run() {
@@ -39,12 +39,12 @@ void TanhCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
 
   int r = xdnn::activation_forward(
-    ctx.GetRawContext(), /* context */
-    xdnn::Activation_t::TANH, /* type */
-    param.X->numel(), /* len */
-    param.X->data<float>(), /* x */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),      /* context */
+      xdnn::Activation_t::TANH, /* type */
+      param.X->numel(),         /* len */
+      param.X->data<float>(),   /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
 }
 
 void SigmoidCompute::Run() {
@@ -52,12 +52,12 @@ void SigmoidCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
 
   int r = xdnn::activation_forward(
-    ctx.GetRawContext(), /* context */
-    xdnn::Activation_t::SIGMOID, /* type */
-    param.X->numel(), /* len */
-    param.X->data<float>(), /* x */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),         /* context */
+      xdnn::Activation_t::SIGMOID, /* type */
+      param.X->numel(),            /* len */
+      param.X->data<float>(),      /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -65,22 +65,14 @@ void SigmoidCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(relu,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ReluCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    relu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(tanh,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::TanhCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    tanh, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::TanhCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

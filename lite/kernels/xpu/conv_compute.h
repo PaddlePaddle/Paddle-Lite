@@ -25,7 +25,7 @@ class Conv2dCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
   using param_t = operators::ConvParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~Conv2dCompute() = default;
 };

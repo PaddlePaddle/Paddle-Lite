@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #pragma GCC system_header
-#include <xpu/runtime.h>
 #include <xpu/api.h>
 #include <xpu/golden.h>
+#include <xpu/runtime.h>
 
 #if defined(LITE_WITH_XTCL)
-# include <xtcl/xtcl.h>
+#include <xtcl/xtcl.h>
 #endif
 
 namespace paddle {

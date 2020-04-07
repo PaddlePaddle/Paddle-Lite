@@ -49,13 +49,13 @@ void StackCompute::Run() {
   xpu_memcpy(x_ptr_guard_.get(), &x_ptr_cpu_[0], n * 8, XPU_HOST_TO_DEVICE);
 
   int r = xdnn::stack_forward(
-    ctx.GetRawContext(), /* context */
-    height, /* height */
-    width, /* width */
-    n, /* n */
-    x_ptr_guard_.get(), /* x_ptr */
-    param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
-  CHECK(r == 0);
+      ctx.GetRawContext(), /* context */
+      height,              /* height */
+      width,               /* width */
+      n,                   /* n */
+      x_ptr_guard_.get(),  /* x_ptr */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -63,12 +63,8 @@ void StackCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(stack,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::StackCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    stack, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::StackCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

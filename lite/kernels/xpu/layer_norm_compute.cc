@@ -30,16 +30,15 @@ void LayerNormCompute::Run() {
   auto matrix_dim = x_dims.Flatten2D(axis);
   float epsilon = param.epsilon;
 
-  int r = xdnn::layer_norm(
-    ctx.GetRawContext(), /* context */
-    matrix_dim[0], /* m */
-    matrix_dim[1], /* n */
-    param.X->data<float>(), /* in */
-    param.Y->mutable_data<float>(TARGET(kXPU)), /* out */
-    param.Scale->data<float>(), /* scale */
-    param.Bias->data<float>(), /* bias */
-    epsilon /* epsilon */);
-  CHECK(r == 0);
+  int r = xdnn::layer_norm(ctx.GetRawContext(),    /* context */
+                           matrix_dim[0],          /* m */
+                           matrix_dim[1],          /* n */
+                           param.X->data<float>(), /* in */
+                           param.Y->mutable_data<float>(TARGET(kXPU)), /* out */
+                           param.Scale->data<float>(), /* scale */
+                           param.Bias->data<float>(),  /* bias */
+                           epsilon /* epsilon */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu

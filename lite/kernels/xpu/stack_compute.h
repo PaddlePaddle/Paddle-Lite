@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
+
+#include <memory>
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
@@ -22,18 +25,16 @@ namespace kernels {
 namespace xpu {
 
 struct XPUFreeDeleter {
-  void operator()(void* p) const {
-    xpu_free(p);
-  }
+  void operator()(void* p) const { xpu_free(p); }
 };
 
 class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::StackParam;
 
-  virtual void PrepareForRun() override;
+  virtual void PrepareForRun();
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~StackCompute() = default;
 

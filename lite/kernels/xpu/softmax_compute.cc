@@ -31,12 +31,12 @@ void SoftmaxCompute::Run() {
   int cols = SizeFromAxis(axis, x_dims);
 
   int r = xdnn::softmax2d_forward(
-    ctx.GetRawContext(), /* context */
-    param.x->data<float>(), /* x */
-    param.output->mutable_data<float>(TARGET(kXPU)), /* y */
-    rows, /* rows */
-    cols /* cols */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),                             /* context */
+      param.x->data<float>(),                          /* x */
+      param.output->mutable_data<float>(TARGET(kXPU)), /* y */
+      rows,                                            /* rows */
+      cols /* cols */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu

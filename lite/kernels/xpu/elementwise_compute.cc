@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/elementwise_compute.h"
+#include <functional>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -31,21 +32,20 @@ void ElementwiseAddCompute::Run() {
   if (param.axis == -1) {
     axis = x_dims.size() - y_dims.size();
   }
-  int iter = std::accumulate(x_dims.begin(),
-    x_dims.begin() + axis, 1, std::multiplies<int>());
+  int iter = std::accumulate(
+      x_dims.begin(), x_dims.begin() + axis, 1, std::multiplies<int>());
   int stride = param.Y->numel();
 
   for (int i = 0; i < iter; ++i) {
     const float* x_ptr = param.X->data<float>() + i * stride;
     const float* y_ptr = param.Y->data<float>();
     float* o_ptr = param.Out->mutable_data<float>(TARGET(kXPU)) + i * stride;
-    int r = xdnn::elementwise_add(
-      ctx.GetRawContext(), /* context */
-      x_ptr, /* x */
-      y_ptr, /* y */
-      o_ptr, /* z */
-      stride /* len */);
-    CHECK(r == 0);
+    int r = xdnn::elementwise_add(ctx.GetRawContext(), /* context */
+                                  x_ptr,               /* x */
+                                  y_ptr,               /* y */
+                                  o_ptr,               /* z */
+                                  stride /* len */);
+    CHECK_EQ(r, 0);
   }
 }
 
@@ -59,21 +59,20 @@ void ElementwiseSubCompute::Run() {
   if (param.axis == -1) {
     axis = x_dims.size() - y_dims.size();
   }
-  int iter = std::accumulate(x_dims.begin(),
-    x_dims.begin() + axis, 1, std::multiplies<int>());
+  int iter = std::accumulate(
+      x_dims.begin(), x_dims.begin() + axis, 1, std::multiplies<int>());
   int stride = param.Y->numel();
 
   for (int i = 0; i < iter; ++i) {
     const float* x_ptr = param.X->data<float>() + i * stride;
     const float* y_ptr = param.Y->data<float>();
     float* o_ptr = param.Out->mutable_data<float>(TARGET(kXPU)) + i * stride;
-    int r = xdnn::elementwise_sub(
-      ctx.GetRawContext(), /* context */
-      x_ptr, /* x */
-      y_ptr, /* y */
-      o_ptr, /* z */
-      stride /* len */);
-    CHECK(r == 0);
+    int r = xdnn::elementwise_sub(ctx.GetRawContext(), /* context */
+                                  x_ptr,               /* x */
+                                  y_ptr,               /* y */
+                                  o_ptr,               /* z */
+                                  stride /* len */);
+    CHECK_EQ(r, 0);
   }
 }
 

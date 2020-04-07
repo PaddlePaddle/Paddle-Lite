@@ -44,17 +44,19 @@ void MulCompute::Run() {
   int k = x_matrix.dims()[1];
   int n = y_matrix.dims()[1];
 
-  int r = xdnn::fc_int16(
-    ctx.GetRawContext(), /* context */
-    false, /* TransA */
-    false, /* TransB */
-    m, n, k,
-    1.0f, /* alpha */
-    x_matrix.data<float>(), /* A */
-    y_matrix.data<float>(), /* B */
-    0.0f, /* beta */
-    param.output->mutable_data<float>(TARGET(kXPU)) /* C */);
-  CHECK(r == 0);
+  int r =
+      xdnn::fc_int16(ctx.GetRawContext(), /* context */
+                     false,               /* TransA */
+                     false,               /* TransB */
+                     m,
+                     n,
+                     k,
+                     1.0f,                   /* alpha */
+                     x_matrix.data<float>(), /* A */
+                     y_matrix.data<float>(), /* B */
+                     0.0f,                   /* beta */
+                     param.output->mutable_data<float>(TARGET(kXPU)) /* C */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -62,12 +64,8 @@ void MulCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(mul,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::MulCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    mul, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::MulCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

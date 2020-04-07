@@ -24,7 +24,7 @@ class MatMulCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::MatMulParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~MatMulCompute() = default;
 };

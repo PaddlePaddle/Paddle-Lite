@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/matmul_compute.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/math.h"
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -42,41 +42,40 @@ void MatMulCompute::Run() {
 
   int r = 0;
   if (mat_dim_a.batch_size_ == 0 || mat_dim_a.batch_size_ == 1) {
-    r = xdnn::fc_int16(
-      ctx.GetRawContext(), /* context */
-      mat_dim_a.trans_, /* TransA */
-      mat_dim_b.trans_, /* TransB */
-      mat_dim_a.height_, /* m */
-      mat_dim_b.width_, /* n */
-      mat_dim_a.width_, /* k */
-      param.alpha, /* alpha */
-      x->data<float>(), /* A */
-      y->data<float>(), /* B */
-      0.0f, /* beta */
-      out->mutable_data<float>(TARGET(kXPU)) /* C */);
+    r = xdnn::fc_int16(ctx.GetRawContext(), /* context */
+                       mat_dim_a.trans_,    /* TransA */
+                       mat_dim_b.trans_,    /* TransB */
+                       mat_dim_a.height_,   /* m */
+                       mat_dim_b.width_,    /* n */
+                       mat_dim_a.width_,    /* k */
+                       param.alpha,         /* alpha */
+                       x->data<float>(),    /* A */
+                       y->data<float>(),    /* B */
+                       0.0f,                /* beta */
+                       out->mutable_data<float>(TARGET(kXPU)) /* C */);
   } else {
     // batch matmul
     r = xdnn::gemm_strided_batched_int16<float, float, float>(
-      ctx.GetRawContext(), /* context */
-      mat_dim_a.trans_, /* TransA */
-      mat_dim_b.trans_, /* TransB */
-      mat_dim_a.batch_size_, /* batch_size */
-      mat_dim_a.height_, /* M */
-      mat_dim_b.width_, /* N */
-      mat_dim_a.width_, /* K */
-      param.alpha, /* alpha */
-      x->data<float>(), /* A */
-      lda, /* lda */
-      mat_dim_a.stride_, /* stride_a */
-      y->data<float>(), /* B */
-      ldb, /* ldb */
-      mat_dim_b.stride_, /* stride_b */
-      0.0f, /* beta */
-      out->mutable_data<float>(TARGET(kXPU)), /* C */
-      ldc, /* ldc */
-      mat_dim_a.height_ * mat_dim_b.width_ /* stride_c */);
+        ctx.GetRawContext(),                    /* context */
+        mat_dim_a.trans_,                       /* TransA */
+        mat_dim_b.trans_,                       /* TransB */
+        mat_dim_a.batch_size_,                  /* batch_size */
+        mat_dim_a.height_,                      /* M */
+        mat_dim_b.width_,                       /* N */
+        mat_dim_a.width_,                       /* K */
+        param.alpha,                            /* alpha */
+        x->data<float>(),                       /* A */
+        lda,                                    /* lda */
+        mat_dim_a.stride_,                      /* stride_a */
+        y->data<float>(),                       /* B */
+        ldb,                                    /* ldb */
+        mat_dim_b.stride_,                      /* stride_b */
+        0.0f,                                   /* beta */
+        out->mutable_data<float>(TARGET(kXPU)), /* C */
+        ldc,                                    /* ldc */
+        mat_dim_a.height_ * mat_dim_b.width_ /* stride_c */);
   }
-  CHECK(r == 0);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -84,12 +83,8 @@ void MatMulCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(matmul,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::MatMulCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    matmul, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::MatMulCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

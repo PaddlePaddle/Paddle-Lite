@@ -24,7 +24,7 @@ class DropoutCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::DropoutParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~DropoutCompute() = default;
 };

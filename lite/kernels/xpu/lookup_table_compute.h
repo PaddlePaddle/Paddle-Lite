@@ -24,7 +24,7 @@ class LookupTableCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::LookupTableParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~LookupTableCompute() = default;
 };

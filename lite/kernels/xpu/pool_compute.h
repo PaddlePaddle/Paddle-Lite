@@ -24,7 +24,7 @@ class Pool2DCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::PoolParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~Pool2DCompute() = default;
 };

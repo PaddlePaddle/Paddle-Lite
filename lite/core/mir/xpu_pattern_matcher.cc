@@ -84,10 +84,10 @@ void XPUPatternMatcher::ValidateByNodeRole(
                        }
                        for (auto &item : subgraph) {
                          if (item.first->IsIntermediate()) {
-                           //for (auto *x : item.second->inlinks) {
-                             //if (!ios.count(x)) {
-                               //return true;
-                             //}
+                           // for (auto *x : item.second->inlinks) {
+                           // if (!ios.count(x)) {
+                           // return true;
+                           //}
                            //}
                            for (auto *x : item.second->outlinks) {
                              if (!ios.count(x)) {
@@ -247,7 +247,8 @@ void XPUPatternMatcher::UniquePatterns(
   *subgraphs = result;
 }
 
-void XPUPatternMatcher::RemoveOverlappedMatch(std::vector<subgraph_t> *subgraphs) {
+void XPUPatternMatcher::RemoveOverlappedMatch(
+    std::vector<subgraph_t> *subgraphs) {
   std::vector<subgraph_t> result;
   std::unordered_set<Node *> node_set;
 

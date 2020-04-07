@@ -28,11 +28,11 @@ void DropoutCompute::Run() {
   int size = param.x->numel() * sizeof(float);
 
   int r = xdnn::memcpy_device(
-    ctx.GetRawContext(), /* context */
-    param.output->mutable_data<float>(TARGET(kXPU)), /* dst */
-    param.x->data<float>(), /* src */
-    size /* size */);
-  CHECK(r == 0);
+      ctx.GetRawContext(),                             /* context */
+      param.output->mutable_data<float>(TARGET(kXPU)), /* dst */
+      param.x->data<float>(),                          /* src */
+      size /* size */);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu

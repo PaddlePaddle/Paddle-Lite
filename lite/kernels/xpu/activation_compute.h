@@ -24,7 +24,7 @@ class ReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~ReluCompute() = default;
 };
@@ -33,7 +33,7 @@ class TanhCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~TanhCompute() = default;
 };
@@ -42,7 +42,7 @@ class SigmoidCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~SigmoidCompute() = default;
 };

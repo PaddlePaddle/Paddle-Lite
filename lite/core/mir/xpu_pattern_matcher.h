@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 #include "lite/core/mir/pattern_matcher.h"
 
 namespace paddle {
@@ -80,7 +84,7 @@ struct XPUPatternMatcher {
       std::pair<Node* /*node in graph*/, PMNode* /*node in pattern*/>;
   PMPattern pattern_;
   std::unordered_map<const PMNode*, std::unordered_set<Node*>> pmnodes2nodes_;
-  std::vector<std::vector<Node *>> extra_input_vars_;
+  std::vector<std::vector<Node*>> extra_input_vars_;
 };
 
 }  // namespace xpu

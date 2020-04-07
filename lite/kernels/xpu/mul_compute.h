@@ -20,7 +20,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-static inline lite::Tensor ReshapeToMatrix(const lite::Tensor& src, int num_col_dims) {
+static inline lite::Tensor ReshapeToMatrix(const lite::Tensor& src,
+                                           int num_col_dims) {
   int rank = src.dims().size();
   if (rank == 2) {
     return src;
@@ -35,7 +36,7 @@ class MulCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::MulParam;
 
-  virtual void Run() override;
+  virtual void Run();
 
   virtual ~MulCompute() = default;
 };

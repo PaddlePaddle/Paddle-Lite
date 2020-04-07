@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
@@ -23,7 +24,7 @@ using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 template <>
 class TargetWrapper<TARGET(kXPU)> {
  public:
-  static size_t num_devices() { return 1; };
+  static size_t num_devices() { return 1; }
   static size_t maximum_stream() { return 0; }
 
   static void* Malloc(size_t size);

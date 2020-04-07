@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <map>
+#include <string>
+#include <vector>
 #include "lite/core/mir/pattern_matcher_high_api.h"
 #include "lite/core/mir/xpu_pattern_matcher.h"
 
@@ -56,8 +59,9 @@ class XPUFuseBase {
   PMNode* VarNode(const std::string& key);
 
  protected:
-  virtual void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched,
-      const std::vector<Node *>& extra_input_vars) = 0;
+  virtual void InsertNewNode(SSAGraph* graph,
+                             const key2nodes_t& matched,
+                             const std::vector<Node*>& extra_input_vars) = 0;
 
   void PerformPatternMatcher(SSAGraph* graph);
 
