@@ -72,6 +72,15 @@ void act_rsqrt(const T* din, T* dout, int size, int threads);
 template <typename T>
 void act_square(const T* din, T* dout, int size, int threads);
 
+template <typename T>
+void act_hard_swish(const T* din,
+                    T* dout,
+                    int size,
+                    float threshold,
+                    float scale,
+                    float offset,
+                    int threads);
+
 #ifdef LITE_WITH_TRAIN
 template <typename T>
 void act_square_grad(
