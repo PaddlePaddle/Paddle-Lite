@@ -80,6 +80,8 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.hard_swish_threshold = opdesc.GetAttr<float>("threshold");
     param_.hard_swish_scale = opdesc.GetAttr<float>("scale");
     param_.hard_swish_offset = opdesc.GetAttr<float>("offset");
+  } else if (opdesc.Type() == "reciprocal") {
+    param_.active_type = lite_api::ActivationType::kReciprocal;
   }
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
 
@@ -109,3 +111,4 @@ REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(hard_swish, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(reciprocal, paddle::lite::operators::ActivationOp);

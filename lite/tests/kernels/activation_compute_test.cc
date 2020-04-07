@@ -37,7 +37,8 @@ enum activation_type_test {
   RSQRT,
   GELU,
   SQUARE,
-  HARD_SWISH
+  HARD_SWISH,
+  RECIPROCAL
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -208,6 +209,12 @@ class ActivationComputeTester : public arena::TestCase {
           float max_value = std::max(0.f, x_data[i] + hard_swish_offset);
           float min_value = std::min(max_value, hard_swish_threshold);
           output_data[i] = min_value * x_data[i] / hard_swish_scale;
+        }
+        break;
+      }
+      case RECIPROCAL: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = 1.0 / x_data[i];
         }
         break;
       }
@@ -596,5 +603,34 @@ TEST(activation_hard_swish, precision) {
     arena.TestPrecision();
   }
 }
+
+TEST(activation_reciprocal, precision) {
+  LOG(INFO) << "test reciprocal op";
+  Place place;
+  float abs_error = 2e-5;
+
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    DDim(dims),
+                                    "reciprocal",
+                                    RECIPROCAL));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle

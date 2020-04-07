@@ -80,6 +80,8 @@ void act_hard_swish(const T* din,
                     float scale,
                     float offset,
                     int threads);
+template <typename T>
+void act_reciprocal(const T* din, T* dout, int size, int threads);
 
 #ifdef LITE_WITH_TRAIN
 template <typename T>

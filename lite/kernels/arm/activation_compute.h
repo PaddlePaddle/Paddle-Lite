@@ -157,6 +157,15 @@ class HardSwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~HardSwishCompute() = default;
 };
 
+class ReciprocalCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~ReciprocalCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

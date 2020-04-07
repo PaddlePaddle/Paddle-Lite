@@ -730,6 +730,20 @@ void act_hard_swish<float>(const float* din,
   }
 }
 
+template <>
+void act_reciprocal<float>(const float* din,
+                           float* dout,
+                           int size,
+                           int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = 1.0 / ptr_in[0];
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
 #ifdef LITE_WITH_TRAIN
 template <>
 void act_square_grad(const float* din,
