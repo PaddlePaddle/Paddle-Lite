@@ -171,7 +171,7 @@ class Env {
     // Get device count
     count = API::num_devices();
     if (count == 0) {
-      CHECK(false) << "No device found!";
+      LOG(INFO) << "No " << TargetToStr(Type) << " device(s) found!";
     } else {
       LOG(INFO) << "Found " << count << " device(s)";
     }

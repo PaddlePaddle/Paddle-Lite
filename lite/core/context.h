@@ -265,7 +265,11 @@ class Context<TargetType::kCUDA> {
       Env<TargetType::kCUDA>::Global();
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
-    cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+    if (devs.size() > 0) {
+      cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+    } else {
+      LOG(INFO) << "No cuda device(s) found, CUDAContext init failed.";
+    }
   }
   void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
     CHECK_GT(devs.size(), 0UL)

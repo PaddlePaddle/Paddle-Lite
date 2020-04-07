@@ -18,6 +18,7 @@
  * of each kernel.
  */
 #pragma once
+#include <cmath>
 #include <string>
 #include <vector>
 #include "lite/core/program.h"

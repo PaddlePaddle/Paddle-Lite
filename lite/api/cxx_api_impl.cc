@@ -31,8 +31,16 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
+  auto places = config.valid_places();
 #ifdef LITE_WITH_CUDA
-  Env<TARGET(kCUDA)>::Init();
+  // if kCUDA is included in valid places, it should be initialized first,
+  // otherwise skip this step.
+  for (auto &p : places) {
+    if (p.target == TARGET(kCUDA)) {
+      Env<TARGET(kCUDA)>::Init();
+      break;
+    }
+  }
 #endif
 #ifdef LITE_WITH_MLU
   Env<TARGET(kMLU)>::Init();

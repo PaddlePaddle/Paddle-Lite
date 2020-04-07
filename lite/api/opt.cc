@@ -23,6 +23,7 @@
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
