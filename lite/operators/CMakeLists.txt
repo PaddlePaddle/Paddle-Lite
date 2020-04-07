@@ -149,6 +149,10 @@ add_operator(elementwise_grad_op train SRCS elementwise_grad_ops.cc DEPS ${op_DE
 add_operator(mul_grad_op train SRCS mul_grad_op.cc DEPS ${op_DEPS})
 add_operator(sgd_op train SRCS sgd_op.cc DEPS ${op_DEPS})
 
+# Only for XPU
+add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
+
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
                 DEPS fc_op memory

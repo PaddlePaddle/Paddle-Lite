@@ -47,5 +47,5 @@ USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
-USE_MIR_PASS(xpu_resnet_fuse_pass);
-USE_MIR_PASS(xpu_encoder_fuse_pass);
+USE_MIR_PASS(__xpu__resnet_fuse_pass);
+USE_MIR_PASS(__xpu__encoder_fuse_pass);

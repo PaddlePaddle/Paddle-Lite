@@ -14,11 +14,10 @@
 
 #include <memory>
 #include <vector>
+#include "lite/backends/xpu/math.h"
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
-#include "lite/operators/subgraph_op.h"
-#include "lite/kernels/xpu/resnet50_compute.h"
-#include "lite/backends/xpu/math.h"
 
 namespace paddle {
 namespace lite {
@@ -30,199 +29,197 @@ class XPUResNetBlock0Fuser : public FuseBase {
   XPUResNetBlock0Fuser() {}
 
   void BuildPattern() override {
-    auto* input = VarNode("input")
-      ->assert_is_op_input("conv2d", "Input")
-      ->AsInput();
+    auto* input =
+        VarNode("input")->assert_is_op_input("conv2d", "Input")->AsInput();
 
     auto* left_conv1_weight = VarNode("left_conv1_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
+                                  ->assert_is_op_input("conv2d", "Filter")
+                                  ->AsInput();
     auto* left_conv1 = OpNode("left_conv1", "conv2d");
     auto* left_conv1_out = VarNode("left_conv1_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                               ->assert_is_op_output("conv2d", "Output")
+                               ->assert_is_op_input("batch_norm", "X")
+                               ->AsIntermediate();
     auto* left_bn1_scale = VarNode("left_bn1_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Scale")
+                               ->AsIntermediate();
     auto* left_bn1_bias = VarNode("left_bn1_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                              ->assert_is_op_input("batch_norm", "Bias")
+                              ->AsInput();
     auto* left_bn1_mean = VarNode("left_bn1_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Mean")
+                              ->AsIntermediate();
     auto* left_bn1_var = VarNode("left_bn1_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* left_bn1 = OpNode("left_bn1", "batch_norm")
-      ->AsIntermediate();
+                             ->assert_is_op_input("batch_norm", "Variance")
+                             ->AsIntermediate();
+    auto* left_bn1 = OpNode("left_bn1", "batch_norm")->AsIntermediate();
     auto* left_bn1_out = VarNode("left_bn1_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
+                             ->assert_is_op_output("batch_norm", "Y")
+                             ->assert_is_op_input("relu", "X")
+                             ->AsIntermediate();
     auto* left_bn1_mean_out = VarNode("left_bn1_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* left_bn1_var_out = VarNode("left_bn1_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* left_bn1_saved_mean = VarNode("left_bn1_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* left_bn1_saved_var = VarNode("left_bn1_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
-    auto* left_relu1 = OpNode("left_relu1", "relu")
-      ->AsIntermediate();
+                                  ->assert_is_op_output("batch_norm", "MeanOut")
+                                  ->AsIntermediate();
+    auto* left_bn1_var_out =
+        VarNode("left_bn1_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* left_bn1_saved_mean =
+        VarNode("left_bn1_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* left_bn1_saved_var =
+        VarNode("left_bn1_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
+    auto* left_relu1 = OpNode("left_relu1", "relu")->AsIntermediate();
     auto* left_relu1_out = VarNode("left_relu1_out")
-      ->assert_is_op_output("relu", "Out")
-      ->assert_is_op_input("conv2d", "Input")
-      ->AsIntermediate();
+                               ->assert_is_op_output("relu", "Out")
+                               ->assert_is_op_input("conv2d", "Input")
+                               ->AsIntermediate();
 
     auto* left_conv2_weight = VarNode("left_conv2_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
-    auto* left_conv2 = OpNode("left_conv2", "conv2d")
-      ->AsIntermediate();
+                                  ->assert_is_op_input("conv2d", "Filter")
+                                  ->AsInput();
+    auto* left_conv2 = OpNode("left_conv2", "conv2d")->AsIntermediate();
     auto* left_conv2_out = VarNode("left_conv2_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                               ->assert_is_op_output("conv2d", "Output")
+                               ->assert_is_op_input("batch_norm", "X")
+                               ->AsIntermediate();
     auto* left_bn2_scale = VarNode("left_bn2_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Scale")
+                               ->AsIntermediate();
     auto* left_bn2_bias = VarNode("left_bn2_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                              ->assert_is_op_input("batch_norm", "Bias")
+                              ->AsInput();
     auto* left_bn2_mean = VarNode("left_bn2_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Mean")
+                              ->AsIntermediate();
     auto* left_bn2_var = VarNode("left_bn2_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* left_bn2 = OpNode("left_bn2", "batch_norm")
-      ->AsIntermediate();
+                             ->assert_is_op_input("batch_norm", "Variance")
+                             ->AsIntermediate();
+    auto* left_bn2 = OpNode("left_bn2", "batch_norm")->AsIntermediate();
     auto* left_bn2_out = VarNode("left_bn2_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
+                             ->assert_is_op_output("batch_norm", "Y")
+                             ->assert_is_op_input("relu", "X")
+                             ->AsIntermediate();
     auto* left_bn2_mean_out = VarNode("left_bn2_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* left_bn2_var_out = VarNode("left_bn2_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* left_bn2_saved_mean = VarNode("left_bn2_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* left_bn2_saved_var = VarNode("left_bn2_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
-    auto* left_relu2 = OpNode("left_relu2", "relu")
-      ->AsIntermediate();
+                                  ->assert_is_op_output("batch_norm", "MeanOut")
+                                  ->AsIntermediate();
+    auto* left_bn2_var_out =
+        VarNode("left_bn2_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* left_bn2_saved_mean =
+        VarNode("left_bn2_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* left_bn2_saved_var =
+        VarNode("left_bn2_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
+    auto* left_relu2 = OpNode("left_relu2", "relu")->AsIntermediate();
     auto* left_relu2_out = VarNode("left_relu2_out")
-      ->assert_is_op_output("relu", "Out")
-      ->assert_is_op_input("conv2d", "Input")
-      ->AsIntermediate();
+                               ->assert_is_op_output("relu", "Out")
+                               ->assert_is_op_input("conv2d", "Input")
+                               ->AsIntermediate();
 
     auto* left_conv3_weight = VarNode("left_conv3_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
-    auto* left_conv3 = OpNode("left_conv3", "conv2d")
-      ->AsIntermediate();
+                                  ->assert_is_op_input("conv2d", "Filter")
+                                  ->AsInput();
+    auto* left_conv3 = OpNode("left_conv3", "conv2d")->AsIntermediate();
     auto* left_conv3_out = VarNode("left_conv3_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                               ->assert_is_op_output("conv2d", "Output")
+                               ->assert_is_op_input("batch_norm", "X")
+                               ->AsIntermediate();
     auto* left_bn3_scale = VarNode("left_bn3_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Scale")
+                               ->AsIntermediate();
     auto* left_bn3_bias = VarNode("left_bn3_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                              ->assert_is_op_input("batch_norm", "Bias")
+                              ->AsInput();
     auto* left_bn3_mean = VarNode("left_bn3_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Mean")
+                              ->AsIntermediate();
     auto* left_bn3_var = VarNode("left_bn3_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* left_bn3 = OpNode("left_bn3", "batch_norm")
-      ->AsIntermediate();
+                             ->assert_is_op_input("batch_norm", "Variance")
+                             ->AsIntermediate();
+    auto* left_bn3 = OpNode("left_bn3", "batch_norm")->AsIntermediate();
     auto* left_bn3_out = VarNode("left_bn3_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("elementwise_add", "Y")
-      ->AsIntermediate();
+                             ->assert_is_op_output("batch_norm", "Y")
+                             ->assert_is_op_input("elementwise_add", "Y")
+                             ->AsIntermediate();
     auto* left_bn3_mean_out = VarNode("left_bn3_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* left_bn3_var_out = VarNode("left_bn3_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* left_bn3_saved_mean = VarNode("left_bn3_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* left_bn3_saved_var = VarNode("left_bn3_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
+                                  ->assert_is_op_output("batch_norm", "MeanOut")
+                                  ->AsIntermediate();
+    auto* left_bn3_var_out =
+        VarNode("left_bn3_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* left_bn3_saved_mean =
+        VarNode("left_bn3_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* left_bn3_saved_var =
+        VarNode("left_bn3_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
 
     auto* right_conv1_weight = VarNode("right_conv1_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
-    auto* right_conv1 = OpNode("right_conv1", "conv2d")
-      ->AsIntermediate();
+                                   ->assert_is_op_input("conv2d", "Filter")
+                                   ->AsInput();
+    auto* right_conv1 = OpNode("right_conv1", "conv2d")->AsIntermediate();
     auto* right_conv1_out = VarNode("right_conv1_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                                ->assert_is_op_output("conv2d", "Output")
+                                ->assert_is_op_input("batch_norm", "X")
+                                ->AsIntermediate();
     auto* right_bn1_scale = VarNode("right_bn1_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                                ->assert_is_op_input("batch_norm", "Scale")
+                                ->AsIntermediate();
     auto* right_bn1_bias = VarNode("right_bn1_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                               ->assert_is_op_input("batch_norm", "Bias")
+                               ->AsInput();
     auto* right_bn1_mean = VarNode("right_bn1_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Mean")
+                               ->AsIntermediate();
     auto* right_bn1_var = VarNode("right_bn1_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* right_bn1 = OpNode("right_bn1", "batch_norm")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Variance")
+                              ->AsIntermediate();
+    auto* right_bn1 = OpNode("right_bn1", "batch_norm")->AsIntermediate();
     auto* right_bn1_out = VarNode("right_bn1_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("elementwise_add", "X")
-      ->AsIntermediate();
-    auto* right_bn1_mean_out = VarNode("right_bn1_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* right_bn1_var_out = VarNode("right_bn1_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* right_bn1_saved_mean = VarNode("right_bn1_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* right_bn1_saved_var = VarNode("right_bn1_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
+                              ->assert_is_op_output("batch_norm", "Y")
+                              ->assert_is_op_input("elementwise_add", "X")
+                              ->AsIntermediate();
+    auto* right_bn1_mean_out =
+        VarNode("right_bn1_mean_out")
+            ->assert_is_op_output("batch_norm", "MeanOut")
+            ->AsIntermediate();
+    auto* right_bn1_var_out =
+        VarNode("right_bn1_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* right_bn1_saved_mean =
+        VarNode("right_bn1_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* right_bn1_saved_var =
+        VarNode("right_bn1_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
 
-    auto* add = OpNode("add", "elementwise_add")
-      ->AsIntermediate();
+    auto* add = OpNode("add", "elementwise_add")->AsIntermediate();
     auto* add_out = VarNode("add_out")
-      ->assert_is_op_output("elementwise_add", "Out")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
-    auto* relu = OpNode("relu", "relu")
-      ->AsIntermediate();
-    auto* relu_out = VarNode("relu_out")
-      ->assert_is_op_output("relu", "Out")
-      ->AsOutput();
+                        ->assert_is_op_output("elementwise_add", "Out")
+                        ->assert_is_op_input("relu", "X")
+                        ->AsIntermediate();
+    auto* relu = OpNode("relu", "relu")->AsIntermediate();
+    auto* relu_out =
+        VarNode("relu_out")->assert_is_op_output("relu", "Out")->AsOutput();
 
-    *input >> *left_conv1 >> *left_conv1_out
-      >> *left_bn1 >> *left_bn1_out >> *left_relu1 >> *left_relu1_out
-      >> *left_conv2 >> *left_conv2_out
-      >> *left_bn2 >> *left_bn2_out >> *left_relu2 >> *left_relu2_out
-      >> *left_conv3 >> *left_conv3_out
-      >> *left_bn3 >> *left_bn3_out >> *add;
+    *input >> *left_conv1 >> *left_conv1_out >> *left_bn1 >> *left_bn1_out >>
+        *left_relu1 >> *left_relu1_out >> *left_conv2 >> *left_conv2_out >>
+        *left_bn2 >> *left_bn2_out >> *left_relu2 >> *left_relu2_out >>
+        *left_conv3 >> *left_conv3_out >> *left_bn3 >> *left_bn3_out >> *add;
 
     *left_conv1_weight >> *left_conv1;
     *left_bn1_scale >> *left_bn1;
@@ -254,8 +251,8 @@ class XPUResNetBlock0Fuser : public FuseBase {
     *left_bn3 >> *left_bn3_saved_mean;
     *left_bn3 >> *left_bn3_saved_var;
 
-    *input >> *right_conv1 >> *right_conv1_out
-      >> *right_bn1 >> *right_bn1_out >> *add;
+    *input >> *right_conv1 >> *right_conv1_out >> *right_bn1 >>
+        *right_bn1_out >> *add;
 
     *right_conv1_weight >> *right_conv1;
     *right_bn1_scale >> *right_bn1;
@@ -274,36 +271,41 @@ class XPUResNetBlock0Fuser : public FuseBase {
     cpp::OpDesc op_desc;
     op_desc.SetType("resnet_block0");
     op_desc.SetInput("Inputs", {matched.at("input")->arg()->name});
-    op_desc.SetInput("Filter", {
-        matched.at("left_conv1_weight")->arg()->name,
-        matched.at("left_conv2_weight")->arg()->name,
-        matched.at("left_conv3_weight")->arg()->name,
-        matched.at("right_conv1_weight")->arg()->name,
-    });
-    op_desc.SetInput("Scale", {
-        matched.at("left_bn1_scale")->arg()->name,
-        matched.at("left_bn2_scale")->arg()->name,
-        matched.at("left_bn3_scale")->arg()->name,
-        matched.at("right_bn1_scale")->arg()->name,
-    });
-    op_desc.SetInput("Bias", {
-        matched.at("left_bn1_bias")->arg()->name,
-        matched.at("left_bn2_bias")->arg()->name,
-        matched.at("left_bn3_bias")->arg()->name,
-        matched.at("right_bn1_bias")->arg()->name,
-    });
-    op_desc.SetInput("Mean", {
-        matched.at("left_bn1_mean")->arg()->name,
-        matched.at("left_bn2_mean")->arg()->name,
-        matched.at("left_bn3_mean")->arg()->name,
-        matched.at("right_bn1_mean")->arg()->name,
-    });
-    op_desc.SetInput("Var", {
-        matched.at("left_bn1_variance")->arg()->name,
-        matched.at("left_bn2_variance")->arg()->name,
-        matched.at("left_bn3_variance")->arg()->name,
-        matched.at("right_bn1_variance")->arg()->name,
-    });
+    op_desc.SetInput("Filter",
+                     {
+                         matched.at("left_conv1_weight")->arg()->name,
+                         matched.at("left_conv2_weight")->arg()->name,
+                         matched.at("left_conv3_weight")->arg()->name,
+                         matched.at("right_conv1_weight")->arg()->name,
+                     });
+    op_desc.SetInput("Scale",
+                     {
+                         matched.at("left_bn1_scale")->arg()->name,
+                         matched.at("left_bn2_scale")->arg()->name,
+                         matched.at("left_bn3_scale")->arg()->name,
+                         matched.at("right_bn1_scale")->arg()->name,
+                     });
+    op_desc.SetInput("Bias",
+                     {
+                         matched.at("left_bn1_bias")->arg()->name,
+                         matched.at("left_bn2_bias")->arg()->name,
+                         matched.at("left_bn3_bias")->arg()->name,
+                         matched.at("right_bn1_bias")->arg()->name,
+                     });
+    op_desc.SetInput("Mean",
+                     {
+                         matched.at("left_bn1_mean")->arg()->name,
+                         matched.at("left_bn2_mean")->arg()->name,
+                         matched.at("left_bn3_mean")->arg()->name,
+                         matched.at("right_bn1_mean")->arg()->name,
+                     });
+    op_desc.SetInput("Var",
+                     {
+                         matched.at("left_bn1_variance")->arg()->name,
+                         matched.at("left_bn2_variance")->arg()->name,
+                         matched.at("left_bn3_variance")->arg()->name,
+                         matched.at("right_bn1_variance")->arg()->name,
+                     });
     op_desc.SetOutput("Outputs", {matched.at("relu_out")->arg()->name});
     // XXX: keep these to fool SubgraphOp::AttachImpl()
     op_desc.SetAttr<int>("sub_block", 0);
@@ -311,18 +313,23 @@ class XPUResNetBlock0Fuser : public FuseBase {
     op_desc.SetAttr<std::vector<std::string>>("output_data_names", {});
 
     auto block0_stmt = matched.at("left_conv1")->stmt();
-    //block0_stmt->ResetOp(op_desc, graph->valid_places());
+    // block0_stmt->ResetOp(op_desc, graph->valid_places());
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     // XXX: memleak?
     auto sub_block_desc = new cpp::BlockDesc();
-    static_cast<operators::SubgraphOp *>(fake_subgraph_op.get())
+    static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetSubBlock(sub_block_desc);
     fake_subgraph_op->Attach(op_desc, block0_stmt->op()->scope());
     block0_stmt->SetOp(fake_subgraph_op);
 
     std::vector<std::string> froms = {
-      "left_conv2_weight", "left_conv3_weight", "right_conv1_weight",
-      "left_bn1_bias", "left_bn2_bias", "left_bn3_bias", "right_bn1_bias",
+        "left_conv2_weight",
+        "left_conv3_weight",
+        "right_conv1_weight",
+        "left_bn1_bias",
+        "left_bn2_bias",
+        "left_bn3_bias",
+        "right_bn1_bias",
     };
     for (auto& from : froms) {
       IR_NODE_LINK_TO(matched.at(from), matched.at("left_conv1"));
@@ -337,159 +344,160 @@ class XPUResNetBlock1Fuser : public FuseBase {
 
   void BuildPattern() override {
     auto* input = VarNode("input")
-      ->assert_is_op_input("conv2d", "Input")
-      ->assert_is_op_input("elementwise_add", "X")
-      ->AsInput();
+                      ->assert_is_op_input("conv2d", "Input")
+                      ->assert_is_op_input("elementwise_add", "X")
+                      ->AsInput();
 
     auto* right_conv1_weight = VarNode("right_conv1_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
+                                   ->assert_is_op_input("conv2d", "Filter")
+                                   ->AsInput();
     auto* right_conv1 = OpNode("right_conv1", "conv2d");
     auto* right_conv1_out = VarNode("right_conv1_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                                ->assert_is_op_output("conv2d", "Output")
+                                ->assert_is_op_input("batch_norm", "X")
+                                ->AsIntermediate();
     auto* right_bn1_scale = VarNode("right_bn1_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                                ->assert_is_op_input("batch_norm", "Scale")
+                                ->AsIntermediate();
     auto* right_bn1_bias = VarNode("right_bn1_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                               ->assert_is_op_input("batch_norm", "Bias")
+                               ->AsInput();
     auto* right_bn1_mean = VarNode("right_bn1_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Mean")
+                               ->AsIntermediate();
     auto* right_bn1_var = VarNode("right_bn1_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* right_bn1 = OpNode("right_bn1", "batch_norm")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Variance")
+                              ->AsIntermediate();
+    auto* right_bn1 = OpNode("right_bn1", "batch_norm")->AsIntermediate();
     auto* right_bn1_out = VarNode("right_bn1_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
-    auto* right_bn1_mean_out = VarNode("right_bn1_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* right_bn1_var_out = VarNode("right_bn1_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* right_bn1_saved_mean = VarNode("right_bn1_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* right_bn1_saved_var = VarNode("right_bn1_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
-    auto* right_relu1 = OpNode("right_relu1", "relu")
-      ->AsIntermediate();
+                              ->assert_is_op_output("batch_norm", "Y")
+                              ->assert_is_op_input("relu", "X")
+                              ->AsIntermediate();
+    auto* right_bn1_mean_out =
+        VarNode("right_bn1_mean_out")
+            ->assert_is_op_output("batch_norm", "MeanOut")
+            ->AsIntermediate();
+    auto* right_bn1_var_out =
+        VarNode("right_bn1_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* right_bn1_saved_mean =
+        VarNode("right_bn1_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* right_bn1_saved_var =
+        VarNode("right_bn1_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
+    auto* right_relu1 = OpNode("right_relu1", "relu")->AsIntermediate();
     auto* right_relu1_out = VarNode("right_relu1_out")
-      ->assert_is_op_output("relu", "Out")
-      ->assert_is_op_input("conv2d", "Input")
-      ->AsIntermediate();
+                                ->assert_is_op_output("relu", "Out")
+                                ->assert_is_op_input("conv2d", "Input")
+                                ->AsIntermediate();
 
     auto* right_conv2_weight = VarNode("right_conv2_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
-    auto* right_conv2 = OpNode("right_conv2", "conv2d")
-      ->AsIntermediate();
+                                   ->assert_is_op_input("conv2d", "Filter")
+                                   ->AsInput();
+    auto* right_conv2 = OpNode("right_conv2", "conv2d")->AsIntermediate();
     auto* right_conv2_out = VarNode("right_conv2_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                                ->assert_is_op_output("conv2d", "Output")
+                                ->assert_is_op_input("batch_norm", "X")
+                                ->AsIntermediate();
     auto* right_bn2_scale = VarNode("right_bn2_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                                ->assert_is_op_input("batch_norm", "Scale")
+                                ->AsIntermediate();
     auto* right_bn2_bias = VarNode("right_bn2_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                               ->assert_is_op_input("batch_norm", "Bias")
+                               ->AsInput();
     auto* right_bn2_mean = VarNode("right_bn2_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Mean")
+                               ->AsIntermediate();
     auto* right_bn2_var = VarNode("right_bn2_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* right_bn2 = OpNode("right_bn2", "batch_norm")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Variance")
+                              ->AsIntermediate();
+    auto* right_bn2 = OpNode("right_bn2", "batch_norm")->AsIntermediate();
     auto* right_bn2_out = VarNode("right_bn2_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
-    auto* right_bn2_mean_out = VarNode("right_bn2_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* right_bn2_var_out = VarNode("right_bn2_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* right_bn2_saved_mean = VarNode("right_bn2_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* right_bn2_saved_var = VarNode("right_bn2_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
-    auto* right_relu2 = OpNode("right_relu2", "relu")
-      ->AsIntermediate();
+                              ->assert_is_op_output("batch_norm", "Y")
+                              ->assert_is_op_input("relu", "X")
+                              ->AsIntermediate();
+    auto* right_bn2_mean_out =
+        VarNode("right_bn2_mean_out")
+            ->assert_is_op_output("batch_norm", "MeanOut")
+            ->AsIntermediate();
+    auto* right_bn2_var_out =
+        VarNode("right_bn2_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* right_bn2_saved_mean =
+        VarNode("right_bn2_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* right_bn2_saved_var =
+        VarNode("right_bn2_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
+    auto* right_relu2 = OpNode("right_relu2", "relu")->AsIntermediate();
     auto* right_relu2_out = VarNode("right_relu2_out")
-      ->assert_is_op_output("relu", "Out")
-      ->assert_is_op_input("conv2d", "Input")
-      ->AsIntermediate();
+                                ->assert_is_op_output("relu", "Out")
+                                ->assert_is_op_input("conv2d", "Input")
+                                ->AsIntermediate();
 
     auto* right_conv3_weight = VarNode("right_conv3_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
-    auto* right_conv3 = OpNode("right_conv3", "conv2d")
-      ->AsIntermediate();
+                                   ->assert_is_op_input("conv2d", "Filter")
+                                   ->AsInput();
+    auto* right_conv3 = OpNode("right_conv3", "conv2d")->AsIntermediate();
     auto* right_conv3_out = VarNode("right_conv3_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                                ->assert_is_op_output("conv2d", "Output")
+                                ->assert_is_op_input("batch_norm", "X")
+                                ->AsIntermediate();
     auto* right_bn3_scale = VarNode("right_bn3_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                                ->assert_is_op_input("batch_norm", "Scale")
+                                ->AsIntermediate();
     auto* right_bn3_bias = VarNode("right_bn3_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                               ->assert_is_op_input("batch_norm", "Bias")
+                               ->AsInput();
     auto* right_bn3_mean = VarNode("right_bn3_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                               ->assert_is_op_input("batch_norm", "Mean")
+                               ->AsIntermediate();
     auto* right_bn3_var = VarNode("right_bn3_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* right_bn3 = OpNode("right_bn3", "batch_norm")
-      ->AsIntermediate();
+                              ->assert_is_op_input("batch_norm", "Variance")
+                              ->AsIntermediate();
+    auto* right_bn3 = OpNode("right_bn3", "batch_norm")->AsIntermediate();
     auto* right_bn3_out = VarNode("right_bn3_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("elementwise_add", "Y")
-      ->AsIntermediate();
-    auto* right_bn3_mean_out = VarNode("right_bn3_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* right_bn3_var_out = VarNode("right_bn3_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* right_bn3_saved_mean = VarNode("right_bn3_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* right_bn3_saved_var = VarNode("right_bn3_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
+                              ->assert_is_op_output("batch_norm", "Y")
+                              ->assert_is_op_input("elementwise_add", "Y")
+                              ->AsIntermediate();
+    auto* right_bn3_mean_out =
+        VarNode("right_bn3_mean_out")
+            ->assert_is_op_output("batch_norm", "MeanOut")
+            ->AsIntermediate();
+    auto* right_bn3_var_out =
+        VarNode("right_bn3_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* right_bn3_saved_mean =
+        VarNode("right_bn3_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* right_bn3_saved_var =
+        VarNode("right_bn3_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
 
-    auto* add = OpNode("add", "elementwise_add")
-      ->AsIntermediate();
+    auto* add = OpNode("add", "elementwise_add")->AsIntermediate();
     auto* add_out = VarNode("add_out")
-      ->assert_is_op_output("elementwise_add", "Out")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
-    auto* relu = OpNode("relu", "relu")
-      ->AsIntermediate();
-    auto* relu_out = VarNode("relu_out")
-      ->assert_is_op_output("relu", "Out")
-      ->AsOutput();
+                        ->assert_is_op_output("elementwise_add", "Out")
+                        ->assert_is_op_input("relu", "X")
+                        ->AsIntermediate();
+    auto* relu = OpNode("relu", "relu")->AsIntermediate();
+    auto* relu_out =
+        VarNode("relu_out")->assert_is_op_output("relu", "Out")->AsOutput();
 
-    *input >> *right_conv1 >> *right_conv1_out
-      >> *right_bn1 >> *right_bn1_out >> *right_relu1 >> *right_relu1_out
-      >> *right_conv2 >> *right_conv2_out
-      >> *right_bn2 >> *right_bn2_out >> *right_relu2 >> *right_relu2_out
-      >> *right_conv3 >> *right_conv3_out
-      >> *right_bn3 >> *right_bn3_out >> *add;
+    *input >> *right_conv1 >> *right_conv1_out >> *right_bn1 >>
+        *right_bn1_out >> *right_relu1 >> *right_relu1_out >> *right_conv2 >>
+        *right_conv2_out >> *right_bn2 >> *right_bn2_out >> *right_relu2 >>
+        *right_relu2_out >> *right_conv3 >> *right_conv3_out >> *right_bn3 >>
+        *right_bn3_out >> *add;
 
     *right_conv1_weight >> *right_conv1;
     *right_bn1_scale >> *right_bn1;
@@ -530,31 +538,36 @@ class XPUResNetBlock1Fuser : public FuseBase {
     cpp::OpDesc op_desc;
     op_desc.SetType("resnet_block1");
     op_desc.SetInput("Inputs", {matched.at("input")->arg()->name});
-    op_desc.SetInput("Filter", {
-        matched.at("right_conv1_weight")->arg()->name,
-        matched.at("right_conv2_weight")->arg()->name,
-        matched.at("right_conv3_weight")->arg()->name,
-    });
-    op_desc.SetInput("Scale", {
-        matched.at("right_bn1_scale")->arg()->name,
-        matched.at("right_bn2_scale")->arg()->name,
-        matched.at("right_bn3_scale")->arg()->name,
-    });
-    op_desc.SetInput("Bias", {
-        matched.at("right_bn1_bias")->arg()->name,
-        matched.at("right_bn2_bias")->arg()->name,
-        matched.at("right_bn3_bias")->arg()->name,
-    });
-    op_desc.SetInput("Mean", {
-        matched.at("right_bn1_mean")->arg()->name,
-        matched.at("right_bn2_mean")->arg()->name,
-        matched.at("right_bn3_mean")->arg()->name,
-    });
-    op_desc.SetInput("Var", {
-        matched.at("right_bn1_variance")->arg()->name,
-        matched.at("right_bn2_variance")->arg()->name,
-        matched.at("right_bn3_variance")->arg()->name,
-    });
+    op_desc.SetInput("Filter",
+                     {
+                         matched.at("right_conv1_weight")->arg()->name,
+                         matched.at("right_conv2_weight")->arg()->name,
+                         matched.at("right_conv3_weight")->arg()->name,
+                     });
+    op_desc.SetInput("Scale",
+                     {
+                         matched.at("right_bn1_scale")->arg()->name,
+                         matched.at("right_bn2_scale")->arg()->name,
+                         matched.at("right_bn3_scale")->arg()->name,
+                     });
+    op_desc.SetInput("Bias",
+                     {
+                         matched.at("right_bn1_bias")->arg()->name,
+                         matched.at("right_bn2_bias")->arg()->name,
+                         matched.at("right_bn3_bias")->arg()->name,
+                     });
+    op_desc.SetInput("Mean",
+                     {
+                         matched.at("right_bn1_mean")->arg()->name,
+                         matched.at("right_bn2_mean")->arg()->name,
+                         matched.at("right_bn3_mean")->arg()->name,
+                     });
+    op_desc.SetInput("Var",
+                     {
+                         matched.at("right_bn1_variance")->arg()->name,
+                         matched.at("right_bn2_variance")->arg()->name,
+                         matched.at("right_bn3_variance")->arg()->name,
+                     });
     op_desc.SetOutput("Outputs", {matched.at("relu_out")->arg()->name});
     // XXX: keep these to fool SubgraphOp::AttachImpl()
     op_desc.SetAttr<int>("sub_block", 0);
@@ -565,14 +578,17 @@ class XPUResNetBlock1Fuser : public FuseBase {
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     // XXX: memleak?
     auto sub_block_desc = new cpp::BlockDesc();
-    static_cast<operators::SubgraphOp *>(fake_subgraph_op.get())
+    static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetSubBlock(sub_block_desc);
     fake_subgraph_op->Attach(op_desc, block1_stmt->op()->scope());
     block1_stmt->SetOp(fake_subgraph_op);
 
     std::vector<std::string> froms = {
-      "right_conv2_weight", "right_conv3_weight",
-      "right_bn1_bias", "right_bn2_bias", "right_bn3_bias",
+        "right_conv2_weight",
+        "right_conv3_weight",
+        "right_bn1_bias",
+        "right_bn2_bias",
+        "right_bn3_bias",
     };
     for (auto& from : froms) {
       IR_NODE_LINK_TO(matched.at(from), matched.at("right_conv1"));
@@ -586,172 +602,181 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
   XPUResNet50Fuser() {}
 
   void BuildPattern() override {
-    auto* input = VarNode("input")
-      ->assert_is_op_input("conv2d", "Input")
-      ->AsInput();
+    auto* input =
+        VarNode("input")->assert_is_op_input("conv2d", "Input")->AsInput();
 
     auto* top_conv_weight = VarNode("top_conv_weight")
-      ->assert_is_op_input("conv2d", "Filter")
-      ->AsInput();
+                                ->assert_is_op_input("conv2d", "Filter")
+                                ->AsInput();
     auto* top_conv = OpNode("top_conv", "conv2d");
     auto* top_conv_out = VarNode("top_conv_out")
-      ->assert_is_op_output("conv2d", "Output")
-      ->assert_is_op_input("batch_norm", "X")
-      ->AsIntermediate();
+                             ->assert_is_op_output("conv2d", "Output")
+                             ->assert_is_op_input("batch_norm", "X")
+                             ->AsIntermediate();
     auto* top_bn_scale = VarNode("top_bn_scale")
-      ->assert_is_op_input("batch_norm", "Scale")
-      ->AsIntermediate();
+                             ->assert_is_op_input("batch_norm", "Scale")
+                             ->AsIntermediate();
     auto* top_bn_bias = VarNode("top_bn_bias")
-      ->assert_is_op_input("batch_norm", "Bias")
-      ->AsInput();
+                            ->assert_is_op_input("batch_norm", "Bias")
+                            ->AsInput();
     auto* top_bn_mean = VarNode("top_bn_mean")
-      ->assert_is_op_input("batch_norm", "Mean")
-      ->AsIntermediate();
+                            ->assert_is_op_input("batch_norm", "Mean")
+                            ->AsIntermediate();
     auto* top_bn_var = VarNode("top_bn_variance")
-      ->assert_is_op_input("batch_norm", "Variance")
-      ->AsIntermediate();
-    auto* top_bn = OpNode("top_bn", "batch_norm")
-      ->AsIntermediate();
+                           ->assert_is_op_input("batch_norm", "Variance")
+                           ->AsIntermediate();
+    auto* top_bn = OpNode("top_bn", "batch_norm")->AsIntermediate();
     auto* top_bn_out = VarNode("top_bn_out")
-      ->assert_is_op_output("batch_norm", "Y")
-      ->assert_is_op_input("relu", "X")
-      ->AsIntermediate();
+                           ->assert_is_op_output("batch_norm", "Y")
+                           ->assert_is_op_input("relu", "X")
+                           ->AsIntermediate();
     auto* top_bn_mean_out = VarNode("top_bn_mean_out")
-      ->assert_is_op_output("batch_norm", "MeanOut")
-      ->AsIntermediate();
-    auto* top_bn_var_out = VarNode("top_bn_var_out")
-      ->assert_is_op_output("batch_norm", "VarianceOut")
-      ->AsIntermediate();
-    auto* top_bn_saved_mean = VarNode("top_bn_saved_mean")
-      ->assert_is_op_output("batch_norm", "SavedMean")
-      ->AsIntermediate();
-    auto* top_bn_saved_var = VarNode("top_bn_saved_var")
-      ->assert_is_op_output("batch_norm", "SavedVariance")
-      ->AsIntermediate();
-    auto* top_relu = OpNode("top_relu", "relu")
-      ->AsIntermediate();
+                                ->assert_is_op_output("batch_norm", "MeanOut")
+                                ->AsIntermediate();
+    auto* top_bn_var_out =
+        VarNode("top_bn_var_out")
+            ->assert_is_op_output("batch_norm", "VarianceOut")
+            ->AsIntermediate();
+    auto* top_bn_saved_mean =
+        VarNode("top_bn_saved_mean")
+            ->assert_is_op_output("batch_norm", "SavedMean")
+            ->AsIntermediate();
+    auto* top_bn_saved_var =
+        VarNode("top_bn_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
+    auto* top_relu = OpNode("top_relu", "relu")->AsIntermediate();
     auto* top_relu_out = VarNode("top_relu_out")
-      ->assert_is_op_output("relu", "Out")
-      ->assert_is_op_input("pool2d", "X")
-      ->AsIntermediate();
-    auto* top_pool = OpNode("top_pool", "pool2d")
-      ->AsIntermediate();
+                             ->assert_is_op_output("relu", "Out")
+                             ->assert_is_op_input("pool2d", "X")
+                             ->AsIntermediate();
+    auto* top_pool = OpNode("top_pool", "pool2d")->AsIntermediate();
     auto* top_pool_out = VarNode("top_pool_out")
-      ->assert_is_op_output("pool2d", "Out")
-      ->assert_is_op_input("resnet_block0", "Inputs")
-      ->AsIntermediate();
+                             ->assert_is_op_output("pool2d", "Out")
+                             ->assert_is_op_input("resnet_block0", "Inputs")
+                             ->AsIntermediate();
 
     // args are left out
-    auto* resnet_block0_1 = OpNode("resnet_block0_1", "resnet_block0")
-      ->AsIntermediate();
-    auto* resnet_block0_1_out = VarNode("resnet_block0_1_out")
-      ->assert_is_op_output("resnet_block0", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_1_1 = OpNode("resnet_block1_1_1", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_1_1_out = VarNode("resnet_block1_1_1_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_1_2 = OpNode("resnet_block1_1_2", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_1_2_out = VarNode("resnet_block1_1_2_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
+    auto* resnet_block0_1 =
+        OpNode("resnet_block0_1", "resnet_block0")->AsIntermediate();
+    auto* resnet_block0_1_out =
+        VarNode("resnet_block0_1_out")
+            ->assert_is_op_output("resnet_block0", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_1_1 =
+        OpNode("resnet_block1_1_1", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_1_1_out =
+        VarNode("resnet_block1_1_1_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_1_2 =
+        OpNode("resnet_block1_1_2", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_1_2_out =
+        VarNode("resnet_block1_1_2_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
 
-    auto* resnet_block0_2 = OpNode("resnet_block0_2", "resnet_block0")
-      ->AsIntermediate();
-    auto* resnet_block0_2_out = VarNode("resnet_block0_2_out")
-      ->assert_is_op_output("resnet_block0", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_2_1 = OpNode("resnet_block1_2_1", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_2_1_out = VarNode("resnet_block1_2_1_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_2_2 = OpNode("resnet_block1_2_2", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_2_2_out = VarNode("resnet_block1_2_2_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_2_3 = OpNode("resnet_block1_2_3", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_2_3_out = VarNode("resnet_block1_2_3_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
+    auto* resnet_block0_2 =
+        OpNode("resnet_block0_2", "resnet_block0")->AsIntermediate();
+    auto* resnet_block0_2_out =
+        VarNode("resnet_block0_2_out")
+            ->assert_is_op_output("resnet_block0", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_2_1 =
+        OpNode("resnet_block1_2_1", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_2_1_out =
+        VarNode("resnet_block1_2_1_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_2_2 =
+        OpNode("resnet_block1_2_2", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_2_2_out =
+        VarNode("resnet_block1_2_2_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_2_3 =
+        OpNode("resnet_block1_2_3", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_2_3_out =
+        VarNode("resnet_block1_2_3_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
 
-    auto* resnet_block0_3 = OpNode("resnet_block0_3", "resnet_block0")
-      ->AsIntermediate();
-    auto* resnet_block0_3_out = VarNode("resnet_block0_3_out")
-      ->assert_is_op_output("resnet_block0", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_3_1 = OpNode("resnet_block1_3_1", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_3_1_out = VarNode("resnet_block1_3_1_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_3_2 = OpNode("resnet_block1_3_2", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_3_2_out = VarNode("resnet_block1_3_2_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_3_3 = OpNode("resnet_block1_3_3", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_3_3_out = VarNode("resnet_block1_3_3_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_3_4 = OpNode("resnet_block1_3_4", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_3_4_out = VarNode("resnet_block1_3_4_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_3_5 = OpNode("resnet_block1_3_5", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_3_5_out = VarNode("resnet_block1_3_5_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
+    auto* resnet_block0_3 =
+        OpNode("resnet_block0_3", "resnet_block0")->AsIntermediate();
+    auto* resnet_block0_3_out =
+        VarNode("resnet_block0_3_out")
+            ->assert_is_op_output("resnet_block0", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_3_1 =
+        OpNode("resnet_block1_3_1", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_3_1_out =
+        VarNode("resnet_block1_3_1_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_3_2 =
+        OpNode("resnet_block1_3_2", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_3_2_out =
+        VarNode("resnet_block1_3_2_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_3_3 =
+        OpNode("resnet_block1_3_3", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_3_3_out =
+        VarNode("resnet_block1_3_3_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_3_4 =
+        OpNode("resnet_block1_3_4", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_3_4_out =
+        VarNode("resnet_block1_3_4_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_3_5 =
+        OpNode("resnet_block1_3_5", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_3_5_out =
+        VarNode("resnet_block1_3_5_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
 
-    auto* resnet_block0_4 = OpNode("resnet_block0_4", "resnet_block0")
-      ->AsIntermediate();
-    auto* resnet_block0_4_out = VarNode("resnet_block0_4_out")
-      ->assert_is_op_output("resnet_block0", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_4_1 = OpNode("resnet_block1_4_1", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_4_1_out = VarNode("resnet_block1_4_1_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
-    auto* resnet_block1_4_2 = OpNode("resnet_block1_4_2", "resnet_block1")
-      ->AsIntermediate();
-    auto* resnet_block1_4_2_out = VarNode("resnet_block1_4_2_out")
-      ->assert_is_op_output("resnet_block1", "Outputs")
-      ->AsIntermediate();
+    auto* resnet_block0_4 =
+        OpNode("resnet_block0_4", "resnet_block0")->AsIntermediate();
+    auto* resnet_block0_4_out =
+        VarNode("resnet_block0_4_out")
+            ->assert_is_op_output("resnet_block0", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_4_1 =
+        OpNode("resnet_block1_4_1", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_4_1_out =
+        VarNode("resnet_block1_4_1_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
+    auto* resnet_block1_4_2 =
+        OpNode("resnet_block1_4_2", "resnet_block1")->AsIntermediate();
+    auto* resnet_block1_4_2_out =
+        VarNode("resnet_block1_4_2_out")
+            ->assert_is_op_output("resnet_block1", "Outputs")
+            ->AsIntermediate();
 
-    auto* bottom_pool = OpNode("bottom_pool", "pool2d")
-      ->AsIntermediate();
+    auto* bottom_pool = OpNode("bottom_pool", "pool2d")->AsIntermediate();
     auto* bottom_pool_out = VarNode("bottom_pool_out")
-      ->assert_is_op_output("pool2d", "Out")
-      ->AsOutput();
+                                ->assert_is_op_output("pool2d", "Out")
+                                ->AsOutput();
 
-    *input >> *top_conv >> *top_conv_out
-      >> *top_bn >> *top_bn_out >> *top_relu >> *top_relu_out
-      >> *top_pool >> *top_pool_out
-      >> *resnet_block0_1 >> *resnet_block0_1_out
-      >> *resnet_block1_1_1 >> *resnet_block1_1_1_out
-      >> *resnet_block1_1_2 >> *resnet_block1_1_2_out
-      >> *resnet_block0_2 >> *resnet_block0_2_out
-      >> *resnet_block1_2_1 >> *resnet_block1_2_1_out
-      >> *resnet_block1_2_2 >> *resnet_block1_2_2_out
-      >> *resnet_block1_2_3 >> *resnet_block1_2_3_out
-      >> *resnet_block0_3 >> *resnet_block0_3_out
-      >> *resnet_block1_3_1 >> *resnet_block1_3_1_out
-      >> *resnet_block1_3_2 >> *resnet_block1_3_2_out
-      >> *resnet_block1_3_3 >> *resnet_block1_3_3_out
-      >> *resnet_block1_3_4 >> *resnet_block1_3_4_out
-      >> *resnet_block1_3_5 >> *resnet_block1_3_5_out
-      >> *resnet_block0_4 >> *resnet_block0_4_out
-      >> *resnet_block1_4_1 >> *resnet_block1_4_1_out
-      >> *resnet_block1_4_2 >> *resnet_block1_4_2_out
-      >> *bottom_pool >> *bottom_pool_out;
+    *input >> *top_conv >> *top_conv_out >> *top_bn >> *top_bn_out >>
+        *top_relu >> *top_relu_out >> *top_pool >> *top_pool_out >>
+        *resnet_block0_1 >> *resnet_block0_1_out >> *resnet_block1_1_1 >>
+        *resnet_block1_1_1_out >> *resnet_block1_1_2 >>
+        *resnet_block1_1_2_out >> *resnet_block0_2 >> *resnet_block0_2_out >>
+        *resnet_block1_2_1 >> *resnet_block1_2_1_out >> *resnet_block1_2_2 >>
+        *resnet_block1_2_2_out >> *resnet_block1_2_3 >>
+        *resnet_block1_2_3_out >> *resnet_block0_3 >> *resnet_block0_3_out >>
+        *resnet_block1_3_1 >> *resnet_block1_3_1_out >> *resnet_block1_3_2 >>
+        *resnet_block1_3_2_out >> *resnet_block1_3_3 >>
+        *resnet_block1_3_3_out >> *resnet_block1_3_4 >>
+        *resnet_block1_3_4_out >> *resnet_block1_3_5 >>
+        *resnet_block1_3_5_out >> *resnet_block0_4 >> *resnet_block0_4_out >>
+        *resnet_block1_4_1 >> *resnet_block1_4_1_out >> *resnet_block1_4_2 >>
+        *resnet_block1_4_2_out >> *bottom_pool >> *bottom_pool_out;
 
     *top_conv_weight >> *top_conv;
     *top_bn_scale >> *top_bn;
@@ -764,52 +789,63 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
     *top_bn >> *top_bn_saved_var;
   }
 
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched,
-      const std::vector<Node *>& extra_input_vars) override {
+  void InsertNewNode(SSAGraph* graph,
+                     const key2nodes_t& matched,
+                     const std::vector<Node*>& extra_input_vars) override {
     cpp::OpDesc op_desc;
-    op_desc.SetType("ResNet50");
+    op_desc.SetType("__xpu__resnet50");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
     std::vector<std::string> filter_name = {
-      matched.at("top_conv_weight")->arg()->name
-    };
+        matched.at("top_conv_weight")->arg()->name};
     std::vector<std::string> scale_name = {
-      matched.at("top_bn_scale")->arg()->name
-    };
+        matched.at("top_bn_scale")->arg()->name};
     std::vector<std::string> bias_name = {
-      matched.at("top_bn_bias")->arg()->name
-    };
+        matched.at("top_bn_bias")->arg()->name};
     std::vector<std::string> mean_name = {
-      matched.at("top_bn_mean")->arg()->name
-    };
+        matched.at("top_bn_mean")->arg()->name};
     std::vector<std::string> var_name = {
-      matched.at("top_bn_variance")->arg()->name
-    };
+        matched.at("top_bn_variance")->arg()->name};
     std::vector<std::string> max_filter_name;
     std::vector<std::string> resnet_block_vec = {
-      "resnet_block0_1", "resnet_block1_1_1", "resnet_block1_1_2",
-      "resnet_block0_2", "resnet_block1_2_1", "resnet_block1_2_2",
-      "resnet_block1_2_3",
-      "resnet_block0_3", "resnet_block1_3_1", "resnet_block1_3_2",
-      "resnet_block1_3_3", "resnet_block1_3_4", "resnet_block1_3_5",
-      "resnet_block0_4", "resnet_block1_4_1", "resnet_block1_4_2",
+        "resnet_block0_1",
+        "resnet_block1_1_1",
+        "resnet_block1_1_2",
+        "resnet_block0_2",
+        "resnet_block1_2_1",
+        "resnet_block1_2_2",
+        "resnet_block1_2_3",
+        "resnet_block0_3",
+        "resnet_block1_3_1",
+        "resnet_block1_3_2",
+        "resnet_block1_3_3",
+        "resnet_block1_3_4",
+        "resnet_block1_3_5",
+        "resnet_block0_4",
+        "resnet_block1_4_1",
+        "resnet_block1_4_2",
     };
-    for (auto &block : resnet_block_vec) {
+    for (auto& block : resnet_block_vec) {
       auto* block_op_info = matched.at(block)->stmt()->op_info();
       auto block_filter_name = block_op_info->Input("Filter");
-      std::copy(block_filter_name.begin(), block_filter_name.end(),
-          std::back_inserter(filter_name));
+      std::copy(block_filter_name.begin(),
+                block_filter_name.end(),
+                std::back_inserter(filter_name));
       auto block_scale_name = block_op_info->Input("Scale");
-      std::copy(block_scale_name.begin(), block_scale_name.end(),
-          std::back_inserter(scale_name));
+      std::copy(block_scale_name.begin(),
+                block_scale_name.end(),
+                std::back_inserter(scale_name));
       auto block_bias_name = block_op_info->Input("Bias");
-      std::copy(block_bias_name.begin(), block_bias_name.end(),
-          std::back_inserter(bias_name));
+      std::copy(block_bias_name.begin(),
+                block_bias_name.end(),
+                std::back_inserter(bias_name));
       auto block_mean_name = block_op_info->Input("Mean");
-      std::copy(block_mean_name.begin(), block_mean_name.end(),
-          std::back_inserter(mean_name));
+      std::copy(block_mean_name.begin(),
+                block_mean_name.end(),
+                std::back_inserter(mean_name));
       auto block_var_name = block_op_info->Input("Var");
-      std::copy(block_var_name.begin(), block_var_name.end(),
-          std::back_inserter(var_name));
+      std::copy(block_var_name.begin(),
+                block_var_name.end(),
+                std::back_inserter(var_name));
     }
     op_desc.SetInput("Filter", filter_name);
     op_desc.SetInput("Bias", bias_name);
@@ -848,9 +884,11 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
         bias_on_host[i] += -mean_on_host[i] * scale_on_host[i];
       }
 
-      float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
+      float max_f =
+          paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
       std::unique_ptr<int16_t[]> filter_int16(new int16_t[filter_len]);
-      xpuapi_fp32_to_int16(filter_on_host, filter_int16.get(), max_f, filter_len);
+      xpuapi_fp32_to_int16(
+          filter_on_host, filter_int16.get(), max_f, filter_len);
       memcpy(filter_on_host, filter_int16.get(), filter_len * sizeof(int16_t));
 
       // create new arg in graph and scope
@@ -858,8 +896,8 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
       max_filter_name.push_back(max_name);
       auto* max_filter_node = graph->NewArgumentNode(max_name);
       max_filter_node->arg()->is_weight = true;
-      max_filter_node->arg()->type = LiteType::GetTensorTy(TARGET(kHost),
-          PRECISION(kFloat), DATALAYOUT(kNCHW));
+      max_filter_node->arg()->type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
       DirectedLink(max_filter_node, matched.at("top_conv"));
       auto* max_filter_t = scope->NewTensor(max_name);
       max_filter_t->Resize({4});
@@ -871,12 +909,11 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
     }
     op_desc.SetInput("MaxFilter", max_filter_name);
 
-    auto resnet50_op = LiteOpRegistry::Global().Create("ResNet50");
+    auto resnet50_op = LiteOpRegistry::Global().Create(op_desc.Type());
     resnet50_op->Attach(op_desc, scope);
+    auto kernels =
+        resnet50_op->CreateKernels(resnet50_stmt->op()->valid_places);
     resnet50_stmt->SetOp(resnet50_op);
-    std::unique_ptr<KernelBase> kernel(new kernels::xpu::ResNet50Compute());
-    std::vector<std::unique_ptr<KernelBase>> kernels;
-    kernels.emplace_back(std::move(kernel));
     resnet50_stmt->SetKernels(std::move(kernels));
 
     IR_NODE_LINK_TO(matched.at("top_bn_bias"), matched.at("top_conv"));
@@ -905,7 +942,7 @@ class XPUResNet50FusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(xpu_resnet_fuse_pass,
+REGISTER_MIR_PASS(__xpu__resnet_fuse_pass,
                   paddle::lite::mir::XPUResNet50FusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("conv2d");

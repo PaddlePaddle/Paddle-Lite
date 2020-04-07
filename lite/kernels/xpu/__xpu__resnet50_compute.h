@@ -13,46 +13,19 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_lite.h"
-#include "lite/operators/op_params.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-
-namespace operators {
-
-class ResNet50Op : public OpLite {
- public:
-  ResNet50Op() {}
-  explicit ResNet50Op(const std::string &op_type) : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "ResNet50"; }
-
- private:
-  mutable ResNet50Param param_;
-};
-
-}  // namespace operators
-
 namespace kernels {
 namespace xpu {
 
-class ResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  ResNet50Compute();
-
-  using param_t = operators::ResNet50Param;
+  using param_t = operators::XPUResNet50Param;
 
   virtual void PrepareForRun();
 

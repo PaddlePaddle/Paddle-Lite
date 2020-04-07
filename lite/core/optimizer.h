@@ -76,8 +76,8 @@ class Optimizer {
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-           "xpu_resnet_fuse_pass",
-           "xpu_encoder_fuse_pass",
+           "__xpu__resnet_fuse_pass",
+           "__xpu__multi_encoder_fuse_pass",
 #endif
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer

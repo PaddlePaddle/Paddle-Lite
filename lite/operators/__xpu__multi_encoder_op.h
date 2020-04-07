@@ -14,21 +14,16 @@
 
 #pragma once
 #include <string>
-#include <vector>
-#include "lite/backends/xpu/xpu_header_sitter.h"
-#include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
-#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
-
 namespace operators {
 
-class MultiEncoderOp : public OpLite {
+class XPUMultiEncoderOp : public OpLite {
  public:
-  MultiEncoderOp() {}
-  explicit MultiEncoderOp(const std::string &op_type) : OpLite(op_type) {}
+  XPUMultiEncoderOp() {}
+  explicit XPUMultiEncoderOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -40,33 +35,9 @@ class MultiEncoderOp : public OpLite {
   std::string DebugString() const override { return "MultiEncoder"; }
 
  private:
-  mutable MultiEncoderParam param_;
+  mutable XPUMultiEncoderParam param_;
 };
 
 }  // namespace operators
-
-namespace kernels {
-namespace xpu {
-
-class MultiEncoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  MultiEncoderCompute();
-
-  using param_t = operators::MultiEncoderParam;
-
-  virtual void PrepareForRun();
-
-  virtual void Run();
-
- private:
-  std::vector<const int16_t *> arg_fc_weight_;
-  std::vector<const float *> arg_fc_bias_;
-  std::vector<const float *> arg_ln_scale_;
-  std::vector<const float *> arg_ln_bias_;
-  xdnn::Activation_t act_type_{xdnn::Activation_t::GELU};
-};
-
-}  // namespace xpu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

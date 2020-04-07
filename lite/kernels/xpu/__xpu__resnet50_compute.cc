@@ -12,63 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/resnet50_compute.h"
-#include "lite/core/op_registry.h"
+#include "lite/kernels/xpu/__xpu__resnet50_compute.h"
 
 namespace paddle {
 namespace lite {
-
-namespace operators {
-
-bool ResNet50Op::CheckShape() const { return true; }
-
-bool ResNet50Op::InferShapeImpl() const {
-  auto input_shape = param_.input->dims();
-  input_shape[1] = 2048;
-  input_shape[2] = 1;
-  input_shape[3] = 1;
-  param_.output->Resize(input_shape);
-  return true;
-}
-
-bool ResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  param_.input = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.output = scope->FindVar(op_desc.Output("Output").front())
-                      ->GetMutable<lite::Tensor>();
-
-  param_.filter.clear();
-  for (auto& name : op_desc.Input("Filter")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
-    param_.filter.push_back(t);
-  }
-  param_.bias.clear();
-  for (auto& name : op_desc.Input("Bias")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
-    param_.bias.push_back(t);
-  }
-  param_.max_filter.clear();
-  for (auto& name : op_desc.Input("MaxFilter")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
-    param_.max_filter.push_back(t);
-  }
-  return true;
-}
-
-}  // namespace operators
-
 namespace kernels {
 namespace xpu {
 
-ResNet50Compute::ResNet50Compute() {
-  set_op_type("ResNet50");
-  set_alias("def");
-}
-
-void ResNet50Compute::PrepareForRun() {
+void XPUResNet50Compute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   for (auto* filter : param.filter) {
@@ -83,7 +34,7 @@ void ResNet50Compute::PrepareForRun() {
   }
 }
 
-void ResNet50Compute::Run() {
+void XPUResNet50Compute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -104,13 +55,11 @@ void ResNet50Compute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(ResNet50, paddle::lite::operators::ResNet50Op);
-
-REGISTER_LITE_KERNEL(ResNet50,
+REGISTER_LITE_KERNEL(__xpu__resnet50,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ResNet50Compute,
+                     paddle::lite::kernels::xpu::XPUResNet50Compute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
