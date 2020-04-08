@@ -84,11 +84,6 @@ void XPUPatternMatcher::ValidateByNodeRole(
                        }
                        for (auto &item : subgraph) {
                          if (item.first->IsIntermediate()) {
-                           // for (auto *x : item.second->inlinks) {
-                           // if (!ios.count(x)) {
-                           // return true;
-                           //}
-                           //}
                            for (auto *x : item.second->outlinks) {
                              if (!ios.count(x)) {
                                return true;
