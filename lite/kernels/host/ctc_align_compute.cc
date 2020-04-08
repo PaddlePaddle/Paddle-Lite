@@ -112,7 +112,7 @@ void CtcAlignCompute<T, PT>::Run() {
     const size_t num_sequences = input_lod[level].size() - 1;
     // merge repeated tokens and delete blank
     size_t output_idx = 0;
-    std::vector<size_t> output_lod0(1, 0);
+    std::vector<uint64_t> output_lod0(1, 0);
     for (size_t seq_idx = 0; seq_idx < num_sequences; ++seq_idx) {
       T prev_token = -1;
       for (size_t i = input_lod[level][seq_idx];
@@ -125,7 +125,7 @@ void CtcAlignCompute<T, PT>::Run() {
         }
         prev_token = input_data[i];
       }
-      output_lod0.push_back(output_idx);
+      output_lod0.push_back(static_cast<uint64_t>(output_idx));
     }
 
     LoD output_lod;
