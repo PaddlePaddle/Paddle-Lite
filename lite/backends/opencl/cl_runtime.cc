@@ -30,10 +30,7 @@ CLRuntime* CLRuntime::Global() {
 
 CLRuntime::~CLRuntime() {
   LOG(INFO) << "CLRuntime::~CLRuntime()";
-// Note: do ReleaseResources() in predictor
-#ifdef PADDLE_WITH_TESTING
-  ReleaseResources();
-#endif
+  // Note: do ReleaseResources() in predictor
   command_queue_&& clReleaseCommandQueue(command_queue_->get());
   command_queue_.reset();
   context_&& clReleaseContext(context_->get());
@@ -44,6 +41,10 @@ CLRuntime::~CLRuntime() {
 }
 
 void CLRuntime::ReleaseResources() {
+  if (is_resources_released_) {
+    return;
+  }
+
   if (command_queue_ != nullptr) {
     command_queue_->flush();
     command_queue_->finish();
@@ -59,6 +60,7 @@ void CLRuntime::ReleaseResources() {
   }
   programs_.clear();
   LOG(INFO) << "release resources finished.";
+  is_resources_released_ = true;
 }
 
 bool CLRuntime::Init() {

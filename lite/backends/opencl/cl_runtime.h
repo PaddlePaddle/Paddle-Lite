@@ -118,6 +118,8 @@ class CLRuntime {
   bool initialized_{false};
 
   bool is_init_success_{false};
+
+  bool is_resources_released_{false};
 };
 
 }  // namespace lite
