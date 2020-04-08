@@ -21,7 +21,7 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/fluid/eigen.h"
-#include "lite/operators/activation_ops.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
