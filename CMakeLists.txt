@@ -210,13 +210,7 @@ if(LITE_WITH_XPU)
 endif()
 
 include(external/mklml)     # download mklml package
-
-
-if (NOT WIN32)
-   include(external/xbyak)     # download xbyak package
-else()
-   #message(FATAL_ERROR "Disable XBYAK in Windows")
-endif()
+include(external/xbyak)     # download xbyak package
 
 include(external/libxsmm)   # download, build, install libxsmm
 include(external/gflags)    # download, build, install gflags

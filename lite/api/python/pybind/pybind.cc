@@ -277,8 +277,6 @@ void BindLiteLightPredictor(py::module *m) {
       .def("get_version", &LightPredictorImpl::GetVersion);
 }
 
-
-
 }  // namespace pybind
 }  // namespace lite
 }  // namespace paddle

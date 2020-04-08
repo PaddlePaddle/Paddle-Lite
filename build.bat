@@ -55,8 +55,6 @@ IF NOT EXIST "%vcvarsall_dir%" (
     goto set_vcvarsall_dir
 )
 
-
-
   cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64  -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
             -DLITE_WITH_X86=ON  ^
