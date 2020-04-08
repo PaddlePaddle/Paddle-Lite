@@ -89,7 +89,6 @@ if (LITE_WITH_PYTHON)
             DEPENDS lite_pybind)
         add_custom_target(copy_lite_pybind ALL DEPENDS ${LITE_CORE_DEPS})
         
-        message("------$<TARGET_FILE:lite_pybind>--1--------")
         add_custom_target(publish_inference_python_lib ${TARGET}
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/lib"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
