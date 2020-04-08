@@ -38,8 +38,10 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
     } else {
       kernel_func_name_ = "concat_mul";
     }
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/concat_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/concat_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
 
     auto axis = concat_param_->axis;
     auto inputs = concat_param_->x;
@@ -88,7 +90,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
 
     auto inputs = param.x;
     int arg_idx = 0;
@@ -177,6 +179,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

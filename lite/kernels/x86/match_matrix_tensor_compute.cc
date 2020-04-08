@@ -35,7 +35,7 @@ void MatchMatrixTensorCompute<T>::Run() {
   const auto& offset_l = x->lod()[0];
   const auto& offset_r = y->lod()[0];
 
-  std::vector<size_t> top_offset;
+  std::vector<uint64_t> top_offset;
   int top_size = 0;
   top_offset.push_back(top_size);
   for (size_t b = 0; b < x->lod()[0].size() - 1; b++) {
@@ -97,9 +97,9 @@ void MatchMatrixTensorCompute<T>::Run() {
   int batch_size = x->lod()[0].size() - 1;
   int lod_lv1_size = batch_size * dim_t;
   int lod_lv2_size = x->lod()[0].back() * dim_t;
-  std::vector<size_t> out_lod0(batch_size + 1, 0);
-  std::vector<size_t> out_lod1(lod_lv1_size + 1, 0);
-  std::vector<size_t> out_lod2(lod_lv2_size + 1, 0);
+  std::vector<uint64_t> out_lod0(batch_size + 1, 0);
+  std::vector<uint64_t> out_lod1(lod_lv1_size + 1, 0);
+  std::vector<uint64_t> out_lod2(lod_lv2_size + 1, 0);
   for (int i = 0; i < batch_size; i++) {
     out_lod0[i + 1] = out_lod0[i] + dim_t;
     int len_l = offset_l[i + 1] - offset_l[i];

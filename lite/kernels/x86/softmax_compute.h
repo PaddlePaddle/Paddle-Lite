@@ -58,7 +58,7 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     auto* x = param.x;
     auto* output = param.output;
-    output->mutable_data<T>();
+    output->template mutable_data<T>();
 
     const int rank = x->dims().size();
     const int axis = CanonicalAxis(param.axis, rank);
