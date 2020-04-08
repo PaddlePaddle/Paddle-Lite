@@ -41,9 +41,9 @@ CLRuntime::~CLRuntime() {
 }
 
 void CLRuntime::ReleaseResources() {
-  if (is_resources_released_) {
-    return;
-  }
+  //  if (is_resources_released_) {
+  //    return;
+  //  }
 
   if (command_queue_ != nullptr) {
     command_queue_->flush();
