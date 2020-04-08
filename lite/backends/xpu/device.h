@@ -14,12 +14,12 @@
 
 #pragma once
 
-#include <xtcl/xtcl.h>
 #include <cstdlib>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
 
 namespace paddle {
 namespace lite {

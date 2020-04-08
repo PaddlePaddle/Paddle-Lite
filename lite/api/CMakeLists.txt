@@ -20,7 +20,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
-        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL) 
+        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
             add_dependencies(paddle_full_api_shared dynload_mklml)
         endif()
     endif()

@@ -180,7 +180,7 @@ TEST(Subgraph, generate_model_and_check_precision) {
 #ifdef LITE_WITH_NPU
   valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
 #endif
-#ifdef LITE_WITH_XPU
+#ifdef LITE_WITH_XTCL
   valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});
 #endif
   auto tar_predictor = TestModel(FLAGS_model_dir,

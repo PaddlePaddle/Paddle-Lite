@@ -27,8 +27,8 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace inference {
-namespace analysis {
+namespace lite {
+namespace mir {
 
 static size_t dot_node_counter{0};
 
@@ -162,6 +162,6 @@ class Dot {
   std::vector<Attr> attrs_;
 };
 
-}  // namespace analysis
-}  // namespace inference
+}  // namespace mir
+}  // namespace lite
 }  // namespace paddle
