@@ -278,6 +278,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   graph->BindConstData(filter_var_name, filter);
   graph->FuseOp(conv_op);
+  CNML_CALL(cnmlDestroyBaseOp(&conv_op));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

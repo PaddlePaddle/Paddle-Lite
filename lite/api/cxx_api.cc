@@ -316,11 +316,9 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
       }
     }
   }
-#ifndef LITE_WITH_MLU
   if (is_quantized_model) {
     inner_places.emplace_back(Place{TARGET(kARM), PRECISION(kInt8)});
   }
-#endif
 
   Program program(desc, scope_, inner_places);
 

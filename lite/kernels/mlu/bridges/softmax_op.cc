@@ -55,6 +55,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                   graph->GetNode(x_var_name)->mlu_tensor(),
                                   output_tensor->mlu_tensor()));
   graph->FuseOp(softmax_op);
+  CNML_CALL(cnmlDestroyBaseOp(&softmax_op));
   return SUCCESS;
 }
 

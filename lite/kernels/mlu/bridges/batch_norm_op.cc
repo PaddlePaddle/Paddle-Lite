@@ -81,6 +81,8 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   graph->BindConstData(mean_var_name, mean);
   graph->FuseOp(bn_op);
 
+  CNML_CALL(cnmlDestroyBaseOp(&bn_op));
+
   return SUCCESS;
 }
 

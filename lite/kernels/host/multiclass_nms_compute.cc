@@ -369,6 +369,7 @@ void MulticlassNmsCompute::Run() {
     }
   } else {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
+    (void)outs->mutable_data<float>();
     int offset = 0;
     int* oindices = nullptr;
     for (int i = 0; i < n; ++i) {

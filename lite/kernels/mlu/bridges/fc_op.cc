@@ -160,6 +160,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       1 / *min_element(weight_scale.begin(), weight_scale.end()));
 
   graph->FuseOp(fc_op);
+  CNML_CALL(cnmlDestroyBaseOp(&fc_op));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
