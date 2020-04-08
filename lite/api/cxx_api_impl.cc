@@ -51,7 +51,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                            config.mlu_first_conv_std(),
                                            config.mlu_input_layout());
 #endif  // LITE_WITH_MLU
-  auto places = config.valid_places();
   std::vector<std::string> passes{};
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
