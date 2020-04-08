@@ -39,6 +39,11 @@ class CLContext {
                  const std::string &options = "",
                  const std::string &time_stamp = "");
 
+  std::shared_ptr<cl::Kernel> CreateKernel(const std::string &kernel_name,
+                                           const std::string &file_name,
+                                           const std::string &options = "",
+                                           const std::string &time_stamp = "");
+
   cl::Kernel &GetKernel(const int index);
 
   cl::Kernel &GetKernel(const std::string &name);

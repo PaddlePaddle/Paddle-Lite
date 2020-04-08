@@ -45,7 +45,6 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   }
 
   auto program = CLRuntime::Global()->CreateProgram(GetContext(), file_name);
-
   VLOG(3) << " --- begin build program -> " << program_key << " --- ";
   CLRuntime::Global()->BuildProgram(program.get(), options);
   VLOG(3) << " --- end build program -> " << program_key << " --- ";
@@ -75,6 +74,23 @@ void CLContext::AddKernel(const std::string &kernel_name,
   STL::stringstream kernel_key;
   kernel_key << kernel_name << options << time_stamp;
   kernel_offset_map[kernel_key.str()] = kernels.size() - 1;
+}
+
+std::shared_ptr<cl::Kernel> CLContext::CreateKernel(
+    const std::string &kernel_name,
+    const std::string &file_name,
+    const std::string &options,
+    const std::string &time_stamp) {
+  cl_int status{CL_SUCCESS};
+  VLOG(3) << " --- to get program " << file_name << " --- ";
+  auto program = GetProgram(file_name, options);
+  VLOG(3) << " --- end get program --- ";
+  VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
+  std::shared_ptr<cl::Kernel> kernel(
+      new cl::Kernel(program, kernel_name.c_str(), &status));
+  CL_CHECK_FATAL(status);
+  VLOG(3) << " --- end create kernel --- ";
+  return kernel;
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {
