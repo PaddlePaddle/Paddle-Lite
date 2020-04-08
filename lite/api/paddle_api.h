@@ -171,6 +171,7 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
+
 #ifdef LITE_WITH_MLU
   // set MLU core version, which is used when compiling MLU kernels
   void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
@@ -195,6 +196,12 @@ class LITE_API CxxConfig : public ConfigBase {
   const std::vector<float>& mlu_first_conv_mean() const;
   const std::vector<float>& mlu_first_conv_std() const;
 #endif
+
+  // XPU only, set the size of the workspace memory from L3 cache for the
+  // current thread.
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  // XPU only, specify the target device ID for the current thread.
+  void set_xpu_dev_per_thread(int dev_no = 0);
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

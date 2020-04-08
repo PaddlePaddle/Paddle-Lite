@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+#include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
@@ -235,6 +236,25 @@ const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
   return mlu_first_conv_std_;
 }
 #endif
+
+void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+#ifdef LITE_WITH_XPU
+  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+#ifdef LITE_WITH_XPU
+  lite::Context<TargetType::kXPU>::SetDev(dev_no);
+#else
+  LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory

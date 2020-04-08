@@ -10,6 +10,7 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
+
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
@@ -19,7 +20,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
-        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL) 
+        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
             add_dependencies(paddle_full_api_shared dynload_mklml)
         endif()
     endif()
@@ -268,8 +269,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
         NPU_DEPS ${npu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
-        CV_DEPS paddle_cv_arm
-        NPU_DEPS ${npu_kernels}
         BM_DEPS ${bm_kernels})
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)

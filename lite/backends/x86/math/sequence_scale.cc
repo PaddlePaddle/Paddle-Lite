@@ -32,7 +32,7 @@ class ScaleLoDTensorFunctor<lite::TargetType::kX86, T> {
     size_t seq_width = seq->dims()[1];
     lite::LoD abs_offset_lod = lite::fluid::ToAbsOffset(lod);
 
-    T* seq_data = seq->mutable_data<T>(lite::TargetType::kX86);
+    T* seq_data = seq->template mutable_data<T>(lite::TargetType::kX86);
     for (size_t i = 0; i < num_seq; ++i) {
       for (size_t j = lod[level][i] * seq_width;
            j < lod[level][i + 1] * seq_width;

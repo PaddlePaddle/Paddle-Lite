@@ -22,15 +22,15 @@ namespace math {
 template <typename T>
 void CopyValidData(lite::Tensor* dst_tensor,
                    const lite::Tensor* src_tensor,
-                   const std::vector<size_t>& seq_offsets,
+                   const std::vector<uint64_t>& seq_offsets,
                    int pad_seq_len,
                    int step_width,
                    bool norm_by_len,
                    CopyType type,
                    PadLayout layout) {
   int seq_num = seq_offsets.size() - 1;
-  const T* src_data = src_tensor->data<T>();
-  T* dst_data = dst_tensor->mutable_data<T>();
+  const T* src_data = src_tensor->template data<T>();
+  T* dst_data = dst_tensor->template mutable_data<T>();
 
   int seq_cpy_gap = step_width;
   int pad_cpy_gap =
@@ -113,7 +113,7 @@ class PaddingLoDTensorFunctor<lite::TargetType::kX86, T> {
                    "'step_width'.");
 
     // fill padding value
-    T* pad_data = pad_tensor->mutable_data<T>();
+    T* pad_data = pad_tensor->template mutable_data<T>();
     const T* pad_value_data = pad_value.data<T>();
     if (pad_value.numel() == 1) {
       fast_mem_init<T>(

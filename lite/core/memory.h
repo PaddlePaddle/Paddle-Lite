@@ -35,6 +35,10 @@
 #include "lite/backends/mlu/target_wrapper.h"
 #endif  // LITE_WITH_MLU
 
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif  // LITE_WITH_XPU
+
 namespace paddle {
 namespace lite {
 
@@ -135,7 +139,7 @@ class Buffer {
                         const size_t img_h,
                         void* host_ptr = nullptr) {
     if (target != target_ || cl_image2d_width_ < img_w ||
-        cl_image2d_height_ < img_h) {
+        cl_image2d_height_ < img_h || host_ptr != nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
