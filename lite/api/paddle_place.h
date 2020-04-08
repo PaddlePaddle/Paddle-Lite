@@ -100,7 +100,9 @@ enum class ActivationType : int {
   kSwish = 7,
   kExp = 8,
   kAbs = 9,
-  NUM = 10,
+  kHardSwish = 10,
+  kReciprocal = 11,
+  NUM = 12,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {

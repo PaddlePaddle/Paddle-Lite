@@ -74,6 +74,14 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   } else if (opdesc.Type() == "abs") {
     // abs
     param_.active_type = lite_api::ActivationType::kAbs;
+  } else if (opdesc.Type() == "hard_swish") {
+    // hard_swish
+    param_.active_type = lite_api::ActivationType::kHardSwish;
+    param_.hard_swish_threshold = opdesc.GetAttr<float>("threshold");
+    param_.hard_swish_scale = opdesc.GetAttr<float>("scale");
+    param_.hard_swish_offset = opdesc.GetAttr<float>("offset");
+  } else if (opdesc.Type() == "reciprocal") {
+    param_.active_type = lite_api::ActivationType::kReciprocal;
   }
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
 
@@ -84,21 +92,11 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
+
+// Baisc activation ops
 REGISTER_LITE_OP(sigmoid, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(tanh, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(relu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(abs, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
