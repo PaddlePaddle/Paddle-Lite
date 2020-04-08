@@ -8,17 +8,19 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
-set(light_lib_DEPS light_api paddle_api paddle_api_light optimizer)
+
+set(light_lib_DEPS light_api paddle_api paddle_api_light)
+
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
-    add_library(paddle_full_api_shared SHARED "")
-    target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc)
+    lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
+                  DEPS paddle_api paddle_api_light  paddle_api_full)
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
     target_link_libraries(paddle_full_api_shared framework_proto)
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
-        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL) 
+        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
             add_dependencies(paddle_full_api_shared dynload_mklml)
         endif()
     endif()
@@ -27,13 +29,13 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     endif(LITE_WITH_CUDA)
 
     #light api dynamic library
-    lite_cc_library(paddle_light_api_shared MODULE
-        SRCS light_api_shared.cc
-        DEPS ${light_lib_DEPS}
-        ARM_DEPS ${arm_kernels}
-        CV_DEPS paddle_cv_arm
-        NPU_DEPS ${npu_kernels})
-
+    lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
+                  DEPS ${light_lib_DEPS}
+                  ARM_DEPS ${arm_kernels}
+                  CV_DEPS paddle_cv_arm
+                  NPU_DEPS ${npu_kernels}
+                  )
+    add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
     set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
     set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
@@ -312,7 +314,7 @@ add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
-        DEPS gflags kernel op optimizer mir_passes utils)
+        DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
     add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 

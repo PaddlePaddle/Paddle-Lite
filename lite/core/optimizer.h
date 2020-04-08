@@ -75,6 +75,8 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
+           "__xpu__resnet_fuse_pass",
+           "__xpu__multi_encoder_fuse_pass",
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and

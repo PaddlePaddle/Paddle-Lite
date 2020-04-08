@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <xtcl/xtcl.h>
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 

@@ -45,6 +45,11 @@ void* TargetMalloc(TargetType target, size_t size) {
       data = TargetWrapper<TARGET(kBM)>::Malloc(size);
       break;
 #endif
+#ifdef LITE_WITH_XPU
+    case TargetType::kXPU:
+      data = TargetWrapperXPU::Malloc(size);
+      break;
+#endif  // LITE_WITH_XPU
     default:
       LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
   }
@@ -83,6 +88,11 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
       TargetWrapper<TARGET(kBM)>::Free(data);
       break;
 #endif
+#ifdef LITE_WITH_XPU
+    case TargetType::kXPU:
+      TargetWrapperXPU::Free(data);
+      break;
+#endif  // LITE_WITH_XPU
     default:
       LOG(FATAL) << "Unknown type";
   }

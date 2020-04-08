@@ -18,6 +18,7 @@ limitations under the License. */
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_utility.h"
@@ -32,6 +33,8 @@ class CLRuntime {
  public:
   static CLRuntime* Global();
 
+  void ReleaseResources();
+
   bool Init();
 
   cl::Platform& platform();
@@ -42,7 +45,7 @@ class CLRuntime {
 
   cl::CommandQueue& command_queue();
 
-  std::unique_ptr<cl::Program> CreateProgram(const cl::Context& context,
+  std::shared_ptr<cl::Program> CreateProgram(const cl::Context& context,
                                              std::string file_name);
 
   std::unique_ptr<cl::UserEvent> CreateEvent(const cl::Context& context);
@@ -56,6 +59,12 @@ class CLRuntime {
   void set_cl_path(std::string cl_path) { cl_path_ = cl_path; }
 
   std::map<std::string, size_t>& GetDeviceInfo();
+
+  std::unordered_map<std::string, std::shared_ptr<cl::Program>>& programs() {
+    return programs_;
+  }
+  std::vector<std::unique_ptr<cl::Kernel>>& kernels() { return kernels_; }
+  std::map<std::string, int>& kernel_offset() { return kernel_offset_; }
 
  private:
   CLRuntime() = default;
@@ -98,11 +107,19 @@ class CLRuntime {
 
   std::shared_ptr<cl::CommandQueue> command_queue_{nullptr};
 
+  std::unordered_map<std::string, std::shared_ptr<cl::Program>> programs_{};
+
+  std::vector<std::unique_ptr<cl::Kernel>> kernels_{};
+
+  std::map<std::string, int> kernel_offset_{};
+
   cl_int status_{CL_SUCCESS};
 
   bool initialized_{false};
 
   bool is_init_success_{false};
+
+  bool is_resources_released_{false};
 };
 
 }  // namespace lite

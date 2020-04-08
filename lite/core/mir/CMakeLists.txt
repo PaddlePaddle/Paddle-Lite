@@ -21,6 +21,8 @@ lite_cc_library(mir_passes
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
+      fusion/__xpu__resnet_fuse_pass.cc
+      fusion/__xpu__multi_encoder_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
       static_kernel_pick_pass.cc
@@ -69,10 +71,10 @@ set(pattern_deps mir_node mir_ssa_graph op)
 if (WITH_TESTING)
   list(APPEND pattern_deps gtest)
 endif()
-lite_cc_library(pattern_matcher SRCS pattern_matcher.cc DEPS ${pattern_deps})
+lite_cc_library(pattern_matcher SRCS pattern_matcher.cc xpu_pattern_matcher.cc DEPS ${pattern_deps})
 lite_cc_test(test_pattern_matcher SRCS pattern_matcher_test.cc DEPS pattern_matcher)
 
-lite_cc_library(pattern_matcher_high_api SRCS pattern_matcher_high_api.cc DEPS pattern_matcher)
+lite_cc_library(pattern_matcher_high_api SRCS pattern_matcher_high_api.cc xpu_pattern_matcher_high_api.cc DEPS pattern_matcher)
 
 
 # for mobile, unnecessary to compile the following testings.

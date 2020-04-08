@@ -42,9 +42,9 @@ class FillConstantBatchSizeLikeCompute
       int output_dim_idx = param.output_dim_idx;
       odims[output_dim_idx] = static_cast<int>(in->lod().back().size()) - 1;
       out->Resize(odims);
-      // out->mutable_data<T>();
+      // out->template mutable_data<T>();
     }
-    out->mutable_data<T>();
+    out->template mutable_data<T>();
     auto value = param.value;
 
     paddle::lite::x86::math::SetConstant<lite::TargetType::kX86, T> setter;

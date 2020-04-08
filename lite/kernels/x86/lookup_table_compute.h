@@ -33,15 +33,15 @@ class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto *ids_t = param.Ids;
     auto *output_t = param.Out;
     int64_t padding_idx = param.padding_idx;
-    const int64_t *ids = ids_t->data<int64_t>();
+    const int64_t *ids = ids_t->template data<int64_t>();
     int64_t ids_numel = ids_t->dims().production();
 
     auto *table_t = param.W;
     int64_t row_number = table_t->dims()[0];
     int64_t row_width = table_t->dims()[1];
 
-    const T *table = table_t->data<T>();
-    T *output = output_t->mutable_data<T>();
+    const T *table = table_t->template data<T>();
+    T *output = output_t->template mutable_data<T>();
     memset(output, 0, output_t->dims().production() * sizeof(T));
     for (int64_t i = 0; i < ids_numel; ++i) {
       if (padding_idx != -1 && ids[i] == padding_idx) {

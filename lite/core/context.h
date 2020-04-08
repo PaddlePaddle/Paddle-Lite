@@ -24,6 +24,9 @@
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#endif
 
 #include <map>
 #include <memory>
@@ -103,11 +106,38 @@ class Context<TargetType::kXPU> {
  public:
   Context() {}
   explicit Context(const XPUContext& ctx);
+
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
+
   void CopySharedTo(XPUContext* ctx) {}
 
+  static xdnn::Context* GetRawContext() {
+    if (_tls_raw_ctx == nullptr) {
+      _tls_raw_ctx = xdnn::create_context();
+      CHECK(_tls_raw_ctx);
+    }
+    return _tls_raw_ctx;
+  }
+
+  static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
+    xdnn::set_workspace_l3_size(GetRawContext(), l3_size);
+  }
+
+  static void SetDev(int dev_no = 0) {
+    const char* dev_env = getenv("LITE_XPU_DEV");
+    if (dev_env) {
+      xpu_set_device(atoi(dev_env));
+      return;
+    }
+
+    xpu_set_device(dev_no);
+  }
+
   std::string name() const { return "XPUContext"; }
+
+ private:
+  static thread_local xdnn::Context* _tls_raw_ctx;
 };
 #endif
 
@@ -181,7 +211,11 @@ class Context<TargetType::kCUDA> {
       Env<TargetType::kCUDA>::Global();
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
-    cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+    if (devs.size() > 0) {
+      cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+    } else {
+      LOG(INFO) << "No cuda device(s) found, CUDAContext init failed.";
+    }
   }
   void Init(int dev_id, int exec_stream_id = 0, int io_stream_id = 0) {
     CHECK_GT(devs.size(), 0UL)

@@ -71,8 +71,10 @@ class ElementwiseMulImageCompute
     VLOG(4) << "bias_dims.size():" << bias_dims.size();
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/elementwise_mul_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/elementwise_mul_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -114,7 +116,7 @@ class ElementwiseMulImageCompute
 #endif
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     auto bias_dims = y->dims();
@@ -201,6 +203,7 @@ class ElementwiseMulImageCompute
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{"elementwise_mul"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

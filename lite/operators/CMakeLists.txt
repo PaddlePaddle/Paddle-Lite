@@ -74,6 +74,7 @@ add_operator(calib_once_op extra SRCS calib_once_op.cc DEPS ${op_DEPS})
 add_operator(reduce_max_op_lite extra SRCS reduce_max_op.cc DEPS ${op_DEPS})
 add_operator(shape_op_lite extra SRCS shape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_expand_op_lite extra SRCS sequence_expand_op.cc DEPS ${op_DEPS})
+add_operator(sequence_unpad_op_lite extra SRCS sequence_unpad_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
@@ -149,6 +150,10 @@ add_operator(activation_grad_ops train SRCS activation_grad_ops.cc DEPS ${op_DEP
 add_operator(elementwise_grad_op train SRCS elementwise_grad_ops.cc DEPS ${op_DEPS})
 add_operator(mul_grad_op train SRCS mul_grad_op.cc DEPS ${op_DEPS})
 add_operator(sgd_op train SRCS sgd_op.cc DEPS ${op_DEPS})
+
+# Only for XPU
+add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc

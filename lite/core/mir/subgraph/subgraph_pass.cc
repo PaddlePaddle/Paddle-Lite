@@ -20,6 +20,7 @@
 #include <vector>
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/subgraph/subgraph_detector.h"
+#include "lite/utils/env.h"
 
 namespace paddle {
 namespace lite {
@@ -40,6 +41,7 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  if (!GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
   std::unordered_set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/xpu/bridges/paddle_use_bridges.h"

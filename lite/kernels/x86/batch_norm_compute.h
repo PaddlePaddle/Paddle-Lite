@@ -59,26 +59,26 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     const int sample_size = x->dims().production() / N / C;
 
     // alloc memory
-    param.y->mutable_data<T>();
+    param.y->template mutable_data<T>();
     if (!param.is_test) {
-      param.mean_out->mutable_data<T>();
-      param.variance_out->mutable_data<T>();
-      param.saved_mean->mutable_data<T>();
-      param.saved_variance->mutable_data<T>();
+      param.mean_out->template mutable_data<T>();
+      param.variance_out->template mutable_data<T>();
+      param.saved_mean->template mutable_data<T>();
+      param.saved_variance->template mutable_data<T>();
     }
     if (!global_stats) {
       // saved_xx is use just in this batch of data
-      EigenVectorArrayMap<T> saved_mean_e(param.saved_mean->mutable_data<T>(),
-                                          C);
+      EigenVectorArrayMap<T> saved_mean_e(
+          param.saved_mean->template mutable_data<T>(), C);
       EigenVectorArrayMap<T> saved_variance_e(
-          param.saved_variance->mutable_data<T>(), C);
+          param.saved_variance->template mutable_data<T>(), C);
       saved_mean_e.setZero();
       saved_variance_e.setZero();
 
-      EigenVectorArrayMap<T> running_mean_arr(param.mean_out->mutable_data<T>(),
-                                              C);
+      EigenVectorArrayMap<T> running_mean_arr(
+          param.mean_out->template mutable_data<T>(), C);
       EigenVectorArrayMap<T> running_var_arr(
-          param.variance_out->mutable_data<T>(), C);
+          param.variance_out->template mutable_data<T>(), C);
 
       if ((N * sample_size) == 1) {
         LOG(WARNING) << "Only 1 element in normalization dimension, "
@@ -89,7 +89,8 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
       switch (param.data_layout) {
         case DATALAYOUT(kNCHW): {
-          ConstEigenArrayMap<T> x_arr(x->data<T>(), sample_size, N * C);
+          ConstEigenArrayMap<T> x_arr(
+              x->template data<T>(), sample_size, N * C);
           for (int nc = 0; nc < N * C; ++nc) {
             saved_mean_e(nc % C) += x_arr.col(nc).sum();
           }
@@ -115,33 +116,37 @@ class BatchNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // use SavedMean and SavedVariance to do normalize
     Eigen::Array<T, Eigen::Dynamic, 1> inv_std(C);
     if (global_stats) {
-      ConstEigenVectorArrayMap<T> var_arr(param.variance->data<T>(), C);
+      ConstEigenVectorArrayMap<T> var_arr(param.variance->template data<T>(),
+                                          C);
       inv_std = (var_arr + param.epsilon).sqrt().inverse();
     } else {
       EigenVectorArrayMap<T> saved_inv_std(
-          param.saved_variance->mutable_data<T>(), C);
+          param.saved_variance->template mutable_data<T>(), C);
       // inverse SavedVariance first, gradient will use it too.
       saved_inv_std = (saved_inv_std + param.epsilon).inverse().sqrt();
       inv_std = saved_inv_std;
     }
 
     ConstEigenVectorArrayMap<T> mean_arr(
-        global_stats ? param.mean->data<T>() : param.saved_mean->data<T>(), C);
+        global_stats ? param.mean->template data<T>()
+                     : param.saved_mean->template data<T>(),
+        C);
 
     //   ((x - est_mean) * (inv_var) * scale + bias
     //   formula transform ====>
     //   (x * inv_var * scale) + (bias - est_mean * inv_var * scale)
 
-    ConstEigenVectorArrayMap<T> scale_arr(param.scale->data<T>(), C);
-    ConstEigenVectorArrayMap<T> bias_arr(param.bias->data<T>(), C);
+    ConstEigenVectorArrayMap<T> scale_arr(param.scale->template data<T>(), C);
+    ConstEigenVectorArrayMap<T> bias_arr(param.bias->template data<T>(), C);
     Eigen::Array<T, Eigen::Dynamic, 1> new_scale = inv_std * scale_arr;
     Eigen::Array<T, Eigen::Dynamic, 1> new_bias =
         bias_arr - mean_arr * inv_std * scale_arr;
 
     switch (param.data_layout) {
       case DATALAYOUT(kNCHW): {
-        EigenArrayMap<T> y_arr(param.y->mutable_data<T>(), sample_size, N * C);
-        ConstEigenArrayMap<T> x_arr(x->data<T>(), sample_size, N * C);
+        EigenArrayMap<T> y_arr(
+            param.y->template mutable_data<T>(), sample_size, N * C);
+        ConstEigenArrayMap<T> x_arr(x->template data<T>(), sample_size, N * C);
         for (int nc = 0; nc < N * C; ++nc) {
           y_arr.col(nc) = x_arr.col(nc) * new_scale(nc % C) + new_bias(nc % C);
         }

@@ -1024,6 +1024,12 @@ struct SequenceExpandParam : ParamBase {
   int ref_level{-1};
 };
 
+struct SequenceUnpadParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Length{};
+  lite::Tensor* Out{};
+};
+
 struct SequenceExpandAsParam : ParamBase {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* y{nullptr};
@@ -1451,6 +1457,30 @@ struct CtcAlignParam : ParamBase {
   int blank{0};
   bool merge_repeated{true};
   int padding_value{0};
+};
+
+struct XPUResNet50Param : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> filter;
+  std::vector<lite::Tensor*> bias;
+  std::vector<lite::Tensor*> max_filter;
+  lite::Tensor* output{};
+};
+
+struct XPUMultiEncoderParam : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  lite::Tensor* fc_weight_max{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+
+  int n_layers{};
+  int head_num{};
+  int size_per_head{};
+  std::string act_type{};
 };
 
 }  // namespace operators
