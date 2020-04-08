@@ -23,6 +23,7 @@ lite_cc_library(mir_passes
       fusion/sequence_pool_concat_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
+      elimination/assign_value_eliminate_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
