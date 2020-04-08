@@ -30,10 +30,10 @@ enum PadLayout { kBatchLengthWidth = 0, kLengthBatchWidth };
 
 enum CopyType { kSeqToPad, kPadToSeq };
 
-inline static size_t MaximumSequenceLength(
-    const std::vector<size_t>& seq_offset) {
-  size_t seq_num = seq_offset.size() - 1;
-  size_t max_seq_len = 0;
+inline static uint64_t MaximumSequenceLength(
+    const std::vector<uint64_t>& seq_offset) {
+  uint64_t seq_num = seq_offset.size() - 1;
+  uint64_t max_seq_len = 0;
   for (size_t i = 0; i < seq_num; ++i) {
     max_seq_len = std::max(max_seq_len, seq_offset[i + 1] - seq_offset[i]);
   }
@@ -42,7 +42,7 @@ inline static size_t MaximumSequenceLength(
 
 inline static void CheckDims(const lite::DDim& seq_tensor_dims,
                              const lite::DDim& pad_tensor_dims,
-                             const std::vector<size_t>& seq_offset,
+                             const std::vector<uint64_t>& seq_offset,
                              int64_t padded_seq_len,
                              int64_t step_width,
                              const PadLayout& layout) {

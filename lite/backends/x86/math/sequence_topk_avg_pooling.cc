@@ -83,7 +83,7 @@ class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T> {
     auto pos_data = pos->mutable_data<int>(lite::TargetType::kX86);
 
     int offset = 0;
-    std::vector<size_t> vec_out_lod;
+    std::vector<uint64_t> vec_out_lod;
     vec_out_lod.reserve(batch_size + 1);
     for (int i = 0; i <= batch_size; ++i) {
       offset = row_lod[i];
@@ -95,7 +95,7 @@ class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T> {
     out->set_lod(lod_temp);
 
     auto in_data = in.data<T>();
-    auto out_data = out->mutable_data<T>(lite::TargetType::kX86);
+    auto out_data = out->template mutable_data<T>(lite::TargetType::kX86);
 
     T* sum_data = new T[max_k];
     for (int i = 0; i < batch_size; ++i) {

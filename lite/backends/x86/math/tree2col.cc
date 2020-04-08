@@ -104,12 +104,12 @@ class Tree2ColFunctor<lite::TargetType::kX86, T> {
     patch_size = processing_list.size();
 
     // T *patch_data =
-    //    patch->mutable_data<T>({static_cast<int64_t>(patch_size),
+    //    patch->template mutable_data<T>({static_cast<int64_t>(patch_size),
     //                            static_cast<int64_t>(patch_elem_size)},
     //                           cpu_place);
     patch->Resize({static_cast<int64_t>(patch_size),
                    static_cast<int64_t>(patch_elem_size)});
-    auto *patch_data = patch->mutable_data<T>(lite::TargetType::kX86);
+    auto *patch_data = patch->template mutable_data<T>(lite::TargetType::kX86);
     constant(context, patch, 0);
     const T *features = node_features.data<T>();
 
@@ -166,12 +166,12 @@ class Col2TreeFunctor<lite::TargetType::kX86, T> {
       }
     }
     // T *grad_data =
-    //    in_grad->mutable_data<T>({static_cast<int64_t>(node_count),
+    //    in_grad->template mutable_data<T>({static_cast<int64_t>(node_count),
     //                              static_cast<int64_t>(grad_elem_size)},
     //                             cpu_place);
     in_grad->Resize({static_cast<int64_t>(node_count),
                      static_cast<int64_t>(grad_elem_size)});
-    auto *grad_data = in_grad->mutable_data<T>(lite::TargetType::kX86);
+    auto *grad_data = in_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     constant(context, in_grad, 0);
     const T *out_g = out_grad.data<T>();
