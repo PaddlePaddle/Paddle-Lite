@@ -19,7 +19,7 @@
 namespace paddle {
 namespace lite {
 namespace fluid {
-using LoD = std::vector<std::vector<size_t>>;
+using LoD = std::vector<std::vector<uint64_t>>;
 
 static LoD ToAbsOffset(const LoD &in) {
   // the lowest level stores relative offsets

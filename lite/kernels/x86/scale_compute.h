@@ -41,8 +41,8 @@ class ScaleCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    scale_compute(param.x->data<T>(),
-                  param.output->mutable_data<T>(),
+    scale_compute(param.x->template data<T>(),
+                  param.output->template mutable_data<T>(),
                   param.x->dims().production(),
                   param.scale,
                   param.bias,

@@ -47,7 +47,7 @@ class ConcatCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int64_t axis = static_cast<int64_t>(param.axis);
     auto* axis_tensor = param.axis_tensor;
     if (axis_tensor != nullptr) {
-      auto* axis_tensor_data = axis_tensor->data<int>();
+      auto* axis_tensor_data = axis_tensor->template data<int>();
       axis = static_cast<int64_t>(axis_tensor_data[0]);
     }
 
@@ -60,7 +60,7 @@ class ConcatCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int concat_input_size = count(axis + 1, x_dims.size(), x_dims);
     const int top_concat_axis = out->dims()[axis];
     for (size_t i = 0; i < param.x.size(); ++i) {
-      const T* bottom_data = param.x[i]->data<T>();
+      const T* bottom_data = param.x[i]->template data<T>();
       const int64_t bottom_concat_axis = param.x[i]->dims()[axis];
       for (int n = 0; n < num_concat; ++n) {
         std::memcpy(
