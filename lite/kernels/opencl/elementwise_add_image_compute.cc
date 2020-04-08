@@ -59,14 +59,11 @@ void ElementwiseAddImageCompute::ReInitWhenNeeded() {
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/elementwise_add_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
-
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    kernel_ =
+        context.cl_context()->CreateKernel(kernel_func_name_,
+                                           "image/elementwise_add_kernel.cl",
+                                           build_options_,
+                                           time_stamp_);
 
     // compute image shape
     paddle::lite::CLImageConverterDefault default_convertor;
@@ -118,13 +115,12 @@ void ElementwiseAddImageCompute::Run() {
 #endif
 
   cl_int status;
-  auto kernel = kernel_;
   if (y_dims.size() == 4) {
-    status = kernel.setArg(0, *x_img);
+    status = kernel_->setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *y_img);
+    status = kernel_->setArg(1, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_img);
+    status = kernel_->setArg(2, *out_img);
     CL_CHECK_FATAL(status);
   } else if (y_dims.size() == 1) {
     if (axis == x_dims.size() - 1 || axis == x_dims.size() - 3) {
@@ -132,13 +128,13 @@ void ElementwiseAddImageCompute::Run() {
 #ifndef LITE_SHUTDOWN_LOG
       VLOG(4) << "tensor_w:" << tensor_w;
 #endif
-      status = kernel.setArg(0, *x_img);
+      status = kernel_->setArg(0, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(1, *y_img);
+      status = kernel_->setArg(1, *y_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(2, *out_img);
+      status = kernel_->setArg(2, *out_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, tensor_w);
+      status = kernel_->setArg(3, tensor_w);
       CL_CHECK_FATAL(status);
     } else {
       LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
@@ -154,7 +150,7 @@ void ElementwiseAddImageCompute::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       cl::NullRange,

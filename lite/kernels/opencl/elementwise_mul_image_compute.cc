@@ -71,10 +71,11 @@ class ElementwiseMulImageCompute
     VLOG(4) << "bias_dims.size():" << bias_dims.size();
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/elementwise_mul_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    kernel_ =
+        context.cl_context()->CreateKernel(kernel_func_name_,
+                                           "image/elementwise_mul_kernel.cl",
+                                           build_options_,
+                                           time_stamp_);
   }
 
   void Run() override {
@@ -115,66 +116,61 @@ class ElementwiseMulImageCompute
             << out_img_shape[1];
 #endif
 
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
     auto bias_dims = y->dims();
     auto x_dims = x->dims();
-
     if (bias_dims == x_dims) {
       // kernel_func_name_ = "elementwise_mul";
-      cl_int status = kernel.setArg(0, *x_img);
+      cl_int status = kernel_->setArg(0, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(1, *y_img);
+      status = kernel_->setArg(1, *y_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(2, *out_img);
+      status = kernel_->setArg(2, *out_img);
       CL_CHECK_FATAL(status);
     } else {
       const int bias_dim_size = bias_dims.size();
       if (bias_dim_size == 1) {
         // kernel_func_name_ = "channel_mul_d1";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel_->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel_->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel_->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel_->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 2) {
         // kernel_func_name_ = "channel_mul_d2";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel_->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel_->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel_->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel_->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 3) {
         // kernel_func_name_ = "channel_mul_d3";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel_->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel_->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel_->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel_->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 4) {
         // kernel_func_name_ = "channel_mul_d4";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel_->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel_->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel_->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel_->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else {
         LOG(FATAL) << "Unsupported ElementwiseMul with x_dims:" << x_dims
@@ -186,7 +182,7 @@ class ElementwiseMulImageCompute
         cl::NDRange{static_cast<cl::size_type>(x_img_width),
                     static_cast<cl::size_type>(x_img_height)};
     auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -205,6 +201,7 @@ class ElementwiseMulImageCompute
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 }  // namespace opencl

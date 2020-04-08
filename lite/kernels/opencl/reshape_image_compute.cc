@@ -36,10 +36,10 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/reshape_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    kernel_ = context.cl_context()->CreateKernel(kernel_func_name_,
+                                                 "image/reshape_kernel.cl",
+                                                 build_options_,
+                                                 time_stamp_);
   }
 
   void Run() override {
@@ -111,42 +111,38 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << TargetToStr(x->target());
     VLOG(4) << TargetToStr(param.output->target());
 #endif
 
-    int arg_idx = 0;
     cl_int status;
-    status = kernel.setArg(arg_idx, *x_image);
+    status = kernel_->setArg(0, *x_image);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_image);
+    status = kernel_->setArg(1, *out_image);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_C);
+    status = kernel_->setArg(2, out_C);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_H);
+    status = kernel_->setArg(3, out_H);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_W);
+    status = kernel_->setArg(4, out_W);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_W);
+    status = kernel_->setArg(5, in_W);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_H);
+    status = kernel_->setArg(6, in_H);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_Stride0);
+    status = kernel_->setArg(7, in_Stride0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_Stride1);
+    status = kernel_->setArg(8, in_Stride1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_Stride2);
+    status = kernel_->setArg(9, in_Stride2);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_Stride0);
+    status = kernel_->setArg(10, out_Stride0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_Stride1);
+    status = kernel_->setArg(11, out_Stride1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_Stride2);
+    status = kernel_->setArg(12, out_Stride2);
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
@@ -155,7 +151,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                     static_cast<size_t>(default_work_size.data()[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -170,6 +166,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 }  // namespace opencl

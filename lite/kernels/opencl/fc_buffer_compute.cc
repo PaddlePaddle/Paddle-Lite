@@ -75,13 +75,10 @@ class FcCompute
       }
 
       auto& context = ctx_->As<OpenCLContext>();
-      context.cl_context()->AddKernel(kernel_func_name_,
-                                      "buffer/fc_kernel.cl",
-                                      build_options_,
-                                      time_stamp_);
-      STL::stringstream kernel_key;
-      kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-      kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+      kernel_ = context.cl_context()->CreateKernel(kernel_func_name_,
+                                                   "buffer/fc_kernel.cl",
+                                                   build_options_,
+                                                   time_stamp_);
 
       // compute global work size
       GetGlobalWorkSize();
@@ -106,25 +103,25 @@ class FcCompute
 
     auto kernel = kernel_;
     cl_int status;
-    status = kernel.setArg(0, *x_buf);
+    status = kernel_->setArg(0, *x_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *w_buf);
+    status = kernel_->setArg(1, *w_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *bias_buf);
+    status = kernel_->setArg(2, *bias_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, *out_buf);
+    status = kernel_->setArg(3, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, static_cast<const int>(m_));
+    status = kernel_->setArg(4, static_cast<const int>(m_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<const int>(n_));
+    status = kernel_->setArg(5, static_cast<const int>(n_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, static_cast<const int>(k_));
+    status = kernel_->setArg(6, static_cast<const int>(k_));
     CL_CHECK_FATAL(status);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel.get()),
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
@@ -143,7 +140,7 @@ class FcCompute
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
-  cl::Kernel kernel_;
+  std::shared_ptr<cl::Kernel> kernel_;
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

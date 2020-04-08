@@ -31,10 +31,11 @@ class FusionElementwiseAddActivationImageCompute
   void PrepareForRun() override {
     build_options_ += " -DRELU";
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/elementwise_add_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    kernel_ =
+        context.cl_context()->CreateKernel(kernel_func_name_,
+                                           "image/elementwise_add_kernel.cl",
+                                           build_options_,
+                                           time_stamp_);
     ele_param_ = param_.get_mutable<param_t>();
     auto act_t = static_cast<param_t*>(ele_param_)->act_type;
     VLOG(4) << "act: " << act_t;

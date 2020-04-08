@@ -46,7 +46,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
+    kernel_ = context.cl_context()->CreateKernel(
         kernel_func_name_, "image/pool_kernel.cl", build_options_, time_stamp_);
   }
 
@@ -111,10 +111,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         out_image_shape["width"], out_image_shape["height"]);
     //    VLOG(4) << "out_image" << out_img;
 
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
     int c_block = (out_dims[1] + 3) / 4;
     int w = out_dims[3];
     int nh = out_dims[0] * out_dims[2];
@@ -124,34 +120,33 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
             << "  " << nh << "  ";
 #endif
     cl_int status;
-    int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_img);
+    status = kernel_->setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel_->setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[2]));
+    status = kernel_->setArg(2, static_cast<const int>(in_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[3]));
+    status = kernel_->setArg(3, static_cast<const int>(in_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[2]));
+    status = kernel_->setArg(4, static_cast<const int>(out_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[3]));
+    status = kernel_->setArg(5, static_cast<const int>(out_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[0]));
+    status = kernel_->setArg(6, static_cast<const int>(ksize[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[1]));
+    status = kernel_->setArg(7, static_cast<const int>(ksize[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
+    status = kernel_->setArg(8, static_cast<const int>(strides[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
+    status = kernel_->setArg(9, static_cast<const int>(strides[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[2]));
+    status = kernel_->setArg(10, static_cast<const int>(paddings[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+    status = kernel_->setArg(11, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -162,6 +157,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
  private:
+  std::shared_ptr<cl::Kernel> kernel_;
   std::string kernel_func_name_{"pool_"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};

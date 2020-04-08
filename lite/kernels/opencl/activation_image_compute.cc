@@ -77,14 +77,10 @@ class ActivationComputeImageDefault
 #endif
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/activation_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
-
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    kernel_ = context.cl_context()->CreateKernel(kernel_func_name_,
+                                                 "image/activation_kernel.cl",
+                                                 build_options_,
+                                                 time_stamp_);
   }
 
   void ReInitWhenNeeded() override {
@@ -118,15 +114,14 @@ class ActivationComputeImageDefault
     auto* out_img = act_param_->Out->mutable_data<half_t, cl::Image2D>(
         out_img_shape_[0], out_img_shape_[1]);
 
-    auto kernel = kernel_;
     cl_int status;
-    status = kernel.setArg(0, *x_img);
+    status = kernel_->setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *out_img);
+    status = kernel_->setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, threshold_);
+    status = kernel_->setArg(2, threshold_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, scale_);
+    status = kernel_->setArg(3, scale_);
     CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -148,7 +143,7 @@ class ActivationComputeImageDefault
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
@@ -168,7 +163,7 @@ class ActivationComputeImageDefault
   std::string kernel_func_name_{};
   float threshold_{6.f};
   float scale_{1.f};
-  cl::Kernel kernel_;
+  std::shared_ptr<cl::Kernel> kernel_;
   bool first_epoch_for_reinit_{true};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};

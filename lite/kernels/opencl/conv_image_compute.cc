@@ -368,25 +368,17 @@ void ConvImageCompute::PrepareForRun() {
 
   build_options_.push_back(build_options_single);
 
-  for (size_t i = 0; i < kernel_func_names_.size(); i++) {
-    context.cl_context()->AddKernel(kernel_func_names_[i],
-                                    kernel_func_paths_[i],
-                                    build_options_[i],
-                                    time_stamp_);
-  }
+  kernel_ = context.cl_context()->CreateKernel(kernel_func_names_[0],
+                                               kernel_func_paths_[0],
+                                               build_options_[0],
+                                               time_stamp_);
 
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
-
-  std::stringstream kernel_key;
-  kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
-  kernel_ = context.cl_context()->GetKernel(kernel_key.str());
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
   size_t max_work_group_size = 0;
-  kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
-                                   CL_KERNEL_WORK_GROUP_SIZE,
-                                   &max_work_group_size);
+  kernel_->getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                    CL_KERNEL_WORK_GROUP_SIZE,
+                                    &max_work_group_size);
 
   VLOG(4) << "max_work_group_size: " << max_work_group_size;
 
@@ -501,49 +493,48 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, offset);
+  status = kernel_->setArg(++arg_idx, offset);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_c_block);
+  status = kernel_->setArg(++arg_idx, input_c_block);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_c);
+  status = kernel_->setArg(++arg_idx, input_c);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+  status = kernel_->setArg(++arg_idx, input_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, output_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, default_w_blk_);
+  status = kernel_->setArg(++arg_idx, default_w_blk_);
   CL_CHECK_FATAL(status);
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       local_work_size_,
@@ -649,56 +640,55 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
   if (has_bias) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
-  auto kernel = kernel_;
 
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_c_block);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, offset);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_c_block);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, input_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_channel);
+  status = kernel_->setArg(++arg_idx, output_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_channel);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_width);
+  status = kernel_->setArg(++arg_idx, output_channel);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_height);
+  status = kernel_->setArg(++arg_idx, filter_channel);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, new_groups);
+  status = kernel_->setArg(++arg_idx, filter_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, filter_height);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, new_groups);
   CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -708,7 +698,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
 #endif
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       cl::NullRange,
@@ -784,48 +774,46 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
-
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, paddings[0]);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, paddings[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, batch);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_channel);
+  status = kernel_->setArg(++arg_idx, batch);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_channel);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, output_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -835,7 +823,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
 #endif
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       local_work_size_,
@@ -917,46 +905,44 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
-
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_c_block);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, offset);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_c_block);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, input_height);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -966,7 +952,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
 #endif
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       cl::NullRange,
@@ -1042,50 +1028,49 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, paddings[0]);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, paddings[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, batch);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_channel);
+  status = kernel_->setArg(++arg_idx, batch);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_channel);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, output_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
   //  VLOG(4) << "out_image: " << out_image;
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       local_work_size_,
@@ -1167,46 +1152,44 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
-
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_c_block);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, offset);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_c_block);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, input_height);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -1216,7 +1199,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
 #endif
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       cl::NullRange,
@@ -1290,49 +1273,47 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
-
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, paddings[0]);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, paddings[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, batch);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_channel);
+  status = kernel_->setArg(++arg_idx, batch);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_channel);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, output_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       local_work_size_,
@@ -1369,19 +1350,17 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   auto* output_img = param.output->mutable_data<half_t, cl::Image2D>(
       image_shape["width"], image_shape["height"]);
 
-  auto kernel = kernel_;
-
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_img);
+  status = kernel_->setArg(++arg_idx, *input_img);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_img);
+  status = kernel_->setArg(++arg_idx, *filter_img);
   CL_CHECK_FATAL(status);
 
   const bool has_bias = param.bias != nullptr;
@@ -1393,30 +1372,30 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *output_img);
+  status = kernel_->setArg(++arg_idx, *output_img);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(strides[0]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(paddings[0]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(dilations[0]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(dilations[0]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[1]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(x_dims[1]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[3]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(x_dims[3]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[2]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(x_dims[2]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[3]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(output_dims[3]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       local_work_size_,
@@ -1456,8 +1435,6 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   auto* output_img = param.output->mutable_data<half_t, cl::Image2D>(
       image_shape["width"], image_shape["height"]);
 
-  auto kernel = kernel_;
-
 #ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << "setArg";
   VLOG(4) << "strides = " << strides[0];
@@ -1472,15 +1449,15 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
 
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_img);
+  status = kernel_->setArg(++arg_idx, *input_img);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_img);
+  status = kernel_->setArg(++arg_idx, *filter_img);
   CL_CHECK_FATAL(status);
   const bool has_bias = param.bias != nullptr;
   const bool is_element_wise_bias =
@@ -1491,30 +1468,30 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *output_img);
+  status = kernel_->setArg(++arg_idx, *output_img);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(strides[0]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(offset));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(offset));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(dilations[0]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(dilations[0]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(input_c_block));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(input_c_block));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[3]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(x_dims[3]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[2]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(x_dims[2]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[3]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(output_dims[3]));
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
+  status = kernel_->setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       cl::NullRange,
@@ -1598,50 +1575,48 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
     bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
   }
 
-  auto kernel = kernel_;
-
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
+  status = kernel_->setArg(arg_idx, c_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
+  status = kernel_->setArg(++arg_idx, w_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
+  status = kernel_->setArg(++arg_idx, nh_blk_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image);
+  status = kernel_->setArg(++arg_idx, *input_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image);
+  status = kernel_->setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image);
+    status = kernel_->setArg(++arg_idx, *bias_image);
     CL_CHECK_FATAL(status);
   }
-  status = kernel.setArg(++arg_idx, *out_image);
+  status = kernel_->setArg(++arg_idx, *out_image);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, strides[0]);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_c_block);
+  status = kernel_->setArg(++arg_idx, strides[0]);
   CL_CHECK_FATAL(status);
 
-  status = kernel.setArg(++arg_idx, dilations[0]);
+  status = kernel_->setArg(++arg_idx, offset);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_width);
+  status = kernel_->setArg(++arg_idx, input_c_block);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_height);
+
+  status = kernel_->setArg(++arg_idx, dilations[0]);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_width);
+  status = kernel_->setArg(++arg_idx, input_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_height);
+  status = kernel_->setArg(++arg_idx, input_height);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_width);
+  status = kernel_->setArg(++arg_idx, output_width);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_height);
+  status = kernel_->setArg(++arg_idx, output_height);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, filter_width);
+  CL_CHECK_FATAL(status);
+  status = kernel_->setArg(++arg_idx, filter_height);
   CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -1651,7 +1626,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
 #endif
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *(kernel_.get()),
       cl::NullRange,
       global_work_size_,
       cl::NullRange,

@@ -60,7 +60,7 @@ class ElementwiseAddImageCompute
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
-  cl::Kernel kernel_;
+  std::shared_ptr<cl::Kernel> kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::shared_ptr<cl::Event> event_{new cl::Event};

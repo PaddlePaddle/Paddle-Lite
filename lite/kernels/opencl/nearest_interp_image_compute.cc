@@ -38,10 +38,11 @@ class NearestInterpComputeImageDefault
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/nearest_interp_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    kernel_ =
+        context.cl_context()->CreateKernel(kernel_func_name_,
+                                           "image/nearest_interp_kernel.cl",
+                                           build_options_,
+                                           time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -67,26 +68,23 @@ class NearestInterpComputeImageDefault
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_img);
+    cl_int status;
+    status = kernel_->setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel_->setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const float>(scale_h));
+    status = kernel_->setArg(2, static_cast<const float>(scale_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const float>(scale_w));
+    status = kernel_->setArg(3, static_cast<const float>(scale_w));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_h));
+    status = kernel_->setArg(4, static_cast<const int>(in_dims_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_h));
+    status = kernel_->setArg(5, static_cast<const int>(out_dims_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_w));
+    status = kernel_->setArg(6, static_cast<const int>(in_dims_w));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
+    status = kernel_->setArg(7, static_cast<const int>(out_dims_w));
     CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -110,7 +108,7 @@ class NearestInterpComputeImageDefault
                     static_cast<cl::size_type>(default_work_size.data()[1]),
                     static_cast<cl::size_type>(default_work_size.data()[2])};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -125,6 +123,7 @@ class NearestInterpComputeImageDefault
   std::string build_options_{" -DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 }  // namespace opencl

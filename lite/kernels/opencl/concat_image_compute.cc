@@ -40,10 +40,10 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       kernel_func_name_ = "concat_mul";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/concat_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    kernel_ = context.cl_context()->CreateKernel(kernel_func_name_,
+                                                 "image/concat_kernel.cl",
+                                                 build_options_,
+                                                 time_stamp_);
 
     auto axis = concat_param_->axis;
     auto inputs = concat_param_->x;
@@ -118,8 +118,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
 
     auto inputs = param.x;
     int arg_idx = 0;
@@ -164,31 +162,30 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
             << (image_shape["height"]);
 #endif
 
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     int out_w = x_dims[x_dims.size() - 1];
     int out_c = x_dims[1];
     if (inputs.size() == 2) {
       auto* x_buf0 = inputs[0]->data<half_t, cl::Image2D>();
       auto* x_buf1 = inputs[1]->data<half_t, cl::Image2D>();
-      cl_int status = kernel.setArg(arg_idx, *x_buf0);
+      cl_int status = kernel_->setArg(arg_idx, *x_buf0);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *x_buf1);
+      status = kernel_->setArg(++arg_idx, *x_buf1);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_buf);
+      status = kernel_->setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, flag_);
+      status = kernel_->setArg(++arg_idx, flag_);
       CL_CHECK_FATAL(status);
-      status =
-          kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
+      status = kernel_->setArg(++arg_idx,
+                               static_cast<int>(inputs[0]->dims()[axis_]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_c);
+      status = kernel_->setArg(++arg_idx, out_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_w);
+      status = kernel_->setArg(++arg_idx, out_w);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, width_);
+      status = kernel_->setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
+          *(kernel_.get()),
           cl::NullRange,
           global_work_size,
           cl::NullRange,
@@ -213,25 +210,25 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                         static_cast<cl::size_type>(image_shape["width"] /
                                                    in_dims[in_dims.size() - 1]),
                         static_cast<cl::size_type>(image_shape["height"])};
-        cl_int status = kernel.setArg(arg_idx, *x_buf);
+        cl_int status = kernel_->setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *out_buf);
+        status = kernel_->setArg(++arg_idx, *out_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, flag_);
+        status = kernel_->setArg(++arg_idx, flag_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, start);
+        status = kernel_->setArg(++arg_idx, start);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_c);
+        status = kernel_->setArg(++arg_idx, out_c);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_w);
+        status = kernel_->setArg(++arg_idx, out_w);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, in_w);
+        status = kernel_->setArg(++arg_idx, in_w);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, width_);
+        status = kernel_->setArg(++arg_idx, width_);
         CL_CHECK_FATAL(status);
         CL_CHECK_FATAL(status);
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-            kernel,
+            *(kernel_.get()),
             cl::NullRange,
             global_work_size,
             cl::NullRange,
@@ -255,6 +252,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string build_options_{" -DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 }  // namespace opencl

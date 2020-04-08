@@ -71,7 +71,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int default_w_blk_ = 1;
   int default_nh_blk_ = 1;
 
-  cl::Kernel kernel_;
+  std::shared_ptr<cl::Kernel> kernel_;
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
