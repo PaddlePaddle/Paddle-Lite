@@ -163,6 +163,11 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
+  // XPU only, set the size of the workspace memory from L3 cache for the
+  // current thread.
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  // XPU only, specify the target device ID for the current thread.
+  void set_xpu_dev_per_thread(int dev_no = 0);
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip
