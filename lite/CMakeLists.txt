@@ -90,7 +90,7 @@ if (LITE_WITH_PYTHON)
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite.so"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.so")
     add_custom_target(publish_inference_python_installer ${TARGET}
-        COMMAND python setup.py bdist_wheel
+        COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
         WORKING_DIRECTORY ${INFER_LITE_PUBLISH_ROOT}/python/install/
         DEPENDS publish_inference_python_lib)
     add_custom_target(publish_inference_python_light_demo ${TARGET}
