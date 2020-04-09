@@ -29,23 +29,23 @@ namespace core {
  */
 // TODO(Superjomn) unify all the type representation across the lite framework.
 enum class Type {
-  _unk = -1,
+  UNK = -1,
   // primary types
-  _int32,
-  _int64,
-  _float32,
-  _float64,
-  _bool,
-  _string,
+  INT32,
+  INT64,
+  FLOAT32,
+  Float64,
+  BOOL,
+  STRING,
   // primary list type
-  _char_list,
+  CHARLIST,
   // list types
-  _list,
+  LIST,
   // enum type
-  _enum,
-  _float16,
+  ENUM,
+  FLOAT16,
   // number of types
-  __num__,
+  NUM,
 };
 
 enum class FluidType {
