@@ -544,49 +544,33 @@ void SaveModelNaive(const std::string &model_dir,
                     const Scope &exec_scope,
                     const cpp::ProgramDesc &cpp_prog,
                     bool combined) {
+  MkDirRecur(model_dir);
   // Save program
-  const std::string prog_path = model_dir + ".nb";
+  const std::string prog_path = model_dir + "/__model__.nb";
   naive_buffer::BinaryTable table;
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
   TransformProgramDescCppToAny(cpp_prog, &nb_prog);
   nb_proto_prog.Save();
+  table.SaveToFile(prog_path);
 
-  // Save meta_version(uint16) into file
-  naive_buffer::BinaryTable meta_version_table;
-  meta_version_table.Require(sizeof(uint16_t));
-  uint16_t meta_version = 0;
-  memcpy(meta_version_table.cursor(), &meta_version, sizeof(uint16_t));
-  meta_version_table.Consume(sizeof(uint16_t));
-  meta_version_table.SaveToFile(prog_path);
+  // NOTE: Only main block be used now.
+  if (combined) {
+    const std::string combined_params_path = model_dir + "/param.nb";
+    SaveCombinedParamsNaive(combined_params_path, exec_scope, cpp_prog);
+  } else {
+    auto prog = cpp_prog;
+    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+        continue;
+      const std::string path = model_dir + "/" + var.Name() + ".nb";
+      SaveParamNaive(path, exec_scope, var.Name());
+    }
+  }
 
-  // Save lite_version(char[16]) into file
-  const int paddle_version_length = 16 * sizeof(char);
-  naive_buffer::BinaryTable paddle_version_table;
-  paddle_version_table.Require(paddle_version_length);
-  std::string paddle_version = version();
-  memcpy(paddle_version_table.cursor(),
-         paddle_version.c_str(),
-         paddle_version_length);
-  paddle_version_table.Consume(paddle_version_length);
-  paddle_version_table.AppendToFile(prog_path);
-  VLOG(4) << "paddle_version:" << paddle_version;
-
-  // Save topology_size(uint64) into file
-  naive_buffer::BinaryTable topology_size_table;
-  topology_size_table.Require(sizeof(uint64_t));
-  uint64_t topology_size = table.size();
-  memcpy(topology_size_table.cursor(), &topology_size, sizeof(uint64_t));
-  topology_size_table.Consume(sizeof(uint64_t));
-  topology_size_table.AppendToFile(prog_path);
-
-  // save topology data into model file
-  table.AppendToFile(prog_path);
-  // Save Params
-  SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
-
-  LOG(INFO) << "Save naive buffer model in '" << model_dir
-            << ".nb' successfully";
+  LOG(INFO) << "Save naive buffer model in " << model_dir << " successfully";
 }
 #endif
 
