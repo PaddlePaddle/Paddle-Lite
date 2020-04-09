@@ -117,9 +117,15 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
+           "mlu_subgraph_pass",
+
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+
+           "mlu_postprocess_pass",
+
            "memory_optimize_pass"}};
+
       if (passes.size() == 1) {
         passes_local.push_back(passes[0]);
       }

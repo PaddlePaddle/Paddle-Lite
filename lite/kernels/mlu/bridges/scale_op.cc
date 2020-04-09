@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,31 +30,37 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[MLU] Converting " + op_type + "...";
 
-  // Get op's attributes
+  // Create act node and set params from op
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
-
-  // nchw axis to nhwc aixs
-  int nchw_to_nhwc_aixs_map[4] = {0, 3, 1, 2};
-  int axis = 1;
-  if (op_info->HasAttr("axis")) {
-    axis = op_info->GetAttr<int>("axis");
-    if (axis < 0) {
-      axis = output_dims.size() + axis;
-    }
-  }
-  int nhwc_axis = nchw_to_nhwc_aixs_map[axis];
-
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
-  cnmlBaseOp_t softmax_op;
-  CNML_CALL(cnmlCreateNdSoftmaxOp(&softmax_op,
-                                  nhwc_axis,
-                                  graph->GetNode(x_var_name)->mlu_tensor(),
-                                  output_tensor->mlu_tensor()));
-  graph->FuseOp(softmax_op);
+  auto bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
+  auto scale = op_info->GetAttr<float>("scale");
+  auto bias = op_info->GetAttr<float>("bias");
+  auto beta = bias_after_scale ? bias : bias * scale;
+
+  std::vector<int64_t> shape = {1, 1, 1, 1};
+
+  std::string prefix = string_format("_%p", op);
+  auto alpha_tensor = graph->AddNode(
+      "Alpha" + prefix, shape, CNML_CONST, CNML_NHWC, graph->FPType());
+  auto beta_tensor = graph->AddNode(
+      "Beta" + prefix, shape, CNML_CONST, CNML_NHWC, graph->FPType());
+
+  graph->BindConstRawData("Alpha" + prefix, &scale, 1);
+  graph->BindConstRawData("Beta" + prefix, &beta, 1);
+
+  auto input_tensor = graph->GetNode(x_var_name);
+  cnmlBaseOp_t scale_op;
+  CNML_CALL(cnmlCreateScaleOp(&scale_op,
+                              input_tensor->mlu_tensor(),
+                              output_tensor->mlu_tensor(),
+                              alpha_tensor->mlu_tensor(),
+                              beta_tensor->mlu_tensor()));
+  graph->FuseOp(scale_op);
   return SUCCESS;
 }
 
@@ -63,6 +69,6 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(softmax,
+REGISTER_SUBGRAPH_BRIDGE(scale,
                          kMLU,
-                         paddle::lite::subgraph::mlu::SoftmaxConverter);
+                         paddle::lite::subgraph::mlu::ScaleConverter);

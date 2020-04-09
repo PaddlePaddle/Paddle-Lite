@@ -84,7 +84,7 @@ struct FPTypeTraits<paddle::lite_api::PrecisionType::kFloat> {
 
 template <>
 struct FPTypeTraits<paddle::lite_api::PrecisionType::kFP16> {
-  typedef ::paddle::lite::fluid::float16 T;
+  typedef paddle::lite::fluid::float16 T;
 };
 
 }  // namespace mlu

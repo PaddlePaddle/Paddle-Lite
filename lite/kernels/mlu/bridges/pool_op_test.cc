@@ -24,8 +24,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int PoolConverter(void* ctx, OpLite* op);
-
 void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
@@ -182,12 +180,7 @@ void test_pool(int bs,
             {0, 2, 3, 1});
 
   auto os = out->dims();
-  out->Resize({static_cast<int>(os[0]),
-               static_cast<int>(os[2]),
-               static_cast<int>(os[3]),
-               static_cast<int>(os[1])});
   x->CopyDataFrom(input_trans);
-  x->Resize({bs, ih, iw, ic});
 
   LaunchOp(op, {x_var_name}, {out_var_name});
 
@@ -275,6 +268,4 @@ TEST(MLUBridges, pool) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         pool2d,
-                         paddle::lite::subgraph::mlu::PoolConverter);
+USE_SUBGRAPH_BRIDGE(pool2d, kMLU)
