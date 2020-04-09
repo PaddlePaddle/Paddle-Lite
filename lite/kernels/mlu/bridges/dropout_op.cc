@@ -61,8 +61,8 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto beta_tensor = graph->AddNode(
       beta_var_name, shape, CNML_CONST, CNML_NHWC, graph->FPType());
 
-  graph->BindConstRawData("Alpha" + prefix, &alpha, 1);
-  graph->BindConstRawData("Beta" + prefix, &beta, 1);
+  graph->BindConstRawData(alpha_var_name, &alpha, 1);
+  graph->BindConstRawData(beta_var_name, &beta, 1);
 
   auto input_tensor = graph->GetNode(x_var_name);
   cnmlBaseOp_t scale_op;

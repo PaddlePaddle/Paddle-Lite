@@ -85,9 +85,9 @@ void test_dropout(int bs,
   opdesc.SetAttr("seed", seed);
   opdesc.SetAttr("dropout_implementation", dropout_implementation);
   opdesc.SetAttr("dropout_prob", dropout_prob);
-  VLOG(6) << "mask: " << mask->dims()[0] << std::endl;
   // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::DropoutOp>(opdesc, &scope);
+  VLOG(6) << "mask: " << mask << std::endl;
   dropout_ref(op);
   out_ref->CopyDataFrom(*out);
 
