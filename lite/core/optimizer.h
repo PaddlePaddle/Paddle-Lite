@@ -73,7 +73,7 @@ class Optimizer {
            "lite_sequence_pool_concat_fuse_pass",         //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
-           "lite_elementwise_add_activation_fuse_pass",  //
+           "lite_elementwise_activation_fuse_pass",  //
 #endif
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer

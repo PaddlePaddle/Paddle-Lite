@@ -21,21 +21,21 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void ElementwiseAddActivationFuser::BuildPattern() {
+void ElementwiseActivationFuser::BuildPattern() {
   // create input nodes.
-  auto* x = VarNode("x")->assert_is_op_input("elementwise_add", "X")->AsInput();
-  auto* y = VarNode("y")->assert_is_op_input("elementwise_add", "Y")->AsInput();
+  auto* x = VarNode("x")->assert_is_op_input(eltwise_type_, "X")->AsInput();
+  auto* y = VarNode("y")->assert_is_op_input(eltwise_type_, "Y")->AsInput();
 
   // create op nodes
-  auto* add = OpNode("add", "elementwise_add")
-                  ->assert_is_op("elementwise_add")
+  auto* elt = OpNode("elt", eltwise_type_)
+                  ->assert_is_op(eltwise_type_)
                   ->AsIntermediate();
   auto* act =
       OpNode("act", act_type_)->assert_is_op(act_type_)->AsIntermediate();
 
   // create intermediate nodes
-  auto* add_out = VarNode("add_out")
-                      ->assert_is_op_output("elementwise_add", "Out")
+  auto* elt_out = VarNode("add_out")
+                      ->assert_is_op_output(eltwise_type_, "Out")
                       ->assert_is_op_input(act_type_, "X")
                       ->AsIntermediate();
 
@@ -44,21 +44,29 @@ void ElementwiseAddActivationFuser::BuildPattern() {
       VarNode("output")->assert_is_op_output(act_type_, "Out")->AsOutput();
 
   // create topology.
-  std::vector<PMNode*> add_inputs{x, y};
-  add_inputs >> *add >> *add_out;
-  *add_out >> *act >> *out;
+  std::vector<PMNode*> elt_inputs{x, y};
+  elt_inputs >> *elt >> *elt_out;
+  *elt_out >> *act >> *out;
 }
 
-void ElementwiseAddActivationFuser::InsertNewNode(SSAGraph* graph,
-                                                  const key2nodes_t& matched) {
+void ElementwiseActivationFuser::InsertNewNode(SSAGraph* graph,
+                                               const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
-  auto op =
-      LiteOpRegistry::Global().Create("fusion_elementwise_add_activation");
-  auto old_op = matched.at("add")->stmt()->op();
+  std::shared_ptr<lite::OpLite> op;
+  if (eltwise_type_ == "elementwise_add") {
+    op = LiteOpRegistry::Global().Create("fusion_elementwise_add_activation");
+  } else if (eltwise_type_ == "elementwise_sub") {
+    op = LiteOpRegistry::Global().Create("fusion_elementwise_sub_activation");
+  } else if (eltwise_type_ == "elementwise_mul") {
+    op = LiteOpRegistry::Global().Create("fusion_elementwise_mul_activation");
+  } else {
+    LOG(FATAL) << "not supported elementwise_type: " << eltwise_type_;
+  }
+
+  auto old_op = matched.at("elt")->stmt()->op();
   auto* scope = old_op->scope();
   auto& valid_places = old_op->valid_places();
   op->Attach(op_desc, scope);
-
   auto* new_op_node = graph->GraphCreateInstructNode(op, valid_places);
 
   IR_NODE_LINK_TO(matched.at("x"), new_op_node);
@@ -66,12 +74,20 @@ void ElementwiseAddActivationFuser::InsertNewNode(SSAGraph* graph,
   IR_NODE_LINK_TO(new_op_node, matched.at("output"));
 }
 
-cpp::OpDesc ElementwiseAddActivationFuser::GenOpDesc(
-    const key2nodes_t& matched) {
-  auto* desc = matched.at("add")->stmt()->op_info();
+cpp::OpDesc ElementwiseActivationFuser::GenOpDesc(const key2nodes_t& matched) {
+  auto* desc = matched.at("elt")->stmt()->op_info();
 
   cpp::OpDesc op_desc;
-  op_desc.SetType("fusion_elementwise_add_activation");
+  if (eltwise_type_ == "elementwise_add") {
+    op_desc.SetType("fusion_elementwise_add_activation");
+  } else if (eltwise_type_ == "elementwise_sub") {
+    op_desc.SetType("fusion_elementwise_sub_activation");
+  } else if (eltwise_type_ == "elementwise_mul") {
+    op_desc.SetType("fusion_elementwise_mul_activation");
+  } else {
+    LOG(FATAL) << "not supported elementwise_type: " << eltwise_type_;
+  }
+
   op_desc.SetInput("X", {matched.at("x")->arg()->name});
   op_desc.SetInput("Y", {matched.at("y")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("output")->arg()->name});
