@@ -53,8 +53,6 @@ class TargetWrapper<TARGET(kMLU)> {
   static cnmlCoreVersion_t MLUCoreVersion();
   static int MLUCoreNumber();
   static bool UseFirstConv();
-  // static const std::vector<float>& MeanVec() const;
-  // static const std::vector<float>& StdVec() const;
   static const std::vector<float>& MeanVec();
   static const std::vector<float>& StdVec();
   static DataLayoutType InputLayout();

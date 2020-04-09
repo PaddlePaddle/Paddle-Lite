@@ -116,12 +116,8 @@ int TargetWrapperMlu::MLUCoreNumber() { return mlu_core_number_; }
 
 bool TargetWrapperMlu::UseFirstConv() { return use_first_conv_; }
 
-// const std::vector<float>& TargetWrapperMlu::MeanVec() const { return
-// mean_vec_; }
 const std::vector<float>& TargetWrapperMlu::MeanVec() { return mean_vec_; }
 
-// const std::vector<float>& TargetWrapperMlu::StdVec() const { return std_vec_;
-// }
 const std::vector<float>& TargetWrapperMlu::StdVec() { return std_vec_; }
 
 DataLayoutType TargetWrapperMlu::InputLayout() { return input_layout_; }
