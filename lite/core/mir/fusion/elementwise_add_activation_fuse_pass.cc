@@ -22,12 +22,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-// void ElementwiseAddActivationFusePass::Apply(
-//     const std::unique_ptr<SSAGraph>& graph) {
-//   fusion::ElementwiseAddActivationFuser fuser("relu");
-//   fuser(graph.get());
-// }
-
 void ElementwiseActivationFusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   // initialze fuser params
@@ -47,14 +41,6 @@ void ElementwiseActivationFusePass::Apply(
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-// REGISTER_MIR_PASS(lite_elementwise_add_activation_fuse_pass,
-//                   paddle::lite::mir::ElementwiseAddActivationFusePass)
-//     .BindTargets({TARGET(kAny)})
-//     .ExcludeTargets({TARGET(kXPU)})
-//     .ExcludeTargets({TARGET(kBM)})
-//     .ExcludeTargets({TARGET(kX86)})
-//     .BindKernel("fusion_elementwise_add_activation");
 
 REGISTER_MIR_PASS(lite_elementwise_activation_fuse_pass,
                   paddle::lite::mir::ElementwiseActivationFusePass)

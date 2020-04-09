@@ -22,11 +22,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-// class ElementwiseAddActivationFusePass : public ProgramPass {
-//  public:
-//   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-// };
-
 class ElementwiseActivationFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
