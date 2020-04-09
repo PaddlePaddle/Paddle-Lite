@@ -64,6 +64,26 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
   return adj_list;
 }
 
+std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
+  std::map<mir::Node *, std::set<mir::Node *>> adj_list;
+
+  for (auto &n : mutable_nodes()) {
+    if (adj_list.find(&n) == adj_list.end()) {
+      adj_list[&n] = std::set<mir::Node *>();
+    }
+    std::vector<mir::Node *> nodes;
+    for (auto &var : n.inlinks) {
+      nodes.push_back(var);
+    }
+    std::sort(nodes.begin(),
+              nodes.end(),
+              [](mir::Node *node1, mir::Node *node2) { return node1 > node2; });
+    adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
+                        std::make_move_iterator(nodes.end()));
+  }
+  return adj_list;
+}
+
 void SSAGraph::SortHelper(
     const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
     mir::Node *node,
@@ -88,6 +108,24 @@ std::vector<mir::Node *> SSAGraph::StmtTopologicalOrder() {
   std::vector<mir::Node *> res;
 
   auto adj_list = BuildOperationAdjList();
+
+  for (auto adj : adj_list) {
+    if (visited.find(adj.first) == visited.end()) {
+      SortHelper(adj_list, adj.first, &visited, &res);
+    }
+  }
+
+  return res;
+}
+
+std::vector<mir::Node *> SSAGraph::NodeTopologicalOrder() {
+  CheckBidirectionalConnection();
+
+  std::stack<mir::Node *> stack;
+  std::set<mir::Node *> visited;
+  std::vector<mir::Node *> res;
+
+  auto adj_list = BuildNodeAdjList();
 
   for (auto adj : adj_list) {
     if (visited.find(adj.first) == visited.end()) {

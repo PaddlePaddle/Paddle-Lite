@@ -47,6 +47,7 @@ using lite_api::TargetType;
 using lite_api::PrecisionType;
 using lite_api::DataLayoutType;
 using lite_api::Place;
+using lite_api::MLUCoreVersion;
 using lite::LightPredictorImpl;
 using lite_api::OptBase;
 
@@ -76,6 +77,7 @@ static void BindLiteMobileConfig(py::module *m);
 static void BindLitePowerMode(py::module *m);
 static void BindLitePlace(py::module *m);
 static void BindLiteTensor(py::module *m);
+static void BindLiteMLUCoreVersion(py::module *m);
 
 void BindLiteApi(py::module *m) {
   BindLiteCxxConfig(m);
@@ -83,6 +85,7 @@ void BindLiteApi(py::module *m) {
   BindLitePowerMode(m);
   BindLitePlace(m);
   BindLiteTensor(m);
+  BindLiteMLUCoreVersion(m);
 #ifndef LITE_ON_TINY_PUBLISH
   BindLiteCxxPredictor(m);
 #endif
@@ -124,6 +127,14 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_power_mode", &CxxConfig::set_power_mode)
       .def("power_mode", &CxxConfig::power_mode);
 #endif
+#ifdef LITE_WITH_MLU
+  cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
+      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
+      .def("set_mlu_input_layout", &CxxConfig::set_mlu_input_layout)
+      .def("set_mlu_use_first_conv", &CxxConfig::set_mlu_use_first_conv)
+      .def("set_mlu_first_conv_mean", &CxxConfig::set_mlu_first_conv_mean)
+      .def("set_mlu_first_conv_std", &CxxConfig::set_mlu_first_conv_std);
+#endif
 }
 
 // TODO(sangoly): Should MobileConfig be renamed to LightConfig ??
@@ -155,6 +166,12 @@ void BindLitePowerMode(py::module *m) {
       .value("LITE_POWER_RAND_LOW", PowerMode::LITE_POWER_RAND_LOW);
 }
 
+void BindLiteMLUCoreVersion(py::module *m) {
+  py::enum_<MLUCoreVersion>(*m, "MLUCoreVersion")
+      .value("LITE_MLU_220", MLUCoreVersion::MLU_220)
+      .value("LITE_MLU_270", MLUCoreVersion::MLU_270);
+}
+
 void BindLitePlace(py::module *m) {
   // TargetType
   py::enum_<TargetType>(*m, "TargetType")
@@ -165,6 +182,7 @@ void BindLitePlace(py::module *m) {
       .value("OpenCL", TargetType::kOpenCL)
       .value("FPGA", TargetType::kFPGA)
       .value("NPU", TargetType::kNPU)
+      .value("MLU", TargetType::kMLU)
       .value("Any", TargetType::kAny);
 
   // PrecisionType
@@ -245,6 +263,20 @@ void BindLiteTensor(py::module *m) {
   DO_GETTER_ONCE(data_type__, name__##_data)
 
   DATA_GETTER_SETTER_ONCE(int8_t, int8);
+#ifdef LITE_WITH_MLU
+  tensor.def("set_uint8_data",
+             [](Tensor &self,
+                const std::vector<uint8_t> &data,
+                TargetType type = TargetType::kHost) {
+               if (type == TargetType::kHost) {
+                 self.CopyFromCpu<uint8_t, TargetType::kHost>(data.data());
+               }
+             },
+             py::arg("data"),
+             py::arg("type") = TargetType::kHost);
+
+  DO_GETTER_ONCE(uint8_t, "uint8_data");
+#endif
   DATA_GETTER_SETTER_ONCE(int32_t, int32);
   DATA_GETTER_SETTER_ONCE(float, float);
 #undef DO_GETTER_ONCE

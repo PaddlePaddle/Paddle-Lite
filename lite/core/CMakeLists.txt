@@ -8,7 +8,8 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper
   FPGA_DEPS fpga_target_wrapper
-  BM_DEPS target_wrapper_bm)
+  BM_DEPS target_wrapper_bm
+  MLU_DEPS target_wrapper_mlu)
 
 lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
 

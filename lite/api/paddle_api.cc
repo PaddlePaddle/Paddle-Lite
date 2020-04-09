@@ -204,6 +204,39 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+#ifdef LITE_WITH_MLU
+void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
+  mlu_core_version_ = core_version;
+}
+void CxxConfig::set_mlu_core_number(int core_number) {
+  mlu_core_number_ = core_number;
+}
+void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
+  mlu_input_layout_ = layout;
+}
+void CxxConfig::set_mlu_use_first_conv(bool use_first_conv) {
+  mlu_use_first_conv_ = use_first_conv;
+}
+void CxxConfig::set_mlu_first_conv_mean(const std::vector<float> &mean) {
+  mlu_first_conv_mean_ = mean;
+}
+void CxxConfig::set_mlu_first_conv_std(const std::vector<float> &std) {
+  mlu_first_conv_std_ = std;
+}
+lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
+  return mlu_core_version_;
+}
+int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
+DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
+bool CxxConfig::mlu_use_first_conv() const { return mlu_use_first_conv_; }
+const std::vector<float> &CxxConfig::mlu_first_conv_mean() const {
+  return mlu_first_conv_mean_;
+}
+const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
+  return mlu_first_conv_std_;
+}
+#endif
+
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
   lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);

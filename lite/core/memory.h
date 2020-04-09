@@ -31,6 +31,10 @@
 #include "lite/backends/bm/target_wrapper.h"
 #endif  // LITE_WITH_BM
 
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/target_wrapper.h"
+#endif  // LITE_WITH_MLU
+
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/target_wrapper.h"
 #endif  // LITE_WITH_XPU
@@ -79,6 +83,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_MLU
+    case TARGET(kMLU):
+      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
+      break;
+#endif
 #ifdef LITE_WITH_FPGA
     case TARGET(kFPGA):
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);

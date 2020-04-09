@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,31 +30,36 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[MLU] Converting " + op_type + "...";
 
-  // Get op's attributes
-  auto x_var_name = op_info->Input("X").front();
+  auto x_var_name = op_info->Input("X");
   auto out_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
+  auto param_axis = op_info->GetAttr<int>("axis");
 
-  // nchw axis to nhwc aixs
-  int nchw_to_nhwc_aixs_map[4] = {0, 3, 1, 2};
-  int axis = 1;
-  if (op_info->HasAttr("axis")) {
-    axis = op_info->GetAttr<int>("axis");
-    if (axis < 0) {
-      axis = output_dims.size() + axis;
-    }
+  std::vector<cnmlTensor_t> input_tensor;
+  for (auto x_name : x_var_name) {
+    CHECK(graph->HasNode(x_name));
+    input_tensor.push_back(graph->GetNode(x_name)->mlu_tensor());
   }
-  int nhwc_axis = nchw_to_nhwc_aixs_map[axis];
+
+  auto dims = output_dims.size();
+  int axis = (param_axis < 0) ? (param_axis + dims) : param_axis;
+  CHECK_LE(axis, 4) << "Unsupport dims in mlu concat";
+  int nchw_to_nhwc_axis_map[4] = {0, 3, 1, 2};
+  int nhwc_axis = nchw_to_nhwc_axis_map[axis];
 
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
-  cnmlBaseOp_t softmax_op;
-  CNML_CALL(cnmlCreateNdSoftmaxOp(&softmax_op,
-                                  nhwc_axis,
-                                  graph->GetNode(x_var_name)->mlu_tensor(),
-                                  output_tensor->mlu_tensor()));
-  graph->FuseOp(softmax_op);
+
+  cnmlBaseOp_t concat_op;
+  cnmlTensor_t outputs = output_tensor->mlu_tensor();
+  CNML_CALL(cnmlCreateNdConcatOp(&concat_op,
+                                 nhwc_axis,
+                                 input_tensor.data(),
+                                 x_var_name.size(),
+                                 &outputs,
+                                 1));
+  graph->FuseOp(concat_op);
   return SUCCESS;
 }
 
@@ -63,6 +68,6 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(softmax,
+REGISTER_SUBGRAPH_BRIDGE(concat,
                          kMLU,
-                         paddle::lite::subgraph::mlu::SoftmaxConverter);
+                         paddle::lite::subgraph::mlu::ConcatConverter);
