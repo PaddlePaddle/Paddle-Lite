@@ -14,6 +14,7 @@
 
 #include "lite/api/light_api.h"
 #include <algorithm>
+#include <unordered_map>
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
 
@@ -135,7 +136,15 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
   // 1. Create op first
   Program program(prog, scope_, {});
 
-  // 2. Create Instructs
+// 2. Create Instructs
+#ifdef LITE_WITH_OPENCL
+  using WaitListType =
+      std::unordered_map<decltype(static_cast<const void*>(nullptr)),
+                         std::shared_ptr<cl::Event>>;
+  using OpenCLContext = Context<TargetType::kOpenCL>;
+  std::unique_ptr<KernelContext> local_ctx(new KernelContext());
+  local_ctx->As<OpenCLContext>().InitOnce();
+#endif
 
   // Create the kernels of the target places, and filter out the specific
   // kernel with the target alias.
@@ -151,7 +160,18 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
           return it->alias() == alias;
         });
     CHECK(it != kernels.end());
+
+#ifdef LITE_WITH_OPENCL
+    if ((*it)->target() == TARGET(kOpenCL)) {
+      std::unique_ptr<KernelContext> ctx(new KernelContext());
+      (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
+      (*it)->SetContext(std::move(ctx));
+    } else {
+      (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
+    }
+#else
     (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
+#endif
 
     insts.emplace_back(op, std::move(*it));
   }

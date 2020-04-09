@@ -21,13 +21,6 @@
 namespace paddle {
 namespace lite {
 
-LightPredictorImpl::~LightPredictorImpl() {
-  raw_predictor_.reset();
-#ifdef LITE_WITH_OPENCL
-  CLRuntime::Global()->ReleaseResources();
-#endif
-}
-
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
   if (config.lite_model_file().empty()) {

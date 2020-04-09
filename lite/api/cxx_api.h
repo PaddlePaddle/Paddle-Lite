@@ -43,16 +43,7 @@ class LITE_API Predictor {
  public:
   // Create an empty predictor.
   Predictor() { scope_ = std::make_shared<Scope>(); }
-  ~Predictor() {
-#ifdef LITE_WITH_OPENCL
-    CLRuntime::Global()->ReleaseResources();
-#endif
-    scope_.reset();
-    exec_scope_ = nullptr;
-    program_.reset();
-    input_names_.clear();
-    output_names_.clear();
-  }
+
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}
