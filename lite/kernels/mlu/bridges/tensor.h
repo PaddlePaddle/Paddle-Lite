@@ -47,6 +47,8 @@ class MLUTensor {
     return mlu_ptr_;
   }
 
+  void set_mlu_dtype(cnmlDataType_t type) { mlu_dtype_ = type; }
+
   ~MLUTensor();
 
  private:

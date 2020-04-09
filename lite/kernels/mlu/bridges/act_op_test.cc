@@ -25,8 +25,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ActConverter(void* ctx, OpLite* op);
-
 template void FillTensor<float, int>(Tensor* x,
                                      float lower = -2,
                                      float upper = -2);
@@ -136,7 +134,7 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
 
 TEST(MLUBridges, activation) {
   std::vector<std::vector<int64_t>> shapes{{1}, {2, 3}, {1, 2, 3, 4}};
-  std::vector<std::string> types{"sigmoid", "relu", "tanh"};
+  std::vector<std::string> types{"sigmoid", "relu", "tanh", "leaky_relu"};
   for (auto x_shape : shapes) {
     for (auto op_type : types) {
       test_act(x_shape, op_type);
@@ -149,8 +147,7 @@ TEST(MLUBridges, activation) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU, relu, paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         sigmoid,
-                         paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU, tanh, paddle::lite::subgraph::mlu::ActConverter);
+USE_SUBGRAPH_BRIDGE(sigmoid, kMLU)
+USE_SUBGRAPH_BRIDGE(relu, kMLU)
+USE_SUBGRAPH_BRIDGE(tanh, kMLU)
+USE_SUBGRAPH_BRIDGE(leaky_relu, kMLU)

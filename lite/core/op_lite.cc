@@ -157,5 +157,33 @@ Tensor *OpLite::GetMutableTensor(lite::Scope *scope,
   return var->GetMutable<lite::Tensor>();
 }
 
+void OpLite::AttachInput(const cpp::OpDesc &op_desc,
+                         lite::Scope *scope,
+                         const std::string &input_name,
+                         bool is_dispensable,
+                         lite::Tensor **input_var) {
+  bool is_have_input =
+      op_desc.HasInput(input_name) && op_desc.Input(input_name).size() > 0;
+  CHECK(is_dispensable || is_have_input);
+  if (is_have_input) {
+    std::string input_var_name = op_desc.Input(input_name).front();
+    *input_var = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  }
+}
+
+void OpLite::AttachOutput(const cpp::OpDesc &op_desc,
+                          lite::Scope *scope,
+                          const std::string &output_name,
+                          bool is_dispensable,
+                          lite::Tensor **output_var) {
+  bool is_have_output =
+      op_desc.HasOutput(output_name) && op_desc.Output(output_name).size() > 0;
+  CHECK(is_dispensable || is_have_output);
+  if (is_have_output) {
+    std::string output_var_name = op_desc.Output(output_name).front();
+    *output_var = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle

@@ -136,6 +136,14 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
+#ifdef LITE_WITH_MLU
+  lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
+  int mlu_core_number_{1};
+  DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
+  bool mlu_use_first_conv_{false};
+  std::vector<float> mlu_first_conv_mean_;
+  std::vector<float> mlu_first_conv_std_;
+#endif
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -163,6 +171,37 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
+
+#ifdef LITE_WITH_MLU
+  // set MLU core version, which is used when compiling MLU kernels
+  void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
+  // set MLU core number, which is used when compiling MLU kernels
+  void set_mlu_core_number(int core_number);
+  // set MLU input layout. User can specify layout of input data to be NHWC,
+  // default is NCHW
+  void set_mlu_input_layout(DataLayoutType layout);
+  // whether use MLU's first conv kernel. First conv is a special kernel
+  // provided by MLU, its input is uint8, and also needs two 3-dimentional
+  // vectors which save all inputs' mean and std values
+  void set_mlu_use_first_conv(bool use_first_conv);
+  // set the 3-dimentional mean vector used by MLU's first conv
+  void set_mlu_first_conv_mean(const std::vector<float>& mean);
+  // set the 3-dimentional std vector used by MLU's first conv
+  void set_mlu_first_conv_std(const std::vector<float>& std);
+
+  lite_api::MLUCoreVersion mlu_core_version() const;
+  int mlu_core_number() const;
+  DataLayoutType mlu_input_layout() const;
+  bool mlu_use_first_conv() const;
+  const std::vector<float>& mlu_first_conv_mean() const;
+  const std::vector<float>& mlu_first_conv_std() const;
+#endif
+
+  // XPU only, set the size of the workspace memory from L3 cache for the
+  // current thread.
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  // XPU only, specify the target device ID for the current thread.
+  void set_xpu_dev_per_thread(int dev_no = 0);
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

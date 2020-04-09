@@ -45,11 +45,10 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       axis = output_dims.size() + axis;
     }
   }
-
   int nhwc_axis = nchw_to_nhwc_aixs_map[axis];
 
   auto output_tensor = graph->AddNode(
-      out_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
   cnmlBaseOp_t softmax_op;
   CNML_CALL(cnmlCreateNdSoftmaxOp(&softmax_op,
                                   nhwc_axis,

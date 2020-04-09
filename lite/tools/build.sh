@@ -25,6 +25,7 @@ SHUTDOWN_LOG=ON
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
+BUILD_XTCL=OFF
 XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
 LITE_WITH_ARM_LANG=OFF
 
@@ -138,6 +139,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -226,6 +228,7 @@ function make_full_publish_so {
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -260,6 +263,7 @@ function make_all_tests {
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -330,7 +334,10 @@ function make_cuda {
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
  
   make publish_inference -j$NUM_PROC
   cd -
@@ -362,9 +369,10 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DLITE_WITH_XPU=$BUID_XPU \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -481,6 +489,10 @@ function main {
                 ;;
             --build_xpu=*)
                 BUILD_XPU="${i#*=}"
+                shift
+                ;;
+            --build_xtcl=*)
+                BUILD_XTCL="${i#*=}"
                 shift
                 ;;
             --xpu_sdk_root=*)

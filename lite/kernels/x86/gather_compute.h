@@ -50,9 +50,9 @@ void CPUGather(const lite::Tensor* src,
 
   auto src_dims = src->dims();
 
-  const T* p_src = src->data<T>();
+  const T* p_src = src->template data<T>();
   const IndexT* p_index = index->data<IndexT>();
-  T* p_output = output->mutable_data<T>();
+  T* p_output = output->template mutable_data<T>();
 
   // slice size
   int slice_size = 1;
@@ -77,7 +77,7 @@ class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto index = param.Index;
     auto out = param.Out;
 
-    out->mutable_data<T>();
+    out->template mutable_data<T>();
     if (x->dims().production() == 0) return;
     /*
      * Since there's no type defined for lite::Tensor in Paddle-Lite, then

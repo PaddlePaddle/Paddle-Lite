@@ -42,6 +42,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
   }
 #endif
+#ifdef LITE_WITH_MLU
+  Env<TARGET(kMLU)>::Init();
+  lite::DeviceInfo::Global().SetMLURunMode(config.mlu_core_version(),
+                                           config.mlu_core_number(),
+                                           config.mlu_use_first_conv(),
+                                           config.mlu_first_conv_mean(),
+                                           config.mlu_first_conv_std(),
+                                           config.mlu_input_layout());
+#endif  // LITE_WITH_MLU
   std::vector<std::string> passes{};
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
