@@ -180,7 +180,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
         VLOG(4) << "picked, opencl found";
         is_found = true;
       } else if (TypeCompatible(*in_arg_ty, from) &&
-                 out_arg_ty->target() == to.target()) {
+                 TargetCompatibleTo(*out_arg_ty, to)) {
         VLOG(4) << "picked";
         is_found = true;
       }

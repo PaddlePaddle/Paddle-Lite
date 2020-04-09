@@ -28,7 +28,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
               const std::vector<std::string>& output_var_names) {
   CNRT_CALL(cnrtInit(0));
-  SetMluDevice(0);
+  ::paddle::lite::SetMluDevice(0);
   cnrtQueue_t queue_;
   cnrtInvokeFuncParam_t forward_param;
   u32_t affinity = 1;
@@ -47,7 +47,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   const auto& bridges = subgraph::Registry::Instance();
   CHECK(bridges.Exists(op_type, TARGET(kMLU)));
 
-  // Convert all of input data vars and added into the MLU IR graph
+  // Convert input data var and add it into the MLU IR graph
   for (auto& input_name : input_var_names) {
     auto input_tensor = scope->FindMutableTensor(input_name);
     CHECK(input_tensor);
@@ -58,7 +58,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
         graph.AddNode(input_name,
                       input_tensor->dims().Vectorize(),
                       CNML_TENSOR,
-                      CNML_NHWC,
+                      CNML_NCHW,
                       graph.FPType(),
                       reinterpret_cast<void*>(
                           input_tensor->mutable_data<float>(TARGET(kMLU))));
@@ -68,6 +68,8 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
                           sizeof(float) * input_tensor->dims().production(),
                           CNRT_MEM_TRANS_DIR_HOST2DEV));
   }
+  op->CheckShape();
+  op->InferShape();
   bridges.Select(op_type, TARGET(kMLU))(
       reinterpret_cast<void*>(&graph), const_cast<OpLite*>(op.get()), nullptr);
 

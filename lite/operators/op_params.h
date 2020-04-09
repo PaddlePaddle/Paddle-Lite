@@ -336,17 +336,22 @@ struct ConcatParam : ParamBase {
 /// ----------------------- activation operators ----------------------
 struct ActivationParam : ParamBase {
   const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite_api::ActivationType active_type;
+  bool has_active{false};
   float Leaky_relu_alpha{0};   // leaky_relu param
   float Relu_clipped_coef{6};  // relu_clipped param
   std::string Prelu_mode{
       "channel"};  // prelu param, can be "all", "channel" or "element"
   lite::Tensor* Prelu_alpha{};  // prelu param
   float Swish_beta;             // swish param
+  // hard_sigmoid param
   float hard_sigmoid_slope{0.2};
   float hard_sigmoid_offset{0.5};
-  lite::Tensor* Out{};
-  bool has_active{false};
-  lite_api::ActivationType active_type;
+  // hard_swish param
+  float hard_swish_threshold{6.0};
+  float hard_swish_scale{6.0};
+  float hard_swish_offset{3.0};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1019,6 +1024,12 @@ struct SequenceExpandParam : ParamBase {
   int ref_level{-1};
 };
 
+struct SequenceUnpadParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Length{};
+  lite::Tensor* Out{};
+};
+
 struct SequenceExpandAsParam : ParamBase {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* y{nullptr};
@@ -1436,6 +1447,40 @@ struct CrfDecodingParam : ParamBase {
   lite::Tensor* label{};
   lite::Tensor* length{};
   lite::Tensor* viterbi_path{};
+};
+
+struct CtcAlignParam : ParamBase {
+  lite::Tensor* input{};
+  lite::Tensor* input_length{};
+  lite::Tensor* output{};
+  lite::Tensor* output_length{};
+  int blank{0};
+  bool merge_repeated{true};
+  int padding_value{0};
+};
+
+struct XPUResNet50Param : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> filter;
+  std::vector<lite::Tensor*> bias;
+  std::vector<lite::Tensor*> max_filter;
+  lite::Tensor* output{};
+};
+
+struct XPUMultiEncoderParam : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  lite::Tensor* fc_weight_max{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+
+  int n_layers{};
+  int head_num{};
+  int size_per_head{};
+  std::string act_type{};
 };
 
 }  // namespace operators

@@ -75,6 +75,8 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
+           "__xpu__resnet_fuse_pass",
+           "__xpu__multi_encoder_fuse_pass",
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and
@@ -115,9 +117,15 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
+           "mlu_subgraph_pass",
+
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+
+           "mlu_postprocess_pass",
+
            "memory_optimize_pass"}};
+
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of
         // runtime_context_assign_pass

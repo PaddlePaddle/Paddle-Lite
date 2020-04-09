@@ -31,15 +31,16 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto* scope = op->scope();
   VLOG(3) << "[MLU] Converting " << op_info->Type() << "... ";
 
-  // Get input, filter and op attributes
+  // get input, filter and op attributes
   const auto input_var_name = op_info->Input("Input").front();
-  const auto& input_dims_nhwc =
+  const auto& input_dims =
       scope->FindVar(input_var_name)->GetMutable<Tensor>()->dims();
-  const auto input_dims = DimNHWC2NCHW(input_dims_nhwc);
   const auto filter_var_name = op_info->Input("Filter").front();
   auto* filter = scope->FindVar(filter_var_name)->GetMutable<Tensor>();
   const auto& filter_dims = filter->dims();
   const auto output_var_name = op_info->Output("Output").front();
+  auto* output = scope->FindVar(output_var_name)->GetMutable<Tensor>();
+  const auto output_shape = output->dims().Vectorize();
   const auto bs = input_dims[0];
   const auto oc = filter_dims[0];
   CHECK_EQ(input_dims.size(), 4);
@@ -70,24 +71,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
-  std::vector<int64_t> output_shape({bs, oc});
-  for (size_t i = 0; i < 2; i++) {
-    const int dkernel = dilations[i] * (filter_dims[2 + i] - 1) + 1;
-    output_shape.push_back(
-        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] - dkernel) /
-            strides[i] +
-        1);
-  }
-
-  const auto output_shape_nhwc = DimNCHW2NHWC(output_shape);
-  const auto output_tensor = graph->AddNode(output_var_name,
-                                            output_shape_nhwc,
-                                            CNML_TENSOR,
-                                            CNML_NHWC,
-                                            graph->FPType());
-  scope->FindVar(output_var_name)
-      ->GetMutable<::paddle::lite::Tensor>()
-      ->Resize(output_shape_nhwc);
+  const auto output_tensor = graph->AddNode(
+      output_var_name, output_shape, CNML_TENSOR, CNML_NCHW, graph->FPType());
 
   // Create filter node
   const auto filter_tensor = graph->AddNode(filter_var_name,
@@ -119,14 +104,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(FATAL) << "UnSupported weight precision!";
   }
 
-  cnmlConvOpParam_t conv_param;
-  CNML_CALL(cnmlCreateConvOpParam(&conv_param,
-                                  strides[0],
-                                  strides[1],
-                                  dilations[0],
-                                  dilations[1],
-                                  paddings[0] * 2,
-                                  paddings[2] * 2));
   std::string bias_var_name;
   std::shared_ptr<MLUTensor> bias_tensor;
   if (HasInputArg(op_info, scope, "Bias")) {
@@ -160,15 +137,75 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  graph->FPType());
     graph->BindConstData(bias_var_name, bias);
   }
-  cnmlBaseOp_t conv_op;
+
   const auto input_scale = op_info->GetAttr<float>("input_scale");
-  CNML_CALL(cnmlCreateConvOpForward(
-      &conv_op,
-      conv_param,
-      graph->GetNode(input_var_name)->mlu_tensor(),
-      output_tensor->mlu_tensor(),
-      filter_tensor->mlu_tensor(),
-      bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
+
+  bool use_first_conv = false;
+  if (lite::DeviceInfo::Global().UseFirstConv() && input_dims[1] == 3) {
+    use_first_conv = true;
+  }
+
+  cnmlBaseOp_t conv_op;
+  if (use_first_conv) {
+    cnmlConvFirstOpParam_t conv_param;
+    CNML_CALL(cnmlCreateConvFirstOpParam_V2(&conv_param,
+                                            strides[0],
+                                            strides[1],
+                                            dilations[0],
+                                            dilations[1],
+                                            paddings[2],
+                                            paddings[2],
+                                            paddings[0],
+                                            paddings[0]));
+    const auto mean_tensor = graph->AddNode("first_conv_mean_tensor",
+                                            std::vector<int64_t>{3},
+                                            CNML_CONST,
+                                            CNML_CNHW,
+                                            graph->FPType());
+    const auto std_tensor = graph->AddNode("first_conv_std_tensor",
+                                           std::vector<int64_t>{3},
+                                           CNML_CONST,
+                                           CNML_CNHW,
+                                           graph->FPType());
+
+    graph->BindConstRawData("first_conv_mean_tensor",
+                            lite::DeviceInfo::Global().MeanVec().data(),
+                            3,
+                            false);
+    graph->BindConstRawData("first_conv_std_tensor",
+                            lite::DeviceInfo::Global().StdVec().data(),
+                            3,
+                            false);
+
+    graph->GetNode(input_var_name)->set_mlu_dtype(CNML_DATA_UINT8);
+    CNML_CALL(cnmlCreateConvFirstOpForward(
+        &conv_op,
+        conv_param,
+        graph->GetNode(input_var_name)->mlu_tensor(),
+        mean_tensor->mlu_tensor(),
+        output_tensor->mlu_tensor(),
+        filter_tensor->mlu_tensor(),
+        bias_tensor ? bias_tensor->mlu_tensor() : nullptr,
+        std_tensor->mlu_tensor()));
+    CNML_CALL(cnmlDestroyConvFirstOpParam(&conv_param));
+  } else {
+    cnmlConvOpParam_t conv_param;
+    CNML_CALL(cnmlCreateConvOpParam(&conv_param,
+                                    strides[0],
+                                    strides[1],
+                                    dilations[0],
+                                    dilations[1],
+                                    paddings[0] * 2,
+                                    paddings[2] * 2));
+    CNML_CALL(cnmlCreateConvOpForward(
+        &conv_op,
+        conv_param,
+        graph->GetNode(input_var_name)->mlu_tensor(),
+        output_tensor->mlu_tensor(),
+        filter_tensor->mlu_tensor(),
+        bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
+    CNML_CALL(cnmlDestroyConvOpParam(&conv_param));
+  }
 
   graph->SetComputingDataType(
       conv_op, graph->GetNode(input_var_name)->mlu_tensor(), 1 / input_scale);
@@ -183,7 +220,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   graph->BindConstData(filter_var_name, filter);
   graph->FuseOp(conv_op);
-  CNML_CALL(cnmlDestroyConvOpParam(&conv_param));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

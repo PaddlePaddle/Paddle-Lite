@@ -25,7 +25,7 @@ namespace x86 {
 template <typename T>
 inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
                      std::vector<lite::Tensor>* xs_in_order) {
-  std::vector<size_t> result;
+  std::vector<uint64_t> result;
   result.resize(xs[0]->lod()[0].size());
 
   for (size_t i = 1; i < result.size(); ++i) {
@@ -75,7 +75,7 @@ class SequenceConcatCompute
     out_dims[0] = batch_size;
     param.Out->Resize(out_dims);
 
-    T* dout = param.Out->mutable_data<T>();
+    T* dout = param.Out->template mutable_data<T>();
 
     std::vector<lite::Tensor> x_in_order;
     param.Out->set_lod(ConcatLoD<T>(param.X, &x_in_order));

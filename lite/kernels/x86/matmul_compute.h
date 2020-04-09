@@ -56,7 +56,7 @@ class MatMulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto *x = param.X;
     auto *y = param.Y;
     auto *out = param.Out;
-    out->mutable_data<T>();
+    out->template mutable_data<T>();
 
     auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
     auto mat_dim_a = lite::x86::math::CreateMatrixDescriptor(

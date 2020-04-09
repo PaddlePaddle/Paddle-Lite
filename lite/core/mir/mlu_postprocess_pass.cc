@@ -15,7 +15,6 @@
 #include "lite/core/mir/mlu_postprocess_pass.h"
 #include <list>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -50,10 +49,9 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
     op_desc.SetAttr<int>("out_dtype", 4);  // FP16
     op_desc.SetInput("X", {cur_node->AsArg().name});
     op_desc.SetOutput("Out", {cast_arg_name});
-  } else if (op_type == "transpose") {
+  } else if (op_type == "layout") {
     // NCHW -> NHWC
-    op_desc.SetAttr<std::vector<int>>("axis", {0, 2, 3, 1});
-    op_desc.SetInput("X", {cur_node->AsArg().name});
+    op_desc.SetInput("Input", {cur_node->AsArg().name});
     op_desc.SetOutput("Out", {cast_arg_name});
   } else if (op_type == "io_copy") {
     op_desc.SetInput("Input", {cur_node->AsArg().name});
@@ -72,8 +70,15 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       if (PrecisionCompatibleTo(*in_arg_ty, *cur_node->AsArg().type)) {
         is_found = true;
       }
-    } else if (op_type == "transpose") {
-      is_found = true;
+    } else if (op_type == "layout") {
+      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+      if (DataLayoutCompatible(*in_arg_ty, *cur_node->AsArg().type) &&
+          DataLayoutCompatible(*out_arg_ty, *cast_type) &&
+          //  for first conv
+          PrecisionCompatibleTo(*in_arg_ty, *cur_node->AsArg().type)) {
+        is_found = true;
+      }
     } else if (op_type == "io_copy") {
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
@@ -89,8 +94,13 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      stmt.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
+      if (op_type == "layout") {
+        stmt.picked_kernel().SetContext(
+            ContextScheduler::Global().NewContext(TARGET(kX86)));
+      } else {
+        stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+            stmt.picked_kernel().target()));
+      }
       break;
     }
   }
@@ -113,7 +123,7 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
   cast_arg->AsArg().type = cast_type;
   auto* var = inst_node->AsStmt().op()->scope()->Var(cast_arg_name);
   // for CastAfter manully set the tensor's type
-  var->GetMutable<::paddle::lite::Tensor>();
+  var->GetMutable<paddle::lite::Tensor>();
 
   // create the stmt node
   auto* cast_inst = graph->NewInstructNode();
@@ -127,10 +137,9 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
     op_desc.SetAttr<int>("out_dtype", 5);  // FP16
     op_desc.SetInput("X", {cast_arg_name});
     op_desc.SetOutput("Out", {cur_node->AsArg().name});
-  } else if (op_type == "transpose") {
+  } else if (op_type == "layout") {
     // NHWC -> NCHW
-    op_desc.SetAttr<std::vector<int>>("axis", {0, 3, 1, 2});
-    op_desc.SetInput("X", {cast_arg_name});
+    op_desc.SetInput("Input", {cast_arg_name});
     op_desc.SetOutput("Out", {cur_node->AsArg().name});
   } else if (op_type == "io_copy") {
     op_desc.SetInput("Input", {cast_arg_name});
@@ -151,8 +160,13 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       if (PrecisionCompatibleTo(*in_arg_ty, *cast_type)) {
         is_found = true;
       }
-    } else if (op_type == "transpose") {
-      is_found = true;
+    } else if (op_type == "layout") {
+      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+      if (DataLayoutCompatible(*in_arg_ty, *cast_type) &&
+          DataLayoutCompatible(*out_arg_ty, *cur_node->AsArg().type)) {
+        is_found = true;
+      }
     } else if (op_type == "io_copy") {
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
@@ -168,8 +182,13 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      stmt.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
+      if (op_type == "layout") {
+        stmt.picked_kernel().SetContext(
+            ContextScheduler::Global().NewContext(TARGET(kX86)));
+      } else {
+        stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+            stmt.picked_kernel().target()));
+      }
       break;
     }
   }
@@ -193,24 +212,28 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
   auto* cur_node = head_node;
   const auto name_prefix =
       head_node->AsArg().name + string_format("_%p", inst_node) + "/trans_";
+  bool is_first_conv_head =
+      std::find(first_conv_nodes_.begin(),
+                first_conv_nodes_.end(),
+                head_node->AsArg().name) != first_conv_nodes_.end();
 
-  // layout cast node
-  if (head_type->layout() != inst_type->layout()) {
+  // precision cast node
+  if (head_type->precision() != inst_type->precision() && !is_first_conv_head) {
     cur_node = InsertCastBefore(
-        "transpose",
-        name_prefix + "transpose",
+        "cast",
+        name_prefix + "cast",
         graph,
         cur_node,
         inst_node,
         LiteType::GetTensorTy(
-            head_type->target(), head_type->precision(), inst_type->layout()));
+            head_type->target(), inst_type->precision(), head_type->layout()));
   }
 
-  // precision cast node
-  if (head_type->precision() != inst_type->precision()) {
+  // layout cast node
+  if (head_type->layout() != inst_type->layout()) {
     cur_node = InsertCastBefore(
-        "cast",
-        name_prefix + "cast",
+        "layout",
+        name_prefix + "layout",
         graph,
         cur_node,
         inst_node,
@@ -260,7 +283,7 @@ void MLUPostprocessPass::GetSubgraphOpArgType(Node* inst_node,
 
   // get subgraph's valid precision
   const auto& places = graph->valid_places();
-  std::set<::paddle::lite_api::PrecisionType> prec_set;
+  std::set<paddle::lite_api::PrecisionType> prec_set;
   for (const auto& place : places) {
     if (place.target == TARGET(kMLU)) {
       prec_set.insert(place.precision);
@@ -343,23 +366,23 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
   const auto name_prefix =
       tail_node->AsArg().name + string_format("_%p", inst_node) + "/trans_";
 
-  // layout cast node
-  if (tail_type->layout() != inst_type->layout()) {
-    cur_node = InsertCastAfter(
-        "transpose",
-        name_prefix + "transpose",
-        graph,
-        cur_node,
-        inst_node,
-        LiteType::GetTensorTy(
-            tail_type->target(), tail_type->precision(), inst_type->layout()));
-  }
-
   // precision cast node
   if (tail_type->precision() != inst_type->precision()) {
     cur_node = InsertCastAfter(
         "cast",
         name_prefix + "cast",
+        graph,
+        cur_node,
+        inst_node,
+        LiteType::GetTensorTy(
+            tail_type->target(), inst_type->precision(), tail_type->layout()));
+  }
+
+  // layout cast node
+  if (tail_type->layout() != inst_type->layout()) {
+    cur_node = InsertCastAfter(
+        "layout",
+        name_prefix + "layout",
         graph,
         cur_node,
         inst_node,
@@ -392,6 +415,14 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
     auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
     UpdateOutputTo(
         sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
+    /* graph like this
+     *        subgraph_op_0
+     *          /       \
+     *         /         \
+     * subgraph_op_1   host_op
+     */
+    UpdateInputTo(
+        sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
   }
 
   // recreate the op
@@ -415,6 +446,56 @@ void MLUPostprocessPass::RecreateOp(Node* inst_node, SSAGraph* graph) {
   }
 }
 
+bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node, Node* inst) {
+  auto* block_desc =
+      static_cast<operators::SubgraphOp*>(inst->AsStmt().op().get())
+          ->GetSubBlock();
+  for (int op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+    CHECK(op_desc);
+    if (op_desc->Type() == "conv2d") {
+      for (auto& names : op_desc->inputs()) {
+        if (std::find(names.second.begin(),
+                      names.second.end(),
+                      arg_node->AsArg().name) != names.second.end()) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool MLUPostprocessPass::IsFirstConvNode(Node* arg_node) {
+  CHECK(arg_node->IsArg());
+  for (auto& inst : arg_node->outlinks) {
+    if (inst->AsStmt().op_type() == "subgraph") {
+      return IsFirstConvInSubgraph(arg_node, inst);
+    }
+  }
+  return false;
+}
+
+void MLUPostprocessPass::GatherAndModifyFirstConvNodes(SSAGraph* graph) {
+  for (auto& node : graph->mutable_nodes()) {
+    if (!node.IsStmt()) continue;
+    if (node.AsStmt().op_type() == "feed") {
+      for (auto& out : node.outlinks) {
+        if (IsFirstConvNode(out)) {
+          first_conv_nodes_.insert(out->AsArg().name);
+          // modify first conv nodes' type
+          const auto* old_type = out->AsArg().type;
+          out->AsArg().type =
+              LiteType::GetTensorTy(old_type->target(),
+                                    paddle::lite_api::PrecisionType::kInt8,
+                                    old_type->layout(),
+                                    old_type->device());
+        }
+      }
+    }
+  }
+}
+
 void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
   for (auto& node : graph->mutable_nodes()) {
     if (!node.IsStmt()) continue;
@@ -432,7 +513,7 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
           out->AsArg().type =
               LiteType::GetTensorTy(old_type->target(),
                                     old_type->precision(),
-                                    ::paddle::lite_api::DataLayoutType::kNHWC,
+                                    paddle::lite_api::DataLayoutType::kNHWC,
                                     old_type->device());
         }
       }
@@ -451,7 +532,7 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
           inp->AsArg().type =
               LiteType::GetTensorTy(old_type->target(),
                                     old_type->precision(),
-                                    ::paddle::lite_api::DataLayoutType::kNHWC,
+                                    paddle::lite_api::DataLayoutType::kNHWC,
                                     old_type->device());
         }
       }
@@ -460,14 +541,22 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
 }
 
 void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  // currently for non-persistent input and output args, mlu subgraph op
-  // only support float16/float32 data type
+// currently for non-persistent input and output args, mlu subgraph op
+// only support float16/float32 data type
 
-  // in two situations as folllows:
-  // 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
-  // arg_in and arg_out are assumed to be NHWC which user should be aware of.
-  // Thus here we change these args' layout to NHWC
-  ModifyLayout(graph.get());
+// in two situations as folllows:
+// 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
+// arg_in and arg_out are assumed to be NHWC which user should be aware of.
+// Thus here we change these args' layout to NHWC
+#ifdef LITE_WITH_MLU
+  if (lite::DeviceInfo::Global().InputLayout() == DATALAYOUT(kNHWC)) {
+    ModifyLayout(graph.get());
+  }
+
+  if (lite::DeviceInfo::Global().UseFirstConv()) {
+    GatherAndModifyFirstConvNodes(graph.get());
+  }
+#endif
 
   // insert io_copy, layout and precision cast of subgraph's inputs and outputs
   for (auto& node : graph->mutable_nodes()) {

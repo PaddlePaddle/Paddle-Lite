@@ -33,6 +33,8 @@ class CLRuntime {
  public:
   static CLRuntime* Global();
 
+  void ReleaseResources();
+
   bool Init();
 
   cl::Platform& platform();
@@ -116,6 +118,8 @@ class CLRuntime {
   bool initialized_{false};
 
   bool is_init_success_{false};
+
+  bool is_resources_released_{false};
 };
 
 }  // namespace lite
