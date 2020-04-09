@@ -31,6 +31,14 @@
 #include "lite/backends/bm/target_wrapper.h"
 #endif  // LITE_WITH_BM
 
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/target_wrapper.h"
+#endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif  // LITE_WITH_XPU
+
 namespace paddle {
 namespace lite {
 
@@ -75,6 +83,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_MLU
+    case TARGET(kMLU):
+      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
+      break;
+#endif
 #ifdef LITE_WITH_FPGA
     case TARGET(kFPGA):
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
@@ -126,7 +139,7 @@ class Buffer {
                         const size_t img_h,
                         void* host_ptr = nullptr) {
     if (target != target_ || cl_image2d_width_ < img_w ||
-        cl_image2d_height_ < img_h) {
+        cl_image2d_height_ < img_h || host_ptr != nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);

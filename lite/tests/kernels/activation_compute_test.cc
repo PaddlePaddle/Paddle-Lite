@@ -36,7 +36,9 @@ enum activation_type_test {
   FLOOR,
   RSQRT,
   GELU,
-  SQUARE
+  SQUARE,
+  HARD_SWISH,
+  RECIPROCAL
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -49,6 +51,9 @@ class ActivationComputeTester : public arena::TestCase {
   float relu_clipped_coef_ = 6.;
   std::string prelu_mode_ = "";
   float swish_beta_ = 0.;
+  float hard_swish_threshold = 6.0;
+  float hard_swish_scale = 6.0;
+  float hard_swish_offset = 3.0;
   DDim dims_{{1}};
   std::string type_ = "";
   activation_type_test act_type_ = RELU;
@@ -199,6 +204,20 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case HARD_SWISH: {
+        for (int i = 0; i < dims_.production(); i++) {
+          float max_value = std::max(0.f, x_data[i] + hard_swish_offset);
+          float min_value = std::min(max_value, hard_swish_threshold);
+          output_data[i] = min_value * x_data[i] / hard_swish_scale;
+        }
+        break;
+      }
+      case RECIPROCAL: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = 1.0 / x_data[i];
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
@@ -220,6 +239,11 @@ class ActivationComputeTester : public arena::TestCase {
     }
     if (act_type_ == SWISH) {
       op_desc->SetAttr("beta", swish_beta_);
+    }
+    if (act_type_ == HARD_SWISH) {
+      op_desc->SetAttr("threshold", hard_swish_threshold);
+      op_desc->SetAttr("scale", hard_swish_scale);
+      op_desc->SetAttr("offset", hard_swish_offset);
     }
   }
 
@@ -547,6 +571,62 @@ TEST(Activation_gelu, precision) {
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
         place, "def", 0.01, 6., "all", 0., DDim(dims), "gelu", GELU));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
+TEST(activation_hard_swish, precision) {
+  LOG(INFO) << "test hard_swish op";
+  Place place;
+  float abs_error = 2e-5;
+
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    DDim(dims),
+                                    "hard_swish",
+                                    HARD_SWISH));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
+TEST(activation_reciprocal, precision) {
+  LOG(INFO) << "test reciprocal op";
+  Place place;
+  float abs_error = 2e-5;
+
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    DDim(dims),
+                                    "reciprocal",
+                                    RECIPROCAL));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }

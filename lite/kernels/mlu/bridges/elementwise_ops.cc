@@ -77,7 +77,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_tensor = graph->AddNode(out_var_name,
                                       x->dims().Vectorize(),
                                       CNML_TENSOR,
-                                      CNML_NHWC,
+                                      CNML_NCHW,
                                       graph->FPType());
 
   cnmlBaseOp_t elementwise_op;
@@ -90,7 +90,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto mid_tensor = graph->AddNode(out_var_name + "_mid",
                                      x->dims().Vectorize(),
                                      CNML_TENSOR,
-                                     CNML_NHWC,
+                                     CNML_NCHW,
                                      graph->FPType());
     CNML_CALL(cnmlCreateBroadcastAddOp(&elementwise_op,
                                        x_tensor->mlu_tensor(),

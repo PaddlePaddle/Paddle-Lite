@@ -50,7 +50,7 @@ class SearchGroupPaddingCompute
       }
     }
 
-    std::vector<size_t> new_offset;
+    std::vector<uint64_t> new_offset;
     new_offset.resize(batch + 1);
     for (int i = 0; i < batch + 1; ++i) {
       new_offset[i] = i * max_seq;
@@ -67,7 +67,7 @@ class SearchGroupPaddingCompute
     top1_lod.push_back(offset);
     top1->set_lod(top1_lod);
     top1->Resize({dim0, 1});
-    memset(top1->mutable_data<T>(),
+    memset(top1->template mutable_data<T>(),
            0,
            top1->dims()[0] * top1->dims()[1] * sizeof(T));
     // for padding input id
@@ -76,9 +76,9 @@ class SearchGroupPaddingCompute
     top2->set_lod(top2_lod);
     top2->Resize({batch * max_seq, 1});
     // copy data
-    const auto* bottom_data = bottom0->data<T>();
-    auto* top_data = top0->mutable_data<T>();
-    auto* top_padding_input_data = top2->mutable_data<T>();
+    const auto* bottom_data = bottom0->template data<T>();
+    auto* top_data = top0->template mutable_data<T>();
+    auto* top_padding_input_data = top2->template mutable_data<T>();
     for (int i = 0; i < batch; i++) {
       const int copy_step = offset[i + 1] - offset[i];
       const int start = i * max_seq;

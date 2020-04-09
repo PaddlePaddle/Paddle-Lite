@@ -75,7 +75,7 @@ class Vol2ColFunctor<lite::TargetType::kX86, T> {
                       "mismatching.");
 
     const T* vol_data = vol.data<T>();
-    T* col_data = col->mutable_data<T>();
+    T* col_data = col->template mutable_data<T>();
 
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;
@@ -159,7 +159,7 @@ class Col2VolFunctor<lite::TargetType::kX86, T> {
                       output_width,
                       "input_width and output_width are "
                       "mismatching.");
-    T* vol_data = vol->mutable_data<T>();
+    T* vol_data = vol->template mutable_data<T>();
     const T* col_data = col.data<T>();
 
     for (int c = 0; c < channels_col; ++c) {

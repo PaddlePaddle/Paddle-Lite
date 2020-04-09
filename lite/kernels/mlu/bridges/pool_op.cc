@@ -47,9 +47,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input, and attributes
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindTensor(x_var_name);
-  auto input_dims_nhwc = x->dims();
-  const auto input_dims = DimNHWC2NCHW(input_dims_nhwc);
   auto output_var_name = op_info->Output("Out").front();
+  auto output_shape = scope->FindTensor(output_var_name)->dims().Vectorize();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
@@ -81,23 +80,17 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  strides,
                                  ksize);
 
-  std::vector<int64_t> output_shape({input_dims[0], input_dims[1]});
-  for (size_t i = 0; i < 2; i++) {
-    output_shape.push_back(
-        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] - ksize[0]) /
-            strides[i] +
-        1);
-  }
+  //  std::vector<int64_t> output_shape({input_dims[0], input_dims[1]});
+  //  for (size_t i = 0; i < 2; i++) {
+  //    output_shape.push_back(
+  //        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] -
+  //        ksize[0]) /
+  //            strides[i] +
+  //        1);
+  //  }
 
-  auto output_shape_nhwc = DimNCHW2NHWC(output_shape);
-  auto output_tensor = graph->AddNode(output_var_name,
-                                      output_shape_nhwc,
-                                      CNML_TENSOR,
-                                      CNML_NHWC,
-                                      graph->FPType());
-  scope->FindVar(output_var_name)
-      ->GetMutable<::paddle::lite::Tensor>()
-      ->Resize(output_shape_nhwc);
+  auto output_tensor = graph->AddNode(
+      output_var_name, output_shape, CNML_TENSOR, CNML_NCHW, graph->FPType());
 
   cnmlPoolOpParam_t pool_param;
   CNML_CALL(

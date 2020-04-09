@@ -84,7 +84,7 @@ void SearchGrnnCompute<T>::PrepareLayout(const Tensor* input_blob) {
   int max_width = width_data[idx_sorted_by_width_data[0]];
 
   // start of reorganizing the input
-  std::vector<size_t> new_offset;
+  std::vector<uint64_t> new_offset;
   new_offset.resize(max_width + 1);
 
   new_offset[0] = 0;

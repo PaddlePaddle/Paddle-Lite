@@ -36,7 +36,7 @@ class CopyMatrixRowsFunctor {
   // The indexed rows are based on the input index.
   void operator()(const lite::Context<Target>& context,
                   const lite::Tensor& src,
-                  const std::vector<size_t>& index_lod,
+                  const std::vector<uint64_t>& index_lod,
                   lite::Tensor* dst,
                   bool is_src_index);
 };
@@ -130,8 +130,8 @@ class LoDTensor2BatchFunctor {
     // batch_lods[2] is the sort order for the input LoDTensor.
     batch_lods->at(2).resize(seq_info.size());
 
-    size_t* batch_starts = batch_lods->at(0).data();
-    size_t* seq2batch_idx = batch_lods->at(1).data();
+    auto* batch_starts = batch_lods->at(0).data();
+    auto* seq2batch_idx = batch_lods->at(1).data();
     batch_starts[0] = 0;
     for (int n = 0; n < max_seqlen; n++) {
       auto batch_id = static_cast<int>(batch_starts[n]);
@@ -148,7 +148,7 @@ class LoDTensor2BatchFunctor {
       }
       batch_starts[n + 1] = static_cast<size_t>(batch_id);
     }
-    size_t* seq_order = batch_lods->at(2).data();
+    auto* seq_order = batch_lods->at(2).data();
     for (size_t i = 0; i < seq_info.size(); ++i) {
       seq_order[i] = seq_info[i].seq_idx;
     }

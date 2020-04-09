@@ -54,8 +54,8 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int input_stride = input_height * input_width;
     const int output_stride = output_height * output_width;
 
-    const T* input_data = input->data<T>();
-    T* output_data = output->mutable_data<T>(lite::TargetType::kX86);
+    const T* input_data = input->template data<T>();
+    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
 
     int hstart, hend;
     int wstart, wend;
@@ -137,7 +137,8 @@ class Pool2dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const T* input_data = input.data<T>();
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
-    T* input_grad_data = input_grad->mutable_data<T>(lite::TargetType::kX86);
+    T* input_grad_data =
+        input_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     int hstart, hend;
     int wstart, wend;
@@ -220,7 +221,8 @@ class MaxPool2dGradFunctor<lite::TargetType::kX86, T> {
     const T* input_data = input.data<T>();
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
-    T* input_grad_data = input_grad->mutable_data<T>(lite::TargetType::kX86);
+    T* input_grad_data =
+        input_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     for (int i = 0; i < batch_size; i++) {
       for (int c = 0; c < output_channels; ++c) {
@@ -322,7 +324,7 @@ class Pool3dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int output_stride = output_depth * output_height * output_width;
 
     const T* input_data = input.data<T>();
-    T* output_data = output->mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
 
     int dstart, dend;
     int hstart, hend;
@@ -425,7 +427,8 @@ class Pool3dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const T* input_data = input.data<T>();
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
-    T* input_grad_data = input_grad->mutable_data<T>(lite::TargetType::kX86);
+    T* input_grad_data =
+        input_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     int dstart, dend;
     int hstart, hend;
@@ -530,7 +533,8 @@ class MaxPool3dGradFunctor<lite::TargetType::kX86, T> {
     const T* input_data = input.data<T>();
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
-    T* input_grad_data = input_grad->mutable_data<T>(lite::TargetType::kX86);
+    T* input_grad_data =
+        input_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     for (int i = 0; i < batch_size; i++) {
       for (int c = 0; c < output_channels; ++c) {

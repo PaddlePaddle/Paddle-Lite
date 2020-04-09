@@ -40,7 +40,7 @@ class SequencePoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     dims[0] = lod[0].size() - 1;
     out->Resize({dims});
-    out->mutable_data<T>();
+    out->template mutable_data<T>();
     lite::Tensor* index = nullptr;
 
     const bool is_test = true;

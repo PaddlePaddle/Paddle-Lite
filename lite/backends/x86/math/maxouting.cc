@@ -35,7 +35,7 @@ class MaxOutFunctor<lite::TargetType::kX86, T> {
     // c_size means the output size of each sample
     int c_size = fea_size * output_channels;
     const T* input_data = input.data<T>();
-    T* output_data = output->mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
 
     for (int i = 0; i < batch_size; ++i) {
       int new_bindex = c_size * i;
@@ -72,7 +72,8 @@ class MaxOutGradFunctor<lite::TargetType::kX86, T> {
     const T* input_data = input.data<T>();
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
-    T* input_grad_data = input_grad->mutable_data<T>(lite::TargetType::kX86);
+    T* input_grad_data =
+        input_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     for (int i = 0; i < batch_size; ++i) {
       int blen = fea_size * output_channels * i;

@@ -64,7 +64,6 @@ class FuseBase {
  protected:
   virtual void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) = 0;
 
- private:
   void PerformPatternMatcher(SSAGraph* graph);
 
   // Delete nodes that are marked as Intermediate
