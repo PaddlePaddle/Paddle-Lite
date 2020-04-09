@@ -569,11 +569,11 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
   // arg_in and arg_out are assumed to be NHWC which user should be aware of.
   // Thus here we change these args' layout to NHWC
-  if (lite::DeviceInfo::Global().InputLayout() == DATALAYOUT(kNHWC)) {
+  if (lite::TargetWrapperMlu::InputLayout() == DATALAYOUT(kNHWC)) {
     ModifyLayout(graph.get());
   }
 
-  if (lite::DeviceInfo::Global().UseFirstConv()) {
+  if (lite::TargetWrapperMlu::UseFirstConv()) {
     GatherAndModifyFirstConvNodes(graph.get());
   }
 

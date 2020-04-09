@@ -164,7 +164,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto input_scale = op_info->GetAttr<float>("input_scale");
 
   bool use_first_conv = false;
-  if (lite::DeviceInfo::Global().UseFirstConv() && input_dims[1] == 3) {
+  if (lite::TargetWrapperMlu::UseFirstConv() && input_dims[1] == 3) {
     use_first_conv = true;
   }
 
@@ -192,11 +192,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                            graph->FPType());
 
     graph->BindConstRawData("first_conv_mean_tensor",
-                            lite::DeviceInfo::Global().MeanVec().data(),
+                            lite::TargetWrapperMlu::MeanVec().data(),
                             3,
                             false);
     graph->BindConstRawData("first_conv_std_tensor",
-                            lite::DeviceInfo::Global().StdVec().data(),
+                            lite::TargetWrapperMlu::StdVec().data(),
                             3,
                             false);
 
