@@ -100,7 +100,8 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
      << " " << setw(12) << left << "Avg (ms)"
      << " " << setw(12) << left << "Min (ms)"
      << " " << setw(12) << left << "Max (ms)"
-     << " " << setw(12) << left << "Last (ms)" << std::endl;
+     << " " << setw(12) << left << "Last (ms)"
+     << " " << setw(12) << left << "Percent (%)" << std::endl;
   // Profile information.
   if (concise) {
     std::map<OpCharacter, TimeInfo, decltype(op_comp)> summary(op_comp);
@@ -117,7 +118,16 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
         summary.insert({unit.Character(), info});
       }
     }
+    // compute total time
+    float total = 0.0;
     for (const auto& item : summary) {
+      total += item.second.avg;
+    }
+    for (const auto& item : summary) {
+      float percent = 0;
+      if (total > 0) {
+        percent = 100 * (item.second.avg / total);
+      }
       // clang-format off
       ss << setw(25) << left << fixed << item.first.op_type             \
          << " " << setw(40) << left << fixed << item.first.kernel_name  \
@@ -125,12 +135,23 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(12) << left << fixed << item.second.avg         \
          << " " << setw(12) << left << fixed << item.second.min         \
          << " " << setw(12) << left << fixed << item.second.max         \
+         << " " << setw(12) << left << fixed << percent << "%"          \
          << " " << std::endl;
       // clang-format on
     }
   } else {
+    float total = 0.0;
     for (auto& unit : units_) {
       const auto& times = unit.Timer(type)->LapTimes();
+      total += times.Avg(w);
+    }
+    for (auto& unit : units_) {
+      const auto& times = unit.Timer(type)->LapTimes();
+      float run = times.Avg(w);
+      float percent = 0;
+      if (total > 0) {
+        percent = 100 * (run / total);
+      }
       // clang-format off
       ss << setw(25) << left << fixed << unit.Character().op_type            \
          << " " << setw(40) << left << fixed << unit.Character().kernel_name \
@@ -139,6 +160,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(12) << left << fixed << times.Min(w)                 \
          << " " << setw(12) << left << fixed << times.Max(w)                 \
          << " " << setw(12) << left << fixed << times.Last(w)                \
+          << " " << setw(12) << left << fixed << percent << "%"              \
          << std::endl;
       // clang-format on
     }
