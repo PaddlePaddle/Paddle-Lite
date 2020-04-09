@@ -28,7 +28,10 @@ void LightPredictor::Build(const std::string& lite_model_file,
     LoadModelNaiveFromFile(lite_model_file, scope_.get(), &cpp_program_desc_);
   }
 
+  // For weight quantization of post training, load the int8/16 weights
+  // for optimized model, and dequant it to fp32.
   DequantizeWeight();
+
   BuildRuntimeProgram(cpp_program_desc_);
   PrepareFeedFetch();
 }
@@ -162,58 +165,76 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 }
 
 void LightPredictor::DequantizeWeight() {
-#define PROCESS_CONV2D_DATA()                                   \
-  for (int64_t i = 0; i < h; ++i) {                             \
-    for (int64_t j = 0; j < w; ++j) {                           \
-      fp_data[i * w + j] = scale_list[i] * int_data[i * w + j]; \
-    }                                                           \
+#define PROCESS_CONV2D_DATA()                                             \
+  for (int64_t i = 0; i < ch; ++i) {                                      \
+    for (int64_t j = 0; j < offset; ++j) {                                \
+      fp_data[i * offset + j] = scale_list[i] * int_data[i * offset + j]; \
+    }                                                                     \
   }
 
-#define PROCESS_FC_DATA()                           \
-  for (int i = 0; i < input_tensor->numel(); i++) { \
-    *fp_data = scale_list[0] * (*int_data);         \
-    ++fp_data;                                      \
-    ++int_data;                                     \
+#define PROCESS_FC_DATA()                                               \
+  for (int64_t i = 0; i < chin; i++) {                                  \
+    for (int64_t j = 0; j < chout; j++) {                               \
+      fp_data[i * chout + j] = scale_list[j] * int_data[i * chout + j]; \
+    }                                                                   \
   }
+
+  auto is_weight_quantized_op = [](const cpp::OpDesc* op_desc) {
+    bool result = false;
+    if (op_desc->HasAttr("quantization_type")) {
+      std::string type = op_desc->GetAttr<std::string>("quantization_type");
+      result = (type == "post_weight_abs_max") ||
+               (type == "post_weight_channel_wise_abs_max");
+    } else {
+      result = op_desc->HasAttr("quantize_weight_bits");
+    }
+    return result;
+  };
 
   Tensor tmp_tensor;
-  CHECK(cpp_program_desc_.BlocksSize());
-  auto* main_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
-  for (size_t k = 0; k < main_block->OpsSize(); ++k) {
-    auto* op_desc = main_block->GetOp<cpp::OpDesc>(k);
-    if (op_desc->HasAttr("quantize_weight_bits")) {  //  weight quantized op
-      auto input_names = op_desc->input_vars();
-      for (auto& input_name : input_names) {
-        std::string input_scale_name = input_name + "_quant_scale";
-        if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
-          auto input_tensor =
-              scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
-          tmp_tensor.CopyDataFrom(*input_tensor);
-          auto scale_list =
-              op_desc->GetAttr<std::vector<float>>(input_scale_name);
-          int quantize_weight_bits =
-              op_desc->GetAttr<int>("quantize_weight_bits");
-          float* fp_data = input_tensor->mutable_data<float>();
+  for (size_t i = 0; i < cpp_program_desc_.BlocksSize(); i++) {
+    auto* block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(i);
+    for (size_t k = 0; k < block->OpsSize(); ++k) {
+      auto* op_desc = block->GetOp<cpp::OpDesc>(k);
+      if (is_weight_quantized_op(op_desc)) {
+        auto input_names = op_desc->input_vars();
+        for (auto& input_name : input_names) {
+          std::string input_scale_name = input_name + "_quant_scale";
+          if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
+            auto input_tensor =
+                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+            tmp_tensor.CopyDataFrom(*input_tensor);
+            auto scale_list =
+                op_desc->GetAttr<std::vector<float>>(input_scale_name);
 
-          std::string op_type = op_desc->Type();
-          if (op_type == "conv2d" || op_type == "depthwise_conv2d") {
-            int64_t h = input_tensor->dims()[0];
-            int64_t w = input_tensor->numel() / h;
-            CHECK_EQ(scale_list.size(), h);
-            if (quantize_weight_bits == 8) {
-              const int8_t* int_data = tmp_tensor.data<int8_t>();
-              PROCESS_CONV2D_DATA()
-            } else {
-              const int16_t* int_data = tmp_tensor.data<int16_t>();
-              PROCESS_CONV2D_DATA()
-            }
-          } else if (op_type == "fc" || op_type == "mul") {
-            if (quantize_weight_bits == 8) {
-              const int8_t* int_data = tmp_tensor.data<int8_t>();
-              PROCESS_FC_DATA()
-            } else {
-              const int16_t* int_data = tmp_tensor.data<int16_t>();
-              PROCESS_FC_DATA()
+            int quantize_weight_bits =
+                op_desc->GetAttr<int>("quantize_weight_bits");
+            CHECK(quantize_weight_bits == 8 || quantize_weight_bits == 16);
+            float* fp_data = input_tensor->mutable_data<float>();
+
+            std::string op_type = op_desc->Type();
+            if (op_type == "conv2d" || op_type == "depthwise_conv2d") {
+              int64_t ch = input_tensor->dims()[0];
+              int64_t offset = input_tensor->numel() / ch;
+              CHECK_EQ(scale_list.size(), ch);
+              if (quantize_weight_bits == 8) {
+                const int8_t* int_data = tmp_tensor.data<int8_t>();
+                PROCESS_CONV2D_DATA()
+              } else {
+                const int16_t* int_data = tmp_tensor.data<int16_t>();
+                PROCESS_CONV2D_DATA()
+              }
+            } else if (op_type == "fc" || op_type == "mul") {
+              int64_t chin = input_tensor->dims()[0];
+              int64_t chout = input_tensor->dims()[1];
+              CHECK_EQ(scale_list.size(), chout);
+              if (quantize_weight_bits == 8) {
+                const int8_t* int_data = tmp_tensor.data<int8_t>();
+                PROCESS_FC_DATA()
+              } else {
+                const int16_t* int_data = tmp_tensor.data<int16_t>();
+                PROCESS_FC_DATA()
+              }
             }
           }
         }
