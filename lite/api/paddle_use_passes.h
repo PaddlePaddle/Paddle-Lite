@@ -47,3 +47,4 @@ USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
+USE_MIR_PASS(shape_eliminate_pass);
