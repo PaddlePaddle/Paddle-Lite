@@ -49,6 +49,8 @@ void CLRuntime::ReleaseResources() {
     command_queue_->flush();
     command_queue_->finish();
   }
+  LOG(INFO) << "kernels_.size():" << kernels_.size();
+  LOG(INFO) << "programs_.size():" << programs_.size();
   for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
     clReleaseKernel(kernels_[kidx]->get());
     kernels_[kidx].reset();
@@ -56,9 +58,9 @@ void CLRuntime::ReleaseResources() {
   kernels_.clear();
   kernel_offset_.clear();
   for (auto& p : programs_) {
-    clReleaseProgram(p.second->get());
+    // clReleaseProgram(p.second->get());
   }
-  programs_.clear();
+  // programs_.clear();
   LOG(INFO) << "release resources finished.";
   is_resources_released_ = true;
 }

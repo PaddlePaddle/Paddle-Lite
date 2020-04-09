@@ -37,6 +37,11 @@ class LayoutComputeBufferChwToImageDefault
  public:
   using param_t = operators::LayoutParam;
 
+  ~LayoutComputeBufferChwToImageDefault() {
+    LOG(INFO) << "Release LayoutComputeBufferChwToImageDefault";
+    kernel_.reset();
+    event_.reset();
+  }
   void PrepareForRun() override {
     auto& param = Param<param_t>();
     if (param.process_type == 1) {
@@ -44,7 +49,7 @@ class LayoutComputeBufferChwToImageDefault
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
+    kernel_ = context.cl_context()->CreateKernel(
         kernel_func_name_, "image/layout_kernel.cl", build_options_);
   }
 
@@ -90,40 +95,37 @@ class LayoutComputeBufferChwToImageDefault
     VLOG(2) << "Stride2:" << Stride2;
     VLOG(2) << "Stride1:" << Stride1;
     VLOG(2) << "Stride0:" << Stride0;
+    VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
+            << " " << (new_dims[0] * new_dims[2]);
 #endif
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_data);
+    cl_int status;
+    status = kernel_->setArg(0, *x_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_data);
+    status = kernel_->setArg(1, *y_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_H));
+    status = kernel_->setArg(2, out_H);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_W));
+    status = kernel_->setArg(3, out_W);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_C));
+    status = kernel_->setArg(4, out_C);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride0));
+    status = kernel_->setArg(5, Stride0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride1));
+    status = kernel_->setArg(6, Stride1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
+    status = kernel_->setArg(7, Stride2);
     CL_CHECK_FATAL(status);
 
-    VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
-            << " " << (new_dims[0] * new_dims[2]);
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -142,6 +144,7 @@ class LayoutComputeBufferChwToImageDefault
   std::string kernel_func_name_{"buffer_to_image2d"};
   std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 // [ImageDefault] -> [NCHW]
@@ -157,7 +160,7 @@ class LayoutComputeImageDefaultToBufferChw
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
+    kernel_ = context.cl_context()->CreateKernel(
         kernel_func_name_, "image/layout_kernel.cl", build_options_);
   }
 
@@ -191,46 +194,45 @@ class LayoutComputeImageDefaultToBufferChw
     VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
 #endif
 
-    size_t C = new_dims[1];
-    size_t in_height = new_dims[2];
-    size_t in_width = new_dims[3];
-    int size_ch = in_height * in_width;
-    int size_block = size_ch * 4;
-    int size_batch = size_ch * C;
+    const int C = new_dims[1];
+    const int in_height = new_dims[2];
+    const int in_width = new_dims[3];
+    const int size_ch = in_height * in_width;
+    const int size_block = size_ch * 4;
+    const int size_batch = size_ch * C;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_data);
+    cl_int status;
+    status = kernel_->setArg(0, *x_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_width));
+    status = kernel_->setArg(1, in_width);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_height));
+    status = kernel_->setArg(2, in_height);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_data);
+    status = kernel_->setArg(3, *y_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_ch));
+    status = kernel_->setArg(4, size_ch);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_block));
+    status = kernel_->setArg(5, size_block);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_batch));
+    status = kernel_->setArg(6, size_batch);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(C));
+    status = kernel_->setArg(7, C);
     CL_CHECK_FATAL(status);
+
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
 #endif
+
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -249,6 +251,7 @@ class LayoutComputeImageDefaultToBufferChw
   std::string kernel_func_name_{"image2d_to_buffer"};
   std::string build_options_{"-DCL_DTYPE_float"};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 // [NCHW] -> [ImageDW]
@@ -261,7 +264,7 @@ class LayoutComputeBufferChwToImage2DNw
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
+    kernel_ = context.cl_context()->CreateKernel(
         kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
   }
 
@@ -295,36 +298,36 @@ class LayoutComputeBufferChwToImage2DNw
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_data);
+    cl_int status;
+    status = kernel_->setArg(0, *x_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_data);
+    status = kernel_->setArg(1, *y_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_H));
+    status = kernel_->setArg(2, out_H);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_W));
+    status = kernel_->setArg(3, out_W);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_N));
+    status = kernel_->setArg(4, out_N);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride0));
+    status = kernel_->setArg(5, Stride0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride1));
+    status = kernel_->setArg(6, Stride1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
+    status = kernel_->setArg(7, Stride2);
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "gws:[3D]" << ((out_N + 3) / 4) << " " << out_W << " "
             << (out_C * out_H);
+#endif
+
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((out_N + 3) / 4),  // N blocks
                     static_cast<cl::size_type>(out_W),            // w
                     static_cast<cl::size_type>(out_C * out_H)};   // ch
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *(kernel_.get()),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
@@ -342,6 +345,7 @@ class LayoutComputeBufferChwToImage2DNw
   std::string kernel_func_name_{"buffer_to_image2d_nw"};
   std::string build_options_{"-DCL_DTYPE_float "};
   std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Kernel> kernel_;
 };
 
 }  // namespace opencl
