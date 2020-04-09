@@ -89,6 +89,14 @@ class Graph {
     output_tensors_.push_back(tensor);
   }
 
+  std::vector<std::shared_ptr<MLUTensor>>* MutableInputs() {
+    return &input_tensors_;
+  }
+
+  std::vector<std::shared_ptr<MLUTensor>>* MutableOutputs() {
+    return &output_tensors_;
+  }
+
   void FuseOp(cnmlBaseOp_t op) { CNML_CALL(cnmlFuseOp(op, fusion_op_)); }
 
   void Compile(cnmlCoreVersion_t core_version, int core_number) {
@@ -100,15 +108,18 @@ class Graph {
     CNML_CALL(cnmlSetFusionOpCorenum(fusion_op_, core_number));
     CNML_CALL(cnmlSetFusionOpCoreVersion(fusion_op_, core_version));
     CNML_CALL(cnmlCompileFusionOp_V2(fusion_op_));
-    for (auto in : input_tensors_) {
-      input_addrs_.push_back(in->mlu_data());
-    }
-    for (auto out : output_tensors_) {
-      output_addrs_.push_back(out->mlu_data());
-    }
   }
 
   void Compute(cnrtInvokeFuncParam_t forward_param, cnrtQueue_t que) {
+    input_addrs_.resize(input_tensors_.size());
+    output_addrs_.resize(output_tensors_.size());
+    for (size_t i = 0; i < input_addrs_.size(); ++i) {
+      input_addrs_[i] = input_tensors_[i]->mlu_data();
+    }
+    for (size_t i = 0; i < output_addrs_.size(); ++i) {
+      output_addrs_[i] = output_tensors_[i]->mlu_data();
+    }
+
 #if PRINT_HW_TIME
     thread_local float hw_time;
     CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que));
@@ -159,7 +170,7 @@ class Graph {
       CNML_CALL(cnmlBindConstData_V2(
           nodes_[tensor_name]->mlu_tensor(), alloc_data, false));
     } else if (fp_type_ == CNML_DATA_FLOAT16) {
-      void* data_fp16 = RegisterConstData<::paddle::lite::fluid::float16>(len);
+      void* data_fp16 = RegisterConstData<paddle::lite::fluid::float16>(len);
       CNRT_CALL(
           cnrtCastDataType(const_cast<void*>(static_cast<const void*>(data)),
                            CNRT_FLOAT32,
@@ -174,7 +185,7 @@ class Graph {
     }
   }
 
-  void BindConstData(std::string tensor_name, ::paddle::lite::Tensor* tensor) {
+  void BindConstData(std::string tensor_name, paddle::lite::Tensor* tensor) {
     const float* data = tensor->data<float>();
     size_t len = tensor->data_size();
     if (fp_type_ == CNML_DATA_FLOAT32) {
@@ -183,10 +194,14 @@ class Graph {
           const_cast<void*>(static_cast<const void*>(data)),
           false));
     } else if (fp_type_ == CNML_DATA_FLOAT16) {
-      auto* data_fp16 = tensor->mutable_data<::paddle::lite::fluid::float16>();
-      for (size_t i = 0; i < len; ++i) {
-        data_fp16[i] = static_cast<::paddle::lite::fluid::float16>(data[i]);
-      }
+      void* data_fp16 = RegisterConstData<paddle::lite::fluid::float16>(len);
+      CNRT_CALL(
+          cnrtCastDataType(const_cast<void*>(static_cast<const void*>(data)),
+                           CNRT_FLOAT32,
+                           data_fp16,
+                           CNRT_FLOAT16,
+                           len,
+                           nullptr));
       CNML_CALL(cnmlBindConstData_V2(nodes_[tensor_name]->mlu_tensor(),
                                      static_cast<void*>(data_fp16),
                                      false));
@@ -207,12 +222,13 @@ class Graph {
     CNML_CALL(cnmlDestroyQuantizedParam(&quant_param));
   }
 
-  void SetFPType(::paddle::lite_api::PrecisionType type) {
+  void SetFPType(paddle::lite_api::PrecisionType type) {
+    origin_fp_type_ = type;
     switch (type) {
-      case ::paddle::lite_api::PrecisionType::kFP16:
+      case paddle::lite_api::PrecisionType::kFP16:
         fp_type_ = CNML_DATA_FLOAT16;
         break;
-      case ::paddle::lite_api::PrecisionType::kFloat:
+      case paddle::lite_api::PrecisionType::kFloat:
         fp_type_ = CNML_DATA_FLOAT32;
         break;
       default:
@@ -224,6 +240,7 @@ class Graph {
 
  private:
   cnmlDataType_t fp_type_{CNML_DATA_FLOAT32};
+  paddle::lite_api::PrecisionType origin_fp_type_{PRECISION(kFloat)};
   std::unordered_map<std::string, std::shared_ptr<MLUTensor>> nodes_;
   std::vector<cnmlTensor_t> inputs_;
   std::vector<cnmlTensor_t> outputs_;

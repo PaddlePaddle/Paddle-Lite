@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -40,11 +41,10 @@ class SubgraphEngine : public subgraph::Engine {
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
                  Scope* scope,
-                 ::paddle::lite_api::PrecisionType type)
+                 paddle::lite_api::PrecisionType type)
       : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {
-    graph_.SetFPType(type);
-  }
+            ctx, block_idx, block_desc, input_names, output_names, scope),
+        fp_type_(type) {}
 
   int Build() {
     // In order to attach all of the ops of the block desc, we need to build
@@ -72,24 +72,44 @@ class SubgraphEngine : public subgraph::Engine {
     return 0;
   }
 
+  bool InputShapeChanged() {
+    std::vector<std::vector<int64_t>> new_shape;
+    for (auto origin_itensor : origin_itensors_) {
+      new_shape.push_back(origin_itensor->dims().Vectorize());
+    }
+    inputs_shape_ = new_shape;
+    if (shape_graph_map_.count(inputs_shape_) > 0) {
+      return false;
+    }
+    return true;
+  }
+
  protected:
   int BuildDeviceProgram() override {
     int status = 0;
+    auto graph = std::make_shared<paddle::lite::subgraph::mlu::Graph>();
+    graph->SetFPType(fp_type_);
+    std::vector<std::vector<int64_t>> new_shape;
+    origin_itensors_.clear();
+    origin_otensors_.clear();
+
     // Convert all of input data vars and added into the MLU IR graph
+    status |= subgraph::REBUILD_WHEN_SHAPE_CHANGED;
     for (auto& input_name : input_names_) {
       auto input_tensor = scope_->FindMutableTensor(input_name);
+
+      origin_itensors_.push_back(input_tensor);
+      new_shape.push_back(input_tensor->dims().Vectorize());
+
       CHECK(input_tensor);
-      auto input_node =
-          graph_.AddNode(input_name,
-                         input_tensor->dims().Vectorize(),
-                         CNML_TENSOR,
-                         CNML_NCHW,
-                         graph_.FPType(),
-                         const_cast<void*>(input_tensor->raw_data()));
+      auto input_node = graph->AddNode(input_name,
+                                       input_tensor->dims().Vectorize(),
+                                       CNML_TENSOR,
+                                       CNML_NCHW,
+                                       graph->FPType());
       CHECK(input_node);
       // MLU doesn't support dynamic dimensions/shapes, so need to rebuild
       // the program when the shape of any input tensor is changed.
-      status |= subgraph::REBUILD_WHEN_SHAPE_CHANGED;
     }
     LOG(INFO) << "START TO CONVERT ";
     // Convert all of ops and its weights and added into the MLU IR graph
@@ -106,7 +126,7 @@ class SubgraphEngine : public subgraph::Engine {
       }
       auto kernel = inst.kernel();
       status |= bridges.Select(op_type, TARGET(kMLU))(
-          reinterpret_cast<void*>(&graph_),
+          reinterpret_cast<void*>(graph.get()),
           const_cast<OpLite*>(op),
           const_cast<KernelBase*>(kernel));
       if (subgraph::CHECK_FAILED(status)) {
@@ -115,33 +135,51 @@ class SubgraphEngine : public subgraph::Engine {
     }
     // Obtain the output nodes of the MLU IR graph and build the graph to MLU
     // runtime
-    std::vector<std::string> valid_output_names;
     for (auto& output_name : output_names_) {
-      if (graph_.HasNode(output_name)) {
-        graph_.AddOutput(graph_.GetNode(output_name));
+      if (graph->HasNode(output_name)) {
+        graph->AddOutput(graph->GetNode(output_name));
         auto output_tensor = scope_->FindMutableTensor(output_name);
-        void* p_data = static_cast<void*>(
-            output_tensor->mutable_data<typename ::paddle::lite::subgraph::mlu::
-                                            FPTypeTraits<Precision>::T>(
-                TARGET(kMLU)));
-        auto node = graph_.GetNode(output_name);
-        CHECK(p_data);
-        node->set_mlu_ptr(p_data);
-        valid_output_names.push_back(output_name);
+        origin_otensors_.push_back(output_tensor);
+
+        // auto node = graph->GetNode(output_name);
+        // CHECK(p_data);
+        // node->set_mlu_ptr(p_data);
       }
     }
     for (auto& input_name : input_names_) {
-      graph_.AddInput(graph_.GetNode(input_name));
+      graph->AddInput(graph->GetNode(input_name));
     }
-    CHECK(!valid_output_names.empty()) << "[MLU] no valid output names";
+
+    CHECK(!origin_otensors_.empty()) << "[MLU] no valid output names";
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto core_version = mlu_context.MLUCoreVersion();
     auto core_number = mlu_context.MLUCoreNumber();
-    graph_.Compile(core_version, core_number);
+    graph->Compile(core_version, core_number);
+    shape_graph_map_[new_shape] = graph;
     return status;
   }
 
   int LaunchDeviceProgram() override {
+    // prepare input and output memory
+    auto graph = shape_graph_map_[inputs_shape_];
+    auto* graph_input = graph->MutableInputs();
+    auto* graph_output = graph->MutableOutputs();
+    CHECK_EQ(graph_input->size(), origin_itensors_.size());
+    CHECK_EQ(graph_output->size(), origin_otensors_.size());
+
+    for (size_t i = 0; i < origin_itensors_.size(); ++i) {
+      graph_input->at(i)->set_mlu_ptr(
+          const_cast<void*>(origin_itensors_[i]->raw_data()));
+    }
+    for (size_t i = 0; i < origin_otensors_.size(); ++i) {
+      origin_otensors_[i]->Resize(graph_output->at(i)->get_origin_shape());
+      void* p_data = static_cast<void*>(
+          origin_otensors_[i]
+              ->mutable_data<typename paddle::lite::subgraph::mlu::FPTypeTraits<
+                  Precision>::T>(TARGET(kMLU)));
+      graph_output->at(i)->set_mlu_ptr(p_data);
+    }
+
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto exec_queue = mlu_context.exec_queue();
     u32_t affinity = mlu_context.affinity();
@@ -150,11 +188,13 @@ class SubgraphEngine : public subgraph::Engine {
     forward_param.data_parallelism = &data_param;
     forward_param.affinity = &affinity;
     forward_param.end = CNRT_PARAM_END;
-    graph_.Compute(forward_param, exec_queue);
+
+    graph->Compute(forward_param, exec_queue);
 
     // // =========== DUMP ===================
     // for (auto input_name : input_names_) {
-    //   auto input_tensor = graph_.GetNode(input_name);
+    //   auto input_tensor =
+    //   shape_graph_map_[inputs_shape_]->GetNode(input_name);
     //   auto dump_name = input_name;
     //   while (dump_name.find("/") != std::string::npos) {
     //     dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
@@ -163,8 +203,9 @@ class SubgraphEngine : public subgraph::Engine {
     //   input_tensor->ToFile(dump_name);
     // }
     // for (auto output_name : output_names_) {
-    //   if (graph_.HasNode(output_name)) {
-    //     auto output_tensor = graph_.GetNode(output_name);
+    //   if (shape_graph_map_[inputs_shape_]->HasNode(output_name)) {
+    //     auto output_tensor =
+    //     shape_graph_map_[inputs_shape_]->GetNode(output_name);
     //     auto dump_name = output_name;
     //     while (dump_name.find("/") != std::string::npos) {
     //       dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
@@ -180,7 +221,11 @@ class SubgraphEngine : public subgraph::Engine {
     return 0;
   }
 
-  paddle::lite::subgraph::mlu::Graph graph_;
+  paddle::lite_api::PrecisionType fp_type_;
+  std::vector<std::vector<int64_t>> inputs_shape_{};
+  std::map<std::vector<std::vector<int64_t>>,
+           std::shared_ptr<paddle::lite::subgraph::mlu::Graph>>
+      shape_graph_map_{};
 };
 
 template <PrecisionType Precision>

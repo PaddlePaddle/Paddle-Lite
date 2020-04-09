@@ -46,6 +46,7 @@ void MLUTensor::remember(const std::vector<int>& shape,
                          cnmlDataOrder_t shape_order) {
   tensor_type_ = tensor_type;
   mlu_dtype_ = mlu_dtype;
+  origin_shape_.assign(shape.begin(), shape.end());
 
   int size = 4;
   if (shape.size() > 4 || shape_order == CNML_ARRAY) {

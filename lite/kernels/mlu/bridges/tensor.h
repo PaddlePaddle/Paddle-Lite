@@ -51,6 +51,8 @@ class MLUTensor {
 
   void set_mlu_dtype(cnmlDataType_t type) { mlu_dtype_ = type; }
 
+  const std::vector<int64_t>& get_origin_shape() const { return origin_shape_; }
+
   ~MLUTensor();
 
   void ToFile(std::string file_name);
@@ -59,6 +61,7 @@ class MLUTensor {
   cnmlTensor_t mlu_tensor_;
 
   std::vector<int> shape_;
+  std::vector<int64_t> origin_shape_;
   cnmlTensorType_t tensor_type_;
   cnmlDataType_t mlu_dtype_;
   int dim_{0};
