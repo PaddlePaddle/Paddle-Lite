@@ -34,6 +34,7 @@ CLRuntime::~CLRuntime() {
   context_.reset();
   device_.reset();
   platform_.reset();
+  LOG(INFO) << "release ~CLRuntime() ";
 }
 
 bool CLRuntime::Init() {
