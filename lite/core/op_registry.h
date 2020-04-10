@@ -135,6 +135,12 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
