@@ -37,7 +37,7 @@ bool ReshapeOp::InferShapeImpl() const {
     for (size_t i = 0; i < shape_tensor_vct.size(); i++) {
       final_shape[i] = shape_tensor_vct[i]->data<int>()[0];
     }
-  } else if (shape_tensor != nullptr) {
+  } else if (shape_tensor != nullptr && shape_tensor->data<int>() != nullptr) {
     auto *shape_tensor_data = shape_tensor->data<int>();
     final_shape = std::vector<int>(shape_tensor_data,
                                    shape_tensor_data + shape_tensor->numel());
