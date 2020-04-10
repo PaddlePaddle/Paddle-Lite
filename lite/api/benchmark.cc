@@ -64,7 +64,7 @@ DEFINE_int32(threads, 1, "threads num");
 DEFINE_string(result_filename,
               "result.txt",
               "save the inference time to the file.");
-DEFINE_bool(is_show_output, false, "Wether show the output.");
+DEFINE_bool(show_output, false, "Wether to show the output in shell.");
 
 namespace paddle {
 namespace lite_api {
@@ -100,7 +100,7 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
 }
 
-int64_t shape_production(const std::vector<int64_t>& shape) {
+int64_t ShapeProduction(const std::vector<int64_t>& shape) {
   int64_t num = 1;
   for (auto i : shape) {
     num *= i;
@@ -124,7 +124,7 @@ void Run(const std::vector<int64_t>& input_shape,
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(input_shape);
   auto input_data = input_tensor->mutable_data<float>();
-  int64_t input_num = shape_production(input_shape);
+  int64_t input_num = ShapeProduction(input_shape);
   if (FLAGS_input_img_path.empty()) {
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
@@ -173,10 +173,10 @@ void Run(const std::vector<int64_t>& input_shape,
   ofs << std::endl;
   ofs.close();
 
-  if (FLAGS_is_show_output) {
+  if (FLAGS_show_output) {
     auto out_tensor = predictor->GetOutput(0);
     auto* out_data = out_tensor->data<float>();
-    int64_t output_num = shape_production(out_tensor->shape());
+    int64_t output_num = ShapeProduction(out_tensor->shape());
     float max_value = out_data[0];
     int max_index = 0;
     for (int i = 0; i < output_num; i++) {
@@ -224,7 +224,7 @@ void print_usage() {
       "  If load the optimized model, set optimized_model_path, or set\n"
       "    model_dir, model_filename and param_filename according to the\n"
       "    model. \n";
-  std::cout << help_info;
+  LOG(INFO) << help_info;
 }
 
 int main(int argc, char** argv) {
@@ -233,7 +233,7 @@ int main(int argc, char** argv) {
   bool is_opt_model = (FLAGS_optimized_model_path != "");
   bool is_origin_model = (FLAGS_model_dir != "");
   if (!is_origin_model && !is_opt_model) {
-    std::cout << "Input error. \n\n";
+    LOG(INFO) << "Input error, the model path should not be empty.\n";
     print_usage();
     exit(0);
   }

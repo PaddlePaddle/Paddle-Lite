@@ -22,16 +22,15 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-bool IsAbsMaxQuantizedOp(const OpInfo* op_info) {
+bool IsAbsMaxQuantizedOp(const OpInfo& op_info) {
   bool result = false;
-  if (op_info->HasAttr("quantization_type") &&
-      op_info->GetAttr<std::string>("quantization_type") ==
+  if (op_info.HasAttr("quantization_type") &&
+      op_info.GetAttr<std::string>("quantization_type") ==
           "post_weight_abs_max") {
     result = true;
-  } else if (!op_info->HasAttr("quantization_type") &&
-             op_info->HasAttr(
-                 "quantize_weight_bits")) {  // Support older model,
-                                             // save this for now
+  } else if (!op_info.HasAttr("quantization_type") &&
+             op_info.HasAttr("quantize_weight_bits")) {  // Support older model,
+                                                         // save this for now
     result = true;
   }
   return result;
@@ -53,7 +52,7 @@ void WeightQuantizationPreprocessPass::Apply(
                   node->AsStmt().op_type()) != weight_quantized_op.end()) {
       auto* scope = node->stmt()->op()->scope();
       auto* op_desc = node->stmt()->mutable_op_info();
-      if (IsAbsMaxQuantizedOp(op_desc)) {
+      if (IsAbsMaxQuantizedOp(*op_desc)) {
         for (auto& input_name : op_desc->input_vars()) {
           std::string scale_name = input_name + "_quant_scale";
           if (op_desc->HasAttr(scale_name)) {
