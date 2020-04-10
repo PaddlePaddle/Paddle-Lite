@@ -541,12 +541,23 @@ void MLUPostprocessPass::ModifyInputOutputDataType(SSAGraph* graph) {
               << "MLU subgraph unexpected persistent input type!";
           out_node->AsArg().type = LiteType::GetTensorTy(
               TARGET(kMLU), PRECISION(kAny), DATALAYOUT(kNHWC));
+        } else if (out_node_type->precision() == PRECISION(kAny) &&
+                   out_node->outlinks.empty()) {
+          out_node->AsArg().is_persist = true;
+          out_node->AsArg().type = LiteType::GetTensorTy(
+              TARGET(kMLU), PRECISION(kAny), DATALAYOUT(kNHWC));
         } else {
           CHECK(out_node_type->precision() == PRECISION(kFloat))
               << "MLU subgraph unexpected common output type!";
           out_node->AsArg().type = LiteType::GetTensorTy(
               TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
         }
+        const auto target = out_node->AsArg().type->target();
+        const auto precision = out_node->AsArg().type->precision();
+        const auto layout = out_node->AsArg().type->layout();
+        VLOG(4) << "arg name: " << out_node->AsArg().name
+                << " type: " << TargetToStr(target) << ", "
+                << PrecisionToStr(precision) << ", " << DataLayoutToStr(layout);
       }
     }
   }
@@ -597,13 +608,13 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
 }
 
 void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  // currently for non-persistent input and output args, mlu subgraph op
-  // only support float16/float32 data type
+// currently for non-persistent input and output args, mlu subgraph op
+// only support float16/float32 data type
 
-  // in two situations as folllows:
-  // 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
-  // arg_in and arg_out are assumed to be NHWC which user should be aware of.
-  // Thus here we change these args' layout to NHWC
+// in two situations as folllows:
+// 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
+// arg_in and arg_out are assumed to be NHWC which user should be aware of.
+// Thus here we change these args' layout to NHWC
 #ifdef LITE_WITH_MLU
   ModifyInputOutputDataType(graph.get());
 
