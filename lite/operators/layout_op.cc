@@ -26,6 +26,7 @@ bool LayoutOp::CheckShape() const {
 }
 bool LayoutOp::InferShape() const {
   param_.y->Resize(param_.x->dims());
+  param_.y->set_lod(param_.x->lod());
   return true;
 }
 bool LayoutOp::Run() { return OpLite::Run(); }

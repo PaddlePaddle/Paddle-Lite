@@ -26,6 +26,7 @@ bool IoCopyOp::CheckShape() const {
 }
 bool IoCopyOp::InferShape() const {
   param_.y->Resize(param_.x->dims());
+  param_.y->set_lod(param_.x->lod());
   return true;
 }
 bool IoCopyOp::Run() { return OpLite::Run(); }
