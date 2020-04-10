@@ -39,6 +39,10 @@ class AffineChannelOpLite : public OpLite {
 
   std::string DebugString() const override { return "affine_channel"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable AffineChannelParam param_;
 };

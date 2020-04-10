@@ -89,6 +89,41 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ActivationOp::GetGops(){
+  // todo
+  auto act_type = param_.active_type;
+  float gops = static_cast<float>(param_.X->numel());
+  switch(act_type){
+    case lite_api::ActivationType::kRelu:
+      return gops;
+    case lite_api::ActivationType::kRelu6:
+      return 2.0 * gops;
+    case lite_api::ActivationType::kLeakyRelu:
+      return 2.0 * gops;
+    case lite_api::ActivationType::kPRelu:
+      return 2.0 * gops;
+    case lite_api::ActivationType::kSwish:
+      return 4.0 * gops;
+    case lite_api::ActivationType::kSigmoid:
+      return 3.0 * gops;
+    case lite_api::ActivationType::kTanh:
+      return 5.0 * gops;
+    case lite_api::ActivationType::kExp:
+      return gops;
+    case lite_api::ActivationType::kAbs:
+      return gops;
+    case lite_api::ActivationType::kHardSwish:
+      return 5.0 * gops;
+    case lite_api::ActivationType::kReciprocal:
+      return gops;
+    default:
+      std::cout << "This Type :" << act_type << "doesn't support! " << std::endl;
+      return gops;
+  }
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

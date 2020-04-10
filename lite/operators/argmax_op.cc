@@ -58,6 +58,26 @@ bool ArgmaxOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ArgmaxOpLite::GetGops(){
+  InferShapeImpl();
+  auto x_dims = param_.X->dims();
+  auto out_dims = param_.Out->dims();
+  auto axis = param_.Axis;
+  int x_rank = x_dims.size();
+  int numel = out_dims.production();
+  int axis_num = x_dims[axis];
+  int max_num = 1;
+  if (axis < 0) {
+    axis += x_rank;
+  }
+  for (int64_t i = axis + 1; i < x_rank; i++) max_num *= x_dims[i];
+  float gops = 1.0f;
+  for (int i = 1; i <= max_num; i++) gops *= i;
+  return gops * numel;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

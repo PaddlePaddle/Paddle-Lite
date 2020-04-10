@@ -71,6 +71,13 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float XPUMultiEncoderOp::GetGops(){
+  // todo
+  return 0.f;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

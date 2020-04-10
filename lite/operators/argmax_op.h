@@ -39,6 +39,10 @@ class ArgmaxOpLite : public OpLite {
 
   std::string DebugString() const override { return "argmax"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable ArgmaxParam param_;
 };

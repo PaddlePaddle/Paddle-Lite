@@ -55,6 +55,13 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ActivationGradOp::GetGops(){
+  // todo
+  return 0.0;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

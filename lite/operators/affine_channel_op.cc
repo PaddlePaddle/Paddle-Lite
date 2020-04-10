@@ -69,6 +69,13 @@ bool AffineChannelOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float AffineChannelOpLite::GetGops(){
+  float gops = static_cast<float>(param_.X->numel());
+  return 2.0 * gops;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -39,6 +39,10 @@ class AssignValueOpLite : public OpLite {
 
   std::string DebugString() const override { return "assign value"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable AssignValueParam param_;
 };

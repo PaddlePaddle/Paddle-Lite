@@ -121,6 +121,10 @@ class OpLite : public Registry {
 
   virtual ~OpLite() = default;
 
+#ifdef LITE_WITH_PROFILE
+  virtual float GetGops();
+#endif
+
  protected:
   // Attach it with the runtime environment.
   virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;

@@ -45,6 +45,13 @@ bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float AssignOpLite::GetGops(){
+  int gops = param_.X->numel();
+  return 1.0 * gops;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

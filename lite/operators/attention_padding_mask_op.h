@@ -37,6 +37,10 @@ class AttentionPaddingMaskOp : public OpLite {
 
   std::string DebugString() const override { return "attention_padding_mask"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable AttentionPaddingMaskParam param_;
 };

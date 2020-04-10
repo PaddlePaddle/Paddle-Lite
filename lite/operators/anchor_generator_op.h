@@ -40,6 +40,10 @@ class AnchorGeneratorOpLite : public OpLite {
 
   std::string DebugString() const override { return "anchor_generator"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable AnchorGeneratorParam param_;
 };

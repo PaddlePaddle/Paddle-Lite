@@ -39,6 +39,10 @@ class AxpyOpLite : public OpLite {
 
   std::string DebugString() const override { return "axpy"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable AxpyParam param_;
 };

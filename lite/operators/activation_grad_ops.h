@@ -34,6 +34,10 @@ class ActivationGradOp : public OpLite {
 
   std::string DebugString() const override { return "activation_grad_op"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable operators::ActivationGradParam param_;
 };
