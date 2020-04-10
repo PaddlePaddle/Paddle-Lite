@@ -49,12 +49,12 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
             .front()
             ->mutable_context()
             ->As<CUDAContext>()
-            .set_need_sync(stmt.need_sync_);
+            .SetNeedSync(stmt.need_sync_);
         stmt.kernels()
             .front()
             ->mutable_context()
             ->As<CUDAContext>()
-            .set_sync_streams(stmt.sync_streams_);
+            .SetSyncStreams(stmt.sync_streams_);
       }
 #endif
       insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));

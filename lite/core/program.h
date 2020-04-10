@@ -117,7 +117,7 @@ struct Instruction {
       return false;
     }
   }
-  void sync() const { kernel_->mutable_context()->As<CUDAContext>().sync(); }
+  void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
 #endif
 
 #ifdef LITE_WITH_PROFILE

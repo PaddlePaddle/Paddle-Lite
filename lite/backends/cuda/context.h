@@ -106,7 +106,7 @@ class Context<TargetType::kCUDA> {
     return devs[dev_id].exec_streams();
   }
 
-  void set_sync_streams(const std::vector<int>& nums) {
+  void SetSyncStreams(const std::vector<int>& nums) {
     sync_streams_.clear();
     std::vector<cudaStream_t> exec_streams = all_exec_streams();
     for (size_t i = 0; i < nums.size(); ++i) {
@@ -114,10 +114,10 @@ class Context<TargetType::kCUDA> {
           << "streams id is not valid";
       sync_streams_.push_back(exec_streams[nums[i]]);
     }
-    init_sync_events(nums.size());
+    InitSyncEvents(nums.size());
   }
 
-  void init_sync_events(const int num) {
+  void InitSyncEvents(const int num) {
     sync_events_.clear();
     for (int i = 0; i < num; ++i) {
       cudaEvent_t eve;
@@ -126,10 +126,10 @@ class Context<TargetType::kCUDA> {
     }
   }
 
-  void set_need_sync(bool sync) { need_sync_ = sync; }
+  void SetNeedSync(bool sync) { need_sync_ = sync; }
   bool need_sync() const { return need_sync_; }
 
-  void sync() {
+  void Sync() {
     CHECK_EQ(sync_streams_.size(), sync_events_.size());
     for (size_t i = 0; i < sync_events_.size(); ++i) {
       TargetWrapperCuda::RecordEvent(sync_events_[i], sync_streams_[i]);

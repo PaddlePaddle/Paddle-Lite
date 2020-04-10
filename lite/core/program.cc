@@ -148,7 +148,7 @@ void RuntimeProgram::Run() {
 #endif
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
-      inst.sync();
+      inst.Sync();
     }
 #endif
     inst.Run();
