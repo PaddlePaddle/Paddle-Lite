@@ -179,7 +179,7 @@ if(LITE_WITH_XPU)
 endif()
 
 if (LITE_WITH_HW_ASCEND_NPU)
-    include(device/ascend)
+    include(device/hw_ascend_npu)
 endif()
 
 include(external/mklml)     # download mklml package

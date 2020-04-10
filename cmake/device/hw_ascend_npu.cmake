@@ -64,5 +64,44 @@ else()
     add_library(runtime_lib SHARED IMPORTED GLOBAL)
     set_property(TARGET runtime_lib PROPERTY IMPORTED_LOCATION ${RT_LIB_FILE})
 endif()
-set(ascend_runtime_libs acl_lib register_lib runtime_lib CACHE INTERNAL "ascend runtime libs")
-set(ascend_builder_libs acl_lib register_lib runtime_lib CACHE INTERNAL "ascend builder libs")
+
+set(hw_ascend_npu_runtime_libs acl_lib register_lib runtime_lib CACHE INTERNAL "ascend runtime libs")
+
+# find atc include folder and library
+find_path(ATC_INC NAMES ge/ge_ir_build.h
+  PATHS ${ASCEND_HOME}/atc/include)
+if (NOT ATC_INC)
+  message(FATAL_ERROR "Can not find ge/ge_ir_build.h in ${ASCEND_HOME}/atc/include")
+endif()
+include_directories("${ATC_INC}")
+
+find_library(GRAPH_LIB_FILE graph PATHS ${ASCEND_HOME}/atc/lib64)
+if (NOT GRAPH_LIB_FILE)
+  message(FATAL_ERROR "Can not find libgraph.so library in ${ASCEND_HOME}/atc/lib64")
+else()
+  message(STATUS "Found Graph Library: ${GRAPH_LIB_FILE}")
+  add_library(graph_lib SHARED IMPORTED GLOBAL)
+  set_property(TARGET graph_lib PROPERTY IMPORTED_LOCATION ${GRAPH_LIB_FILE})
+endif()
+
+# find opp include folder and library
+find_path(OPP_INC NAMES all_ops.h
+  PATHS ${ASCEND_HOME}/opp/op_proto/built-in/inc)
+if (NOT OPP_INC)
+  message(FATAL_ERROR "Can not find all_ops.h in ${ASCEND_HOME}/opp/op_proto/built-in/inc")
+endif()
+include_directories("${OPP_INC}")
+
+find_library(OPP_LIB_FILE opsproto PATHS ${ASCEND_HOME}/opp/op_proto/built-in)
+if (NOT OPP_LIB_FILE)
+  message(FATAL_ERROR "Can not find libopsproto.so in ${ASCEND_HOME}/opp/op_proto/built-in")
+else()
+  message(STATUS "Found OPP Library: ${OPP_LIB_FILE}")
+  add_library(opp_lib SHARED IMPORTED GLOBAL)
+  set_property(TARGET opp_lib PROPERTY IMPORTED_LOCATION ${OPP_LIB_FILE})
+endif()
+
+
+set(hw_ascend_npu_builder_libs graph_lib opp_lib CACHE INTERNAL "ascend builder libs")
+
+
