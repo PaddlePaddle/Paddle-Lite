@@ -26,15 +26,13 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-using inference::analysis::Dot;
-
 void GraphVisualizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   VLOG(5) << "\n" << Visualize(graph.get());
 }
 
 std::string Visualize(mir::SSAGraph* graph) {
   std::ostringstream os;
-  inference::analysis::Dot dot;
+  Dot dot;
   auto string_trunc = [](const std::string& str) -> std::string {
     const int max_disp_size = 100;
     if (str.length() > max_disp_size)

@@ -80,7 +80,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     std::vector<int64_t> col_dims_vec{top_size};
     col_dims_vec.push_back(1);
     col->Resize(col_dims_vec);
-    auto* top_data = col->mutable_data<T>();
+    auto* top_data = col->template mutable_data<T>();
     const auto* bottom_data = input.data<T>();
 
     int kernel_win_size = kernel_h * kernel_w;
@@ -149,7 +149,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // const auto& offset_y = in_row->lod()[0];
     const auto& offset_y = param.X->lod()[1];
     const auto& offset_x = param.X->lod()[2];
-    std::vector<size_t> top_offset;
+    std::vector<uint64_t> top_offset;
     int top_size = 0;
     top_offset.push_back(top_size);
     for (int b = 0; b < batch; ++b) {
@@ -178,9 +178,9 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     std::vector<int64_t> top_dims_vec{top_size};
     top_dims_vec.push_back(1);
     top->Resize(top_dims_vec);
-    auto* top_data = top->mutable_data<T>();
-    const auto* w_data = w->data<T>();
-    const auto* col_data = col->data<T>();
+    auto* top_data = top->template mutable_data<T>();
+    const auto* w_data = w->template data<T>();
+    const auto* col_data = col->template data<T>();
 
     auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
     for (int b = 0; b < batch; ++b) {

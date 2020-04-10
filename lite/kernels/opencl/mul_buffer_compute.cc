@@ -16,6 +16,7 @@
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
@@ -32,8 +33,10 @@ class MulCompute
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/mat_mul_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/mat_mul_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     const auto& param = *param_.get_mutable<param_t>();
     const auto* x_data = param.x->data<float>();
     const auto* y_data = param.y->data<float>();
@@ -68,7 +71,7 @@ class MulCompute
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status;
@@ -103,6 +106,7 @@ class MulCompute
   int m_, n_, k_;
   std::string kernel_func_name_{"mat_mul"};
   std::string build_options_{"-DCL_DTYPE_float"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

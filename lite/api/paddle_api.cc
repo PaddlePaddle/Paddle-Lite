@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+#include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
@@ -200,6 +201,58 @@ void ConfigBase::set_threads(int threads) {
   lite::DeviceInfo::Global().SetRunMode(mode_, threads);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+#ifdef LITE_WITH_MLU
+void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
+  mlu_core_version_ = core_version;
+}
+void CxxConfig::set_mlu_core_number(int core_number) {
+  mlu_core_number_ = core_number;
+}
+void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
+  mlu_input_layout_ = layout;
+}
+void CxxConfig::set_mlu_use_first_conv(bool use_first_conv) {
+  mlu_use_first_conv_ = use_first_conv;
+}
+void CxxConfig::set_mlu_first_conv_mean(const std::vector<float> &mean) {
+  mlu_first_conv_mean_ = mean;
+}
+void CxxConfig::set_mlu_first_conv_std(const std::vector<float> &std) {
+  mlu_first_conv_std_ = std;
+}
+lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
+  return mlu_core_version_;
+}
+int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
+DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
+bool CxxConfig::mlu_use_first_conv() const { return mlu_use_first_conv_; }
+const std::vector<float> &CxxConfig::mlu_first_conv_mean() const {
+  return mlu_first_conv_mean_;
+}
+const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
+  return mlu_first_conv_std_;
+}
+#endif
+
+void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+#ifdef LITE_WITH_XPU
+  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+#ifdef LITE_WITH_XPU
+  lite::Context<TargetType::kXPU>::SetDev(dev_no);
+#else
+  LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
 

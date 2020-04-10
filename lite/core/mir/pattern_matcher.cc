@@ -322,7 +322,6 @@ void PatternMatcher::RemoveOverlappedMatch(std::vector<subgraph_t> *subgraphs) {
 }
 
 std::string PMPattern::DotString() const {
-  using inference::analysis::Dot;
   Dot dot;
   int id = 0;
   // Create Nodes

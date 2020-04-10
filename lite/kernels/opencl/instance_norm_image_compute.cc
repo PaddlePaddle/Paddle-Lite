@@ -60,8 +60,10 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     }
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/instance_norm_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/instance_norm_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -115,7 +117,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
         out_image_shape["width"], out_image_shape["height"]);
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status = kernel.setArg(0, out_w);
@@ -180,8 +182,10 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     bias_image_.mutable_data<half_t, cl::Image2D>(
         scale_img_size[0], scale_img_size[1], bias_img.data());
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/instance_norm_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/instance_norm_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -234,7 +238,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     auto* scale_img = scale_image_.data<half_t, cl::Image2D>();
     auto* bias_img = bias_image_.data<half_t, cl::Image2D>();
@@ -271,6 +275,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   param_t* instance_norm_param_{nullptr};
   std::string kernel_func_name_{"instance_norm_onnx"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
   Tensor scale_image_;
   Tensor bias_image_;

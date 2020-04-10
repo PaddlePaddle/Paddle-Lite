@@ -106,6 +106,12 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+  if (LITE_WITH_MLU)
+    foreach(var ${lite_deps_MLU_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
   set(${TARGET} ${deps} PARENT_SCOPE)
 endfunction()
 
@@ -151,6 +157,7 @@ function(lite_cc_library TARGET)
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
+            MLU_DEPS ${args_MLU_DEPS}
             )
 
     if (args_SHARED OR ARGS_shared)
@@ -197,6 +204,7 @@ function(lite_cc_binary TARGET)
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             CV_DEPS ${CV_DEPS}
+            MLU_DEPS ${args_MLU_DEPS}
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
     target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
@@ -226,11 +234,9 @@ function(lite_cc_test TARGET)
     endif()
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS NPU_DEPS XPU_DEPS PROFILE_DEPS
-        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS HW_ASCEND_NPU_DEPS
-        ARGS
-        COMPILE_LEVEL # (basic|extra)
-        )
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS NPU_DEPS
+        XPU_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS HW_ASCEND_NPU_DEPS
+        ARGS COMPILE_LEVEL # (basic|extra))
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if (args_COMPILE_LEVEL STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
@@ -254,6 +260,7 @@ function(lite_cc_test TARGET)
               LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}
               CV_DEPS ${args_CV_DEPS}
+              MLU_DEPS ${args_MLU_DEPS}
               )
     _lite_cc_test(${TARGET} SRCS ${args_SRCS} DEPS ${deps} ARGS ${args_ARGS})
     # strip binary target to reduce size
@@ -278,6 +285,7 @@ set(cuda_kernels CACHE INTERNAL "cuda kernels")
 set(fpga_kernels CACHE INTERNAL "fpga kernels")
 set(npu_kernels CACHE INTERNAL "npu kernels")
 set(xpu_kernels CACHE INTERNAL "xpu kernels")
+set(mlu_kernels CACHE INTERNAL "mlu kernels")
 set(bm_kernels CACHE INTERNAL "bm kernels")
 set(hw_ascend_npu_kernels CACHE INTERNAL "huawei ascend npu kernels")
 set(opencl_kernels CACHE INTERNAL "opencl kernels")
@@ -295,7 +303,7 @@ if(LITE_BUILD_TAILOR)
   file(STRINGS ${tailored_kernels_list_path} tailored_kernels_list)
 endif()
 # add a kernel for some specific device
-# device: one of (Host, ARM, X86, NPU, FPGA, OPENCL, CUDA, BM)
+# device: one of (Host, ARM, X86, NPU, MLU, FPGA, OPENCL, CUDA, BM)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
     set(options "")
@@ -388,6 +396,12 @@ function(add_kernel TARGET device level)
         endif()
         set(bm_kernels "${bm_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
+    if ("${device}" STREQUAL "MLU")
+        if (NOT LITE_WITH_MLU)
+            return()
+        endif()
+        set(mlu_kernels "${mlu_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
     if ("${device}" STREQUAL "OPENCL")
         if (NOT LITE_WITH_OPENCL)
             foreach(src ${args_SRCS})
@@ -428,7 +442,8 @@ function(add_kernel TARGET device level)
               NPU_DEPS ${args_NPU_DEPS}
               XPU_DEPS ${args_XPU_DEPS}
               HW_ASCEND_NPU_DEPS ${args_HW_ASCEND_NPU_DEPS}
-	            BM_DEPS ${args_BM_DEPS}
+	          BM_DEPS ${args_BM_DEPS}
+              MLU_DEPS ${args_MLU_DEPS}
               PROFILE_DEPS ${args_PROFILE_DEPS}
               LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}
@@ -447,7 +462,7 @@ endif()
 function(add_operator TARGET level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS NPU_DEPS XPU_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS NPU_DEPS XPU_DEPS MLU_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -482,7 +497,8 @@ function(add_operator TARGET level)
               NPU_DEPS ${args_NPU_DEPS}
               XPU_DEPS ${args_XPU_DEPS}
               HW_ASCEND_NPU_DEPS ${args_HW_ASCEND_NPU_DEPS}
-	            BM_DEPS ${args_BM_DEPS}
+	          BM_DEPS ${args_BM_DEPS}
+              MLU_DEPS ${args_MLU_DEPS}
               PROFILE_DEPS ${args_PROFILE_DEPS}
               LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}

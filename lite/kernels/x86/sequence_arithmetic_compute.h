@@ -39,9 +39,9 @@ class SequenceArithmeticCompute
     out->Resize(x->dims());
     out->set_lod(x->lod());
 
-    auto x_data = x->data<T>();
-    auto y_data = y->data<T>();
-    auto out_data = out->mutable_data<T>();
+    auto x_data = x->template data<T>();
+    auto y_data = y->template data<T>();
+    auto out_data = out->template mutable_data<T>();
     auto x_seq_offset = x->lod()[0];
     auto y_seq_offset = y->lod()[0];
     int seq_num = x_seq_offset.size() - 1;

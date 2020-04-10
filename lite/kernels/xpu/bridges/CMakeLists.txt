@@ -1,4 +1,4 @@
-if(NOT LITE_WITH_XPU)
+if(NOT LITE_WITH_XTCL)
   return()
 endif()
 

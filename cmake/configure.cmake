@@ -140,6 +140,9 @@ endif()
 
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
+    if (LITE_WITH_XTCL)
+      add_definitions("-DLITE_WITH_XTCL")
+    endif()
 endif()
 
 if (LITE_WITH_OPENCL)
@@ -152,6 +155,10 @@ endif()
 
 if (LITE_WITH_BM)
 add_definitions("-DLITE_WITH_BM")
+endif()
+
+if (LITE_WITH_MLU)
+add_definitions("-DLITE_WITH_MLU")
 endif()
 
 if (LITE_WITH_PROFILE)

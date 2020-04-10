@@ -47,7 +47,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "image/pool_kernel.cl", build_options_);
+        kernel_func_name_, "image/pool_kernel.cl", build_options_, time_stamp_);
   }
 
   void Run() override {
@@ -112,7 +112,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     //    VLOG(4) << "out_image" << out_img;
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int c_block = (out_dims[1] + 3) / 4;
@@ -164,6 +164,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
  private:
   std::string kernel_func_name_{"pool_"};
   std::string build_options_{"-DCL_DTYPE_half"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

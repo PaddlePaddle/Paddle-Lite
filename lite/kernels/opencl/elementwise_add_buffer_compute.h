@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 #include "lite/core/kernel.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/cp_logging.h"
 
@@ -46,6 +47,7 @@ class ElementwiseAddCompute
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{"elementwise_add"};
   std::string build_options_{"-DCL_DTYPE_float"};
+  std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

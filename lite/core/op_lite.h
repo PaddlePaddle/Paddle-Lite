@@ -105,6 +105,20 @@ class OpLite : public Registry {
     return kernel_.get();
   }
 
+  // Attach input variable from scope by op_desc and input name
+  void AttachInput(const cpp::OpDesc &op_desc,
+                   lite::Scope *scope,
+                   const std::string &input_name,
+                   bool is_dispensable,
+                   lite::Tensor **input_var);
+
+  // Attach output variable from scope by op_desc and output name
+  void AttachOutput(const cpp::OpDesc &op_desc,
+                    lite::Scope *scope,
+                    const std::string &output_name,
+                    bool is_dispensable,
+                    lite::Tensor **output_var);
+
   virtual ~OpLite() = default;
 
  protected:

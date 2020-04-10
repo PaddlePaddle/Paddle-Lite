@@ -133,22 +133,3 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
-
-//                     kMLU,
-//                     kFloat,
-//                     kNHWC,
-//                     paddle::lite::kernels::mlu::IoCopyHostToMluCompute,
-//                     host_to_device)
-//    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU))})
-//    .Finalize();
-//
-//
-//                     kMLU,
-//                     kFloat,
-//                     kNHWC,
-//                     paddle::lite::kernels::mlu::IoCopyMluToHostCompute,
-//                     device_to_host)
-//    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU))})
-//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-//    .Finalize();

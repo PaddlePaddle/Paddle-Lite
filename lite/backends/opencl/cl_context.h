@@ -27,6 +27,20 @@ namespace lite {
 
 class CLContext {
  public:
+  ~CLContext() {
+    for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
+      clReleaseKernel(kernels_[kidx]->get());
+      kernels_[kidx].reset();
+    }
+    kernels_.clear();
+    kernel_offset_.clear();
+    for (auto &p : programs_) {
+      clReleaseProgram(p.second->get());
+    }
+    programs_.clear();
+    LOG(INFO) << "release cl::Program, cl::Kernel finished.";
+  }
+
   cl::CommandQueue &GetCommandQueue();
 
   cl::Context &GetContext();
@@ -36,7 +50,8 @@ class CLContext {
 
   void AddKernel(const std::string &kernel_name,
                  const std::string &file_name,
-                 const std::string &options = "");
+                 const std::string &options = "",
+                 const std::string &time_stamp = "");
 
   cl::Kernel &GetKernel(const int index);
 
@@ -45,12 +60,12 @@ class CLContext {
   cl::NDRange DefaultWorkSize(const CLImage &image);
 
   cl::NDRange LocalWorkSize(cl::NDRange global_work_size, size_t max_work_size);
+
   cl::NDRange LocalWorkSizeTurn(cl::NDRange global_work_size,
                                 size_t max_work_size,
                                 int divitor = 2);
   //  cl::NDRange LocalWorkSizeConv1x1(cl::NDRange global_work_size,
   //                                   size_t max_work_size);
-
  private:
   std::unordered_map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::vector<std::unique_ptr<cl::Kernel>> kernels_;

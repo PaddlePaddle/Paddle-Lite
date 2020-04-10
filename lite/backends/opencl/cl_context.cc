@@ -1,11 +1,8 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,7 +10,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_context.h"
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -55,7 +51,8 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
 
 void CLContext::AddKernel(const std::string &kernel_name,
                           const std::string &file_name,
-                          const std::string &options) {
+                          const std::string &options,
+                          const std::string &time_stamp) {
   cl_int status{CL_SUCCESS};
   VLOG(3) << " --- to get program " << file_name << " --- ";
   auto program = GetProgram(file_name, options);
@@ -67,7 +64,7 @@ void CLContext::AddKernel(const std::string &kernel_name,
   VLOG(3) << " --- end create kernel --- ";
   kernels_.emplace_back(std::move(kernel));
   STL::stringstream kernel_key;
-  kernel_key << kernel_name << options;
+  kernel_key << kernel_name << options << time_stamp;
   kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
