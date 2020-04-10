@@ -107,8 +107,6 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
  public:
   LightPredictorImpl() = default;
 
-  ~LightPredictorImpl();
-
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
 
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
