@@ -24,7 +24,7 @@ TEST(NaiveBuffer, primary) {
   PrimaryBuilder<int32_t> p0(&table);
   PrimaryBuilder<float> p1(&table);
   StringBuilder p2(&table);
-  ASSERT_EQ(p0.type(), Type::_int32);
+  ASSERT_EQ(p0.type(), Type::INT32);
   ASSERT_EQ(p1.type(), Type::FLOAT32);
   ASSERT_EQ(p2.type(), Type::STRING);
 
