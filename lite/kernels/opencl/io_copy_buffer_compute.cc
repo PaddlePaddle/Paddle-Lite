@@ -115,7 +115,6 @@ class IoCopykOpenCLToHostCompute
       auto& event = *(it->second);
       event.wait();
       auto command_queue = CLRuntime::Global()->command_queue();
-      command_queue.flush();
       command_queue.finish();
     } else {
       LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
