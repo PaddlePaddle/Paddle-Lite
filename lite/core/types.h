@@ -81,7 +81,7 @@ enum class FluidType {
 
 template <typename T>
 Type StdTypeToRepr() {
-  return Type::_unk;
+  return Type::UNK;
 }
 template <>
 Type StdTypeToRepr<int32_t>();
