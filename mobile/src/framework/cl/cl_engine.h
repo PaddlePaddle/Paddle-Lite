@@ -233,7 +233,7 @@ class CLEngine {
   void setClPath(std::string cl_path) { cl_path_ = cl_path; }
 
  private:
-  CLEngine() { initialized_ = false; }
+  CLEngine() { Init(); }
 
   bool SetPlatform();
 
