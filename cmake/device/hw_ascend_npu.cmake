@@ -34,7 +34,6 @@ include_directories("${ACL_INC}")
 
 # find ascendcl library
 find_library(ACL_LIB_FILE NAMES ascendcl PATHS ${ASCEND_HOME}/acllib/lib64)
-
 if(NOT ACL_LIB_FILE)
   message(FATAL_ERROR "Can not find ACL Library in ${ASCEND_HOME}/acllib/lib64")
 else()
@@ -45,7 +44,6 @@ endif()
 
 # find register library
 find_library(REG_LIB_FILE NAMES register PATHS ${ASCEND_HOME}/acllib/lib64)
-
 if(NOT REG_LIB_FILE)
     message(FATAL_ERROR "Can not find REG Library in ${ASCEND_HOME}/acllib/lib64")
 else()
@@ -56,7 +54,6 @@ endif()
 
 
 find_library(RT_LIB_FILE NAMES runtime PATHS ${ASCEND_HOME}/acllib/lib64)
-
 if(NOT RT_LIB_FILE)
     message(FATAL_ERROR "Can not find RT Library in ${ASCEND_HOME}/acllib/lib64")
 else()
@@ -101,7 +98,5 @@ else()
   set_property(TARGET opp_lib PROPERTY IMPORTED_LOCATION ${OPP_LIB_FILE})
 endif()
 
-
 set(hw_ascend_npu_builder_libs graph_lib opp_lib CACHE INTERNAL "ascend builder libs")
-
 

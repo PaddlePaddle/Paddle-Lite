@@ -199,7 +199,7 @@ function(lite_cc_binary TARGET)
             NPU_DEPS ${args_NPU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             HW_ASCEND_NPU_DEPS ${args_HW_ASCEND_NPU_DEPS}
-	          BM_DEPS ${args_BM_DEPS}
+	        BM_DEPS ${args_BM_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}

@@ -14,7 +14,7 @@
 
 #include "lite/kernels/hw_ascend_npu/bridges/graph.h"
 /// reference from opp package
-#include <all_ops.h
+#include <all_ops.h>
 #include <utility>
 
 namespace paddle {
