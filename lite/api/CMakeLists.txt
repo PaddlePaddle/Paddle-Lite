@@ -68,7 +68,7 @@ if (WITH_TESTING)
       X86_DEPS ${x86_kernels}
       XPU_DEPS ${xpu_kernels}
       BM_DEPS ${bm_kernels}
-      HW_ASCENND_NPU_DEPS ${hw_ascend_npu_kernels})
+      HW_ASCENND_NPU_DEPS ${hw_ascend_npu_kernels}
       MLU_DEPS ${mlu_kernels})
 endif()
 if(LITE_WITH_FPGA)
@@ -132,7 +132,7 @@ lite_cc_library(light_api SRCS light_api.cc
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         BM_DEPS ${bm_kernels}
-        HW_ASCEND_NPU_DEPS ${hw_ascend_npu_kernels})
+        HW_ASCEND_NPU_DEPS ${hw_ascend_npu_kernels}
         MLU_DEPS ${mlu_kernels})
 
 include(ExternalProject)

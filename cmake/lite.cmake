@@ -236,7 +236,8 @@ function(lite_cc_test TARGET)
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS NPU_DEPS
         XPU_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS HW_ASCEND_NPU_DEPS
-        ARGS COMPILE_LEVEL # (basic|extra))
+        ARGS COMPILE_LEVEL # (basic|extra)
+    )
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if (args_COMPILE_LEVEL STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
