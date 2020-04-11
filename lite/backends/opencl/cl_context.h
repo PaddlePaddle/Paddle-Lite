@@ -36,6 +36,7 @@ class CLContext {
     kernel_offset_.clear();
     for (auto &p : programs_) {
       clReleaseProgram(p.second->get());
+      p.second.reset();
     }
     programs_.clear();
     LOG(INFO) << "release cl::Program, cl::Kernel finished.";
@@ -66,9 +67,10 @@ class CLContext {
                                 int divitor = 2);
   //  cl::NDRange LocalWorkSizeConv1x1(cl::NDRange global_work_size,
   //                                   size_t max_work_size);
+
  private:
   std::unordered_map<std::string, std::unique_ptr<cl::Program>> programs_;
-  std::vector<std::unique_ptr<cl::Kernel>> kernels_;
+  std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
 };
 
