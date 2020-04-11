@@ -141,9 +141,6 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 
 // 2. Create Instructs
 #ifdef LITE_WITH_OPENCL
-  using WaitListType =
-      std::unordered_map<decltype(static_cast<const void*>(nullptr)),
-                         std::shared_ptr<cl::Event>>;
   using OpenCLContext = Context<TargetType::kOpenCL>;
   std::unique_ptr<KernelContext> local_ctx(new KernelContext());
   local_ctx->As<OpenCLContext>().InitOnce();
