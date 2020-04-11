@@ -45,14 +45,6 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     i_score_shape_data[i] = static_cast<int32_t>(score_dims[i]);
   }
 
-  auto out_var_name = op_info->Output("Out").front();
-  auto out = scope->FindVar(out_var_name)->GetMutable<lite::Tensor>();
-  auto out_dims = out->dims();
-  std::vector<int32_t> i_out_shape_data(out_dims.size());
-  for (size_t i = 0; i < out_dims.size(); i++) {
-    i_out_shape_data[i] = static_cast<int32_t>(out_dims[i]);
-  }
-
   auto background_label = op_info->GetAttr<int>("background_label");
   auto keep_top_k = op_info->GetAttr<int>("keep_top_k");
   auto nms_top_k = op_info->GetAttr<int>("nms_top_k");
@@ -62,6 +54,26 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bool normalized;
   if (op_info->HasAttr("normalized")) {
     normalized = op_info->GetAttr<bool>("normalized");
+  }
+
+  auto out_var_name = op_info->Output("Out").front();
+  auto out = scope->FindVar(out_var_name)->GetMutable<lite::Tensor>();
+  std::vector<int64_t> vec_out_dim(score_dims.size());
+  if (3 == score_dims.size()) {
+    vec_out_dim[0] = score_dims[0];  // batch_size
+    vec_out_dim[1] = keep_top_k;
+    vec_out_dim[2] = 6;
+  } else {
+    vec_out_dim[0] = keep_top_k;
+    vec_out_dim[1] = 6;
+  }
+  DDimLite out_dims(vec_out_dim);
+  out->Resize(out_dims);
+  out->mutable_data<float>();
+
+  std::vector<int32_t> i_out_shape_data(out_dims.size());
+  for (size_t i = 0; i < out_dims.size(); i++) {
+    i_out_shape_data[i] = static_cast<int32_t>(out_dims[i]);
   }
 
   user_cpu_param_t bm_param;
@@ -88,12 +100,9 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int32_t* out_shape[1];
   int32_t out_dim[1];
   const char* out_name[1];
-  i_out_shape_data[0] = keep_top_k;
-  i_out_shape_data[1] = 6;
   out_shape[0] = &i_out_shape_data[0];
-  out_dim[0] = 2;
+  out_dim[0] = out_dims.size();
   out_name[0] = static_cast<const char*>(out_var_name.c_str());
-
   add_user_cpu_layer(graph->GetCompilerHandle(),
                      input_num,
                      in_shape,

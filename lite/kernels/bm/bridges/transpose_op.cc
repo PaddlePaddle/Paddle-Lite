@@ -15,6 +15,7 @@
 #include <bmcompiler_defs.h>
 #include <bmcompiler_if.h>
 #include "lite/kernels/bm/bridges/graph.h"
+#include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
@@ -39,11 +40,20 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
-  std::vector<int32_t> i_output_shape_data(output_dims.size());
+  std::vector<int32_t> i_output_shape_data(x_dims.size());
   for (size_t i = 0; i < x_dims.size(); i++) {
     i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
   }
-  for (size_t i = 0; i < output_dims.size(); i++) {
+  auto out_name = output_var_name;
+  if (x_dims.size() > output_dims.size()) {
+    for (size_t i = 0; i < (x_dims.size() - output_dims.size()); i++) {
+      i_output_shape_data[i] = 1;
+    }
+    out_name = lite::subgraph::bm::UniqueName(op_type);
+  }
+
+  for (size_t i = (x_dims.size() - output_dims.size()); i < output_dims.size();
+       i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
   auto axis = op_info->GetAttr<std::vector<int>>("axis");
@@ -53,9 +63,22 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                          const_cast<const int*>(&i_x_shape_data[0]),
                          x_dims.size(),
                          DTYPE_FP32,
-                         static_cast<const char*>(output_var_name.c_str()),
+                         static_cast<const char*>(out_name.c_str()),
                          NULL,
                          const_cast<const int*>(&axis[0]));
+  if (x_dims.size() > output_dims.size()) {
+    std::vector<int32_t> i_real_output_shape_data(output_dims.size());
+    for (size_t i = 0; i < output_dims.size(); i++) {
+      i_real_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
+    }
+    add_reshape_layer_v2(graph->GetCompilerHandle(),
+                         static_cast<const char*>(out_name.c_str()),
+                         const_cast<const int*>(&i_output_shape_data[0]),
+                         i_output_shape_data.size(),
+                         static_cast<const char*>(output_var_name.c_str()),
+                         const_cast<const int*>(&i_real_output_shape_data[0]),
+                         output_dims.size());
+  }
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
