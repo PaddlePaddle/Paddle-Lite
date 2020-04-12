@@ -108,6 +108,7 @@ class DepthwiseConv2dCompute
     status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,

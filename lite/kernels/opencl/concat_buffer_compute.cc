@@ -123,6 +123,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, total1);
       CL_CHECK_FATAL(status);
+      event_ = std::shared_ptr<cl::Event>(new cl::Event);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
           cl::NullRange,
@@ -156,6 +157,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, total0);
         CL_CHECK_FATAL(status);
+        event_ = std::shared_ptr<cl::Event>(new cl::Event);
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
             kernel,
             cl::NullRange,

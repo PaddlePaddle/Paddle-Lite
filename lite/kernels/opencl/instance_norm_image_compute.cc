@@ -137,6 +137,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(7, *out_img);
     CL_CHECK_FATAL(status);
 
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -259,6 +260,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(arg_idx++, in_w);
     CL_CHECK_FATAL(status);
 
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,

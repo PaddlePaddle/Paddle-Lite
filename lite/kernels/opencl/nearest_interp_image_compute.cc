@@ -109,6 +109,7 @@ class NearestInterpComputeImageDefault
         cl::NDRange{static_cast<cl::size_type>(default_work_size.data()[0]),
                     static_cast<cl::size_type>(default_work_size.data()[1]),
                     static_cast<cl::size_type>(default_work_size.data()[2])};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,

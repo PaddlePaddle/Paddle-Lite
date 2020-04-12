@@ -542,6 +542,7 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, default_w_blk_);
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -707,6 +708,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -834,6 +836,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -965,6 +968,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1084,6 +1088,7 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
 
   //  VLOG(4) << "out_image: " << out_image;
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1215,6 +1220,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1331,6 +1337,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1415,6 +1422,7 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1513,6 +1521,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1650,6 +1659,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,

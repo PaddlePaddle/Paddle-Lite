@@ -91,6 +91,7 @@ class MulCompute
 
     auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                         static_cast<size_t>((n_ + 3) / 4)};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
