@@ -29,13 +29,13 @@ class CLContext {
  public:
   ~CLContext() {
     for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
-      clReleaseKernel(kernels_[kidx]->get());
+      // Note(ysh329): Don't need `clReleaseKernel`
       kernels_[kidx].reset();
     }
     kernels_.clear();
     kernel_offset_.clear();
     for (auto &p : programs_) {
-      clReleaseProgram(p.second->get());
+      // Note(ysh329): Dont't need `clReleaseProgram`
       p.second.reset();
     }
     programs_.clear();
