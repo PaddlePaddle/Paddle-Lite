@@ -46,11 +46,11 @@ TEST(cl_test, context_test) {
   auto *runtime = CLRuntime::Global();
   CHECK(runtime->IsInitSuccess());
   CLContext context;
-  context.AddKernel("pool_max", "image/pool_kernel.cl", "-DCL_DTYPE_float");
+  context.AddKernel("pool_max", "image/pool_kernel.cl", "-DCL_DTYPE_half");
   context.AddKernel(
-      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_float");
+      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_half");
   context.AddKernel(
-      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_float");
+      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_half");
 }
 
 TEST(cl_test, kernel_test) {
@@ -58,10 +58,10 @@ TEST(cl_test, kernel_test) {
   CHECK(runtime->IsInitSuccess());
   std::unique_ptr<CLContext> context(new CLContext);
   context->AddKernel(
-      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_float");
-  context->AddKernel("pool_max", "image/pool_kernel.cl", "-DCL_DTYPE_float");
+      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_half");
+  context->AddKernel("pool_max", "image/pool_kernel.cl", "-DCL_DTYPE_half");
   context->AddKernel(
-      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_float");
+      "elementwise_add", "image/elementwise_add_kernel.cl", "-DCL_DTYPE_half");
   auto kernel = context->GetKernel(2);
 
   std::unique_ptr<float[]> in_data(new float[4 * 3 * 256 * 512]);
@@ -90,19 +90,23 @@ TEST(cl_test, kernel_test) {
   LOG(INFO) << out_image;
 
   cl_int status;
-  status = kernel.setArg(0, *in_image.cl_image());
+  status = kernel->setArg(0, *in_image.cl_image());
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(1, *bias_image.cl_image());
+  status = kernel->setArg(1, *bias_image.cl_image());
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(2, *out_image.cl_image());
+  status = kernel->setArg(2, *out_image.cl_image());
   CL_CHECK_FATAL(status);
 
   size_t width = in_image.ImageWidth();
   size_t height = in_image.ImageHeight();
   auto global_work_size = cl::NDRange{width, height};
   cl::Event event;
-  status = context->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
+  status = context->GetCommandQueue().enqueueNDRangeKernel(*kernel.get(),
+                                                           cl::NullRange,
+                                                           global_work_size,
+                                                           cl::NullRange,
+                                                           nullptr,
+                                                           &event);
   CL_CHECK_FATAL(status);
   status = context->GetCommandQueue().finish();
   CL_CHECK_FATAL(status);
@@ -118,7 +122,7 @@ TEST(cl_test, target_wrapper_buffer_test) {
   CHECK(inited) << "Fail to initialize OpenCL runtime.";
   std::unique_ptr<CLContext> context(new CLContext);
   std::string kernel_name = "elementwise_add";
-  std::string build_options = "-DCL_DTYPE_float";
+  std::string build_options = "-DCL_DTYPE_half";
   context->AddKernel(
       kernel_name, "buffer/elementwise_add_kernel.cl", build_options);
   std::vector<float> h_a;
@@ -145,21 +149,25 @@ TEST(cl_test, target_wrapper_buffer_test) {
       d_b, h_b.data(), sizeof(float) * h_b.size(), IoDirection::HtoD);
   // x + y: x[n=1, c=10, h=1, w=1], y[c=10]
   auto kernel = context->GetKernel(kernel_name + build_options);
-  cl_int status = kernel.setArg(0, *d_a);
+  cl_int status = kernel->setArg(0, *d_a);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(1, *d_b);
+  status = kernel->setArg(1, *d_b);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(2, *d_out);
+  status = kernel->setArg(2, *d_out);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(3, 1);
+  status = kernel->setArg(3, 1);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(4, 10);
+  status = kernel->setArg(4, 10);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(5, 1);
+  status = kernel->setArg(5, 1);
   CL_CHECK_FATAL(status);
   auto global_work_size = cl::NDRange{10, 1};
-  status = context->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
+  status = context->GetCommandQueue().enqueueNDRangeKernel(*kernel.get(),
+                                                           cl::NullRange,
+                                                           global_work_size,
+                                                           cl::NullRange,
+                                                           nullptr,
+                                                           nullptr);
   CL_CHECK_FATAL(status);
   status = context->GetCommandQueue().finish();
   CL_CHECK_FATAL(status);
