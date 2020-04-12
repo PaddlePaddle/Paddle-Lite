@@ -70,7 +70,7 @@ endif()
 
 if (WITH_MKLML AND MKLML_IOMP_LIB)
     message(STATUS "Enable Intel OpenMP with ${MKLML_IOMP_LIB}")
-    if(WIN32)
+    if(WIN32 OR APPLE)
         # openmp not support well for now on windows
         set(OPENMP_FLAGS "")
     else(WIN32)
