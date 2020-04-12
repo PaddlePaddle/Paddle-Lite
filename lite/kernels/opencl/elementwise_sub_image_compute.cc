@@ -101,11 +101,11 @@ void ElementwiseSubImageCompute::Run() {
   int arg_idx = 0;
   auto y_dims = y->dims();
   if (y_dims.size() == 4) {
-    cl_int status = kernel.setArg(arg_idx, *x_img);
+    cl_int status = kernel->setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_img);
+    status = kernel->setArg(++arg_idx, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel->setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
   } else if (y_dims.size() == 1) {
     if (axis == x->dims().size() - 1 || axis == x->dims().size() - 3) {
@@ -113,13 +113,13 @@ void ElementwiseSubImageCompute::Run() {
 #ifndef LITE_SHUTDOWN_LOG
       VLOG(4) << "tensor_w:" << tensor_w;
 #endif
-      cl_int status = kernel.setArg(arg_idx, *x_img);
+      cl_int status = kernel->setArg(arg_idx, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *y_img);
+      status = kernel->setArg(++arg_idx, *y_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_img);
+      status = kernel->setArg(++arg_idx, *out_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, static_cast<const int>(tensor_w));
+      status = kernel->setArg(++arg_idx, static_cast<const int>(tensor_w));
       CL_CHECK_FATAL(status);
     } else {
       LOG(FATAL) << "ElementwiseSubImage doesn't support axis:" << axis
@@ -139,7 +139,7 @@ void ElementwiseSubImageCompute::Run() {
 #endif
 
   auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *kernel.get(),
       cl::NullRange,
       global_work_size,
       cl::NullRange,

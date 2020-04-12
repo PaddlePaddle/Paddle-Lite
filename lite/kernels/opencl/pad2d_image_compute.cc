@@ -114,27 +114,27 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     int pad_w1 = pad2d_param_->paddings[3];
     float pad_value = pad2d_param_->pad_value;
 
-    cl_int status = kernel.setArg(arg_idx++, *x_img);
+    cl_int status = kernel->setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *out_img);
+    status = kernel->setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, in_h);
+    status = kernel->setArg(arg_idx++, in_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, in_w);
+    status = kernel->setArg(arg_idx++, in_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_h);
+    status = kernel->setArg(arg_idx++, out_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_w);
+    status = kernel->setArg(arg_idx++, out_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, pad_h0);
+    status = kernel->setArg(arg_idx++, pad_h0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, pad_h1);
+    status = kernel->setArg(arg_idx++, pad_h1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, pad_w0);
+    status = kernel->setArg(arg_idx++, pad_w0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, pad_w1);
+    status = kernel->setArg(arg_idx++, pad_w1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, pad_value);
+    status = kernel->setArg(arg_idx++, pad_value);
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
@@ -143,7 +143,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

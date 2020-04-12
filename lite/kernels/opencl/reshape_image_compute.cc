@@ -122,31 +122,31 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
     int arg_idx = 0;
     cl_int status;
-    status = kernel.setArg(arg_idx, *x_image);
+    status = kernel->setArg(arg_idx, *x_image);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_image);
+    status = kernel->setArg(++arg_idx, *out_image);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_C);
+    status = kernel->setArg(++arg_idx, out_C);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_H);
+    status = kernel->setArg(++arg_idx, out_H);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_W);
+    status = kernel->setArg(++arg_idx, out_W);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_W);
+    status = kernel->setArg(++arg_idx, in_W);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_H);
+    status = kernel->setArg(++arg_idx, in_H);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_Stride0);
+    status = kernel->setArg(++arg_idx, in_Stride0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_Stride1);
+    status = kernel->setArg(++arg_idx, in_Stride1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_Stride2);
+    status = kernel->setArg(++arg_idx, in_Stride2);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_Stride0);
+    status = kernel->setArg(++arg_idx, out_Stride0);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_Stride1);
+    status = kernel->setArg(++arg_idx, out_Stride1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_Stride2);
+    status = kernel->setArg(++arg_idx, out_Stride2);
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
@@ -155,7 +155,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                     static_cast<size_t>(default_work_size.data()[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

@@ -170,25 +170,25 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     if (inputs.size() == 2) {
       auto* x_buf0 = inputs[0]->data<half_t, cl::Image2D>();
       auto* x_buf1 = inputs[1]->data<half_t, cl::Image2D>();
-      cl_int status = kernel.setArg(arg_idx, *x_buf0);
+      cl_int status = kernel->setArg(arg_idx, *x_buf0);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *x_buf1);
+      status = kernel->setArg(++arg_idx, *x_buf1);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_buf);
+      status = kernel->setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, flag_);
+      status = kernel->setArg(++arg_idx, flag_);
       CL_CHECK_FATAL(status);
       status =
-          kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
+          kernel->setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_c);
+      status = kernel->setArg(++arg_idx, out_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_w);
+      status = kernel->setArg(++arg_idx, out_w);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, width_);
+      status = kernel->setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
+          *kernel.get(),
           cl::NullRange,
           global_work_size,
           cl::NullRange,
@@ -213,25 +213,25 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                         static_cast<cl::size_type>(image_shape["width"] /
                                                    in_dims[in_dims.size() - 1]),
                         static_cast<cl::size_type>(image_shape["height"])};
-        cl_int status = kernel.setArg(arg_idx, *x_buf);
+        cl_int status = kernel->setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *out_buf);
+        status = kernel->setArg(++arg_idx, *out_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, flag_);
+        status = kernel->setArg(++arg_idx, flag_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, start);
+        status = kernel->setArg(++arg_idx, start);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_c);
+        status = kernel->setArg(++arg_idx, out_c);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_w);
+        status = kernel->setArg(++arg_idx, out_w);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, in_w);
+        status = kernel->setArg(++arg_idx, in_w);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, width_);
+        status = kernel->setArg(++arg_idx, width_);
         CL_CHECK_FATAL(status);
         CL_CHECK_FATAL(status);
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-            kernel,
+            *kernel.get(),
             cl::NullRange,
             global_work_size,
             cl::NullRange,

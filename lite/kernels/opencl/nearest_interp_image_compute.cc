@@ -72,21 +72,21 @@ class NearestInterpComputeImageDefault
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_img);
+    cl_int status = kernel->setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel->setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const float>(scale_h));
+    status = kernel->setArg(++arg_idx, static_cast<const float>(scale_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const float>(scale_w));
+    status = kernel->setArg(++arg_idx, static_cast<const float>(scale_w));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_h));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(in_dims_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_h));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(out_dims_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_w));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(in_dims_w));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(out_dims_w));
     CL_CHECK_FATAL(status);
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -110,7 +110,7 @@ class NearestInterpComputeImageDefault
                     static_cast<cl::size_type>(default_work_size.data()[1]),
                     static_cast<cl::size_type>(default_work_size.data()[2])};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

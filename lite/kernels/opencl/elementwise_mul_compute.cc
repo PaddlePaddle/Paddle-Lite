@@ -96,51 +96,51 @@ void ElementwiseMulFloatImageCompute::Run() {
   auto x_dims = x->dims();
   if (y_dims == x_dims) {
     // kernel: elementwise_mul(channel_mul_d4)
-    cl_int status = kernel.setArg(arg_idx, *x_img);
+    cl_int status = kernel->setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_img);
+    status = kernel->setArg(++arg_idx, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel->setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
   } else if (y_dims.size() == 1 || y_dims.size() == 4) {
     auto tensor_w = x_dims[x_dims.size() - 1];
     VLOG(4) << "tensor_w:" << tensor_w;
     // kernel: channel_mul_d1 / channel_mul_d4
-    cl_int status = kernel.setArg(arg_idx, *x_img);
+    cl_int status = kernel->setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_img);
+    status = kernel->setArg(++arg_idx, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel->setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(tensor_w));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(tensor_w));
     CL_CHECK_FATAL(status);
   } else if (y_dims.size() == 2) {
     if (x_dims[0] == y_dims[0] && x_dims[1] == y_dims[1]) {
       auto tensor_w = x_dims[x_dims.size() - 1];
       VLOG(4) << "tensor_w:" << tensor_w;
       // kernel: channel_mul_d2_nc
-      cl_int status = kernel.setArg(arg_idx, *x_img);
+      cl_int status = kernel->setArg(arg_idx, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *y_img);
+      status = kernel->setArg(++arg_idx, *y_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_img);
+      status = kernel->setArg(++arg_idx, *out_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, static_cast<const int>(tensor_w));
+      status = kernel->setArg(++arg_idx, static_cast<const int>(tensor_w));
       CL_CHECK_FATAL(status);
     } else {
       auto y_tensor_h = y->dims()[0];
       auto y_tensor_w = y->dims()[1];
       VLOG(4) << "y_tensor_w:" << y_tensor_w << " y_tensor_h:" << y_tensor_h;
       // kernel: channel_mul_d2_hw
-      cl_int status = kernel.setArg(arg_idx, *x_img);
+      cl_int status = kernel->setArg(arg_idx, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *y_img);
+      status = kernel->setArg(++arg_idx, *y_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_img);
+      status = kernel->setArg(++arg_idx, *out_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, static_cast<const int>(y_tensor_w));
+      status = kernel->setArg(++arg_idx, static_cast<const int>(y_tensor_w));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, static_cast<const int>(y_tensor_h));
+      status = kernel->setArg(++arg_idx, static_cast<const int>(y_tensor_h));
       CL_CHECK_FATAL(status);
     }
   } else {
@@ -151,7 +151,7 @@ void ElementwiseMulFloatImageCompute::Run() {
   auto global_work_size = cl::NDRange{static_cast<cl::size_type>(x_img_width),
                                       static_cast<cl::size_type>(x_img_height)};
   auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *kernel.get(),
       cl::NullRange,
       global_work_size,
       cl::NullRange,

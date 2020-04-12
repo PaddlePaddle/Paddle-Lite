@@ -49,22 +49,22 @@ void ElementwiseAddCompute::Run() {
   VLOG(4) << TargetToStr(ele_param_->Out->target());
 #endif
   int arg_idx = 0;
-  cl_int status = kernel.setArg(arg_idx, *x_buf);
+  cl_int status = kernel->setArg(arg_idx, *x_buf);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *y_buf);
+  status = kernel->setArg(++arg_idx, *y_buf);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *out_buf);
+  status = kernel->setArg(++arg_idx, *out_buf);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (const int)batch_);
+  status = kernel->setArg(++arg_idx, (const int)batch_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (const int)channels_);
+  status = kernel->setArg(++arg_idx, (const int)channels_);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (const int)num_);
+  status = kernel->setArg(++arg_idx, (const int)num_);
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *kernel.get(),
       cl::NullRange,
       global_work_size,
       cl::NullRange,

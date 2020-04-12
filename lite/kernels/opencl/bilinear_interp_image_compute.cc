@@ -118,23 +118,23 @@ class BilinearInterpImageCompute
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
 #endif
-    cl_int status = kernel.setArg(arg_idx++, *x_img);
+    cl_int status = kernel->setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *out_img);
+    status = kernel->setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, scale_h);
+    status = kernel->setArg(arg_idx++, scale_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, scale_w);
+    status = kernel->setArg(arg_idx++, scale_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, align_delta);
+    status = kernel->setArg(arg_idx++, align_delta);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, in_h);
+    status = kernel->setArg(arg_idx++, in_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, in_w);
+    status = kernel->setArg(arg_idx++, in_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_h);
+    status = kernel->setArg(arg_idx++, out_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_w);
+    status = kernel->setArg(arg_idx++, out_w);
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
@@ -143,7 +143,7 @@ class BilinearInterpImageCompute
                     static_cast<cl::size_type>(default_work_size[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

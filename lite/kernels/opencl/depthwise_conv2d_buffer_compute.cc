@@ -75,41 +75,41 @@ class DepthwiseConv2dCompute
     cl_int status;
     auto numel = output_dims.production();
     int arg_idx = 0;
-    status = kernel.setArg(arg_idx, static_cast<const int>(numel));
+    status = kernel->setArg(arg_idx, static_cast<const int>(numel));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *input_buf);
+    status = kernel->setArg(++arg_idx, *input_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[2]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(x_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(x_dims[3]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(x_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[1]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(output_dims[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(output_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[3]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(output_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(filter_dims[2]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(filter_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(filter_dims[3]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(filter_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(strides[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(strides[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[1]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(paddings[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *output_buf);
+    status = kernel->setArg(++arg_idx, *output_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *filter_buf);
+    status = kernel->setArg(++arg_idx, *filter_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *bias_buf);
+    status = kernel->setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

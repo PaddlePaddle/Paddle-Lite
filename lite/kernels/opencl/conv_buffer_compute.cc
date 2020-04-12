@@ -283,25 +283,25 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
   auto& context = ctx_->As<OpenCLContext>();
   cl_int status;
   int arg_idx = 0;
-  status = kernel.setArg(arg_idx, *filter_d);
+  status = kernel->setArg(arg_idx, *filter_d);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *x_d);
+  status = kernel->setArg(++arg_idx, *x_d);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *bias_d);
+  status = kernel->setArg(++arg_idx, *bias_d);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *output_d);
+  status = kernel->setArg(++arg_idx, *output_d);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, m);
+  status = kernel->setArg(++arg_idx, m);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, n);
+  status = kernel->setArg(++arg_idx, n);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, k);
+  status = kernel->setArg(++arg_idx, k);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, batch_size);
+  status = kernel->setArg(++arg_idx, batch_size);
   CL_CHECK_FATAL(status);
 
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
+      *kernel.get(),
       cl::NullRange,
       global_work_size,
       local_work_size,

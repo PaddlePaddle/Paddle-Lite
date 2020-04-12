@@ -76,23 +76,23 @@ class MulCompute
 
     cl_int status;
     int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_buf);
+    status = kernel->setArg(arg_idx, *x_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_buf);
+    status = kernel->setArg(++arg_idx, *y_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
+    status = kernel->setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, m_);
+    status = kernel->setArg(++arg_idx, m_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, n_);
+    status = kernel->setArg(++arg_idx, n_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, k_);
+    status = kernel->setArg(++arg_idx, k_);
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                         static_cast<size_t>((n_ + 3) / 4)};
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

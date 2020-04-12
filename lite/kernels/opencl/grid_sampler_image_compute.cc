@@ -48,7 +48,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     VLOG(4) << "kernel_key: " << kernel_key.str();
   }
 
@@ -116,22 +116,24 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
     cl_int status;
-    auto kernel = kernel_;
-    status = kernel.setArg(0, *x_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *grid_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, out_height);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, out_width);
-    CL_CHECK_FATAL(status);
-
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    status = kernel->setArg(0, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(1, *grid_img);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(2, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(3, out_height);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(4, out_width);
+    CL_CHECK_FATAL(status);
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
@@ -148,7 +150,6 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   std::string kernel_func_name_{"grid_sampler"};
-  cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{"-DCL_DTYPE_half"};

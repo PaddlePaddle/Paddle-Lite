@@ -104,24 +104,24 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
               << default_work_size[1] << ", " << default_work_size[2];
 #endif
       int arg_idx = 0;
-      cl_int status = kernel.setArg(arg_idx++, *prior_box_image);
+      cl_int status = kernel->setArg(arg_idx++, *prior_box_image);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, *prior_box_var_image);
+      status = kernel->setArg(arg_idx++, *prior_box_var_image);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, *target_box_image);
+      status = kernel->setArg(arg_idx++, *target_box_image);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, *out_buf);
+      status = kernel->setArg(arg_idx++, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, out_C);
+      status = kernel->setArg(arg_idx++, out_C);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, out_H);
+      status = kernel->setArg(arg_idx++, out_H);
       CL_CHECK_FATAL(status);
       auto global_work_size =
           cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                       static_cast<cl::size_type>(default_work_size[2])};
 
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
+          *kernel.get(),
           cl::NullRange,
           global_work_size,
           cl::NullRange,

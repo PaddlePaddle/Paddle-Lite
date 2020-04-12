@@ -45,7 +45,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
   }
 
   void ReInitWhenNeeded() override {
@@ -82,19 +82,22 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
-    auto kernel = kernel_;
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    ;
     cl_int status;
-    status = kernel.setArg(0, *x_img);
+    status = kernel->setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *out_img);
+    status = kernel->setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, scale);
+    status = kernel->setArg(2, scale);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, bias);
+    status = kernel->setArg(3, bias);
     CL_CHECK_FATAL(status);
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
@@ -111,7 +114,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   std::shared_ptr<cl::Event> event_{new cl::Event};
 
   param_t* scale_param_{nullptr};
-  cl::Kernel kernel_;
+  cl::Kernel kernel;
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(

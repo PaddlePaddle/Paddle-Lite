@@ -68,16 +68,16 @@ void CLContext::AddKernel(const std::string &kernel_name,
   kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
-cl::Kernel &CLContext::GetKernel(const int index) {
+std::shared_ptr<cl::Kernel> &CLContext::GetKernel(const int index) {
   VLOG(3) << " --- kernel count: " << kernels_.size() << " --- ";
   CHECK(static_cast<size_t>(index) < kernels_.size())
       << "The index must be less than the size of kernels.";
   CHECK(kernels_[index] != nullptr)
       << "The target kernel pointer cannot be null.";
-  return *(kernels_[index]);
+  return kernels_[index];
 }
 
-cl::Kernel &CLContext::GetKernel(const std::string &name) {
+std::shared_ptr<cl::Kernel> &CLContext::GetKernel(const std::string &name) {
   auto it = kernel_offset_.find(name);
   CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
                                     << name;

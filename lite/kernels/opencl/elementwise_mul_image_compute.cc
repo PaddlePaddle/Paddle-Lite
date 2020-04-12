@@ -124,57 +124,57 @@ class ElementwiseMulImageCompute
 
     if (bias_dims == x_dims) {
       // kernel_func_name_ = "elementwise_mul";
-      cl_int status = kernel.setArg(0, *x_img);
+      cl_int status = kernel->setArg(0, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(1, *y_img);
+      status = kernel->setArg(1, *y_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(2, *out_img);
+      status = kernel->setArg(2, *out_img);
       CL_CHECK_FATAL(status);
     } else {
       const int bias_dim_size = bias_dims.size();
       if (bias_dim_size == 1) {
         // kernel_func_name_ = "channel_mul_d1";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 2) {
         // kernel_func_name_ = "channel_mul_d2";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 3) {
         // kernel_func_name_ = "channel_mul_d3";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 4) {
         // kernel_func_name_ = "channel_mul_d4";
         const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
+        cl_int status = kernel->setArg(0, *x_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
+        status = kernel->setArg(1, *y_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
+        status = kernel->setArg(2, *out_img);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
+        status = kernel->setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else {
         LOG(FATAL) << "Unsupported ElementwiseMul with x_dims:" << x_dims
@@ -186,7 +186,7 @@ class ElementwiseMulImageCompute
         cl::NDRange{static_cast<cl::size_type>(x_img_width),
                     static_cast<cl::size_type>(x_img_height)};
     auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

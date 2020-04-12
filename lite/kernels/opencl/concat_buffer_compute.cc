@@ -103,28 +103,28 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
       auto axis0 = inputs[0]->dims()[axis_];
       int total0 = axis0 * post_size_;
       int total1 = (axis_size_ - axis0) * post_size_;
-      cl_int status = kernel.setArg(arg_idx, *x_buf0);
+      cl_int status = kernel->setArg(arg_idx, *x_buf0);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *x_buf1);
+      status = kernel->setArg(++arg_idx, *x_buf1);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_buf);
+      status = kernel->setArg(++arg_idx, *out_buf);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, static_cast<int>(axis0));
+      status = kernel->setArg(++arg_idx, static_cast<int>(axis0));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, axis_size_);
+      status = kernel->setArg(++arg_idx, axis_size_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, pre_size_);
+      status = kernel->setArg(++arg_idx, pre_size_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, post_size_);
+      status = kernel->setArg(++arg_idx, post_size_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, total);
+      status = kernel->setArg(++arg_idx, total);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, total0);
+      status = kernel->setArg(++arg_idx, total0);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, total1);
+      status = kernel->setArg(++arg_idx, total1);
       CL_CHECK_FATAL(status);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
+          *kernel.get(),
           cl::NullRange,
           global_work_size,
           cl::NullRange,
@@ -140,24 +140,24 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
         auto* x_buf = inputs[i]->data<float, cl::Buffer>();
         global_work_size = cl::NDRange{static_cast<size_t>(size)};
         int total0 = size * post_size_;
-        cl_int status = kernel.setArg(arg_idx, *x_buf);
+        cl_int status = kernel->setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *out_buf);
+        status = kernel->setArg(++arg_idx, *out_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, static_cast<int>(size));
+        status = kernel->setArg(++arg_idx, static_cast<int>(size));
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, pre_size_);
+        status = kernel->setArg(++arg_idx, pre_size_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, post_size_);
+        status = kernel->setArg(++arg_idx, post_size_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, start);
+        status = kernel->setArg(++arg_idx, start);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, total);
+        status = kernel->setArg(++arg_idx, total);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, total0);
+        status = kernel->setArg(++arg_idx, total0);
         CL_CHECK_FATAL(status);
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-            kernel,
+            *kernel.get(),
             cl::NullRange,
             global_work_size,
             cl::NullRange,

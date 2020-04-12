@@ -120,25 +120,25 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    cl_int status = kernel.setArg(0, out_w);
+    cl_int status = kernel->setArg(0, out_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, out_h);
+    status = kernel->setArg(1, out_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, out_c_group);
+    status = kernel->setArg(2, out_c_group);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, lws1);
+    status = kernel->setArg(3, lws1);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, lws2);
+    status = kernel->setArg(4, lws2);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, epsilon);
+    status = kernel->setArg(5, epsilon);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, *x_img);
+    status = kernel->setArg(6, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, *out_img);
+    status = kernel->setArg(7, *out_img);
     CL_CHECK_FATAL(status);
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         local_work_size,
@@ -244,23 +244,23 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* bias_img = bias_image_.data<half_t, cl::Image2D>();
     float epsilon = instance_norm_param_->epsilon;
 
-    cl_int status = kernel.setArg(arg_idx++, *x_img);
+    cl_int status = kernel->setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *out_img);
+    status = kernel->setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *scale_img);
+    status = kernel->setArg(arg_idx++, *scale_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *bias_img);
+    status = kernel->setArg(arg_idx++, *bias_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, epsilon);
+    status = kernel->setArg(arg_idx++, epsilon);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, in_h);
+    status = kernel->setArg(arg_idx++, in_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, in_w);
+    status = kernel->setArg(arg_idx++, in_w);
     CL_CHECK_FATAL(status);
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         local_work_size,

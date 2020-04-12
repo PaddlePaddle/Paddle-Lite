@@ -106,21 +106,21 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[3];
 #endif
-    cl_int status = kernel.setArg(arg_idx++, *x_img);
+    cl_int status = kernel->setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *out_img);
+    status = kernel->setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_channel);
+    status = kernel->setArg(arg_idx++, out_channel);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, out_width);
+    status = kernel->setArg(arg_idx++, out_width);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, n_);
+    status = kernel->setArg(arg_idx++, n_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, k_);
+    status = kernel->setArg(arg_idx++, k_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, alpha_);
+    status = kernel->setArg(arg_idx++, alpha_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, beta_);
+    status = kernel->setArg(arg_idx++, beta_);
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
@@ -129,7 +129,7 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

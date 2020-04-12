@@ -125,33 +125,33 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #endif
     cl_int status;
     int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_img);
+    status = kernel->setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel->setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[2]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(in_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[3]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(in_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[2]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(out_dims[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[3]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(out_dims[3]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[0]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(ksize[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[1]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(ksize[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(strides[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(strides[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[2]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(paddings[2]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+    status = kernel->setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,

@@ -54,9 +54,9 @@ class CLContext {
                  const std::string &options = "",
                  const std::string &time_stamp = "");
 
-  cl::Kernel &GetKernel(const int index);
+  std::shared_ptr<cl::Kernel> &GetKernel(const int index);
 
-  cl::Kernel &GetKernel(const std::string &name);
+  std::shared_ptr<cl::Kernel> &GetKernel(const std::string &name);
 
   cl::NDRange DefaultWorkSize(const CLImage &image);
 

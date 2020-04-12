@@ -81,7 +81,7 @@ class FcCompute
                                       time_stamp_);
       STL::stringstream kernel_key;
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-      kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+      auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
       // compute global work size
       GetGlobalWorkSize();
@@ -103,28 +103,30 @@ class FcCompute
     auto* bias_buf = fc_param_->bias->data<float, cl::Buffer>();
     auto* out_buf =
         fc_param_->output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
-    auto kernel = kernel_;
-    cl_int status;
-    status = kernel.setArg(0, *x_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *w_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *bias_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, *out_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, static_cast<const int>(m_));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<const int>(n_));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, static_cast<const int>(k_));
-    CL_CHECK_FATAL(status);
-
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    ;
+    cl_int status;
+    status = kernel->setArg(0, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(1, *w_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(2, *bias_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(3, *out_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(4, static_cast<const int>(m_));
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(5, static_cast<const int>(n_));
+    CL_CHECK_FATAL(status);
+    status = kernel->setArg(6, static_cast<const int>(k_));
+    CL_CHECK_FATAL(status);
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
@@ -143,7 +145,7 @@ class FcCompute
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
-  cl::Kernel kernel_;
+  cl::Kernel kernel;
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 

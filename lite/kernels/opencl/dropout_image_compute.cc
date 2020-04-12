@@ -70,13 +70,13 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
     cl_int status;
 
     int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_img);
+    status = kernel->setArg(arg_idx, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
+    status = kernel->setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_w);
+    status = kernel->setArg(++arg_idx, out_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, dropout_prob);
+    status = kernel->setArg(++arg_idx, dropout_prob);
     CL_CHECK_FATAL(status);
 
     const std::vector<size_t>& default_work_size =
@@ -90,7 +90,7 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size.data()[2])};
 
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
+        *kernel.get(),
         cl::NullRange,
         global_work_size,
         cl::NullRange,
