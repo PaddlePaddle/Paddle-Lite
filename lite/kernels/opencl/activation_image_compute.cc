@@ -81,10 +81,6 @@ class ActivationComputeImageDefault
                                     "image/activation_kernel.cl",
                                     build_options_,
                                     time_stamp_);
-
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
   }
 
   void ReInitWhenNeeded() override {
@@ -119,10 +115,11 @@ class ActivationComputeImageDefault
         out_img_shape_[0], out_img_shape_[1]);
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+
     std::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    ;
+
     cl_int status;
     status = kernel->setArg(0, *x_img);
     CL_CHECK_FATAL(status);
@@ -170,7 +167,6 @@ class ActivationComputeImageDefault
   std::string kernel_func_name_{};
   float threshold_{6.f};
   float scale_{1.f};
-  cl::Kernel kernel;
   bool first_epoch_for_reinit_{true};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};

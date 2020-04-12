@@ -108,7 +108,6 @@ class FcCompute
     std::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    ;
     cl_int status;
     status = kernel->setArg(0, *x_buf);
     CL_CHECK_FATAL(status);
@@ -145,7 +144,7 @@ class FcCompute
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
-  cl::Kernel kernel;
+
   std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
