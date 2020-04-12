@@ -142,7 +142,7 @@ class LayoutComputeBufferChwToImageDefault
  private:
   std::string kernel_func_name_{"buffer_to_image2d"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 // [ImageDefault] -> [NCHW]
@@ -250,7 +250,7 @@ class LayoutComputeImageDefaultToBufferChw
  private:
   std::string kernel_func_name_{"image2d_to_buffer"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 // [NCHW] -> [ImageDW]
@@ -344,7 +344,7 @@ class LayoutComputeBufferChwToImage2DNw
  private:
   std::string kernel_func_name_{"buffer_to_image2d_nw"};
   std::string build_options_{"-DCL_DTYPE_float "};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

@@ -78,7 +78,7 @@ class ReluCompute
   std::string kernel_func_name_{"relu"};
   std::string build_options_{"-DCL_DTYPE_float -DRELU"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 class SigmoidCompute
@@ -137,7 +137,7 @@ class SigmoidCompute
   std::string kernel_func_name_{"sigmoid"};
   std::string build_options_{"-DCL_DTYPE_float -DSIGMOID"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

@@ -145,7 +145,7 @@ class FcCompute
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

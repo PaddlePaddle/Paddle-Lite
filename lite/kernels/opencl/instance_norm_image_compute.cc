@@ -278,7 +278,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{"instance_norm_onnx"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
   Tensor scale_image_;
   Tensor bias_image_;
 };

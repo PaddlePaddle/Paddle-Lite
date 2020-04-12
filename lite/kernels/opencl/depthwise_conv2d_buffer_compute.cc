@@ -124,7 +124,7 @@ class DepthwiseConv2dCompute
   std::string kernel_func_name_{"depthwise_conv2d"};
   std::string build_options_{"-DCL_DTYPE_float"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl
