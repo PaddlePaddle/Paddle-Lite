@@ -8,7 +8,9 @@ message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
 message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
 message(STATUS "LITE_WITH_NPU:\t${LITE_WITH_NPU}")
 message(STATUS "LITE_WITH_XPU:\t${LITE_WITH_XPU}")
+message(STATUS "LITE_WITH_XTCL:\t${LITE_WITH_XTCL}")
 message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
+message(STATUS "LITE_WITH_MLU:\t${LITE_WITH_MLU}")
 message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
@@ -122,7 +124,7 @@ if (LITE_WITH_PYTHON)
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite.so"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.so")
     add_custom_target(publish_inference_python_installer ${TARGET}
-        COMMAND python setup.py bdist_wheel
+        COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
         WORKING_DIRECTORY ${INFER_LITE_PUBLISH_ROOT}/python/install/
         DEPENDS publish_inference_python_lib)
     add_custom_target(publish_inference_python_light_demo ${TARGET}

@@ -1,11 +1,8 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,7 +10,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_context.h"
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -36,10 +32,8 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   STL::stringstream program_key_ss;
   program_key_ss << file_name << options;
   std::string program_key = program_key_ss.str();
-
-  auto &programs = CLRuntime::Global()->programs();
-  auto it = programs.find(program_key);
-  if (it != programs.end()) {
+  auto it = programs_.find(program_key);
+  if (it != programs_.end()) {
     VLOG(3) << " --- program -> " << program_key << " has been built --- ";
     return *(it->second);
   }
@@ -50,9 +44,9 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   CLRuntime::Global()->BuildProgram(program.get(), options);
   VLOG(3) << " --- end build program -> " << program_key << " --- ";
 
-  programs[program_key] = std::move(program);
+  programs_[program_key] = std::move(program);
 
-  return *(programs[program_key]);
+  return *(programs_[program_key]);
 }
 
 void CLContext::AddKernel(const std::string &kernel_name,
@@ -64,34 +58,29 @@ void CLContext::AddKernel(const std::string &kernel_name,
   auto program = GetProgram(file_name, options);
   VLOG(3) << " --- end get program --- ";
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
-  std::unique_ptr<cl::Kernel> kernel(
+  std::shared_ptr<cl::Kernel> kernel(
       new cl::Kernel(program, kernel_name.c_str(), &status));
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
-
-  auto &kernels = CLRuntime::Global()->kernels();
-  auto &kernel_offset_map = CLRuntime::Global()->kernel_offset();
-  kernels.emplace_back(std::move(kernel));
+  kernels_.emplace_back(std::move(kernel));
   STL::stringstream kernel_key;
   kernel_key << kernel_name << options << time_stamp;
-  kernel_offset_map[kernel_key.str()] = kernels.size() - 1;
+  kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {
-  auto &kernels = CLRuntime::Global()->kernels();
-  VLOG(3) << " --- kernel count: " << kernels.size() << " --- ";
-  CHECK(static_cast<size_t>(index) < kernels.size())
+  VLOG(3) << " --- kernel count: " << kernels_.size() << " --- ";
+  CHECK(static_cast<size_t>(index) < kernels_.size())
       << "The index must be less than the size of kernels.";
-  CHECK(kernels[index] != nullptr)
+  CHECK(kernels_[index] != nullptr)
       << "The target kernel pointer cannot be null.";
-  return *(kernels[index]);
+  return *(kernels_[index]);
 }
 
 cl::Kernel &CLContext::GetKernel(const std::string &name) {
-  auto &kernel_offset_map = CLRuntime::Global()->kernel_offset();
-  auto it = kernel_offset_map.find(name);
-  CHECK(it != kernel_offset_map.end()) << "Cannot find the kernel function: "
-                                       << name;
+  auto it = kernel_offset_.find(name);
+  CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
+                                    << name;
   return GetKernel(it->second);
 }
 

@@ -51,6 +51,7 @@ class SubgraphEngine : public subgraph::Engine {
   void *bmrt_hd_;
   std::vector<bm_tensor_t> device_inputs_;
   std::vector<bm_tensor_t> device_outputs_;
+  std::map<std::string, int> outname_map_;
   const char **net_names_;
   const bm_net_info_t *net_info_;
   bm_handle_t bm_hd_;

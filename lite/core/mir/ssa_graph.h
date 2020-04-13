@@ -42,6 +42,8 @@ class SSAGraph : GraphBase {
 
   std::vector<mir::Node *> StmtTopologicalOrder();
 
+  std::vector<mir::Node *> NodeTopologicalOrder();
+
   // The inputs of the graph.
   std::vector<mir::Node *> inputs();
 
@@ -85,6 +87,9 @@ class SSAGraph : GraphBase {
 
   // Build operator inlink edge table.
   std::map<mir::Node *, std::set<mir::Node *>> BuildOperationAdjList();
+
+  // Build node inlink edge table.
+  std::map<mir::Node *, std::set<mir::Node *>> BuildNodeAdjList();
 
   void SortHelper(const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
                   mir::Node *node,

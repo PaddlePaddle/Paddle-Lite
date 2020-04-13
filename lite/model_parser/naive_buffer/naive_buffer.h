@@ -192,7 +192,7 @@ class EnumBuilder : public FieldBuilder {
 
   ~EnumBuilder() = default;
 
-  Type type() const override { return Type::_enum; }
+  Type type() const override { return Type::ENUM; }
 };
 
 class StringBuilder : public FieldBuilder {
@@ -211,7 +211,7 @@ class StringBuilder : public FieldBuilder {
 
   void Load() override;
 
-  Type type() const override { return Type::_string; }
+  Type type() const override { return Type::STRING; }
 };
 
 /*
@@ -266,7 +266,7 @@ class StructBuilder : public FieldBuilder {
 
   /// Type of this struct.
   // TODO(Superjomn) The customized type is not supported yet.
-  Type type() const override { return Type::_unk; }
+  Type type() const override { return Type::UNK; }
 
   /// Get a field by `name`.
   template <typename T>
@@ -327,7 +327,7 @@ class ListBuilder : public FieldBuilder {
   }
 
   // Get element type.
-  Type type() const override { return Type::_list; }
+  Type type() const override { return Type::LIST; }
 
   /// Persist information to the corresponding BinaryTable.
   void Save() override;

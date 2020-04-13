@@ -83,6 +83,9 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
+#if defined(LITE_WITH_MLU)
+    WorkSpace::Global_MLU().AllocReset();
+#endif
 #ifdef LITE_WITH_PROFILE
     profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
     profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());

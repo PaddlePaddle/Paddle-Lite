@@ -54,6 +54,7 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     type = 0;
   }
+  is_int = false;
   if (type == 2 && is_int) {
     add_upsample_layer(graph->GetCompilerHandle(),
                        const_cast<const int*>(&i_x_shape_data[0]),

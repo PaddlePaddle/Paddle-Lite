@@ -1,11 +1,8 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,7 +11,6 @@ limitations under the License. */
 
 #include "lite/backends/opencl/cl_runtime.h"
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/utils/cp_logging.h"
@@ -29,38 +25,16 @@ CLRuntime* CLRuntime::Global() {
 }
 
 CLRuntime::~CLRuntime() {
-  LOG(INFO) << "CLRuntime::~CLRuntime()";
-  // Note: do ReleaseResources() in predictor
-  command_queue_&& clReleaseCommandQueue(command_queue_->get());
-  command_queue_.reset();
-  context_&& clReleaseContext(context_->get());
-  context_.reset();
-  device_.reset();
-  platform_.reset();
-  initialized_ = false;
-}
-
-void CLRuntime::ReleaseResources() {
-  //  if (is_resources_released_) {
-  //    return;
-  //  }
-
   if (command_queue_ != nullptr) {
     command_queue_->flush();
     command_queue_->finish();
   }
-  for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
-    clReleaseKernel(kernels_[kidx]->get());
-    kernels_[kidx].reset();
-  }
-  kernels_.clear();
-  kernel_offset_.clear();
-  for (auto& p : programs_) {
-    clReleaseProgram(p.second->get());
-  }
-  programs_.clear();
-  LOG(INFO) << "release resources finished.";
-  is_resources_released_ = true;
+  // For controlling the destruction order
+  command_queue_.reset();
+  context_.reset();
+  device_.reset();
+  platform_.reset();
+  device_info_.clear();
 }
 
 bool CLRuntime::Init() {
@@ -98,14 +72,14 @@ cl::CommandQueue& CLRuntime::command_queue() {
   return *command_queue_;
 }
 
-std::shared_ptr<cl::Program> CLRuntime::CreateProgram(
+std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
     const cl::Context& context, std::string file_name) {
   auto cl_file = opencl_kernels_files.find(file_name);
   std::string content(cl_file->second.begin(), cl_file->second.end());
   cl::Program::Sources sources;
   sources.push_back(content);
   auto prog =
-      std::shared_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
   VLOG(4) << "OpenCL kernel file name: " << file_name;
   VLOG(4) << "Program source size: " << content.size();
   CL_CHECK_FATAL(status_);
