@@ -32,12 +32,17 @@ namespace lite {
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
   auto places = config.valid_places();
+  std::vector<std::string> passes{};
 #ifdef LITE_WITH_CUDA
   // if kCUDA is included in valid places, it should be initialized first,
   // otherwise skip this step.
   for (auto &p : places) {
     if (p.target == TARGET(kCUDA)) {
       Env<TARGET(kCUDA)>::Init();
+      if (config_.multi_stream()) {
+        passes = {"multi_stream_analysis_pass"};
+        VLOG(3) << "add pass: " << passes[0];
+      }
       break;
     }
   }
@@ -51,7 +56,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                            config.mlu_first_conv_std(),
                                            config.mlu_input_layout());
 #endif  // LITE_WITH_MLU
-  std::vector<std::string> passes{};
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
   VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
