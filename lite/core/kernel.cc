@@ -57,7 +57,7 @@ void KernelBase::ParseKernelType(const std::string &kernel_type,
                                  std::string *alias,
                                  Place *place) {
   auto parts = Split(kernel_type, "/");
-  CHECK_EQ(parts.size(), 5);
+  CHECK_EQ(parts.size(), 5u);
   *op_type = parts[0];
   *alias = parts[1];
 

@@ -80,7 +80,7 @@ static bool InferScaleFromSubgraph(std::string var_name,
   auto input_or_output_scales = op_info->GetAttr<std::vector<float>>(attr_name);
   auto size = input_or_output_names.size();
   CHECK(size == input_or_output_scales.size());
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     if (input_or_output_names[i] == var_name) {
       *scale = input_or_output_scales[i];
       return true;

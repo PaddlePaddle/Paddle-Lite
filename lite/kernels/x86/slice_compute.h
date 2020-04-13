@@ -118,7 +118,7 @@ void slice_compute(const lite::Tensor* in,
         out_dims[decrease_axis[i]] = 0;
       }
 
-      for (int i = 0; i < out_dims.size(); ++i) {
+      for (size_t i = 0; i < out_dims.size(); ++i) {
         if (out_dims[i] != 0) {
           new_out_shape.push_back(out_dims[i]);
         }

@@ -36,11 +36,11 @@ TEST(CxxApi, run) {
 
   auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
+  for (size_t i = 0; i < inputs.size(); i++) {
     LOG(INFO) << "inputnames: " << inputs[i];
   }
   auto outputs = predictor->GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
+  for (size_t i = 0; i < outputs.size(); i++) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
   auto input_tensor = predictor->GetInputByName(inputs[0]);

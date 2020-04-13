@@ -232,8 +232,8 @@ void TestModel(const std::vector<Place>& valid_places,
     for (int i = 0; i < outs->numel(); ++i) {
       LOG(INFO) << o_data[i];
     }
-    for (int i = 0; i < lod.size(); ++i) {
-      for (int j = 0; j < lod[i].size(); ++j) {
+    for (size_t i = 0; i < lod.size(); ++i) {
+      for (size_t j = 0; j < lod[i].size(); ++j) {
         LOG(INFO) << lod[i][j];
       }
     }

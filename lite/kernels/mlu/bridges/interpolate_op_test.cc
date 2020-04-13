@@ -85,7 +85,7 @@ void BilinearInterpRef(const lite::Tensor* x,
   int channel_size = x_dims[1];
   auto x_h = x_dims[2];
   auto x_w = x_dims[3];
-  CHECK_EQ(x_dims.size(), 4);
+  CHECK_EQ(x_dims.size(), 4u);
 
   auto out_dims = out->dims();
   int out_h = out_dims[2];

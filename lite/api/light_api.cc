@@ -82,7 +82,7 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
                << "], model's inputs include:";
-    for (int i = 0; i < input_names_.size(); i++) {
+    for (size_t i = 0; i < input_names_.size(); i++) {
       LOG(ERROR) << "[" << input_names_[i] << "]";
     }
     return nullptr;
@@ -114,7 +114,7 @@ void LightPredictor::PrepareFeedFetch() {
   auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
   std::vector<cpp::OpDesc*> feeds;
   std::vector<cpp::OpDesc*> fetchs;
-  for (int i = 0; i < current_block->OpsSize(); i++) {
+  for (size_t i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
       feeds.push_back(op);
@@ -124,11 +124,11 @@ void LightPredictor::PrepareFeedFetch() {
   }
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
-  for (int i = 0; i < feeds.size(); i++) {
+  for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
   }
-  for (int i = 0; i < fetchs.size(); i++) {
+  for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
   }
