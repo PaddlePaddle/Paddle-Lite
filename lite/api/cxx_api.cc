@@ -295,6 +295,10 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
   inner_places.emplace_back(
       TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+  inner_places.emplace_back(
+      TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
+  inner_places.emplace_back(
+      TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kNCHW));
 
   // Analysis whether the modle is quantized.
   // For quantized model, add place(arm, int8) to inner_places
