@@ -166,6 +166,15 @@ class ReciprocalCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~ReciprocalCompute() = default;
 };
 
+class AbsCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~AbsCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
