@@ -136,6 +136,9 @@ endif()
 
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
+    if (LITE_WITH_XTCL)
+      add_definitions("-DLITE_WITH_XTCL")
+    endif()
 endif()
 
 if (LITE_WITH_OPENCL)
@@ -150,11 +153,16 @@ if (LITE_WITH_BM)
 add_definitions("-DLITE_WITH_BM")
 endif()
 
+if (LITE_WITH_MLU)
+add_definitions("-DLITE_WITH_MLU")
+endif()
+
 if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
-    if (LITE_WITH_PRECISION_PROFILE)
-        add_definitions("-DLITE_WITH_PRECISION_PROFILE")
-    endif()
+endif()
+
+if (LITE_WITH_PRECISION_PROFILE)
+    add_definitions("-DLITE_WITH_PRECISION_PROFILE")
 endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -173,3 +181,6 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
   add_definitions("-DLITE_ON_MODEL_OPTIMIZE_TOOL")
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
+if (LITE_WITH_PYTHON)
+  add_definitions("-DLITE_WITH_PYTHON")
+endif(LITE_WITH_PYTHON)

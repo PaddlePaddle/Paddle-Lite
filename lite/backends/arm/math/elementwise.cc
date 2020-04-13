@@ -302,10 +302,10 @@ void elementwise_add_grad_broadcast<float>(const float* dout_grad,
                                            int pre,
                                            int n,
                                            int post) {
-  if (x_grad) {
+  if (x_grad != nullptr) {
     elementwise_add_grad(dout_grad, x_grad, pre * n * post);
   }
-  if (y_grad) {
+  if (y_grad != nullptr) {
     memset(y_grad, 0, n * sizeof(float));
 #pragma omp parallel for
     for (int i = 0; i < pre; ++i) {
@@ -582,10 +582,10 @@ void elementwise_sub_grad<float>(const float* dout_grad,
                                  float* x_grad,
                                  float* y_grad,
                                  int num) {
-  if (x_grad) {
+  if (x_grad != nullptr) {
     elementwise_add_grad(dout_grad, x_grad, num);
   }
-  if (y_grad) {
+  if (y_grad != nullptr) {
     int cnt = num >> 4;
     int remain = num & 0x0f;
     float32x4_t minus = vdupq_n_f32(-1);
@@ -624,10 +624,10 @@ void elementwise_sub_grad_broadcast<float>(const float* dout_grad,
                                            int pre,
                                            int n,
                                            int post) {
-  if (x_grad) {
+  if (x_grad != nullptr) {
     elementwise_add_grad(dout_grad, x_grad, pre * n * post);
   }
-  if (y_grad) {
+  if (y_grad != nullptr) {
     memset(y_grad, 0, n * sizeof(float));
 #pragma omp parallel for
     for (int i = 0; i < pre; ++i) {

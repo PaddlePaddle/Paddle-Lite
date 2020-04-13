@@ -27,7 +27,7 @@ bool SliceOp::CheckShape() const {
   return true;
 }
 
-bool SliceOp::InferShape() const {
+bool SliceOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto in_dims = param_.X->dims();

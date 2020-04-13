@@ -26,7 +26,7 @@ bool SearchSeqFcOpLite::CheckShape() const {
   return true;
 }
 
-bool SearchSeqFcOpLite::InferShape() const {
+bool SearchSeqFcOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   const auto w_dims = param_.w->dims();
   const auto& x_lod = param_.x->lod();

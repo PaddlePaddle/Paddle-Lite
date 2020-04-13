@@ -27,7 +27,7 @@ bool ElementwiseOp::CheckShape() const {
   return true;
 }
 
-bool ElementwiseOp::InferShape() const {
+bool ElementwiseOp::InferShapeImpl() const {
   auto x_dim = param_.X->dims();
   auto y_dim = param_.Y->dims();
   if (x_dim == y_dim) {
@@ -81,6 +81,7 @@ bool ElementwiseOp::InferShape() const {
     auto out_lod = param_.Out->mutable_lod();
     *out_lod = param_.X->lod();
   }
+
   return true;
 }
 
@@ -104,7 +105,7 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 //  return true;
 //}
 
-// bool ElementwiseGradExplicitOp::InferShape() const {
+// bool ElementwiseGradExplicitOp::InferShapeImpl() const {
 //   param_.X_grad->Resize(param_.Out_grad->dims());
 //   if (param_.Y_grad) param_.Y_grad->Resize(param_.Y->dims());
 //   return true;

@@ -26,6 +26,7 @@
 
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/cxx_api.h"
+#include "lite/api/opt_base.h"
 #endif
 
 #include "lite/api/light_api.h"
@@ -46,11 +47,29 @@ using lite_api::TargetType;
 using lite_api::PrecisionType;
 using lite_api::DataLayoutType;
 using lite_api::Place;
+using lite_api::MLUCoreVersion;
 using lite::LightPredictorImpl;
+using lite_api::OptBase;
 
 #ifndef LITE_ON_TINY_PUBLISH
 using lite::CxxPaddleApiImpl;
 static void BindLiteCxxPredictor(py::module *m);
+void BindLiteOpt(py::module *m) {
+  py::class_<OptBase> opt_base(*m, "Opt");
+  opt_base.def(py::init<>())
+      .def("set_model_dir", &OptBase::SetModelDir)
+      .def("set_modelset_dir", &OptBase::SetModelSetDir)
+      .def("set_model_file", &OptBase::SetModelFile)
+      .def("set_param_file", &OptBase::SetParamFile)
+      .def("set_valid_places", &OptBase::SetValidPlaces)
+      .def("set_optimize_out", &OptBase::SetOptimizeOut)
+      .def("set_model_type", &OptBase::SetModelType)
+      .def("run_optimize", &OptBase::RunOptimize)
+      .def("help", &OptBase::PrintHelpInfo)
+      .def("print_supported_ops", &OptBase::PrintSupportedOps)
+      .def("display_kernels_info", &OptBase::DisplayKernelsInfo)
+      .def("print_all_ops", &OptBase::PrintAllOps);
+}
 #endif
 static void BindLiteLightPredictor(py::module *m);
 static void BindLiteCxxConfig(py::module *m);
@@ -58,6 +77,7 @@ static void BindLiteMobileConfig(py::module *m);
 static void BindLitePowerMode(py::module *m);
 static void BindLitePlace(py::module *m);
 static void BindLiteTensor(py::module *m);
+static void BindLiteMLUCoreVersion(py::module *m);
 
 void BindLiteApi(py::module *m) {
   BindLiteCxxConfig(m);
@@ -65,6 +85,7 @@ void BindLiteApi(py::module *m) {
   BindLitePowerMode(m);
   BindLitePlace(m);
   BindLiteTensor(m);
+  BindLiteMLUCoreVersion(m);
 #ifndef LITE_ON_TINY_PUBLISH
   BindLiteCxxPredictor(m);
 #endif
@@ -106,6 +127,14 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_power_mode", &CxxConfig::set_power_mode)
       .def("power_mode", &CxxConfig::power_mode);
 #endif
+#ifdef LITE_WITH_MLU
+  cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
+      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
+      .def("set_mlu_input_layout", &CxxConfig::set_mlu_input_layout)
+      .def("set_mlu_use_first_conv", &CxxConfig::set_mlu_use_first_conv)
+      .def("set_mlu_first_conv_mean", &CxxConfig::set_mlu_first_conv_mean)
+      .def("set_mlu_first_conv_std", &CxxConfig::set_mlu_first_conv_std);
+#endif
 }
 
 // TODO(sangoly): Should MobileConfig be renamed to LightConfig ??
@@ -137,6 +166,12 @@ void BindLitePowerMode(py::module *m) {
       .value("LITE_POWER_RAND_LOW", PowerMode::LITE_POWER_RAND_LOW);
 }
 
+void BindLiteMLUCoreVersion(py::module *m) {
+  py::enum_<MLUCoreVersion>(*m, "MLUCoreVersion")
+      .value("LITE_MLU_220", MLUCoreVersion::MLU_220)
+      .value("LITE_MLU_270", MLUCoreVersion::MLU_270);
+}
+
 void BindLitePlace(py::module *m) {
   // TargetType
   py::enum_<TargetType>(*m, "TargetType")
@@ -147,6 +182,7 @@ void BindLitePlace(py::module *m) {
       .value("OpenCL", TargetType::kOpenCL)
       .value("FPGA", TargetType::kFPGA)
       .value("NPU", TargetType::kNPU)
+      .value("MLU", TargetType::kMLU)
       .value("Any", TargetType::kAny);
 
   // PrecisionType
@@ -227,6 +263,20 @@ void BindLiteTensor(py::module *m) {
   DO_GETTER_ONCE(data_type__, name__##_data)
 
   DATA_GETTER_SETTER_ONCE(int8_t, int8);
+#ifdef LITE_WITH_MLU
+  tensor.def("set_uint8_data",
+             [](Tensor &self,
+                const std::vector<uint8_t> &data,
+                TargetType type = TargetType::kHost) {
+               if (type == TargetType::kHost) {
+                 self.CopyFromCpu<uint8_t, TargetType::kHost>(data.data());
+               }
+             },
+             py::arg("data"),
+             py::arg("type") = TargetType::kHost);
+
+  DO_GETTER_ONCE(uint8_t, "uint8_data");
+#endif
   DATA_GETTER_SETTER_ONCE(int32_t, int32);
   DATA_GETTER_SETTER_ONCE(float, float);
 #undef DO_GETTER_ONCE

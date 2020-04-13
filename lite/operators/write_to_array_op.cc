@@ -26,7 +26,7 @@ bool WriteToArrayOp::CheckShape() const {
   return true;
 }
 
-bool WriteToArrayOp::InferShape() const {
+bool WriteToArrayOp::InferShapeImpl() const {
   int id = param_.I->data<int64_t>()[0];
   if (param_.Out->size() < id + 1) {
     param_.Out->resize(id + 1);

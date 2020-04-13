@@ -42,7 +42,7 @@ bool InstanceNormOp::CheckShape() const {
   return true;
 }
 
-bool InstanceNormOp::InferShape() const {
+bool InstanceNormOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   int64_t batch_size = x_dims[0];
   int64_t channel_size = x_dims[1];

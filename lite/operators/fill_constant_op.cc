@@ -24,7 +24,7 @@ bool FillConstantOp::CheckShape() const {
   return true;
 }
 
-bool FillConstantOp::InferShape() const {
+bool FillConstantOp::InferShapeImpl() const {
   std::vector<int64_t> out_shape;
   auto shape_tensor = param_.shape_tensor;
   auto shape_tensor_list = param_.shape_tensor_list;

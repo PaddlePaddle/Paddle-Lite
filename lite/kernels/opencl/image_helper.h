@@ -74,6 +74,12 @@ static std::vector<size_t> DefaultWorkSize(const DDim& image_dim,
   LOG(FATAL) << " not support this dim, need imp ";
 }
 
+static const std::string GetTimeStamp() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return std::to_string(time.tv_usec);
+}
+
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite

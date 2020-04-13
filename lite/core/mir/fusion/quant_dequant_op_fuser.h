@@ -87,24 +87,16 @@ class ChannelWiseDequantOpFuser : public FuseBase {
 };
 
 /* The pattern like "fake_quantize_dequantize_moving_average_abs_max +
- * pooled/elementwise_add" can be deteted by this fuser. The fuser
- * extract the input_scale form fake_quant_dequant_op and save into
- * the quantized_op. Besides, the fuser delete fake_quant_dequant_op in
- * the graph.
+ * quantized_op" can be deteted by this fuser. The fuser modifies the input
+ * scale for the quantized_op and deletes the fake_quant_dequant_op.
 */
-
 class DeleteQuantDequantOpFuser : public FuseBase {
  public:
-  explicit DeleteQuantDequantOpFuser(const std::string& quantized_op_type)
-      : quantized_op_type_(quantized_op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
-
- private:
-  std::string quantized_op_type_{};
 };
 
 }  // namespace fusion

@@ -27,7 +27,7 @@ class SequenceConcatOp : public OpLite {
   SequenceConcatOp() {}
   explicit SequenceConcatOp(const std::string &op_type) : OpLite(op_type) {}
   bool CheckShape() const override;
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "sequence_concat"; }

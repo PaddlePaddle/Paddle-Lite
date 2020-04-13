@@ -76,8 +76,8 @@ void ElementwiseAddGradCompute::Run() {
   const float* x_data = param.X->data<float>();
   const float* y_data = param.Y->data<float>();
   const float* out_grad_data = param.OutGrad->data<float>();
-  float* x_grad_data;
-  float* y_grad_data;
+  float* x_grad_data = nullptr;
+  float* y_grad_data = nullptr;
   if (param.XGrad) {
     x_grad_data = param.XGrad->mutable_data<float>();
   }
@@ -122,8 +122,8 @@ void ElementwiseSubGradCompute::Run() {
   const float* x_data = param.X->data<float>();
   const float* y_data = param.Y->data<float>();
   const float* out_data = param.OutGrad->data<float>();
-  float* x_grad_data;
-  float* y_grad_data;
+  float* x_grad_data = nullptr;
+  float* y_grad_data = nullptr;
   if (param.XGrad) {
     x_grad_data = param.XGrad->mutable_data<float>();
   }
@@ -137,9 +137,15 @@ void ElementwiseSubGradCompute::Run() {
 
   if (!param.XGrad || !param.YGrad) {
     CHECK(param.XGrad || param.YGrad);
-    lite::arm::math::elementwise_sub_grad(
-        out_data, x_grad_data, y_grad_data, y_dims.production());
-    return;
+    if (param.XGrad) {
+      lite::arm::math::elementwise_sub_grad(
+          out_data, x_grad_data, y_grad_data, x_dims.production());
+      return;
+    } else {
+      lite::arm::math::elementwise_sub_grad(
+          out_data, x_grad_data, y_grad_data, y_dims.production());
+      return;
+    }
   }
 
   if (x_dims.size() < y_dims.size()) {

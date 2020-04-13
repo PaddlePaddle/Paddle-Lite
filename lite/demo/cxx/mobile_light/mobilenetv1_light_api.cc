@@ -32,7 +32,7 @@ int64_t ShapeProduction(const shape_t& shape) {
 std::string ShapePrint(const shape_t& shape) {
   std::string shape_str{""};
   for (auto i : shape) {
-    shape_str += paddle::lite::to_string(i) + " ";
+    shape_str += std::to_string(i) + " ";
   }
   return shape_str;
 }

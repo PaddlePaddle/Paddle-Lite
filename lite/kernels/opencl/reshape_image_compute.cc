@@ -36,8 +36,10 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/reshape_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/reshape_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -110,7 +112,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
 #ifndef LITE_SHUTDOWN_LOG
@@ -152,6 +154,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                     static_cast<size_t>(default_work_size.data()[1]),
                     static_cast<size_t>(default_work_size.data()[2])};
 
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -166,7 +169,8 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
  private:
   std::string kernel_func_name_{"reshape"};
   std::string build_options_{"-DCL_DTYPE_half"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string time_stamp_{GetTimeStamp()};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl
@@ -203,8 +207,8 @@ REGISTER_LITE_KERNEL(reshape2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -221,7 +225,7 @@ REGISTER_LITE_KERNEL(flatten,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -239,7 +243,7 @@ REGISTER_LITE_KERNEL(flatten2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

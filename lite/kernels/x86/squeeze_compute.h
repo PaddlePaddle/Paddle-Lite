@@ -35,8 +35,8 @@ class SqueezeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto x = param.X;
     auto output = param.Out;
     auto x_dims = x->dims();
-    auto* x_data = x->data<T>();
-    auto* out_data = output->mutable_data<T>();
+    auto* x_data = x->template data<T>();
+    auto* out_data = output->template mutable_data<T>();
     memcpy(out_data, x_data, x_dims.production() * sizeof(T));
   }
 
@@ -54,9 +54,9 @@ class Squeeze2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto output = param.Out;
     auto xshape = param.XShape;
     auto x_dims = x->dims();
-    auto* x_data = x->data<T>();
-    auto* out_data = output->mutable_data<T>();
-    auto* xshape_data = xshape->mutable_data<T>();
+    auto* x_data = x->template data<T>();
+    auto* out_data = output->template mutable_data<T>();
+    auto* xshape_data = xshape->template mutable_data<T>();
     memcpy(out_data, x_data, x_dims.production() * sizeof(T));
     memcpy(xshape_data, x_data, x_dims.production() * sizeof(T));
   }

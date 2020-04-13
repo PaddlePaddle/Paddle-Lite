@@ -27,7 +27,7 @@ bool MatMulOpLite::CheckShape() const {
   return true;
 }
 
-bool MatMulOpLite::InferShape() const {
+bool MatMulOpLite::InferShapeImpl() const {
   const auto x_dims = param_.X->dims();
   const auto y_dims = param_.Y->dims();
   bool x_transpose = param_.transpose_X;

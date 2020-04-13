@@ -51,7 +51,7 @@ bool SearchGrnnOpLite::CheckShape() const {
   return true;
 }
 
-bool SearchGrnnOpLite::InferShape() const {
+bool SearchGrnnOpLite::InferShapeImpl() const {
   const auto& x_dims = param_.x->dims();
   const auto& x_lod = param_.x->lod();
   CHECK_OR_FALSE(!x_lod.empty());

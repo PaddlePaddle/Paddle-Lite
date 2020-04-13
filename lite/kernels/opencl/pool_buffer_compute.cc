@@ -37,8 +37,10 @@ class PoolCompute
     const auto& param = *param_.get_mutable<param_t>();
     kernel_func_name_ += param.pooling_type;
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/pool_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/pool_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -69,7 +71,7 @@ class PoolCompute
     auto* output_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     cl_int status;
     auto numel = out_dims.production();
@@ -103,6 +105,7 @@ class PoolCompute
     status = kernel.setArg(++arg_idx, *output_buf);
     CL_CHECK_FATAL(status);
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -117,7 +120,8 @@ class PoolCompute
  private:
   std::string kernel_func_name_{"pool_"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string time_stamp_{GetTimeStamp()};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

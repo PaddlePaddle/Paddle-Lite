@@ -5,9 +5,11 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   DEPS target_wrapper_host place
   X86_DEPS target_wrapper_x86
   CUDA_DEPS target_wrapper_cuda
+  XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper
   FPGA_DEPS fpga_target_wrapper
-  BM_DEPS target_wrapper_bm)
+  BM_DEPS target_wrapper_bm
+  MLU_DEPS target_wrapper_mlu)
 
 lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
 
@@ -93,9 +95,13 @@ add_custom_command(
   OUTPUT ops.h # not a real path to the output to force it execute every time.
   )
 # generate fake kernels for memory_optimize_tool
+
+#-------------------------------opt----------------------------------------------------------------
+# tricks to create headfiles for opt
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
   ${kernels_src_list}
+  ${fake_kernels_src_list}
   ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
   ${CMAKE_BINARY_DIR}/kernel_src_map.h
   OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
@@ -103,12 +109,12 @@ add_custom_command(
 add_custom_target(op_list_h DEPENDS ops.h)
 add_custom_target(kernel_list_h DEPENDS kernels.h)
 add_custom_target(all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
-#add_custom_target(opencl_kernels_source_cc DEPENDS opencl_kernels_source.cc)
 
 # create headfile to restore ops info sorted by suppported platforms
 add_custom_command(
   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
   ${kernels_src_list}
+  ${fake_kernels_src_list}
   ${ops_src_list}
   ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
   OUTPUT supported_kernel_op_info.h # not a real path to the output to force it execute every time.

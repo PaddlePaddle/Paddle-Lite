@@ -49,6 +49,8 @@ int ReduceFullConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     op_code = REDUCE_SUM;
   } else if (op_type == "reduce_mean") {
     op_code = REDUCE_MEAN;
+  } else if (op_type == "reduce_max") {
+    op_code = REDUCE_MAX;
   }
 
   add_reduce_full_layer(graph->GetCompilerHandle(),
@@ -73,5 +75,8 @@ REGISTER_SUBGRAPH_BRIDGE(reduce_sum,
                          kBM,
                          paddle::lite::subgraph::bm::ReduceFullConverter);
 REGISTER_SUBGRAPH_BRIDGE(reduce_mean,
+                         kBM,
+                         paddle::lite::subgraph::bm::ReduceFullConverter);
+REGISTER_SUBGRAPH_BRIDGE(reduce_max,
                          kBM,
                          paddle::lite::subgraph::bm::ReduceFullConverter);

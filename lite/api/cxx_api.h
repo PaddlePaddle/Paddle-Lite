@@ -43,6 +43,7 @@ class LITE_API Predictor {
  public:
   // Create an empty predictor.
   Predictor() { scope_ = std::make_shared<Scope>(); }
+
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}

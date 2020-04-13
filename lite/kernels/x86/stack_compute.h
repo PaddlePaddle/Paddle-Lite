@@ -40,9 +40,9 @@ class StackCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     if (axis < 0) axis += (x[0]->dims().size() + 1);
 
     int n = static_cast<int>(x.size());
-    auto y_data = y->mutable_data<T>();
+    auto y_data = y->template mutable_data<T>();
     std::vector<const T*> x_datas(n);
-    for (int i = 0; i < n; ++i) x_datas[i] = x[i]->data<T>();
+    for (int i = 0; i < n; ++i) x_datas[i] = x[i]->template data<T>();
 
     int pre = 1, post = 1;
     auto dim = x[0]->dims();

@@ -25,7 +25,7 @@ bool ShapeOpLite::CheckShape() const {
   return true;
 }
 
-bool ShapeOpLite::InferShape() const {
+bool ShapeOpLite::InferShapeImpl() const {
   int64_t x_dims_size = param_.X->dims().size();
   param_.Out->Resize({x_dims_size});
   return true;

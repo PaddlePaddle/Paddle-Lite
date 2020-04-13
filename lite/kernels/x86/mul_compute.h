@@ -64,7 +64,7 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       y_matrix = *y;
     }
 
-    z->mutable_data<T>();
+    z->template mutable_data<T>();
     auto z_dim = z->dims();
     if (z_dim.size() != 2) {
       z->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});

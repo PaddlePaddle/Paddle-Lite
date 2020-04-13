@@ -58,6 +58,7 @@ void LightPredictorImpl::Run() {
 
 std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone() {
   LOG(FATAL) << "The Clone API is not supported in LigthPredictor";
+  return nullptr;
 }
 
 std::string LightPredictorImpl::GetVersion() const { return lite::version(); }

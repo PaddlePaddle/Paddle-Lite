@@ -41,7 +41,7 @@ void GetSize(T start, T end, T step, int64_t* size) {
               : std::ceil(std::abs((end - start) / step));
 }
 
-bool RangeOpLite::InferShape() const {
+bool RangeOpLite::InferShapeImpl() const {
   int start = param_.Start->data<float>()[0];
   int end = param_.End->data<float>()[0];
   int step = param_.Step->data<float>()[0];

@@ -23,6 +23,7 @@
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
@@ -108,6 +109,8 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "mlu") {
+      valid_places.emplace_back(TARGET(kMLU));
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "

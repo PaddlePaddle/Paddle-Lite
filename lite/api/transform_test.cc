@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest.h>
+#endif
 #include <string>
 #include <vector>
 #include "lite/api/cxx_api.h"

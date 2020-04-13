@@ -25,7 +25,7 @@ bool ActivationGradOp::CheckShape() const {
   return true;
 }
 
-bool ActivationGradOp::InferShape() const {
+bool ActivationGradOp::InferShapeImpl() const {
   param_.X_grad->Resize(param_.Out_grad->dims());
   return true;
 }
