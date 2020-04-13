@@ -62,8 +62,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
     }
   }
-  int pad_height = paddings[0];
-  int pad_width = paddings[2];
   std::string padding_algorithm("");
   if (op_info->HasAttr("padding_algorithm")) {
     padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
@@ -73,12 +71,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     adaptive = op_info->GetAttr<bool>("adaptive");
   }
   auto input_dims = x->dims();
-  if (global_pooling) {
-    ksize.resize(static_cast<size_t>(input_dims.size()) - 2);
-    for (size_t i = 0; i < ksize.size(); ++i) {
-      ksize[i] = static_cast<int>(input_dims[i + 2]);
-    }
-  }
+
   lite::operators::UpdatePadding(&paddings,
                                  global_pooling,
                                  adaptive,
@@ -87,31 +80,31 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  strides,
                                  ksize);
 
-  //  std::vector<int64_t> output_shape({input_dims[0], input_dims[1]});
-  //  for (size_t i = 0; i < 2; i++) {
-  //    output_shape.push_back(
-  //        (input_dims[i + 2] + paddings[2 * i] + paddings[2 * i + 1] -
-  //        ksize[0]) /
-  //            strides[i] +
-  //        1);
-  //  }
+  if (global_pooling) {
+    ksize.resize(static_cast<size_t>(input_dims.size()) - 2);
+    for (size_t i = 0; i < ksize.size(); ++i) {
+      ksize[i] = static_cast<int>(input_dims[i + 2]);
+    }
+  }
 
   auto output_tensor = graph->AddNode(
       output_var_name, output_shape, CNML_TENSOR, CNML_NCHW, graph->FPType());
 
   cnmlPoolOpParam_t pool_param;
   CNML_CALL(
-      cnmlCreatePoolOpParam_V2(&pool_param,
+      cnmlCreatePoolOpParam_V3(&pool_param,
                                ksize[0],
                                ksize[1],
                                strides[0],
                                strides[1],
-                               pad_height,
-                               pad_width,
-                               1,  // dilation
-                               1,
+                               paddings[0],
+                               paddings[1],
+                               paddings[2],
+                               paddings[3],
+                               1,  // dilation h
+                               1,  // dilation w
                                ToCnmlPoolMode(pooling_type),
-                               ceil_mode ? CNML_POOL_KVALID : CNML_POOL_KFULL,
+                               ceil_mode ? CNML_POOL_KFULL : CNML_POOL_KVALID,
                                true, /* real */
                                1 /* blend factor */));
   cnmlBaseOp_t pool_op;
