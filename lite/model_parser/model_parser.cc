@@ -290,7 +290,7 @@ void SaveModelPb(const std::string &model_dir,
   // Save Params
   // NOTE: Only main block be used now.
   if (combined) {
-    const std::string combined_params_path = model_dir + "/params";
+    const std::string combined_params_path = model_dir + "/param";
     SaveCombinedParamsPb(combined_params_path, exec_scope, cpp_prog);
   } else {
     for (auto &item : pb_proto_prog.blocks(0).vars()) {
