@@ -59,8 +59,8 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::vector<std::string> build_options_{};
   std::string time_stamp_{GetTimeStamp()};
   std::shared_ptr<cl::Event> event_{nullptr};
-  Tensor filter_gpu_image_;
-  Tensor bias_gpu_image_;
+  std::unique_ptr<Tensor> filter_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> bias_gpu_image_{nullptr};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   int c_blk_ = 1;
