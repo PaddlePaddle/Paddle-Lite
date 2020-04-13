@@ -37,12 +37,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   RKNPU_DEPS ${rknpu_kernels}
                   )
 
-    if (LITE_WITH_RKNPU)
-        # Need to add RKNPU runtime libs dependency
-        target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
-        target_link_libraries(paddle_full_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
-    endif()
-
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${rknpu_kernels})
     set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
