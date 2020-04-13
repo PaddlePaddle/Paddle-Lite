@@ -37,6 +37,7 @@ lite_cc_library(mir_passes
       demo_pass.cc
       runtime_context_assign_pass.cc
       memory_optimize_pass.cc
+      multi_stream_analysis_pass.cc
       mlu_postprocess_pass.cc
       weight_quantization_preprocess_pass.cc
       quantized_op_attributes_inference_pass.cc
