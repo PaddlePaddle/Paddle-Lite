@@ -34,40 +34,21 @@ std::vector<size_t> stride_numel(const DDim& ddim) {
   return strides;
 }
 
-void ConcatCompute::Run() {
-  auto& param = Param<operators::ConcatParam>();
-  std::vector<lite::Tensor*> inputs = param.x;
-  auto* out = param.output;
-  int axis = param.axis;
-  auto* axis_tensor = param.axis_tensor;
-  if (axis_tensor != nullptr) {
-    auto* axis_tensor_data = axis_tensor->data<int>();
-    axis = axis_tensor_data[0];
-  }
-  out->mutable_data<float>();
-
-  /// Sometimes direct copies will be faster, this maybe need deeply analysis.
+template <typename T>
+void ConcatFunc(const std::vector<lite::Tensor*> inputs,
+                int axis,
+                lite::Tensor* out) {
+  // Sometimes direct copies will be faster, this maybe need deeply analysis.
   if (axis == 0 && inputs.size() < 10) {
     size_t output_offset = 0;
     for (auto* in : inputs) {
       auto in_stride = stride_numel(in->dims());
       auto out_stride = stride_numel(out->dims());
-      void* dst = out->mutable_data<float>() + output_offset;
-      const void* src = in->data<float>();
-#if 0
-      LOG(INFO) << "out_stride.size():" << out_stride.size();
-      LOG(INFO) << "out_stride[0]" << out_stride[0];
-      for (int i=0; i < out_stride.size(); ++i) {
-        LOG(INFO) << "out_stride[" << i << "]:" << out_stride[i];
-      }
-      LOG(INFO) << "in_stride.size():" << in_stride.size();
-      for (int i=0; i < in_stride.size(); ++i) {
-        LOG(INFO) << "in_stride[" << i << "]:" << in_stride[i];
-      }
-#endif
+      void* dst = out->mutable_data<T>() + output_offset;
+      const void* src = in->data<T>();
       // src and dst tensor should have the same dims size.
       CHECK(in_stride.size() == out_stride.size());
-      std::memcpy(dst, src, sizeof(float) * in_stride[0]);
+      std::memcpy(dst, src, sizeof(T) * in_stride[0]);
       output_offset += in_stride[0];
     }
   } else {
@@ -75,9 +56,37 @@ void ConcatCompute::Run() {
     for (int j = 0; j < inputs.size(); ++j) {
       inputs_concat[j] = inputs[j];
     }
-    lite::arm::math::concat_func(inputs_concat, axis, out);
+    lite::arm::math::concat_func<T>(inputs_concat, axis, out);
   }
-  return;
+}
+
+void ConcatCompute::Run() {
+  auto& param = Param<operators::ConcatParam>();
+  std::vector<lite::Tensor*> inputs = param.x;
+  CHECK_GE(inputs.size(), 1);
+  auto* out = param.output;
+  int axis = param.axis;
+  auto* axis_tensor = param.axis_tensor;
+  if (axis_tensor != nullptr) {
+    auto* axis_tensor_data = axis_tensor->data<int>();
+    axis = axis_tensor_data[0];
+  }
+
+  switch (inputs.front()->precision()) {
+    case PRECISION(kFloat):
+      ConcatFunc<float>(inputs, axis, out);
+      break;
+    case PRECISION(kInt32):
+      ConcatFunc<int32_t>(inputs, axis, out);
+      break;
+    case PRECISION(kInt64):
+      ConcatFunc<int64_t>(inputs, axis, out);
+      break;
+    default:
+      LOG(FATAL) << "Concat does not implement for the "
+                 << "input type:"
+                 << static_cast<int>(inputs.front()->precision());
+  }
 }
 
 }  // namespace arm
@@ -86,9 +95,9 @@ void ConcatCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    concat, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ConcatCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    concat, kARM, kAny, kNCHW, paddle::lite::kernels::arm::ConcatCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
