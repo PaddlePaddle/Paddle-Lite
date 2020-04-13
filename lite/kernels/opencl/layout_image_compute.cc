@@ -122,6 +122,7 @@ class LayoutComputeBufferChwToImageDefault
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -141,7 +142,7 @@ class LayoutComputeBufferChwToImageDefault
  private:
   std::string kernel_func_name_{"buffer_to_image2d"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 // [ImageDefault] -> [NCHW]
@@ -229,6 +230,7 @@ class LayoutComputeImageDefaultToBufferChw
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -248,7 +250,7 @@ class LayoutComputeImageDefaultToBufferChw
  private:
   std::string kernel_func_name_{"image2d_to_buffer"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 // [NCHW] -> [ImageDW]
@@ -323,6 +325,7 @@ class LayoutComputeBufferChwToImage2DNw
         cl::NDRange{static_cast<cl::size_type>((out_N + 3) / 4),  // N blocks
                     static_cast<cl::size_type>(out_W),            // w
                     static_cast<cl::size_type>(out_C * out_H)};   // ch
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -341,7 +344,7 @@ class LayoutComputeBufferChwToImage2DNw
  private:
   std::string kernel_func_name_{"buffer_to_image2d_nw"};
   std::string build_options_{"-DCL_DTYPE_float "};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl
