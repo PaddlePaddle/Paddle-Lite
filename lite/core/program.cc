@@ -146,6 +146,11 @@ void RuntimeProgram::Run() {
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
 #endif
+#ifdef LITE_WITH_CUDA
+    if (inst.need_sync()) {
+      inst.Sync();
+    }
+#endif
     inst.Run();
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA

@@ -123,6 +123,7 @@ class FcCompute
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -144,7 +145,7 @@ class FcCompute
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

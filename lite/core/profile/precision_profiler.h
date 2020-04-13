@@ -178,6 +178,13 @@ class PrecisionProfiler {
           write_result_to_file&& write_tensorfile<int32_t>(in, name);
           return;
         }
+        case PRECISION(kInt64): {
+          auto ptr = in->data<int64_t>();
+          *mean = compute_mean<int64_t>(ptr, in->numel());
+          *std_dev = compute_standard_deviation<int64_t>(
+              ptr, in->numel(), true, *mean);
+          return;
+        }
         default:
           *mean = -333333333333;
           *std_dev = -33333333333;
