@@ -28,6 +28,9 @@ void InterpolateFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   fusion::InterpolateFuser nearest_interp_fuser("nearest_interp");
   nearest_interp_fuser(graph.get());
+
+  fusion::InterpolateFuser2 nearest_interp_fuser2("nearest_interp");
+  nearest_interp_fuser2(graph.get());
 }
 
 }  // namespace mir
