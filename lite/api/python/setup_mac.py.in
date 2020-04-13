@@ -39,6 +39,17 @@ PACKAGE_DATA = {'paddlelite': ['lite.so']}
 PACKAGE_DATA['paddlelite.libs'] = []
 LIB_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
 
+if '${WITH_MKL}' == 'ON':
+    shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
+    shutil.copy('${MKLML_SHARED_LIB}', LIB_PATH)
+    PACKAGE_DATA['paddlelite.libs'] += ['libmklml.dylib', 'libiomp5.dylib']
+
+# link lite.so to paddlelite.libs
+COMMAND = "install_name_tool -id \"@loader_path/../libs/\" ${PADDLE_BINARY_DIR}\
+/inference_lite_lib/python/install/lite/lite.so"
+if os.system(COMMAND) != 0:
+    raise Exception("patch third_party libs failed, command: %s" % COMMAND)
+
 # remove unused paddle/libs/__init__.py
 if os.path.isfile(LIB_PATH+'/__init__.py'):
     os.remove(LIB_PATH+'/__init__.py')

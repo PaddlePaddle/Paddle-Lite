@@ -38,9 +38,9 @@ ELSEIF(APPLE)
     #  Now enable Erf function in mklml library temporarily, it will be updated as offical version later.
     SET(MKLML_VER "mklml_mac_2019.0.5.20190502" CACHE STRING "" FORCE)
     SET(MKLML_URL "https://paddlelite-data.bj.bcebos.com/third_party_libs/${MKLML_VER}.tgz" CACHE STRING "" FORCE)
-    SET(MKLML_LIB                 ${MKLML_LIB_DIR}/libmklml_intel.dylib)
+    SET(MKLML_LIB                 ${MKLML_LIB_DIR}/libmklml.dylib)
     SET(MKLML_IOMP_LIB            ${MKLML_LIB_DIR}/libiomp5.dylib)
-    SET(MKLML_SHARED_LIB          ${MKLML_LIB_DIR}/libmklml_intel.dylib)
+    SET(MKLML_SHARED_LIB          ${MKLML_LIB_DIR}/libmklml.dylib)
     SET(MKLML_SHARED_IOMP_LIB     ${MKLML_LIB_DIR}/libiomp5.dylib)
 ELSE()
     #TODO(intel-huying):
