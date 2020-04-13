@@ -138,6 +138,7 @@ void ElementwiseSubImageCompute::Run() {
   VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
