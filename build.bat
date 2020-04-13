@@ -17,6 +17,16 @@ set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-
 
 set workspace=%source_path%
 
+:set_vcvarsall_dir
+SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
+set tmp_var=!vcvarsall_dir!
+call:remove_space
+set vcvarsall_dir=!tmp_var!   
+IF NOT EXIST "%vcvarsall_dir%" (
+    echo "------------%vcvarsall_dir% not exist------------"
+    goto set_vcvarsall_dir
+)
+
 call:prepare_thirdparty
 
 if EXIST "%build_directory%" (
@@ -25,7 +35,7 @@ if EXIST "%build_directory%" (
 ) 
 
 set root_dir=%workspace%
-set build_directory=%BUILD_DIR%\build_lite_x86
+set build_directory=%BUILD_DIR%\build.lite.86
 set GEN_CODE_PATH_PREFIX=%build_directory%\lite\gen_code
 set DEBUG_TOOL_PATH_PREFIX=%build_directory%\lite\tools\debug
 
@@ -44,16 +54,6 @@ if NOT EXIST "%DEBUG_TOOL_PATH_PREFIX%" (
 copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 
 cd "%build_directory%"
-
-:set_vcvarsall_dir
-SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
-set tmp_var=!vcvarsall_dir!
-call:remove_space
-set vcvarsall_dir=!tmp_var!   
-IF NOT EXIST "%vcvarsall_dir%" (
-    echo "------------%vcvarsall_dir% not exist------------"
-    goto set_vcvarsall_dir
-)
 
   cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64  -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
