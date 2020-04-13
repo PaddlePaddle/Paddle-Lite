@@ -151,16 +151,30 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kMLU, kInt16, kNHWC);
   INIT_FOR(kMLU, kInt16, kNCHW);
 
-  INIT_FOR(kHost, kFloat, kNCHW);
-  INIT_FOR(kHost, kInt32, kNCHW);
-  INIT_FOR(kHost, kInt64, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
+  INIT_FOR(kHost, kAny, kNHWC);
+  INIT_FOR(kHost, kAny, kAny);
+  INIT_FOR(kHost, kBool, kNCHW);
+  INIT_FOR(kHost, kBool, kNHWC);
+  INIT_FOR(kHost, kBool, kAny);
+  INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kFloat, kNHWC);
   INIT_FOR(kHost, kFloat, kAny);
-  INIT_FOR(kHost, kAny, kNHWC);
-  INIT_FOR(kHost, kAny, kAny);
-  INIT_FOR(kHost, kAny, kNHWC);
-  INIT_FOR(kHost, kAny, kAny);
+  INIT_FOR(kHost, kFP16, kNCHW);
+  INIT_FOR(kHost, kFP16, kNHWC);
+  INIT_FOR(kHost, kFP16, kAny);
+  INIT_FOR(kHost, kInt8, kNCHW);
+  INIT_FOR(kHost, kInt8, kNHWC);
+  INIT_FOR(kHost, kInt8, kAny);
+  INIT_FOR(kHost, kInt16, kNCHW);
+  INIT_FOR(kHost, kInt16, kNHWC);
+  INIT_FOR(kHost, kInt16, kAny);
+  INIT_FOR(kHost, kInt32, kNCHW);
+  INIT_FOR(kHost, kInt32, kNHWC);
+  INIT_FOR(kHost, kInt32, kAny);
+  INIT_FOR(kHost, kInt64, kNCHW);
+  INIT_FOR(kHost, kInt64, kNHWC);
+  INIT_FOR(kHost, kInt64, kAny);
 
   INIT_FOR(kX86, kFloat, kNCHW);
   INIT_FOR(kX86, kAny, kNCHW);
