@@ -59,6 +59,7 @@ lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+lite_option(LITE_WITH_RKNPU  "Enable RKNPU in lite mode"  OFF)
 lite_option(LITE_WITH_MLU  "Enable MLU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_XTCL  "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
@@ -127,6 +128,10 @@ include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 if (LITE_WITH_PYTHON)
     include(external/python)    # download, build, install python
     include(external/pybind11)    # download, build, install pybind11
+endif()
+
+if(LITE_WITH_RKNPU)
+   include(device/rknpu)
 endif()
 
 
