@@ -43,7 +43,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(NOT WIN32)
     set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
     set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
-    add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND echo.)
     add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
     add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
     set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})

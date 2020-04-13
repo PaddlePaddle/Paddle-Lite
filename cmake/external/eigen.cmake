@@ -2,11 +2,7 @@ INCLUDE(ExternalProject)
 
 SET(EIGEN_SOURCECODE_DIR ${CMAKE_SOURCE_DIR}/third-party/eigen3)
 SET(EIGEN_SOURCE_DIR ${THIRD_PARTY_PATH}/eigen3)
-if(WIN32)
-  SET(EIGEN_INCLUDE_DIR ${EIGEN_SOURCE_DIR}/src/extern_eigen3/eigen-git-mirror-master)
-else()
-  SET(EIGEN_INCLUDE_DIR ${EIGEN_SOURCE_DIR}/src/extern_eigen3)
-endif()  
+SET(EIGEN_INCLUDE_DIR ${EIGEN_SOURCE_DIR}/src/extern_eigen3)
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 if(NOT WITH_FAST_MATH)
   # EIGEN_FAST_MATH: https://eigen.tuxfamily.org/dox/TopicPreprocessorDirectives.html

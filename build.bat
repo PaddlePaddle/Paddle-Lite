@@ -35,7 +35,7 @@ if EXIST "%build_directory%" (
 ) 
 
 set root_dir=%workspace%
-set build_directory=%BUILD_DIR%\build.lite.86
+set build_directory=%BUILD_DIR%\build.lite.x86
 set GEN_CODE_PATH_PREFIX=%build_directory%\lite\gen_code
 set DEBUG_TOOL_PATH_PREFIX=%build_directory%\lite\tools\debug
 

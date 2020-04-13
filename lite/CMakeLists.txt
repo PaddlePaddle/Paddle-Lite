@@ -84,7 +84,7 @@ message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 # add python lib
 if (LITE_WITH_PYTHON)
     if(WIN32)   
-        set(LITE_CORE "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd")
+        set(LITE_CORE "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite.pyd")
         set(LITE_CORE_DEPS ${LITE_CORE})
         add_custom_command(OUTPUT   ${LITE_CORE}
             COMMAND cmake -E copy $<TARGET_FILE:lite_pybind> ${LITE_CORE}
@@ -97,8 +97,8 @@ if (LITE_WITH_PYTHON)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/setup.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/"
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/python/__init__.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite_core.pyd"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite_core.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite_core.pyd"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite.pyd"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/python/pybind/${CMAKE_BUILD_TYPE}/lite.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.pyd"
             DEPENDS copy_lite_pybind
             )
             
@@ -144,6 +144,7 @@ if (LITE_WITH_PYTHON)
 endif()
 
 if (LITE_WITH_CUDA OR LITE_WITH_X86)
+  if(NOT WIN32)
     add_custom_target(publish_inference_cxx_lib ${TARGET}
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
@@ -162,6 +163,7 @@ if (LITE_WITH_CUDA OR LITE_WITH_X86)
     add_dependencies(publish_inference_cxx_lib paddle_light_api_shared)
     add_dependencies(publish_inference publish_inference_cxx_lib)
     add_dependencies(publish_inference publish_inference_third_party)
+  endif(WIN32)
 endif()
 
 if (LITE_WITH_X86)

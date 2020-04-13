@@ -34,7 +34,7 @@ else:
 
 # core lib of paddlelite is stored as lite.so
 LITE_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
-PACKAGE_DATA = {'paddlelite': ['lite.so' if os.name!='nt' else 'lite_core.pyd']}
+PACKAGE_DATA = {'paddlelite': ['lite.so' if os.name!='nt' else 'lite.pyd']}
 # put all thirdparty libraries in paddlelite.libs
 PACKAGE_DATA['paddlelite.libs'] = []
 LIB_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
