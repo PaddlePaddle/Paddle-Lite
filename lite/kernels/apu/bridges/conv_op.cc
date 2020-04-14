@@ -549,8 +549,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (output_node == nullptr) return subgraph::FAILED;
   }
 
-  VLOG(3) << "Add " << op_type << " success! \n";
-
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

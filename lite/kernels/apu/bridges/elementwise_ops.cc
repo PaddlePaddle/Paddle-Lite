@@ -34,12 +34,10 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-  VLOG(3) << "[APU] Converting input" + x_name + "...";
 
   auto y_name = op_info->Input("Y").front();
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
-  VLOG(3) << "[APU] Converting input" + y_name + "...";
 
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindMutableTensor(out_name);
@@ -52,7 +50,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       op_type == "fusion_elementwise_mul_activation" ||
       op_type == "fusion_elementwise_div_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
-    VLOG(3) << "fusion op ";
   }
 
   return REBUILD_WHEN_SHAPE_CHANGED;

@@ -266,8 +266,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                                   &addOutIndex[0]);
   }
 
-  VLOG(3) << "Add " << op_type << " success \n";
-
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

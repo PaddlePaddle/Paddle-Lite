@@ -239,8 +239,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
-  VLOG(3) << "Add " << op_type << " success! \n";
-
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
