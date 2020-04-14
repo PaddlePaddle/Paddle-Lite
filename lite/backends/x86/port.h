@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include <time.h>
 #include <cstdio>
 #include <stdexcept>
 
-#include <time.h>
 #include <memory>
 #include <string>
 

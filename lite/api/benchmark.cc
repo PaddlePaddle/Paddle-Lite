@@ -17,7 +17,7 @@
 #include <sys/time.h>
 #else
 #include <windows.h>
-#include "lite\backends\x86\port.h"
+#include "lite/backends/x86/port.h"
 #endif
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 #include <time.h>

@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #else
 #include <windows.h>
-#include "lite\backends\x86\port.h"
+#include "lite/backends/x86/port.h"
 #endif
 #include <time.h>
 #include <cmath>

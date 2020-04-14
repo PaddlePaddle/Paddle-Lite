@@ -115,14 +115,6 @@ if (LITE_WITH_PYTHON)
         add_dependencies(publish_inference publish_inference_python_installer)
         add_dependencies(publish_inference publish_inference_python_light_demo)
     else()
-    add_custom_target(publish_inference_python_lib ${TARGET}
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/lib"
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
-            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/setup.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/"
-            COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/python/__init__.py" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/install/lite/lite.so"
-            COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/python/pybind/liblite_pybind.so" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.so")
     if(APPLE)
         add_custom_target(publish_inference_python_lib ${TARGET}
                 COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/python/lib"
