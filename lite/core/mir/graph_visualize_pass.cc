@@ -85,7 +85,23 @@ std::string Visualize(mir::SSAGraph* graph) {
     if (!node->IsStmt()) continue;
     auto op_info = node->AsStmt().op_info();
     auto op_type = op_info->Type();
-    std::string op_name = string_format("%s%d", op_type.c_str(), op_idx++);
+    std::string op_name;
+    if (node->AsStmt().need_sync_) {
+      std::ostringstream oss;
+      for (size_t i = 0; i < node->AsStmt().sync_streams_.size(); ++i) {
+        oss << std::to_string(node->AsStmt().sync_streams_[i]);
+        if (i != node->AsStmt().sync_streams_.size() - 1) {
+          oss << ",";
+        }
+      }
+      op_name = string_format("%s%d, stream=%d, sync_streams={%s}",
+                              op_type.c_str(),
+                              op_idx++,
+                              node->AsStmt().stream_id_,
+                              oss.str().c_str());
+    } else {
+      op_name = string_format("%s%d", op_type.c_str(), op_idx++);
+    }
     // Add its input&output variables as the Dot nodes
     dot.AddNode(op_name,
                 {Dot::Attr("shape", "box"),
@@ -93,7 +109,13 @@ std::string Visualize(mir::SSAGraph* graph) {
                  Dot::Attr("color", "black"),
                  Dot::Attr("fillcolor", "yellow")});
     for (auto& x : node->inlinks) {
-      auto var_name = x->AsArg().name;
+      std::string var_name;
+      if (x->AsArg().lane != -1) {
+        var_name = string_format(
+            "%s, lane=%d", x->AsArg().name.c_str(), x->AsArg().lane);
+      } else {
+        var_name = x->AsArg().name;
+      }
       if (!exists_var_names.count(var_name)) {
         dot.AddNode(var_name, {});
         exists_var_names.insert(var_name);
@@ -101,7 +123,13 @@ std::string Visualize(mir::SSAGraph* graph) {
       dot.AddEdge(var_name, op_name, {});
     }
     for (auto& x : node->outlinks) {
-      auto var_name = x->AsArg().name;
+      std::string var_name;
+      if (x->AsArg().lane != -1) {
+        var_name = string_format(
+            "%s, lane=%d", x->AsArg().name.c_str(), x->AsArg().lane);
+      } else {
+        var_name = x->AsArg().name;
+      }
       if (!exists_var_names.count(var_name)) {
         dot.AddNode(var_name, {});
         exists_var_names.insert(var_name);

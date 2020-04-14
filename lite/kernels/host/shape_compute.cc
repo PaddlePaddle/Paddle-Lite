@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/shape_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/host/shape_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void ShapeCompute::Run() {
   auto& param = Param<operators::ShapeParam>();
@@ -29,13 +28,17 @@ void ShapeCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    shape, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ShapeCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    shape, kHost, kAny, kAny, paddle::lite::kernels::host::ShapeCompute, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .Finalize();

@@ -67,31 +67,31 @@ STL::ostream& operator<<(STL::ostream& os, const KernelPickFactor& k) {
 
 template <>
 Type StdTypeToRepr<int32_t>() {
-  return Type::_int32;
+  return Type::INT32;
 }
 template <>
 Type StdTypeToRepr<int64_t>() {
-  return Type::_int64;
+  return Type::INT64;
 }
 template <>
 Type StdTypeToRepr<float>() {
-  return Type::_float32;
+  return Type::FLOAT32;
 }
 template <>
 Type StdTypeToRepr<double>() {
-  return Type::_float64;
+  return Type::Float64;
 }
 template <>
 Type StdTypeToRepr<std::vector<char>>() {
-  return Type::_char_list;
+  return Type::CHARLIST;
 }
 template <>
 Type StdTypeToRepr<std::string>() {
-  return Type::_string;
+  return Type::STRING;
 }
 template <>
 Type StdTypeToRepr<bool>() {
-  return Type::_bool;
+  return Type::BOOL;
 }
 
 }  // namespace core

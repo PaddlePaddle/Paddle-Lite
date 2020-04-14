@@ -190,7 +190,11 @@ if(WITH_TESTING)
            lite_cc_test(test_classify_lite_bm SRCS test_classify_lite_bm.cc
               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
-              ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+              ARGS --model_dir=${LITE_MODEL_DIR}/classify)
+           lite_cc_test(test_yolov3_lite_bm SRCS test_yolov3_lite_bm.cc
+              DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+              ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
+              ARGS --model_dir=${LITE_MODEL_DIR}/yolov3)
         endif()
     endif()
 endif()

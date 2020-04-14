@@ -116,8 +116,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   }
   size_t weight_num = conv_weight_t->data_size();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
-  bool is_weight_quantization =
-      conv_op_desc->HasAttr("quantize_weight_bits") ? true : false;
+  bool is_weight_quantization = conv_op_desc->HasAttr("quantize_weight_bits");
 
   // comupte BN alpha and beta
   Tensor alpha_tensor, beta_tensor;
