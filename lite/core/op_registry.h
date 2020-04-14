@@ -425,9 +425,6 @@ class KernelRegistor : public lite::Registor<KernelType> {
     return LITE_OP_REGISTER_INSTANCE(op_type__).Touch();                  \
   }
 
-// some platform-independent defintion
-#include "lite/utils/macros.h"
-
 // Kernel registry
 #define LITE_KERNEL_REGISTER(op_type__, target__, precision__) \
   op_type__##__##target__##__##precision__##__registor__
