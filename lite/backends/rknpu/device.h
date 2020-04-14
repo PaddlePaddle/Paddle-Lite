@@ -15,38 +15,35 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "rknpu/rknpu_pub.h"  // NOLINT
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace rknpu {
 
-class NPUSubgraphPass : public ProgramPass {
+class Device {
  public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  static Device& Global() {
+    static Device x;
+    return x;
+  }
+  Device() {}
+
+  // Build the RK IR graph to om model, return RK model exector to
+  // load om model and run inference.
+  std::unique_ptr<rk::nn::Exection> Build(
+      std::string& model_name,                                   // NOLINT
+      rk::nn::Graph* rk_graph,                                   // NOLINT
+      std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes,  // NOLINT
+      std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes  // NOLINT
+      );                                                         // NOLINT
+
+ private:
 };
 
-class XPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class RKNPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class MLUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-}  // namespace mir
+}  // namespace rknpu
 }  // namespace lite
 }  // namespace paddle

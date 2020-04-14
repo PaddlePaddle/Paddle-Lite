@@ -34,9 +34,11 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   ARM_DEPS ${arm_kernels}
                   CV_DEPS paddle_cv_arm
                   NPU_DEPS ${npu_kernels}
+                  RKNPU_DEPS ${rknpu_kernels}
                   )
+
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
-    target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels})
+    target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${rknpu_kernels})
     if(NOT APPLE)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
@@ -59,6 +61,11 @@ else()
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
         endif()
+        if (LITE_WITH_RKNPU)
+            # Need to add RKNPU runtime libs dependency
+            target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
+        endif()
+
     endif()
 endif()
 
@@ -69,6 +76,7 @@ if (WITH_TESTING)
       CUDA_DEPS ${cuda_kernels}
       X86_DEPS ${x86_kernels}
       XPU_DEPS ${xpu_kernels}
+      RKNPU_DEPS ${rknpu_kernels}
       BM_DEPS ${bm_kernels}
       MLU_DEPS ${mlu_kernels})
 endif()
@@ -82,6 +90,12 @@ if(LITE_WITH_BM)
     set(cxx_api_deps ${cxx_api_deps} ${bm_deps})
 endif()
 
+if(LITE_WITH_RKNPU)
+    set(light_api_deps ${light_api_deps} ${rknpu_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${rknpu_deps})
+endif()
+
+
 message(STATUS "get ops ${ops}")
 message(STATUS "get X86 kernels ${x86_kernels}")
 message(STATUS "get CUDA kernels ${cuda_kernels}")
@@ -90,6 +104,7 @@ message(STATUS "get ARM kernels ${arm_kernels}")
 message(STATUS "get OpenCL kernels ${opencl_kernels}")
 message(STATUS "get NPU kernels ${npu_kernels}")
 message(STATUS "get XPU kernels ${xpu_kernels}")
+message(STATUS "get RKNPU kernels ${rknpu_kernels}")
 message(STATUS "get FPGA kernels ${fpga_kernels}")
 message(STATUS "get BM kernels ${bm_kernels}")
 message(STATUS "get MLU kernels ${mlu_kernels}")
@@ -107,6 +122,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         CV_DEPS paddle_cv_arm
                         NPU_DEPS ${npu_kernels}
                         XPU_DEPS ${xpu_kernels}
+                        RKNPU_DEPS ${rknpu_kernels}
                         BM_DEPS ${bm_kernels}
                         CL_DEPS ${opencl_kernels}
                         FPGA_DEPS ${fpga_kernels})
@@ -128,6 +144,7 @@ lite_cc_library(light_api SRCS light_api.cc
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         BM_DEPS ${bm_kernels}
@@ -147,6 +164,7 @@ if(WITH_TESTING)
        CV_DEPS paddle_cv_arm
        NPU_DEPS ${npu_kernels}
        XPU_DEPS ${xpu_kernels}
+       RKNPU_DEPS ${rknpu_kernels}
        CL_DEPS ${opencl_kernels}
        FPGA_DEPS ${fpga_kernels}
        BM_DEPS ${bm_kernels}
@@ -248,6 +266,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
+
    # brief: we comment ocr_test_ut because we do not supply ocr model to test, it is the reference to infer nlp model
    # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc
    #    DEPS ${lite_model_test_DEPS})
@@ -291,6 +310,7 @@ lite_cc_test(test_light_api SRCS light_api_test.cc
         DEPS light_api program mir_passes paddle_api_light
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         BM_DEPS ${bm_kernels}
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
@@ -300,6 +320,7 @@ lite_cc_test(test_apis SRCS apis_test.cc
         X86_DEPS ${x86_kernels}
         XPU_DEPS ${xpu_kernels}
         FPGA_DEPS ${fpga_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         BM_DEPS ${bm_kernels}
         MLU_DEPS ${mlu_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
@@ -335,6 +356,7 @@ lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle
   CV_DEPS paddle_cv_arm
   NPU_DEPS ${npu_kernels}
   XPU_DEPS ${xpu_kernels}
+  RKNPU_DEPS ${rknpu_kernels}
   CL_DEPS ${opencl_kernels}
   X86_DEPS ${x86_kernels}
   FPGA_DEPS ${fpga_kernels}
@@ -356,6 +378,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
@@ -369,6 +392,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
@@ -382,6 +406,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
@@ -392,6 +417,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -404,17 +430,20 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
         MLU_DEPS ${mlu_kernels}
         CL_DEPS ${opencl_kernels}
 	BM_DEPS ${bm_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
+
     lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
+        RKNPU_DEPS ${npu_kernels}
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
