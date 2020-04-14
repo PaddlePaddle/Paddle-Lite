@@ -23,6 +23,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
             add_dependencies(paddle_full_api_shared dynload_mklml)
         endif()
+        if(WIN32)
+             target_link_libraries(paddle_full_api_shared shlwapi.lib)
+        endif()
     endif()
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
@@ -37,9 +40,10 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   APU_DEPS ${apu_kernels}
                   RKNPU_DEPS ${rknpu_kernels}
                   )
+
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${rknpu_kernels} ${apu_kernels})
-    if(NOT APPLE)
+    if(NOT APPLE AND NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
         add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)

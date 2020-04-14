@@ -15,7 +15,12 @@
 #pragma once
 
 #include <gflags/gflags.h>
+#if !defined(_WIN32)
 #include <sys/time.h>
+#else
+#include <windows.h>
+#include "lite/backends/x86/port.h"
+#endif
 #include <time.h>
 #include <cmath>
 
