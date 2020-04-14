@@ -159,7 +159,7 @@ class Env {
     static Devs* devs = new Devs();
     return *devs;
   }
-  static void Init(int max_stream = 4) {
+  static void Init(int max_stream = 6) {
 #ifdef LITE_WITH_MLU
     CNRT_CALL(cnrtInit(0));
 #endif
@@ -175,6 +175,7 @@ class Env {
     } else {
       LOG(INFO) << "Found " << count << " device(s)";
     }
+    CHECK_GT(max_stream, 0) << "max_stream must be greater than 0.";
     // create all device
     for (int i = 0; i < count; i++) {
       auto dev = Device<Type>(i, max_stream);
@@ -234,8 +235,8 @@ class Device<TARGET(kCUDA)> {
   std::string name() { return device_prop_.name; }
   int core_num() { return device_prop_.multiProcessorCount; }
   float max_memory() { return device_prop_.totalGlobalMem / 1048576.; }
-  std::vector<cudaStream_t> exec_streams() { return exec_stream_; }
-  std::vector<cudaStream_t> io_streams() { return io_stream_; }
+  const std::vector<cudaStream_t>& exec_streams() { return exec_stream_; }
+  const std::vector<cudaStream_t>& io_streams() { return io_stream_; }
 
   int sm_version() { return sm_version_; }
   bool has_fp16() { return has_fp16_; }

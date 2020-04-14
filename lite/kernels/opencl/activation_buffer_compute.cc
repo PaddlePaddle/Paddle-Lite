@@ -62,6 +62,7 @@ class ReluCompute
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -77,7 +78,7 @@ class ReluCompute
   std::string kernel_func_name_{"relu"};
   std::string build_options_{"-DCL_DTYPE_float -DRELU"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 class SigmoidCompute
@@ -120,6 +121,7 @@ class SigmoidCompute
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -135,7 +137,7 @@ class SigmoidCompute
   std::string kernel_func_name_{"sigmoid"};
   std::string build_options_{"-DCL_DTYPE_float -DSIGMOID"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

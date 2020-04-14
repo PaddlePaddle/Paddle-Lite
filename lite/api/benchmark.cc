@@ -193,6 +193,10 @@ void Run(const std::vector<int64_t>& input_shape,
     }
     LOG(INFO) << "max_value:" << max_value;
     LOG(INFO) << "max_index:" << max_index;
+    LOG(INFO) << "output data[0:10]:";
+    for (int i = 0; i < 10; i++) {
+      LOG(INFO) << out_data[i];
+    }
   }
 }
 #endif
@@ -204,32 +208,33 @@ void print_usage() {
   std::string help_info =
       "Usage: \n"
       "./benchmark_bin \n"
-      "  --optimized_model_path (the path of the model that is optimized\n"
-      "    by opt.) type: string \n"
-      "  --model_dir (the path of the model that is not optimized by opt,\n"
+      "  --optimized_model_path (The path of the model that is optimized\n"
+      "    by opt. If the model is optimized, please set the param.) \n"
+      "    type: string \n"
+      "  --model_dir (The path of the model that is not optimized by opt,\n"
       "    the model and param files is under model_dir.) type: string \n"
-      "  --model_filename (the filename of model file. When the model is\n "
+      "  --model_filename (The filename of model file. When the model is\n "
       "    combined formate, please set model_file. Otherwise, it is not\n"
       "    necessary to set it.) type: string \n"
-      "  --param_filename (the filename of param file, set param_file when\n"
+      "  --param_filename (The filename of param file, set param_file when\n"
       "    the model is combined formate. Otherwise, it is not necessary\n"
       "    to set it.) type: string \n"
-      "  --input_shape (set input shapes according to the model, separated by\n"
+      "  --input_shape (Set input shapes according to the model, separated by\n"
       "    colon and comma, such as 1,3,244,244) type: string\n"
       "    default: 1,3,224,224 \n"
-      "  --input_img_path (the path of input image, if not set\n"
+      "  --input_img_path (The path of input image, if not set\n"
       "    input_img_path, the input will be 1.0.) type: string \n "
-      "  --power_mode (arm power mode: 0 for big cluster, 1 for little\n"
+      "  --power_mode (Arm power mode: 0 for big cluster, 1 for little\n"
       "    cluster, 2 for all cores, 3 for no bind) type: int32 default: 3\n"
-      "  --repeats (repeats times) type: int32 default: 1 \n"
-      "  --result_filename (save the inference time to the file.) type: \n"
+      "  --repeats (Repeats times) type: int32 default: 1 \n"
+      "  --result_filename (Save the inference time to the file.) type: \n"
       "    string default: result.txt \n"
-      "  --threads (threads num) type: int32 default: 1 \n"
-      "  --warmup (warmup times) type: int32 default: 0 \n"
+      "  --threads (Threads num) type: int32 default: 1 \n"
+      "  --warmup (Warmup times) type: int32 default: 0 \n"
       "Note that: \n"
-      "  If load the optimized model, set optimized_model_path, or set\n"
-      "    model_dir, model_filename and param_filename according to the\n"
-      "    model. \n";
+      "  If load the optimized model, set optimized_model_path. Otherwise, \n"
+      "    set model_dir, model_filename and param_filename according to \n"
+      "    the model. \n";
   LOG(INFO) << help_info;
 }
 

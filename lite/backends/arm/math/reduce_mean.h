@@ -83,6 +83,9 @@ void reduce_mean_all(const T* src,
                      int height_in,
                      int width_in);
 
+template <typename T>
+void mean_grad(const T* out_grad, T* in_grad, int size);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

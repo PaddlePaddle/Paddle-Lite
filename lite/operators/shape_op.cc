@@ -26,9 +26,8 @@ bool ShapeOpLite::CheckShape() const {
 }
 
 bool ShapeOpLite::InferShapeImpl() const {
-  std::vector<int64_t> shape_vec;
-  shape_vec.push_back(static_cast<int64_t>(param_.X->dims().size()));
-  param_.Out->Resize(shape_vec);
+  int64_t x_dims_size = param_.X->dims().size();
+  param_.Out->Resize({x_dims_size});
   return true;
 }
 

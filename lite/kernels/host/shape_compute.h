@@ -11,47 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <memory>
-#include <string>
+#pragma once
 #include "lite/core/kernel.h"
-#include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace opencl {
+namespace host {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+class ShapeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::ElementwiseParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
-  std::string doc() const override {
-    return "ElementwiseAdd using cl::Buffer, kFloat";
-  }
-
- protected:
-  void UpdateParams();
-
-  size_t batch_{1};
-  size_t channels_{1};
-  size_t num_{1};
-  param_t* ele_param_{nullptr};
-  std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE_float"};
-  std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
+  virtual ~ShapeCompute() = default;
 };
 
-}  // namespace opencl
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
