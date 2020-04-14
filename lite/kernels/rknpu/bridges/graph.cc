@@ -123,7 +123,7 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
   auto attr = std::make_shared<rk::nn::TensorAttr>();
   attr->precision = ToRknpuPrecisionType(precision);
   attr->layout = ToRknpuDataLayoutType(layout);
-  attr->role = rk::nn::TensorRole::DATA;
+  attr->role = rk::nn::TensorRole::VAR;
   attr->name = name;
 
   switch (precision) {
