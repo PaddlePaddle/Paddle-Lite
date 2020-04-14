@@ -82,8 +82,7 @@ class FCFunctor {
           memcpy(X1_data + i * KK, X + i * K, K * sizeof(T));
         }
       };
-      lite::x86::RunParallelFor(0, M, parallel_memcpy_x);
-
+      parallel_memcpy_x(0,M);
       blas.GEMM(false,
                 false,
                 M,
@@ -104,18 +103,17 @@ class FCFunctor {
             memcpy(Y + i * N, Y1_data + i * NN, N * sizeof(T));
           }
         };
-        lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
+        parallel_memcpy_y(0,M);
         return;
       }
 
-      lite::x86::RunParallelFor(0, M, parallel_compute);
+      parallel_compute(0,M);
     } else {
       blas.MatMul(M, N, K, X, W, Y);
-      if (!B) {
+     if (!B) {
         return;
       }
-
-      lite::x86::RunParallelFor(0, M, parallel_compute);
+      parallel_compute(0, M);
     }
   }
 };
@@ -139,7 +137,6 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
 
     int M = output->dims().production() / w_dims1;
-
     const T* input_data = input->data<T>();
     const T* w_data = w->data<T>();
     T* output_data = output->mutable_data<T>();

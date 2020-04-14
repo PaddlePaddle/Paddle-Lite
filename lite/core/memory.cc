@@ -24,6 +24,8 @@ void* TargetMalloc(TargetType target, size_t size) {
     case TargetType::kX86:
     case TargetType::kARM:
       data = TargetWrapper<TARGET(kHost)>::Malloc(size);
+      TargetWrapper<TARGET(kHost)>::Free(data);
+      data = TargetWrapper<TARGET(kHost)>::Malloc(size);
       break;
 #ifdef LITE_WITH_CUDA
     case TargetType::kCUDA:

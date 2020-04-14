@@ -17,10 +17,17 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
+#include <chrono>
+#include "lite/fluid/eigen.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
+
+template <typename T,
+          int MajorType = Eigen::RowMajor,
+          typename IndexType = Eigen::DenseIndex>
+using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 // using Tensor = framework::Tensor;
 inline lite::Tensor ReshapeToMatrix(const lite::Tensor& src, int num_col_dims) {
@@ -40,9 +47,7 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   using param_t = operators::MulParam;
 
   void Run() override {
-    auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::MulParam>();
-    // CHECK(context.x86_device_context());
 
     auto* z = param.output;
 
@@ -50,7 +55,6 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* y = param.y;
 
     Tensor x_matrix, y_matrix;
-
     if (x->dims().size() > 2) {
       x_matrix = ReshapeToMatrix(*x, param.x_num_col_dims);
     } else {
@@ -64,18 +68,10 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       y_matrix = *y;
     }
 
-    z->mutable_data<T>();
-    auto z_dim = z->dims();
-    if (z_dim.size() != 2) {
-      z->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
-    }
-
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
-
-    blas.MatMul(x_matrix, y_matrix, z);
-    if (z_dim.size() != 2) {
-      z->Resize(z_dim);
-    }
+Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> mat_test(x_matrix.mutable_data<T>(), x_matrix.dims()[0], x_matrix.dims()[1]);
+Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> mat1_test(y_matrix.mutable_data<T>(), y_matrix.dims()[0], y_matrix.dims()[1]);
+Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> out_test(z->mutable_data<T>(), z->dims()[0], z->dims()[1]);
+out_test = mat_test * mat1_test;
   }
 
   virtual ~MulCompute() = default;
