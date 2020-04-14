@@ -262,7 +262,7 @@ void* GetTensorRtDsoHandle() {
 
 void* GetMKLMLDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(mklml_dir, "libmklml_intel.dylib");
+  return GetDsoHandleFromSearchPath(mklml_dir, "libmklml.dylib");
 #elif defined(_WIN32)
   return GetDsoHandleFromSearchPath(mklml_dir, "mklml.dll");
 #else
