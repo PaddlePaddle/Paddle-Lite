@@ -121,7 +121,6 @@ void insert_transpose_node(void* ctx,
     VLOG(3) << "Has " << input_name;
     input_node = graph->Get(input_name);
   } else {
-    //    neuron_errCode = NeuronModel_addOperand(model, &inType); //input
     neuron_errCode = (*neuron_model_addOperand)(model, &inType);  // input
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(WARNING) << "Insert transpose op fail!";
@@ -138,7 +137,6 @@ void insert_transpose_node(void* ctx,
   uint32_t dims_perms[1] = {4};
   permsType.dimensions = dims_perms;
 
-  //  neuron_errCode = NeuronModel_addOperand(model, &permsType); //perm
   neuron_errCode = (*neuron_model_addOperand)(model, &permsType);  // perm
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Insert transpose op fail!";
@@ -149,7 +147,6 @@ void insert_transpose_node(void* ctx,
 
   VLOG(3) << "axis :" << axis[0] << ":" << axis[1] << ":" << axis[2] << ":"
           << axis[3];
-  //  neuron_errCode = NeuronModel_setOperandValue(model, perms_node->index(),
   //  &axis[0], sizeof(int32_t) * axis.size());
   neuron_errCode = (*neuron_model_setOperandValue)(
       model, perms_node->index(), &axis[0], sizeof(int32_t) * axis.size());
@@ -166,7 +163,6 @@ void insert_transpose_node(void* ctx,
   outType.dimensionCount = output_shape.size();
   outType.dimensions = &output_shape[0];
 
-  //  NeuronModel_addOperand(model, &outType); //output
   (*neuron_model_addOperand)(model, &outType);  // output
   std::shared_ptr<Node> output_node = nullptr;
   output_node = graph->Add(output_name, output_shape);
@@ -176,11 +172,6 @@ void insert_transpose_node(void* ctx,
 
   std::vector<uint32_t> addOutIndex = {output_node->index()};
 
-  //  neuron_errCode = NeuronModel_addOperation(model, NEURON_TRANSPOSE,
-  //                                            addInIndex.size(),
-  //                                            &addInIndex[0],
-  //                                            addOutIndex.size(),
-  //                                            &addOutIndex[0]);
   neuron_errCode = (*neuron_model_addOperation)(model,
                                                 NEURON_TRANSPOSE,
                                                 addInIndex.size(),
