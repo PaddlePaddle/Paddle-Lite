@@ -34,6 +34,15 @@ elseif(SSE3_FOUND)
     set(SIMD_FLAG ${SSE3_FLAG})
 endif()
 
+if(WIN32)
+  # windows header option for all targets.
+  add_definitions(-D_XKEYCHECK_H)
+  
+  if (NOT MSVC)
+    message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
+  endif(NOT MSVC)
+endif(WIN32)
+
 if(LITE_WITH_CUDA)
     add_definitions(-DLITE_WITH_CUDA)
     add_definitions(-DEIGEN_USE_GPU)
