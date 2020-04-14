@@ -36,6 +36,13 @@ void cnrtMemcpyDtoH(void* dst, const void* src, size_t size) {
 
 }  // namespace mlu
 
+thread_local cnmlCoreVersion_t TargetWrapperMlu::mlu_core_version_{CNML_MLU270};
+thread_local int TargetWrapperMlu::mlu_core_number_{1};
+thread_local bool TargetWrapperMlu::use_first_conv_{false};
+thread_local std::vector<float> TargetWrapperMlu::mean_vec_;
+thread_local std::vector<float> TargetWrapperMlu::std_vec_;
+thread_local DataLayoutType TargetWrapperMlu::input_layout_{DATALAYOUT(kNCHW)};
+
 size_t TargetWrapperMlu::num_devices() {
   uint32_t dev_count = 0;
   CNRT_CALL(cnrtGetDeviceCount(&dev_count)) << " cnrt get device count failed";
@@ -77,6 +84,43 @@ void TargetWrapperMlu::MemcpySync(void* dst,
       LOG(FATAL) << "Unsupported IoDirection" << static_cast<int>(dir);
   }
 }
+void TargetWrapperMlu::SetMLURunMode(lite_api::MLUCoreVersion core_version,
+                                     int core_number,
+                                     bool use_first_conv,
+                                     const std::vector<float>& mean_vec,
+                                     const std::vector<float>& std_vec,
+                                     DataLayoutType input_layout) {
+  switch (core_version) {
+    case (lite_api::MLUCoreVersion::MLU_220):
+      mlu_core_version_ = CNML_MLU220;
+      break;
+    case (lite_api::MLUCoreVersion::MLU_270):
+      mlu_core_version_ = CNML_MLU270;
+      break;
+    default:
+      mlu_core_version_ = CNML_MLU270;
+      break;
+  }
+  mlu_core_number_ = core_number;
+  use_first_conv_ = use_first_conv;
+  mean_vec_ = mean_vec;
+  std_vec_ = std_vec;
+  input_layout_ = input_layout;
+}
+
+cnmlCoreVersion_t TargetWrapperMlu::MLUCoreVersion() {
+  return mlu_core_version_;
+}
+
+int TargetWrapperMlu::MLUCoreNumber() { return mlu_core_number_; }
+
+bool TargetWrapperMlu::UseFirstConv() { return use_first_conv_; }
+
+const std::vector<float>& TargetWrapperMlu::MeanVec() { return mean_vec_; }
+
+const std::vector<float>& TargetWrapperMlu::StdVec() { return std_vec_; }
+
+DataLayoutType TargetWrapperMlu::InputLayout() { return input_layout_; }
 
 // void TargetWrapperMlu::MemcpyAsync(void* dst,
 //                                    const void* src,
