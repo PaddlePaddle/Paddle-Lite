@@ -59,7 +59,10 @@ lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+lite_option(LITE_WITH_RKNPU  "Enable RKNPU in lite mode"  OFF)
+lite_option(LITE_WITH_MLU  "Enable MLU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
+lite_option(LITE_WITH_XTCL  "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
 lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
 lite_option(LITE_WITH_TRAIN "Enable training operators and kernels in lite" OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
@@ -127,6 +130,10 @@ if (LITE_WITH_PYTHON)
     include(external/pybind11)    # download, build, install pybind11
 endif()
 
+if(LITE_WITH_RKNPU)
+   include(device/rknpu)
+endif()
+
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -177,6 +184,10 @@ if(LITE_WITH_XPU)
     include(device/xpu)
 endif()
 
+if(LITE_WITH_MLU)
+    include(mlu)
+endif()
+
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 include(external/libxsmm)   # download, build, install libxsmm
@@ -203,7 +214,9 @@ include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
-include(flags)
+if(NOT APPLE)
+  include(flags)
+endif()
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

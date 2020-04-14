@@ -24,8 +24,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int FCConverter(void* ctx, OpLite* op);
-
 void fc_ref(const std::shared_ptr<operators::FcOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
@@ -141,15 +139,34 @@ void test_fc(const std::vector<int64_t>& input_shape,
   }
 
   auto fc_op_mlu = CreateOp<operators::FcOpLite>(fc_op_desc_mlu, &scope);
-  input->Resize({static_cast<int>(input_shape[0]),
-                 static_cast<int>(input_shape[2]),
-                 static_cast<int>(input_shape[3]),
-                 static_cast<int>(input_shape[1])});
-  out->Resize({static_cast<int>(input_shape[0]), static_cast<int>(w_shape[1])});
+
+  Tensor input_tmp, out_tmp;
+  input_tmp.Resize(input_shape);
+  transpose(input->mutable_data<float>(),
+            input_tmp.mutable_data<float>(),
+            {static_cast<int>(input_shape[0]),
+             static_cast<int>(input_shape[1]),
+             static_cast<int>(input_shape[2]),
+             static_cast<int>(input_shape[3])},
+            {0, 2, 3, 1});
+  input->CopyDataFrom(input_tmp);
+
   LaunchOp(fc_op_mlu, {input_var_name}, {out_var_name});
 
-  // compare results
+  auto os = out->dims();
+  out_tmp.Resize(os);
   auto* out_data = out->mutable_data<float>();
+  //  transpose(out_data,
+  //            out_tmp.mutable_data<float>(),
+  //            {static_cast<int>(os[0]),
+  //             static_cast<int>(os[2]),
+  //             static_cast<int>(os[3]),
+  //             static_cast<int>(os[1])},
+  //            {0, 3, 1, 2});
+  //
+  //  out_data = out_tmp.mutable_data<float>();
+
+  // compare results
   auto* out_ref_data = out_ref->mutable_data<float>();
   for (int i = 0; i < out->dims().production(); i++) {
     EXPECT_NEAR(out_data[i], out_ref_data[i], 1e-5);
@@ -170,4 +187,4 @@ TEST(MLUBridges, fc) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU, fc, paddle::lite::subgraph::mlu::FCConverter);
+USE_SUBGRAPH_BRIDGE(fc, kMLU);

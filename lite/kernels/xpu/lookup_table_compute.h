@@ -13,43 +13,23 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/compare_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class LookupTableCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  void Run() override;
+  using param_t = operators::LookupTableParam;
 
-  ~CompareCompute() {}
+  virtual void Run();
+
+  virtual ~LookupTableCompute() = default;
 };
 
-template <template <typename T> class Functor>
-class CompareCompute_int32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int32() {}
-};
-
-template <template <typename T> class Functor>
-class CompareCompute_int64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int64() {}
-};
-
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

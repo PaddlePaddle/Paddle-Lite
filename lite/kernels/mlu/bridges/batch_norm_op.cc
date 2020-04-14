@@ -42,7 +42,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output = scope->FindVar(y_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
   auto output_tensor = graph->AddNode(
-      y_var_name, output_dims, CNML_TENSOR, CNML_NHWC, graph->FPType());
+      y_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
 
   CHECK(graph->HasNode(x_var_name));
 

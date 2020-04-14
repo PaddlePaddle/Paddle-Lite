@@ -53,9 +53,10 @@ enum class TargetType : int {
   kNPU = 8,
   kXPU = 9,
   kBM = 10,
-  kAny = 6,  // any target
   kMLU = 11,
-  NUM = 12,  // number of fields.
+  kRKNPU = 12,
+  kAny = 6,  // any target
+  NUM = 13,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -89,6 +90,8 @@ typedef enum {
   LITE_POWER_RAND_LOW = 5
 } PowerMode;
 
+typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
+
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,
@@ -100,7 +103,9 @@ enum class ActivationType : int {
   kSwish = 7,
   kExp = 8,
   kAbs = 9,
-  NUM = 10,
+  kHardSwish = 10,
+  kReciprocal = 11,
+  NUM = 12,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {

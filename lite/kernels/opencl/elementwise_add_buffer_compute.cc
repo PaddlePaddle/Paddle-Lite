@@ -63,6 +63,7 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,

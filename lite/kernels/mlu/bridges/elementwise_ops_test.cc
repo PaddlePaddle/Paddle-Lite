@@ -24,8 +24,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ElementwiseConverter(void* ctx, OpLite* op);
-
 template <typename dtype>
 void elementwise_add_ref(const std::shared_ptr<operators::ElementwiseOp> op) {
   Scope* scope = op->scope();
@@ -184,15 +182,7 @@ TEST(MLUBridges, elementwise_add) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         elementwise_add,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         elementwise_sub,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         elementwise_mul,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         elementwise_div,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
+USE_SUBGRAPH_BRIDGE(elementwise_add, kMLU)
+USE_SUBGRAPH_BRIDGE(elementwise_sub, kMLU)
+USE_SUBGRAPH_BRIDGE(elementwise_mul, kMLU)
+USE_SUBGRAPH_BRIDGE(elementwise_div, kMLU)

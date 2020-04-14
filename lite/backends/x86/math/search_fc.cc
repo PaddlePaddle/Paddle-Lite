@@ -42,7 +42,7 @@ class SearchFcFunctor<lite::TargetType::kX86, T> {
     lite::DDim dims(std::vector<int64_t>({bottom.dims()[0], out_size}));
 
     const auto bottom_data = bottom.data<T>();
-    auto top_data = top->mutable_data<T>(lite::TargetType::kX86);
+    auto top_data = top->template mutable_data<T>(lite::TargetType::kX86);
     const auto weights = w.data<T>();
     auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
     call_gemm<lite::X86Context, T>(blas,

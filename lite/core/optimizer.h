@@ -90,6 +90,8 @@ class Optimizer {
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
 #endif
+           "__xpu__resnet_fuse_pass",
+           "__xpu__multi_encoder_fuse_pass",
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and
@@ -99,6 +101,7 @@ class Optimizer {
            "npu_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",
+           "rknpu_subgraph_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
@@ -130,11 +133,31 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
+           "mlu_subgraph_pass",
+
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+
+           "mlu_postprocess_pass",
+
            "memory_optimize_pass"}};
+
       if (passes.size() == 1) {
-        passes_local.push_back(passes[0]);
+        // multi_stream_analysis_pass must be in the front of
+        // runtime_context_assign_pass
+        const std::string msa_pass{"multi_stream_analysis_pass"};
+        const std::string depend_pass{"runtime_context_assign_pass"};
+        if (passes[0] == msa_pass) {
+          auto iter =
+              std::find(passes_local.begin(), passes_local.end(), depend_pass);
+          if (iter != passes_local.end()) {
+            passes_local.insert(iter, msa_pass);
+          } else {
+            CHECK(false) << "Not find " << depend_pass;
+          }
+        } else {
+          passes_local.push_back(passes[0]);
+        }
       }
       RunPasses(passes_local);
     } else {

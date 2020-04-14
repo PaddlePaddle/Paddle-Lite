@@ -198,6 +198,23 @@ void reduce_mean_hw<float>(const float* src,
   reduce_mean_w(tmp_out, dst, num_in, channel_in, 1, width_in);
 }
 
+template <>
+void mean_grad<float>(const float* out_grad, float* in_grad, int size) {
+  float grad = out_grad[0] / size;
+  float32x4_t grad_v = vdupq_n_f32(grad);
+  int loop = size >> 2;
+  int remain = size & 3;
+
+#pragma omp parallel for
+  for (int i = 0; i < loop; ++i) {
+    vst1q_f32(in_grad, grad_v);
+    in_grad += 4;
+  }
+  for (int i = 0; i < remain; ++i) {
+    in_grad[i] = grad;
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -25,7 +25,10 @@ SHUTDOWN_LOG=ON
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
+BUILD_XTCL=OFF
 XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
+BUILD_RKNPU=OFF
+RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 LITE_WITH_ARM_LANG=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -138,7 +141,10 @@ function make_tiny_publish_so {
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -226,7 +232,10 @@ function make_full_publish_so {
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -260,7 +269,10 @@ function make_all_tests {
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -330,7 +342,10 @@ function make_cuda {
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
  
   make publish_inference -j$NUM_PROC
   cd -
@@ -358,14 +373,14 @@ function make_x86 {
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=$BUILD_PYTHON \
             -DWITH_GPU=OFF \
             -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DLITE_WITH_XPU=$BUID_XPU \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -484,8 +499,20 @@ function main {
                 BUILD_XPU="${i#*=}"
                 shift
                 ;;
+            --build_xtcl=*)
+                BUILD_XTCL="${i#*=}"
+                shift
+                ;;
             --xpu_sdk_root=*)
                 XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --build_rknpu=*)
+                BUILD_RKNPU="${i#*=}"
+                shift
+                ;;
+            --rknpu_ddk_root=*)
+                RKNPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             tiny_publish)

@@ -137,9 +137,10 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
 
     int M = output->dims().production() / w_dims1;
-    const T* input_data = input->data<T>();
-    const T* w_data = w->data<T>();
-    T* output_data = output->mutable_data<T>();
+
+    const T* input_data = input->template data<T>();
+    const T* w_data = w->template data<T>();
+    T* output_data = output->template mutable_data<T>();
 
     auto& context = ctx_->As<X86Context>();
     FCFunctor<lite::TargetType::kX86, T> fc;
@@ -150,7 +151,7 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
        input_data,
        w_data,
        output_data,
-       bias ? bias->data<T>() : NULL,
+       bias ? bias->template data<T>() : NULL,
        with_relu,
        padding_weights);
   }

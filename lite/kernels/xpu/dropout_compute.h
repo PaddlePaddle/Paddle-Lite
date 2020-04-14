@@ -14,21 +14,22 @@
 
 #pragma once
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class ShapeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class DropoutCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  void Run() override;
+  using param_t = operators::DropoutParam;
 
-  virtual ~ShapeCompute() = default;
+  virtual void Run();
+
+  virtual ~DropoutCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
