@@ -1,4 +1,4 @@
-if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XTCL AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU)
+if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XTCL AND NOT LITE_WITH_BM AND NOT LITE_WITH_RKNPU AND NOT LITE_WITH_MLU)
   return()
 endif()
 
@@ -38,6 +38,8 @@ lite_cc_library(subgraph_bridge_shuffle_channel_op_npu SRCS shuffle_channel_op.c
 lite_cc_library(subgraph_bridge_pad2d_op_npu SRCS pad2d_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_reduce_mean_op_npu SRCS reduce_mean_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unsqueeze_op_npu SRCS unsqueeze_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_gather_op_npu SRCS gather_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_lookup_table_op_npu SRCS lookup_table_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_argmax_op_npu SRCS argmax_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_instance_norm_op_npu SRCS instance_norm_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_dropout_op_npu SRCS dropout_op.cc DEPS ${npu_subgraph_bridge_deps})
@@ -47,6 +49,7 @@ lite_cc_library(subgraph_bridge_fill_constant_op_npu SRCS fill_constant_op.cc DE
 lite_cc_library(subgraph_bridge_fill_constant_batch_size_like_op_npu SRCS fill_constant_batch_size_like_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_increment_op_npu SRCS increment_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_compare_op_npu SRCS compare_op.cc DEPS ${npu_subgraph_bridge_deps})
+#lite_cc_library(subgraph_bridge_shape_op_npu SRCS shape_op.cc DEPS ${npu_subgraph_bridge_deps})
 
 
 set(npu_subgraph_bridges
@@ -73,6 +76,8 @@ set(npu_subgraph_bridges
         subgraph_bridge_pad2d_op_npu
         subgraph_bridge_reduce_mean_op_npu
         subgraph_bridge_unsqueeze_op_npu
+        subgraph_bridge_gather_op_npu
+        subgraph_bridge_lookup_table_op_npu
         subgraph_bridge_argmax_op_npu
         subgraph_bridge_instance_norm_op_npu
         subgraph_bridge_dropout_op_npu

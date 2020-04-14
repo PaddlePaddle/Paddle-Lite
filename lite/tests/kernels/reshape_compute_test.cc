@@ -204,6 +204,8 @@ TEST(Reshape, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else

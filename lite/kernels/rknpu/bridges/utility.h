@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,27 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/tensor.h"
+#include "rknpu/rknpu_pub.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace subgraph {
+namespace rknpu {
 
-class ShapeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~ShapeCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType precision);
+rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType layout);
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname);
+}  // namespace rknpu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

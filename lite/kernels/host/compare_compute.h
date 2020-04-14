@@ -13,43 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/compare_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <template <typename T> class Functor>
-class CompareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType, typename CompareFunctor>
+class CompareCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
-  ~CompareCompute() {}
+  virtual ~CompareCompute() = default;
 };
 
-template <template <typename T> class Functor>
-class CompareCompute_int32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int32() {}
-};
-
-template <template <typename T> class Functor>
-class CompareCompute_int64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64)> {
- public:
-  void Run() override;
-
-  ~CompareCompute_int64() {}
-};
-
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

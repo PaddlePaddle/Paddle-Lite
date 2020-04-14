@@ -21,6 +21,7 @@
 namespace paddle {
 namespace lite {
 
+template <typename T>
 class LookupTableComputeTest : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -64,7 +65,7 @@ class LookupTableComputeTest : public arena::TestCase {
     out->Resize(out_dims);
     out->set_lod(ids->lod());
 
-    auto ids_data = ids->data<int64_t>();
+    auto ids_data = ids->data<T>();
     auto ids_size = ids_dims.production();
     auto w_data = w->data<float>();
     auto w_rows = w_dims[0];
@@ -95,9 +96,8 @@ class LookupTableComputeTest : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<int64_t> ids(ids_dims_.production());
-    fill_data_rand<int64_t>(
-        ids.data(), 0, w_dims_[0] - 1, ids_dims_.production());
+    std::vector<T> ids(ids_dims_.production());
+    fill_data_rand<T>(ids.data(), 0, w_dims_[0] - 1, ids_dims_.production());
 
     std::vector<float> w(w_dims_.production());
     fill_data_rand(w.data(), -1.f, 1.f, w_dims_.production());
@@ -109,9 +109,12 @@ class LookupTableComputeTest : public arena::TestCase {
 
 TEST(LookupTable, precision) {
   LOG(INFO) << "test lookup_table op";
-  float abs_error = 2e-5;
+  float abs_error = 1e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
@@ -119,18 +122,25 @@ TEST(LookupTable, precision) {
   return;
 #endif
 
+#if defined(LITE_WITH_NPU)
+  using ID_T = int;
+#else
+  using ID_T = int64_t;
+#endif
+
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
     for (auto w_dims :
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU) && defined(LITE_WITH_NPU)
       for (auto padding_idx :
-           std::vector<int64_t>{-1}) {  // Only -1 is supported by XPU
+           std::vector<int64_t>{-1}) {  // Only -1 is supported by XPU or NPU
 #else
       for (auto padding_idx : std::vector<int64_t>{-1, 0, w_dims[0] - 1}) {
 #endif
-        std::unique_ptr<arena::TestCase> tester(new LookupTableComputeTest(
-            place, "def", DDim(ids_dims), DDim(w_dims), padding_idx));
+        std::unique_ptr<arena::TestCase> tester(
+            new LookupTableComputeTest<ID_T>(
+                place, "def", DDim(ids_dims), DDim(w_dims), padding_idx));
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
       }
