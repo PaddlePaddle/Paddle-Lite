@@ -39,12 +39,14 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
 
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${rknpu_kernels})
-    set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
-    set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
-    add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
-    add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
-    set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
-    add_dependencies(paddle_full_api_shared custom_linker_map)
+    if(NOT APPLE)
+        set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+        set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
+        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+        add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
+        set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+        add_dependencies(paddle_full_api_shared custom_linker_map)
+   endif()
 else()
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
         add_library(paddle_light_api_shared SHARED "")
@@ -208,7 +210,11 @@ if(WITH_TESTING)
            lite_cc_test(test_classify_lite_bm SRCS test_classify_lite_bm.cc
               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
-              ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+              ARGS --model_dir=${LITE_MODEL_DIR}/classify)
+           lite_cc_test(test_yolov3_lite_bm SRCS test_yolov3_lite_bm.cc
+              DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+              ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
+              ARGS --model_dir=${LITE_MODEL_DIR}/yolov3)
         endif()
     endif()
 endif()

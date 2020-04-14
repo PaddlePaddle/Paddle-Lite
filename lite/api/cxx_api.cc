@@ -292,9 +292,10 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   program_desc_ = desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
-  inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
-  inner_places.emplace_back(
-      TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+  for (auto &valid_place : valid_places) {
+    inner_places.emplace_back(
+        Place(TARGET(kHost), valid_place.precision, valid_place.layout));
+  }
 
   // Analysis whether the modle is quantized.
   // For quantized model, add place(arm, int8) to inner_places

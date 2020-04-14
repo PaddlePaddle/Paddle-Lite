@@ -38,6 +38,7 @@ void ConvImageCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
 
+  filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   int bs = x_dims[0];
   int c_in = x_dims[1];
   int h_out = output_dims[2];
@@ -113,7 +114,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d1x1opt;
@@ -174,7 +175,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
 #endif
@@ -194,7 +195,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::DepthwiseConv2d;
@@ -209,7 +210,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d3x3opt;
@@ -241,7 +242,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d5x5;
@@ -257,7 +258,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d5x5opt;
@@ -290,7 +291,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    this->filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    this->filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d7x7;
@@ -306,7 +307,7 @@ void ConvImageCompute::PrepareForRun() {
     std::vector<half_t> filter_image_v(filter_image_dims[0] *
                                        filter_image_dims[1] * 4);  // 4 : RGBA
     converter.NCHWToImage(filter_cpu, filter_image_v.data(), filter_dims);
-    this->filter_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    this->filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_dims[0], filter_image_dims[1], filter_image_v.data());
 
     impl_ = &ConvImageCompute::Conv2d7x7opt;
@@ -349,6 +350,7 @@ void ConvImageCompute::PrepareForRun() {
   const bool is_element_wise_bias =
       has_bias && param.output->dims() == param.bias->dims();
   if (has_bias) {
+    bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     build_options_single +=
         is_element_wise_bias ? " -DBIASE_ELE" : " -DBIASE_CH";
 
@@ -361,7 +363,7 @@ void ConvImageCompute::PrepareForRun() {
     float* bias_cpu_data = param.bias->mutable_data<float>();
     bias_converter.NCHWToImage(
         bias_cpu_data, bias_image_v.data(), param.bias->dims());
-    this->bias_gpu_image_.mutable_data<half_t, cl::Image2D>(
+    this->bias_gpu_image_->mutable_data<half_t, cl::Image2D>(
         bias_image_dims[0], bias_image_dims[1], bias_image_v.data());
     // convert cpu buffer bias --> gpu image --- end ----
   }
@@ -434,7 +436,7 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -498,7 +500,7 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   const cl::Buffer* bias_buf = nullptr;
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -542,6 +544,7 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, default_w_blk_);
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -565,7 +568,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
   auto strides = param.strides;
 
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -647,7 +650,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
   auto kernel = kernel_;
 
@@ -707,6 +710,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -732,7 +736,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   auto dilations = *param.dilations;
 
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -781,7 +785,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -834,6 +838,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -856,7 +861,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -914,7 +919,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -965,6 +970,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -989,7 +995,7 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
   auto dilations = *param.dilations;
 
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -1039,7 +1045,7 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -1084,6 +1090,7 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
 
   //  VLOG(4) << "out_image: " << out_image;
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1106,7 +1113,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -1164,7 +1171,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -1215,6 +1222,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1239,7 +1247,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   auto dilations = *param.dilations;
 
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -1287,7 +1295,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -1331,6 +1339,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1357,11 +1366,11 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   auto dilations = *param.dilations;
 
   auto* input_img = param.x->data<half_t, cl::Image2D>();
-  auto* filter_img = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_img = filter_gpu_image_->data<half_t, cl::Image2D>();
 
   const cl::Image2D* bias_img = nullptr;
   if (param.bias) {
-    bias_img = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_img = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto image_shape = InitImageDimInfoWith(output_dims);
@@ -1389,7 +1398,7 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
       has_bias && param.output->dims() == param.bias->dims();
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
@@ -1415,6 +1424,7 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1444,11 +1454,11 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   int input_c_block = (x_dims[1] + 3) / 4;
 
   auto* input_img = param.x->data<half_t, cl::Image2D>();
-  auto* filter_img = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_img = filter_gpu_image_->data<half_t, cl::Image2D>();
 
   const cl::Image2D* bias_img = nullptr;
   if (param.bias) {
-    bias_img = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_img = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto image_shape = InitImageDimInfoWith(output_dims);
@@ -1487,7 +1497,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
       has_bias && param.output->dims() == param.bias->dims();
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "set bias_image: ";
 #endif
@@ -1513,6 +1523,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
@@ -1536,7 +1547,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto* input_image = param.x->data<half_t, cl::Image2D>();
-  auto* filter_image = filter_gpu_image_.data<half_t, cl::Image2D>();
+  auto* filter_image = filter_gpu_image_->data<half_t, cl::Image2D>();
   auto filter_dims = param.filter->dims();
   auto output_dims = param.output->dims();
 
@@ -1595,7 +1606,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   const cl::Buffer* bias_buf = nullptr;
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_.data<half_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto kernel = kernel_;
@@ -1650,6 +1661,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,

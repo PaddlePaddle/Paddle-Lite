@@ -120,6 +120,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
           cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                       static_cast<cl::size_type>(default_work_size[2])};
 
+      event_ = std::shared_ptr<cl::Event>(new cl::Event);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
           cl::NullRange,
@@ -141,7 +142,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
   param_t* boxcoder_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

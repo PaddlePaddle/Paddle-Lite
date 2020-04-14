@@ -19,25 +19,28 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
 #include "lite/core/version.h"
-
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
-    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL) && !defined(__APPLE__)
 #include <omp.h>
 #include "lite/backends/x86/mklml.h"
 #endif
-
 namespace paddle {
 namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
   auto places = config.valid_places();
+  std::vector<std::string> passes{};
 #ifdef LITE_WITH_CUDA
   // if kCUDA is included in valid places, it should be initialized first,
   // otherwise skip this step.
   for (auto &p : places) {
     if (p.target == TARGET(kCUDA)) {
       Env<TARGET(kCUDA)>::Init();
+      if (config_.multi_stream()) {
+        passes = {"multi_stream_analysis_pass"};
+        VLOG(3) << "add pass: " << passes[0];
+      }
       break;
     }
   }
@@ -51,7 +54,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                            config.mlu_first_conv_std(),
                                            config.mlu_input_layout());
 #endif  // LITE_WITH_MLU
-  std::vector<std::string> passes{};
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
   VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
@@ -63,9 +65,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   raw_predictor_.Build(config, places, passes);
   mode_ = config.power_mode();
   threads_ = config.threads();
-
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
-    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL) && !defined(__APPLE__)
   int num_threads = config.x86_math_library_num_threads();
   int real_num_threads = num_threads > 1 ? num_threads : 1;
   paddle::lite::x86::MKL_Set_Num_Threads(real_num_threads);

@@ -22,7 +22,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ConcatCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ConcatCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::ConcatParam;
 

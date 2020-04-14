@@ -16,12 +16,6 @@ IF(NOT ${WITH_MKLML})
   return()
 ENDIF(NOT ${WITH_MKLML})
 
-IF(APPLE)
-    MESSAGE(WARNING "Mac is not supported with MKLML in Paddle yet. Force WITH_MKLML=OFF.")
-    SET(WITH_MKLML OFF CACHE STRING "Disable MKLML package in MacOS" FORCE)
-    return()
-ENDIF()
-
 INCLUDE(ExternalProject)
 SET(MKLML_DST_DIR       "mklml")
 SET(MKLML_INSTALL_ROOT  "${THIRD_PARTY_PATH}/install")
@@ -39,6 +33,15 @@ IF(WIN32)
     SET(MKLML_IOMP_LIB            ${MKLML_LIB_DIR}/libiomp5md.lib)
     SET(MKLML_SHARED_LIB          ${MKLML_LIB_DIR}/mklml.dll)
     SET(MKLML_SHARED_IOMP_LIB     ${MKLML_LIB_DIR}/libiomp5md.dll)
+ELSEIF(APPLE)
+    #TODO(intel-huying):
+    #  Now enable Erf function in mklml library temporarily, it will be updated as offical version later.
+    SET(MKLML_VER "mklml_mac_2019.0.5.20190502" CACHE STRING "" FORCE)
+    SET(MKLML_URL "https://paddlelite-data.bj.bcebos.com/third_party_libs/${MKLML_VER}.tgz" CACHE STRING "" FORCE)
+    SET(MKLML_LIB                 ${MKLML_LIB_DIR}/libmklml.dylib)
+    SET(MKLML_IOMP_LIB            ${MKLML_LIB_DIR}/libiomp5.dylib)
+    SET(MKLML_SHARED_LIB          ${MKLML_LIB_DIR}/libmklml.dylib)
+    SET(MKLML_SHARED_IOMP_LIB     ${MKLML_LIB_DIR}/libiomp5.dylib)
 ELSE()
     #TODO(intel-huying):
     #  Now enable Erf function in mklml library temporarily, it will be updated as offical version later.

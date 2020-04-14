@@ -65,7 +65,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_dims = output->dims();
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
-  LOG(INFO) << x_dims << " " << output_dims;
   std::vector<int32_t> i_output_shape_data(output_dims.size());
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);

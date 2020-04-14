@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/mean_grad_compute.h"
-
+#include "lite/backends/arm/math/reduce_mean.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -31,10 +31,7 @@ void MeanGradCompute::Run() {
 
   int input_grad_size = input_grad->dims().production();
 
-  // TODO(mapingshuo): use parallel methods to accelerate this for loop
-  for (int i = 0; i < input_grad_size; i++) {
-    input_grad_data[i] = out_grad_data[0] / input_grad_size;
-  }
+  lite::arm::math::mean_grad(out_grad_data, input_grad_data, input_grad_size);
 }
 
 }  // namespace arm

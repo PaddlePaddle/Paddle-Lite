@@ -70,7 +70,7 @@ endif()
 
 if (WITH_MKLML AND MKLML_IOMP_LIB)
     message(STATUS "Enable Intel OpenMP with ${MKLML_IOMP_LIB}")
-    if(WIN32)
+    if(WIN32 OR APPLE)
         # openmp not support well for now on windows
         set(OPENMP_FLAGS "")
     else(WIN32)
@@ -185,3 +185,6 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
   add_definitions("-DLITE_ON_MODEL_OPTIMIZE_TOOL")
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
+if (LITE_WITH_PYTHON)
+  add_definitions("-DLITE_WITH_PYTHON")
+endif(LITE_WITH_PYTHON)
