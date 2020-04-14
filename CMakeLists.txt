@@ -209,7 +209,7 @@ include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
-if(not APPLE)
+if(NOT APPLE)
   include(flags)
 endif()
 
