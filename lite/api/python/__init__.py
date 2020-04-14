@@ -15,8 +15,8 @@
 import os 
 import sys
 
-current_path = os.path.abspath(os.path.dirname(__file__))
 if os.name =='nt':
-    third_lib_path = current_path + os.sep + '.' + os.sep + 'libs'
+    current_path = os.path.abspath(os.path.dirname(__file__))
+    third_lib_path = current_path + os.sep + 'libs'
     os.environ['path'] =  third_lib_path+ ';' + os.environ['path']
     sys.path.insert(0, third_lib_path)
