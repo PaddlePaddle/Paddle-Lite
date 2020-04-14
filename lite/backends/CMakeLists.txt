@@ -9,3 +9,5 @@ add_subdirectory(xpu)
 add_subdirectory(mlu)
 add_subdirectory(bm)
 add_subdirectory(apu)
+add_subdirectory(rknpu)
+

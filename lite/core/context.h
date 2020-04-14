@@ -60,6 +60,7 @@ using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
+using RKNPUContext = Context<TargetType::kRKNPU>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -117,6 +118,21 @@ class Context<TargetType::kBM> {
   void* GetHandle() { return TargetWrapperBM::GetHandle(); }
 
   std::string name() const { return "BMContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_RKNPU
+template <>
+class Context<TargetType::kRKNPU> {
+ public:
+  Context() {}
+  explicit Context(const RKNPUContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(RKNPUContext* ctx) {}
+
+  RKNPUContext& operator=(const RKNPUContext& ctx) {}
+  std::string name() const { return "RKNPUContext"; }
 };
 #endif
 
@@ -415,6 +431,12 @@ class ContextScheduler {
             &ctx->As<APUContext>());
         break;
 #endif
+#ifdef LITE_WITH_RKNPU
+      case TARGET(kRKNPU):
+        kernel_contexts_[TargetType::kRKNPU].As<RKNPUContext>().CopySharedTo(
+            &ctx->As<RKNPUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_XPU
       case TARGET(kXPU):
         kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
@@ -486,6 +508,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_APU
     InitContext<TargetType::kAPU, APUContext>();
+#endif
+#ifdef LITE_WITH_RKNPU
+    InitContext<TargetType::kRKNPU, RKNPUContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

@@ -55,8 +55,9 @@ enum class TargetType : int {
   kXPU = 9,
   kBM = 10,
   kMLU = 11,
-  kAPU = 12,
-  NUM = 13,  // number of fields.
+  kRKNPU = 12,
+  kAPU = 13,
+  NUM = 14,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
