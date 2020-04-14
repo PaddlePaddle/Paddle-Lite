@@ -20,7 +20,7 @@ namespace lite {
 namespace operators {
 
 bool ReluOp::CheckShape() const { return true; }
-bool ReluOp::InferShape() const {
+bool ReluOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.

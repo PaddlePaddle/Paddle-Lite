@@ -26,7 +26,7 @@ bool LstmOp::CheckShape() const {
   return true;
 }
 
-bool LstmOp::InferShape() const {
+bool LstmOp::InferShapeImpl() const {
   auto in_dims = param_.Input->dims();
   if (param_.H0) {
     CHECK(param_.C0) << "lstm must has H0 and C0 in the same time";

@@ -32,7 +32,7 @@ bool ExpandOpLite::CheckShape() const {
   return true;
 }
 
-bool ExpandOpLite::InferShape() const {
+bool ExpandOpLite::InferShapeImpl() const {
   DDim out_dims(param_.X->dims());
   for (size_t i = 0; i < param_.expand_times.size(); ++i) {
     out_dims[i] *= param_.expand_times[i];

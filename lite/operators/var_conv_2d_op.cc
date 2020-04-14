@@ -21,7 +21,7 @@ namespace operators {
 
 bool VarConv2dOp::CheckShape() const { return true; }
 
-bool VarConv2dOp::InferShape() const { return true; }
+bool VarConv2dOp::InferShapeImpl() const { return true; }
 
 bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(

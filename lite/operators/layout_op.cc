@@ -24,7 +24,7 @@ bool LayoutOp::CheckShape() const {
   CHECK_OR_FALSE(param_.y);
   return true;
 }
-bool LayoutOp::InferShape() const {
+bool LayoutOp::InferShapeImpl() const {
   param_.y->Resize(param_.x->dims());
   return true;
 }

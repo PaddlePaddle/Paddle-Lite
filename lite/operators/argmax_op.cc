@@ -29,7 +29,7 @@ bool ArgmaxOpLite::CheckShape() const {
   return true;
 }
 
-bool ArgmaxOpLite::InferShape() const {
+bool ArgmaxOpLite::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
   int axis = param_.Axis;

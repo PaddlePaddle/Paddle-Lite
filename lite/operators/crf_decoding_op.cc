@@ -60,7 +60,7 @@ bool CrfDecodingOpLite::CheckShape() const {
   return true;
 }
 
-bool CrfDecodingOpLite::InferShape() const {
+bool CrfDecodingOpLite::InferShapeImpl() const {
   auto emission_dims = param_.emission->dims();
   if (param_.length == nullptr) {
     param_.viterbi_path->Resize({emission_dims[0], 1});

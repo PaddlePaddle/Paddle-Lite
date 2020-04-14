@@ -24,7 +24,7 @@ bool IoCopyOp::CheckShape() const {
   CHECK_OR_FALSE(param_.y);
   return true;
 }
-bool IoCopyOp::InferShape() const {
+bool IoCopyOp::InferShapeImpl() const {
   param_.y->Resize(param_.x->dims());
   return true;
 }

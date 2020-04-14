@@ -29,35 +29,7 @@ bool SoftmaxOp::CheckShape() const {
   return true;
 }
 
-bool SoftmaxOp::SmartInferShape() {
-  if (!last_input_shapes.empty() && !last_output_shapes.empty()) {
-    if (param_.x->dims() == last_input_shapes[0] &&
-        param_.x->lod() == last_input_lods[0]) {
-      param_.output->Resize(last_output_shapes[0]);
-      param_.output->set_lod(last_output_lods[0]);
-      return true;
-    }
-  }
-
-  this->InferShape();
-
-  if (!last_input_shapes.empty()) {
-    last_input_shapes.clear();
-    last_input_lods.clear();
-  }
-  last_input_shapes.push_back(param_.x->dims());
-  last_input_lods.push_back(param_.x->lod());
-
-  if (!last_output_shapes.empty()) {
-    last_output_shapes.clear();
-    last_output_lods.clear();
-  }
-  last_output_shapes.push_back(param_.output->dims());
-  last_output_lods.push_back(param_.output->lod());
-  return true;
-}
-
-bool SoftmaxOp::InferShape() const {
+bool SoftmaxOp::InferShapeImpl() const {
   param_.output->Resize(param_.x->dims());
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();

@@ -26,7 +26,7 @@ bool CompareOp::CheckShape() const {
   return true;
 }
 
-bool CompareOp::InferShape() const {
+bool CompareOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();

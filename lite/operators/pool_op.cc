@@ -60,7 +60,7 @@ int PoolOutputSize(int input_size,
   return output_size;
 }
 
-bool PoolOpLite::InferShape() const {
+bool PoolOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
   // dynamic update 4-pad

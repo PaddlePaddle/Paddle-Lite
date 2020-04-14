@@ -28,7 +28,7 @@ bool FillConstantBatchSizeLikeOp::CheckShape() const {
   return true;
 }
 
-bool FillConstantBatchSizeLikeOp::InferShape() const {
+bool FillConstantBatchSizeLikeOp::InferShapeImpl() const {
   std::vector<int64_t> output_dim{param_.shape.begin(), param_.shape.end()};
   if (param_.input_dim_idx == 0 && !param_.input->lod().empty()) {
     output_dim[param_.output_dim_idx] = param_.input->lod().back().size() - 1;

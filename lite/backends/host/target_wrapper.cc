@@ -34,7 +34,7 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   return r;
 }
 void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
-  ptr=Malloc(1);
+  ptr = Malloc(1);
   if (ptr) {
     free(static_cast<void**>(ptr)[-1]);
   }

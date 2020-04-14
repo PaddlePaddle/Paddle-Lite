@@ -99,10 +99,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  ksize);
 
   // ceil mode
-  int ceil_mode = 0;
-  if (op_info->HasAttr("ceil_mode")) {
-    ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
-  }
+  bool ceil_mode =
+      op_info->HasAttr("ceil_mode") && op_info->GetAttr<bool>("ceil_mode");
 
   // Pooling node
   auto pool_node = graph->Add<ge::op::Pooling>(out_name);
@@ -112,12 +110,14 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   pool_op->set_attr_pad_mode(pad_mode);
   pool_op->set_attr_global_pooling(global_pooling);
   pool_op->set_attr_window(ge::AttrValue::LIST_INT(ksize.begin(), ksize.end()));
-  pool_op->set_attr_pad(ge::AttrValue::LIST_INT{
-      paddings[0], paddings[1], paddings[2], paddings[3]});
+  pool_op->set_attr_pad(
+      ge::AttrValue::LIST_INT(paddings.begin(), paddings.end()));
   pool_op->set_attr_stride(
       ge::AttrValue::LIST_INT(strides.begin(), strides.end()));
-  pool_op->set_attr_ceil_mode(ceil_mode);
-  // pool_op->set_attr_data_mode(data_mode);
+  if (ceil_mode) {
+    pool_op->set_attr_ceil_mode(1);
+    pool_op->set_attr_data_mode(0);
+  }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

@@ -46,7 +46,7 @@ bool MulGradOpLite::CheckShape() const {
   return true;
 }
 
-bool MulGradOpLite::InferShape() const {
+bool MulGradOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   const auto y_dims = param_.y->dims();
   if (param_.x_grad) {

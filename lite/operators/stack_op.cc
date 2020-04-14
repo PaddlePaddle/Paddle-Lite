@@ -32,7 +32,7 @@ bool StackOp::CheckShape() const {
   return true;
 }
 
-bool StackOp::InferShape() const {
+bool StackOp::InferShapeImpl() const {
   auto input = param_.X;
   auto input_dims = input[0]->dims();
   int axis = param_.axis;

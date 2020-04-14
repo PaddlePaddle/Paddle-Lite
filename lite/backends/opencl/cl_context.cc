@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_context.h"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,8 +36,10 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   STL::stringstream program_key_ss;
   program_key_ss << file_name << options;
   std::string program_key = program_key_ss.str();
-  auto it = programs_.find(program_key);
-  if (it != programs_.end()) {
+
+  auto &programs = CLRuntime::Global()->programs();
+  auto it = programs.find(program_key);
+  if (it != programs.end()) {
     VLOG(3) << " --- program -> " << program_key << " has been built --- ";
     return *(it->second);
   }
@@ -47,14 +50,15 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
   CLRuntime::Global()->BuildProgram(program.get(), options);
   VLOG(3) << " --- end build program -> " << program_key << " --- ";
 
-  programs_[program_key] = std::move(program);
+  programs[program_key] = std::move(program);
 
-  return *(programs_[program_key]);
+  return *(programs[program_key]);
 }
 
 void CLContext::AddKernel(const std::string &kernel_name,
                           const std::string &file_name,
-                          const std::string &options) {
+                          const std::string &options,
+                          const std::string &time_stamp) {
   cl_int status{CL_SUCCESS};
   VLOG(3) << " --- to get program " << file_name << " --- ";
   auto program = GetProgram(file_name, options);
@@ -64,25 +68,30 @@ void CLContext::AddKernel(const std::string &kernel_name,
       new cl::Kernel(program, kernel_name.c_str(), &status));
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
-  kernels_.emplace_back(std::move(kernel));
+
+  auto &kernels = CLRuntime::Global()->kernels();
+  auto &kernel_offset_map = CLRuntime::Global()->kernel_offset();
+  kernels.emplace_back(std::move(kernel));
   STL::stringstream kernel_key;
-  kernel_key << kernel_name << options;
-  kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
+  kernel_key << kernel_name << options << time_stamp;
+  kernel_offset_map[kernel_key.str()] = kernels.size() - 1;
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {
-  VLOG(3) << " --- kernel count: " << kernels_.size() << " --- ";
-  CHECK(static_cast<size_t>(index) < kernels_.size())
+  auto &kernels = CLRuntime::Global()->kernels();
+  VLOG(3) << " --- kernel count: " << kernels.size() << " --- ";
+  CHECK(static_cast<size_t>(index) < kernels.size())
       << "The index must be less than the size of kernels.";
-  CHECK(kernels_[index] != nullptr)
+  CHECK(kernels[index] != nullptr)
       << "The target kernel pointer cannot be null.";
-  return *(kernels_[index]);
+  return *(kernels[index]);
 }
 
 cl::Kernel &CLContext::GetKernel(const std::string &name) {
-  auto it = kernel_offset_.find(name);
-  CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
-                                    << name;
+  auto &kernel_offset_map = CLRuntime::Global()->kernel_offset();
+  auto it = kernel_offset_map.find(name);
+  CHECK(it != kernel_offset_map.end()) << "Cannot find the kernel function: "
+                                       << name;
   return GetKernel(it->second);
 }
 
@@ -121,14 +130,53 @@ cl::NDRange CLContext::DefaultWorkSize(const CLImage &image) {
   }
 }
 
+cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
+                                         size_t max_work_size,
+                                         int divisor) {
+  int preferred_lws = 0;
+#if 1
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
+#else
+  auto gws2 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws0 = global_work_size[2];
+#endif
+  if (divisor > 1) {
+    max_work_size /= divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
+  }
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
+  }
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
+  }
+#if 1
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
+#else
+  return cl::NDRange{static_cast<size_t>(gws2),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws0)};
+#endif
+}
+
 cl::NDRange CLContext::LocalWorkSize(cl::NDRange global_work_size,
                                      size_t max_work_size) {
   int preferred_lws = 0;
   int divisor = 2;
 
-  auto tmp0 = global_work_size[0];
-  auto tmp1 = global_work_size[1];
-  auto tmp2 = global_work_size[2];
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
 
   if (divisor > 1) {
     max_work_size /= divisor;
@@ -136,18 +184,18 @@ cl::NDRange CLContext::LocalWorkSize(cl::NDRange global_work_size,
   if (preferred_lws > 0 && preferred_lws <= max_work_size) {
     max_work_size = preferred_lws;
   }
-  while (tmp1 > max_work_size && max_work_size > 0) {
-    tmp1 = tmp1 % 2 == 0 ? tmp1 / 2 : 1;
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
   }
-  while (tmp2 * tmp1 > max_work_size && max_work_size > 0) {
-    tmp2 = tmp2 % 2 == 0 ? tmp2 / 2 : 1;
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
   }
-  while (tmp0 * tmp1 * tmp2 > max_work_size && max_work_size > 0) {
-    tmp0 = tmp0 % 2 == 0 ? tmp0 / 2 : 1;
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
   }
-  return cl::NDRange{static_cast<size_t>(tmp0),
-                     static_cast<size_t>(tmp1),
-                     static_cast<size_t>(tmp2)};
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
 }
 
 }  // namespace lite

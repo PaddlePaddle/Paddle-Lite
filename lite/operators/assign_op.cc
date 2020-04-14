@@ -26,7 +26,7 @@ bool AssignOpLite::CheckShape() const {
   return true;
 }
 
-bool AssignOpLite::InferShape() const {
+bool AssignOpLite::InferShapeImpl() const {
   lite::DDim input_dims;
   input_dims = param_.X->dims();
   param_.Out->Resize(lite::DDim(input_dims));
