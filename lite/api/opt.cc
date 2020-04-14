@@ -104,7 +104,8 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "x86") {
-      valid_places.emplace_back(TARGET(kX86));
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
