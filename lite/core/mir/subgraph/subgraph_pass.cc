@@ -69,6 +69,20 @@ void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
+void RKNPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::unordered_set<std::string> supported_lists;
+#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
+#include "lite/kernels/rknpu/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
+  auto teller = [&](Node* node) {
+    if (!node->IsStmt()) return false;
+    auto& stmt = node->AsStmt();
+    return supported_lists.count(stmt.op_type()) != 0;
+  };
+  SubgraphFuser fuser(graph.get(), teller, 1 /* min_subgraph_size */);
+  fuser();
+}
+
 void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::unordered_set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
@@ -93,5 +107,7 @@ REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite::mir::XPUSubgraphPass)
     .BindTargets({TARGET(kXPU)});
 REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite::mir::BMSubgraphPass)
     .BindTargets({TARGET(kBM)});
+REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
+    .BindTargets({TARGET(kRKNPU)});
 REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
