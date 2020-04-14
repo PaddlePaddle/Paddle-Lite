@@ -46,9 +46,9 @@ struct ParamBase {
 using param_t = Any;
 #define WITH_INT8_CONFIG             \
   bool enable_int8{false};           \
-  float input_scale{1.0f};            \
+  float input_scale{1.0f};           \
   std::vector<float> weight_scale{}; \
-  float output_scale{1.0f};           \
+  float output_scale{1.0f};          \
   int bit_length{8};
 
 /// ----------------------- Functional operators ------------------------------
@@ -352,7 +352,6 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0};
   float hard_swish_scale{6.0};
   float hard_swish_offset{3.0};
-
 };
 
 struct ActivationGradParam : ParamBase {

@@ -25,7 +25,6 @@ void BindLiteApi(pybind11::module *m);
 void BindLiteOpt(pybind11::module *m);
 
 PYBIND11_MODULE(lite, m) {
-  
   m.doc() = "C++ core of Paddle-Lite";
 
   BindLiteApi(&m);
