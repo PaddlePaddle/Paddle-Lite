@@ -27,6 +27,10 @@ NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.hua
 BUILD_XPU=OFF
 BUILD_XTCL=OFF
 XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
+BUILD_APU=OFF
+APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
+BUILD_RKNPU=OFF
+RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 LITE_WITH_ARM_LANG=OFF
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -141,6 +145,10 @@ function make_tiny_publish_so {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_APU=$BUILD_APU \
+      -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -230,7 +238,11 @@ function make_full_publish_so {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
+      -DLITE_WITH_APU=$BUILD_APU \
+      -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -265,6 +277,10 @@ function make_all_tests {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_APU=$BUILD_APU \
+      -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -496,6 +512,22 @@ function main {
                 ;;
             --xpu_sdk_root=*)
                 XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --build_apu=*)
+                BUILD_APU="${i#*=}"
+                shift
+                ;;
+           --apu_ddk_root=*)
+                APU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --build_rknpu=*)
+                BUILD_RKNPU="${i#*=}"
+                shift
+                ;;
+            --rknpu_ddk_root=*)
+                RKNPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             tiny_publish)

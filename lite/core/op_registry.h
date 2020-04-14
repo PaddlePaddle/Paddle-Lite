@@ -231,6 +231,9 @@ class KernelRegistry final {
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 
+              KernelRegistryForTarget<TARGET(kAPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
@@ -248,6 +251,16 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kBM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+
+              KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kRKNPU),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 

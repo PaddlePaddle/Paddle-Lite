@@ -134,6 +134,14 @@ if (LITE_WITH_NPU)
     add_definitions("-DLITE_WITH_NPU")
 endif()
 
+if (LITE_WITH_APU)
+    add_definitions("-DLITE_WITH_APU")
+endif()
+
+if (LITE_WITH_RKNPU)
+    add_definitions("-DLITE_WITH_RKNPU")
+endif()
+
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
     if (LITE_WITH_XTCL)

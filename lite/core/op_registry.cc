@@ -98,6 +98,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kNPU): {
       CREATE_KERNEL(kNPU);
     } break;
+    case TARGET(kAPU): {
+      CREATE_KERNEL(kAPU);
+    } break;
     case TARGET(kXPU): {
       CREATE_KERNEL(kXPU);
     } break;
@@ -109,6 +112,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     } break;
     case TARGET(kMLU): {
       CREATE_KERNEL(kMLU);
+    } break;
+    case TARGET(kRKNPU): {
+      CREATE_KERNEL(kRKNPU);
     } break;
     default:
       CHECK(false) << "not supported kernel target " << TargetToStr(target);
@@ -217,6 +223,7 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kNPU, kAny, kNHWC);
   INIT_FOR(kNPU, kAny, kAny);
 
+  INIT_FOR(kAPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kFloat, kNCHW);
   INIT_FOR(kXPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kAny, kNCHW);
@@ -232,6 +239,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kBM, kInt8, kNCHW);
   INIT_FOR(kBM, kAny, kNCHW);
   INIT_FOR(kBM, kAny, kAny);
+
+  INIT_FOR(kRKNPU, kFloat, kNCHW);
+  INIT_FOR(kRKNPU, kInt8, kNCHW);
+  INIT_FOR(kRKNPU, kAny, kNCHW);
+  INIT_FOR(kRKNPU, kAny, kAny);
 #undef INIT_FOR
 }
 
