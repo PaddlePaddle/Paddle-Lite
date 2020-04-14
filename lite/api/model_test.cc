@@ -22,6 +22,9 @@
 #include "lite/core/profile/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+#include "lite/api/paddle_use_ops.h"
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_passes.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
@@ -46,7 +49,9 @@ void OutputOptModel(const std::string& load_model_dir,
   config.set_model_dir(load_model_dir);
 #ifdef LITE_WITH_X86
   config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                           Place{TARGET(kX86), PRECISION(kInt64)}});
+                           Place{TARGET(kX86), PRECISION(kInt64)},
+                           Place{TARGET(kHost), PRECISION(kFloat)}
+                           });
 #else
   config.set_valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
