@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/hw_ascend_npu/utility.h"
+#include "lite/kernels/hw_ascend_npu/bridges/utility.h"
+#include <algorithm>
 #include <utility>
-#include <algorithm
 
 namespace paddle {
 namespace lite {
