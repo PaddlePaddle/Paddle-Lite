@@ -194,9 +194,9 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kOpenCL",
                                       "kFPGA",
                                       "kNPU",
-                                      "kAPU",
                                       "kXPU",
                                       "kRKNPU",
+                                      "kAPU",
                                       "kAny",
                                       "kUnk"};
   int maximum_optype_length = 0;
