@@ -100,7 +100,7 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
 
 void TensorLite::ResetBuffer(std::shared_ptr<Buffer> buffer,
                              size_t memory_size) {
-  CHECK_EQ(offset_, 0)
+  CHECK_EQ(offset_, 0u)
       << "Only the offset is supported to zero when the Buffer is reset.";
   if (buffer_) {
     CHECK_LE(memory_size_, buffer->space())

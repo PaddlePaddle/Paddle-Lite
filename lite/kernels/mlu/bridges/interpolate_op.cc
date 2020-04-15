@@ -36,7 +36,7 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x = scope->FindVar(x_var_name)->GetMutable<Tensor>();
   auto out = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto x_dims = x->dims();
-  CHECK_EQ(x_dims.size(), 4);
+  CHECK_EQ(x_dims.size(), 4u);
   auto scale = op_info->GetAttr<float>("scale");
   auto out_w = op_info->GetAttr<int>("out_w");
   auto out_h = op_info->GetAttr<int>("out_h");

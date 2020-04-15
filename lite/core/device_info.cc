@@ -947,7 +947,7 @@ void DeviceInfo::RequestPowerNoBindMode(int thread_num) {
     active_ids_ = core_ids_;
   } else {
     active_ids_.resize(thread_num);
-    for (int i = 0; i < thread_num; ++i) {
+    for (uint32_t i = 0; i < thread_num; ++i) {
       if (i < big_core_ids_.size()) {
         active_ids_[i] = big_core_ids_[i];
       } else {

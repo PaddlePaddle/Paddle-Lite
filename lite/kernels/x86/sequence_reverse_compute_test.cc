@@ -30,7 +30,7 @@ static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
   auto seq_offset = x->lod()[x->lod().size() - 1];
   int width = x->numel() / x->dims()[0];
   auto* y_data = y->mutable_data<float>();
-  for (int i = 0; i < seq_offset.size() - 1; ++i) {
+  for (size_t i = 0; i < seq_offset.size() - 1; ++i) {
     auto start_pos = seq_offset[i];
     auto end_pos = seq_offset[i + 1];
     for (auto pos = start_pos; pos < end_pos; ++pos) {
