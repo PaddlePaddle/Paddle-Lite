@@ -1,0 +1,41 @@
+name: C/C++ CI
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: modity build.sh
+      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/-j$NUM_CORES_FOR_COMPILE/-j1/' lite/tools/build_mlu.sh
+    - name: build
+      run: NEUWARE_HOME=/usr/local/neuware ./lite/tools/build_mlu.sh build
+    - name: test_act_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_act_converter_mlu
+    - name: test_batch_norm_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_batch_norm_converter_mlu
+    - name: test_concat_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_concat_converter_mlu
+    - name: test_conv_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_conv_converter_mlu
+    - name: test_dropout_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_dropout_converter_mlu
+    - name: test_elementwise_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_elementwise_converter_mlu
+    - name: test_fc_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_fc_converter_mlu
+    - name: test_interp_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_interp_converter_mlu
+    - name: test_pool_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_pool_converter_mlu
+    - name: test_scale_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_scale_converter_mlu
+    - name: test_softmax_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_softmax_converter_mlu
+    - name: test_transpose_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_transpose_converter_mlu
