@@ -120,7 +120,8 @@ class Graph {
       output_addrs_[i] = output_tensors_[i]->mlu_data();
     }
 
-#if PRINT_HW_TIME thread_local float hw_time;
+#if PRINT_HW_TIME
+    thread_local float hw_time;
     CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que));
 #endif
     CNML_CALL(cnmlComputeFusionOpForward_V3(fusion_op_,

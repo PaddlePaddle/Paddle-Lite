@@ -570,11 +570,11 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 // arg_in and arg_out are assumed to be NHWC which user should be aware of.
 // Thus here we change these args' layout to NHWC
 #ifdef LITE_WITH_MLU
-  if (lite::DeviceInfo::Global().InputLayout() == DATALAYOUT(kNHWC)) {
+  if (lite::TargetWrapperMlu::InputLayout() == DATALAYOUT(kNHWC)) {
     ModifyLayout(graph.get());
   }
 
-  if (lite::DeviceInfo::Global().UseFirstConv()) {
+  if (lite::TargetWrapperMlu::UseFirstConv()) {
     GatherAndModifyFirstConvNodes(graph.get());
   }
 #endif

@@ -84,32 +84,6 @@ class SubgraphEngine : public subgraph::Engine {
     return true;
   }
 
-  int Build() {
-    // In order to attach all of the ops of the block desc, we need to build
-    // the original program firstly.
-    BuildOriginProgram();
-    // Run InferShape() of all of ops, and convert Paddle ops to MLU IR graph
-    build_device_program_status_ = BuildDeviceProgram();
-    return build_device_program_status_;
-  }
-
-  int Launch() {
-    // Rebuild device program when the shapes of input tensors have been
-    // changed.
-    if (subgraph::CHECK_SUCCESS(build_device_program_status_) &&
-        subgraph::CHECK_REBUILD_WHEN_SHAPE_CHANGED(
-            build_device_program_status_) &&
-        InputShapeChanged()) {
-      Build();
-    }
-    if (subgraph::CHECK_FAILED(build_device_program_status_)) {
-      LaunchOriginProgram();
-    } else {
-      LaunchDeviceProgram();
-    }
-    return 0;
-  }
-
  protected:
   int BuildDeviceProgram() override {
     int status = 0;
