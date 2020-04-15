@@ -253,18 +253,16 @@ function print_usage {
     echo -e "\n Methods of compiling Padddle-Lite android library:"
     echo "----------------------------------------"
     echo -e "compile light_api library (recommanded): (armv8, gcc, c++_static)"
-    echo -e "   ./lite/tools/build_android.sh tiny_publish"
-    echo -e "compile both light_api and cxx_api library: (armv8, gcc, c++_static)"
-    echo -e "   ./lite/tools/build_android.sh full_publish"
+    echo -e "   ./lite/tools/build_android.sh"
     echo -e "compile both light_api and cxx_api opencl library: (armv8, gcc, c++_static)"
     echo -e "   ./lite/tools/build_android.sh opencl"
+    echo -e "print help infomation:"
+    echo -e "   ./lite/tools/build_android.sh help"
     echo
     echo -e "optional argument:"
     echo -e "--arm_abi:\t armv8|armv7, default is armv8"
     echo -e "--arm_lang:\t gcc|clang, defalut is gcc"
     echo -e "--android_stl:\t c++_static|c++_shared, default is c++_static"
-    echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
-    echo -e "--build_python: (OFF|ON); controls whether to publish python api lib, default is OFF"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib, default is ON"
     echo -e "--build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF"
     echo -e "--shutdown_log: (OFF|ON); controls whether to hide log information, default is ON"
@@ -279,8 +277,8 @@ function print_usage {
 
 function main {
     if [ -z "$1" ]; then
-        print_usage
-        exit -1
+        # compiling result contains light_api lib only, recommanded.
+        make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL
     fi
 
     # Parse command line.
@@ -331,20 +329,20 @@ function main {
                 SHUTDOWN_LOG="${i#*=}"
                 shift
                 ;;
-            # compiling result contains light_api lib only, recommanded.
-            tiny_publish)
-                make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL 
-                shift
-                ;;
             # compiling result contains both light_api and cxx_api lib.
             full_publish)
                 make_full_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL 
-                shift
+                exit 0
                 ;;
             # compiling lib which can operate on opencl and cpu.
             opencl)
                 make_opencl $ARM_ABI $ARM_LANG
-                shift
+                exit 0
+                ;;
+            help)
+                # unknown option
+                print_usage
+                exit 0
                 ;;
             *)
                 # unknown option
@@ -352,6 +350,8 @@ function main {
                 exit 1
                 ;;
         esac
+        # compiling result contains light_api lib only, recommanded.
+        make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL
     done
 }
 

@@ -87,9 +87,11 @@ function print_usage {
     echo -e "\nMethods of compiling Paddle-Lite iOS library:"
     echo "----------------------------------------"
     echo -e "compile ios armv8 library:"
-    echo -e "   ./lite/tools/build_ios.sh --arm_abi=armv8"
+    echo -e "   ./lite/tools/build_ios.sh"
     echo -e "compile ios armv7 library:"
     echo -e "   ./lite/tools/build_ios.sh --arm_abi=armv7"
+    echo -e "print help information:"
+    echo -e "   ./lite/tools/build_ios.sh help"
     echo
     echo -e "optional arguments:"
     echo -e "--arm_abi:\t armv8|armv7, required."
@@ -107,7 +109,7 @@ function print_usage {
 
 function main {
     if [ -z "$1" ]; then
-        print_usage
+        make_ios $ARM_ABI
         exit -1
     fi
 
@@ -144,9 +146,9 @@ function main {
                 SHUTDOWN_LOG="${i#*=}"
                 shift
                 ;;
-            ios)
-                make_ios $ARM_ABI
-                shift
+            help)
+                print_usage
+                exit 0
                 ;;
             *)
                 # unknown option
