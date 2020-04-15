@@ -14,27 +14,23 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/logical_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class IsEmptyCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class IsEmptyCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::IsEmptyParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
   ~IsEmptyCompute() {}
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
