@@ -47,8 +47,8 @@ std::string SubgraphVisualizer::operator()() {
       "turquoise4",   "snow3",          "sienna4",        "salmon2",
   };
   std::unordered_map<Node *, int> subgraph_indices;
-  for (int i = 0; i < subgraphs_.size(); i++) {
-    for (int j = 0; j < subgraphs_[i].size(); j++) {
+  for (size_t i = 0; i < subgraphs_.size(); i++) {
+    for (size_t j = 0; j < subgraphs_[i].size(); j++) {
       subgraph_indices[subgraphs_[i][j]] = i;
     }
   }
@@ -538,7 +538,8 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph, teller)();
   SubgraphVisualizer(graph, subgraphs)();
-  for (int subgraph_idx = 0; subgraph_idx < subgraphs.size(); subgraph_idx++) {
+  for (size_t subgraph_idx = 0; subgraph_idx < subgraphs.size();
+       subgraph_idx++) {
     if (subgraphs[subgraph_idx].size() >= min_subgraph_size) {
       InsertNewNode(graph, subgraph_idx, subgraphs[subgraph_idx]);
     }

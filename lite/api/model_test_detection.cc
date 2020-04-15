@@ -114,7 +114,7 @@ void detect_object(const float* dout,
   }
   std::string name = FLAGS_out_txt + "_accu.txt";
   FILE* fp = fopen(name.c_str(), "w");
-  for (int i = 0; i < objects.size(); ++i) {
+  for (size_t i = 0; i < objects.size(); ++i) {
     Object object = objects.at(i);
     if (object.prob > thresh && object.x > 0 && object.y > 0 &&
         object.width > 0 && object.height > 0) {
@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "input shapes: " << FLAGS_input_shape;
   std::vector<std::string> str_input_shapes = split_string(FLAGS_input_shape);
   std::vector<std::vector<int64_t>> input_shapes;
-  for (int i = 0; i < str_input_shapes.size(); ++i) {
+  for (size_t i = 0; i < str_input_shapes.size(); ++i) {
     LOG(INFO) << "input shape: " << str_input_shapes[i];
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }

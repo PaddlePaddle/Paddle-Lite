@@ -107,7 +107,7 @@ TEST(ModelParser, LoadParamNaive) {
   ASSERT_EQ(bg_lod, tensor.lod());
   ASSERT_EQ(tensor.data_size(), size);
   auto* data = tensor.data<float>();
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     EXPECT_NEAR(bg_data[i], data[i], 1e-6);
   }
 }

@@ -27,7 +27,7 @@ bool ExpandOpLite::CheckShape() const {
   CHECK_EQ(expand_size, x_dims_size)
       << "The number of expand_times size must be qual to the rank of "
          "Input(X).";
-  CHECK_LE(param_.X->dims().size(), 6)
+  CHECK_LE(param_.X->dims().size(), 6u)
       << "The rank of Input(X) must not be greater than 6.";
   return true;
 }

@@ -265,7 +265,7 @@ class BeamSearchFunctor<TARGET(kX86), T> {
     // size_t num_seqs = scores->NumElements(lod_level);
     size_t num_seqs = scores->lod()[lod_level].size() - 1;
     size_t seq_width = 1;
-    for (int i = 1; i < scores->dims().size(); i++) {
+    for (size_t i = 1; i < scores->dims().size(); i++) {
       seq_width *= scores->dims()[i];
     }
 

@@ -41,7 +41,7 @@ bool OpLite::InferShapeWithCache() {
        iter++) {
     // combined dims value into new_hash value.
     auto &element_dims = (*iter)->dims();
-    for (int i = 0; i < element_dims.size(); i++) {
+    for (size_t i = 0; i < element_dims.size(); i++) {
       new_hash =
           lite::hash_combine(new_hash, static_cast<int>(element_dims[i]));
     }
@@ -49,7 +49,7 @@ bool OpLite::InferShapeWithCache() {
     auto &emement_lods = (*iter)->lod();
     for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
          lod_iter++) {
-      for (int i = 0; i < lod_iter->size(); i++) {
+      for (size_t i = 0; i < lod_iter->size(); i++) {
         new_hash =
             lite::hash_combine(new_hash, static_cast<int>(lod_iter->at(i)));
       }
@@ -60,7 +60,7 @@ bool OpLite::InferShapeWithCache() {
     // if current hash value is consistent with io_shape_lod_hash_,
     // previous outputs shape and lod are reused.
     auto *current_outputs = param_.output_tensor_ptrs();
-    for (int i = 0; i < current_outputs->size(); i++) {
+    for (size_t i = 0; i < current_outputs->size(); i++) {
       current_outputs->at(i)->Resize(last_output_shapes[i]);
       current_outputs->at(i)->set_lod(last_output_lods[i]);
     }
@@ -69,7 +69,7 @@ bool OpLite::InferShapeWithCache() {
     io_shape_lod_hash_ = new_hash;
     this->InferShapeImpl();
     auto *current_outputs = param_.output_tensor_ptrs();
-    for (int i = 0; i < current_outputs->size(); i++) {
+    for (size_t i = 0; i < current_outputs->size(); i++) {
       last_output_shapes[i] = current_outputs->at(i)->dims();
       last_output_lods[i] = current_outputs->at(i)->lod();
     }

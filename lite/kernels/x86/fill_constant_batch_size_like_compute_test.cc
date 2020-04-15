@@ -71,7 +71,7 @@ TEST(fill_constant_batch_size_like_x86, run_test) {
 
   std::vector<float> ref_results{
       3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5};
-  for (int i = 0; i < ref_results.size(); i++) {
+  for (size_t i = 0; i < ref_results.size(); i++) {
     EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }
 }
