@@ -93,14 +93,6 @@ int ActConverter<ge::op::Activation>(void* ctx,
   } else if (op_type == "relu6") {
     float Relu_clipped_coef = 6.f;
     act_op->set_attr_coef(Relu_clipped_coef);
-  } else if (op_type == "leaky_relu") {
-    auto alpha = op_info->GetAttr<float>("alpha");
-    act_op->set_attr_negative_slope(alpha);
-  } else if (op_type == "hard_sigmoid") {
-    auto slope = op_info->GetAttr<float>("slope");
-    auto offset = op_info->GetAttr<float>("offset");
-    act_op->set_attr_negative_slope(slope);
-    act_op->set_attr_coef(offset);
   }
   return SUCCESS;
 }
@@ -113,53 +105,53 @@ int ActConverter<ge::op::Activation>(void* ctx,
 REGISTER_SUBGRAPH_BRIDGE(
     sigmoid,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     tanh,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu_clipped,
     kNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu6,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     leaky_relu,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     abs,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     softsign,
-    kNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    kHWAscendNPU,
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     softplus,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     hard_sigmoid,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 
 REGISTER_SUBGRAPH_BRIDGE(
     log,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Log>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Log>);
 REGISTER_SUBGRAPH_BRIDGE(
     square,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Square>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Square>);
 REGISTER_SUBGRAPH_BRIDGE(
     sqrt,
     kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Sqrt>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Sqrt>);
