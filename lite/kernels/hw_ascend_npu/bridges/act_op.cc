@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <all_ops.h>
 #include "lite/kernels/hw_ascend_npu/bridges/graph.h"
 #include "lite/kernels/hw_ascend_npu/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -124,7 +125,7 @@ REGISTER_SUBGRAPH_BRIDGE(
 REGISTER_SUBGRAPH_BRIDGE(
     relu_clipped,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu6,
     kHWAscendNPU,
@@ -132,7 +133,7 @@ REGISTER_SUBGRAPH_BRIDGE(
 REGISTER_SUBGRAPH_BRIDGE(
     leaky_relu,
     kHWAscendNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::Activation>);
+    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     abs,
     kHWAscendNPU,

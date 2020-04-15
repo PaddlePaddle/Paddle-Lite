@@ -291,6 +291,8 @@ TEST(Activation_relu, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HW_ASCEND_NPU)
+  place = TARGET(kHWAscendNPU);
 #else
   return;
 #endif
