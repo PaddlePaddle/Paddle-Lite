@@ -535,6 +535,7 @@ class ContextScheduler {
             .As<HWAscendNPUContext>()
             .CopySharedTo(&ctx->As<HWAscendNPUContext>());
         break;
+#endif
 #ifdef LITE_WITH_MLU
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();

@@ -14,13 +14,15 @@
 
 #pragma once
 
+// reference from atc package
+#include <all_ops.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-// reference from atc package
-#include "graph/operators.h"
+#include "graph/operator.h"
+#include "graph/operator_reg.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 

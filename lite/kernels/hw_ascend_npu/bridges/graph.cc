@@ -14,8 +14,8 @@
 
 #include "lite/kernels/hw_ascend_npu/bridges/graph.h"
 /// reference from opp package
-#include <all_ops.h>
 #include <utility>
+#include "lite/kernels/hw_ascend_npu/utility.h"
 
 namespace paddle {
 namespace lite {
@@ -49,8 +49,9 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
   PrecisionType precision = tensor.precision();
   if (tensor.persistable()) {
     // Const node
-    node = Add<ge::Const>(name, precision, layout);
-    node->data<ge::Const>()->set_attr_value(CvtTensor(tensor, shape, layout));
+    node = Add<ge::op::Const>(name, precision, layout);
+    node->data<ge::op::Const>()->set_attr_value(
+        CvtTensor(tensor, shape, layout));
   } else {
     // Data node
     node = Add(name, shape, precision, layout);
@@ -63,10 +64,10 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  std::vector<int64_t> shape,
                                  PrecisionType precision,
                                  DataLayoutType layout) {
-  auto node = Add<ge::Data>(name, precision, layout);
+  auto node = Add<ge::op::Data>(name, precision, layout);
   ge::TensorDesc desc(
       ge::Shape(shape), CvtDataLayoutType(layout), CvtPrecisionType(precision));
-  node->data<ge::Data>()->update_input_desc_x(desc);
+  node->data<ge::op::Data>()->update_input_desc_data(desc);
   return node;
 }
 
