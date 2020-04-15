@@ -84,14 +84,12 @@ function make_ios {
 
 function print_usage {
     set +x
-    echo -e "\nUSAGE:"
-    echo
+    echo -e "\nMethods of compiling Paddle-Lite iOS library:"
     echo "----------------------------------------"
     echo -e "compile ios armv8 lib:"
     echo -e "   ./build.sh --arm_abi=armv8"
     echo -e "compile ios armv7 lib:"
     echo -e "   ./build.sh --arm_abi=armv7"
-    echo
     echo
     echo -e "optional arguments:"
     echo -e "--arm_abi:\t armv8|armv7, default is armv8"
@@ -103,8 +101,6 @@ function print_usage {
     echo -e "arguments of striping lib according to input model:"
     echo -e "--build_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF"
     echo -e "--opt_model_dir: (path to optimized model dir); contains absolute path to optimized model dir"
-    echo
-    echo
     echo "----------------------------------------"
     echo
 }

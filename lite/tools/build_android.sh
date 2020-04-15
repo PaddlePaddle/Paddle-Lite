@@ -250,8 +250,7 @@ function make_opencl {
 
 function print_usage {
     set +x
-    echo -e "\nUSAGE:"
-    echo
+    echo -e "\n Methods of compiling Padddle-Lite android library:"
     echo "----------------------------------------"
     echo -e "compile light_api lib (recommanded): (armv8, gcc, c++_static)"
     echo -e "   ./build.sh tiny_publish"
@@ -272,8 +271,6 @@ function print_usage {
     echo -e "arguments of striping lib according to input model:"
     echo -e "--build_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF"
     echo -e "--opt_model_dir: (path to optimized model dir); contains absolute path to optimized model dir"
-    echo
-    echo
     echo "----------------------------------------"
     echo
 }
