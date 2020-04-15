@@ -92,7 +92,7 @@ function print_usage {
     echo -e "   ./build.sh --arm_abi=armv7"
     echo
     echo -e "optional arguments:"
-    echo -e "--arm_abi:\t armv8|armv7, default is armv8"
+    echo -e "--arm_abi:\t armv8|armv7, required."
     echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
     echo -e "--build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF"
     echo -e "--shutdown_log: (OFF|ON); controls whether to hide log information, default is ON"
