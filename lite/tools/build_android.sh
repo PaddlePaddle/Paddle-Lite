@@ -253,9 +253,9 @@ function print_usage {
     echo -e "\n Methods of compiling Padddle-Lite android library:"
     echo "----------------------------------------"
     echo -e "compile light_api lib (recommanded): (armv8, gcc, c++_static)"
-    echo -e "   ./build.sh tiny_publish"
+    echo -e "   ./build_android.sh tiny_publish"
     echo -e "compile both light_api and cxx_api lib: (armv8, gcc, c++_static)"
-    echo -e "   ./build.sh full_publish"
+    echo -e "   ./build_android.sh full_publish"
     echo
     echo -e "optional argument:"
     echo -e "--arm_abi:\t armv8|armv7, default is armv8"
