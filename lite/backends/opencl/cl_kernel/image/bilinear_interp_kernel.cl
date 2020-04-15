@@ -54,10 +54,10 @@ __kernel void bilinear_interp(__read_only image2d_t input,
     if (ceil_h > in_dims_h - 1) {
         ceil_h = in_dims_h- 1;
     }
-    float wight0_w = center_w - floor_w;
-    float wight0_h = center_h - floor_h;
-    float wight1_w = 1.0 - wight0_w;
-    float wight1_h = 1.0 - wight0_h;
+    CL_DTYPE wight0_w = center_w - floor_w;
+    CL_DTYPE wight0_h = center_h - floor_h;
+    CL_DTYPE wight1_w = 1.0 - wight0_w;
+    CL_DTYPE wight1_h = 1.0 - wight0_h;
 
     const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
                             CLK_ADDRESS_CLAMP |
@@ -91,6 +91,7 @@ __kernel void bilinear_interp(__read_only image2d_t input,
     // calculate output data
     CL_DTYPE4 out = (left_down_data * wight1_w + right_down_data * wight0_w) * wight1_h
             + (left_up_data * wight1_w + right_up_data * wight0_w) * wight0_h;
+
 
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, out);
 }
