@@ -63,6 +63,13 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "rknpu") {
+      valid_places.emplace_back(TARGET(kRKNPU));
+      valid_places.emplace_back(
+          TARGET(kRKNPU), PRECISION(kInt8), DATALAYOUT(kNCHW));
+    } else if (target_repr == "apu") {
+      valid_places.emplace_back(
+          Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "

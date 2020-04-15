@@ -108,17 +108,17 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
-    } else if (target_repr == "apu") {
-      valid_places.emplace_back(
-          Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "mlu") {
+      valid_places.emplace_back(TARGET(kMLU));
     } else if (target_repr == "rknpu") {
       valid_places.emplace_back(TARGET(kRKNPU));
       valid_places.emplace_back(
           TARGET(kRKNPU), PRECISION(kInt8), DATALAYOUT(kNCHW));
-    } else if (target_repr == "mlu") {
-      valid_places.emplace_back(TARGET(kMLU));
+    } else if (target_repr == "apu") {
+      valid_places.emplace_back(
+          Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
