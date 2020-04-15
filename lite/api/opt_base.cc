@@ -63,6 +63,13 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "rknpu") {
+      valid_places_.emplace_back(TARGET(kRKNPU));
+      valid_places_.emplace_back(
+          TARGET(kRKNPU), PRECISION(kInt8), DATALAYOUT(kNCHW));
+    } else if (target_repr == "apu") {
+      valid_places_.emplace_back(
+          Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -183,7 +190,7 @@ void OptBase::PrintHelpInfo() {
       "        `set_param_file(param_file_path)`\n"
       "        `set_model_type(protobuf|naive_buffer)`\n"
       "        `set_optimize_out(output_optimize_model_dir)`\n"
-      "        `set_valid_places(arm|opencl|x86|npu|xpu)`\n"
+      "        `set_valid_places(arm|opencl|x86|npu|xpu|rknpu|apu)`\n"
       "        `run_optimize(false|true)`\n"
       "        `  ----fasle&true refer to whether to record ops info for "
       "tailoring lib, false by default`\n"
@@ -208,6 +215,8 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
                                                      "kFPGA",
                                                      "kNPU",
                                                      "kXPU",
+                                                     "kRKNPU",
+                                                     "kAPU",
                                                      "kAny",
                                                      "kUnk"};
   // Get the lengh of the first column: maximum length of the op_type
