@@ -183,6 +183,7 @@ void BindLitePlace(py::module *m) {
       .value("FPGA", TargetType::kFPGA)
       .value("NPU", TargetType::kNPU)
       .value("MLU", TargetType::kMLU)
+      .value("APU", TargetType::kAPU)
       .value("Any", TargetType::kAny);
 
   // PrecisionType

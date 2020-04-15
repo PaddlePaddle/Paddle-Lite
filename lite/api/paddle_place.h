@@ -49,14 +49,15 @@ enum class TargetType : int {
   kCUDA = 3,
   kARM = 4,
   kOpenCL = 5,
+  kAny = 6,  // any target
   kFPGA = 7,
   kNPU = 8,
   kXPU = 9,
   kBM = 10,
   kMLU = 11,
   kRKNPU = 12,
-  kAny = 6,  // any target
-  NUM = 13,  // number of fields.
+  kAPU = 13,
+  NUM = 14,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,

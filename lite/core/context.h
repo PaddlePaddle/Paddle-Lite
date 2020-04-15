@@ -54,6 +54,7 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
 using NPUContext = Context<TargetType::kNPU>;
+using APUContext = Context<TargetType::kAPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
@@ -84,6 +85,21 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_APU
+template <>
+class Context<TargetType::kAPU> {
+ public:
+  Context() {}
+  explicit Context(const APUContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(APUContext* ctx) {}
+
+  APUContext& operator=(const APUContext& ctx) {}
+  std::string name() const { return "APUContext"; }
 };
 #endif
 
@@ -408,6 +424,12 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
+#ifdef LITE_WITH_APU
+      case TARGET(kAPU):
+        kernel_contexts_[TargetType::kAPU].As<APUContext>().CopySharedTo(
+            &ctx->As<APUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_RKNPU
       case TARGET(kRKNPU):
         kernel_contexts_[TargetType::kRKNPU].As<RKNPUContext>().CopySharedTo(
@@ -482,6 +504,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_APU
+    InitContext<TargetType::kAPU, APUContext>();
 #endif
 #ifdef LITE_WITH_RKNPU
     InitContext<TargetType::kRKNPU, RKNPUContext>();
