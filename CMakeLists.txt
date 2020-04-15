@@ -89,6 +89,7 @@ lite_option(LITE_WITH_MLU  "Enable MLU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_XTCL  "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
 lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
+lite_option(LITE_WITH_APU  "Enable APU in lite mode"  OFF)
 lite_option(LITE_WITH_TRAIN "Enable training operators and kernels in lite" OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
@@ -173,6 +174,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(device/npu) # check and prepare NPU DDK
     include(device/xpu) # check and prepare XPU SDK
+    include(device/apu) # check and prepare APU SDK
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
