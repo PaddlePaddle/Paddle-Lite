@@ -25,7 +25,7 @@ bool SearchSeqSoftmaxOp::CheckShape() const {
   return true;
 }
 
-bool SearchSeqSoftmaxOp::InferShape() const {
+bool SearchSeqSoftmaxOp::InferShapeImpl() const {
   param_.output->Resize(param_.x->dims());
   param_.output->set_lod(param_.x->lod());
   return true;

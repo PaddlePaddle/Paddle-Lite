@@ -43,7 +43,7 @@ bool SequenceTopkAvgPoolingOpLite::CheckShape() const {
   return true;
 }
 
-bool SequenceTopkAvgPoolingOpLite::InferShape() const {
+bool SequenceTopkAvgPoolingOpLite::InferShapeImpl() const {
   int channel_num = param_.channel_num;
   std::vector<int> topks = param_.topks;
   auto row_dim = param_.ROW->dims();

@@ -251,9 +251,10 @@ std::vector<mir::Node *> SSAGraph::outputs() {
 }
 
 mir::Node *SSAGraph::RetrieveArgument(const std::string &arg) {
-  auto it = arguments_.find(arg);
-  if (it != arguments_.end()) {
-    return it->second;
+  for (auto &node : node_storage_) {
+    if (node.IsArg() && node.arg()->name == arg) {
+      return &node;
+    }
   }
   return nullptr;
 }

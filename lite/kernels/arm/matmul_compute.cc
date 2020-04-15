@@ -45,32 +45,13 @@ void MatMulCompute::Run() {
   operators::ActivationParam act_param;
   act_param.has_active = false;
 
-  if (x_dims.size() > 2 && y_dims.size() >= 2) {
+  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
+      (x_dims.size() != 2 || y_dims.size() != 2)) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
     // x: [B, M, K], y: [K, N], out: [B, M, N]
-
-    if (!x_transpose && !y_transpose) {
-      CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 2])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << ") x_transpose is " << x_transpose << "y_transpose is "
-          << y_transpose;
-    } else if (!x_transpose && y_transpose) {
-      CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 1])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << ") x_transpose is " << x_transpose << "y_transpose is "
-          << y_transpose;
-    } else if (x_transpose && !y_transpose) {
-      CHECK_EQ(x_dims[x_dims.size() - 2], y_dims[y_dims.size() - 2])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << ") x_transpose is " << x_transpose << "y_transpose is "
-          << y_transpose;
-    } else {
-      CHECK_EQ(x_dims[x_dims.size() - 2], y_dims[y_dims.size() - 1])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << ") x_transpose is " << x_transpose << "y_transpose is "
-          << y_transpose;
-    }
-
+    // or
+    // x: [M, K], y: [B, ..., K, N], out: [B, ..., M, N]
+    // x: [M, K], y: [B, K, N], out: [B, M, N]
     int lda, ldb, ldc;
     if (!x_transpose) {
       m_ = x_dims[x_dims.size() - 2];
@@ -96,11 +77,7 @@ void MatMulCompute::Run() {
     int y_inner = y_dims[y_dims.size() - 2] * y_dims[y_dims.size() - 1];
     int out_inner = o_dims[o_dims.size() - 2] * o_dims[o_dims.size() - 1];
 
-    float* x_data_trans = nullptr;
-    if (x_transpose) {
-      x_data_trans = static_cast<float*>(malloc(sizeof(float) * x_inner));
-    }
-    if (y_dims.size() > 2) {
+    if (x_dims.size() > 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::sgemm(x_transpose,
                                y_transpose,
@@ -120,7 +97,7 @@ void MatMulCompute::Run() {
                                act_param,
                                &ctx);
       }
-    } else {
+    } else if (x_dims.size() > 2 && y_dims.size() == 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::sgemm(x_transpose,
                                y_transpose,
@@ -140,34 +117,29 @@ void MatMulCompute::Run() {
                                act_param,
                                &ctx);
       }
-    }
-    if (x_data_trans) {
-      free(x_data_trans);
+    } else if (x_dims.size() == 2 && y_dims.size() > 2) {
+      for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
+        lite::arm::math::sgemm(x_transpose,
+                               y_transpose,
+                               m_,
+                               n_,
+                               k_,
+                               alpha,
+                               x_data,
+                               lda,
+                               y_data + i * y_inner,
+                               ldb,
+                               0.f,
+                               o_data + i * out_inner,
+                               ldc,
+                               nullptr,
+                               false,
+                               act_param,
+                               &ctx);
+      }
     }
   } else if (x_dims.size() == 2 && y_dims.size() == 2) {
     // x: [M, K], y: [K, N], out: [M, N]
-    if (!x_transpose && !y_transpose) {
-      CHECK_EQ(x_dims[1], y_dims[0])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    } else if (!x_transpose && y_transpose) {
-      CHECK_EQ(x_dims[1], y_dims[1])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    } else if (x_transpose && !y_transpose) {
-      CHECK_EQ(x_dims[0], y_dims[0])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    } else {
-      CHECK_EQ(x_dims[0], y_dims[1])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    }
-
     int lda, ldb, ldc;
     if (!x_transpose) {
       m_ = x_dims[0];

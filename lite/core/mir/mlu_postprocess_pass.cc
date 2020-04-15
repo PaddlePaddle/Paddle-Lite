@@ -562,20 +562,22 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
 }
 
 void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  // currently for non-persistent input and output args, mlu subgraph op
-  // only support float16/float32 data type
+// currently for non-persistent input and output args, mlu subgraph op
+// only support float16/float32 data type
 
-  // in two situations as folllows:
-  // 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
-  // arg_in and arg_out are assumed to be NHWC which user should be aware of.
-  // Thus here we change these args' layout to NHWC
-  if (lite::TargetWrapperMlu::InputLayout() == DATALAYOUT(kNHWC)) {
+// in two situations as folllows:
+// 1: feed->arg_in->subgraph->... 2: ...->subgraph->arg_out->fetch;
+// arg_in and arg_out are assumed to be NHWC which user should be aware of.
+// Thus here we change these args' layout to NHWC
+#ifdef LITE_WITH_MLU
+  if (lite::DeviceInfo::Global().InputLayout() == DATALAYOUT(kNHWC)) {
     ModifyLayout(graph.get());
   }
 
-  if (lite::TargetWrapperMlu::UseFirstConv()) {
+  if (lite::DeviceInfo::Global().UseFirstConv()) {
     GatherAndModifyFirstConvNodes(graph.get());
   }
+#endif
 
   // insert io_copy, layout and precision cast of subgraph's inputs and outputs
   for (auto& node : graph->mutable_nodes()) {

@@ -42,7 +42,7 @@ bool TransposeOp::CheckShape() const {
   return true;
 }
 
-bool TransposeOp::InferShape() const {
+bool TransposeOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();
@@ -111,7 +111,7 @@ bool Transpose2Op::CheckShape() const {
   return true;
 }
 
-bool Transpose2Op::InferShape() const {
+bool Transpose2Op::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();

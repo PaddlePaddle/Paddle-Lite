@@ -31,7 +31,7 @@ bool AnchorGeneratorOpLite::CheckShape() const {
   return true;
 }
 
-bool AnchorGeneratorOpLite::InferShape() const {
+bool AnchorGeneratorOpLite::InferShapeImpl() const {
   auto input_dims = param_.Input->dims();
   size_t num_anchors = param_.aspect_ratios.size() * param_.anchor_sizes.size();
   std::vector<int64_t> output_shape(

@@ -30,7 +30,7 @@ bool SGDOpLite::CheckShape() const {
   return true;
 }
 
-bool SGDOpLite::InferShape() const {
+bool SGDOpLite::InferShapeImpl() const {
   param_.ParamOut->Resize(param_.Param->dims());
   return true;
 }

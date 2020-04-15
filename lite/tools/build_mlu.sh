@@ -5,7 +5,7 @@ set -ex
 NEUWARE_HOME="${NEUWARE_HOME}"
 TARGET_NAME="all"    # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
-WITH_TESTING=OFF                     # ON/OFF
+WITH_TESTING=ON                     # ON/OFF
 
 function print_usage {
     echo -e "\nUSAGE:"
@@ -70,7 +70,7 @@ function build_mlu {
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
         -DLITE_WITH_MLU=ON \
-        -DLITE_WITH_PYTHON=ON \
+        -DLITE_WITH_PYTHON=OFF \
         -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
         -DNEUWARE_HOME=${NEUWARE_HOME}

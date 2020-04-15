@@ -24,11 +24,32 @@ class RuntimeContextAssignPass : public StmtPass {
   RuntimeContextAssignPass() {}
 
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+#ifdef LITE_WITH_OPENCL
+    using OpenCLContext = Context<TargetType::kOpenCL>;
+    std::unique_ptr<KernelContext> local_ctx(new KernelContext());
+    local_ctx->As<OpenCLContext>().InitOnce();
+#endif
     for (auto& node : graph->mutable_nodes()) {
       if (!node.IsStmt()) continue;
       auto& inst = node.AsStmt();
-      inst.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
+
+#ifdef LITE_WITH_OPENCL
+      if (inst.picked_kernel().target() == TARGET(kOpenCL)) {
+        std::unique_ptr<KernelContext> ctx(new KernelContext());
+        (*local_ctx)
+            .As<OpenCLContext>()
+            .CopySharedTo(&ctx->As<OpenCLContext>());
+        inst.picked_kernel().SetContext(std::move(ctx));
+      } else {
+        inst.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+            inst.picked_kernel().target()));
+      }
+#else
+      int stream_id = inst.stream_id_;
+
+      inst.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+          inst.picked_kernel().target(), stream_id));
+#endif
     }
   }
 };

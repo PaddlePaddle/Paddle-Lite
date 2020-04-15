@@ -35,7 +35,7 @@ bool BoxClipOpLite::CheckShape() const {
   return true;
 }
 
-bool BoxClipOpLite::InferShape() const {
+bool BoxClipOpLite::InferShapeImpl() const {
   auto* input = param_.Input;
   auto* output = param_.Output;
   output->Resize(input->dims());

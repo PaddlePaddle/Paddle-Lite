@@ -27,7 +27,7 @@ bool PriorBoxOpLite::CheckShape() const {
   return true;
 }
 
-bool PriorBoxOpLite::InferShape() const { return true; }
+bool PriorBoxOpLite::InferShapeImpl() const { return true; }
 
 bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto input = opdesc.Input("Input").front();

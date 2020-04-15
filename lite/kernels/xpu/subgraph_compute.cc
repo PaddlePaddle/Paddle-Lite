@@ -34,7 +34,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   subgraph::xpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
   for (auto& inst : origin_program_) {
-    auto op = inst.op();
+    auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
     op->InferShape();
@@ -43,10 +43,8 @@ int SubgraphEngine::BuildDeviceProgram() {
       return subgraph::FAILED;
     }
     auto kernel = inst.kernel();
-    status |=
-        bridges.Select(op_type, TARGET(kXPU))(reinterpret_cast<void*>(&graph),
-                                              const_cast<OpLite*>(op),
-                                              const_cast<KernelBase*>(kernel));
+    status |= bridges.Select(op_type, TARGET(kXPU))(
+        reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
       return subgraph::FAILED;
     }

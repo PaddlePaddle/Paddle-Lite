@@ -1,11 +1,8 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,8 +52,10 @@ class CLRuntime {
 
   void set_cl_path(std::string cl_path) { cl_path_ = cl_path; }
 
+  std::map<std::string, size_t>& GetDeviceInfo();
+
  private:
-  CLRuntime() = default;
+  CLRuntime() { Init(); }
 
   ~CLRuntime();
 
@@ -83,6 +82,8 @@ class CLRuntime {
     CL_CHECK_FATAL(status_);
     return queue;
   }
+
+  std::map<std::string, size_t> device_info_;
 
   std::string cl_path_;
 

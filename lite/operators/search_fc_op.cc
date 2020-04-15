@@ -50,7 +50,7 @@ bool SearchFcOpLite::CheckShape() const {
   return true;
 }
 
-bool SearchFcOpLite::InferShape() const {
+bool SearchFcOpLite::InferShapeImpl() const {
   auto out_size = param_.out_size;
   lite::DDim dims(std::vector<int64_t>({-1, out_size}));
   param_.Out->Resize(dims);

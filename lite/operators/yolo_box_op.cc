@@ -46,7 +46,7 @@ bool YoloBoxOp::CheckShape() const {
   return true;
 }
 
-bool YoloBoxOp::InferShape() const {
+bool YoloBoxOp::InferShapeImpl() const {
   auto* X = param_.X;
   auto anchors = param_.anchors;
   int anchor_num = anchors.size() / 2;

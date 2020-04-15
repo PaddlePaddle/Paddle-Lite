@@ -52,8 +52,10 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     }
 
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/pad2d_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/pad2d_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
@@ -93,7 +95,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -140,6 +142,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size[1]),
                     static_cast<cl::size_type>(default_work_size[2])};
 
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -159,7 +162,8 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
   param_t* pad2d_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_half"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string time_stamp_{GetTimeStamp()};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

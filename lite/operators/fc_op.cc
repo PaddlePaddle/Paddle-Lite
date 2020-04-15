@@ -48,34 +48,7 @@ bool FcOpLite::CheckShape() const {
   return true;
 }
 
-bool FcOpLite::SmartInferShape() {
-  if (!last_input_shapes.empty() && !last_output_shapes.empty()) {
-    if (last_input_shapes[0] == param_.input->dims() &&
-        last_input_lods[0] == param_.input->lod()) {
-      param_.output->Resize(last_output_shapes[0]);
-      param_.output->set_lod(last_output_lods[0]);
-      return true;
-    }
-  }
-
-  this->InferShape();
-
-  if (!last_input_shapes.empty()) {
-    last_input_shapes.clear();
-    last_input_lods.clear();
-  }
-  last_input_shapes.push_back(param_.input->dims());
-  last_input_lods.push_back(param_.input->lod());
-  if (!last_output_shapes.empty()) {
-    last_output_shapes.clear();
-    last_output_lods.clear();
-  }
-  last_output_shapes.push_back(param_.output->dims());
-  last_output_lods.push_back(param_.output->lod());
-
-  return true;
-}
-bool FcOpLite::InferShape() const {
+bool FcOpLite::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;

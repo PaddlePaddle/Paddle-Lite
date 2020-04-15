@@ -216,7 +216,7 @@ TEST(Compare_OP_NPU, precision) {
 }
 #elif defined(LITE_WITH_ARM)
 TEST(Compare_OP_ARM, precision) {
-  Place place{TARGET(kARM)};
+  Place place{TARGET(kHost)};
   float abs_error = 1e-5;
   for (auto op : std::vector<std::string>{"equal",
                                           "not_equal",

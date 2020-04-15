@@ -34,7 +34,7 @@ bool AxpyOpLite::CheckShape() const {
   return true;
 }
 
-bool AxpyOpLite::InferShape() const {
+bool AxpyOpLite::InferShapeImpl() const {
   auto dims = param_.Bias->dims();
 
   // Set output dims

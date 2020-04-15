@@ -38,6 +38,24 @@ class ElementwiseAddComputeNHWC
   virtual ~ElementwiseAddComputeNHWC() = default;
 };
 
+class ElementwiseSubCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseSubCompute() = default;
+};
+
+class ElementwiseSubComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseSubComputeNHWC() = default;
+};
+
 class ElementwiseMulCompute
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:

@@ -44,8 +44,10 @@ class DepthwiseConv2dCompute
       build_options_ += " -DRELU6";
     }
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/depthwise_conv2d_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/depthwise_conv2d_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -67,7 +69,7 @@ class DepthwiseConv2dCompute
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status;
@@ -106,6 +108,7 @@ class DepthwiseConv2dCompute
     status = kernel.setArg(++arg_idx, *bias_buf);
     CL_CHECK_FATAL(status);
     auto global_work_size = cl::NDRange(static_cast<size_t>(numel));
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -120,7 +123,8 @@ class DepthwiseConv2dCompute
  private:
   std::string kernel_func_name_{"depthwise_conv2d"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string time_stamp_{GetTimeStamp()};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

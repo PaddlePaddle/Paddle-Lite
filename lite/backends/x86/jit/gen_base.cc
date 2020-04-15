@@ -28,6 +28,12 @@
 #define posix_memalign_free free
 #endif
 
+#ifdef _WIN32
+#define posix_memalign_free _aligned_free
+#define posix_memalign(p, a, s) \
+  (((*(p)) = _aligned_malloc((s), (a))), *(p) ? 0 : errno)
+#endif
+
 // DEFINE_bool(dump_jitcode, false, "Whether to dump the jitcode to file");
 bool dump_jitcode = paddle::lite::GetBoolFromEnv("dump_jitcode");
 
@@ -53,10 +59,14 @@ void GenBase::dumpCode(const unsigned char* code) const {
 void* GenBase::operator new(size_t size) {
   void* ptr;
   constexpr size_t alignment = 32ul;
+#ifdef _WIN32
+  ptr = _aligned_malloc(size, alignment);
+#else
   PADDLE_ENFORCE_EQ(posix_memalign(&ptr, alignment, size),
                     0,
                     "GenBase Alloc %ld error!",
                     size);
+#endif
   PADDLE_ENFORCE(ptr, "Fail to allocate GenBase CPU memory: size = %d .", size);
   return ptr;
 }

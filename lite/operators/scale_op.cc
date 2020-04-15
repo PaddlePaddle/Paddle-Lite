@@ -24,7 +24,7 @@ bool ScaleOp::CheckShape() const {
   return true;
 }
 
-bool ScaleOp::InferShape() const {
+bool ScaleOp::InferShapeImpl() const {
   param_.output->Resize(param_.x->dims());
   return true;
 }

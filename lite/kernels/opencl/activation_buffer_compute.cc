@@ -32,8 +32,10 @@ class ReluCompute
   std::string doc() const override { return "Relu using cl::Buffer, kFloat"; }
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/relu_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/relu_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -46,7 +48,7 @@ class ReluCompute
     auto* x_buf = param.X->data<float, cl::Buffer>();
     auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
@@ -60,6 +62,7 @@ class ReluCompute
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -74,7 +77,8 @@ class ReluCompute
  private:
   std::string kernel_func_name_{"relu"};
   std::string build_options_{"-DCL_DTYPE_float -DRELU"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string time_stamp_{GetTimeStamp()};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 class SigmoidCompute
@@ -87,8 +91,10 @@ class SigmoidCompute
   }
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/sigmoid_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/sigmoid_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -101,7 +107,7 @@ class SigmoidCompute
     auto* x_buf = param.X->data<float, cl::Buffer>();
     auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
@@ -115,6 +121,7 @@ class SigmoidCompute
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{count};
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -129,7 +136,8 @@ class SigmoidCompute
  private:
   std::string kernel_func_name_{"sigmoid"};
   std::string build_options_{"-DCL_DTYPE_float -DSIGMOID"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::string time_stamp_{GetTimeStamp()};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

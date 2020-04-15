@@ -51,7 +51,7 @@ class ConcatFunctor<lite::TargetType::kX86, T> {
     // auto cpu_place = boost::get<platform::CPUPlace>(context.GetPlace());
 
     // computation
-    auto output_data = output->mutable_data<T>();
+    auto output_data = output->template mutable_data<T>();
     int col_idx = 0;
     for (int j = 0; j < num; ++j) {
       int col_len = input_cols[j];
@@ -108,7 +108,7 @@ class SplitFunctor<lite::TargetType::kX86, T> {
         int col_len = output_cols[j];
         auto* out_tensor = outputs->at(j);
         if (out_tensor != nullptr) {
-          T* dst_ptr = out_tensor->mutable_data<T>() + k * col_len;
+          T* dst_ptr = out_tensor->template mutable_data<T>() + k * col_len;
           std::copy_n(src_ptr + col_idx, col_len, dst_ptr);
           // memory::Copy(cpu_place, dst_ptr, cpu_place, src_ptr + col_idx,
           //             sizeof(T) * col_len);

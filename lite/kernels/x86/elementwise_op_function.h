@@ -248,8 +248,8 @@ class TransformFunctor {
                    lite::Tensor *z,
                    const lite::Context<Target> &ctx,
                    Functor func)
-      : x_(x->data<T>()),
-        y_(y->data<T>()),
+      : x_(x->template data<T>()),
+        y_(y->template data<T>()),
         z_(z->mutable_data<OutType>()),
         nx_(x->numel()),
         ctx_(ctx),
@@ -483,9 +483,10 @@ void FusedElemwiseAndActComputeNoBroadcast(const lite::Context<Target> &ctx,
           x.data<T>(),
           y.data<T>(),
           compound_functor,
-          out->mutable_data<T>(),
-          intermediate_out == nullptr ? nullptr
-                                      : intermediate_out->mutable_data<T>()});
+          out->template mutable_data<T>(),
+          intermediate_out == nullptr
+              ? nullptr
+              : intermediate_out->template mutable_data<T>()});
 }
 
 template <lite::TargetType Target,
@@ -523,9 +524,10 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
         compound_functor,
         h,
         w,
-        out->mutable_data<T>(),
-        intermediate_out == nullptr ? nullptr
-                                    : intermediate_out->mutable_data<T>());
+        out->template mutable_data<T>(),
+        intermediate_out == nullptr
+            ? nullptr
+            : intermediate_out->template mutable_data<T>());
 
   } else {
     FusedElemwiseAndActBroadcast2CPU<T,
@@ -539,9 +541,10 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
         n,
         post,
         compound_functor,
-        out->mutable_data<T>(),
-        intermediate_out == nullptr ? nullptr
-                                    : intermediate_out->mutable_data<T>());
+        out->template mutable_data<T>(),
+        intermediate_out == nullptr
+            ? nullptr
+            : intermediate_out->template mutable_data<T>());
   }
 }
 

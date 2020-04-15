@@ -47,9 +47,9 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     auto x_dims = x->dims();
 
-    y->mutable_data<T>();
-    Mean->mutable_data<T>();
-    Var->mutable_data<T>();
+    y->template mutable_data<T>();
+    Mean->template mutable_data<T>();
+    Var->template mutable_data<T>();
 
     auto matrix_dim = x_dims.Flatten2D(begin_norm_axis);
     int left = static_cast<int>(matrix_dim[0]);
@@ -73,10 +73,10 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                    .At(right);
     ker(in.mutable_data<T>(),
         out.mutable_data<T>(),
-        Mean->mutable_data<T>(),
-        Var->mutable_data<T>(),
-        Scale->data<T>(),
-        Bias->data<T>(),
+        Mean->template mutable_data<T>(),
+        Var->template mutable_data<T>(),
+        Scale->template data<T>(),
+        Bias->template data<T>(),
         static_cast<int>(left),
         epsilon,
         right);

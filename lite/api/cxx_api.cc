@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
 
 namespace paddle {
@@ -291,10 +292,13 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   program_desc_ = desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
-  inner_places.emplace_back(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny));
-  inner_places.emplace_back(
-      TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+  for (auto &valid_place : valid_places) {
+    inner_places.emplace_back(
+        Place(TARGET(kHost), valid_place.precision, valid_place.layout));
+  }
 
+  // Analysis whether the modle is quantized.
+  // For quantized model, add place(arm, int8) to inner_places
   const std::vector<std::string> quant_dequant_op = {
       "fake_quantize_abs_max",
       "fake_quantize_range_abs_max",
@@ -317,7 +321,8 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
     }
   }
   if (is_quantized_model) {
-    inner_places.emplace_back(Place{TARGET(kARM), PRECISION(kInt8)});
+    inner_places.insert(inner_places.begin(),
+                        Place{TARGET(kARM), PRECISION(kInt8)});
   }
 
   Program program(desc, scope_, inner_places);

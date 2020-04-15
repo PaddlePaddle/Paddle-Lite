@@ -25,7 +25,7 @@ bool IncrementOp::CheckShape() const {
   return true;
 }
 
-bool IncrementOp::InferShape() const {
+bool IncrementOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();

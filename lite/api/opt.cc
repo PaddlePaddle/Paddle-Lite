@@ -23,6 +23,7 @@
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
@@ -108,6 +109,10 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "rknpu") {
+      valid_places.emplace_back(TARGET(kRKNPU));
+      valid_places.emplace_back(
+          TARGET(kRKNPU), PRECISION(kInt8), DATALAYOUT(kNCHW));
     } else if (target_repr == "mlu") {
       valid_places.emplace_back(TARGET(kMLU));
     } else {
@@ -186,6 +191,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kFPGA",
                                       "kNPU",
                                       "kXPU",
+                                      "kRKNPU",
                                       "kAny",
                                       "kUnk"};
   int maximum_optype_length = 0;
@@ -250,16 +256,16 @@ void PrintHelpInfo() {
       "        `--param_file=<param_path>`\n"
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
-      "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
+      "        `--valid_targets=(arm|opencl|x86|npu|xpu|rknpu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu)`"
       "  Display operators in the input model\n";
   std::cout << "opt version:" << opt_version << std::endl
             << help_info << std::endl;

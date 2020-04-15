@@ -45,9 +45,9 @@ class AttentionPaddingMaskCompute
     auto src_len = static_cast<int64_t>(bottom1->lod()[0][1]);
     const int att_batch = bottom0->lod()[0].size() - 1;
     const int src_batch = bottom1->lod()[0].size() - 1;
-    int* pad_begin = _pad_begin->mutable_data<int>();
+    int* pad_begin = _pad_begin->template mutable_data<int>();
     for (int i = 0; i < src_batch; ++i) {
-      const auto* src_data = bottom1->data<T>() + src_len * i;
+      const auto* src_data = bottom1->template data<T>() + src_len * i;
       int index = src_len - 1;
       for (; index >= 0 && _pad_id == static_cast<int>(src_data[index]);
            --index) {
@@ -56,13 +56,14 @@ class AttentionPaddingMaskCompute
     }
 
     const auto att_len = static_cast<int64_t>(bottom0->lod()[0][1]);
-    auto* top_data = top->mutable_data<T>();
+    auto* top_data = top->template mutable_data<T>();
     memcpy(top_data,
-           bottom0->data<T>(),
+           bottom0->template data<T>(),
            bottom0->dims()[0] * bottom0->dims()[1] * sizeof(T));
     for (int i = 0; i < att_batch; ++i) {
       for (int j = 0; j < att_len; ++j) {
-        top_data = top->mutable_data<T>() + src_len * (att_len * i + j);
+        top_data =
+            top->template mutable_data<T>() + src_len * (att_len * i + j);
         int src_idx = i % src_batch;
         for (int k = pad_begin[src_idx]; k < src_len; ++k) {
           top_data[k] = _mask;

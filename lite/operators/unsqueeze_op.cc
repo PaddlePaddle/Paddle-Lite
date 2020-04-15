@@ -62,7 +62,7 @@ bool UnsqueezeOp::CheckShape() const {
   return true;
 }
 
-bool UnsqueezeOp::InferShape() const {
+bool UnsqueezeOp::InferShapeImpl() const {
   std::vector<int> final_axes;
   auto axes = param_.axes;
   auto *axes_tensor = param_.axes_tensor;
@@ -129,8 +129,8 @@ bool Unsqueeze2Op::CheckShape() const {
   return true;
 }
 
-bool Unsqueeze2Op::InferShape() const {
-  UnsqueezeOp::InferShape();
+bool Unsqueeze2Op::InferShapeImpl() const {
+  UnsqueezeOp::InferShapeImpl();
   auto x_dims = param_.X->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
   for (size_t i = 0; i < x_dims.size(); i++) {

@@ -18,6 +18,7 @@
  * of each kernel.
  */
 #pragma once
+#include <cmath>
 #include <string>
 #include <vector>
 #include "lite/core/program.h"
@@ -175,6 +176,13 @@ class PrecisionProfiler {
               ptr, in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<int32_t>(ptr, in->numel());
           write_result_to_file&& write_tensorfile<int32_t>(in, name);
+          return;
+        }
+        case PRECISION(kInt64): {
+          auto ptr = in->data<int64_t>();
+          *mean = compute_mean<int64_t>(ptr, in->numel());
+          *std_dev = compute_standard_deviation<int64_t>(
+              ptr, in->numel(), true, *mean);
           return;
         }
         default:
