@@ -138,10 +138,6 @@ REGISTER_SUBGRAPH_BRIDGE(
     softplus,
     kHWAscendNPU,
     paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
-REGISTER_SUBGRAPH_BRIDGE(
-    hard_sigmoid,
-    kHWAscendNPU,
-    paddle::lite::subgraph::hw_ascend_npu::ActConverter<ge::op::Activation>);
 
 REGISTER_SUBGRAPH_BRIDGE(
     log,

@@ -22,7 +22,8 @@ namespace arena {
 
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
-  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU)) {
+  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU) ||
+      place_.target == TARGET(kHWAscendNPU)) {
     // Create a new block desc to wrap the original op desc
     int sub_block_idx = 0;
     auto sub_block_desc = new cpp::BlockDesc();

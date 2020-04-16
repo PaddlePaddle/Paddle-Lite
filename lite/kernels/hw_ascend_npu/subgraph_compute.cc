@@ -19,7 +19,7 @@
 #include "lite/backends/hw_ascend_npu/device.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/hw_ascend_npu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/paddle_use_bridges.h"
+#include "lite/kernels/hw_ascend_npu/bridges/paddle_use_bridges.h"
 
 namespace paddle {
 namespace lite {

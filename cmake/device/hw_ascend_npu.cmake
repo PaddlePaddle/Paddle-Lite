@@ -32,37 +32,25 @@ endif()
 
 include_directories("${ACL_INC}")
 
-# find ascendcl library
-find_library(ACL_LIB_FILE NAMES ascendcl PATHS ${ASCEND_HOME}/acllib/lib64)
-if(NOT ACL_LIB_FILE)
-  message(FATAL_ERROR "Can not find ACL Library in ${ASCEND_HOME}/acllib/lib64")
-else()
-  message(STATUS "Found ACL Library: ${ACL_LIB_FILE}")
-  add_library(acl_lib SHARED IMPORTED GLOBAL)
-  set_property(TARGET acl_lib PROPERTY IMPORTED_LOCATION ${ACL_LIB_FILE})
-endif()
+set(ACL_LIB_FILES
+  acl_dvpp
+  ascendcl
+  register
+  runtime
+  )
 
-# find register library
-find_library(REG_LIB_FILE NAMES register PATHS ${ASCEND_HOME}/acllib/lib64)
-if(NOT REG_LIB_FILE)
-    message(FATAL_ERROR "Can not find REG Library in ${ASCEND_HOME}/acllib/lib64")
-else()
-    message(STATUS "Found REG Library: ${REG_LIB_FILE}")
-    add_library(register_lib SHARED IMPORTED GLOBAL)
-    set_property(TARGET register_lib PROPERTY IMPORTED_LOCATION ${REG_LIB_FILE})
-endif()
+foreach (libname ${ACL_LIB_FILES})
+  find_library(lib_name_path_${libname} NAMES ${libname} PATHS ${ASCEND_HOME}/acllib/lib64)
+  if (lib_name_path_${libname})
+    add_library(acl_${libname} SHARED IMPORTED GLOBAL)
+    set_property(TARGET acl_${libname} PROPERTY IMPORTED_LOCATION ${lib_name_path_${libname}})
+    list(APPEND acl_libs acl_${libname})
+  else()
+    message(FATAL_ERROR "can not find library: ${libname}")
+  endif()
+endforeach()
 
-
-find_library(RT_LIB_FILE NAMES runtime PATHS ${ASCEND_HOME}/acllib/lib64)
-if(NOT RT_LIB_FILE)
-    message(FATAL_ERROR "Can not find RT Library in ${ASCEND_HOME}/acllib/lib64")
-else()
-    message(STATUS "Found RT Library: ${RT_LIB_FILE}")
-    add_library(runtime_lib SHARED IMPORTED GLOBAL)
-    set_property(TARGET runtime_lib PROPERTY IMPORTED_LOCATION ${RT_LIB_FILE})
-endif()
-
-set(hw_ascend_npu_runtime_libs acl_lib register_lib runtime_lib CACHE INTERNAL "ascend runtime libs")
+set(hw_ascend_npu_runtime_libs ${acl_libs} CACHE INTERNAL "ascend runtime libs")
 
 # find atc include folder and library
 find_path(ATC_INC NAMES ge/ge_ir_build.h
@@ -72,14 +60,49 @@ if (NOT ATC_INC)
 endif()
 include_directories("${ATC_INC}")
 
-find_library(GRAPH_LIB_FILE graph PATHS ${ASCEND_HOME}/atc/lib64)
-if (NOT GRAPH_LIB_FILE)
-  message(FATAL_ERROR "Can not find libgraph.so library in ${ASCEND_HOME}/atc/lib64")
-else()
-  message(STATUS "Found Graph Library: ${GRAPH_LIB_FILE}")
-  add_library(graph_lib SHARED IMPORTED GLOBAL)
-  set_property(TARGET graph_lib PROPERTY IMPORTED_LOCATION ${GRAPH_LIB_FILE})
-endif()
+set(ATC_LIB_FILES
+  _caffe_parser
+  auto_tiling
+  c_sec
+  cce
+  cce_aicore
+  cce_aicpudev_online
+  cce_tools
+  drvdevdrv
+  drvdevmm
+  drvdsmi_host
+  drvhdc_host
+  fmk_caffe_parser
+  fmk_tensorflow_parser
+  ge_client
+  ge_common
+  ge_compiler
+  ge_executor
+  graph
+  mmpa
+  msprof
+  parser_common
+  register
+  resource
+  runtime
+  slog
+  te_fusion
+  tiling
+  tvm
+  tvm_runtime
+  tvm_topi
+  )
+
+foreach (libname ${ATC_LIB_FILES})
+  find_library(lib_name_path_${libname} NAMES ${libname} PATHS ${ASCEND_HOME}/atc/lib64)
+  if (lib_name_path_${libname})
+    add_library(atc_${libname} SHARED IMPORTED GLOBAL)
+    set_property(TARGET atc_${libname} PROPERTY IMPORTED_LOCATION ${lib_name_path_${libname}})
+    list(APPEND atc_libs atc_${libname})
+  else()
+    message(FATAL_ERROR "can not find library: ${libname}")
+  endif()
+endforeach()
 
 # find opp include folder and library
 find_path(OPP_INC NAMES all_ops.h
@@ -89,14 +112,37 @@ if (NOT OPP_INC)
 endif()
 include_directories("${OPP_INC}")
 
-find_library(OPP_LIB_FILE opsproto PATHS ${ASCEND_HOME}/opp/op_proto/built-in)
-if (NOT OPP_LIB_FILE)
+find_library(OPP_OPSPROTO_LIB_FILE opsproto PATHS ${ASCEND_HOME}/opp/op_proto/built-in)
+if (NOT OPP_OPSPROTO_LIB_FILE)
   message(FATAL_ERROR "Can not find libopsproto.so in ${ASCEND_HOME}/opp/op_proto/built-in")
 else()
-  message(STATUS "Found OPP Library: ${OPP_LIB_FILE}")
-  add_library(opp_lib SHARED IMPORTED GLOBAL)
-  set_property(TARGET opp_lib PROPERTY IMPORTED_LOCATION ${OPP_LIB_FILE})
+  message(STATUS "Found OPP proto Library: ${OPP_OPSPROTO_LIB_FILE}")
+  add_library(opp_opsproto_lib SHARED IMPORTED GLOBAL)
+  set_property(TARGET opp_opsproto_lib PROPERTY IMPORTED_LOCATION ${OPP_OPSPROTO_LIB_FILE})
 endif()
 
-set(hw_ascend_npu_builder_libs graph_lib opp_lib CACHE INTERNAL "ascend builder libs")
+find_library(OPP_FUSION_AICORE ops_fusion_pass_aicore PATHS ${ASCEND_HOME}/opp/fusion_pass/built_in/)
+if (NOT OPP_FUSION_AICORE)
+  message(FATAL_ERROR "Can not find libops_fusion_pass_aicore.so in ${ASCEND_HOME}/opp/fusion_pass/built_in/")
+else()
+  message(STATUS "Found fusion_pass_aicore Library: ${OPP_FUSION_AICORE}")
+  add_library(opp_fusion_pass_aicore_lib SHARED IMPORTED GLOBAL)
+  set_property(TARGET opp_fusion_pass_aicore_lib PROPERTY IMPORTED_LOCATION ${OPP_FUSION_AICORE})
+endif()
+
+find_library(OPP_FUSION_VECTORCORE ops_fusion_pass_vectorcore PATHS ${ASCEND_HOME}/opp/fusion_pass/built_in/vector_core)
+if (NOT OPP_FUSION_VECTORCORE)
+  message(FATAL_ERROR "Can not find libops_fusion_pass_vectorcore.so in ${ASCEND_HOME}/opp/fusion_pass/built_in/vector_core")
+else()
+  message(STATUS "Found fusion_pass_vectorcore Library: ${OPP_FUSION_VECTORCORE}")
+  add_library(opp_fusion_pass_vectorcore_lib SHARED IMPORTED GLOBAL)
+  set_property(TARGET opp_fusion_pass_vectorcore_lib PROPERTY IMPORTED_LOCATION ${OPP_FUSION_VECTORCORE})
+endif()
+
+set(hw_ascend_npu_builder_libs
+  ${atc_libs}
+  opp_opsproto_lib
+  opp_fusion_pass_aicore_lib
+  opp_fusion_pass_vectorcore_lib
+  CACHE INTERNAL "ascend builder libs")
 

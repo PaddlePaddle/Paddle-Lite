@@ -82,8 +82,8 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
       break;
     // TODO(yanghongtian): support more data layout type
     default:
-      LOG(FATAL) << "[HW_ASCEND_NPU] Can not convert data layout type("
-                 << DataLayoutToStr(itype) << ") from Lite to HW_ASCEND_NPU";
+      LOG(FATAL) << "[HWAscendNPU] Can not convert data layout type("
+                 << DataLayoutToStr(itype) << ") from Lite to HWAscendNPU";
       break;
   }
   return otype;
@@ -91,7 +91,7 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
 
 std::vector<int64_t> CvtShape(const std::vector<int64_t>& in_shape) {
   CHECK(in_shape.size() <= 4 && in_shape.size() > 0)
-      << "[HW_ASCEND_NPU] The size of in_shape is invalid: " << in_shape.size();
+      << "[HWAscendNPU] The size of in_shape is invalid: " << in_shape.size();
   // Padding the shape to 4-dimensions(NCHW)
   std::vector<int64_t> out_shape(4, 1);
   std::copy(in_shape.begin(),
@@ -152,7 +152,7 @@ int CvtActMode(const std::string& act_type) {
     act_mode = 9;
   } else {
     // TODO(yanghongtian): support more activation mode
-    LOG(FATAL) << "[NPU] Unsupported activation type " << act_type;
+    LOG(FATAL) << "[HWAscendNPU] Unsupported activation type " << act_type;
   }
   return act_mode;
 }
