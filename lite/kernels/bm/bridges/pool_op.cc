@@ -64,7 +64,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
-  auto adaptive = op_info->GetAttr<bool>("adaptive");
+  bool adaptive = false;
+  if (op_info->HasAttr("adaptive")) {
+    adaptive = op_info->GetAttr<bool>("adaptive");
+  }
   bool average_exclusive = false;
   if (pooling_type == "avg") {
     average_exclusive = op_info->GetAttr<bool>("exclusive");
