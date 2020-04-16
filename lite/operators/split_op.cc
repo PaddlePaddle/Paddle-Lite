@@ -67,7 +67,7 @@ bool SplitOp::InferShapeImpl() const {
     axis = param_.axis_tensor->data<int>()[0];
   }
 
-  for (int j = 0; j < outs_dims.size(); ++j) {
+  for (size_t j = 0; j < outs_dims.size(); ++j) {
     outs[j]->Resize(outs_dims[j]);
   }
 

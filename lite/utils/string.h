@@ -16,6 +16,7 @@
 #include <stdarg.h>  // For va_start, etc.
 #include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <memory>  // For std::unique_ptr
 #include <string>
 #include <vector>

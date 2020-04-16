@@ -29,12 +29,12 @@ CLRuntime::~CLRuntime() {
     command_queue_->flush();
     command_queue_->finish();
   }
-  // For controlling the destruction order:
+  // For controlling the destruction order
   command_queue_.reset();
   context_.reset();
   device_.reset();
   platform_.reset();
-  LOG(INFO) << "release ~CLRuntime() ";
+  device_info_.clear();
 }
 
 bool CLRuntime::Init() {

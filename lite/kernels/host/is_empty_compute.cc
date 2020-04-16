@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/is_empty_compute.h"
-#include <vector>
-#include "lite/api/paddle_place.h"
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
+#include "lite/kernels/host/is_empty_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
-
-void IsEmptyCompute::PrepareForRun() {}
+namespace host {
 
 void IsEmptyCompute::Run() {
   auto& param = this->Param<operators::IsEmptyParam>();
@@ -32,16 +25,22 @@ void IsEmptyCompute::Run() {
   param.Out->mutable_data<bool>()[0] = (count == 0);
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 REGISTER_LITE_KERNEL(is_empty,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::IsEmptyCompute,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::IsEmptyCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
     .Finalize();

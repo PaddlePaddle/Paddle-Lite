@@ -24,9 +24,9 @@ TEST(NaiveBuffer, primary) {
   PrimaryBuilder<int32_t> p0(&table);
   PrimaryBuilder<float> p1(&table);
   StringBuilder p2(&table);
-  ASSERT_EQ(p0.type(), Type::_int32);
-  ASSERT_EQ(p1.type(), Type::_float32);
-  ASSERT_EQ(p2.type(), Type::_string);
+  ASSERT_EQ(p0.type(), Type::INT32);
+  ASSERT_EQ(p1.type(), Type::FLOAT32);
+  ASSERT_EQ(p2.type(), Type::STRING);
 
   p0.set(2008);
   p0.Save();
@@ -129,7 +129,7 @@ TEST(NBTestMsg, msg1) {
   int0->set(2008);
   int0->Save();
 
-  enum0->set(Type::_int64);
+  enum0->set(Type::INT64);
   enum0->Save();
 
   SetMsg0(msg0);
@@ -143,7 +143,7 @@ TEST(NBTestMsg, msg1) {
   msg1.Load();
 
   ASSERT_EQ(msg.GetField<Int32Builder>("int0").data(), 2008);
-  ASSERT_EQ(msg.GetField<enum_builder>("enum0").data(), Type::_int64);
+  ASSERT_EQ(msg.GetField<enum_builder>("enum0").data(), Type::INT64);
   TestMsg0(msg1.GetField<NBTestMsg0>("msg0"));
 }
 

@@ -93,6 +93,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(3, bias);
     CL_CHECK_FATAL(status);
 
+    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
@@ -108,7 +109,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{"scale"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 
   param_t* scale_param_{nullptr};
   cl::Kernel kernel_;

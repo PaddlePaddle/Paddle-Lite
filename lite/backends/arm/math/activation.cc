@@ -744,6 +744,15 @@ void act_reciprocal<float>(const float* din,
   }
 }
 
+template <>
+void act_abs<float>(const float* din, float* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (din[0] > 0 ? din[0] : -din[0]);
+    din++;
+    dout++;
+  }
+}
+
 #ifdef LITE_WITH_TRAIN
 template <>
 void act_square_grad(const float* din,

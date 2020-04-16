@@ -36,7 +36,16 @@ else()
         # eigen on cuda9.1 missing header of math_funtions.hpp
         # https://stackoverflow.com/questions/43113508/math-functions-hpp-not-found-when-using-cuda-with-eigen
         GIT_TAG
-        URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Feigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
+        ######################################################################################################
+        # url address of eigen before v2.3.0
+        # URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Feigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
+        ######################################################################################################
+        # url address of eigen since  v2.6.0
+        #         github address: https://github.com/eigenteam/eigen-git-mirror
+        # we changed the source code to adapt for windows compiling
+        #         git diffs : (1) unsupported/Eigen/CXX11/src/Tensor/TensorBlockV2.h
+        ######################################################################################################
+        URL             https://paddlelite-data.bj.bcebos.com/third_party_libs/eigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
         DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
         DOWNLOAD_NO_PROGRESS  1
         PREFIX          ${EIGEN_SOURCE_DIR}

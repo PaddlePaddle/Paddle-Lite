@@ -56,7 +56,7 @@ void CPUGather(const lite::Tensor* src,
 
   // slice size
   int slice_size = 1;
-  for (int i = 1; i < src_dims.size(); ++i) slice_size *= src_dims[i];
+  for (size_t i = 1; i < src_dims.size(); ++i) slice_size *= src_dims[i];
 
   const size_t slice_bytes = slice_size * sizeof(T);
   for (int64_t i = 0; i < index_size; ++i) {

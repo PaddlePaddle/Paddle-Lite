@@ -37,6 +37,7 @@ lite_cc_library(subgraph_bridge_split_op_bm SRCS split_op.cc DEPS ${bm_subgraph_
 lite_cc_library(subgraph_bridge_matmul_op_bm SRCS matmul_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_max_pool_with_index_op_bm SRCS max_pool_with_index_op.cc DEPS ${bm_subgraph_bridge_deps})
 
+
 set(bm_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_engine

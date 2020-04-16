@@ -86,6 +86,8 @@ class Optimizer {
            "npu_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",
+           "apu_subgraph_pass",
+           "rknpu_subgraph_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
@@ -127,7 +129,21 @@ class Optimizer {
            "memory_optimize_pass"}};
 
       if (passes.size() == 1) {
-        passes_local.push_back(passes[0]);
+        // multi_stream_analysis_pass must be in the front of
+        // runtime_context_assign_pass
+        const std::string msa_pass{"multi_stream_analysis_pass"};
+        const std::string depend_pass{"runtime_context_assign_pass"};
+        if (passes[0] == msa_pass) {
+          auto iter =
+              std::find(passes_local.begin(), passes_local.end(), depend_pass);
+          if (iter != passes_local.end()) {
+            passes_local.insert(iter, msa_pass);
+          } else {
+            CHECK(false) << "Not find " << depend_pass;
+          }
+        } else {
+          passes_local.push_back(passes[0]);
+        }
       }
       RunPasses(passes_local);
     } else {

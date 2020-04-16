@@ -116,8 +116,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   }
   size_t weight_num = conv_weight_t->data_size();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
-  bool is_weight_quantization =
-      conv_op_desc->HasAttr("quantize_weight_bits") ? true : false;
+  bool is_weight_quantization = conv_op_desc->HasAttr("quantize_weight_bits");
 
   // comupte BN alpha and beta
   Tensor alpha_tensor, beta_tensor;
@@ -164,23 +163,23 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
-      for (unsigned int k = 0; k < conv_weight_t->dims()[0]; ++k) {
-        for (unsigned int i = 0; i < h; ++i) {
+      for (int k = 0; k < conv_weight_t->dims()[0]; ++k) {
+        for (int i = 0; i < h; ++i) {
           weight_scale[i] *= fabsf(alpha_data[i]);
           if (alpha_data[i] < 0.f) {
             auto ptr_row = conv_weight_d + k * c_size + i * hw;
-            for (unsigned int j = 0; j < hw; ++j) {
+            for (int j = 0; j < hw; ++j) {
               ptr_row[j] *= -1;
             }
           }
         }
       }
     } else {
-      for (unsigned int i = 0; i < h; ++i) {
+      for (int i = 0; i < h; ++i) {
         weight_scale[i] *= fabsf(alpha_data[i]);
         if (alpha_data[i] < 0.f) {
           auto ptr_row = conv_weight_d + i * w;
-          for (unsigned int j = 0; j < w; ++j) {
+          for (int j = 0; j < w; ++j) {
             ptr_row[j] *= -1;
           }
         }
@@ -204,17 +203,17 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
-      for (unsigned int k = 0; k < conv_weight_t->dims()[0]; ++k) {
-        for (unsigned int i = 0; i < h; ++i) {
+      for (int k = 0; k < conv_weight_t->dims()[0]; ++k) {
+        for (int i = 0; i < h; ++i) {
           auto ptr_row = conv_weight_d + k * c_size + i * hw;
-          for (unsigned int j = 0; j < hw; ++j) {
+          for (int j = 0; j < hw; ++j) {
             ptr_row[j] *= alpha_data[i];
           }
         }
       }
     } else {
-      for (unsigned int i = 0; i < h; ++i) {    // n: conv2d output channels
-        for (unsigned int j = 0; j < w; ++j) {  // w: conv2d input channels
+      for (int i = 0; i < h; ++i) {    // n: conv2d output channels
+        for (int j = 0; j < w; ++j) {  // w: conv2d input channels
           conv_weight_d[i * w + j] *= alpha_data[i];
         }
       }

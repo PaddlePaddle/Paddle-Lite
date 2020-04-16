@@ -58,7 +58,7 @@ void CLContext::AddKernel(const std::string &kernel_name,
   auto program = GetProgram(file_name, options);
   VLOG(3) << " --- end get program --- ";
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
-  std::unique_ptr<cl::Kernel> kernel(
+  std::shared_ptr<cl::Kernel> kernel(
       new cl::Kernel(program, kernel_name.c_str(), &status));
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";

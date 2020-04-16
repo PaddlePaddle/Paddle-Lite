@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/operators/logical_op.h"
+#include "lite/backends/cuda/context.h"
 
 namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-class IsEmptyCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::IsEmptyParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~IsEmptyCompute() {}
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
+namespace lite {}  // namespace lite
 }  // namespace paddle

@@ -55,7 +55,7 @@ class CLRuntime {
   std::map<std::string, size_t>& GetDeviceInfo();
 
  private:
-  CLRuntime() = default;
+  CLRuntime() { Init(); }
 
   ~CLRuntime();
 
