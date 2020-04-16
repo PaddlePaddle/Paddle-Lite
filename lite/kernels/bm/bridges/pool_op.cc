@@ -11,7 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <bmcompiler_defs.h>
 #include <bmcompiler_if.h>
+#include <bmcompiler_if_lite.h>
+#include <user_bmcpu_common.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -61,6 +64,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
+  auto adaptive = op_info->GetAttr<bool>("adaptive");
   bool average_exclusive = false;
   if (pooling_type == "avg") {
     average_exclusive = op_info->GetAttr<bool>("exclusive");
@@ -71,29 +75,52 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     ksize[0] = i_x_shape_data[2];
     ksize[1] = i_x_shape_data[3];
   }
-  add_pooling_layer(
-      graph->GetCompilerHandle(),
-      const_cast<const int*>(&i_x_shape_data[0]),
-      x_dims.size(),
-      static_cast<const char*>(x_var_name.c_str()),
-      1,
-      shape,
-      dim,
-      name,
-      ksize[0],
-      ksize[1],
-      paddings[0],
-      paddings[0],
-      paddings[1],
-      paddings[1],
-      strides[0],
-      strides[1],
-      (ksize[0] > 1 && ksize[1] > 1) && pooling_type == "max" ? 0 : 1,
-      static_cast<int>(average_exclusive),
-      static_cast<int>(global_pooling),
-      static_cast<int>(ceil_mode),
-      static_cast<const char*>(unique_op_name.c_str()),
-      nullptr);
+  bool is_max = (ksize[0] > 1 && ksize[1] > 1) && pooling_type == "max";
+  if (adaptive) {
+    user_cpu_param_t bm_param;
+    bm_param.op_type = USER_PADDLE_ADAPTIVE_POOL;
+    bm_param.u.adaptive_pool_parm.is_avg = !is_max;
+    int32_t* in_shape[1];
+    int32_t in_dim[1];
+    const char* in_name[1];
+    in_shape[0] = &i_x_shape_data[0];
+    in_name[0] = static_cast<const char*>(x_var_name.c_str());
+    in_dim[0] = x_dims.size();
+    add_user_cpu_layer(graph->GetCompilerHandle(),
+                       1,
+                       in_shape,
+                       in_dim,
+                       in_name,
+                       1,
+                       shape,
+                       dim,
+                       name,
+                       &bm_param,
+                       static_cast<int>(sizeof(bm_param)));
+  } else {
+    add_pooling_layer(graph->GetCompilerHandle(),
+                      const_cast<const int*>(&i_x_shape_data[0]),
+                      x_dims.size(),
+                      static_cast<const char*>(x_var_name.c_str()),
+                      1,
+                      shape,
+                      dim,
+                      name,
+                      ksize[0],
+                      ksize[1],
+                      paddings[0],
+                      paddings[0],
+                      paddings[1],
+                      paddings[1],
+                      strides[0],
+                      strides[1],
+                      is_max ? 0 : 1,
+                      static_cast<int>(average_exclusive),
+                      static_cast<int>(global_pooling),
+                      static_cast<int>(ceil_mode),
+                      static_cast<const char*>(unique_op_name.c_str()),
+                      nullptr);
+  }
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
