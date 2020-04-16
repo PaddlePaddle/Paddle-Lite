@@ -50,6 +50,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   CHECK_EQ(input_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
+  CHECK(!(op_info->HasAttr("fuse_relu") &&
+          (op_info->GetAttr<bool>("fuse_relu") == true)))
+      << "UnSupported param fuse_relu is true!";
   const auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");

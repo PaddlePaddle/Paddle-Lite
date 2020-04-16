@@ -55,6 +55,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  CHECK(!(op_info->HasAttr("exclusive") &&
+          op_info->GetAttr<bool>("exclusive") == false))
+      << "Unsupport param exclusive is false!";
 
   if (paddings.size() == 2L) {
     for (size_t i = 0; i < 2L; ++i) {

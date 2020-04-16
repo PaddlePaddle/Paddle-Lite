@@ -44,6 +44,8 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   //   CHECK(is_test != true);
   // }
 
+  // Param fix_seed and seed is useless in MLU
+
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");
   auto dropout_prob = op_info->GetAttr<float>("dropout_prob");
