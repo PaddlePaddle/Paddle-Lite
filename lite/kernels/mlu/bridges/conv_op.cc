@@ -246,6 +246,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CNML_CALL(cnmlDestroyConvOpParam(&conv_param));
   } else {
     cnmlConvOpParam_t conv_param;
+    VLOG(5) << "conv param (" << input_var_name << ")"
+            << "stride: " << strides[0] << ',' << strides[1] << '\t'
+            << "dilations: " << dilations[0] << ',' << dilations[1] << '\t'
+            << "paddings: " << paddings[0] << ',' << paddings[2] << std::endl;
     CNML_CALL(cnmlCreateConvOpParam(&conv_param,
                                     strides[0],
                                     strides[1],
@@ -269,7 +273,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     graph->SetComputingDataType(
         conv_op,
         filter_tensor->mlu_tensor(),
-        1 / *min_element(weight_scale.begin(), weight_scale.end()));
+        1 / *max_element(weight_scale.begin(), weight_scale.end()));
   }
   CNML_CALL(cnmlSetOperationComputingLayout(conv_op, CNML_NHWC));
   if (HasInputArg(op_info, scope, "Bias")) {
