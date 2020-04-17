@@ -98,7 +98,7 @@ struct Instruction {
   }
 
   // Run the instruction.
-  void Run();
+  double Run();
 
   friend STL::ostream& operator<<(STL::ostream& os, const Instruction& other);
 
@@ -190,7 +190,7 @@ class LITE_API RuntimeProgram {
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<Instruction> instructions_;
   lite::Scope* exec_scope_{};
-
+  double infershape_time{0};
 #ifdef LITE_WITH_PROFILE
   profile::Profiler profiler_;
   void set_profiler() {

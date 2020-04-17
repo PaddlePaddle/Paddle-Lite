@@ -141,7 +141,7 @@ void RuntimeProgram::Run() {
   std::string precision_profiler_summary =
       inst_precision_profiler.GetSummaryHeader();
 #endif
-
+infershape_time = 0;
   for (auto& inst : instructions_) {
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
@@ -151,7 +151,7 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
-    inst.Run();
+infershape_time = infershape_time + inst.Run();
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
@@ -159,6 +159,7 @@ void RuntimeProgram::Run() {
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+  std::cout << " infershape spends:" << infershape_time << " ms in total." << std::endl;
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 0);
 #endif
@@ -267,7 +268,7 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
   }
 }
 
-void Instruction::Run() {
+double Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
                       "When LITE_WITH_PROFILE is defined, please set a "
@@ -284,12 +285,18 @@ void Instruction::Run() {
   }
 
   if (op_->run_once() && has_run_) {
-    return;
+    return 0;
   }
-
+  // mark current time
+  auto t0 = std::chrono::steady_clock::now();
   op_->InferShape();
+  auto t1 = std::chrono::steady_clock::now();
+  std::chrono::duration<double> spend = t1 - t0;
+//  std::cout << " infershape:" << spend.count() * 1000  << " ms." << std::endl;
+//  infershape_time = infershape_time + spend.count() * 1000;
   kernel_->Launch();
   has_run_ = true;
+  return double(spend.count() * 1000);
 }
 
 STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
