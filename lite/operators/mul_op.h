@@ -46,11 +46,12 @@ class MulOpLite : public OpLite {
     auto W = op_desc.Input("Y").front();
     auto out = op_desc.Output("Out").front();
     auto *var = scope->FindVar(input);
+    auto& param = param<param_t>();
     CHECK(var);
-    param_.x = &var->Get<Tensor>();
+    param.x = &var->Get<Tensor>();
     var = scope->FindVar(W);
     CHECK(var) << "no var called " << W;
-    param_.y = &var->Get<Tensor>();
+    param.y = &var->Get<Tensor>();
     var = scope->FindVar(out);
     CHECK(var) << "no var called " << out;
     param_.output = var->GetMutable<Tensor>();
@@ -62,8 +63,6 @@ class MulOpLite : public OpLite {
 
   std::string DebugString() const override { return "mul"; }
 
- private:
-  mutable MulParam param_;
 };
 
 }  // namespace operators

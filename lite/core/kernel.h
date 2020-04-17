@@ -100,8 +100,8 @@ class KernelBase {
     ctx_ = std::move(ctx);
   }
   template <typename T>
-  void SetParam(T param) {
-    param_.set<T>(param);
+  void SetParam(const std::shared_ptr<operators::ParamBase>& param) {
+    param_<T> = param;
   }
   template <typename P>
   P& Param() const {
@@ -171,7 +171,7 @@ class KernelBase {
 
  protected:
   std::unique_ptr<KernelContext> ctx_{nullptr};
-  mutable operators::param_t param_;
+  std::shared_ptr<operators::param_t> param_;
   // The corresponding op type.
   std::string op_type_{};
   // The extra identity to help defficiate a specific kernel, op_type_ + alias_

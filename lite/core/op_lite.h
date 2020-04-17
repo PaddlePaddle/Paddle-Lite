@@ -38,7 +38,7 @@ struct Registry {
 namespace mir {
 class Node;
 class SSAGraph;
-}
+}  // namespace mir
 
 class OpInfo;
 
@@ -160,6 +160,10 @@ class OpLite : public Registry {
     return var->GetMutable<T>();
   }
 
+  Template<typename T> inline T &param() {
+    return *static_cast<T *>(param_.get());
+  }
+
  protected:
   lite::Scope *scope_{nullptr};
   std::unique_ptr<KernelBase> kernel_;
@@ -171,7 +175,7 @@ class OpLite : public Registry {
   std::vector<DDimLite> last_output_shapes{};
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
   size_t io_shape_lod_hash_{};
-  mutable operators::ParamBase param_;
+  mutable std::shared_ptr<operators::ParamBase> param_;
 
  private:
   // Infer Shape according to memory, if current input shapes are consistent
