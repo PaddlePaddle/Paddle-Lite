@@ -24,7 +24,11 @@ add_kernel(stack_compute_x86 X86 basic SRCS stack_compute.cc DEPS ${lite_kernel_
 add_kernel(dropout_compute_x86 X86 basic SRCS dropout_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(transpose_compute_x86 X86 basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_function)
 add_kernel(layer_norm_compute_x86 X86 basic SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} jit_kernel_helper)
-add_kernel(fc_compute_x86 X86 basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} jit_kernel_helper)
+# todo: fc x86 kernel can not compile successfully on mac because openmp is not supported on mac clang,
+# this problem should be fixed later to support fc x86 kernel on mac. @DannyIsFunny
+if(NOT APPLE)
+    add_kernel(fc_compute_x86 X86 basic SRCS fc_compute.cc DEPS ${lite_kernel_deps} jit_kernel_helper)
+endif()
 # lite_cc_library(batch_norm_compute_x86 SRCS batch_norm_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(uniform_random_compute_x86 SRCS uniform_random_compute.cc DEPS ${lite_kernel_deps} )
 add_kernel(gru_compute_x86 X86 basic SRCS gru_compute.cc DEPS ${lite_kernel_deps} blas math_function sequence2batch gru_compute)

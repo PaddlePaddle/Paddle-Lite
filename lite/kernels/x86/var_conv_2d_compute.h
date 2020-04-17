@@ -44,7 +44,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // 2-D lod info.
     // const auto& offset_x = in_col->lod()[0];
     // const auto& offset_y = in_row->lod()[0];
-    CHECK_EQ(param.X->lod().size(), 3) << "input lod size should be 3!";
+    CHECK_EQ(param.X->lod().size(), 3u) << "input lod size should be 3!";
     const auto& offset_y = param.X->lod()[1];
     const auto& offset_x = param.X->lod()[2];
 

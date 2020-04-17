@@ -12,29 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/operators/logical_op.h"
+#include "lite/kernels/apu/bridges/graph.h"
+#include <utility>
+#include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace subgraph {
+namespace apu {
 
-class IsEmptyCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::IsEmptyParam;
+int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
+  auto it = nodes_.find(name);
 
-  void PrepareForRun() override;
+  if (it != nodes_.end()) {
+    LOG(FATAL) << "[APU] Node" << name << " is redefined.";
+    return -1;
+  } else {
+    VLOG(3) << " Add: " << name << " : " << node->index();
+    auto ret = nodes_.insert(
+        std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
+    CHECK(ret.second);
+    it = ret.first;
+  }
+  operandIdx_ += 1;
+  it->second.push_back(node);
 
-  void Run() override;
+  return it->second.size();
+}
 
-  ~IsEmptyCompute() {}
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace apu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
