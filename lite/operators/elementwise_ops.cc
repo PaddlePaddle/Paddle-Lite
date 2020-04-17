@@ -97,6 +97,12 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ElementwiseOp::GetGops(){
+  return 1.f * param_.Out->production();
+}
+#endif
+
 // #ifdef LITE_WITH_TRAIN
 // bool ElementwiseGradExplicitOp::CheckShape() const {
 //  CHECK_OR_FALSE(param_.Y);

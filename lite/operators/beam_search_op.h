@@ -38,6 +38,10 @@ class BeamSearchOp : public OpLite {
 
   std::string DebugString() const override { return "beam_search"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable BeamSearchParam param_;
 };

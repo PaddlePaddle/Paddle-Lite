@@ -55,6 +55,13 @@ class FakeDequantizeMaxAbsOpLite : public OpLite {
 
   std::string DebugString() const override { return "fake_dequantize_max_abs"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){
+    // todo
+    return 0.f;
+  }
+#endif
+
  private:
   mutable FakeDequantizeMaxAbsParam param_;
 };

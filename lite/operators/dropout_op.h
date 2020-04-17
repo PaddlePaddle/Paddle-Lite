@@ -36,6 +36,10 @@ class DropoutOp : public OpLite {
 
   std::string DebugString() const override { return "dropout"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable DropoutParam param_;
 };

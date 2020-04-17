@@ -58,6 +58,13 @@ bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float BeamSearchOp::GetGops(){
+  // todo
+  return 0.0;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

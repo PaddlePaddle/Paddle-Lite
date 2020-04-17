@@ -39,6 +39,10 @@ class CrfDecodingOpLite : public OpLite {
 
   std::string DebugString() const override { return "crf_decoding"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable CrfDecodingParam param_;
 };

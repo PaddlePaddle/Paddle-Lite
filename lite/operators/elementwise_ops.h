@@ -35,6 +35,10 @@ class ElementwiseOp : public OpLite {
 
   std::string DebugString() const override { return "elementwise_op"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable operators::ElementwiseParam param_;
 };

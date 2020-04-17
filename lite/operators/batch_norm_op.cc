@@ -119,6 +119,14 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float BatchNormOp::GetGops(){
+  InferShape();
+  auto gops = param_.y->numel();
+  return 6.0 * gops;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

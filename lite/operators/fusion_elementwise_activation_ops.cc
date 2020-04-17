@@ -50,6 +50,18 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float FusionElementwiseActivationOp::GetGops(){
+  auto num = param_.Out->production();
+  if (param_.act_type == "relu") {
+    return 2.f * num;
+  } else {
+    // todo add
+    return 0.f;
+  }
+}
+#endif
+
 // #ifdef LITE_WITH_X86
 // bool FusionElementwiseActivationGradExplicitOp::CheckShape() const {
 //   CHECK_OR_FALSE(param_.Y);

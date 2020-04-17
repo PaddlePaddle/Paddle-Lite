@@ -42,6 +42,10 @@ class DistributeFpnProposalsOpLite : public OpLite {
     return "distribute_fpn_proposals";
   }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable DistributeFpnProposalsParam param_;
 };

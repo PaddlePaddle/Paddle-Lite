@@ -54,6 +54,10 @@ class FeedOp : public OpLite {
 
   std::string DebugString() const override { return "feed"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){ return 1.f; }
+#endif
+
  private:
   mutable FeedParam param_;
 };

@@ -50,6 +50,12 @@ bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ExpandOpLite::GetGops(){
+  return 1.f;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

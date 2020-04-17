@@ -69,6 +69,13 @@ bool CollectFpnProposalsOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float CollectFpnProposalsOpLite::GetGops(){
+  // todo
+  return 0.f;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

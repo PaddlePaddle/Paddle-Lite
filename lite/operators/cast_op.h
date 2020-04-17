@@ -38,6 +38,10 @@ class CastOp : public OpLite {
 
   std::string DebugString() const override { return "cast"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable CastParam param_;
 };

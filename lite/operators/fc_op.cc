@@ -112,6 +112,16 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float FcOpLite::GetGops(){
+  auto m = param_.input->dims().count(0, in_num_col_dims_);
+  auto w_dims = param_.w->dims();
+  auto num = m * w_dims[0] * w_dims[1];
+  // sgemm(mul + add) + bias
+  return 3.f * num;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

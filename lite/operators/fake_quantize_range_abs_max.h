@@ -62,6 +62,13 @@ class FakeQuantizeRangeMaxAbsOpLite : public OpLite {
     return "fake_quantize_range_max_abs";
   }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){
+    // todo
+    return 0.f;
+  }
+#endif
+
  private:
   mutable FakeQuantizeMovingAvgMaxAbsParam param_;
 };

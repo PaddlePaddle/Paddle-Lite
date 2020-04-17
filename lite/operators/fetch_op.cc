@@ -49,6 +49,10 @@ class FetchOp : public OpLite {
 
   std::string DebugString() const override { return "fetch"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){ return 1.f; }
+#endif
+
  private:
   mutable FetchParam param_;
 };

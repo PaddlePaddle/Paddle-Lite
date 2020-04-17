@@ -42,6 +42,10 @@ class ConvTransposeOpLite : public OpLite {
 
   std::string DebugString() const override { return "conv_transpose"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable ConvParam param_;
   std::string padding_algorithm_{""};

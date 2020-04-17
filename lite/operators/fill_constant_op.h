@@ -38,6 +38,10 @@ class FillConstantOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "fill_constant"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){ return 1.f; }
+#endif
+
  private:
   mutable FillConstantParam param_;
 };

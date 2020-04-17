@@ -50,6 +50,9 @@ class CalibOpLite : public OpLite {
 
   std::string DebugString() const override { return "calib"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
  private:
   mutable CalibParam param_;
 };

@@ -99,6 +99,14 @@ bool BoxCoderOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float BoxCoderOpLite::GetGops(){
+  auto dims = param_.proposals->dims();
+  auto num = dims[0] * dims[1];
+  return 30.f * num;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

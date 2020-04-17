@@ -54,6 +54,13 @@ bool BoxClipOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float BoxClipOpLite::GetGops(){
+  auto num = param_.Output->production();
+  return 2.f * num;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

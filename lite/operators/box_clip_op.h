@@ -39,6 +39,10 @@ class BoxClipOpLite : public OpLite {
 
   std::string DebugString() const override { return "box clip"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable BoxClipParam param_;
 };

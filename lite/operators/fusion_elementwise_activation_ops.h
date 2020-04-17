@@ -39,6 +39,10 @@ class FusionElementwiseActivationOp : public OpLite {
     return "fusion_elementwise_activation_op";
   }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable operators::FusionElementwiseActivationParam param_;
 };

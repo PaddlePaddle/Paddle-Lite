@@ -37,6 +37,10 @@ class FlattenOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "flatten"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){ return 1.f; }
+#endif
+
  protected:
   mutable ReshapeParam param_;
   int axis_;
@@ -55,6 +59,11 @@ class Flatten2Op : public FlattenOp {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "flatten2"; }
+
+#ifdef LITE_WITH_PROFILE
+  float GetGops(){ return 1.f; }
+#endif
+
 };
 
 }  // namespace operators

@@ -49,6 +49,11 @@ bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float CompareOp::GetGops(){
+  return 1.f * param_.Out->production();
+}
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

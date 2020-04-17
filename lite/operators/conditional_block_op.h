@@ -41,6 +41,10 @@ class ConditionalBlockOpLite : public OpLite {
 
   void SetSubBlock(cpp::BlockDesc *desc) { sub_block_ = desc; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable ConditionalBlockParam param_;
   cpp::BlockDesc *sub_block_;

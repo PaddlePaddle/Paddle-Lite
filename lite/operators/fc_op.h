@@ -43,6 +43,10 @@ class FcOpLite : public OpLite {
 
   std::string DebugString() const override { return "fc"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable FcParam param_;
 };
