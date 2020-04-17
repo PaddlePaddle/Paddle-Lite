@@ -14,8 +14,8 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include <pthread.h>
 #include <fstream>
+#include <thread>  //NOLINT
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -31,8 +31,8 @@ DEFINE_string(input_img_txt_path,
 namespace paddle {
 namespace lite {
 
-const int g_batch_size = 4;
-const int g_thread_num = 10;
+const int g_batch_size = 1;
+const int g_thread_num = 1;
 
 void instance_run() {
   lite::Predictor predictor;
