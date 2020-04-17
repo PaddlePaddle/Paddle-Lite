@@ -215,8 +215,11 @@ class Graph {
                             float scale,
                             cnmlDataType_t data_type = CNML_DATA_INT8) {
     cnmlQuantizedParam_t quant_param;
-    CNML_CALL(
-        cnmlCreateQuantizedParam(&quant_param, scale2position(scale), 1, 0.0));
+    int pos = scale2position(scale);
+    auto cnml_scale = pow(2, pos) * scale;
+    VLOG(5) << "[cnml quantized param] pos: " << pos
+            << "\tscale: " << cnml_scale << std::endl;
+    CNML_CALL(cnmlCreateQuantizedParam(&quant_param, pos, cnml_scale, 0.0));
     CNML_CALL(
         cnmlSetOperationComputingDataType(op, tensor, data_type, quant_param));
     CNML_CALL(cnmlDestroyQuantizedParam(&quant_param));
