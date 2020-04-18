@@ -49,6 +49,8 @@ bool FcOpLite::CheckShape() const {
 }
 
 bool FcOpLite::InferShapeImpl() const {
+  op_param_.reset(dynamic_cast<FcParam*>(&param_));
+
   const auto& input_dims = param_.input->dims();
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;

@@ -35,8 +35,10 @@ namespace operators {
 
 struct ParamBase {
  public:
-  const std::vector<Tensor*>* input_tensor_ptrs() const { return nullptr; }
-  std::vector<Tensor*>* output_tensor_ptrs() { return nullptr; }
+  virtual const std::vector<const Tensor*>* input_tensor_ptrs() {
+    return nullptr;
+  }
+  virtual std::vector<Tensor*>* output_tensor_ptrs() { return nullptr; }
 
  protected:
   std::shared_ptr<std::vector<const Tensor*>> input_tensor_ptrs_cache_{nullptr};
@@ -108,15 +110,15 @@ struct FcParam : ParamBase {
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({input}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -160,15 +162,15 @@ struct MulParam : ParamBase {
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x, y}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -243,15 +245,15 @@ struct ScaleParam : ParamBase {
   bool bias_after_scale{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -265,15 +267,15 @@ struct SoftmaxParam : ParamBase {
   int axis{-1};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -292,15 +294,15 @@ struct ReshapeParam : ParamBase {
   bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -314,8 +316,8 @@ struct ConcatParam : ParamBase {
   int axis{0};
   lite::Tensor* axis_tensor{};
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       std::vector<const Tensor*> vec;
       for (auto in : x) {
         vec.push_back(in);
@@ -325,8 +327,8 @@ struct ConcatParam : ParamBase {
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -406,15 +408,15 @@ struct ConvParam : ParamBase {
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -440,15 +442,15 @@ struct BatchNormParam : ParamBase {
   DataLayoutType data_layout{DATALAYOUT(kNCHW)};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({y}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -479,15 +481,15 @@ struct PoolParam : ParamBase {
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -518,15 +520,15 @@ struct SplitParam : ParamBase {
   std::vector<int> sections;
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -544,15 +546,15 @@ struct TransposeParam : ParamBase {
   std::string data_format{"AnyLayout"};
   ///////////////////////////////////////////////////////////////////////////////////
   //  // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -571,15 +573,15 @@ struct ElementwiseParam : ParamBase {
   float y_input_scale{1.0};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X, Y}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -884,15 +886,15 @@ struct SequenceSoftmaxParam : ParamBase {
   lite::Tensor* Out{};
   ///////////////////////////////////////////////////////////////////////////////////
   //  // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -1135,15 +1137,15 @@ struct SliceParam : ParamBase {
   lite::Tensor* EndsTensor{nullptr};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -1197,15 +1199,15 @@ struct SqueezeParam : ParamBase {
   std::vector<int> axes{};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -1221,15 +1223,15 @@ struct UnsqueezeParam : ParamBase {
   std::vector<const lite::Tensor*> axes_tensor_vct{};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
@@ -1253,15 +1255,15 @@ struct MatMulParam : ParamBase {
   float alpha{1.0f};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
-  const std::vector<const Tensor*>* input_tensor_ptrs() {
-    if (UNLIKELY(input_tensor_ptrs_cache_)) {
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X, Y}));
     }
     return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
-  const std::vector<Tensor*>* output_tensor_ptrs() {
-    if (UNLIKELY(output_tensor_ptrs_cache_)) {
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_.get();
