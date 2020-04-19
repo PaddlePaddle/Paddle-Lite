@@ -119,16 +119,7 @@ TEST(pool2d_buffer_fp32, compute) {
 
   kernel->Launch();
 
-  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<float, cl::Buffer>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto& event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
+  CLRuntime::Global()->command_queue().finish();
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   pool_avg(0, 0, 1, 1, 7, 7, mapped_x, in_dim, out_ref.get(), out_dim);

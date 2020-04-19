@@ -218,16 +218,8 @@ TEST(box_coder_image2d, compute) {
 
             auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
             auto* out_ptr = param.proposals->data<half_t, cl::Image2D>();
-            auto it = wait_list->find(out_ptr);
-            if (it != wait_list->end()) {
-              VLOG(4) << "--- Find the sync event for the target cl "
-                         "tensor. ---";
-              auto& event = *(it->second);
-              event.wait();
-            } else {
-              LOG(FATAL) << "Could not find the sync event for the "
-                            "target cl tensor.";
-            }
+
+            CLRuntime::Global()->command_queue().finish();
 
             lite::Tensor out_ref_tensor;
             out_ref_tensor.Resize(out_dim);

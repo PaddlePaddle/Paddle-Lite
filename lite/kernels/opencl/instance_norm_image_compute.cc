@@ -137,16 +137,14 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(7, *out_img);
     CL_CHECK_FATAL(status);
 
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         local_work_size,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
   }
 
 #else  // paddle version
@@ -260,16 +258,15 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(arg_idx++, in_w);
     CL_CHECK_FATAL(status);
 
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         local_work_size,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
+    // context.cl_wait_list()->emplace(out_img, event_);
   }
 #endif
 
@@ -278,7 +275,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{"instance_norm_onnx"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
+
   Tensor scale_image_;
   Tensor bias_image_;
 };

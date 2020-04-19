@@ -100,9 +100,8 @@ TEST(cl_test, kernel_test) {
   size_t width = in_image.ImageWidth();
   size_t height = in_image.ImageHeight();
   auto global_work_size = cl::NDRange{width, height};
-  cl::Event event;
   status = context->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, &event);
+      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_FATAL(status);
   status = context->GetCommandQueue().finish();
   CL_CHECK_FATAL(status);
