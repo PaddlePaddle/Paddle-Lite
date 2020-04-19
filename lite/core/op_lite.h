@@ -170,7 +170,7 @@ class OpLite : public Registry {
   std::vector<DDimLite> last_output_shapes{};
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
   size_t io_shape_lod_hash_{};
-  mutable operators::ParamBase *op_param_;
+  mutable operators::ParamBase *op_param_{nullptr};
 
  private:
   // Infer Shape according to memory, if current input shapes are consistent
