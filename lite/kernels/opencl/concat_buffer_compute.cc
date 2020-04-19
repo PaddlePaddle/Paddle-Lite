@@ -123,16 +123,15 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, total1);
       CL_CHECK_FATAL(status);
-      event_ = std::shared_ptr<cl::Event>(new cl::Event);
+
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
           cl::NullRange,
           global_work_size,
           cl::NullRange,
           nullptr,
-          event_.get());
+          nullptr);
       CL_CHECK_FATAL(status);
-      context.cl_wait_list()->emplace(out_buf, event_);
     } else {
       auto start = 0;
       for (int i = 0; i < inputs.size(); i++) {
@@ -157,16 +156,15 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, total0);
         CL_CHECK_FATAL(status);
-        event_ = std::shared_ptr<cl::Event>(new cl::Event);
+
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
             kernel,
             cl::NullRange,
             global_work_size,
             cl::NullRange,
             nullptr,
-            event_.get());
+            nullptr);
         CL_CHECK_FATAL(status);
-        context.cl_wait_list()->emplace(out_buf, event_);
         start += size;
       }
     }
@@ -182,7 +180,6 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl
