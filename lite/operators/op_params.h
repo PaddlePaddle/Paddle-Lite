@@ -1276,8 +1276,13 @@ struct GatherParam : ParamBase {
 
 /// ----------------------- assign operators -----------------------
 struct AssignParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  // for tensor
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Out{nullptr};
+
+  // for tensor_array
+  const std::vector<lite::Tensor>* X_array{nullptr};
+  std::vector<lite::Tensor>* Out_array{nullptr};
 };
 
 /// ----------------------- roi_align operators -----------------------
