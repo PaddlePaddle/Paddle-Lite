@@ -38,7 +38,7 @@ class ConvOpLite : public OpLite {
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
-    op_param_.reset(dynamic_cast<ConvParam*>(&param_));
+    op_param_ = dynamic_cast<ConvParam*>(&param_);
 
     auto X = op_desc.Input("Input").front();
     auto Filter = op_desc.Input("Filter").front();

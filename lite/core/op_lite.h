@@ -123,7 +123,9 @@ class OpLite : public Registry {
 
  protected:
   // Attach it with the runtime environment.
-  virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
+  virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+    op_param_ = new operators::ParamBase;
+  }
 
   // Specify the kernel to run by default. This will specify the value of
   // `kernel_place_`.
@@ -167,11 +169,10 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
-
   std::vector<DDimLite> last_output_shapes{};
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
   size_t io_shape_lod_hash_{};
-  mutable std::shared_ptr<operators::ParamBase> op_param_;
+  mutable operators::ParamBase *op_param_;
 
  private:
   // Infer Shape according to memory, if current input shapes are consistent
