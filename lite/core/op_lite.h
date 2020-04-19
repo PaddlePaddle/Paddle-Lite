@@ -125,6 +125,7 @@ class OpLite : public Registry {
   // Attach it with the runtime environment.
   virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     op_param_ = new operators::ParamBase;
+    return true;
   }
 
   // Specify the kernel to run by default. This will specify the value of

@@ -35,6 +35,7 @@ namespace operators {
 
 struct ParamBase {
  public:
+  virtual ~ParamBase() {}
   virtual const std::vector<const Tensor*>* input_tensor_ptrs() {
     return nullptr;
   }
