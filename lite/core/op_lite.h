@@ -77,6 +77,11 @@ class OpLite : public Registry {
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
+  template <typename T>
+  void AttachParam(T &param) {
+    op_param_ = static_cast<T *>(&param);
+  }
+
   const OpInfo *op_info() const { return op_info_.get(); }
   OpInfo *mutable_op_info() { return op_info_.get(); }
 

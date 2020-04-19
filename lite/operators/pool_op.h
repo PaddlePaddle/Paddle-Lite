@@ -41,6 +41,7 @@ class PoolOpLite : public OpLite {
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+    AttachParam<PoolParam>(param_);
     auto x = op_desc.Input("X").front();
     auto out = op_desc.Output("Out").front();
 
