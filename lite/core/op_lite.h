@@ -78,7 +78,7 @@ class OpLite : public Registry {
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
   template <typename T>
-  void AttachParam(T &param) {
+  void AttachParam(const T &param) {
     op_param_ = static_cast<T *>(&param);
   }
 
