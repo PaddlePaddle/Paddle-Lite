@@ -105,10 +105,13 @@ TEST(cl_test, kernel_test) {
   CL_CHECK_FATAL(status);
   status = context->GetCommandQueue().finish();
   CL_CHECK_FATAL(status);
+#if 0
   double start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   double stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
   LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros << " us.";
+#endif
+
   LOG(INFO) << out_image;
 }
 
