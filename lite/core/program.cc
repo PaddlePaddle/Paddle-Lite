@@ -72,7 +72,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
   std::unordered_map<std::string, cpp::VarDesc> origin_var_maps;
   auto& main_block = *desc->GetBlock<cpp::BlockDesc>(0);
   auto var_size = main_block.VarsSize();
-  for (int i = 0; i < var_size; i++) {
+  for (size_t i = 0; i < var_size; i++) {
     auto v = main_block.GetVar<cpp::VarDesc>(i);
     auto name = v->Name();
     origin_var_maps.emplace(name, *v);
@@ -145,6 +145,11 @@ void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
+#endif
+#ifdef LITE_WITH_CUDA
+    if (inst.need_sync()) {
+      inst.Sync();
+    }
 #endif
     inst.Run();
 #ifdef LITE_WITH_PRECISION_PROFILE

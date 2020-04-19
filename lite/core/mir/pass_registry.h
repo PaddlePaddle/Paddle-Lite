@@ -59,6 +59,9 @@ class PassRegistry {
 }  // namespace lite
 }  // namespace paddle
 
+// some platform-independent defintion
+#include "lite/utils/macros.h"
+
 #define REGISTER_MIR_PASS(name__, class__)                                \
   paddle::lite::mir::PassRegistry mir_pass_registry##name__(#name__,      \
                                                             new class__); \
@@ -66,4 +69,4 @@ class PassRegistry {
     return mir_pass_registry##name__.Touch();                             \
   }                                                                       \
   static paddle::lite::mir::PassRegistry mir_pass_registry_func_##name__  \
-      __attribute__((unused)) = mir_pass_registry##name__
+      UNUSED = mir_pass_registry##name__

@@ -12,29 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/kernels/host/shape_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class ReadFromArrayCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::ReadFromArrayParam;
+void ShapeCompute::Run() {
+  auto& param = Param<operators::ShapeParam>();
+  int* output_data = param.Out->mutable_data<int>();
+  auto in_dims = param.X->dims();
+  for (int i = 0; i < in_dims.size(); ++i) {
+    output_data[i] = in_dims[i];
+  }
+}
 
-  void Run() override;
-
-  ~ReadFromArrayCompute() {}
-
- private:
-};
-
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(
+    shape, kHost, kAny, kAny, paddle::lite::kernels::host::ShapeCompute, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .Finalize();

@@ -75,7 +75,7 @@ bool UnsqueezeOp::InferShapeImpl() const {
     final_axes = std::vector<int>(axes_tensor_data,
                                   axes_tensor_data + axes_tensor->numel());
   } else if (!axes_tensor_vct.empty()) {
-    for (int i = 0; i < axes_tensor_vct.size(); i++) {
+    for (size_t i = 0; i < axes_tensor_vct.size(); i++) {
       final_axes.push_back(axes_tensor_vct[i]->data<int>()[0]);
     }
   } else {

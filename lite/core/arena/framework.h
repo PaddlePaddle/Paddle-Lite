@@ -166,7 +166,7 @@ class TestCase {
   // TODO(Superjomn) Move this method to utils or DDim?
   bool ShapeEquals(const DDim& a, const DDim& b) {
     if (a.size() != b.size()) return false;
-    for (int i = 0; i < a.size(); i++) {
+    for (size_t i = 0; i < a.size(); i++) {
       if (a[i] != b[i]) return false;
     }
     return true;

@@ -136,6 +136,9 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
+#ifdef LITE_WITH_CUDA
+  bool multi_stream_{false};
+#endif
 #ifdef LITE_WITH_MLU
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
@@ -170,6 +173,10 @@ class LITE_API CxxConfig : public ConfigBase {
   int x86_math_library_num_threads() const {
     return x86_math_library_math_threads_;
   }
+#endif
+#ifdef LITE_WITH_CUDA
+  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
+  int multi_stream() const { return multi_stream_; }
 #endif
 
 #ifdef LITE_WITH_MLU

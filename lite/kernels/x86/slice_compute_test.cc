@@ -34,10 +34,10 @@ static void slice_ref(const float* input,
   std::vector<int> real_starts(in_dims.size(), 0);
   std::vector<int> real_ends(in_dims.size(), 0);
   std::vector<int> real_step(in_dims.size(), 0);
-  for (int i = 0; i < in_dims.size(); i++) {
+  for (size_t i = 0; i < in_dims.size(); i++) {
     real_ends[i] = in_dims[i];
   }
-  for (int i = 0; i < axes.size(); i++) {
+  for (size_t i = 0; i < axes.size(); i++) {
     int dim_value = in_dims[axes[i]];
     if (dim_value > 0) {
       int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
@@ -52,11 +52,11 @@ static void slice_ref(const float* input,
   }
   const int LEN = in_dims.size();
   int dst_step[LEN];
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
   }
   int src_step[LEN];
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     src_step[i] = 1;
   }
   int out_num = out_dims[in_dims.size() - 1];
@@ -69,7 +69,7 @@ static void slice_ref(const float* input,
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
     int index_id = dst_id;
-    for (int j = 0; j < out_dims.size(); j++) {
+    for (size_t j = 0; j < out_dims.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
@@ -409,7 +409,7 @@ void test_tensor_case3(lite::Tensor x, lite::Tensor out) {
   lite::Tensor starts_tensor, ends_tensor;
   starts_tensor.Resize(DDim({3}));
   ends_tensor.Resize(DDim({3}));
-  for (int i = 0; i < starts.size(); ++i) {
+  for (size_t i = 0; i < starts.size(); ++i) {
     starts_tensor.mutable_data<int>()[i] = starts[i];
     ends_tensor.mutable_data<int>()[i] = ends[i];
   }

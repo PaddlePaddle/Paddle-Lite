@@ -97,11 +97,11 @@ void test_fc(const std::vector<int64_t>& input_shape,
   Tensor input_int;
   input_int.Resize(input_shape);
   FillTensor<int8_t, int8_t>(&input_int, -127, 127);
-  for (int i = 0; i < input->data_size(); i++) {
+  for (size_t i = 0; i < input->data_size(); i++) {
     input->mutable_data<float>()[i] = input_int.data<int8_t>()[i] * input_scale;
   }
 
-  for (int i = 0; i < w->data_size(); i++) {
+  for (size_t i = 0; i < w->data_size(); i++) {
     w->mutable_data<float>()[i] = w_int->data<int8_t>()[i] * w_scale;
   }
 

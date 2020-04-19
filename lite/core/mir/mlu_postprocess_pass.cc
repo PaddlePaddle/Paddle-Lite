@@ -292,7 +292,7 @@ void MLUPostprocessPass::GetSubgraphOpArgType(Node* inst_node,
 
   // get subgraph op's type info
   size_t kernel_size = inst_node->AsStmt().kernels().size();
-  CHECK_GT(kernel_size, 0);
+  CHECK_GT(kernel_size, 0u);
   VLOG(4) << "subgraph kernel size: " << kernel_size;
 
   for (size_t i = 0; i < kernel_size; ++i) {
@@ -450,7 +450,7 @@ bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node, Node* inst) {
   auto* block_desc =
       static_cast<operators::SubgraphOp*>(inst->AsStmt().op().get())
           ->GetSubBlock();
-  for (int op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
     auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     if (op_desc->Type() == "conv2d") {

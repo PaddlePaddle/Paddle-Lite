@@ -12,30 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/shape_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#pragma once
+#include <stdint.h>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-void ShapeCompute::Run() {
-  auto& param = Param<operators::ShapeParam>();
-  int* output_data = param.Out->mutable_data<int>();
-  auto in_dims = param.X->dims();
-  for (int i = 0; i < in_dims.size(); ++i) {
-    output_data[i] = in_dims[i];
-  }
-}
+class IsEmptyCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
 
-}  // namespace arm
+  ~IsEmptyCompute() {}
+};
+
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    shape, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ShapeCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();

@@ -64,14 +64,14 @@ inline void get_mid_dims(const lite::DDim &x_dims,
     for (int i = 0; i < axis; ++i) {
       (*pre) *= x_dims[i];
     }
-    for (int i = 0; i < y_dims.size(); ++i) {
+    for (size_t i = 0; i < y_dims.size(); ++i) {
       if (x_dims[i + axis] != y_dims[i]) {
         // only support single y_dims[i] = 1 now.
         PADDLE_ENFORCE_EQ(
             *mid_flag, 0, "Broadcast support y_dims with single 1.");
         PADDLE_ENFORCE_EQ(y_dims[i], 1, "Broadcast dimension mismatch.");
         // m*n*k m*1*k
-        for (int j = 0; j < i; ++j) {
+        for (size_t j = 0; j < i; ++j) {
           (*pre) *= y_dims[j];
         }
         *n = std::max(x_dims[i + axis], y_dims[i]);
@@ -82,11 +82,11 @@ inline void get_mid_dims(const lite::DDim &x_dims,
       (*n) *= y_dims[i];
     }
     if (*mid_flag) {
-      for (int i = mid + 1; i < x_dims.size(); ++i) {
+      for (size_t i = mid + 1; i < x_dims.size(); ++i) {
         (*post) *= x_dims[i];
       }
     } else {
-      for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
+      for (size_t i = axis + y_dims.size(); i < x_dims.size(); ++i) {
         (*post) *= x_dims[i];
       }
     }
@@ -95,13 +95,13 @@ inline void get_mid_dims(const lite::DDim &x_dims,
       (*pre) *= x_dims[i];
     }
 
-    for (int i = 0; i < y_dims.size(); ++i) {
+    for (size_t i = 0; i < y_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(
           x_dims[i + axis], y_dims[i], "Broadcast dimension mismatch.");
       (*n) *= y_dims[i];
     }
 
-    for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
+    for (size_t i = axis + y_dims.size(); i < x_dims.size(); ++i) {
       (*post) *= x_dims[i];
     }
   }
@@ -116,7 +116,7 @@ inline lite::DDim trim_trailing_singular_dims(const lite::DDim &dims) {
 
   std::vector<int64_t> trim_dims;
   trim_dims.resize(actual_dims_size);
-  for (int i = 0; i < actual_dims_size; ++i) {
+  for (size_t i = 0; i < actual_dims_size; ++i) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {

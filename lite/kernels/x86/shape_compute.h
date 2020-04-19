@@ -31,7 +31,7 @@ class ShapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // auto& context = context_->As<X86Context>();
     auto out_data = param.Out->template mutable_data<int32_t>();
     auto in_dims = param.X->dims();
-    for (int i = 0; i < in_dims.size(); ++i) {
+    for (size_t i = 0; i < in_dims.size(); ++i) {
       out_data[i] = in_dims[i];
     }
   }
