@@ -66,7 +66,6 @@ TEST(io_copy, compute) {
   h2d_kernel->Launch();
   auto* event_key = d_y.data<float, cl::Buffer>();
   std::shared_ptr<cl::Event> event(new cl::Event);
-  context->As<OpenCLContext>().cl_wait_list()->emplace(event_key, event);
   d2h_kernel->Launch();
 
   auto* h_y_data = h_y.data<float>();
