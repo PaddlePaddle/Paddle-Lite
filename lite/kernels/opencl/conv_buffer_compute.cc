@@ -309,8 +309,6 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
       nullptr,
       nullptr);
   CL_CHECK_FATAL(status);
-
-  // context.cl_wait_list()->emplace(output_d, event_);
 }
 
 void ConvCompute::Run() { (this->*impl_)(); }

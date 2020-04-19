@@ -242,7 +242,6 @@ class LayoutComputeImageDefaultToBufferChw
         nullptr,
         nullptr);
     CL_CHECK_FATAL(status);
-    // context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -339,7 +338,6 @@ class LayoutComputeBufferChwToImage2DNw
         nullptr,
         nullptr);
     CL_CHECK_FATAL(status);
-    // context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {

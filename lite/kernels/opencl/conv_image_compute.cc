@@ -621,7 +621,6 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
       nullptr,
       nullptr);
   CL_CHECK_FATAL(status);
-  // context.cl_wait_list()->emplace(out_image, event_);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
   }
@@ -804,7 +803,6 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
       nullptr,
       nullptr);
   CL_CHECK_FATAL(status);
-  // context.cl_wait_list()->emplace(out_image, event_);
 }
 void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
@@ -926,7 +924,6 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
       nullptr,
       nullptr);
   CL_CHECK_FATAL(status);
-  // context.cl_wait_list()->emplace(out_image, event_);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
   }
@@ -1057,7 +1054,6 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
       nullptr,
       nullptr);
   CL_CHECK_FATAL(status);
-  // context.cl_wait_list()->emplace(out_image, event_);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
   }

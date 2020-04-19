@@ -142,9 +142,6 @@ TEST(opencl_concat_buffer, compute) {
   kernel->SetContext(std::move(concat_context));
   kernel->Launch();
 
-  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto *out_ptr = param.output->data<float, cl::Buffer>();
-
   CLRuntime::Global()->command_queue().finish();
 
   // run compute ref and check

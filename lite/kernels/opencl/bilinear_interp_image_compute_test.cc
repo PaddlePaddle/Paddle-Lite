@@ -187,9 +187,6 @@ TEST(bilinear_interp_image2d, compute) {
                   // LOG(INFO) << "out_image:" << out_image;
                   kernel->Launch();
 
-                  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-                  auto* out_ptr = param.Out->data<half_t, cl::Image2D>();
-
                   CLRuntime::Global()->command_queue().finish();
 
                   std::unique_ptr<float[]> out_ref(

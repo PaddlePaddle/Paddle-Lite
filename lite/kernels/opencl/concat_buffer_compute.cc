@@ -165,7 +165,6 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
             nullptr,
             nullptr);
         CL_CHECK_FATAL(status);
-        // context.cl_wait_list()->emplace(out_buf, event_);
         start += size;
       }
     }

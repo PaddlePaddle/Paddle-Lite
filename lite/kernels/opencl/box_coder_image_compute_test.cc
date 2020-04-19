@@ -216,9 +216,6 @@ TEST(box_coder_image2d, compute) {
                 out_image_shape[0], out_image_shape[1]);
             kernel->Launch();
 
-            auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-            auto* out_ptr = param.proposals->data<half_t, cl::Image2D>();
-
             CLRuntime::Global()->command_queue().finish();
 
             lite::Tensor out_ref_tensor;

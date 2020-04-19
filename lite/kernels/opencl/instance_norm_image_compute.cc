@@ -266,7 +266,6 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
         nullptr,
         nullptr);
     CL_CHECK_FATAL(status);
-    // context.cl_wait_list()->emplace(out_img, event_);
   }
 #endif
 

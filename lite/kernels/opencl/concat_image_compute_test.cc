@@ -245,11 +245,6 @@ TEST(concat_image2d, compute) {
             LOG(INFO) << "run kernel: img_to_buf_kernel";
             img_to_buf_kernel->Launch();
 
-            // wait for opencl
-            auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
-            auto *out_ptr = ImageToBufferParam.y->data<float, cl::Buffer>();
-            auto it = wait_list->find(out_ptr);
-
             CLRuntime::Global()->command_queue().finish();
 
             // compute ref cp_u
