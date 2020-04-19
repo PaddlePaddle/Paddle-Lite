@@ -87,7 +87,7 @@ bool SliceOp::InferShapeImpl() const {
 }
 
 bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam<SliceParam>(&param_);
+  AttachParam(&param_);
   param_.X =
       scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
   param_.Out =
