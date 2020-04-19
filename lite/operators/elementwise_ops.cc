@@ -87,6 +87,7 @@ bool ElementwiseOp::InferShapeImpl() const {
 }
 
 bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+  delete op_param_;
   op_param_ = static_cast<ElementwiseParam*>(&param_);
 
   auto X_name = opdesc.Input("X").front();
