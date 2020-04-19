@@ -110,7 +110,7 @@ void ConvImageCompute::PrepareForRun() {
     // }
 
     if (param.x->dims()[1] % 4 == 0) {
-      kernel_func_names_.push_back("conv2d_1x1_simple");  //写死weigth
+      kernel_func_names_.push_back("conv2d_1x1_simple");
     } else {
       kernel_func_names_.push_back("conv2d_1x1_opt");
     }
@@ -784,7 +784,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
   CL_CHECK_FATAL(status);
   status = kernel.setArg(++arg_idx, new_groups);
   CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, (int)input_dims[1]);
+  status = kernel.setArg(++arg_idx, static_cast<int>(input_dims[1]));
   CL_CHECK_FATAL(status);
 
   // auto global_work_size =
