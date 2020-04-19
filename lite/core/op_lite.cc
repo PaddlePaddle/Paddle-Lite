@@ -25,7 +25,7 @@ namespace lite {
 bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
   // InferShapeByMemoryInternal will be applied.
-  if (op_param_->input_tensor_ptrs() && op_param_->output_tensor_ptrs()) {
+  if (op_param_ && op_param_->input_tensor_ptrs() && op_param_->output_tensor_ptrs()) {
     return this->InferShapeWithCache();
   } else {
     return this->InferShapeImpl();
