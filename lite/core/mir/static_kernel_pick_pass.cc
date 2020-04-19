@@ -46,20 +46,20 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
 
+    // Get op's in/out vars' precision
     std::unordered_map<std::string, PrecisionType> in_types;
     std::unordered_map<std::string, PrecisionType> out_types;
-    for (std::list<Node*>::iterator i = node.inlinks.begin();
-         i != node.inlinks.end();
-         ++i) {
-      if ((*i)->arg()->type)
-        in_types[(*i)->arg()->name] = (*i)->arg()->type->precision();
+    for (auto* in_var : node.inlinks) {
+      if (in_var->arg()->type != nullptr) {
+        in_types[in_var->arg()->name] = in_var->arg()->type->precision();
+      }
     }
-    for (std::list<Node*>::iterator i = node.outlinks.begin();
-         i != node.outlinks.end();
-         ++i) {
-      if ((*i)->arg()->type)
-        out_types[(*i)->arg()->name] = (*i)->arg()->type->precision();
+    for (auto* out_var : node.outlinks) {
+      if (out_var->arg()->type != nullptr) {
+        out_types[out_var->arg()->name] = out_var->arg()->type->precision();
+      }
     }
+
     // Get candidate kernels
     std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;
     CHECK(!instruct.kernels().empty()) << "No kernels found for "

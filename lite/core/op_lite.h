@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/context.h"
@@ -38,7 +39,7 @@ struct Registry {
 namespace mir {
 class Node;
 class SSAGraph;
-}
+}  // namespace mir
 
 class OpInfo;
 
@@ -281,6 +282,17 @@ class OpInfo : public cpp::OpDesc {
     }
   }
 };
+
+// Get grade of the kernel
+size_t KernelGrade(
+    const OpInfo &op_info,
+    const lite::KernelBase &kernel,
+    const std::vector<Place> &places,
+    const std::unordered_map<std::string, PrecisionType> &in_types,
+    const std::unordered_map<std::string, PrecisionType> &out_types,
+    const std::vector<std::string> &in_names,
+    const std::vector<std::string> &out_names,
+    const core::KernelPickFactor &kernel_pick_factors);
 
 }  // namespace lite
 }  // namespace paddle
