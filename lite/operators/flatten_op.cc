@@ -32,7 +32,7 @@ bool FlattenOp::InferShapeImpl() const {
   *out_lod = param_.x->lod();
 
   int64_t outer = 1, inner = 1;
-  for (int i = 0; i < x_dims.size(); ++i) {
+  for (size_t i = 0; i < x_dims.size(); ++i) {
     if (i < axis_) {
       outer *= x_dims[i];
     } else {

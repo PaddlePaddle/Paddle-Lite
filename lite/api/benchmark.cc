@@ -13,7 +13,13 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#if !defined(_WIN32)
 #include <sys/time.h>
+#else
+#include <windows.h>
+#include "lite/backends/x86/port.h"
+#endif
+#define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 #include <time.h>
 #include <algorithm>
 #include <cstdio>
@@ -213,7 +219,7 @@ void print_usage() {
       "  --param_filename (The filename of param file, set param_file when\n"
       "    the model is combined formate. Otherwise, it is not necessary\n"
       "    to set it.) type: string \n"
-      "  --input_shape (Tet input shapes according to the model, separated by\n"
+      "  --input_shape (Set input shapes according to the model, separated by\n"
       "    colon and comma, such as 1,3,244,244) type: string\n"
       "    default: 1,3,224,224 \n"
       "  --input_img_path (The path of input image, if not set\n"

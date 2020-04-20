@@ -11,3 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import os 
+import sys
+
+if os.name =='nt':
+    current_path = os.path.abspath(os.path.dirname(__file__))
+    third_lib_path = current_path + os.sep + 'libs'
+    os.environ['path'] =  third_lib_path+ ';' + os.environ['path']
+    sys.path.insert(0, third_lib_path)

@@ -11,7 +11,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
 #pragma once
 
 /////////////////////////////////
@@ -108,7 +107,8 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #endif
 
 #ifdef RELU6
-  output = clamp(in, (CL_DTYPE4)0, (CL_DTYPE4)6);
+  in = fmax((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
+  output = fmin((CL_DTYPE4)(6.0f, 6.0f, 6.0f, 6.0f), in);
 #endif
   return output;
 }

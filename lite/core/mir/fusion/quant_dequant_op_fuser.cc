@@ -260,7 +260,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto channel_scale_tensor =
       scope->FindVar(channel_scale_name)->GetMutable<lite::Tensor>();
   auto* channel_scale_data = channel_scale_tensor->data<float>();
-  for (int i = 0; i < channel_scale_tensor->data_size(); i++) {
+  for (size_t i = 0; i < channel_scale_tensor->data_size(); i++) {
     weight_scale.push_back(channel_scale_data[i] / range);
   }
 

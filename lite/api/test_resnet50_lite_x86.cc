@@ -38,7 +38,7 @@ TEST(Resnet50, test_resnet50_lite_x86) {
   input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
   int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
+  for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
   for (int i = 0; i < input_num; i++) {
@@ -69,13 +69,13 @@ TEST(Resnet50, test_resnet50_lite_x86) {
        0.006387163,   0.0037145028,  0.0012812682,  0.00045948103,
        0.00013535398, 0.0002483765,  0.00076759676, 0.0002773295}));
   auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape().size(), 2u);
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 
   int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
                   results[i][j],
                   1e-6);

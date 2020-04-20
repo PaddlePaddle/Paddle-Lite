@@ -58,14 +58,6 @@ class Registry {
 }  // namespace lite
 }  // namespace paddle
 
-// some platform-independent defintion
-#if defined(_WIN32)
-#define UNUSED
-#define __builtin_expect(EXP, C) (EXP)
-#else
-#define UNUSED __attribute__((unused))
-#endif
-
 #define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(uniq_name, msg)         \
   struct __test_global_namespace_##uniq_name##__ {};                          \
   static_assert(std::is_same<::__test_global_namespace_##uniq_name##__,       \

@@ -114,14 +114,14 @@ struct BeamSearchDecoder {
     lod.push_back(source_level_lod);
     lod.push_back(sentence_level_lod);
 
-    *(id_tensor->mutable_lod()) = lod;
+    id_tensor->set_lod(lod);
 
     id_tensor->Resize({static_cast<int64_t>(id_data.size())});
     auto id_ptr = id_tensor->mutable_data<int64_t>();
     TargetCopy(
         TARGET(kARM), id_ptr, id_data.data(), id_data.size() * sizeof(int64_t));
 
-    *(score_tensor->mutable_lod()) = lod;
+    score_tensor->set_lod(lod);
     score_tensor->Resize({static_cast<int64_t>(score_data.size())});
     auto score_ptr = score_tensor->mutable_data<T>();
     TargetCopy(TARGET(kARM),

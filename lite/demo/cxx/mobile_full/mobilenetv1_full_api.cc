@@ -18,6 +18,11 @@
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 
+#if defined(_WIN32)
+#include "paddle_use_kernels.h"  // NOLINT
+#include "paddle_use_ops.h"      // NOLINT
+#endif
+
 using namespace paddle::lite_api;  // NOLINT
 
 DEFINE_string(model_dir, "", "Model dir path.");
