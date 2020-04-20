@@ -14,13 +14,10 @@ limitations under the License. */
 
 #pragma once
 
-// some platform-independent defintion
-#include "lite/utils/macros.h"
-
 #ifdef PADDLE_MOBILE_CPU
 #define LOAD_CPU_OP(op_type)                                           \
   extern int TouchOpRegistrar_##op_type##_##cpu();                     \
-  static int use_op_itself_##op_type##_##cpu UNUSED = \
+  static int use_op_itself_##op_type##_##cpu __attribute__((unused)) = \
       TouchOpRegistrar_##op_type##_##cpu()
 #else
 #define LOAD_CPU_OP(op_type)
@@ -29,7 +26,7 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_CL
 #define LOAD_GPU_CL_OP(op_type)                                       \
   extern int TouchOpRegistrar_##op_type##_##cl();                     \
-  static int use_op_itself_##op_type##_##cl UNUSED = \
+  static int use_op_itself_##op_type##_##cl __attribute__((unused)) = \
       TouchOpRegistrar_##op_type##_##cl()
 #else
 #define LOAD_GPU_CL_OP(op_type)
@@ -38,7 +35,7 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_FPGA
 #define LOAD_FPGA_OP(op_type)                                           \
   extern int TouchOpRegistrar_##op_type##_##fpga();                     \
-  static int use_op_itself_##op_type##_##fpga UNUSED = \
+  static int use_op_itself_##op_type##_##fpga __attribute__((unused)) = \
       TouchOpRegistrar_##op_type##_##fpga()
 #else
 #define LOAD_FPGA_OP(op_type)
@@ -46,7 +43,7 @@ limitations under the License. */
 
 #define LOAD_FUSION_MATCHER(op_type)                                       \
   extern int TouchFusionMatcherRegistrar_##op_type();                      \
-  static int use_fusion_matcher_itself_##op_type UNUSED = \
+  static int use_fusion_matcher_itself_##op_type __attribute__((unused)) = \
       TouchFusionMatcherRegistrar_##op_type();
 
 #define LOAD_OP(op_type)   \
