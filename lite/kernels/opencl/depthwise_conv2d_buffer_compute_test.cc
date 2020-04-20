@@ -137,16 +137,7 @@ TEST(depthwise_conv2d_buffer_fp32, compute) {
   output.Resize({4, 32, 110, 110});
   kernel->Launch();
 
-  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<float, cl::Buffer>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto& event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
+  CLRuntime::Global()->command_queue().finish();
 
   lite::Tensor output_ref;
   output_ref.Resize({4, 32, 110, 110});

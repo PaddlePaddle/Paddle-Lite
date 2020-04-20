@@ -144,16 +144,7 @@ TEST(elementwise_add_buffer, compute) {
 
   kernel->Launch();
 
-  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto *out_ptr = param.Out->data<float, cl::Buffer>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto &event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
+  CLRuntime::Global()->command_queue().finish();
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   elementwise_compute_ref<float>(
@@ -225,16 +216,7 @@ TEST(fusion_elementwise_add_activation_buffer, compute) {
 
   kernel->Launch();
 
-  auto *wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto *out_ptr = param.Out->data<float, cl::Buffer>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto &event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
+  CLRuntime::Global()->command_queue().finish();
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   elementwise_compute_ref<float>(
