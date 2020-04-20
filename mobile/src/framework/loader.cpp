@@ -75,7 +75,17 @@ void Loader<GPU_CL, float>::InitMemoryFromProgram(
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
           PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
-          dim[0] = 1;
+          if (dim.size() == 0) {
+            auto tensor = var->GetMutable<LoDTensor>();
+            framework::DDim dDim = {0};
+            tensor->Resize(dDim);
+          } else {
+            for (auto &d : dim) {
+              if (d < 0) {
+                d *= -1;
+              }
+            }
+          }
           auto cl_image = var->GetMutable<framework::CLImage>();
           cl_image->Resize(make_ddim(dim));
         }
