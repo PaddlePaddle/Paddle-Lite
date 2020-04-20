@@ -30,8 +30,8 @@ void gemm_s8(bool is_transA,
              Dtype* C,
              const float* bias,
              bool is_bias,
-             bool is_relu,
              const float* scale,
+             const operators::ActivationParam act_param,
              ARMContext* ctx) {
   int hblock = get_hblock_int8(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
@@ -42,7 +42,7 @@ void gemm_s8(bool is_transA,
   prepackA_int8(packed_A, A, lda, 0, M, 0, K, is_transA, ctx);
 
   gemm_prepack_int8(
-      packed_A, B, bias, C, M, N, K, is_bias, is_relu, is_transB, scale, ctx);
+      packed_A, B, bias, C, M, N, K, is_bias, is_transB, scale, act_param, ctx);
   TargetFree(TargetType::kARM, packed_A);
 }
 
@@ -56,8 +56,8 @@ template void gemm_s8<float>(bool is_transA,
                              float* C,
                              const float* bias,
                              bool is_bias,
-                             bool is_relu,
                              const float* scale,
+                             const operators::ActivationParam act_param,
                              ARMContext* ctx);
 
 template void gemm_s8<int8_t>(bool is_transA,
@@ -70,8 +70,8 @@ template void gemm_s8<int8_t>(bool is_transA,
                               int8_t* C,
                               const float* bias,
                               bool is_bias,
-                              bool is_relu,
                               const float* scale,
+                              const operators::ActivationParam act_param,
                               ARMContext* ctx);
 
 }  // namespace math

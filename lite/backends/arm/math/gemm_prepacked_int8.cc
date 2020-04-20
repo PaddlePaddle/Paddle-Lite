@@ -1367,7 +1367,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fcmge  v4.4s,    v30.4s,    v2.4s   \n" /* vcgeq_f32 */  \
   "fmul   v5.4s,    v30.4s,    v3.4s   \n" /* vmulq_f32 */  \
   "fcmge  v6.4s,    v31.4s,    v2.4s   \n" /* vcgeq_f32 */  \
-  "fmul   v7.4s,    v32.4s,    v3.4s   \n" /* vmulq_f32 */  \
+  "fmul   v7.4s,    v31.4s,    v3.4s   \n" /* vmulq_f32 */  \
   "bif    v30.16b,   v5.16b,   v4.16b  \n" /* choose*/      \
   "bif    v31.16b,   v7.16b,   v6.16b  \n" /* choose*/      \
   "12: \n"

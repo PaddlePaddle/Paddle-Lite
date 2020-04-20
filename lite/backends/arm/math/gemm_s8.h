@@ -34,8 +34,8 @@ void gemm_s8(bool is_transA,
              Dtype* C,
              const float* bias,
              bool is_bias,
-             bool is_relu,
              const float* scale,
+             const operators::ActivationParam act_param,
              ARMContext* ctx);
 
 }  // namespace math
