@@ -232,9 +232,6 @@ function print_usage {
     echo -e "   ./lite/tools/build_android.sh opencl"
     echo -e "compile android npu library: (armv8, gcc, c++_static)"
     echo -e "   ./lite/tools/build_android.sh --npu_ddk_root=YourHiAiDDKPath npu"
-    echo -e "       more information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html;"
-    echo -e "       '--npu_ddk_root' must be set when compiling npu library, this refers to path of huawei HiAi DDK file;"
-    echo -e "       you can download npu_ddk from:  https://developer.huawei.com/consumer/cn/hiai/ ."
 
     echo -e "print help information:"
     echo -e "   ./lite/tools/build_android.sh help"
@@ -251,6 +248,11 @@ function print_usage {
     echo -e "arguments of striping lib according to input model:"
     echo -e "--build_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF"
     echo -e "--opt_model_dir: (path to optimized model dir); contains absolute path to optimized model dir"
+    echo
+    echo -e "arguments of npu library compiling:"
+    echo -e "--npu_ddk_root: refers to the path of huawei HiAi DDK file; required when compiling npu library"
+    echo -e "       you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/ "
+    echo -e "detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html"
     echo "----------------------------------------"
     echo
 }
