@@ -264,6 +264,7 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
   }
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -294,9 +295,9 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                           n,
                           k,
                           flag_bias,
-                          flag_relu,
                           false,
                           scale_group,
+                          act_param,
                           ctx);
       }
     }
@@ -474,6 +475,8 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
 
+  auto act_param = param.activation_param;
+
   int hblock = get_hblock_int8(ctx);
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
@@ -534,9 +537,9 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                           n,
                           k,
                           flag_bias,
-                          flag_relu,
                           false,
                           scale_group,
+                          act_param,
                           ctx);
       }
     }
