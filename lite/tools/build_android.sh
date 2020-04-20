@@ -130,7 +130,7 @@ function make_tiny_publish_so {
   mkdir -p $build_dir
   cd $build_dir
 
-  cmake .. \
+  cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
@@ -168,7 +168,7 @@ function make_full_publish_so {
   cd $build_directory
 
   prepare_workspace $root_dir $build_directory
-  cmake $root_dir \
+  cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
@@ -202,7 +202,7 @@ function make_opencl {
   cd $build_dir
   prepare_workspace $root_dir $build_dir
   prepare_opencl_source_code $root_dir $build_dir
-  cmake .. \
+  cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \

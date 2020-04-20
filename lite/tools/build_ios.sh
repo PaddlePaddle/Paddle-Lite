@@ -60,7 +60,7 @@ function make_ios {
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
-    cmake .. \
+    cmake $workspace \
             -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
             -DWITH_LITE=ON \
