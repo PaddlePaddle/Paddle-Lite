@@ -24,6 +24,7 @@ lite_cc_library(mir_passes
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
       fusion/__xpu__embedding_with_ewadd_fuse_pass.cc
+      fusion/__xpu__fc_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
