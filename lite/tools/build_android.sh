@@ -131,7 +131,6 @@ function make_tiny_publish_so {
   cd $build_dir
 
   cmake .. \
-      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
@@ -170,7 +169,6 @@ function make_full_publish_so {
 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
-      ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
