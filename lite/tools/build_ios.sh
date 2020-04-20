@@ -13,7 +13,7 @@ BUILD_CV=OFF
 # controls whether to hide log information, default is ON.
 SHUTDOWN_LOG=ON
 # absolute path of Paddle-Lite.
-workspace=$(dirname $(readlink -f $0))/../../
+workspace=$PWD/$(dirname $0)/../../
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
@@ -26,8 +26,8 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
 # on mac environment, we should expand the maximum file num to compile successfully
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 #####################################################################################################
