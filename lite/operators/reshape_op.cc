@@ -56,6 +56,7 @@ bool ReshapeOp::InferShapeImpl() const {
 }
 
 bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.x =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.output =
@@ -70,7 +71,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         param_.shape_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
       }
     }
-    CHECK_GT(param_.shape_tensor_vct.size(), 0)
+    CHECK_GT(param_.shape_tensor_vct.size(), 0u)
         << "ShapeError: When `shape` in ReshapeOp is a list or tuple "
            "which contains Tensor, the shape's size can't be zero. "
            "But received shape's size is "
@@ -145,7 +146,7 @@ std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
           << "Only one input dimension of Attr(shape) can be unknown.";
       unk_dim_idx = i;
     } else if (shape[i] == copy_dim_val) {
-      CHECK_LT(static_cast<int>(i), input_dims.size())
+      CHECK_LT(i, input_dims.size())
           << "The index of dimension to copy from input shape must be less "
              "than the size of input shape.";
     } else {

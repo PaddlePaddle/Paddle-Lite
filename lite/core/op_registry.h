@@ -112,17 +112,22 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNHWC)> *,  //
+
               KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -141,9 +146,7 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kInt64),
                                       DATALAYOUT(kNCHW)> *,  //
-              KernelRegistryForTarget<TARGET(kCUDA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny)> *,  //
+
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
@@ -231,6 +234,9 @@ class KernelRegistry final {
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
 
+              KernelRegistryForTarget<TARGET(kAPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //

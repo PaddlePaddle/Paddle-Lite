@@ -162,8 +162,7 @@ TEST(fc, compute) {
 
         // run opencl kernel
         kernel->Launch();
-        auto command_queue = CLRuntime::Global()->command_queue();
-        command_queue.finish();
+        CLRuntime::Global()->command_queue().finish();
 
 #if 0  // NOTE(ysh329): note event
         auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
@@ -173,6 +172,7 @@ TEST(fc, compute) {
           VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
           auto& event = *(it->second);
           event.wait();
+        CLRuntime::Global()->command_queue().finish();
           double start_nanos =
               event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
           double stop_nanos =

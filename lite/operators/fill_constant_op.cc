@@ -34,7 +34,7 @@ bool FillConstantOp::InferShapeImpl() const {
       out_shape.push_back(shape_tensor_data[i]);
     }
   } else if (!shape_tensor_list.empty()) {
-    for (int i = 0; i < shape_tensor_list.size(); i++) {
+    for (size_t i = 0; i < shape_tensor_list.size(); i++) {
       out_shape.push_back(shape_tensor_list[i]->data<int>()[0]);
     }
   } else if (!param_.shape.empty()) {

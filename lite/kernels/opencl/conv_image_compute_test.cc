@@ -395,19 +395,7 @@ TEST(conv2d, compute_image2d_1x1) {
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target"
-                              "cl tensor.";
-              }
+              CLRuntime::Global()->command_queue().finish();
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),
@@ -530,11 +518,11 @@ const int stride = 2;
                 const int iw = 3;
                 const int oc = 2;
 #else  // big scale with group
-  const int stride = 1;
-  const int group = 32 / 1;
-  const int batch_size = 2;
-  const int ic = 32 / 1;
-  const int ih = 112 / 1;
+  const int stride = 2;
+  const int group = 1;
+  const int batch_size = 1;
+  const int ic = 3 / 1;
+  const int ih = 224 / 1;
   const int iw = 112 / 1;
   const int oc = 32 / 1;
 #endif
@@ -652,10 +640,10 @@ const int stride = 2;
 
               SHADOW_LOG << "gen input and filter ...";
               for (int i = 0; i < input_v.size(); ++i) {
-                input_v[i] = i * 0.001;  // gen(engine);
+                input_v[i] = gen(engine);
               }
               for (int i = 0; i < filter_v.size(); ++i) {
-                filter_v[i] = 1 * 0.001;  // gen(engine);
+                filter_v[i] = gen(engine);
               }
 
               SHADOW_LOG << "after gen input and filter ...";
@@ -763,20 +751,7 @@ const int stride = 2;
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target "
-                              "cl tensor.";
-              }
-
+              CLRuntime::Global()->command_queue().finish();
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),
                                           out_image_width,
@@ -848,8 +823,13 @@ const int stride = 2;
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
-                if (relative_diff > FP16_MAX_DIFF) {
+                auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                // EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                // EXPECT_LT(abs_diff, FP16_ABS_DIFF);
+
+                EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+                             abs_diff > FP16_ABS_DIFF);
+                if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
                   LOG(FATAL) << "error idx:" << i << "output_v[" << i
                              << "]:" << output_v[i] << " "
                                                        "out_ref_data["
@@ -1115,19 +1095,7 @@ TEST(conv2d, compute_image2d_5x5) {
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target "
-                              "cl tensor.";
-              }
+              CLRuntime::Global()->command_queue().finish();
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),
@@ -1468,19 +1436,7 @@ TEST(conv2d, compute_image2d_7x7) {
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target "
-                              "cl tensor.";
-              }
+              CLRuntime::Global()->command_queue().finish();
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),

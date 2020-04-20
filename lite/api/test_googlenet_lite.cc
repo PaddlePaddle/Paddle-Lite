@@ -38,7 +38,7 @@ TEST(CXXApi, test_lite_googlenet) {
   input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
   int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
+  for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
   for (int i = 0; i < input_num; i++) {
@@ -69,7 +69,7 @@ TEST(CXXApi, test_lite_googlenet) {
   for (size_t i = 0; i < results.size(); ++i) {
     EXPECT_NEAR(out->data<float>()[i * 51], results[i], 1e-5);
   }
-  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape().size(), 2u);
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 }

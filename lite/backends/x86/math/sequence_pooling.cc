@@ -46,9 +46,9 @@ class MaxSeqPoolFunctor {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
     auto idx_dims = index->dims();
-    PADDLE_ENFORCE_GT(in_dims.size(), 1);
-    PADDLE_ENFORCE_GT(out_dims.size(), 1);
-    for (int64_t i = 1; i < in_dims.size(); ++i) {
+    PADDLE_ENFORCE_GT(in_dims.size(), 1u);
+    PADDLE_ENFORCE_GT(out_dims.size(), 1u);
+    for (size_t i = 1; i < in_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(in_dims[i], out_dims[i]);
     }
     PADDLE_ENFORCE_EQ(idx_dims, out_dims);
@@ -95,9 +95,9 @@ class MaxSeqPoolFunctor<T, true> {
                   lite::Tensor* index) {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
-    PADDLE_ENFORCE_GT(in_dims.size(), 1);
-    PADDLE_ENFORCE_GT(out_dims.size(), 1);
-    for (int64_t i = 1; i < in_dims.size(); ++i) {
+    PADDLE_ENFORCE_GT(in_dims.size(), 1u);
+    PADDLE_ENFORCE_GT(out_dims.size(), 1u);
+    for (size_t i = 1; i < in_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(in_dims[i], out_dims[i]);
     }
 
@@ -138,7 +138,7 @@ class MaxSeqPoolGradFunctor {
     auto idx_dims = index.dims();
     PADDLE_ENFORCE_GT(og_dims.size(), 1);
     PADDLE_ENFORCE_GT(ig_dims.size(), 1);
-    for (int64_t i = 1; i < og_dims.size(); ++i) {
+    for (size_t i = 1; i < og_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(og_dims[i], ig_dims[i]);
     }
     PADDLE_ENFORCE_EQ(idx_dims, og_dims);

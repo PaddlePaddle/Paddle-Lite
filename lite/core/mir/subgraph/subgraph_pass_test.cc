@@ -39,7 +39,7 @@ std::vector<std::vector<int64_t>> ShapeParsing(std::string text) {
   std::vector<std::vector<int64_t>> shapes;
   std::vector<std::string> shape_strings = Split(text, ":");
   shapes.resize(shape_strings.size());
-  for (int i = 0; i < shape_strings.size(); i++) {
+  for (size_t i = 0; i < shape_strings.size(); i++) {
     std::vector<std::string> shape_nums = Split(shape_strings[i], ",");
     for (auto shape_num : shape_nums) {
       shapes[i].push_back(atoi(shape_num.c_str()));
@@ -66,7 +66,7 @@ void FillInputTensors(
   for (int j = 0; j < input_tensor_size; j++) {                \
     input_tensor_data[j] = static_cast<type>(value);           \
   }
-  for (int i = 0; i < input_tensor_shape.size(); i++) {
+  for (size_t i = 0; i < input_tensor_shape.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
     input_tensor->Resize(input_tensor_shape[i]);
     auto input_tensor_size = ShapeProduction(input_tensor->shape());
@@ -95,7 +95,7 @@ void CheckOutputTensors(
             << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;        \
     EXPECT_LT(rel_diff, 0.1);                                                 \
   }
-  for (int i = 0; i < output_tensor_type.size(); i++) {
+  for (size_t i = 0; i < output_tensor_type.size(); i++) {
     auto tar_output_tensor = tar_predictor->GetOutput(i);
     auto ref_output_tensor = ref_predictor->GetOutput(i);
     auto tar_output_tensor_size = ShapeProduction(tar_output_tensor->shape());

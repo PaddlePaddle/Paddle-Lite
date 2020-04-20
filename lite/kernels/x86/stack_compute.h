@@ -47,7 +47,7 @@ class StackCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     int pre = 1, post = 1;
     auto dim = x[0]->dims();
     for (int i = 0; i < axis; ++i) pre *= dim[i];
-    for (int i = axis; i < dim.size(); ++i) post *= dim[i];
+    for (size_t i = axis; i < dim.size(); ++i) post *= dim[i];
 
     auto x_data_arr = x_datas.data();
 

@@ -37,7 +37,7 @@ void concat_ref(const std::shared_ptr<operators::ConcatOpLite> op) {
       scope->FindVar(op_info->Output("Out").front())->GetMutable<Tensor>();
   int axis = op_info->GetAttr<int>("axis");
   std::vector<lite::Tensor*> inputs_concat(inputs.size());
-  for (int j = 0; j < inputs.size(); ++j) {
+  for (size_t j = 0; j < inputs.size(); ++j) {
     inputs_concat[j] = inputs[j];
   }
   size_t num = inputs.size();
@@ -48,7 +48,7 @@ void concat_ref(const std::shared_ptr<operators::ConcatOpLite> op) {
   }
   int out_rows = rows, out_cols = 0;
   std::vector<int64_t> inputs_cols(inputs.size());
-  for (int i = 0; i < num; ++i) {
+  for (size_t i = 0; i < num; ++i) {
     int t_cols = inputs[i]->numel() / rows;
     out_cols += t_cols;
     inputs_cols[i] = t_cols;
@@ -56,7 +56,7 @@ void concat_ref(const std::shared_ptr<operators::ConcatOpLite> op) {
   for (int k = 0; k < out_rows; ++k) {
     float* dst_ptr = out->mutable_data<float>() + k * out_cols;
     int col_idx = 0;
-    for (int j = 0; j < num; ++j) {
+    for (size_t j = 0; j < num; ++j) {
       int col_len = inputs_cols[j];
       const float* src_prt = inputs[j]->data<float>() + k * col_len;
       std::memcpy(dst_ptr + col_idx, src_prt, sizeof(float) * col_len);
