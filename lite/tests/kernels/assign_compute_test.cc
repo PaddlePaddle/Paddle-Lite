@@ -69,7 +69,7 @@ void TestAssign(const Place& place) {
 TEST(Assign, precision) {
   Place place;
 #ifdef LITE_WITH_ARM
-  place = TARGET(kARM);
+  place = TARGET(kHost);
 #else
   return;
 #endif
