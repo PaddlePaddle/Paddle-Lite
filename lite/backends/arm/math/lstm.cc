@@ -31,7 +31,7 @@ void add_bias_rowwise(Tensor* input,
   const float* b_data = bias->data<float>();
   for (int i = 0; i < in_dim[0]; ++i) {
     for (int w = start_w; w < w_adds; ++w) {
-      i_data[w] += b_data[w];
+      i_data[i * width + w] += b_data[w];
     }
   }
 }
