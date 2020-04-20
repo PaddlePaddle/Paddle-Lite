@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cl_common.h>
+
 __kernel void conv2d_3x3_opt(__private const int item_ch,
                              __private const int item_w,
                              __private const int item_h,
