@@ -518,6 +518,8 @@ function main {
                 ;;
             --python_executable=*)
                 PYTHON_EXECUTABLE_OPTION="-DPYTHON_EXECUTABLE=${i#*=}"
+                shift
+                ;;
             --build_apu=*)
                 BUILD_APU="${i#*=}"
                 shift
