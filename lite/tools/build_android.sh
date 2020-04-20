@@ -21,6 +21,9 @@ SHUTDOWN_LOG=ON
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
+# options of compiling NPU lib..
+BUILD_NPU=OFF
+NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -62,15 +65,6 @@ fi
 function prepare_workspace {
     local root_dir=$1
     local build_dir=$2
-    # ARM LANG
-    if [ ${ARM_LANG} == "clang" ]; then
-        LITE_WITH_ARM_LANG=ON
-    else
-        LITE_WITH_ARM_LANG=OFF
-    fi
-    echo "ARM_LANG is  ${ARM_LANG}"
-    echo "LITE_WITH_ARM_LANG is ${LITE_WITH_ARM_LANG}"
-    # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
     mkdir -p ${GEN_CODE_PATH_PREFIX}
@@ -145,7 +139,6 @@ function make_tiny_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -184,7 +177,6 @@ function make_full_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -240,6 +232,12 @@ function print_usage {
     echo -e "   ./lite/tools/build_android.sh"
     echo -e "compile android opencl library: (armv8, gcc, c++_static)"
     echo -e "   ./lite/tools/build_android.sh opencl"
+    echo -e "compile android npu library: (armv8, gcc, c++_static)"
+    echo -e "   ./lite/tools/build_android.sh --npu_ddk_root=PathOfHiAIDDK npu"
+    echo -e "       more information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html;"
+    echo -e "       '--npu_ddk_root' must be set when compiling npu library, this refers to path of huawei HiAi DDK file;"
+    echo -e "       you can download npu_ddk from:  https://developer.huawei.com/consumer/cn/hiai/ ."
+
     echo -e "print help information:"
     echo -e "   ./lite/tools/build_android.sh help"
     echo
@@ -321,6 +319,15 @@ function main {
             # compiling lib which can operate on opencl and cpu.
             opencl)
                 make_opencl $ARM_ABI $ARM_LANG
+                exit 0
+                ;;
+           --npu_ddk_root=*)
+                NPU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            npu)
+                BUILD_NPU=ON
+                make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL
                 exit 0
                 ;;
             help)
