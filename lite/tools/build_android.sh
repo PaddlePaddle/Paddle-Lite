@@ -18,7 +18,6 @@ BUILD_JAVA=ON
 BUILD_CV=OFF
 # controls whether to hide log information, default is ON.
 SHUTDOWN_LOG=ON
-BUILD_DIR=$(pwd)
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
@@ -34,11 +33,15 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party zip file to accelerate third-paty lib installation
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
-readonly workspace=$PWD
+# absolute path of Paddle-Lite.
+readonly workspace=$(dirname $(readlink -f $0))/../../
 # basic options for android compiling.
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
+                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+                               -DLITE_WITH_X86=OFF \
+                               -DWITH_TESTING=OFF \
+                               -DARM_TARGET_OS=android"
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
@@ -121,16 +124,14 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
-#  local os=$1
   local abi=$1
   local lang=$2
   local android_stl=$3
 
-  cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.adnroid.${abi}.${lang}
+  build_dir=$workspace/build.lite.android.${abi}.${lang}
   if [ -d $build_dir ]
   then
-    rm -rf $build_dir
+      rm -rf $build_dir
   fi
   mkdir -p $build_dir
   cd $build_dir
@@ -138,9 +139,7 @@ function make_tiny_publish_so {
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
-      -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
-      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
@@ -150,12 +149,8 @@ function make_tiny_publish_so {
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
-      -DLITE_WITH_X86=OFF \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
-      -DLITE_WITH_XPU=$BUILD_XPU \
-      -DLITE_WITH_XTCL=$BUILD_XTCL \
-      -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-      -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+      -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -170,12 +165,12 @@ function make_full_publish_so {
 
   prepare_thirdparty
 
-  root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build.lite.android.${abi}.${lang}
+  root_dir=$workspace
+  build_directory=$workspace/build.lite.android.${abi}.${lang}
 
   if [ -d $build_directory ]
   then
-    rm -rf $build_directory
+      rm -rf $build_directory
   fi
   mkdir -p $build_directory
   cd $build_directory
@@ -184,24 +179,17 @@ function make_full_publish_so {
   cmake $root_dir \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
-      -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
-      -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-      -DLITE_WITH_X86=OFF \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
-      -DLITE_WITH_XPU=$BUILD_XPU \
-      -DLITE_WITH_XTCL=$BUILD_XTCL \
-      -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
-      -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+      -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -214,32 +202,28 @@ function make_opencl {
   local lang=$2
   prepare_thirdparty
 
-  root_dir=$(pwd)
-  build_dir=$root_dir/build.lite.android.${abi}.${lang}.opencl
+  root_dir=$workspace
+  build_dir=$workspace/build.lite.android.${abi}.${lang}.opencl
   if [ -d $build_directory ]
   then
-  rm -rf $build_directory
+      rm -rf $build_directory
   fi
   mkdir -p $build_dir
   cd $build_dir
   prepare_workspace $root_dir $build_dir
   prepare_opencl_source_code $root_dir $build_dir
   cmake .. \
+      ${CMAKE_COMMON_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
       -DLITE_WITH_CUDA=OFF \
-      -DLITE_WITH_X86=OFF \
-      -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
       -DLITE_ON_TINY_PUBLISH=ON \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-      -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=$abi -DARM_TARGET_LANG=$lang
+      -DARM_TARGET_ARCH_ABI=$abi -DARM_TARGET_LANG=$lang
 
     make opencl_clhpp -j$NUM_PROC
     make publish_inference -j$NUM_PROC

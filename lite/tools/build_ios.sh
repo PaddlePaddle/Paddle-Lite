@@ -12,7 +12,8 @@ BUILD_EXTRA=OFF
 BUILD_CV=OFF
 # controls whether to hide log information, default is ON.
 SHUTDOWN_LOG=ON
-BUILD_DIR=$(pwd)
+# absolute path of Paddle-Lite.
+workspace=$(dirname $(readlink -f $0))/../../
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
@@ -46,9 +47,12 @@ function make_ios {
         exit 1
     fi
 
-    build_dir=build.ios.${os}.${abi}
+    build_dir=$workspace/build.ios.${os}.${abi}
+    if [ -d $build_dir ]
+    then
+        rm -rf $build_dir
+    fi
     echo "building ios target into $build_dir"
-    echo  then"target os: $os"
     echo "target abi: $abi"
     mkdir -p ${build_dir}
     cd ${build_dir}
@@ -130,10 +134,6 @@ function main {
                 BUILD_CV="${i#*=}"
                 shift
                 ;;
-            --build_dir=*)
-                BUILD_DIR="${i#*=}"
-                shift
-		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 shift
