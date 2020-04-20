@@ -484,9 +484,9 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_INT8_RELU                             \
   /* do relu */                                    \
-  "cmp    %w[flag_act],    #0\n"    /* skip relu */ \
+  "cmp    %w[is_relu],    #0\n"    /* skip relu */ \
   "beq   9f                     \n"   /* no act end */ \
-  "cmp    %w[flag_act],    #1\n"    /* skip relu */ \
+  "cmp    %w[is_relu],    #1\n"    /* skip relu */ \
   "beq   10f                     \n"   /* other act */ \
   "movi   v0.4s, #0\n"             /* for relu */  \
   "fmax   v16.4s, v16.4s, v0.4s\n" /* relu */      \
@@ -510,7 +510,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
 #define GEMM_INT8_RELU6                             \
   /* do relu6 */                                    \
   "10: \n"                                           \
-  "cmp   %w[flag_act],  #2       \n"   /* check relu6 */ \
+  "cmp   %w[is_relu],  #2       \n"   /* check relu6 */ \
   "beq   11f                     \n"   /* no act end */ \
   "movi   v0.4s, #0\n"             /* for relu6 */  \
   "fmax   v16.4s, v16.4s, v0.4s\n" /* relu */      \
