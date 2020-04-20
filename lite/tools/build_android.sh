@@ -231,7 +231,7 @@ function print_usage {
     echo -e "compile android opencl library: (armv8, gcc, c++_static)"
     echo -e "   ./lite/tools/build_android.sh opencl"
     echo -e "compile android npu library: (armv8, gcc, c++_static)"
-    echo -e "   ./lite/tools/build_android.sh --npu_ddk_root=PathOfHiAIDDK npu"
+    echo -e "   ./lite/tools/build_android.sh --npu_ddk_root=YourHiAiDDKPath npu"
     echo -e "       more information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html;"
     echo -e "       '--npu_ddk_root' must be set when compiling npu library, this refers to path of huawei HiAi DDK file;"
     echo -e "       you can download npu_ddk from:  https://developer.huawei.com/consumer/cn/hiai/ ."
