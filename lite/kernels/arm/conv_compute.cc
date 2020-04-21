@@ -72,7 +72,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && ks_equal &&
-             no_dilation && pads_all_equal) {
+             no_dilation) {
     // TODO(MyPandaShaoxiang): winograd conv support any pad
     impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking winograd conv";
