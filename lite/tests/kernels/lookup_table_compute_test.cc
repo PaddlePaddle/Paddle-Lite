@@ -65,12 +65,12 @@ class LookupTableComputeTest : public arena::TestCase {
     out->Resize(out_dims);
     out->set_lod(ids->lod());
 
-    auto ids_data = ids->data<T>();
+    auto ids_data = ids->template data<T>();
     auto ids_size = ids_dims.production();
-    auto w_data = w->data<float>();
+    auto w_data = w->template data<float>();
     auto w_rows = w_dims[0];
     auto w_cols = w_dims[1];
-    auto out_data = out->mutable_data<float>();
+    auto out_data = out->template mutable_data<float>();
 
     for (int64_t i = 0; i < ids_size; i++) {
       auto id = ids_data[i];
