@@ -77,6 +77,11 @@ class OpLite : public Registry {
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
+  template <typename T>
+  inline void AttachParam(T *param) {
+    op_param_ = static_cast<T *>(param);
+  }
+
   const OpInfo *op_info() const { return op_info_.get(); }
   OpInfo *mutable_op_info() { return op_info_.get(); }
 
@@ -167,11 +172,10 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
-
   std::vector<DDimLite> last_output_shapes{};
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
   size_t io_shape_lod_hash_{};
-  mutable operators::ParamBase param_;
+  mutable operators::ParamBase *op_param_{nullptr};
 
  private:
   // Infer Shape according to memory, if current input shapes are consistent

@@ -12,29 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/assign_compute.h"
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-void AssignCompute::Run() {
-  auto& param = Param<param_t>();
-  param.Out->CopyDataFrom(*param.X);
-}
+class AssignCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::AssignParam;
 
-}  // namespace arm
+  void Run() override;
+
+  virtual ~AssignCompute() = default;
+};
+
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    assign, kARM, kAny, kNCHW, paddle::lite::kernels::arm::AssignCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .Finalize();
