@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/__xpu__embedding_with_ewadd_compute.h"
+#include "lite/kernels/xpu/__xpu__embedding_with_eltwise_add_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void XPUEmbeddingWithEwaddCompute::PrepareForRun() {
+void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   arg_ids_.reserve(param.Ids.size());
@@ -38,7 +38,7 @@ void XPUEmbeddingWithEwaddCompute::PrepareForRun() {
   table_lens_guard_.reset(lens_ptr);
 }
 
-void XPUEmbeddingWithEwaddCompute::Run() {
+void XPUEmbeddingWithEltwiseAddCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -74,12 +74,13 @@ void XPUEmbeddingWithEwaddCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(__xpu__embedding_with_ewadd,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::XPUEmbeddingWithEwaddCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    __xpu__embedding_with_eltwise_add,
+    kXPU,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::xpu::XPUEmbeddingWithEltwiseAddCompute,
+    def)
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("Tables", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})

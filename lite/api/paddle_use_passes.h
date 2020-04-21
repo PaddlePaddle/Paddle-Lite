@@ -54,5 +54,5 @@ USE_MIR_PASS(apu_subgraph_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
-USE_MIR_PASS(__xpu__embedding_with_ewadd_fuse_pass);
+USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);
 USE_MIR_PASS(__xpu__fc_fuse_pass);

@@ -13,34 +13,34 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/core/op_lite.h"
+
+#include <memory>
+#include <vector>
+#include "lite/core/kernel.h"
+#include "lite/kernels/xpu/utils.h"  // XPUFreeDeleter
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace xpu {
 
-class XPUEmbeddingWithEwaddOp : public OpLite {
+class XPUEmbeddingWithEltwiseAddCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  XPUEmbeddingWithEwaddOp() {}
+  using param_t = operators::XPUEmbeddingWithEltwiseAddParam;
 
-  explicit XPUEmbeddingWithEwaddOp(const std::string &op_type)
-      : OpLite(op_type) {}
+  void PrepareForRun() override;
 
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "EmbeddingWithEwadd"; }
+  void Run() override;
 
  private:
-  mutable XPUEmbeddingWithEwaddParam param_;
+  std::vector<const int64_t*> arg_ids_;
+  std::vector<const float*> arg_tables_;
+  std::unique_ptr<void, XPUFreeDeleter> table_lens_guard_;
+  std::vector<int> table_lens_cpu_;
 };
 
-}  // namespace operators
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

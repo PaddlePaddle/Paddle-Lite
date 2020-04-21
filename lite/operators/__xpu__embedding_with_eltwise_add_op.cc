@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/__xpu__embedding_with_ewadd_op.h"
+#include "lite/operators/__xpu__embedding_with_eltwise_add_op.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUEmbeddingWithEwaddOp::CheckShape() const {
+bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Ids.size() == param_.Tables.size());
 
   auto& id_dims = param_.Ids[0]->dims();
@@ -33,7 +33,7 @@ bool XPUEmbeddingWithEwaddOp::CheckShape() const {
   return true;
 }
 
-bool XPUEmbeddingWithEwaddOp::InferShapeImpl() const {
+bool XPUEmbeddingWithEltwiseAddOp::InferShapeImpl() const {
   auto& id_dims = param_.Ids[0]->dims();
   auto& table_dims = param_.Tables[0]->dims();
 
@@ -46,8 +46,8 @@ bool XPUEmbeddingWithEwaddOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUEmbeddingWithEwaddOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                         lite::Scope* scope) {
+bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
+                                              lite::Scope* scope) {
   param_.Out = scope->FindVar(op_desc.Output("Output").front())
                    ->GetMutable<lite::Tensor>();
 
@@ -72,5 +72,5 @@ bool XPUEmbeddingWithEwaddOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__embedding_with_ewadd,
-                 paddle::lite::operators::XPUEmbeddingWithEwaddOp);
+REGISTER_LITE_OP(__xpu__embedding_with_eltwise_add,
+                 paddle::lite::operators::XPUEmbeddingWithEltwiseAddOp);

@@ -24,9 +24,9 @@ namespace mir {
 
 namespace fusion {
 
-class XPUEmbeddingWithEwaddFuser : public FuseBase {
+class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
  public:
-  explicit XPUEmbeddingWithEwaddFuser(int n_embedding)
+  explicit XPUEmbeddingWithEltwiseAddFuser(int n_embedding)
       : n_embedding_(n_embedding) {}
 
   void BuildPattern() override {
@@ -103,7 +103,7 @@ class XPUEmbeddingWithEwaddFuser : public FuseBase {
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     cpp::OpDesc op_desc;
-    op_desc.SetType("__xpu__embedding_with_ewadd");
+    op_desc.SetType("__xpu__embedding_with_eltwise_add");
     std::vector<std::string> ids_names;
     std::vector<std::string> table_names;
     for (int i = 0; i < n_embedding_; ++i) {
@@ -145,14 +145,13 @@ class XPUEmbeddingWithEwaddFuser : public FuseBase {
 
 }  // namespace fusion
 
-class XPUEmbeddingWithEwaddFusePass : public ProgramPass {
+class XPUEmbeddingWithEltwiseAddFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     for (int n_embedding : {4, 3}) {
-      fusion::XPUEmbeddingWithEwaddFuser embedding_with_ewadd_fuser(
-          n_embedding);
-      embedding_with_ewadd_fuser(graph.get());
+      fusion::XPUEmbeddingWithEltwiseAddFuser fuser(n_embedding);
+      fuser(graph.get());
     }
   }
 };
@@ -161,7 +160,7 @@ class XPUEmbeddingWithEwaddFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__embedding_with_ewadd_fuse_pass,
-                  paddle::lite::mir::XPUEmbeddingWithEwaddFusePass)
+REGISTER_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass,
+                  paddle::lite::mir::XPUEmbeddingWithEltwiseAddFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("lookup_table");

@@ -1491,7 +1491,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string act_type{};
 };
 
-struct XPUEmbeddingWithEwaddParam : ParamBase {
+struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
   lite::Tensor* Out{};

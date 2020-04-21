@@ -154,7 +154,7 @@ add_operator(sgd_op train SRCS sgd_op.cc DEPS ${op_DEPS})
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
-add_operator(__xpu__embedding_with_ewadd_op extra SRCS __xpu__embedding_with_ewadd_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
