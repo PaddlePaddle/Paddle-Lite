@@ -157,7 +157,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   graph->SetComputingDataType(
       fc_op,
       w_tensor->mlu_tensor(),
-      1 / *min_element(weight_scale.begin(), weight_scale.end()));
+      1 / *max_element(weight_scale.begin(), weight_scale.end()));
 
   graph->FuseOp(fc_op);
   CNML_CALL(cnmlDestroyBaseOp(&fc_op));

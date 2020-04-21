@@ -36,7 +36,9 @@ void transpose(float* input_data,
                float* output_data,
                std::vector<int> input_shape,
                std::vector<int> axis);
-int scale2position(float scale);
+
+inline int scale2position(float scale) { return std::floor(-std::log2(scale)); }
+
 void dequant(float* dst, int8_t* src, size_t size, float scale);
 
 void dequant(float* dst,

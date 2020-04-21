@@ -60,8 +60,6 @@ void transpose(float* input_data,
   }
 }
 
-int scale2position(float scale) { return static_cast<int>(-std::log2(scale)); }
-
 void dequant(float* dst, int8_t* src, size_t size, float scale) {
   for (size_t i = 0; i < size; ++i) {
     dst[i] = static_cast<float>(src[i]) * scale;
