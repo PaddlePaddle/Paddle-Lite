@@ -1,6 +1,5 @@
 #!/bin/bash
-set -ex
-
+set +x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
@@ -11,19 +10,21 @@ ANDROID_STL=c++_static
 # gcc or clang, default gcc.
 ARM_LANG=gcc
 # ON or OFF, default OFF.
-BUILD_EXTRA=OFF
+WITH_EXTRA=OFF
 # ON or OFF, default ON. 
-BUILD_JAVA=ON
+WITH_JAVA=ON
 # controls whether to compile cv functions into lib, default is OFF.
-BUILD_CV=OFF
+WITH_CV=OFF
 # controls whether to hide log information, default is ON.
 SHUTDOWN_LOG=ON
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
-BUILD_TAILOR=OFF
-# options of compiling NPU lib..
-BUILD_NPU=OFF
+WITH_STRIP=OFF
+# options of compiling NPU lib.
+WITH_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
+# options of compiling OPENCL lib.
+WITH_OPENCL=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -118,11 +119,15 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
-  local abi=$1
-  local lang=$2
-  local android_stl=$3
+  build_dir=$workspace/build.lite.android.$ARM_ABI.$ARM_LANG
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      build_dir=${build_dir}.opencl
+  fi
+  if [ "${WITH_npu}" == "ON" ]; then
+      build_dir=${build_dir}.npu
+  fi
 
-  build_dir=$workspace/build.lite.android.${abi}.${lang}
+
   if [ -d $build_dir ]
   then
       rm -rf $build_dir
@@ -130,19 +135,34 @@ function make_tiny_publish_so {
   mkdir -p $build_dir
   cd $build_dir
 
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      prepare_opencl_source_code $workspace $build_dir
+  fi
+
+
+  local cmake_mutable_options="
+      -DLITE_BUILD_EXTRA=$WITH_EXTRA \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_BUILD_TAILOR=$WITH_STRIP \
+      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+      -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_CV=$WITH_CV \
+      -DLITE_WITH_NPU=$WITH_NPU \
+      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_OPENCL=$WITH_OPENCL \
+      -DARM_TARGET_ARCH_ABI=$ARM_ABI \
+      -DARM_TARGET_LANG=$ARM_LANG \
+      -DANDROID_STL_TYPE=$ANDROID_STL"
+
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
-      -DLITE_WITH_JAVA=$BUILD_JAVA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
-      -DLITE_ON_TINY_PUBLISH=ON \
-      -DANDROID_STL_TYPE=$android_stl \
-      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-      -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
-      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
-      -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+      ${cmake_mutable_options}  \
+      -DLITE_ON_TINY_PUBLISH=ON 
+
+  # todo: third_party of opencl should be moved into git submodule and cmake later
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      make opencl_clhpp -j$NUM_PROC 
+  fi
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -151,14 +171,10 @@ function make_tiny_publish_so {
 # 4.2 function of full_publish compiling
 # here we compile both light_api lib and full_api lib
 function make_full_publish_so {
-  local abi=$1
-  local lang=$2
-  local android_stl=$3
 
   prepare_thirdparty
 
-  root_dir=$workspace
-  build_directory=$workspace/build.lite.android.${abi}.${lang}
+  build_directory=$workspace/build.lite.android.$ARM_ABI.$ARM_LANG
 
   if [ -d $build_directory ]
   then
@@ -167,96 +183,85 @@ function make_full_publish_so {
   mkdir -p $build_directory
   cd $build_directory
 
-  prepare_workspace $root_dir $build_directory
+  prepare_workspace $workspace $build_directory
+
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      prepare_opencl_source_code $workspace $build_dir
+  fi
+
+  local cmake_mutable_options="
+      -DLITE_BUILD_EXTRA=$WITH_EXTRA \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_BUILD_TAILOR=$WITH_STRIP \
+      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+      -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_CV=$WITH_CV \
+      -DLITE_WITH_NPU=$WITH_NPU \
+      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_OPENCL=$WITH_OPENCL \
+      -DARM_TARGET_ARCH_ABI=$ARM_ABI \
+      -DARM_TARGET_LANG=$ARM_LANG \
+      -DANDROID_STL_TYPE=$ANDROID_STL"
+
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
-      -DLITE_WITH_JAVA=$BUILD_JAVA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
-      -DANDROID_STL_TYPE=$android_stl \
-      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-      -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
-      -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DLITE_WITH_TRAIN=$BUILD_TRAIN \
-      -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+      ${cmake_mutable_options}
+
+  # todo: third_party of opencl should be moved into git submodule and cmake later
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      make opencl_clhpp -j$NUM_PROC
+  fi
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
-# 4.3 function of opencl compiling
-# here we compile both light_api and full_api opencl lib
-function make_opencl {
-  local abi=$1
-  local lang=$2
-  prepare_thirdparty
 
-  root_dir=$workspace
-  build_dir=$workspace/build.lite.android.${abi}.${lang}.opencl
-  if [ -d $build_directory ]
-  then
-      rm -rf $build_directory
-  fi
-  mkdir -p $build_dir
-  cd $build_dir
-  prepare_workspace $root_dir $build_dir
-  prepare_opencl_source_code $root_dir $build_dir
-  cmake $workspace \
-      ${CMAKE_COMMON_OPTIONS} \
-      -DLITE_WITH_OPENCL=ON \
-      -DWITH_GPU=OFF \
-      -DWITH_MKL=OFF \
-      -DLITE_WITH_CUDA=OFF \
-      -DWITH_ARM_DOTPROD=ON   \
-      -DLITE_ON_TINY_PUBLISH=ON \
-      -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
-      -DLITE_WITH_CV=$BUILD_CV \
-      -DARM_TARGET_ARCH_ABI=$abi -DARM_TARGET_LANG=$lang
-
-    make opencl_clhpp -j$NUM_PROC
-    make publish_inference -j$NUM_PROC
+# 4.3 function of print help information
+function print_usage {
+    echo "----------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "| Methods of compiling Padddle-Lite Android library:                                                                                   |"
+    echo "----------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "|  compile android library: (armv8, gcc, c++_static)                                                                                   |"
+    echo -e "|     ./lite/tools/build_android.sh                                                                                                    |"
+    echo -e "|  print help information:                                                                                                             |"
+    echo -e "|     ./lite/tools/build_android.sh help                                                                                               |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  optional argument:                                                                                                                  |"
+    echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                       |"
+    echo -e "|     --arm_lang: (gcc|clang), defalut is gcc                                                                                          |"
+    echo -e "|     --android_stl: (c++_static|c++_shared|gnu_static|gnu_shared), default is c++_static                                              |"
+    echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
+    echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
+    echo -e "|     --shutdown_log: (OFF|ON); controls whether to hide log information, default is ON                                                |"
+    echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
+    echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
+    echo -e "|     --with_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF                                    |"
+    echo -e "|     --opt_model_dir: (absolute path to optimized model dir) required when compiling striped library                                  |"
+    echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html           |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of npu library compiling:(armv8, gcc, c++_static)                                                                         |"
+    echo -e "|     ./lite/tools/build_android.sh --with_huawei_kirin_npu=ON --npu_ddk_root=YourNpuDdkPath                                           |"
+    echo -e "|     --with_huawei_kirin_npu: (OFF|ON); controls whether to compile lib for huawei_kirin_npu, default is OFF                          |"
+    echo -e "|     --npu_ddk_root: (path to huawei HiAi DDK file) required when compiling npu library                                               |"
+    echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
+    echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of opencl library compiling:(armv8, gcc, c++_static)                                                                      |"
+    echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                   |"
+    echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                              |"
+    echo "----------------------------------------------------------------------------------------------------------------------------------------"
+    echo
 }
+
 ####################################################################################################
 
 
-
-function print_usage {
-    set +x
-    echo -e "\n Methods of compiling Padddle-Lite android library:"
-    echo "----------------------------------------"
-    echo -e "compile android library: (armv8, gcc, c++_static)"
-    echo -e "   ./lite/tools/build_android.sh"
-    echo -e "compile android opencl library: (armv8, gcc, c++_static)"
-    echo -e "   ./lite/tools/build_android.sh opencl"
-    echo -e "compile android npu library: (armv8, gcc, c++_static)"
-    echo -e "   ./lite/tools/build_android.sh --npu_ddk_root=YourHiAiDDKPath npu"
-
-    echo -e "print help information:"
-    echo -e "   ./lite/tools/build_android.sh help"
-    echo
-    echo -e "optional argument:"
-    echo -e "--arm_abi:\t armv8|armv7, default is armv8"
-    echo -e "--arm_lang:\t gcc|clang, defalut is gcc"
-    echo -e "--android_stl:\t c++_static|c++_shared, default is c++_static"
-    echo -e "--build_java: (OFF|ON); controls whether to publish java api lib, default is ON"
-    echo -e "--build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF"
-    echo -e "--shutdown_log: (OFF|ON); controls whether to hide log information, default is ON"
-    echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
-    echo
-    echo -e "arguments of striping lib according to input model:"
-    echo -e "--build_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF"
-    echo -e "--opt_model_dir: (path to optimized model dir); contains absolute path to optimized model dir"
-    echo
-    echo -e "arguments of npu library compiling:"
-    echo -e "--npu_ddk_root: refers to the path of huawei HiAi DDK file; required when compiling npu library"
-    echo -e "       you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/ "
-    echo -e "detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html"
-    echo "----------------------------------------"
-    echo
-}
-
+####################################################################################################
+# 5. main functions: choose compiling method according to input argument
+####################################################################################################
 function main {
     if [ -z "$1" ]; then
         # compiling result contains light_api lib only, recommanded.
@@ -282,18 +287,23 @@ function main {
                 shift
                 ;;
             # ON or OFF, default OFF
-            --build_extra=*)
-                BUILD_EXTRA="${i#*=}"
+            --with_extra=*)
+                WITH_EXTRA="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
-            --build_cv=*)
-                BUILD_CV="${i#*=}"
+            --with_cv=*)
+                WITH_CV="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default ON
-            --build_java=*)
-                BUILD_JAVA="${i#*=}"
+            --with_java=*)
+                WITH_JAVA="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
+            --with_strip=*)
+                WITH_STRIP="${i#*=}"
                 shift
                 ;;
             # string, absolute path to optimized model dir
@@ -301,37 +311,31 @@ function main {
                 OPTMODEL_DIR="${i#*=}"
                 shift
                 ;;
-            # ON or OFF, default OFF
-            --build_tailor=*)
-                BUILD_TAILOR="${i#*=}"
-                shift
-                ;;
             # ON or OFF, default ON
             --shutdown_log=*)
                 SHUTDOWN_LOG="${i#*=}"
                 shift
                 ;;
-            # compiling result contains both light_api and cxx_api lib.
-            full_publish)
-                make_full_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL 
-                exit 0
-                ;;
             # compiling lib which can operate on opencl and cpu.
-            opencl)
-                make_opencl $ARM_ABI $ARM_LANG
+            --with_opencl=*)
+                WITH_OPENCL="${i#*=}"
+                ;;
+            # compiling lib which can operate on huawei npu.
+            --with_huawei_kirin_npu=*)
+                WITH_NPU="${i#*=}"
                 exit 0
                 ;;
-           --npu_ddk_root=*)
+            --npu_ddk_root=*)
                 NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
-            npu)
-                BUILD_NPU=ON
-                make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL
+            # compiling result contains both light_api and cxx_api lib.
+            full_publish)
+                make_full_publish_so
                 exit 0
                 ;;
             help)
-                # unknown option
+            # print help info
                 print_usage
                 exit 0
                 ;;
@@ -342,7 +346,7 @@ function main {
                 ;;
         esac
         # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL
+        make_tiny_publish_so
     done
 }
 
