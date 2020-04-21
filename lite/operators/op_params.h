@@ -244,6 +244,9 @@ struct ScaleParam : ParamBase {
   float scale{1.};
   float bias{};
   bool bias_after_scale{true};
+  std::string activation_type{""};
+  bool fuse_relu{false};
+  float alpha{6.};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {

@@ -41,6 +41,17 @@ template <typename T>
 void scale(const T* din, T* dout, int num, T scale, T bias);
 
 template <typename T>
+void scale_relu(const T* din, T* dout, int num, T scale, T bias);
+
+template <typename T>
+void scale_relu6(const T* din, T* dout, int num, T scale,
+                 T bias, T alpha);
+
+template <typename T>
+void scale_leaky_relu(const T* din, T* dout, int num, T scale,
+                 T bias, T alpha);
+
+template <typename T>
 void scale(const T* din,
            T* dout,
            int outer_dim,

@@ -71,6 +71,7 @@ class Optimizer {
            "identity_scale_eliminate_pass",               //
            "elementwise_mul_constant_eliminate_pass",     //
            "lite_sequence_pool_concat_fuse_pass",         //
+           "lite_scale_activation_fuse_pass",             //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
            "lite_elementwise_add_activation_fuse_pass",  //
