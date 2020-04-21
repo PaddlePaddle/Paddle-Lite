@@ -1,4 +1,5 @@
 #include <cl_common.h>
+
 __kernel void conv2d_1x1_opt(
     __private const int global_size_dim0,
     __private const int global_size_dim1,
@@ -27,10 +28,7 @@ __kernel void conv2d_1x1_opt(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
-  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
-      out_nh >= global_size_dim2) {
-    return;
-  }
+
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
   int out_w2 = out_w + global_size_dim1 * 2;
@@ -76,10 +74,10 @@ __kernel void conv2d_1x1_opt(
   CL_DTYPE4 output3 = output0;
 
 #else
-  CL_DTYPE4 output0 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
-  CL_DTYPE4 output1 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
-  CL_DTYPE4 output2 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
-  CL_DTYPE4 output3 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
+  CL_DTYPE4 output0 = 0.0f;
+  CL_DTYPE4 output1 = 0.0f;
+  CL_DTYPE4 output2 = 0.0f;
+  CL_DTYPE4 output3 = 0.0f;
 #endif
 
   int max_w_bound = input_c_block * input_width;
@@ -88,14 +86,6 @@ __kernel void conv2d_1x1_opt(
     // ------------0---------------
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
                          in_pos_in_one_block0.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
     CL_DTYPE4 input0 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
@@ -142,14 +132,6 @@ __kernel void conv2d_1x1_opt(
     // -------------1--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
     CL_DTYPE4 input1 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
@@ -186,14 +168,6 @@ __kernel void conv2d_1x1_opt(
     // -------------2--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x,
                     in_pos_in_one_block2.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
     CL_DTYPE4 input2 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
@@ -230,14 +204,6 @@ __kernel void conv2d_1x1_opt(
     // -------------3--------------
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x,
                     in_pos_in_one_block3.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
     CL_DTYPE4 input3 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
@@ -339,10 +305,7 @@ __kernel void conv2d_1x1_simple(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
-  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
-      out_nh >= global_size_dim2) {
-    return;
-  }
+
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
   int out_w2 = out_w + global_size_dim1 * 2;
@@ -388,25 +351,16 @@ __kernel void conv2d_1x1_simple(
   CL_DTYPE4 output3 = output0;
 
 #else
-  CL_DTYPE4 output0 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
-  CL_DTYPE4 output1 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
-  CL_DTYPE4 output2 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
-  CL_DTYPE4 output3 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
+  CL_DTYPE4 output0 = 0.0f;
+  CL_DTYPE4 output1 = 0.0f;
+  CL_DTYPE4 output2 = 0.0f;
+  CL_DTYPE4 output3 = 0.0f;
 #endif
 
   for (int i = 0; i < input_c; ++i) {
     // ------------0---------------
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
                          in_pos_in_one_block0.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
-
     CL_DTYPE4 input0 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
 
@@ -426,15 +380,6 @@ __kernel void conv2d_1x1_simple(
 
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
-
     CL_DTYPE4 input1 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
     output1 = mad(input1.x, weight0, output1);
@@ -444,14 +389,6 @@ __kernel void conv2d_1x1_simple(
 
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x,
                     in_pos_in_one_block2.y);
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
     CL_DTYPE4 input2 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
     output2 = mad(input2.x, weight0, output2);
@@ -461,16 +398,6 @@ __kernel void conv2d_1x1_simple(
 
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x,
                     in_pos_in_one_block3.y);
-
-    pos_in.x = select(
-        pos_in.x,
-        -1,
-        (pos_in.x < i * input_width + in_pos_in_one_block0.x ||
-         pos_in.x >= i * input_width + in_pos_in_one_block0.x + input_width));
-
-    pos_in.y =
-        select(pos_in.y, -1, (pos_in.y < 0 || pos_in.y >= global_size_dim2));
-
     CL_DTYPE4 input3 =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
     output3 = mad(input3.x, weight0, output3);
@@ -501,16 +428,6 @@ __kernel void conv2d_1x1_simple(
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
-
-  // const int debug_pos = 0;
-  // int2 pos_test = (int2)(debug_pos, debug_pos);
-  // if (input_height == 112 && input_width == 112 && output_width == 112 &&
-  //     output_height == 112) {
-  //   output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_test);
-  //   output1 = output0;
-  //   output2 = output1;
-  //   output3 = output2;
-  // }
 
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);

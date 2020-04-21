@@ -30,10 +30,6 @@ __kernel void buffer_to_image2d(__global CL_DTYPE* in,
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
 
-  if (out_c >= out_C || out_w >= out_W || out_nh >= out_H) {
-    return;
-  }
-
   const int out_n = out_nh / out_H;
   const int out_h = out_nh % out_H;
 
@@ -59,18 +55,12 @@ __kernel void buffer_to_image2d(__global CL_DTYPE* in,
 
   if (out_C - 4 * out_c >= 2) {
     output.y = CONVERT_TYPE_TO(in[input_pos1], CL_COMPUTE_DTYPE);
-  } else {
-    output.y = CONVERT_TYPE_TO(0.f, CL_COMPUTE_DTYPE);
   }
   if (out_C - 4 * out_c >= 3) {
     output.z = CONVERT_TYPE_TO(in[input_pos2], CL_COMPUTE_DTYPE);
-  } else {
-    output.z = CONVERT_TYPE_TO(0.f, CL_COMPUTE_DTYPE);
   }
   if (out_C - 4 * out_c >= 4) {
     output.w = CONVERT_TYPE_TO(in[input_pos3], CL_COMPUTE_DTYPE);
-  } else {
-    output.w = CONVERT_TYPE_TO(0.f, CL_COMPUTE_DTYPE);
   }
 
 #ifdef DEBUG
@@ -146,11 +136,9 @@ __kernel void image2d_to_buffer(__read_only image2d_t input,
   if (C - 4 * in_c >= 2) {
     out[index + size_ch] = CONVERT_TYPE_TO(in.y, CL_DTYPE);
   }
-
   if (C - 4 * in_c >= 3) {
     out[index + size_ch * 2] = CONVERT_TYPE_TO(in.z, CL_DTYPE);
   }
-
   if (C - 4 * in_c >= 4) {
     out[index + size_ch * 3] = CONVERT_TYPE_TO(in.w, CL_DTYPE);
   }

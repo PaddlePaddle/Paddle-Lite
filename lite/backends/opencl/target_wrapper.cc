@@ -90,7 +90,7 @@ void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
   cl_int status;
   cl::Image2D *cl_image =
       new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_USE_HOST_PTR
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
                                                     : CL_MEM_ALLOC_HOST_PTR),
                       img_format,
                       cl_image2d_width,
