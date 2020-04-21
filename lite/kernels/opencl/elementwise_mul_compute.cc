@@ -50,8 +50,10 @@ void ElementwiseMulFloatImageCompute::PrepareForRun() {
   VLOG(4) << "y_dims.size():" << y_dims.size();
 
   auto& context = ctx_->As<OpenCLContext>();
-  context.cl_context()->AddKernel(
-      kernel_func_name_, "image/elementwise_mul_kernel.cl", build_options_);
+  context.cl_context()->AddKernel(kernel_func_name_,
+                                  "image/elementwise_mul_kernel.cl",
+                                  build_options_,
+                                  time_stamp_);
 }
 
 void ElementwiseMulFloatImageCompute::Run() {
@@ -88,7 +90,7 @@ void ElementwiseMulFloatImageCompute::Run() {
           << out_img_shape[1];
 
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
+  kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
   int arg_idx = 0;
@@ -150,16 +152,16 @@ void ElementwiseMulFloatImageCompute::Run() {
 
   auto global_work_size = cl::NDRange{static_cast<cl::size_type>(x_img_width),
                                       static_cast<cl::size_type>(x_img_height)};
-  event_ = std::shared_ptr<cl::Event>(new cl::Event);
+
   auto  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel
       kernel,
       cl::NullRange,
       global_work_size,
       cl::NullRange,
       nullptr,
-      event_.get());
+      nullptr);
   CL_CHECK_FATAL(status);
-  context.cl_wait_list()->emplace(out_img, event_);
+  std::string time_stamp_{GetTimeStamp()};
 
   VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 }

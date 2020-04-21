@@ -1,28 +1,29 @@
 #include <cl_common.h>
 
-__kernel void conv2d_1x1_opt(__private const int global_size_dim0,
-                         __private const int global_size_dim1,
-                         __private const int global_size_dim2,
-                         __read_only image2d_t input_image,
-                         __read_only image2d_t filter,
+__kernel void conv2d_1x1_opt(
+    __private const int global_size_dim0,
+    __private const int global_size_dim1,
+    __private const int global_size_dim2,
+    __read_only image2d_t input_image,
+    __read_only image2d_t filter,
 #if defined(BIASE_CH) || defined(BIASE_ELE)
     __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
-__read_only image2d_t new_scale,
-                         __read_only image2d_t new_biase,
+    __read_only image2d_t new_scale,
+    __read_only image2d_t new_biase,
 #endif
-                         __write_only image2d_t output_image,
-                         __private const int stride,
-                         __private const int offset,
-                         __private const int input_c_block,
-                         __private const int input_c_origin,
-                         __private const int dilation,
-                         __private const int input_width,  /* of one block */
-                         __private const int input_height, /* of one block */
-                         __private const int output_width,
-                         __private const int output_height,
-                         __private const int old_w) {
+    __write_only image2d_t output_image,
+    __private const int stride,
+    __private const int offset,
+    __private const int input_c_block,
+    __private const int input_c_origin,
+    __private const int dilation,
+    __private const int input_width,  /* of one block */
+    __private const int input_height, /* of one block */
+    __private const int output_width,
+    __private const int output_height,
+    __private const int old_w) {
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
@@ -287,7 +288,7 @@ __kernel void conv2d_1x1_simple(
     __read_only image2d_t bias,
 #endif
 #ifdef BATCH_NORM
-__read_only image2d_t new_scale,
+    __read_only image2d_t new_scale,
     __read_only image2d_t new_biase,
 #endif
     __write_only image2d_t output_image,
