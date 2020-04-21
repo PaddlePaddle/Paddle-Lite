@@ -1180,9 +1180,16 @@ class SoftmaxParam : public OpParam {
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
+    if (HasAttr("axis", attrs)) {
+      axis_ = GetAttr<int>("axis", attrs);
+      has_axis_ = true;
+    }
   }
   const GType *InputX() const { return input_x_; }
   GType *Out() const { return out_; }
+
+  int axis_ = -1;
+  bool has_axis_ = false;
 
  private:
   GType *input_x_;
