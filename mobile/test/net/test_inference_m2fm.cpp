@@ -24,8 +24,8 @@ PaddleMobileConfig GetConfig() {
   config.device = PaddleMobileConfig::kGPU_CL;
   config.pre_post_type = PaddleMobileConfig::NONE_PRE_POST;
 
-  config.prog_file = "../models/m2fm/model";
-  config.param_file = "../models/m2fm/params";
+  config.prog_file = "../models/gan_yanlong_check2/model";
+  config.param_file = "../models/gan_yanlong_check2/params";
   config.lod_mode = false;
   config.load_when_predict = false;
   return config;

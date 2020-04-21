@@ -3083,6 +3083,12 @@ class BilinearInterpParam : public OpParam {
     out_w_ = GetAttr<int>("out_w", attrs);
     align_corners = GetAttr<bool>("align_corners", attrs);
     align_mode = GetAttr<int>("align_mode", attrs);
+    if (HasAttr("scale", attrs)) {
+      has_scale_ = true;
+      scale_ = GetAttr<float>("scale", attrs);
+    }
+    LOG(kLOG_DEBUG1) << "has_scale_:  " << has_scale_;
+    LOG(kLOG_DEBUG1) << "scale_:  " << scale_;
   }
   const GType *InputX() const { return input_x_; }
   const GType *InputOutPutSize() const { return input_outsize_; }
@@ -3091,6 +3097,8 @@ class BilinearInterpParam : public OpParam {
   int OutW() const { return out_w_; }
   bool AlignCorners() const { return align_corners; }
   int AlignMode() const { return align_mode; }
+  float Scale() const { return scale_; }
+  bool HasScale() const { return has_scale_; }
 
  private:
   GType *input_x_;
@@ -3100,6 +3108,8 @@ class BilinearInterpParam : public OpParam {
   int out_w_;
   bool align_corners;
   int align_mode;
+  float scale_;
+  bool has_scale_;
 };
 #endif
 

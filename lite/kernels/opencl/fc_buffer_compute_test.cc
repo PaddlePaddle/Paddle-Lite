@@ -162,17 +162,8 @@ TEST(fc, compute) {
 
         // run opencl kernel
         kernel->Launch();
-        //       kernel->Launch();
 
-        auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-        auto* out_ptr = param.output->data<float, cl::Buffer>();
-        auto it = wait_list->find(out_ptr);
-        if (it != wait_list->end()) {
-          VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-          auto& event = *(it->second);
-          event.wait();
-          auto command_queue = CLRuntime::Global()->command_queue();
-          command_queue.finish();
+        CLRuntime::Global()->command_queue().finish();
 #if 0
           double start_nanos =
               event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
@@ -181,10 +172,6 @@ TEST(fc, compute) {
           double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
           LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros << " us.";
 #endif
-        } else {
-          LOG(FATAL)
-              << "Could not find the sync event for the target cl tensor.";
-        }
 
         std::vector<float> out_data_from_gpu(out_dim.production());
         TargetWrapperCL::MemcpySync(

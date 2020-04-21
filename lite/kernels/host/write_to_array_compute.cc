@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/write_to_array_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/host/write_to_array_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void WriteToArrayCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->template Param<operators::WriteToArrayParam>();
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
 
@@ -32,19 +30,27 @@ void WriteToArrayCompute::Run() {
   param.Out->at(id).CopyDataFrom(*param.X);
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(write_to_array,
-                     kARM,
+                     kHost,
                      kAny,
-                     kNCHW,
-                     paddle::lite::kernels::arm::WriteToArrayCompute,
+                     kAny,
+                     paddle::lite::kernels::host::WriteToArrayCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindInput("I", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindInput("I",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
+                {LiteType::GetTensorListTy(TARGET(kHost),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .Finalize();
