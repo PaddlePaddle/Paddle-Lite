@@ -57,13 +57,21 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   shape[0] = &i_output_shape_data[0];
   name[0] = static_cast<const char*>(output_var_name.c_str());
   dim[0] = output_dims.size();
-  auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
+  std::string pooling_type;
+  if (op_info->HasAttr("pooling_type")) {
+    pooling_type = op_info->GetAttr<std::string>("pooling_type");
+  } else if (op_type == "max_pool2d_with_index") {
+    pooling_type = "max";
+  }
   CHECK(pooling_type == "max" || pooling_type == "avg");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
-  auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
+  bool ceil_mode = false;
+  if (op_info->HasAttr("ceil_mode")) {
+    ceil_mode = op_info->GetAttr<bool>("ceil_mode");
+  }
   bool adaptive = false;
   if (op_info->HasAttr("adaptive")) {
     adaptive = op_info->GetAttr<bool>("adaptive");
@@ -72,14 +80,17 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (pooling_type == "avg") {
     average_exclusive = op_info->GetAttr<bool>("exclusive");
   }
+  if (output_dims[2] == 1 && output_dims[3] == 1) {
+    global_pooling = true;
+  }
   if (global_pooling) {
     paddings[0] = 0;
     paddings[1] = 0;
     ksize[0] = i_x_shape_data[2];
     ksize[1] = i_x_shape_data[3];
   }
-  bool is_max = (ksize[0] > 1 && ksize[1] > 1) && pooling_type == "max";
-  if (adaptive) {
+  bool is_max = (pooling_type == "max");
+  if (adaptive && !global_pooling) {
     user_cpu_param_t bm_param;
     bm_param.op_type = USER_PADDLE_ADAPTIVE_POOL;
     bm_param.u.adaptive_pool_parm.is_avg = !is_max;
@@ -133,5 +144,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 REGISTER_SUBGRAPH_BRIDGE(pool2d,
+                         kBM,
+                         paddle::lite::subgraph::bm::PoolConverter);
+REGISTER_SUBGRAPH_BRIDGE(max_pool2d_with_index,
                          kBM,
                          paddle::lite::subgraph::bm::PoolConverter);
