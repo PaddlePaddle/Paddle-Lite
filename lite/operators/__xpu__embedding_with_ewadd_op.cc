@@ -46,21 +46,21 @@ bool XPUEmbeddingWithEwaddOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUEmbeddingWithEwaddOp::AttachImpl(
-    const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool XPUEmbeddingWithEwaddOp::AttachImpl(const cpp::OpDesc& op_desc,
+                                         lite::Scope* scope) {
   param_.Out = scope->FindVar(op_desc.Output("Output").front())
-      ->GetMutable<lite::Tensor>();
+                   ->GetMutable<lite::Tensor>();
 
   param_.Ids.clear();
   for (auto& name : op_desc.Input("Ids")) {
-    auto t = const_cast<lite::Tensor *>(
-        &scope->FindVar(name)->Get<lite::Tensor>());
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
     param_.Ids.push_back(t);
   }
   param_.Tables.clear();
   for (auto& name : op_desc.Input("Tables")) {
-    auto t = const_cast<lite::Tensor *>(
-        &scope->FindVar(name)->Get<lite::Tensor>());
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
     param_.Tables.push_back(t);
   }
 
@@ -74,4 +74,3 @@ bool XPUEmbeddingWithEwaddOp::AttachImpl(
 
 REGISTER_LITE_OP(__xpu__embedding_with_ewadd,
                  paddle::lite::operators::XPUEmbeddingWithEwaddOp);
-

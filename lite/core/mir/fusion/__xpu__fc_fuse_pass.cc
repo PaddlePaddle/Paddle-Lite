@@ -81,9 +81,8 @@ class XPUFcFuser : public FuseBase {
                                        weight_trans_int16.get(),
                                        weight_dims[0],
                                        weight_dims[1]);
-    memcpy(weight_on_host,
-           weight_trans_int16.get(),
-           weight_len * sizeof(int16_t));
+    memcpy(
+        weight_on_host, weight_trans_int16.get(), weight_len * sizeof(int16_t));
 
     auto op_desc = GenOpDesc(matched, max_f, true);
     auto fc_op = LiteOpRegistry::Global().Create("__xpu__fc");
@@ -99,8 +98,9 @@ class XPUFcFuser : public FuseBase {
   }
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched, float w_max,
-      bool transpose_w) {
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched,
+                        float w_max,
+                        bool transpose_w) {
     cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
@@ -142,7 +142,6 @@ class XPUFcFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__fc_fuse_pass,
-                  paddle::lite::mir::XPUFcFusePass)
+REGISTER_MIR_PASS(__xpu__fc_fuse_pass, paddle::lite::mir::XPUFcFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("fc");

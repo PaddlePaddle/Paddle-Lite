@@ -133,9 +133,11 @@ void TypeTargetTransformPass::AddIoCopyInst(
     CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
     // CHECK(io_copy_op);
     // Create the new var manually.
-    auto* io_copy_output_var = inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
+    auto* io_copy_output_var =
+        inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
     // Shape is deduced in InferShape()
-    auto* io_copy_output_tensor = io_copy_output_var->GetMutable<lite::Tensor>();
+    auto* io_copy_output_tensor =
+        io_copy_output_var->GetMutable<lite::Tensor>();
     io_copy_output_tensor->set_persistable(in_persist);
     io_copy_output_tensor->set_precision(from.precision());
 

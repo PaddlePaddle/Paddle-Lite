@@ -32,23 +32,24 @@ void XPUFcCompute::Run() {
   int n = param.w->dims()[1];
   const float* bias = param.bias ? param.bias->data<float>() : nullptr;
   xdnn::Activation_t act_type = (param.activation_type == "relu")
-      ? xdnn::Activation_t::RELU : xdnn::Activation_t::LINEAR;
+                                    ? xdnn::Activation_t::RELU
+                                    : xdnn::Activation_t::LINEAR;
 
   int r = xdnn::fc_int16(
-      ctx.GetRawContext(),                                 /* context */
-      false,                                               /* TransA */
-      param.transpose_w,                                   /* TransB */
-      m,                                                   /* m */
-      n,                                                   /* n */
-      k,                                                   /* k */
-      1.0f,                                                /* alpha */
-      param.input->data<float>(),                          /* A */
+      ctx.GetRawContext(),                                      /* context */
+      false,                                                    /* TransA */
+      param.transpose_w,                                        /* TransB */
+      m,                                                        /* m */
+      n,                                                        /* n */
+      k,                                                        /* k */
+      1.0f,                                                     /* alpha */
+      param.input->data<float>(),                               /* A */
       reinterpret_cast<const int16_t*>(param.w->data<float>()), /* B */
-      param.w_max,                                         /* max_b */
-      0.0f,                                                /* beta */
-      param.output->mutable_data<float>(TARGET(kXPU)),     /* C */
-      bias,                                                /* bias */
-      act_type                                             /* act_type */);
+      param.w_max,                                              /* max_b */
+      0.0f,                                                     /* beta */
+      param.output->mutable_data<float>(TARGET(kXPU)),          /* C */
+      bias,                                                     /* bias */
+      act_type /* act_type */);
   CHECK_EQ(r, 0);
 }
 

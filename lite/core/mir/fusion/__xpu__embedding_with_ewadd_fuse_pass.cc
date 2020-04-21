@@ -27,39 +27,33 @@ namespace fusion {
 class XPUEmbeddingWithEwaddFuser : public FuseBase {
  public:
   explicit XPUEmbeddingWithEwaddFuser(int n_embedding)
-    : n_embedding_(n_embedding) {}
+      : n_embedding_(n_embedding) {}
 
   void BuildPattern() override {
-    auto* ids0 = VarNode("ids0")
-      ->assert_is_op_input("lookup_table", "Ids")
-      ->AsInput();
-    auto* table0 = VarNode("table0")
-      ->assert_is_op_input("lookup_table", "W")
-      ->AsInput();
+    auto* ids0 =
+        VarNode("ids0")->assert_is_op_input("lookup_table", "Ids")->AsInput();
+    auto* table0 =
+        VarNode("table0")->assert_is_op_input("lookup_table", "W")->AsInput();
     auto* embedding0 = OpNode("embedding0", "lookup_table");
     auto* embedding_out0 = VarNode("embedding_out0")
-      ->assert_is_op_output("lookup_table", "Out")
-      ->assert_is_op_input("elementwise_add", "X")
-      ->AsIntermediate();
+                               ->assert_is_op_output("lookup_table", "Out")
+                               ->assert_is_op_input("elementwise_add", "X")
+                               ->AsIntermediate();
 
-    auto* ids1 = VarNode("ids1")
-      ->assert_is_op_input("lookup_table", "Ids")
-      ->AsInput();
-    auto* table1 = VarNode("table1")
-      ->assert_is_op_input("lookup_table", "W")
-      ->AsInput();
-    auto* embedding1 = OpNode("embedding1", "lookup_table")
-      ->AsIntermediate();
+    auto* ids1 =
+        VarNode("ids1")->assert_is_op_input("lookup_table", "Ids")->AsInput();
+    auto* table1 =
+        VarNode("table1")->assert_is_op_input("lookup_table", "W")->AsInput();
+    auto* embedding1 = OpNode("embedding1", "lookup_table")->AsIntermediate();
     auto* embedding_out1 = VarNode("embedding_out1")
-      ->assert_is_op_output("lookup_table", "Out")
-      ->assert_is_op_input("elementwise_add", "Y")
-      ->AsIntermediate();
+                               ->assert_is_op_output("lookup_table", "Out")
+                               ->assert_is_op_input("elementwise_add", "Y")
+                               ->AsIntermediate();
 
-    auto* ewadd01 = OpNode("ewadd01", "elementwise_add")
-      ->AsIntermediate();
+    auto* ewadd01 = OpNode("ewadd01", "elementwise_add")->AsIntermediate();
     auto* ewadd01_out = VarNode("ewadd01_out")
-      ->assert_is_op_output("elementwise_add", "Out")
-      ->AsIntermediate();
+                            ->assert_is_op_output("elementwise_add", "Out")
+                            ->AsIntermediate();
 
     embedding0->LinksFrom({ids0, table0});
     embedding0->LinksTo({embedding_out0});
@@ -73,34 +67,32 @@ class XPUEmbeddingWithEwaddFuser : public FuseBase {
       auto ids_name = paddle::lite::string_format("ids%d", i);
       auto table_name = paddle::lite::string_format("table%d", i);
       auto embedding_name = paddle::lite::string_format("embedding%d", i);
-      auto embedding_out_name = paddle::lite::string_format(
-          "embedding_out%d", i);
+      auto embedding_out_name =
+          paddle::lite::string_format("embedding_out%d", i);
 
       auto* new_ids = VarNode(ids_name)
-        ->assert_is_op_input("lookup_table", "Ids")
-        ->AsInput();
+                          ->assert_is_op_input("lookup_table", "Ids")
+                          ->AsInput();
       auto* new_table = VarNode(table_name)
-        ->assert_is_op_input("lookup_table", "W")
-        ->AsInput();
-      auto* new_embedding = OpNode(embedding_name, "lookup_table")
-        ->AsIntermediate();
+                            ->assert_is_op_input("lookup_table", "W")
+                            ->AsInput();
+      auto* new_embedding =
+          OpNode(embedding_name, "lookup_table")->AsIntermediate();
       auto* new_embedding_out = VarNode(embedding_out_name)
-        ->assert_is_op_output("lookup_table", "Out")
-        ->assert_is_op_input("elementwise_add", "Y")
-        ->AsIntermediate();
+                                    ->assert_is_op_output("lookup_table", "Out")
+                                    ->assert_is_op_input("elementwise_add", "Y")
+                                    ->AsIntermediate();
 
       new_embedding->LinksFrom({new_ids, new_table});
       new_embedding->LinksTo({new_embedding_out});
 
-      auto ewadd_name = paddle::lite::string_format(
-          "ewadd%d%d", i - 1, i);
+      auto ewadd_name = paddle::lite::string_format("ewadd%d%d", i - 1, i);
       auto ewadd_out_name = ewadd_name + "_out";
 
-      auto* new_ewadd = OpNode(ewadd_name, "elementwise_add")
-        ->AsIntermediate();
+      auto* new_ewadd = OpNode(ewadd_name, "elementwise_add")->AsIntermediate();
       auto* new_ewadd_out = VarNode(ewadd_out_name)
-        ->assert_is_op_output("elementwise_add", "Out")
-        ->AsIntermediate();
+                                ->assert_is_op_output("elementwise_add", "Out")
+                                ->AsIntermediate();
 
       new_ewadd->LinksFrom({last_ewadd_out, new_embedding_out});
       new_ewadd->LinksTo({new_ewadd_out});
@@ -123,19 +115,18 @@ class XPUEmbeddingWithEwaddFuser : public FuseBase {
     op_desc.SetInput("Ids", ids_names);
     op_desc.SetInput("Tables", table_names);
     auto output_name = paddle::lite::string_format(
-        "ewadd%d%d_out", n_embedding_ - 2, n_embedding_ -  1);
+        "ewadd%d%d_out", n_embedding_ - 2, n_embedding_ - 1);
     op_desc.SetOutput("Output", {matched.at(output_name)->arg()->name});
     op_desc.SetAttr<int>("n_embedding", n_embedding_);
     auto* embedding0_op_info = matched.at("embedding0")->stmt()->op_info();
-    op_desc.SetAttr<int64_t>("padding_idx",
-        embedding0_op_info->GetAttr<int64_t>("padding_idx"));
+    op_desc.SetAttr<int64_t>(
+        "padding_idx", embedding0_op_info->GetAttr<int64_t>("padding_idx"));
 
     auto* new_stmt = matched.at("embedding0")->stmt();
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
     new_op->Attach(op_desc, new_stmt->op()->scope());
     new_op->SetValidPlaces(new_stmt->op()->valid_places());
-    auto kernels =
-        new_op->CreateKernels(new_op->valid_places());
+    auto kernels = new_op->CreateKernels(new_op->valid_places());
     new_stmt->SetOp(new_op);
     new_stmt->SetKernels(std::move(kernels));
 
@@ -159,8 +150,8 @@ class XPUEmbeddingWithEwaddFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     for (int n_embedding : {4, 3}) {
-      fusion::XPUEmbeddingWithEwaddFuser
-          embedding_with_ewadd_fuser(n_embedding);
+      fusion::XPUEmbeddingWithEwaddFuser embedding_with_ewadd_fuser(
+          n_embedding);
       embedding_with_ewadd_fuser(graph.get());
     }
   }

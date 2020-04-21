@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
 #include "lite/operators/__xpu__fc_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -69,8 +69,7 @@ bool XPUFcOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc,
-                         lite::Scope* scope) {
+bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto W = op_desc.Input("W").front();
   auto out = op_desc.Output("Out").front();
@@ -107,5 +106,4 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__fc,
-                 paddle::lite::operators::XPUFcOp);
+REGISTER_LITE_OP(__xpu__fc, paddle::lite::operators::XPUFcOp);

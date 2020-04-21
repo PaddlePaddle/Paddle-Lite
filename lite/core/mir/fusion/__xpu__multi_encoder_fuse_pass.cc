@@ -16,8 +16,8 @@
 #include <vector>
 #include "lite/backends/xpu/math.h"
 #include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 #include "lite/core/mir/type_precision_cast_pass.h"  // For UpdateInputs()
+#include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
@@ -622,10 +622,10 @@ class XPUMultiEncoderFuser {
           auto* multi_encoder = cast_out->outlinks.front();
           DirectedLink(stack_out, multi_encoder);
           UpdateInputs(multi_encoder->stmt()->op().get(),
-              cast_out->arg()->name, stack_out->arg()->name);
+                       cast_out->arg()->name,
+                       stack_out->arg()->name);
           auto update_op_info = *multi_encoder->stmt()->op_info();
-          multi_encoder->stmt()->ResetOp(update_op_info,
-              graph->valid_places());
+          multi_encoder->stmt()->ResetOp(update_op_info, graph->valid_places());
         }
       }
       GraphSafeRemoveNodes(graph, to_remove2);

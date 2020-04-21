@@ -30,9 +30,9 @@ class Eliminator : public FuseBase {
     // TODO(Superjomn) check has only one output
     auto* x = VarNode("x")->assert_is_op_input("dropout", "X");
     auto* dropout_op = OpNode("dropout", "dropout")
-                         ->assert_op_attr<int>("is_test", 1)
-                         ->assert_op_attr<std::string>(
-                             "dropout_implementation", "upscale_in_train");
+                           ->assert_op_attr<int>("is_test", 1)
+                           ->assert_op_attr<std::string>(
+                               "dropout_implementation", "upscale_in_train");
     auto* out = VarNode("out")->assert_is_op_output("dropout", "Out");
     auto* mask = VarNode("mask")->assert_is_op_output("dropout", "Mask");
 
