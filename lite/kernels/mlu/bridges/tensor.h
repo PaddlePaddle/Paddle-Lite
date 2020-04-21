@@ -49,6 +49,7 @@ class MLUTensor {
     return mlu_ptr_;
   }
 
+  cnmlDataType_t dtype() { return mlu_dtype_; }
   void set_mlu_dtype(cnmlDataType_t type) { mlu_dtype_ = type; }
 
   const std::vector<int64_t>& get_origin_shape() const { return origin_shape_; }

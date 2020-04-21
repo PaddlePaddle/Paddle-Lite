@@ -89,7 +89,10 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   }
 
   graph.Compile(CNML_MLU270, 1);
-  graph.Compute(forward_param, queue_);
+  graph.Compute(forward_param,
+                queue_,
+                *(graph.MutableInputs()),
+                *(graph.MutableOutputs()));
   CNRT_CALL(cnrtSyncQueue(queue_));
 
   for (auto& output_name : output_var_names) {
