@@ -84,7 +84,8 @@ TEST(slice_image2d_fp16, compute) {
   }
 
   LOG(INFO) << "prepare input";
-  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
+  std::shared_ptr<CLImageConverterDefault> default_converter(
+      new CLImageConverterDefault());
   DDim image_shape = default_converter->InitImageDimInfoWith(in_dim);
   LOG(INFO) << "image_shape = " << image_shape[0] << " " << image_shape[1];
   std::vector<half_t> x_image_data(image_shape.production() * 4);  // 4 : RGBA
