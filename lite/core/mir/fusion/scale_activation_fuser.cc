@@ -26,30 +26,27 @@ void ScaleActivationFuser::BuildPattern() {
   auto* x = VarNode("x")->assert_is_op_input("scale", "X")->AsInput();
 
   // create op nodes
-  auto* scale = OpNode("scale", "scale")
-                  ->assert_is_op("scale")
-                  ->AsIntermediate();
+  auto* scale =
+      OpNode("scale", "scale")->assert_is_op("scale")->AsIntermediate();
   auto* act =
       OpNode("act", act_type_)->assert_is_op(act_type_)->AsIntermediate();
 
   // create intermediate nodes
   auto* scale_out = VarNode("scale_out")
-                      ->assert_is_op_output("scale", "Out")
-                      ->assert_is_op_input(act_type_, "X")
-                      ->AsIntermediate();
+                        ->assert_is_op_output("scale", "Out")
+                        ->assert_is_op_input(act_type_, "X")
+                        ->AsIntermediate();
 
   // create output node
   auto* out =
       VarNode("output")->assert_is_op_output(act_type_, "Out")->AsOutput();
-  // create topology.
-//  std::vector<PMNode*> scale_inputs{x};
- //  scale_inputs 
+  // create topology. 
   *x >> *scale >> *scale_out;
   *scale_out >> *act >> *out;
 }
 
 void ScaleActivationFuser::InsertNewNode(SSAGraph* graph,
-                                            const key2nodes_t& matched) {
+                                         const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto scale_op = LiteOpRegistry::Global().Create("scale");
   auto scale = matched.at("scale")->stmt()->op();

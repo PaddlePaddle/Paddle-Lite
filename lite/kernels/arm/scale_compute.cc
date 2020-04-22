@@ -32,14 +32,16 @@ void ScaleCompute<T, PType>::Run() {
     bias *= scale;
   }
   T alpha = param.alpha;
-  if (param.activation_type == ""){ // no act
+  if (param.activation_type == "") {  // no act
     lite::arm::math::scale<T>(x_data, output_data, num, scale, bias);
-  } else if (param.activation_type == "relu") { // do relu
+  } else if (param.activation_type == "relu") {  // do relu
     lite::arm::math::scale_relu<T>(x_data, output_data, num, scale, bias);
-  } else if (param.activation_type == "relu6") { // do relu6
-    lite::arm::math::scale_relu6<T>(x_data, output_data, num, scale, bias, alpha);
-  } else if (param.activation_type == "leaky_relu") { // do leaky_relu
-    lite::arm::math::scale_leaky_relu<T>(x_data, output_data, num, scale, bias, alpha);
+  } else if (param.activation_type == "relu6") {  // do relu6
+    lite::arm::math::scale_relu6<T>(
+        x_data, output_data, num, scale, bias, alpha);
+  } else if (param.activation_type == "leaky_relu") {  // do leaky_relu
+    lite::arm::math::scale_leaky_relu<T>(
+        x_data, output_data, num, scale, bias, alpha);
   }
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());

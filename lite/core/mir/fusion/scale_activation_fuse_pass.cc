@@ -24,9 +24,9 @@ namespace mir {
 
 void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto act_type : {"relu", "relu6", "leaky_relu"}) {
-      fusion::ScaleActivationFuser fuser(act_type);
-      fuser(graph.get());
- }
+    fusion::ScaleActivationFuser fuser(act_type);
+    fuser(graph.get());
+  }
 }
 
 }  // namespace mir
