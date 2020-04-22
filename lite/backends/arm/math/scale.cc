@@ -41,14 +41,14 @@ void scale<float>(
         "and  v11.16b, %[vbias].16b, %[vbias].16b \n"
 
         "fmla v8.4s, v4.4s, %[vscale].4s          \n"
-        "fmla v9.4s, v4.4s, %[vscale].4s          \n"
-        "fmla v10.4s, v4.4s, %[vscale].4s         \n"
-        "fmla v11.4s, v4.4s, %[vscale].4s         \n"
+        "fmla v9.4s, v5.4s, %[vscale].4s          \n"
+        "fmla v10.4s, v6.4s, %[vscale].4s         \n"
+        "fmla v11.4s, v7.4s, %[vscale].4s         \n"
 
         "stp  q8, q9, [%[dout]], #32              \n"
         "subs %w[cnt], %w[cnt],  #1               \n"
         "stp  q10, q11, [%[dout]], #32            \n"
-          
+
         "bne    1b                                \n"
         "0:   \n"
         : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
@@ -82,12 +82,10 @@ void scale<float>(
 #endif
   }
   if (remain > 0) {
-    const float* din_ptr = din + (cnt << 4);
-    float* dout_ptr = dout + (cnt << 4);
     for (int i = 0; i < remain; i++) {
-      *dout_ptr = *din_ptr * scale + bias;
-      dout_ptr++;
-      din_ptr++;
+      *dout = *din * scale + bias;
+      dout++;
+      din++;
     }
   }
 }
@@ -114,9 +112,9 @@ void scale_relu<float>(
         "and  v11.16b, %[vbias].16b, %[vbias].16b\n"
 
         "fmla v8.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v9.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v10.4s, v4.4s, %[vscale].4s      \n"
-        "fmla v11.4s, v4.4s, %[vscale].4s      \n"
+        "fmla v9.4s, v5.4s, %[vscale].4s       \n"
+        "fmla v10.4s, v6.4s, %[vscale].4s      \n"
+        "fmla v11.4s, v7.4s, %[vscale].4s      \n"
 
         "fmax v8.4s, v8.4s, %[vzero].4s        \n"
         "fmax v9.4s, v9.4s, %[vzero].4s        \n"
@@ -126,7 +124,7 @@ void scale_relu<float>(
         "stp  q8, q9, [%[dout]], #32           \n"
         "subs %w[cnt], %w[cnt], #1             \n"
         "stp  q10, q11, [%[dout]], #32         \n"
-          
+
         "bne    1b                             \n"
         "0:   \n"
         : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
@@ -165,20 +163,19 @@ void scale_relu<float>(
 #endif
   }
   if (remain > 0) {
-    const float* din_ptr = din + (cnt << 4);
-    float* dout_ptr = dout + (cnt << 4);
     for (int i = 0; i < remain; i++) {
-      *dout_ptr = *din_ptr * scale + bias;
-      *dout_ptr = *dout_ptr > 0.f ? *dout_ptr : 0.f;
-      dout_ptr++;
-      din_ptr++;
+      *dout = *din * scale + bias;
+      *dout = *dout > 0.f ? *dout : 0.f;
+      dout++;
+      din++;
     }
   }
 }
 
 template <>
 void scale_relu6<float>(const float* din,
-                        float* dout, int num,
+                        float* dout,
+                        int num,
                         float scale,
                         float bias,
                         float alpha) {
@@ -202,9 +199,9 @@ void scale_relu6<float>(const float* din,
         "and  v11.16b, %[vbias].16b, %[vbias].16b \n"
 
         "fmla v8.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v9.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v10.4s, v4.4s, %[vscale].4s      \n"
-        "fmla v11.4s, v4.4s, %[vscale].4s      \n"
+        "fmla v9.4s, v5.4s, %[vscale].4s       \n"
+        "fmla v10.4s, v6.4s, %[vscale].4s      \n"
+        "fmla v11.4s, v7.4s, %[vscale].4s      \n"
 
         "fmax v8.4s, v8.4s, %[vzero].4s        \n"
         "fmax v9.4s, v9.4s, %[vzero].4s        \n"
@@ -218,8 +215,7 @@ void scale_relu6<float>(const float* din,
 
         "stp  q8, q9, [%[dout]], #32           \n"
         "subs %w[cnt], %w[cnt], #1             \n"
-        "stp  q10, q11, [%[dout]], #32         \n"
-          
+        "stp  q10, q11, [%[dout]], #32         \n"      
         "bne    1b                             \n"
         "0:   \n"
         : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
@@ -269,14 +265,11 @@ void scale_relu6<float>(const float* din,
 #endif
   }
   if (remain > 0) {
-    const float* din_ptr = din + (cnt << 4);
-    float* dout_ptr = dout + (cnt << 4);
     for (int i = 0; i < remain; i++) {
-      *dout_ptr = *din_ptr * scale + bias;
-      *dout_ptr =
-          *dout_ptr > 0.f ? (*dout_ptr < alpha ? *dout_ptr : alpha) : 0.f;
-      dout_ptr++;
-      din_ptr++;
+      *dout = *din * scale + bias;
+      *dout = *dout > 0.f ? (*dout < alpha ? *dout : alpha) : 0.f;
+      dout++;
+      din++;
     }
   }
 }
@@ -308,9 +301,9 @@ void scale_leaky_relu<float>(const float* din,
         "and  v11.16b, %[vbias].16b, %[vbias].16b \n"
 
         "fmla v8.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v9.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v10.4s, v4.4s, %[vscale].4s      \n"
-        "fmla v11.4s, v4.4s, %[vscale].4s      \n"
+        "fmla v9.4s, v5.4s, %[vscale].4s       \n"
+        "fmla v10.4s, v6.4s, %[vscale].4s      \n"
+        "fmla v11.4s, v7.4s, %[vscale].4s      \n"
 
         "fcmge v12.4s, v8.4s, %[vzero].4s       \n"
         "fmul v16.4s, v8.4s, %[valpha].4s       \n"
@@ -324,15 +317,14 @@ void scale_leaky_relu<float>(const float* din,
         "fcmge v15.4s, v11.4s, %[vzero].4s      \n"
         "fmul v19.4s, v11.4s, %[valpha].4s      \n"
 
-        "bif  v8.16b, v16.16b, v12.16b \n" /* choose*/
-        "bif  v9.16b, v17.16b, v13.16b \n" /* choose*/
+        "bif  v8.16b, v16.16b, v12.16b \n"  /* choose*/
+        "bif  v9.16b, v17.16b, v13.16b \n"  /* choose*/
         "bif  v10.16b, v18.16b, v14.16b \n" /* choose*/
         "bif  v11.16b, v19.16b, v15.16b \n" /* choose*/
 
         "stp  q8, q9, [%[dout]], #32           \n"
         "subs %w[cnt], %w[cnt], #1             \n"
         "stp  q10, q11, [%[dout]], #32         \n"
-          
         "bne    1b                             \n"
         "0:   \n"
         : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
@@ -398,29 +390,27 @@ void scale_leaky_relu<float>(const float* din,
           [vzero] "w"(vzero),
           [valpha] "w"(valpha)
         : "cc",
-        "memory",
-        "q4",
-        "q5",
-        "q6",
-        "q7",
-        "q8",
-        "q9",
-        "q10",
-        "q11",
-        "q12",
-        "q13",
-        "q14",
-        "q15");
+          "memory",
+          "q4",
+          "q5",
+          "q6",
+          "q7",
+          "q8",
+          "q9",
+          "q10",
+          "q11",
+          "q12",
+          "q13",
+          "q14",
+          "q15");
 #endif
   }
   if (remain > 0) {
-    const float* din_ptr = din + (cnt << 4);
-    float* dout_ptr = dout + (cnt << 4);
     for (int i = 0; i < remain; i++) {
-      *dout_ptr = *din_ptr * scale + bias;
-      *dout_ptr = *dout_ptr > 0.f ? *dout_ptr : (*dout_ptr * alpha);
-      dout_ptr++;
-      din_ptr++;
+      *dout = *din * scale + bias;
+      *dout = *dout > 0.f ? *dout : (*dout * alpha);
+      dout++;
+      din++;
     }
   }
 }
@@ -586,7 +576,7 @@ void scale_leaky_relu<int>(
     uint32x4_t v2 = vcgeq_s32(vsum2, vzero);
     uint32x4_t v3 = vcgeq_s32(vsum3, vzero);
     uint32x4_t v4 = vcgeq_s32(vsum4, vzero);
-    
+
     int32x4_t v11 = vmulq_s32(vsum1, valpha);
     int32x4_t v21 = vmulq_s32(vsum1, valpha);
     int32x4_t v31 = vmulq_s32(vsum1, valpha);

@@ -40,7 +40,7 @@ void ScaleActivationFuser::BuildPattern() {
   // create output node
   auto* out =
       VarNode("output")->assert_is_op_output(act_type_, "Out")->AsOutput();
-  // create topology. 
+  // create topology.
   *x >> *scale >> *scale_out;
   *scale_out >> *act >> *out;
 }
