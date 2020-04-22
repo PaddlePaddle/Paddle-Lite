@@ -124,7 +124,6 @@ void scale_relu<float>(
         "stp  q8, q9, [%[dout]], #32           \n"
         "subs %w[cnt], %w[cnt], #1             \n"
         "stp  q10, q11, [%[dout]], #32         \n"
-
         "bne    1b                             \n"
         "0:   \n"
         : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
@@ -215,7 +214,7 @@ void scale_relu6<float>(const float* din,
 
         "stp  q8, q9, [%[dout]], #32           \n"
         "subs %w[cnt], %w[cnt], #1             \n"
-        "stp  q10, q11, [%[dout]], #32         \n"      
+        "stp  q10, q11, [%[dout]], #32         \n"
         "bne    1b                             \n"
         "0:   \n"
         : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
@@ -377,8 +376,7 @@ void scale_leaky_relu<float>(const float* din,
         "vst1.32  {d16-d19}, [%[dout]]!         @ store result, add pointer\n"
 
         "vbif q10, q14, q12                       @ choose \n"
-        "vbif q11, q15, q13                      @ choose \n"
-          
+        "vbif q11, q15, q13                      @ choose \n"  
         "subs %[cnt], #1                        @ loop count minus 1\n"
         "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
 
