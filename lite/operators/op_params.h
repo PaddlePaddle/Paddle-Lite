@@ -340,7 +340,7 @@ struct ConcatParam : ParamBase {
 struct ActivationParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  lite_api::ActivationType active_type;
+  lite_api::ActivationType active_type{0};
   bool has_active{false};
   float Leaky_relu_alpha{0};   // leaky_relu param
   float Relu_clipped_coef{6};  // relu_clipped param
