@@ -8,7 +8,7 @@ ARM_ABI=armv8
 # c++_static or c++_shared, default c++_static.
 ANDROID_STL=c++_static
 # gcc or clang, default gcc.
-ARM_LANG=gcc
+TOOLCHAIN=gcc
 # ON or OFF, default OFF.
 WITH_EXTRA=OFF
 # ON or OFF, default ON. 
@@ -119,7 +119,7 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
-  build_dir=$workspace/build.lite.android.$ARM_ABI.$ARM_LANG
+  build_dir=$workspace/build.lite.android.$ARM_ABI.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
   fi
@@ -151,7 +151,7 @@ function make_tiny_publish_so {
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARM_ABI \
-      -DARM_TARGET_LANG=$ARM_LANG \
+      -DARM_TARGET_LANG=$TOOLCHAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
   cmake $workspace \
@@ -229,7 +229,7 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                       |"
-    echo -e "|     --arm_lang: (gcc|clang), defalut is gcc                                                                                          |"
+    echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
     echo -e "|     --android_stl: (c++_static|c++_shared|gnu_static|gnu_shared), default is c++_static                                              |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
@@ -265,7 +265,7 @@ function print_usage {
 function main {
     if [ -z "$1" ]; then
         # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so $ARM_ABI $ARM_LANG $ANDROID_STL
+        make_tiny_publish_so $ARM_ABI $TOOLCHAIN $ANDROID_STL
     fi
 
     # Parse command line.
@@ -277,8 +277,8 @@ function main {
                 shift
                 ;;
             # gcc or clang, default gcc
-            --arm_lang=*)
-                ARM_LANG="${i#*=}"
+            --toolchain=*)
+                TOOLCHAIN="${i#*=}"
                 shift
                 ;;
             # c++_static or c++_shared, default c++_static
