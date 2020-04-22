@@ -31,7 +31,7 @@ void ScaleCompute<T, PType>::Run() {
   if (!param.bias_after_scale) {
     bias *= scale;
   }
-  float alpha = param.alpha;
+  T alpha = param.alpha;
   if (param.activation_type == ""){ // no act
     lite::arm::math::scale<T>(x_data, output_data, num, scale, bias);
   } else if (param.activation_type == "relu") { // do relu
@@ -41,7 +41,6 @@ void ScaleCompute<T, PType>::Run() {
   } else if (param.activation_type == "leaky_relu") { // do leaky_relu
     lite::arm::math::scale_leaky_relu<T>(x_data, output_data, num, scale, bias, alpha);
   }
-
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }

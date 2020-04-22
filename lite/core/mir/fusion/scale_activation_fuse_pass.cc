@@ -25,10 +25,8 @@ namespace mir {
 void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto act_type : {"relu", "relu6", "leaky_relu"}) {
       fusion::ScaleActivationFuser fuser(act_type);
-        fuser(graph.get());
-      }
-    }
-  }
+      fuser(graph.get());
+ }
 }
 
 }  // namespace mir
@@ -37,5 +35,6 @@ void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_scale_activation_fuse_pass,
                   paddle::lite::mir::ScaleActivationFusePass)
-    .BindTargets({TARGET(kARM)})
-    .BindKernel("scale");;
+    .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU), TARGET(kCUDA), TARGET(kBM)})
+    .BindKernel("scale");

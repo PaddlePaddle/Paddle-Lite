@@ -32,7 +32,7 @@ lite_cc_library(fuse_sequence_pool_concat
         SRCS sequence_pool_concat_fuser.cc
         DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_scale_activation
-        SRCS scale_activatio_fuser.cc
+        SRCS scale_activation_fuser.cc
         DEPS pattern_matcher_high_api)
 
 set(mir_fusers

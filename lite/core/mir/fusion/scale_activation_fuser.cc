@@ -41,10 +41,10 @@ void ScaleActivationFuser::BuildPattern() {
   // create output node
   auto* out =
       VarNode("output")->assert_is_op_output(act_type_, "Out")->AsOutput();
-
   // create topology.
-  std::vector<PMNode*> scale_inputs{x};
-  scale_inputs >> *scale >> *scale_out;
+//  std::vector<PMNode*> scale_inputs{x};
+ //  scale_inputs 
+  *x >> *scale >> *scale_out;
   *scale_out >> *act >> *out;
 }
 
@@ -65,7 +65,7 @@ void ScaleActivationFuser::InsertNewNode(SSAGraph* graph,
 
 cpp::OpDesc ScaleActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("scale")->stmt()->op_info();
-  op_desc.SetOutput("Output", {matched.at("output")->arg()->name});
+  op_desc.SetOutput("Out", {matched.at("output")->arg()->name});
   cpp::OpDesc act_op_desc = *matched.at("act")->stmt()->op_info();
 
   op_desc.SetAttr("activation_type", act_type_);
