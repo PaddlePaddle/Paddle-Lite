@@ -55,17 +55,17 @@ class LogicalTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override {
     auto* x = scope->FindTensor(x_);
-    const bool* x_data = x->data<bool>();
+    const bool* x_data = x->template data<bool>();
     const Tensor* y = nullptr;
     const bool* y_data = nullptr;
     if (op_type_ != "logical_not") {
       y = scope->FindTensor(y_);
-      y_data = y->data<bool>();
+      y_data = y->template data<bool>();
     }
 
     auto* out = scope->NewTensor(out_);
     out->Resize(dims_);
-    bool* out_data = out->mutable_data<bool>();
+    bool* out_data = out->template mutable_data<bool>();
     for (int i = 0; i < dims_.production(); i++) {
       bool y_tmp = (y_data == nullptr) ? true : y_data[i];
       out_data[i] = Functor()(x_data[i], y_tmp);

@@ -45,12 +45,14 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   int ow = o_dims[3];
   int tile_block = 8;
   auto pad = *(param.paddings);
-  int pad_h = pad[0];
-  int pad_w = pad[2];
+  int pad_h0 = pad[0];
+  int pad_h1 = pad[1];
+  int pad_w0 = pad[2];
+  int pad_w1 = pad[3];
   int oc_pad = (oc + 3) / 4 * 4;
   int ic_pad = (ic + 3) / 4 * 4;
   const int new_input_size =
-      (ic + 3) / 4 * 4 * (ih + pad_h * 2) * (iw + pad_w * 2);
+      (ic + 3) / 4 * 4 * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
   const int temp_size =
       (tile_block * ((ic + 3) / 4 + (oc + 3) / 4) * 4 * wino_iw * wino_iw +
        8 * wino_iw * wino_iw) *
