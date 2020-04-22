@@ -55,8 +55,7 @@ function init_cmake_mutable_options {
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
-                        -DLITE_WITH_TRAIN=$WITH_TRAIN \
-                        "
+                        -DLITE_WITH_TRAIN=$WITH_TRAIN"
 }
 #####################################################################################################
 
@@ -126,25 +125,25 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
-    is_tiny=${1:ON}
-    if [ $WITH_PYTHON == "ON" -a $is_tiny == "ON" ]; then
+    is_tiny=${1:-ON}
+    if [ "$WITH_PYTHON" = "ON" -a "$is_tiny" = "ON" ]; then
         echo "Warning: build full_publish to use python."
         is_tiny=OFF
     fi
-    if [ $WITH_TRAIN == "ON" -a $is_tiny == "ON" ]; then
+    if [ "$WITH_TRAIN" = "ON" -a "$is_tiny" = "ON" ]; then
         echo "Warning: build full_publish to add training ops."
         is_tiny=OFF
     fi
-    if [ $BUILD_TAILOR == "ON" -a $OPTMODEL_DIR == "" ]; then
+    if [ "$BUILD_TAILOR" = "ON" -a "$OPTMODEL_DIR" = "" ]; then
         echo "Error: set OPTMODEL_DIR if BUILD_TAILOR is ON."
     fi
 
-    if [ $is_tiny == "OFF" ]; then
+    if [ "$is_tiny" = "OFF" ]; then
         prepare_thirdparty
     fi
 
     build_dir=$workspace/build.lite.armlinux.$ARM_ABI.$ARM_LANG
-    if [ "${WITH_OPENCL}" == "ON" ]; then
+    if [ "${WITH_OPENCL}" = "ON" ]; then
        build_dir=${build_dir}.opencl
     fi
 
@@ -156,17 +155,17 @@ function make_tiny_publish_so {
 
     prepare_workspace $workspace $build_dir
 
-    if [ "${WITH_OPENCL}" == "ON" ]; then
+    if [ "${WITH_OPENCL}" = "ON" ]; then
        prepare_opencl_source_code $workspace $build_dir
     fi
 
     init_cmake_mutable_options
     cmake $workspace \
        ${CMAKE_COMMON_OPTIONS} \
-       ${cmake_mutable_options}  \
+       ${cmake_mutable_options} \
        -DLITE_ON_TINY_PUBLISH=$is_tiny
 
-    if [ "${WITH_OPENCL}" == "ON" ]; then
+    if [ "${WITH_OPENCL}" = "ON" ]; then
        make opencl_clhpp -j$NUM_PROC 
     fi
 
