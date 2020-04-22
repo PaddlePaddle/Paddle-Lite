@@ -84,7 +84,7 @@ TEST(slice_image2d_fp16, compute) {
   }
 
   LOG(INFO) << "prepare input";
-  std::shared_ptr<CLImageConverterDefault> default_converter(
+  std::unique_ptr<CLImageConverterDefault> default_converter(
       new CLImageConverterDefault());
   DDim image_shape = default_converter->InitImageDimInfoWith(in_dim);
   LOG(INFO) << "image_shape = " << image_shape[0] << " " << image_shape[1];
