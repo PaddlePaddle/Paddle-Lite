@@ -291,7 +291,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
   // `inner_places` is used to optimize passes
-  std::vector<Place> inner_places;
+  std::vector<Place> inner_places = valid_places;
   for (auto &valid_place : valid_places) {
     inner_places.emplace_back(
         Place(TARGET(kHost), valid_place.precision, valid_place.layout));
