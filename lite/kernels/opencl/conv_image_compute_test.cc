@@ -337,7 +337,7 @@ TEST(conv2d, compute_image2d_1x1) {
                 SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
               }
               //                auto* filter_image2d =
-              //                filter.mutable_data<uint16_t, cl::Image2D>(
+              //                filter.mutable_data<half_t, cl::Image2D>(
               //                    filter_image_width,
               //                    filter_image_height,
               //                    filter_image_v.data());
