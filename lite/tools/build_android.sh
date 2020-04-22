@@ -25,6 +25,8 @@ WITH_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
+# options of adding training ops
+WITH_TRAIN=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -201,6 +203,7 @@ function make_full_publish_so {
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARM_ABI \
       -DARM_TARGET_LANG=$ARM_LANG \
+      -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
   cmake $workspace \
@@ -333,6 +336,11 @@ function main {
             full_publish)
                 make_full_publish_so
                 exit 0
+                ;;
+            # compiling lib with training ops.
+            --with_train=*)
+                WITH_TRAIN="${i#*=}"
+                shift
                 ;;
             help)
             # print help info
