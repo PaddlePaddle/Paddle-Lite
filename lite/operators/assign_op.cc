@@ -21,8 +21,8 @@ namespace lite {
 namespace operators {
 
 bool AssignOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.X != nullptr || param_.X_array != nullptr);
+  CHECK(param_.Out != nullptr || param_.Out_array != nullptr);
   return true;
 }
 

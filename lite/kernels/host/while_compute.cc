@@ -110,7 +110,6 @@ void StepExecutor::Build() {
     picked_kernel->SetContext(
         ContextScheduler::Global().NewContext(picked_kernel->target()));
     insts_.emplace_back(std::move(op), std::move(picked_kernel));
-    insts_.back().Run();
   }
 }
 
