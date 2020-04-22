@@ -940,6 +940,7 @@ struct WhileParam : ParamBase {
   cpp::BlockDesc* sub_block{};
   std::vector<Tensor*> x{};
   std::vector<Tensor*> outs{};
+  std::vector<std::string> valid_places;
 };
 
 struct TopkParam : ParamBase {
@@ -1397,6 +1398,7 @@ struct ConditionalBlockParam : ParamBase {
   cpp::BlockDesc* sub_block{};
   Scope* scope{};
   bool is_scalar_condition{};
+  std::vector<std::string> valid_places;
 };
 
 struct CollectFpnProposalsParam : ParamBase {

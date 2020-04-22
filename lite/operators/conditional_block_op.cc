@@ -48,6 +48,8 @@ bool ConditionalBlockOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   // obtain sub_block in core program.cc
   param_.sub_block = sub_block_;
   param_.scope = scope;
+  param_.valid_places =
+      op_desc.GetAttr<std::vector<std::string>>("valid_places");
 
   return true;
 }
