@@ -32,7 +32,7 @@ const char* opencl_error_to_str(cl_int error);
         __FILE__,                                                    \
         __LINE__);                                                   \
   }
-
+#ifndef LITE_SHUTDOWN_LOG
 #define CL_CHECK_FATAL(err_code__)                                   \
   if (err_code__ != CL_SUCCESS) {                                    \
     LOG(FATAL) << string_format(                                     \
@@ -42,5 +42,8 @@ const char* opencl_error_to_str(cl_int error);
         __FILE__,                                                    \
         __LINE__);                                                   \
   }
+#else
+#define CL_CHECK_FATAL(err_code__)
+#endif
 }  // namespace lite
 }  // namespace paddle

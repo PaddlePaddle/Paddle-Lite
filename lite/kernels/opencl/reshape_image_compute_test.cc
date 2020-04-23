@@ -184,17 +184,7 @@ TEST(reshape_opencl, compute) {
   LOG(INFO) << "kernel launch ...";
   kernel->Launch();
 
-  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-  auto it = wait_list->find(out_image);
-
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto& event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
+  CLRuntime::Global()->command_queue().finish();
 
   half_t* out_image_data = new half_t[out_image_shape.production() * 4];
   TargetWrapperCL::ImgcpySync(out_image_data,

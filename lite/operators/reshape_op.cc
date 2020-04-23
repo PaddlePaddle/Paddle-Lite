@@ -26,7 +26,7 @@ bool ReshapeOp::CheckShape() const {
   return true;
 }
 
-bool ReshapeOp::InferShape() const {
+bool ReshapeOp::InferShapeImpl() const {
   const auto &shape_tensor_vct = param_.shape_tensor_vct;
   auto *shape_tensor = param_.shape_tensor;
   const auto &shape_vct = param_.shape_vct;
@@ -37,7 +37,7 @@ bool ReshapeOp::InferShape() const {
     for (size_t i = 0; i < shape_tensor_vct.size(); i++) {
       final_shape[i] = shape_tensor_vct[i]->data<int>()[0];
     }
-  } else if (shape_tensor != nullptr) {
+  } else if (shape_tensor != nullptr && shape_tensor->data<int>() != nullptr) {
     auto *shape_tensor_data = shape_tensor->data<int>();
     final_shape = std::vector<int>(shape_tensor_data,
                                    shape_tensor_data + shape_tensor->numel());
@@ -56,6 +56,7 @@ bool ReshapeOp::InferShape() const {
 }
 
 bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.x =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.output =
@@ -70,7 +71,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         param_.shape_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
       }
     }
-    CHECK_GT(param_.shape_tensor_vct.size(), 0)
+    CHECK_GT(param_.shape_tensor_vct.size(), 0u)
         << "ShapeError: When `shape` in ReshapeOp is a list or tuple "
            "which contains Tensor, the shape's size can't be zero. "
            "But received shape's size is "
@@ -97,8 +98,8 @@ bool Reshape2Op::CheckShape() const {
   return true;
 }
 
-bool Reshape2Op::InferShape() const {
-  ReshapeOp::InferShape();
+bool Reshape2Op::InferShapeImpl() const {
+  ReshapeOp::InferShapeImpl();
   const auto &x_dims = param_.x->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1);
   xshape_dims[0] = 0;
@@ -145,7 +146,7 @@ std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
           << "Only one input dimension of Attr(shape) can be unknown.";
       unk_dim_idx = i;
     } else if (shape[i] == copy_dim_val) {
-      CHECK_LT(static_cast<int>(i), input_dims.size())
+      CHECK_LT(i, input_dims.size())
           << "The index of dimension to copy from input shape must be less "
              "than the size of input shape.";
     } else {

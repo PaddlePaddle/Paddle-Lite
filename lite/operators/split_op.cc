@@ -29,7 +29,7 @@ bool SplitOp::CheckShape() const {
   return true;
 }
 
-bool SplitOp::InferShape() const {
+bool SplitOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
   int axis = param_.axis;
@@ -67,7 +67,7 @@ bool SplitOp::InferShape() const {
     axis = param_.axis_tensor->data<int>()[0];
   }
 
-  for (int j = 0; j < outs_dims.size(); ++j) {
+  for (size_t j = 0; j < outs_dims.size(); ++j) {
     outs[j]->Resize(outs_dims[j]);
   }
 
@@ -75,6 +75,7 @@ bool SplitOp::InferShape() const {
 }
 
 bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.num = opdesc.GetAttr<int>("num");
   param_.sections = opdesc.GetAttr<std::vector<int>>("sections");

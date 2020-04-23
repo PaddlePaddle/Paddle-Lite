@@ -52,7 +52,7 @@ struct SelectedRowsAdd<lite::TargetType::kX86, T> {
     PADDLE_ENFORCE_EQ(in1_row_numel, in2_value.numel() / in2_rows.size());
     PADDLE_ENFORCE_EQ(in1_row_numel, out_value->numel() / out_rows.size());
 
-    auto* out_data = out_value->mutable_data<T>();
+    auto* out_data = out_value->template mutable_data<T>();
     auto* in1_data = in1_value.data<T>();
     std::copy_n(in1_data, in1_value.numel(), out_data);
 
@@ -87,7 +87,7 @@ struct SelectedRowsAddTensor<lite::TargetType::kX86, T> {
     functor(context, output, 0.0);
 
     auto* in1_data = in1_value.data<T>();
-    auto* out_data = output->mutable_data<T>();
+    auto* out_data = output->template mutable_data<T>();
 
     for (size_t i = 0; i < in1_rows.size(); i++) {
       for (int64_t j = 0; j < in1_row_numel; j++) {
@@ -127,7 +127,7 @@ struct SelectedRowsAddTo<lite::TargetType::kX86, T> {
     in2_rows.insert(in2_rows.end(), in1_rows.begin(), in1_rows.end());
 
     auto* in1_data = in1_value.data<T>();
-    auto* in2_data = in2_value->mutable_data<T>();
+    auto* in2_data = in2_value->template mutable_data<T>();
     std::copy_n(in1_data, in1_value.numel(), in2_data + input2_offset);
   }
 };
@@ -161,7 +161,7 @@ struct SelectedRowsSumTo<lite::TargetType::kX86, T> {
     input2->set_rows(in2_rows);
 
     auto* in2_value = input2->mutable_value();
-    T* in2_data = in2_value->mutable_data<T>();
+    T* in2_data = in2_value->template mutable_data<T>();
     auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
     size_t offset = 0u;
     for (size_t i = 0u; i != input1.size(); ++i) {
@@ -194,7 +194,7 @@ struct SelectedRowsAddToTensor<lite::TargetType::kX86, T> {
     PADDLE_ENFORCE_EQ(in1_row_numel, input2->numel() / in1_height);
 
     auto* in1_data = in1_value.data<T>();
-    auto* input2_data = input2->mutable_data<T>();
+    auto* input2_data = input2->template mutable_data<T>();
 
     for (size_t i = 0; i < in1_rows.size(); i++) {
       for (int64_t j = 0; j < in1_row_numel; j++) {
@@ -305,7 +305,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
     lite::DDim dims(std::vector<int64_t>(
         {static_cast<int64_t>(merged_row_set.size()), input_width}));
     out.mutable_value()->Resize(dims);
-    auto* out_data = out.mutable_value()->mutable_data<T>();
+    auto* out_data = out.mutable_value()->template mutable_data<T>();
 
     if (merged_row_set.size() == row_num && !sorted_result) {
       // no duplicated ids, just concat the result together
@@ -385,7 +385,7 @@ struct UpdateToTensor<lite::TargetType::kX86, T> {
     PADDLE_ENFORCE_EQ(in1_row_numel, input2->numel() / in1_height);
 
     auto* in1_data = in1_value.data<T>();
-    auto* input2_data = input2->data<T>();
+    auto* input2_data = input2->template data<T>();
 
     // FIXME(typhoonzero): use macro fix the below messy code.
     switch (op) {

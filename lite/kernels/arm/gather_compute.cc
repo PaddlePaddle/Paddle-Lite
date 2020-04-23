@@ -20,24 +20,48 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void GatherCompute::Run() {
-  auto& param = this->Param<operators::GatherParam>();
-
-  auto* p_output = param.Out->mutable_data<float>();
-  auto index_size = param.Index->dims()[0];
+template <typename T>
+void GatherFunc(const operators::GatherParam& param) {
   auto src_dims = param.X->dims();
-  const float* p_src = param.X->data<float>();
+  auto index_size = param.Index->dims()[0];
+  auto* p_src = param.X->data<T>();
   const int* p_index = param.Index->data<int>();
+  auto* p_output = param.Out->mutable_data<T>();
 
   int slice_size = 1;
-  for (int i = 1; i < src_dims.size(); ++i) {
+  for (size_t i = 1; i < src_dims.size(); ++i) {
     slice_size *= src_dims[i];
   }
   for (int i = 0; i < index_size; ++i) {
     int index_ = p_index[i];
     memcpy(p_output + i * slice_size,
            p_src + index_ * slice_size,
-           slice_size * sizeof(float));
+           slice_size * sizeof(T));
+  }
+}
+
+void GatherCompute::Run() {
+  auto& param = this->Param<operators::GatherParam>();
+
+  switch (param.X->precision()) {
+    case PRECISION(kFloat):
+      GatherFunc<float>(param);
+      break;
+    case PRECISION(kInt8):
+      GatherFunc<int8_t>(param);
+      break;
+    case PRECISION(kInt16):
+      GatherFunc<int16_t>(param);
+      break;
+    case PRECISION(kInt32):
+      GatherFunc<int32_t>(param);
+      break;
+    case PRECISION(kInt64):
+      GatherFunc<int64_t>(param);
+      break;
+    default:
+      LOG(FATAL) << "Gather does not implement for the "
+                 << "input type:" << static_cast<int>(param.X->precision());
   }
 }
 
@@ -48,8 +72,8 @@ void GatherCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     gather, kARM, kAny, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

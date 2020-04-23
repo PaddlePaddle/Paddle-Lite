@@ -155,18 +155,6 @@ class MulGradTester {
     fill_data_rand(y.data(), -1.f, 1.f, y_dims_.production());
     this->run_forward(&param_, &kernel_, x, y, out.data());
 
-    for (int i = 0; i < x_dims_.production(); i++) {
-      LOG(INFO) << "x_" << i << ": " << x[i];
-    }
-
-    for (int i = 0; i < y_dims_.production(); i++) {
-      LOG(INFO) << "y_" << i << ": " << y[i];
-    }
-
-    for (int i = 0; i < out_dims_.production(); i++) {
-      LOG(INFO) << "out_" << i << ": " << out[i];
-    }
-
     // backward
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(x_dims_.production());
@@ -190,12 +178,7 @@ class MulGradTester {
     float delta = 0.001;
     float max_grad_delta = 0.005;
     for (int i = 0; i < x_dims_.production(); i++) {
-      LOG(INFO) << "--------------------";
-      LOG(INFO) << "delta: " << delta;
-      LOG(INFO) << "max_grad_delta: " << max_grad_delta;
       for (int j = 0; j < x_dims_.production(); j++) {
-        // x_delta[j] = i == j ? x[j] + delta : x[j];
-
         if (i == j) {
           x_delta[j] = x[j] + delta;
         } else {
@@ -204,26 +187,12 @@ class MulGradTester {
       }
       this->run_forward(
           &delta_param_, &delta_kernel_, x_delta, y, out_delta.data());
-      for (int j = 0; j < x_dims_.production(); j++) {
-        LOG(INFO) << "x_" << j << ": " << x[j];
-        LOG(INFO) << "x_delta_" << j << ": " << x_delta[j];
-      }
-
-      for (int j = 0; j < y_dims_.production(); j++) {
-        LOG(INFO) << "y_" << j << ": " << y[j];
-      }
-
-      for (int j = 0; j < out_dims_.production(); j++) {
-        LOG(INFO) << "out_delta_" << j << ": " << out_delta[j];
-      }
 
       float sum = 0;
       for (int j = 0; j < out_dims_.production(); j++) {
         sum += (out_delta[j] - out[j]);
       }
 
-      LOG(INFO) << "x_grad_" << i << ": " << x_grad[i];
-      LOG(INFO) << "x_grad_num_" << i << ": " << sum / delta;
       EXPECT_NEAR(x_grad[i], sum / delta, max_grad_delta);
     }
 
@@ -237,8 +206,7 @@ class MulGradTester {
       for (int j = 0; j < out_dims_.production(); j++) {
         sum += out_delta[j] - out[j];
       }
-      LOG(INFO) << "y_grad_" << i << ": " << y_grad[i];
-      LOG(INFO) << "y_grad_num_" << i << ": " << sum / delta;
+
       EXPECT_NEAR(y_grad[i], sum / delta, max_grad_delta);
     }
   }
@@ -265,8 +233,7 @@ void TestNormalCase(const std::vector<int64_t>& x_dims,
       DDim(x_dims), DDim(y_dims), x_num_col_dims, y_num_col_dims));
 
   tester->prepare_kernel();
-  float delta = 0.001;
-  float max_grad_delta = 0.005;
+
   tester->check_grad();
 }
 

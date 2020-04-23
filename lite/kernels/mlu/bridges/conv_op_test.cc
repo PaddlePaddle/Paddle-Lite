@@ -25,8 +25,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ConvConverter(void* ctx, OpLite* op);
-
 void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
@@ -175,10 +173,10 @@ void test_conv(int bs,
   Tensor input_int;
   input_int.Resize(input_shape);
   FillTensor<int8_t, int8_t>(&input_int, -127, 127);
-  for (int i = 0; i < input->data_size(); i++) {
+  for (size_t i = 0; i < input->data_size(); i++) {
     input->mutable_data<float>()[i] = input_int.data<int8_t>()[i] * input_scale;
   }
-  for (int i = 0; i < filter->data_size(); i++) {
+  for (size_t i = 0; i < filter->data_size(); i++) {
     filter->mutable_data<float>()[i] =
         filter_int->data<int8_t>()[i] * filter_scale;
   }
@@ -245,10 +243,6 @@ void test_conv(int bs,
       }
     }
   }
-
-  input->Resize({bs, ih, iw, ic});
-  output->Resize(
-      {output_shape[0], output_shape[2], output_shape[3], output_shape[1]});
 
   // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::ConvOpLite>(opdesc_mlu, &scope);
@@ -342,9 +336,5 @@ TEST(MLUBridges, conv) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         conv2d,
-                         paddle::lite::subgraph::mlu::ConvConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         depthwise_conv2d,
-                         paddle::lite::subgraph::mlu::ConvConverter);
+USE_SUBGRAPH_BRIDGE(conv2d, kMLU)
+USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kMLU)

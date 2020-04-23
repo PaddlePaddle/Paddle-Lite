@@ -1,4 +1,4 @@
-if(NOT LITE_WITH_XPU)
+if(NOT LITE_WITH_XTCL)
   return()
 endif()
 
@@ -25,6 +25,7 @@ lite_cc_library(subgraph_bridge_layer_norm_op_xpu SRCS layer_norm_op.cc DEPS ${x
 lite_cc_library(subgraph_bridge_dropout_op_xpu SRCS dropout_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_matmul_op_xpu SRCS matmul_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_cast_op_xpu SRCS cast_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_yolo_box_op_xpu SRCS yolo_box_op.cc DEPS ${xpu_subgraph_bridge_deps})
 
 set(xpu_subgraph_bridges
         subgraph_bridge_registry
@@ -48,6 +49,7 @@ set(xpu_subgraph_bridges
         subgraph_bridge_dropout_op_xpu
         subgraph_bridge_matmul_op_xpu
         subgraph_bridge_cast_op_xpu
+        subgraph_bridge_yolo_box_op_xpu
         CACHE INTERNAL "xpu_subgraph_bridges")
 
 message(STATUS "+++++ xpu_subgraph_bridges: ${xpu_subgraph_bridges}")

@@ -683,7 +683,6 @@ void resize(const uint8_t* src,
     w_in = srcw * 3;
     w_out = dstw * 3;
     num = 3;
-
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     w_in = srcw * 4;
     w_out = dstw * 4;
@@ -725,10 +724,10 @@ void resize(const uint8_t* src,
   int remain = w_out % 8;
   int32x4_t _v2 = vdupq_n_s32(2);
   int prev_sy1 = -1;
+  int16_t* rowsbuf0 = new int16_t[w_out + 1];
+  int16_t* rowsbuf1 = new int16_t[w_out + 1];
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
-    int16_t* rowsbuf0 = new int16_t[w_out + 1];
-    int16_t* rowsbuf1 = new int16_t[w_out + 1];
     int sy = yofs[dy];
     if (dy >= orih) {
       xofs = xofs1;
@@ -852,8 +851,6 @@ void resize(const uint8_t* src,
                     2);
     }
     ibeta += 2;
-    delete[] rowsbuf0;
-    delete[] rowsbuf1;
   }
   if (orih < dsth) {  // uv
     delete[] xofs1;
@@ -861,6 +858,8 @@ void resize(const uint8_t* src,
     delete[] ialpha1;
   }
   delete[] buf;
+  delete[] rowsbuf0;
+  delete[] rowsbuf1;
 }
 // compute xofs, yofs, alpha, beta
 void compute_xy(int srcw,

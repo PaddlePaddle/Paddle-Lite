@@ -114,8 +114,10 @@ void ConvCompute::PrepareForRun() {
   }
 
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
-    context.cl_context()->AddKernel(
-        kernel_func_names_[i], kernel_func_paths_[i], build_options_[i]);
+    context.cl_context()->AddKernel(kernel_func_names_[i],
+                                    kernel_func_paths_[i],
+                                    build_options_[i],
+                                    time_stamp_);
   }
 }
 
@@ -153,7 +155,7 @@ void ConvCompute::GemmlikeConv2d() {
 
   auto& context = ctx_->As<OpenCLContext>();
   std::stringstream kernel_key;
-  kernel_key << kernel_func_names_[0] << build_options_[0];
+  kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
   auto img2col_kernel = context.cl_context()->GetKernel(kernel_key.str());
 
   int n_threads = c_in * h_out * w_out;
@@ -203,6 +205,7 @@ void ConvCompute::GemmlikeConv2d() {
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{static_cast<size_t>(out_stride)};
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         img2col_kernel,
         cl::NullRange,
@@ -218,7 +221,7 @@ void ConvCompute::GemmlikeConv2d() {
   int n = h_out * w_out;
   VLOG(4) << "m = " << m << " n = " << n << " k = " << k;
   kernel_key.str("");
-  kernel_key << kernel_func_names_[1] << build_options_[1];
+  kernel_key << kernel_func_names_[1] << build_options_[1] << time_stamp_;
   auto gemm_kernel = context.cl_context()->GetKernel(kernel_key.str());
   GemmBatched(
       gemm_kernel, col_buf, filter_buf, bias_buf, output_buf, bs, m, n, k);
@@ -249,7 +252,8 @@ void ConvCompute::Conv2d1x1() {
 
   auto& context = ctx_->As<OpenCLContext>();
   std::stringstream kernel_key;
-  kernel_key << kernel_func_names_.front() << build_options_.front();
+  kernel_key << kernel_func_names_.front() << build_options_.front()
+             << time_stamp_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
   GemmBatched(kernel, x_d, filter_d, bias_d, output_d, batch_size, m, n, k);
@@ -303,10 +307,8 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
       global_work_size,
       local_work_size,
       nullptr,
-      event_.get());
+      nullptr);
   CL_CHECK_FATAL(status);
-
-  context.cl_wait_list()->emplace(output_d, event_);
 }
 
 void ConvCompute::Run() { (this->*impl_)(); }

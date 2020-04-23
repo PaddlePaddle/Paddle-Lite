@@ -40,14 +40,14 @@ class StackCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     if (axis < 0) axis += (x[0]->dims().size() + 1);
 
     int n = static_cast<int>(x.size());
-    auto y_data = y->mutable_data<T>();
+    auto y_data = y->template mutable_data<T>();
     std::vector<const T*> x_datas(n);
-    for (int i = 0; i < n; ++i) x_datas[i] = x[i]->data<T>();
+    for (int i = 0; i < n; ++i) x_datas[i] = x[i]->template data<T>();
 
     int pre = 1, post = 1;
     auto dim = x[0]->dims();
     for (int i = 0; i < axis; ++i) pre *= dim[i];
-    for (int i = axis; i < dim.size(); ++i) post *= dim[i];
+    for (size_t i = axis; i < dim.size(); ++i) post *= dim[i];
 
     auto x_data_arr = x_datas.data();
 

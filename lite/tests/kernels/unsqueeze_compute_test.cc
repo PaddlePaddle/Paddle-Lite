@@ -123,7 +123,7 @@ class UnsqueezeComputeTester : public arena::TestCase {
     } else if (input_axes_flag_ == 3) {
       std::string name = "axes_tensor_";
       for (size_t i = 0; i < axes_.size(); i++) {
-        name = name + std::to_string(i);
+        name = name + paddle::lite::to_string(i);
         axes_tensor_list_.push_back(name);
         SetCommonTensor(name, DDim({1}), &axes_[i]);
       }

@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include <time.h>
 #include <cstdio>
 #include <stdexcept>
 
-#include <time.h>
 #include <memory>
 #include <string>
 
@@ -37,7 +37,9 @@
 #define GOOGLE_GLOG_DLL_DECL
 #include <io.h>  // _popen, _pclose
 #include <stdio.h>
+#define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
+#include <winsock.h>
 #include <numeric>  // std::accumulate in msvc
 #ifndef S_ISDIR     // windows port for sys/stat.h
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
@@ -62,6 +64,7 @@ static void *dlopen(const char *filename, int flag) {
   return reinterpret_cast<void *>(hModule);
 }
 
+extern struct timeval;
 static int gettimeofday(struct timeval *tp, void *tzp) {
   time_t clock;
   struct tm tm;

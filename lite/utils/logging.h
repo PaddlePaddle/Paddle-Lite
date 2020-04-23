@@ -29,17 +29,18 @@
 #include <cstring>
 #include <string>
 #include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 #ifdef LITE_WITH_ANDROID
 #include <android/log.h>
 // Android log macors
 #define ANDROID_LOG_TAG "Paddle-Lite"
 #define ANDROID_LOG_I(msg) \
-  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_W(msg) \
-  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_F(msg) \
-  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, "%s", msg)
 #endif
 
 // NOLINTFILE()
@@ -171,7 +172,7 @@ class VLogMessage {
     if (GLOG_v_int < level_int) {
       return;
     }
-    const char* level = std::to_string(level_int).c_str();
+    const char* level = paddle::lite::to_string(level_int).c_str();
     paddle::lite::gen_log(log_stream_, file, func, lineno, level);
   }
 

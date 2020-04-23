@@ -46,7 +46,7 @@ bool BatchNormOp::CheckShape() const {
   return true;
 }
 
-bool BatchNormOp::InferShape() const {
+bool BatchNormOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   int64_t channel_size = 0;
   switch (param_.data_layout) {
@@ -73,6 +73,7 @@ bool BatchNormOp::InferShape() const {
 }
 
 bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.bias =
       scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();

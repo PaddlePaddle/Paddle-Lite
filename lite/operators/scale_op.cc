@@ -24,12 +24,13 @@ bool ScaleOp::CheckShape() const {
   return true;
 }
 
-bool ScaleOp::InferShape() const {
+bool ScaleOp::InferShapeImpl() const {
   param_.output->Resize(param_.x->dims());
   return true;
 }
 
 bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto output = op_desc.Output("Out").front();
   param_.x = scope->FindVar(x)->GetMutable<Tensor>();

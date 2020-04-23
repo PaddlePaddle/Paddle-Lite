@@ -45,7 +45,8 @@ class ReshapeComputeTester : public arena::TestCase {
       : TestCase(place, alias), dims_(dims) {
     if (is_shape_tensor_vct) {
       for (size_t i = 0; i < shape.size(); i++) {
-        shape_tensor_vct_.emplace_back(op_type_ + "/shape" + std::to_string(i));
+        shape_tensor_vct_.emplace_back(op_type_ + "/shape" +
+                                       paddle::lite::to_string(i));
       }
     } else if (is_shape_tensor) {
       shape_tensor_ = op_type_ + "/shape";
@@ -203,6 +204,8 @@ TEST(Reshape, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else

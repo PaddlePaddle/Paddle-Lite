@@ -31,7 +31,7 @@ bool SearchGroupPaddingOp::CheckShape() const {
   return true;
 }
 
-bool SearchGroupPaddingOp::InferShape() const {
+bool SearchGroupPaddingOp::InferShapeImpl() const {
   std::vector<int64_t> x_dims = param_.x->dims().Vectorize();
 
   param_.out_emb_padding->Resize({-1, x_dims[1]});

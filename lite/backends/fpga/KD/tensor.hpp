@@ -351,10 +351,10 @@ class Tensor {
   void printScale(std::string type) { printScale(); }
 
   std::string dimsFileName() {
-    return std::to_string(shape_->num()) + "_" +
-           std::to_string(shape_->channel()) + "_" +
-           std::to_string(shape_->height()) + "_" +
-           std::to_string(shape_->width()) + ".txt";
+    return paddle::lite::to_string(shape_->num()) + "_" +
+           paddle::lite::to_string(shape_->channel()) + "_" +
+           paddle::lite::to_string(shape_->height()) + "_" +
+           paddle::lite::to_string(shape_->width()) + ".txt";
   }
 
   void saveToFile() { std::string path = dimsFileName(); }
@@ -374,7 +374,7 @@ class Tensor {
     invalidate();
     std::ofstream ofs;
     static int counter = 0;
-    std::string npath = std::to_string(counter) + "_" + path;
+    std::string npath = paddle::lite::to_string(counter) + "_" + path;
     counter++;
     save_file_with_name(npath);
   }

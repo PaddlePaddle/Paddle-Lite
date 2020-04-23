@@ -36,10 +36,10 @@ std::vector<std::string> AddFCDesc(
     const std::shared_ptr<Scope>& scope,
     const std::vector<std::string>& input_var_names,
     const std::vector<int64_t>& wshape) {
-  CHECK_EQ(input_var_names.size(), 1);
-  CHECK_EQ(wshape.size(), 2);
+  CHECK_EQ(input_var_names.size(), 1u);
+  CHECK_EQ(wshape.size(), 2u);
   static int id = 0;
-  std::string prefix = "fc_" + std::to_string(id);
+  std::string prefix = "fc_" + paddle::lite::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
 
   auto* wgt = block_desc->AddVar<cpp::VarDesc>();
@@ -76,7 +76,7 @@ std::vector<std::string> AddElementwiseAddDesc(
     const std::vector<std::string>& input_Y_names) {
   // CHECK_EQ(input_var_names.size(), 2);
   static int id = 0;
-  std::string prefix = "elementwise_add_" + std::to_string(id);
+  std::string prefix = "elementwise_add_" + paddle::lite::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* out = block_desc->AddVar<cpp::VarDesc>();
 
@@ -100,7 +100,7 @@ std::vector<std::string> AddFeedDesc(
     const std::vector<std::string>& input_X_names) {
   // CHECK_EQ(input_var_names.size(), 1);
   static int id = 0;
-  std::string prefix = "feed_" + std::to_string(id);
+  std::string prefix = "feed_" + paddle::lite::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* out = block_desc->AddVar<cpp::VarDesc>();
 
@@ -123,7 +123,7 @@ std::vector<std::string> AddFetchDesc(
     const std::vector<std::string>& input_X_names) {
   // CHECK_EQ(input_var_names.size(), 1);
   static int id = 0;
-  std::string prefix = "fetch_" + std::to_string(id);
+  std::string prefix = "fetch_" + paddle::lite::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* out = block_desc->AddVar<cpp::VarDesc>();
 
@@ -169,8 +169,8 @@ TEST(Subgraph, detect_simple_model) {
   };
   std::vector<std::vector<mir::Node*>> subgraphs =
       mir::SubgraphDetector(graph.get(), teller)();
-  ASSERT_EQ(subgraphs.size(), 1);
-  ASSERT_EQ(graph->nodes().size(), 9);
+  ASSERT_EQ(subgraphs.size(), 1u);
+  ASSERT_EQ(graph->nodes().size(), 9u);
   mir::SubgraphVisualizer(graph.get(), subgraphs)();
 }
 
@@ -200,7 +200,7 @@ TEST(Subgraph, detect_custom_model) {
 #ifdef LITE_WITH_NPU
       Place{TARGET(kNPU), PRECISION(kFloat)},
 #endif
-#ifdef LITE_WITH_XPU
+#ifdef LITE_WITH_XTCL
       Place{TARGET(kXPU), PRECISION(kFloat)},
 #endif
   });
@@ -221,7 +221,7 @@ TEST(Subgraph, detect_custom_model) {
   std::vector<std::vector<mir::Node*>> subgraphs =
       mir::SubgraphDetector(graph.get(), teller)();
   mir::SubgraphVisualizer(graph.get(), subgraphs)();
-  ASSERT_EQ(subgraphs.size(), 1);
+  ASSERT_EQ(subgraphs.size(), 1u);
 }
 
 }  // namespace lite

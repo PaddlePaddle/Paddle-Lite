@@ -108,7 +108,7 @@ TEST(layer_norm_x86, run_test) {
   for (int i = 0; i < begin_norm_axis; ++i) {
     pre *= x_shape[i];
   }
-  for (int i = begin_norm_axis; i < x_shape.size(); ++i) {
+  for (size_t i = begin_norm_axis; i < x_shape.size(); ++i) {
     post *= x_shape[i];
   }
   std::vector<int64_t> scale_shape({post});

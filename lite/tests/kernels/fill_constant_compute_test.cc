@@ -52,7 +52,8 @@ class FillConstantComputeTester : public arena::TestCase {
         is_use_shape_tensor_list_(is_use_shape_tensor_list) {
     if (is_use_shape_tensor_list) {
       for (int i = 0; i < shape.size(); i++) {
-        shape_tensor_list_.push_back(shape_tensor_ + std::to_string(i));
+        shape_tensor_list_.push_back(shape_tensor_ +
+                                     paddle::lite::to_string(i));
       }
     }
   }

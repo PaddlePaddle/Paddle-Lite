@@ -44,8 +44,10 @@ class LayoutComputeBufferChwToImageDefault
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/layout_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/layout_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -74,6 +76,7 @@ class LayoutComputeBufferChwToImageDefault
     const int Stride1 = out_H * out_W;
     const int Stride0 = out_W;
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
@@ -89,11 +92,12 @@ class LayoutComputeBufferChwToImageDefault
     VLOG(2) << "Stride2:" << Stride2;
     VLOG(2) << "Stride1:" << Stride1;
     VLOG(2) << "Stride0:" << Stride0;
+#endif
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -114,21 +118,24 @@ class LayoutComputeBufferChwToImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
+#endif
+
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -137,9 +144,9 @@ class LayoutComputeBufferChwToImageDefault
   }
 
  private:
+  std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"buffer_to_image2d"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 // [ImageDefault] -> [NCHW]
@@ -155,8 +162,10 @@ class LayoutComputeImageDefaultToBufferChw
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/layout_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/layout_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -177,6 +186,7 @@ class LayoutComputeImageDefaultToBufferChw
       new_dims[4 - x_dims.size() + j] = x_dims[j];
     }
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
@@ -186,6 +196,7 @@ class LayoutComputeImageDefaultToBufferChw
             << new_dims[1] << " " << new_dims[2] << " " << new_dims[3];
     VLOG(2) << "y_dims:" << y_dims;
     VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
+#endif
 
     size_t C = new_dims[1];
     size_t in_height = new_dims[2];
@@ -197,7 +208,7 @@ class LayoutComputeImageDefaultToBufferChw
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -217,21 +228,23 @@ class LayoutComputeImageDefaultToBufferChw
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(C));
     CL_CHECK_FATAL(status);
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
+#endif
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -240,9 +253,9 @@ class LayoutComputeImageDefaultToBufferChw
   }
 
  private:
+  std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"image2d_to_buffer"};
   std::string build_options_{"-DCL_DTYPE_float"};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 // [NCHW] -> [ImageDW]
@@ -255,8 +268,10 @@ class LayoutComputeBufferChwToImage2DNw
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "buffer/layout_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "buffer/layout_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -290,7 +305,7 @@ class LayoutComputeBufferChwToImage2DNw
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
@@ -317,15 +332,15 @@ class LayoutComputeBufferChwToImage2DNw
         cl::NDRange{static_cast<cl::size_type>((out_N + 3) / 4),  // N blocks
                     static_cast<cl::size_type>(out_W),            // w
                     static_cast<cl::size_type>(out_C * out_H)};   // ch
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(y_data, event_);
   }
 
   std::string doc() const override {
@@ -333,9 +348,10 @@ class LayoutComputeBufferChwToImage2DNw
   }
 
  private:
+  std::string time_stamp_{GetTimeStamp()};
+
   std::string kernel_func_name_{"buffer_to_image2d_nw"};
   std::string build_options_{"-DCL_DTYPE_float "};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

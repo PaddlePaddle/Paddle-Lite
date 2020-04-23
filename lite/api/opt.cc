@@ -23,6 +23,7 @@
 #include "kernel_src_map.h"     // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
@@ -54,7 +55,7 @@ DEFINE_string(model_file, "", "model file path of the combined-param model");
 DEFINE_string(param_file, "", "param file path of the combined-param model");
 DEFINE_string(
     optimize_out_type,
-    "protobuf",
+    "naive_buffer",
     "store type of the output optimized model. protobuf/naive_buffer");
 DEFINE_bool(display_kernels, false, "Display kernel information");
 DEFINE_bool(record_tailoring_info,
@@ -103,11 +104,21 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "x86") {
-      valid_places.emplace_back(TARGET(kX86));
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "mlu") {
+      valid_places.emplace_back(TARGET(kMLU));
+    } else if (target_repr == "rknpu") {
+      valid_places.emplace_back(TARGET(kRKNPU));
+      valid_places.emplace_back(
+          TARGET(kRKNPU), PRECISION(kInt8), DATALAYOUT(kNCHW));
+    } else if (target_repr == "apu") {
+      valid_places.emplace_back(
+          Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -184,6 +195,8 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kFPGA",
                                       "kNPU",
                                       "kXPU",
+                                      "kRKNPU",
+                                      "kAPU",
                                       "kAny",
                                       "kUnk"};
   int maximum_optype_length = 0;
@@ -194,7 +207,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   }
   std::cout << std::setiosflags(std::ios::internal);
   std::cout << std::setw(maximum_optype_length) << "OP_name";
-  for (int i = 0; i < targets.size(); i++) {
+  for (size_t i = 0; i < targets.size(); i++) {
     std::cout << std::setw(10) << targets[i].substr(1);
   }
   std::cout << std::endl;
@@ -202,7 +215,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
       std::cout << std::setw(maximum_optype_length) << it->first;
       auto ops_valid_places = it->second;
-      for (int i = 0; i < targets.size(); i++) {
+      for (size_t i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
@@ -222,7 +235,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
       }
       // Print OP info.
       auto ops_valid_places = supported_ops.at(*op);
-      for (int i = 0; i < targets.size(); i++) {
+      for (size_t i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
@@ -248,16 +261,16 @@ void PrintHelpInfo() {
       "        `--param_file=<param_path>`\n"
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
-      "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
+      "        `--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`"
       "  Display operators in the input model\n";
   std::cout << "opt version:" << opt_version << std::endl
             << help_info << std::endl;
@@ -275,11 +288,11 @@ void ParseInputCommand() {
     auto valid_places = paddle::lite_api::ParserValidPlaces();
     // get valid_targets string
     std::vector<TargetType> target_types = {};
-    for (int i = 0; i < valid_places.size(); i++) {
+    for (size_t i = 0; i < valid_places.size(); i++) {
       target_types.push_back(valid_places[i].target);
     }
     std::string targets_str = TargetToStr(target_types[0]);
-    for (int i = 1; i < target_types.size(); i++) {
+    for (size_t i = 1; i < target_types.size(); i++) {
       targets_str = targets_str + TargetToStr(target_types[i]);
     }
 
@@ -288,7 +301,7 @@ void ParseInputCommand() {
     target_types.push_back(TARGET(kUnk));
 
     std::set<std::string> valid_ops;
-    for (int i = 0; i < target_types.size(); i++) {
+    for (size_t i = 0; i < target_types.size(); i++) {
       auto ops = supported_ops_target[static_cast<int>(target_types[i])];
       valid_ops.insert(ops.begin(), ops.end());
     }
@@ -305,7 +318,7 @@ void CheckIfModelSupported() {
   auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
   valid_ops.insert(
       valid_ops.end(), valid_unktype_ops.begin(), valid_unktype_ops.end());
-  for (int i = 0; i < valid_places.size(); i++) {
+  for (size_t i = 0; i < valid_places.size(); i++) {
     auto target = valid_places[i].target;
     auto ops = supported_ops_target[static_cast<int>(target)];
     valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
@@ -327,7 +340,7 @@ void CheckIfModelSupported() {
 
   std::set<std::string> unsupported_ops;
   std::set<std::string> input_model_ops;
-  for (int index = 0; index < cpp_prog.BlocksSize(); index++) {
+  for (size_t index = 0; index < cpp_prog.BlocksSize(); index++) {
     auto current_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(index);
     for (size_t i = 0; i < current_block->OpsSize(); ++i) {
       auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
@@ -351,13 +364,13 @@ void CheckIfModelSupported() {
       unsupported_ops_str = unsupported_ops_str + ", " + *op_str;
     }
     std::vector<TargetType> targets = {};
-    for (int i = 0; i < valid_places.size(); i++) {
+    for (size_t i = 0; i < valid_places.size(); i++) {
       targets.push_back(valid_places[i].target);
     }
     std::sort(targets.begin(), targets.end());
     targets.erase(unique(targets.begin(), targets.end()), targets.end());
     std::string targets_str = TargetToStr(targets[0]);
-    for (int i = 1; i < targets.size(); i++) {
+    for (size_t i = 1; i < targets.size(); i++) {
       targets_str = targets_str + "," + TargetToStr(targets[i]);
     }
 

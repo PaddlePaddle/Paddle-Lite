@@ -46,9 +46,10 @@ void WhileCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     while, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::WhileCompute, def)
-    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Condition",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
-    .BindOutput("Out", {LiteType::GetTensorListTy(TARGET(kARM))})
+    .BindOutput("Out",
+                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("StepScopes", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/logging.h"
@@ -30,6 +31,14 @@
 #include "lite/backends/bm/target_wrapper.h"
 #endif  // LITE_WITH_BM
 
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/target_wrapper.h"
+#endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif  // LITE_WITH_XPU
+
 namespace paddle {
 namespace lite {
 
@@ -39,7 +48,9 @@ LITE_API void* TargetMalloc(TargetType target, size_t size);
 
 // Free memory for a specific Target. All the targets should be an element in
 // the `switch` here.
-void LITE_API TargetFree(TargetType target, void* data);
+void LITE_API TargetFree(TargetType target,
+                         void* data,
+                         std::string free_flag = "");
 
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);
@@ -72,6 +83,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_MLU
+    case TARGET(kMLU):
+      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
+      break;
+#endif
 #ifdef LITE_WITH_FPGA
     case TARGET(kFPGA):
       TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
@@ -108,6 +124,9 @@ class Buffer {
       data_ = TargetMalloc(target, size);
       target_ = target;
       space_ = size;
+#ifdef LITE_WITH_OPENCL
+      cl_use_image2d_ = false;
+#endif
     }
   }
 
@@ -119,15 +138,15 @@ class Buffer {
                         const size_t img_w,
                         const size_t img_h,
                         void* host_ptr = nullptr) {
-    size_t size = sizeof(T) * img_w * img_h *
-                  4;  // 4 for RGBA, un-used for opencl Image2D
     if (target != target_ || cl_image2d_width_ < img_w ||
-        cl_image2d_height_ < img_h) {
+        cl_image2d_height_ < img_h || host_ptr != nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
       target_ = target;
-      space_ = size;  // un-used for opencl Image2D
+      space_ = sizeof(T) * img_w * img_h *
+               4;  // un-used for opencl Image2D, 4 for RGBA,
+      cl_use_image2d_ = true;
       cl_image2d_width_ = img_w;
       cl_image2d_height_ = img_h;
     }
@@ -136,7 +155,11 @@ class Buffer {
 
   void Free() {
     if (space_ > 0 && own_data_) {
-      TargetFree(target_, data_);
+      if (!cl_use_image2d_) {
+        TargetFree(target_, data_);
+      } else {
+        TargetFree(target_, data_, "cl_use_image2d_");
+      }
     }
     data_ = nullptr;
     target_ = TargetType::kHost;
@@ -155,6 +178,7 @@ class Buffer {
  private:
   // memory it actually malloced.
   size_t space_{0};
+  bool cl_use_image2d_{false};   // only used for OpenCL Image2D
   size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
   void* data_{nullptr};

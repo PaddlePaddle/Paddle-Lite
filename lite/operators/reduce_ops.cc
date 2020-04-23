@@ -28,7 +28,7 @@ bool ReduceOp::CheckShape() const {
   return true;
 }
 
-bool ReduceOp::InferShape() const {
+bool ReduceOp::InferShapeImpl() const {
   const auto &x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
   auto dims = param_.dim;

@@ -220,6 +220,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     act_op->set_attr_mode(CvtActMode(act_type));
     if (act_type == "leaky_relu") {
       act_op->set_attr_negative_slope(leaky_relu_alpha);
+    } else if (act_type == "relu6") {
+      act_op->set_attr_coef(6.f);
     }
   }
 

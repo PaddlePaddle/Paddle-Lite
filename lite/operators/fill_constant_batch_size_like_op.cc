@@ -22,13 +22,13 @@ namespace operators {
 bool FillConstantBatchSizeLikeOp::CheckShape() const {
   CHECK(param_.out);
   CHECK(param_.input);
-  CHECK_GT(param_.shape.size(), 0);
+  CHECK_GT(param_.shape.size(), 0u);
   CHECK_GE(param_.input_dim_idx, 0);
   CHECK_GE(param_.output_dim_idx, 0);
   return true;
 }
 
-bool FillConstantBatchSizeLikeOp::InferShape() const {
+bool FillConstantBatchSizeLikeOp::InferShapeImpl() const {
   std::vector<int64_t> output_dim{param_.shape.begin(), param_.shape.end()};
   if (param_.input_dim_idx == 0 && !param_.input->lod().empty()) {
     output_dim[param_.output_dim_idx] = param_.input->lod().back().size() - 1;

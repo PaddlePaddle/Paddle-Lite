@@ -64,9 +64,9 @@ class SequenceReshapeCompute
 
     out->Resize(std::vector<int64_t>{static_cast<int64_t>(out->lod()[0].back()),
                                      out_width});
-    auto* dst_ptr = out->mutable_data<T>();
+    auto* dst_ptr = out->template mutable_data<T>();
     auto size = in->numel() * sizeof(T);
-    std::memcpy(dst_ptr, in->data<T>(), size);
+    std::memcpy(dst_ptr, in->template data<T>(), size);
   }
 
   virtual ~SequenceReshapeCompute() = default;

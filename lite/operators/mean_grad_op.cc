@@ -28,7 +28,7 @@ bool MeanGradOp::CheckShape() const {
   return true;
 }
 
-bool MeanGradOp::InferShape() const {
+bool MeanGradOp::InferShapeImpl() const {
   param_.X_grad->Resize(param_.X->dims());
   return true;
 }

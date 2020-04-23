@@ -42,7 +42,7 @@ bool TransposeOp::CheckShape() const {
   return true;
 }
 
-bool TransposeOp::InferShape() const {
+bool TransposeOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();
@@ -70,6 +70,7 @@ bool TransposeOp::InferShape() const {
 }
 
 bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
@@ -111,7 +112,7 @@ bool Transpose2Op::CheckShape() const {
   return true;
 }
 
-bool Transpose2Op::InferShape() const {
+bool Transpose2Op::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();

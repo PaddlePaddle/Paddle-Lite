@@ -24,7 +24,7 @@ class LayoutOp : public OpLite {
  public:
   explicit LayoutOp(const std::string &type) : OpLite(type) {}
   bool CheckShape() const override;
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
   bool Run() override;
   std::string DebugString() const override;
 

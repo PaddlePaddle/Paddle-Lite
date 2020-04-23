@@ -25,8 +25,10 @@ namespace opencl {
 
 void ElementwiseAddCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
-  context.cl_context()->AddKernel(
-      kernel_func_name_, "buffer/elementwise_add_kernel.cl", build_options_);
+  context.cl_context()->AddKernel(kernel_func_name_,
+                                  "buffer/elementwise_add_kernel.cl",
+                                  build_options_,
+                                  time_stamp_);
   ele_param_ = param_.get_mutable<param_t>();
   UpdateParams();
 }
@@ -39,11 +41,13 @@ void ElementwiseAddCompute::Run() {
   auto* out_buf = ele_param_->Out->template mutable_data<float, cl::Buffer>(
       TARGET(kOpenCL));
   STL::stringstream kernel_key;
-  kernel_key << kernel_func_name_ << build_options_;
+  kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << TargetToStr(ele_param_->X->target());
   VLOG(4) << TargetToStr(ele_param_->Y->target());
   VLOG(4) << TargetToStr(ele_param_->Out->target());
+#endif
   int arg_idx = 0;
   cl_int status = kernel.setArg(arg_idx, *x_buf);
   CL_CHECK_FATAL(status);
@@ -59,15 +63,10 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
+
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size,
-      cl::NullRange,
-      nullptr,
-      event_.get());
+      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_FATAL(status);
-  context.cl_wait_list()->emplace(out_buf, event_);
 }
 
 void ElementwiseAddCompute::UpdateParams() {
@@ -87,10 +86,12 @@ void ElementwiseAddCompute::UpdateParams() {
   for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size(); ++i) {
     num_ *= x_dims[i];
   }
+#ifndef LITE_SHUTDOWN_LOG
   VLOG(4) << "axis: " << axis;
   VLOG(4) << "batch: " << batch_;
   VLOG(4) << "channels: " << channels_;
   VLOG(4) << "num: " << num_;
+#endif
 }
 
 }  // namespace opencl

@@ -27,7 +27,7 @@ bool LrnOpLite::CheckShape() const {
   return true;
 }
 
-bool LrnOpLite::InferShape() const {
+bool LrnOpLite::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
   return true;
 }

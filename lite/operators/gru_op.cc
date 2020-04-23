@@ -51,7 +51,7 @@ bool GRUOpLite::CheckShape() const {
   return true;
 }
 
-bool GRUOpLite::InferShape() const {
+bool GRUOpLite::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
   const auto& weight_dims = param_.weight->dims();
   int frame_size = weight_dims[0];

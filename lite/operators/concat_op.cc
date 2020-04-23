@@ -26,7 +26,7 @@ bool ConcatOpLite::CheckShape() const {
   return true;
 }
 
-bool ConcatOpLite::InferShape() const {
+bool ConcatOpLite::InferShapeImpl() const {
   const std::vector<Tensor *> &inputs = param_.x;
   const size_t n = inputs.size();
   CHECK_GT_OR_FALSE(n, 0);
@@ -66,6 +66,7 @@ bool ConcatOpLite::InferShape() const {
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   auto inputs = op_desc.Input("X");
   auto out = op_desc.Output("Out").front();
 

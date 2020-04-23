@@ -28,7 +28,7 @@ bool ReduceProdOpLite::CheckShape() const {
   return true;
 }
 
-bool ReduceProdOpLite::InferShape() const {
+bool ReduceProdOpLite::InferShapeImpl() const {
   auto x = param_.x;
   auto out = param_.output;
   std::vector<int> dim = param_.dim;

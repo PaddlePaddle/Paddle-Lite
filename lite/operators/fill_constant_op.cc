@@ -24,7 +24,7 @@ bool FillConstantOp::CheckShape() const {
   return true;
 }
 
-bool FillConstantOp::InferShape() const {
+bool FillConstantOp::InferShapeImpl() const {
   std::vector<int64_t> out_shape;
   auto shape_tensor = param_.shape_tensor;
   auto shape_tensor_list = param_.shape_tensor_list;
@@ -34,7 +34,7 @@ bool FillConstantOp::InferShape() const {
       out_shape.push_back(shape_tensor_data[i]);
     }
   } else if (!shape_tensor_list.empty()) {
-    for (int i = 0; i < shape_tensor_list.size(); i++) {
+    for (size_t i = 0; i < shape_tensor_list.size(); i++) {
       out_shape.push_back(shape_tensor_list[i]->data<int>()[0]);
     }
   } else if (!param_.shape.empty()) {

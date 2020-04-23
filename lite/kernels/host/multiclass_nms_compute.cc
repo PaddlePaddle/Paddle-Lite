@@ -92,6 +92,7 @@ T PolyIoU(const T* box1,
           const size_t box_size,
           const bool normalized) {
   LOG(FATAL) << "PolyIoU not implement.";
+  return *box1;
 }
 
 template <class T>
@@ -369,6 +370,7 @@ void MulticlassNmsCompute::Run() {
     }
   } else {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
+    outs->mutable_data<float>();
     int offset = 0;
     int* oindices = nullptr;
     for (int i = 0; i < n; ++i) {

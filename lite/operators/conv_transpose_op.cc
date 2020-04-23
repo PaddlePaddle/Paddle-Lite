@@ -52,7 +52,7 @@ inline int ConvTransposeOutputSize(int input_size,
   return output_size;
 }
 
-bool ConvTransposeOpLite::InferShape() const {
+bool ConvTransposeOpLite::InferShapeImpl() const {
   const auto in_dims = param_.x->dims();
   const auto filter_dims = param_.filter->dims();
 
@@ -156,4 +156,6 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(conv2d_transpose,
+                 paddle::lite::operators::ConvTransposeOpLite);
+REGISTER_LITE_OP(depthwise_conv2d_transpose,
                  paddle::lite::operators::ConvTransposeOpLite);

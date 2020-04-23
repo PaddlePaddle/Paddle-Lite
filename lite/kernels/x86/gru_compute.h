@@ -44,7 +44,7 @@ inline void ReorderInitState(const lite::Context<TARGET(kX86)>& context,
                              bool indexed_src) {
   lite::x86::math::CopyMatrixRowsFunctor<TARGET(kX86), T> row_shuffle;
   dst->Resize(src.dims());
-  dst->mutable_data<T>();
+  dst->template mutable_data<T>();
   row_shuffle(context, src, index_lod, dst, indexed_src);
 }
 
@@ -65,18 +65,19 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* input = param.input;
     auto* h0 = param.h0;
     auto* weight = param.weight;
-    const T* weight_data = weight->data<T>();
+    const T* weight_data = weight->template data<T>();
     auto* bias = param.bias;
 
     auto* batch_gate = param.batch_gate;
     auto* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
     auto* batch_hidden = param.batch_hidden;
-    T* batch_gate_ptr = batch_gate->mutable_data<T>();
-    T* batch_reset_hidden_prev_ptr = batch_reset_hidden_prev->mutable_data<T>();
-    T* batch_hidden_ptr = batch_hidden->mutable_data<T>();
+    T* batch_gate_ptr = batch_gate->template mutable_data<T>();
+    T* batch_reset_hidden_prev_ptr =
+        batch_reset_hidden_prev->template mutable_data<T>();
+    T* batch_hidden_ptr = batch_hidden->template mutable_data<T>();
 
     auto* hidden = param.hidden;
-    hidden->mutable_data<T>();
+    hidden->template mutable_data<T>();
 
     const auto& hidden_dims = hidden->dims();
 
@@ -99,7 +100,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       // Since the batch computing for GRU reorders the input sequences
       // according to their length. The initialized cell state also needs
       // to reorder.
-      const std::vector<size_t>& order(batch_gate->lod()[2]);
+      const std::vector<uint64_t>& order(batch_gate->lod()[2]);
       ReorderInitState<T>(context, *h0, order, &ordered_h0, true);
       gru_value.prev_out_value = ordered_h0.mutable_data<T>();
     } else {

@@ -30,7 +30,7 @@ bool BeamSearchOp::CheckShape() const {
   return true;
 }
 
-bool BeamSearchOp::InferShape() const { return true; }
+bool BeamSearchOp::InferShapeImpl() const { return true; }
 
 bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.pre_ids = scope->FindTensor(opdesc.Input("pre_ids").front());
