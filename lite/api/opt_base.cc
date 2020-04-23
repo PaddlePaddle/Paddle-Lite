@@ -82,27 +82,56 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
          "command argument 'valid_targets'";
 }
 
-void OptBase::SetOptimizeOut(const std::string& optimized_out_path) {
-  optimize_out_path_ = optimized_out_path;
+void OptBase::SetLiteOut(const std::string& optimized_out_name) {
+  lite_out_name_ = lite_out_name;
 }
 
-void OptBase::RunOptimize(bool record_strip_info) {
+void OptBase::RecordModelInfo(bool record_strip_info) {
+  record_strip_info_ = record_strip_info;
+}
+
+void OptBase::Run() {
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
   opt_config_.set_valid_places(valid_places_);
   if (model_set_dir_ != "") {
-    RunOptimizeFromModelSet(record_strip_info);
+    RunOptimizeFromModelSet(record_strip_info_);
   } else {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
-        optimize_out_path_, model_type_, record_strip_info);
+        optimize_out_path_, model_type_, record_strip_info_);
     auto resulted_model_name =
-        record_strip_info ? "information of striped model" : "optimized model";
+        record_strip_info_ ? "information of striped model" : "optimized model";
     std::cout << "Save the " << resulted_model_name
               << " into :" << optimize_out_path_ << "successfully";
   }
 }
 
+void OptBase::RunOptimize(const std::string& model_dir_path,
+                          const std::string& model_path,
+                          const std::string& param_path,
+                          const std::string& valid_places,
+                          const std::string& optimized_out_path) {
+  SetModelDir(model_dir_path);
+  SetModelFile(model_path);
+  SetParamFile(param_path);
+  SetValidPlaces(valid_places);
+  SetOptimizeOut(optimized_out_path);
+  CheckIfModelSupported(false);
+  OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
+  opt_config_.set_valid_places(valid_places_);
+  if (model_set_dir_ != "") {
+    RunOptimizeFromModelSet(record_strip_info_);
+  } else {
+    auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
+    opt_predictor->SaveOptimizedModel(
+        optimize_out_path_, model_type_, record_strip_info_);
+    auto resulted_model_name =
+        record_strip_info_ ? "information of striped model" : "optimized model";
+    std::cout << "Save the " << resulted_model_name
+              << " into :" << optimize_out_path_ << "successfully";
+  }
+}
 // collect ops info of modelset
 void CollectModelMetaInfo(const std::string& output_dir,
                           const std::vector<std::string>& models,
@@ -180,30 +209,45 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
 void OptBase::PrintHelpInfo() {
   const std::string opt_version = lite::version();
   const char help_info[] =
-      "At least one argument should be inputed. Valid arguments are listed "
-      "below:\n"
+      "------------------------------------------------------------------------"
+      "-----------------------------------------------------------\n"
+      "  Valid arguments of Paddle-Lite opt are listed below:\n"
+      "------------------------------------------------------------------------"
+      "-----------------------------------------------------------\n"
       "  Arguments of help information:\n"
       "        `help()`   Print help infomation\n"
-      "  Arguments of model optimization:\n"
+      "\n"
+      "  Arguments of model transformation:\n"
       "        `set_model_dir(model_dir)`\n"
       "        `set_model_file(model_file_path)`\n"
       "        `set_param_file(param_file_path)`\n"
-      "        `set_model_type(protobuf|naive_buffer)`\n"
-      "        `set_optimize_out(output_optimize_model_dir)`\n"
+      "        `set_model_type(protobuf|naive_buffer)`: naive_buffer by "
+      "default\n"
+      "        `set_lite_out(output_optimize_model_dir)`\n"
       "        `set_valid_places(arm|opencl|x86|npu|xpu|rknpu|apu)`\n"
-      "        `run_optimize(false|true)`\n"
-      "        `  ----fasle&true refer to whether to record ops info for "
-      "tailoring lib, false by default`\n"
-      "  Arguments of model checking and ops information:\n"
+      "        `record_model_info(false|true)`: refer to whether to record ops "
+      "info for striping lib, false by default`\n"
+      "        `run() : start model transformation`\n"
+      "    eg. `opt.set_model_dir(\"./mobilenetv1\"); "
+      "opt.set_lite_out(\"mobilenetv1_opt\"); opt.set_valid_places(\"arm\"); "
+      "opt.run();`\n"
+      "\n"
+      "  You can also transform model through a single input argument:\n"
+      "        `run_optimize(model_dir, model_file_path, param_file_path, "
+      "model_type, valid_places, lite_out_name) `\n"
+      "    eg. `opt.run_optimize(\"./mobilenetv1\", \"\", \"\", "
+      "\"naive_buffer\", \"arm\", \"mobilenetv1_opt\");`"
+      "\n"
+      "  Arguments of checking model and printing ops information:\n"
       "        `print_all_ops()`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `print_supported_ops`   Display supported operators of valid "
       "places\n"
       "        `check_if_model_supported()`   Check if the input model is "
-      "supported\n";
-
-  std::cout << "opt version:" << opt_version << std::endl
-            << help_info << std::endl;
+      "supported\n"
+      "------------------------------------------------------------------------"
+      "-----------------------------------------------------------\n";
+  std::cout << "opt version:" << opt_version << std::endl << help_info;
 }
 // 2. Print supported info of inputed ops
 void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
