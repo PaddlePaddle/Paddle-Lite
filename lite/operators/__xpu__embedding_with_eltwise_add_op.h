@@ -13,33 +13,34 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include <vector>
-#include "lite/core/kernel.h"
-#include "lite/kernels/xpu/utils.h"  // XPUFreeDeleter
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUEmbeddingWithEltwiseAddOp : public OpLite {
  public:
-  using param_t = operators::StackParam;
+  XPUEmbeddingWithEltwiseAddOp() {}
 
-  virtual void PrepareForRun();
+  explicit XPUEmbeddingWithEltwiseAddOp(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  virtual void Run();
+  bool CheckShape() const override;
 
-  virtual ~StackCompute() = default;
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "EmbeddingWithEltwiseAdd"; }
 
  private:
-  std::unique_ptr<void, XPUFreeDeleter> x_ptr_guard_;
-  std::vector<const float*> x_ptr_cpu_;
+  mutable XPUEmbeddingWithEltwiseAddParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

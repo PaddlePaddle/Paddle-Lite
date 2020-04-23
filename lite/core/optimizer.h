@@ -77,6 +77,10 @@ class Optimizer {
 #endif
            "__xpu__resnet_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
+           "__xpu__embedding_with_eltwise_add_fuse_pass",
+           "__xpu__fc_fuse_pass",
+           "identity_dropout_eliminate_pass",         // should be placed after
+                                                      // xpu fusion
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and

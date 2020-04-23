@@ -293,6 +293,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   for (auto &valid_place : valid_places) {
+    if (valid_place.target == TARGET(kOpenCL)) continue;
     inner_places.emplace_back(
         Place(TARGET(kHost), valid_place.precision, valid_place.layout));
   }
