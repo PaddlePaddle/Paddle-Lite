@@ -69,6 +69,12 @@ bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float Im2SequenceOp::GetGops(){
+  //  todo
+  return 0.f;
+}
+#endif
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

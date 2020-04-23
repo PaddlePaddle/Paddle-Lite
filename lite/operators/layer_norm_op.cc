@@ -65,6 +65,13 @@ bool LayerNormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float LayerNormOp::GetGops(){
+  auto out_sum = param_.Y->numel();
+  return 7.f * out_sum;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

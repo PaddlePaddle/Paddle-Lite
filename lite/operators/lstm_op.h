@@ -38,6 +38,9 @@ class LstmOp : public OpLite {
 
   std::string DebugString() const override { return "lstm"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
  private:
   mutable LstmParam param_;
 };

@@ -39,6 +39,10 @@ class MergeLodTensorOpLite : public OpLite {
 
   std::string DebugString() const override { return "merge_lod_tensor"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable MergeLodTensorParam param_;
 };

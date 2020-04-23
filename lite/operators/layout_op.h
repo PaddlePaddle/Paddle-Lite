@@ -33,6 +33,10 @@ class LayoutOp : public OpLite {
  protected:
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   operators::LayoutParam param_;
 };

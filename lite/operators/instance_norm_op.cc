@@ -70,6 +70,16 @@ bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float InstanceNormOp::GetGops(){
+    auto x_dims = param_.x->dims();
+    auto nc = x_dims[0] * x_dims[1];
+    auto hw = x_dims[2] * x_dims[3];
+    auto nchw = x_dims->production();
+    return 5.f * nchw + 3.f * (nc + hw);
+}
+#endif
+
 } /* namespace operators */
 } /* namespace lite */
 } /* namespace paddle */

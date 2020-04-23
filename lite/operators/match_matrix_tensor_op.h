@@ -40,6 +40,10 @@ class MatchMatrixTensorOpLite : public OpLite {
 
   std::string DebugString() const override { return "match_matrix_tensor"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable MatchMatrixTensorParam param_;
 };

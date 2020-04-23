@@ -38,6 +38,10 @@ class BinaryLogicalOp : public OpLite {
 
   std::string DebugString() const override { return "binary logical"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable LogicalParam param_;
 };
@@ -56,6 +60,10 @@ class UnaryLogicalOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "binary logical"; }
+
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
 
  private:
   mutable LogicalParam param_;

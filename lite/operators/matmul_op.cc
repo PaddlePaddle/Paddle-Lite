@@ -158,6 +158,26 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float MatMulOpLite::GetGops(){
+  auto x_dims = param_.X->dims();
+  auto y_dims = param_.Y->dims();
+  auto m = x_dims[x_dims.size() - 2];
+  auto k = x_dims[x_dims.size() - 1];
+  auto n = y_dims[y_dims.size() - 1];
+
+  if (param_.transpose_X) {
+    m = x_dims[x_dims.size() - 1];
+    k = x_dims[x_dims.size() - 2];
+  }
+  if (param_.transpose_Y){
+    n = y_dims[y_dims.size() - 2];
+  }
+
+  return 3.f * m * n * k;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

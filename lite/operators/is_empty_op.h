@@ -38,6 +38,10 @@ class IsEmptyOp : public OpLite {
 
   std::string DebugString() const override { return "binary logical"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable IsEmptyParam param_;
 };

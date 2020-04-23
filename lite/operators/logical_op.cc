@@ -47,6 +47,13 @@ bool BinaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc,
   CHECK(param_.Out);
   return true;
 }
+
+#ifdef LITE_WITH_PROFILE
+float BinaryLogicalOp::GetGops(){
+  return 3.f * param_.Out->numel();
+}
+#endif
+
 bool UnaryLogicalOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
@@ -70,6 +77,12 @@ bool UnaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   CHECK(param_.Out);
   return true;
 }
+
+#ifdef LITE_WITH_PROFILE
+float UnaryLogicalOp::GetGops(){
+  return 3.f * param_.Out->numel();
+}
+#endif
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

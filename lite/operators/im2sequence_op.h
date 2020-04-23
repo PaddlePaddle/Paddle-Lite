@@ -38,6 +38,10 @@ class Im2SequenceOp : public OpLite {
 
   std::string DebugString() const override { return "im2suquence"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable Im2SequenceParam param_;
 };

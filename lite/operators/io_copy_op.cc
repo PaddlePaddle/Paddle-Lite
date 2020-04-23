@@ -43,6 +43,12 @@ bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
 }
 std::string IoCopyOp::DebugString() const { return "io_copy_op"; }
 
+#ifdef LITE_WITH_PROFILE
+float IoCopyOp::GetGops(){
+  return 1.f;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

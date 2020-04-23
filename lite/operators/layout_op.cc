@@ -43,6 +43,12 @@ bool LayoutOp::AttachImpl(const cpp::OpDesc &opdesc,
 }
 std::string LayoutOp::DebugString() const { return "layout_op"; }
 
+#ifdef LITE_WITH_PROFILE
+float LayoutOp::GetGops(){
+  return 1.f;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

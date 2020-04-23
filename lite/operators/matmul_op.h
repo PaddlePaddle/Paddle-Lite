@@ -41,6 +41,10 @@ class MatMulOpLite : public OpLite {
 
   std::string DebugString() const override { return "matmul"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable MatMulParam param_;
 };

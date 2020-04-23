@@ -30,6 +30,10 @@ class IoCopyOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  protected:
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 

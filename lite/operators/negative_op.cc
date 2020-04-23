@@ -44,6 +44,11 @@ bool NegativeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float NegativeOpLite::GetGops(){
+  return 1.f * param_.Out->dims();
+}
+#endif
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

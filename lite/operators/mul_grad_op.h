@@ -41,6 +41,10 @@ class MulGradOpLite : public OpLite {
 
   std::string DebugString() const override { return "mul_grad"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable MulGradParam param_;
 };
