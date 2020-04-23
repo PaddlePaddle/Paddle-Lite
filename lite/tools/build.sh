@@ -32,6 +32,7 @@ APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 LITE_WITH_ARM_LANG=OFF
+PYTHON_EXECUTABLE_OPTION=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -387,7 +388,8 @@ function make_x86 {
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            $PYTHON_EXECUTABLE_OPTION
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -481,7 +483,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		            ;;
+		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 shift
@@ -512,6 +514,10 @@ function main {
                 ;;
             --xpu_sdk_root=*)
                 XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --python_executable=*)
+                PYTHON_EXECUTABLE_OPTION="-DPYTHON_EXECUTABLE=${i#*=}"
                 shift
                 ;;
             --build_apu=*)
