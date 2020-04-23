@@ -18,6 +18,7 @@
 #if !defined(_WIN32)
 #include <sys/time.h>
 #else
+#define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
 #include "lite/backends/x86/port.h"
 #endif

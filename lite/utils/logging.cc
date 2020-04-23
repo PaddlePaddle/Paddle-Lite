@@ -38,7 +38,11 @@ void gen_log(STL::ostream& log_stream_,
   std::string time_str;
   struct tm tm_time;  // Time of creation of LogMessage
   time_t timestamp = time(NULL);
+#if defined(_WIN32)
+  localtime_s(&tm_time, &timestamp);
+#else
   localtime_r(&timestamp, &tm_time);
+#endif
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
