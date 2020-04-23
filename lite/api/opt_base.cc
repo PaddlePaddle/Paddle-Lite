@@ -103,7 +103,7 @@ void OptBase::Run() {
     auto resulted_model_name =
         record_strip_info_ ? "information of striped model" : "optimized model";
     std::cout << "Save the " << resulted_model_name
-              << " into :" << optimize_out_path_ << "successfully";
+              << " into :" << lite_out_name_ << "successfully";
   }
 }
 
@@ -129,7 +129,7 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
     auto resulted_model_name =
         record_strip_info_ ? "information of striped model" : "optimized model";
     std::cout << "Save the " << resulted_model_name
-              << " into :" << optimize_out_path_ << "successfully";
+              << " into :" << lite_out_name_ << "successfully";
   }
 }
 // collect ops info of modelset
@@ -184,7 +184,7 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
 
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
-        optimize_out_path_, model_type_, record_strip_info);
+        lite_out_name_, model_type_, record_strip_info);
 
     std::cout << "Optimize done. ";
   }
@@ -193,16 +193,15 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
   if (record_strip_info) {
     // Collect all models information
     CollectModelMetaInfo(
-        optimize_out_path_, model_dirs, lite::TAILORD_OPS_SOURCE_LIST_FILENAME);
+        lite_out_name_, model_dirs, lite::TAILORD_OPS_SOURCE_LIST_FILENAME);
     CollectModelMetaInfo(
-        optimize_out_path_, model_dirs, lite::TAILORD_OPS_LIST_NAME);
-    CollectModelMetaInfo(optimize_out_path_,
-                         model_dirs,
-                         lite::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
+        lite_out_name_, model_dirs, lite::TAILORD_OPS_LIST_NAME);
     CollectModelMetaInfo(
-        optimize_out_path_, model_dirs, lite::TAILORD_KERNELS_LIST_NAME);
+        lite_out_name_, model_dirs, lite::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
+    CollectModelMetaInfo(
+        lite_out_name_, model_dirs, lite::TAILORD_KERNELS_LIST_NAME);
     std::cout << "Record the information of stripped models into :"
-              << optimize_out_path_ << "successfully";
+              << lite_out_name_ << "successfully";
   }
 }
 
