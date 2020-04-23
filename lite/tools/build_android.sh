@@ -21,8 +21,8 @@ SHUTDOWN_LOG=ON
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 # options of compiling NPU lib.
-WITH_NPU=OFF
-NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
+WITH_HUAWEI_KIRIN_NPU=OFF
+HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # num of threads used during compiling..
@@ -147,8 +147,8 @@ function make_tiny_publish_so {
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_CV=$WITH_CV \
-      -DLITE_WITH_NPU=$WITH_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
+      -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARM_ABI \
       -DARM_TARGET_LANG=$ARM_LANG \
@@ -196,8 +196,8 @@ function make_full_publish_so {
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_CV=$WITH_CV \
-      -DLITE_WITH_NPU=$WITH_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
+      -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
+      -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARM_ABI \
       -DARM_TARGET_LANG=$ARM_LANG \
@@ -243,9 +243,9 @@ function print_usage {
     echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html           |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of npu library compiling:(armv8, gcc, c++_static)                                                                         |"
-    echo -e "|     ./lite/tools/build_android.sh --with_huawei_kirin_npu=ON --npu_ddk_root=YourNpuDdkPath                                           |"
+    echo -e "|     ./lite/tools/build_android.sh --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=YourNpuSdkPath                              |"
     echo -e "|     --with_huawei_kirin_npu: (OFF|ON); controls whether to compile lib for huawei_kirin_npu, default is OFF                          |"
-    echo -e "|     --npu_ddk_root: (path to huawei HiAi DDK file) required when compiling npu library                                               |"
+    echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
     echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
     echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
     echo -e "|                                                                                                                                      |"
@@ -319,14 +319,15 @@ function main {
             # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
+                shift
                 ;;
             # compiling lib which can operate on huawei npu.
             --with_huawei_kirin_npu=*)
-                WITH_NPU="${i#*=}"
-                exit 0
+                WITH_HUAWEI_KIRIN_NPU="${i#*=}"
+                shift
                 ;;
-            --npu_ddk_root=*)
-                NPU_DDK_ROOT="${i#*=}"
+            --huawei_kirin_npu_sdk_root=*)
+                HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.
@@ -341,6 +342,7 @@ function main {
                 ;;
             *)
                 # unknown option
+                echo "Error: unsupported argument \"${i#*=}\""
                 print_usage
                 exit 1
                 ;;
