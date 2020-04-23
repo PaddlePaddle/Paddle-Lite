@@ -157,10 +157,10 @@ TEST(conv2d, compute_image2d_1x1) {
             for (std::string relu_flag : {""}) {
 #else
   const int batch_size = 1;
-  const int oc = 32;
-  const int ih = 32;
-  const int iw = 32;
-  const int ic = 32;
+  const int oc = 2;
+  const int ih = 3;
+  const int iw = 3;
+  const int ic = 2;
   const bool bias_flag = false;
   const std::string relu_flag = "";
 #endif
