@@ -36,7 +36,7 @@ DEFINE_string(model_dir_0, "", "model_dir_0");
 DEFINE_string(input_shape_0,
               "1,3,224,224",
               "input shapes another, separated by colon and comma");
-
+DEFINE_string(target, "arm", "main target for Predictor: arm, opencl");
 DEFINE_bool(use_optimize_nb,
             false,
             "optimized & naive buffer model for mobile devices");
@@ -51,9 +51,19 @@ void OutputOptModel(const std::string& load_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
   lite_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
-  config.set_valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-  });
+  if (FLAGS_target == "arm") {
+    config.set_valid_places({
+        Place{TARGET(kARM), PRECISION(kFloat)},
+    });
+  } else if (FLAGS_target == "opencl") {
+    config.set_valid_places({
+        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+        Place{TARGET(kARM)},  // enable kARM CPU kernel when no opencl kernel
+    });
+  }
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   // delete old optimized model
@@ -78,7 +88,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          int tid,
          const int warmup_times = 5) {
   lite_api::MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
@@ -197,7 +207,7 @@ void RunTestType_10(const std::vector<std::vector<int64_t>>& input_shapes,
                     const int repeat,
                     int warmup = 5) {
   lite_api::MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
@@ -218,13 +228,13 @@ void RunTestType_11(const std::vector<std::vector<int64_t>>& input_shapes,
                     const int repeat,
                     int warmup = 5) {
   lite_api::MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  config.set_model_dir(model_dir_0);
+  config.set_model_from_file(model_dir_0 + ".nb");
   auto predictor_0 = lite_api::CreatePaddlePredictor(config);
 
   for (int i = 0; i < 2 * repeat; i += 2) {
@@ -246,7 +256,8 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_model_dir == "") {
     LOG(INFO) << "usage: "
-              << "--model_dir /path/to/your/model";
+              << "--model_dir /path/to/your/model --model_dir_0 "
+                 "/path/to/your/model0  --target `arm` or `opencl`";
     exit(0);
   }
   std::string save_optimized_model_dir = "";
