@@ -55,17 +55,20 @@ __kernel void relu6(__read_only image2d_t input,
 __kernel void sigmoid(__read_only image2d_t input,
                       __write_only image2d_t output,
                       __private const float threshold,
-                   __private const float scale) {
+                      __private const float scale) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
 
-  const int x = get_global_id(0); // image_width
-  const int y = get_global_id(1); // image_height
-
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
-  CL_DTYPE4 out = 1 / (1 + exp(-in));
+  CL_DTYPE4 out;
+  out.x = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.x)));
+  out.y = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.y)));
+  out.z = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.z)));
+  out.w = 1.0 / (1.0 + pow(2.71828182, -1.0 * (float)(in.w)));
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
 

@@ -2,10 +2,10 @@
 set -ex
 
 # global variables with default value
-NEUWARE_HOME="${NEUWARE_HOME}"    # XPU SDK
+NEUWARE_HOME="${NEUWARE_HOME}"
 TARGET_NAME="all"    # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
-WITH_TESTING=OFF                     # ON/OFF
+WITH_TESTING=ON                     # ON/OFF
 
 function print_usage {
     echo -e "\nUSAGE:"
@@ -20,10 +20,9 @@ function print_usage {
 # readonly variables with default value
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-                               -DWITH_PYTHON=OFF \
                                -DLITE_WITH_ARM=OFF"
 
-readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
+readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$(pwd)
@@ -37,8 +36,7 @@ function prepare_thirdparty {
         fi
         tar xzf third-party-05b862.tar.gz
     else
-        # git submodule update --init --recursive
-        echo "third-party is in ready"
+        git submodule update --init --recursive
     fi
 }
 
@@ -62,12 +60,12 @@ function prepare_workspace {
 }
 
 function build_mlu {
+    prepare_workspace
     build_dir=${workspace}/build.lite.mlu
     mkdir -p $build_dir
     cd $build_dir
 
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    prepare_workspace
     cmake .. \
         ${CMAKE_COMMON_OPTIONS} \
         -DWITH_GPU=OFF \
@@ -75,9 +73,10 @@ function build_mlu {
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
         -DLITE_WITH_MLU=ON \
+        -DLITE_WITH_PYTHON=OFF \
         -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
-        -DMLU_SDK_ROOT=${XPU_SDK_ROOT}
+        -DNEUWARE_HOME=${NEUWARE_HOME}
 
     make $TARGET_NAME -j$NUM_CORES_FOR_COMPILE
 

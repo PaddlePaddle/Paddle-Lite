@@ -96,8 +96,8 @@ class BeamSearchFunctor<TARGET(kX86), T> {
     //        : nullptr;
 
     // fill in data
-    std::vector<size_t> low_level;
-    size_t low_offset = 0;
+    std::vector<uint64_t> low_level;
+    uint64_t low_offset = 0;
     for (auto &items : selected_items) {
       low_level.push_back(low_offset);
       for (auto &item : items) {

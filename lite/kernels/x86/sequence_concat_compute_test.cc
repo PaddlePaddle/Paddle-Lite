@@ -26,7 +26,7 @@ namespace x86 {
 namespace {
 inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
                      std::vector<lite::Tensor>* xs_in_order) {
-  std::vector<size_t> result;
+  std::vector<uint64_t> result;
   result.resize(xs[0]->lod()[0].size());
 
   for (size_t i = 1; i < result.size(); ++i) {

@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/shape_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#pragma once
+#include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-void ShapeCompute::Run() {
-  auto& param = Param<operators::ShapeParam>();
-  int* output_data = param.Out->mutable_data<int>();
-  auto in_dims = param.X->dims();
-  for (int i = 0; i < in_dims.size(); ++i) {
-    output_data[i] = in_dims[i];
-  }
-}
+class XPUResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::XPUResNet50Param;
 
-}  // namespace arm
+  virtual void PrepareForRun();
+
+  virtual void Run();
+
+ private:
+  std::vector<const int16_t *> arg_filter_;
+  std::vector<const float *> arg_max_filter_;
+  std::vector<const float *> arg_bias_;
+};
+
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    shape, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ShapeCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();

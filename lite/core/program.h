@@ -108,6 +108,18 @@ struct Instruction {
 
   bool is_feed_fetch_op() const { return is_feed_fetch_op_; }
 
+#ifdef LITE_WITH_CUDA
+  bool need_sync() const {
+    if (kernel_->target() == TargetType::kCUDA) {
+      return kernel_->mutable_context()->As<CUDAContext>().need_sync();
+    } else {
+      // the io_copy kernel has synced, so cpu kernels don't need sync..
+      return false;
+    }
+  }
+  void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
+#endif
+
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
     profiler_ = profiler;

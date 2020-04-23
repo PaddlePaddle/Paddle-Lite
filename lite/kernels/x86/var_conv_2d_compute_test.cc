@@ -140,7 +140,7 @@ static void var_conv_2d_ref(const lite::Tensor* bottom,
   const auto& col_offset = col->lod()[0];
   const auto& offset_x = in_col->lod()[0];
   const auto& offset_y = in_row->lod()[0];
-  std::vector<size_t> top_offset;
+  std::vector<uint64_t> top_offset;
   int top_size = 0;
   top_offset.push_back(top_size);
   for (int b = 0; b < batch; ++b) {

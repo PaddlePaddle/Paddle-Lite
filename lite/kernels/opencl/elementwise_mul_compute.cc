@@ -150,7 +150,8 @@ void ElementwiseMulFloatImageCompute::Run() {
 
   auto global_work_size = cl::NDRange{static_cast<cl::size_type>(x_img_width),
                                       static_cast<cl::size_type>(x_img_height)};
-  auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
+  event_ = std::shared_ptr<cl::Event>(new cl::Event);
+  auto  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel
       kernel,
       cl::NullRange,
       global_work_size,

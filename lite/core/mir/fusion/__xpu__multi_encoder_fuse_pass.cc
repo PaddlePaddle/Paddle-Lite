@@ -1,0 +1,637 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+#include <vector>
+#include "lite/backends/xpu/math.h"
+#include "lite/core/mir/pass_registry.h"
+#include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/operators/subgraph_op.h"
+
+namespace paddle {
+namespace lite {
+namespace mir {
+
+namespace fusion {
+
+class XPUSingleEncoderFuser : public FuseBase {
+ public:
+  explicit XPUSingleEncoderFuser(const std::string& act_type = "gelu")
+      : act_type_(act_type) {}
+
+  void BuildPattern() override {
+    auto* input = VarNode("input")
+                      ->assert_is_op_input("mul", "X")
+                      ->assert_is_op_input("elementwise_add", "Y")
+                      ->AsInput();
+
+    auto* q_mul_y =
+        VarNode("q_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* q_mul = OpNode("q_mul", "mul");
+    auto* q_mul_out = VarNode("q_mul_out")
+                          ->assert_is_op_output("mul", "Out")
+                          ->assert_is_op_input("elementwise_add", "X")
+                          ->AsIntermediate();
+    auto* q_add_y = VarNode("q_add_y")
+                        ->assert_is_op_input("elementwise_add", "Y")
+                        ->AsInput();
+    auto* q_add = OpNode("q_add", "elementwise_add")->AsIntermediate();
+    auto* q_add_out = VarNode("q_add_out")
+                          ->assert_is_op_output("elementwise_add", "Out")
+                          ->assert_is_op_input("reshape2", "X")
+                          ->AsIntermediate();
+    auto* q_reshape2 = OpNode("q_reshape2", "reshape2")->AsIntermediate();
+    auto* q_reshape2_out = VarNode("q_reshape2_out")
+                               ->assert_is_op_output("reshape2", "Out")
+                               ->assert_is_op_input("transpose2", "X")
+                               ->AsIntermediate();
+    auto* q_reshape2_xshape = VarNode("q_reshape2_xshape")
+                                  ->assert_is_op_output("reshape2", "XShape")
+                                  ->AsIntermediate();
+    auto* q_transpose2 = OpNode("q_transpose2", "transpose2")->AsIntermediate();
+    auto* q_transpose2_out = VarNode("q_transpose2_out")
+                                 ->assert_is_op_output("transpose2", "Out")
+                                 ->assert_is_op_input("scale", "X")
+                                 ->AsIntermediate();
+    auto* q_transpose2_xshape =
+        VarNode("q_transpose2_xshape")
+            ->assert_is_op_output("transpose2", "XShape")
+            ->AsIntermediate();
+    auto* q_scale = OpNode("q_scale", "scale")->AsIntermediate();
+    auto* q_scale_out = VarNode("q_scale_out")
+                            ->assert_is_op_output("scale", "Out")
+                            ->assert_is_op_input("matmul", "X")
+                            ->AsIntermediate();
+
+    auto* k_mul_y =
+        VarNode("k_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* k_mul = OpNode("k_mul", "mul")->AsIntermediate();
+    auto* k_mul_out = VarNode("k_mul_out")
+                          ->assert_is_op_output("mul", "Out")
+                          ->assert_is_op_input("elementwise_add", "X")
+                          ->AsIntermediate();
+    auto* k_add_y = VarNode("k_add_y")
+                        ->assert_is_op_input("elementwise_add", "Y")
+                        ->AsInput();
+    auto* k_add = OpNode("k_add", "elementwise_add")->AsIntermediate();
+    auto* k_add_out = VarNode("k_add_out")
+                          ->assert_is_op_output("elementwise_add", "Out")
+                          ->assert_is_op_input("reshape2", "X")
+                          ->AsIntermediate();
+    auto* k_reshape2 = OpNode("k_reshape2", "reshape2")->AsIntermediate();
+    auto* k_reshape2_out = VarNode("k_reshape2_out")
+                               ->assert_is_op_output("reshape2", "Out")
+                               ->assert_is_op_input("transpose2", "X")
+                               ->AsIntermediate();
+    auto* k_reshape2_xshape = VarNode("k_reshape2_xshape")
+                                  ->assert_is_op_output("reshape2", "XShape")
+                                  ->AsIntermediate();
+    auto* k_transpose2 = OpNode("k_transpose2", "transpose2")->AsIntermediate();
+    auto* k_transpose2_out = VarNode("k_transpose2_out")
+                                 ->assert_is_op_output("transpose2", "Out")
+                                 ->assert_is_op_input("matmul", "Y")
+                                 ->AsIntermediate();
+    auto* k_transpose2_xshape =
+        VarNode("k_transpose2_xshape")
+            ->assert_is_op_output("transpose2", "XShape")
+            ->AsIntermediate();
+
+    auto* qk_matmul = OpNode("qk_matmul", "matmul")->AsIntermediate();
+    auto* qk_matmul_out = VarNode("qk_matmul_out")
+                              ->assert_is_op_output("matmul", "Out")
+                              ->assert_is_op_input("elementwise_add", "X")
+                              ->AsIntermediate();
+    auto* qk_mask = VarNode("qk_mask")
+                        ->assert_is_op_input("elementwise_add", "Y")
+                        ->AsInput();
+    auto* qk_add = OpNode("qk_add", "elementwise_add")->AsIntermediate();
+    auto* qk_add_out = VarNode("qk_add_out")
+                           ->assert_is_op_output("elementwise_add", "Out")
+                           ->assert_is_op_input("softmax", "X")
+                           ->AsIntermediate();
+    auto* qk_softmax = OpNode("qk_softmax", "softmax")->AsIntermediate();
+    auto* qk_softmax_out = VarNode("qk_softmax_out")
+                               ->assert_is_op_output("softmax", "Out")
+                               ->AsIntermediate();
+    auto* qk_dropout = OpNode("qk_dropout", "dropout")->AsIntermediate();
+    auto* qk_dropout_out = VarNode("qk_dropout_out")
+                               ->assert_is_op_output("dropout", "Out")
+                               ->assert_is_op_input("matmul", "X")
+                               ->AsIntermediate();
+    auto* qk_dropout_mask = VarNode("qk_dropout_mask")
+                                ->assert_is_op_output("dropout", "Mask")
+                                ->AsIntermediate();
+
+    auto* v_mul_y =
+        VarNode("v_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* v_mul = OpNode("v_mul", "mul")->AsIntermediate();
+    auto* v_mul_out = VarNode("v_mul_out")
+                          ->assert_is_op_output("mul", "Out")
+                          ->assert_is_op_input("elementwise_add", "X")
+                          ->AsIntermediate();
+    auto* v_add_y = VarNode("v_add_y")
+                        ->assert_is_op_input("elementwise_add", "Y")
+                        ->AsInput();
+    auto* v_add = OpNode("v_add", "elementwise_add")->AsIntermediate();
+    auto* v_add_out = VarNode("v_add_out")
+                          ->assert_is_op_output("elementwise_add", "Out")
+                          ->assert_is_op_input("reshape2", "X")
+                          ->AsIntermediate();
+    auto* v_reshape2 = OpNode("v_reshape2", "reshape2")->AsIntermediate();
+    auto* v_reshape2_out = VarNode("v_reshape2_out")
+                               ->assert_is_op_output("reshape2", "Out")
+                               ->assert_is_op_input("transpose2", "X")
+                               ->AsIntermediate();
+    auto* v_reshape2_xshape = VarNode("v_reshape2_xshape")
+                                  ->assert_is_op_output("reshape2", "XShape")
+                                  ->AsIntermediate();
+    auto* v_transpose2 = OpNode("v_transpose2", "transpose2")->AsIntermediate();
+    auto* v_transpose2_out = VarNode("v_transpose2_out")
+                                 ->assert_is_op_output("transpose2", "Out")
+                                 ->assert_is_op_input("matmul", "Y")
+                                 ->AsIntermediate();
+    auto* v_transpose2_xshape =
+        VarNode("v_transpose2_xshape")
+            ->assert_is_op_output("transpose2", "XShape")
+            ->AsIntermediate();
+
+    auto* qkv_matmul = OpNode("qkv_matmul", "matmul")->AsIntermediate();
+    auto* qkv_matmul_out = VarNode("qkv_matmul_out")
+                               ->assert_is_op_output("matmul", "Out")
+                               ->assert_is_op_input("transpose2", "X")
+                               ->AsIntermediate();
+    auto* qkv_transpose2 =
+        OpNode("qkv_transpose2", "transpose2")->AsIntermediate();
+    auto* qkv_transpose2_out = VarNode("qkv_transpose2_out")
+                                   ->assert_is_op_output("transpose2", "Out")
+                                   ->assert_is_op_input("reshape2", "X")
+                                   ->AsIntermediate();
+    auto* qkv_transpose2_xshape =
+        VarNode("qkv_transpose2_xshape")
+            ->assert_is_op_output("transpose2", "XShape")
+            ->AsIntermediate();
+    auto* qkv_reshape2 = OpNode("qkv_reshape2", "reshape2")->AsIntermediate();
+    auto* qkv_reshape2_out = VarNode("qkv_reshape2_out")
+                                 ->assert_is_op_output("reshape2", "Out")
+                                 ->assert_is_op_input("mul", "X")
+                                 ->AsIntermediate();
+    auto* qkv_reshape2_xshape = VarNode("qkv_reshape2_xshape")
+                                    ->assert_is_op_output("reshape2", "XShape")
+                                    ->AsIntermediate();
+    auto* qkv_mul_y =
+        VarNode("qkv_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* qkv_mul = OpNode("qkv_mul", "mul")->AsIntermediate();
+    auto* qkv_mul_out = VarNode("qkv_mul_out")
+                            ->assert_is_op_output("mul", "Out")
+                            ->assert_is_op_input("elementwise_add", "X")
+                            ->AsIntermediate();
+    auto* qkv_add_y = VarNode("qkv_add_y")
+                          ->assert_is_op_input("elementwise_add", "Y")
+                          ->AsInput();
+    auto* qkv_add = OpNode("qkv_add", "elementwise_add")->AsIntermediate();
+    auto* qkv_add_out = VarNode("qkv_add_out")
+                            ->assert_is_op_output("elementwise_add", "Out")
+                            ->assert_is_op_input("dropout", "X")
+                            ->AsIntermediate();
+    auto* qkv_dropout = OpNode("qkv_dropout", "dropout")->AsIntermediate();
+    auto* qkv_dropout_out = VarNode("qkv_dropout_out")
+                                ->assert_is_op_output("dropout", "Out")
+                                ->assert_is_op_input("elementwise_add", "X")
+                                ->AsIntermediate();
+    auto* qkv_dropout_mask = VarNode("qkv_dropout_mask")
+                                 ->assert_is_op_output("dropout", "Mask")
+                                 ->AsIntermediate();
+
+    auto* qkv_add_2 = OpNode("qkv_add_2", "elementwise_add")->AsIntermediate();
+    auto* qkv_add_2_out = VarNode("qkv_add_2_out")
+                              ->assert_is_op_output("elementwise_add", "Out")
+                              ->assert_is_op_input("layer_norm", "X")
+                              ->AsIntermediate();
+    auto* qkv_ln_2_scale = VarNode("qkv_ln_2_scale")
+                               ->assert_is_op_input("layer_norm", "Scale")
+                               ->AsInput();
+    auto* qkv_ln_2_bias = VarNode("qkv_ln_2_bias")
+                              ->assert_is_op_input("layer_norm", "Bias")
+                              ->AsInput();
+    auto* qkv_ln_2 = OpNode("qkv_ln_2", "layer_norm")->AsIntermediate();
+    auto* qkv_ln_2_out = VarNode("qkv_ln_2_out")
+                             ->assert_is_op_output("layer_norm", "Y")
+                             ->assert_is_op_input("mul", "X")
+                             ->assert_is_op_input("elementwise_add", "Y")
+                             ->AsIntermediate();
+    auto* qkv_ln_2_mean = VarNode("qkv_ln_2_mean")
+                              ->assert_is_op_output("layer_norm", "Mean")
+                              ->AsIntermediate();
+    auto* qkv_ln_2_var = VarNode("qkv_ln_2_var")
+                             ->assert_is_op_output("layer_norm", "Variance")
+                             ->AsIntermediate();
+
+    auto* qkv_mul_3_y =
+        VarNode("qkv_mul_3_y")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* qkv_mul_3 = OpNode("qkv_mul_3", "mul")->AsIntermediate();
+    auto* qkv_mul_3_out = VarNode("qkv_mul_3_out")
+                              ->assert_is_op_output("mul", "Out")
+                              ->assert_is_op_input("elementwise_add", "X")
+                              ->AsIntermediate();
+    auto* qkv_add_3_y = VarNode("qkv_add_3_y")
+                            ->assert_is_op_input("elementwise_add", "Y")
+                            ->AsInput();
+    auto* qkv_add_3 = OpNode("qkv_add_3", "elementwise_add")->AsIntermediate();
+    auto* qkv_add_3_out = VarNode("qkv_add_3_out")
+                              ->assert_is_op_output("elementwise_add", "Out")
+                              ->assert_is_op_input(act_type_, "X")
+                              ->AsIntermediate();
+    auto* qkv_act = OpNode("qkv_act", act_type_)->AsIntermediate();
+    auto* qkv_act_out = VarNode("qkv_act_out")
+                            ->assert_is_op_output(act_type_, "Out")
+                            ->assert_is_op_input("mul", "X")
+                            ->AsIntermediate();
+    auto* qkv_mul_4_y =
+        VarNode("qkv_mul_4_y")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* qkv_mul_4 = OpNode("qkv_mul_4", "mul")->AsIntermediate();
+    auto* qkv_mul_4_out = VarNode("qkv_mul_4_out")
+                              ->assert_is_op_output("mul", "Out")
+                              ->assert_is_op_input("elementwise_add", "X")
+                              ->AsIntermediate();
+    auto* qkv_add_4_y = VarNode("qkv_add_4_y")
+                            ->assert_is_op_input("elementwise_add", "Y")
+                            ->AsInput();
+    auto* qkv_add_4 = OpNode("qkv_add_4", "elementwise_add")->AsIntermediate();
+    auto* qkv_add_4_out = VarNode("qkv_add_4_out")
+                              ->assert_is_op_output("elementwise_add", "Out")
+                              ->assert_is_op_input("dropout", "X")
+                              ->AsIntermediate();
+    auto* qkv_dropout_4 = OpNode("qkv_dropout_4", "dropout")->AsIntermediate();
+    auto* qkv_dropout_4_out = VarNode("qkv_dropout_4_out")
+                                  ->assert_is_op_output("dropout", "Out")
+                                  ->assert_is_op_input("elementwise_add", "X")
+                                  ->AsIntermediate();
+    auto* qkv_dropout_4_mask = VarNode("qkv_dropout_4_mask")
+                                   ->assert_is_op_output("dropout", "Mask")
+                                   ->AsIntermediate();
+
+    auto* qkv_add_5 = OpNode("qkv_add_5", "elementwise_add")->AsIntermediate();
+    auto* qkv_add_5_out = VarNode("qkv_add_5_out")
+                              ->assert_is_op_output("elementwise_add", "Out")
+                              ->assert_is_op_input("layer_norm", "X")
+                              ->AsIntermediate();
+    auto* qkv_ln_5_scale = VarNode("qkv_ln_5_scale")
+                               ->assert_is_op_input("layer_norm", "Scale")
+                               ->AsInput();
+    auto* qkv_ln_5_bias = VarNode("qkv_ln_5_bias")
+                              ->assert_is_op_input("layer_norm", "Bias")
+                              ->AsInput();
+    auto* qkv_ln_5 = OpNode("qkv_ln_5", "layer_norm")->AsIntermediate();
+    auto* qkv_ln_5_out = VarNode("qkv_ln_5_out")
+                             ->assert_is_op_output("layer_norm", "Y")
+                             ->AsOutput();
+    auto* qkv_ln_5_mean = VarNode("qkv_ln_5_mean")
+                              ->assert_is_op_output("layer_norm", "Mean")
+                              ->AsIntermediate();
+    auto* qkv_ln_5_var = VarNode("qkv_ln_5_var")
+                             ->assert_is_op_output("layer_norm", "Variance")
+                             ->AsIntermediate();
+
+    // TODO(miaotianxiang): use LinksFrom/LinksTo() instead
+    *input >> *q_mul >> *q_mul_out >> *q_add >> *q_add_out >> *q_reshape2 >>
+        *q_reshape2_out >> *q_transpose2 >> *q_transpose2_out >> *q_scale >>
+        *q_scale_out >> *qk_matmul;
+    *q_mul_y >> *q_mul;
+    *q_add_y >> *q_add;
+    *q_reshape2 >> *q_reshape2_xshape;
+    *q_transpose2 >> *q_transpose2_xshape;
+
+    *input >> *k_mul >> *k_mul_out >> *k_add >> *k_add_out >> *k_reshape2 >>
+        *k_reshape2_out >> *k_transpose2 >> *k_transpose2_out >> *qk_matmul;
+    *k_mul_y >> *k_mul;
+    *k_add_y >> *k_add;
+    *k_reshape2 >> *k_reshape2_xshape;
+    *k_transpose2 >> *k_transpose2_xshape;
+
+    *qk_matmul >> *qk_matmul_out >> *qk_add >> *qk_add_out >> *qk_softmax >>
+        *qk_softmax_out >> *qk_dropout >> *qk_dropout_out >> *qkv_matmul;
+    *qk_mask >> *qk_add;
+    *qk_dropout >> *qk_dropout_mask;
+
+    *input >> *v_mul >> *v_mul_out >> *v_add >> *v_add_out >> *v_reshape2 >>
+        *v_reshape2_out >> *v_transpose2 >> *v_transpose2_out >> *qkv_matmul;
+    *v_mul_y >> *v_mul;
+    *v_add_y >> *v_add;
+    *v_reshape2 >> *v_reshape2_xshape;
+    *v_transpose2 >> *v_transpose2_xshape;
+
+    *qkv_matmul >> *qkv_matmul_out >> *qkv_transpose2 >> *qkv_transpose2_out >>
+        *qkv_reshape2 >> *qkv_reshape2_out >> *qkv_mul >> *qkv_mul_out >>
+        *qkv_add >> *qkv_add_out >> *qkv_dropout >> *qkv_dropout_out >>
+        *qkv_add_2;
+    *qkv_transpose2 >> *qkv_transpose2_xshape;
+    *qkv_reshape2 >> *qkv_reshape2_xshape;
+    *qkv_mul_y >> *qkv_mul;
+    *qkv_add_y >> *qkv_add;
+    *qkv_dropout >> *qkv_dropout_mask;
+
+    *input >> *qkv_add_2 >> *qkv_add_2_out >> *qkv_ln_2 >> *qkv_ln_2_out;
+    *qkv_ln_2_scale >> *qkv_ln_2;
+    *qkv_ln_2_bias >> *qkv_ln_2;
+    *qkv_ln_2 >> *qkv_ln_2_mean;
+    *qkv_ln_2 >> *qkv_ln_2_var;
+
+    *qkv_ln_2_out >> *qkv_mul_3 >> *qkv_mul_3_out >> *qkv_add_3 >>
+        *qkv_add_3_out >> *qkv_act >> *qkv_act_out >> *qkv_mul_4 >>
+        *qkv_mul_4_out >> *qkv_add_4 >> *qkv_add_4_out >> *qkv_dropout_4 >>
+        *qkv_dropout_4_out >> *qkv_add_5;
+    *qkv_mul_3_y >> *qkv_mul_3;
+    *qkv_add_3_y >> *qkv_add_3;
+    *qkv_mul_4_y >> *qkv_mul_4;
+    *qkv_add_4_y >> *qkv_add_4;
+    *qkv_dropout_4 >> *qkv_dropout_4_mask;
+
+    *qkv_ln_2_out >> *qkv_add_5 >> *qkv_add_5_out >> *qkv_ln_5 >> *qkv_ln_5_out;
+    *qkv_ln_5_scale >> *qkv_ln_5;
+    *qkv_ln_5_bias >> *qkv_ln_5;
+    *qkv_ln_5 >> *qkv_ln_5_mean;
+    *qkv_ln_5 >> *qkv_ln_5_var;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    cpp::OpDesc op_desc;
+    op_desc.SetType("single_encoder");
+    op_desc.SetInput("Inputs", {matched.at("input")->arg()->name});
+    op_desc.SetInput("Mask", {matched.at("qk_mask")->arg()->name});
+    op_desc.SetInput("FCWeight",
+                     {
+                         matched.at("q_mul_y")->arg()->name,
+                         matched.at("k_mul_y")->arg()->name,
+                         matched.at("v_mul_y")->arg()->name,
+                         matched.at("qkv_mul_y")->arg()->name,
+                         matched.at("qkv_mul_3_y")->arg()->name,
+                         matched.at("qkv_mul_4_y")->arg()->name,
+                     });
+    op_desc.SetInput("FCBias",
+                     {
+                         matched.at("q_add_y")->arg()->name,
+                         matched.at("k_add_y")->arg()->name,
+                         matched.at("v_add_y")->arg()->name,
+                         matched.at("qkv_add_y")->arg()->name,
+                         matched.at("qkv_add_3_y")->arg()->name,
+                         matched.at("qkv_add_4_y")->arg()->name,
+                     });
+    op_desc.SetInput("LNScale",
+                     {
+                         matched.at("qkv_ln_2_scale")->arg()->name,
+                         matched.at("qkv_ln_5_scale")->arg()->name,
+                     });
+    op_desc.SetInput("LNBias",
+                     {
+                         matched.at("qkv_ln_2_bias")->arg()->name,
+                         matched.at("qkv_ln_5_bias")->arg()->name,
+                     });
+    op_desc.SetOutput("Outputs", {matched.at("qkv_ln_5_out")->arg()->name});
+    // XXX: keep these to fool SubgraphOp::AttachImpl()
+    op_desc.SetAttr<int>("sub_block", 0);
+    op_desc.SetAttr<std::vector<std::string>>("input_data_names", {});
+    op_desc.SetAttr<std::vector<std::string>>("output_data_names", {});
+
+    // extra traits to distill
+    auto* reshape_op_info = matched.at("q_reshape2")->stmt()->op_info();
+    auto reshape_dim = reshape_op_info->GetAttr<std::vector<int>>("shape");
+    op_desc.SetAttr<int>("head_num", reshape_dim[2]);
+    op_desc.SetAttr<int>("size_per_head", reshape_dim[3]);
+    op_desc.SetAttr<std::string>("act_type", act_type_);
+
+    auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
+    // XXX: memleak?
+    auto sub_block_desc = new cpp::BlockDesc();
+    static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
+        ->SetSubBlock(sub_block_desc);
+    auto* single_encoder_stmt = matched.at("q_mul")->stmt();
+    fake_subgraph_op->Attach(op_desc, single_encoder_stmt->op()->scope());
+    fake_subgraph_op->SetValidPlaces(single_encoder_stmt->op()->valid_places());
+    single_encoder_stmt->SetOp(fake_subgraph_op);
+
+    std::vector<std::string> froms = {
+        "qk_mask",
+        "k_mul_y",
+        "v_mul_y",
+        "qkv_mul_y",
+        "qkv_mul_3_y",
+        "qkv_mul_4_y",
+        "q_add_y",
+        "k_add_y",
+        "v_add_y",
+        "qkv_add_y",
+        "qkv_add_3_y",
+        "qkv_add_4_y",
+        "qkv_ln_2_scale",
+        "qkv_ln_2_bias",
+        "qkv_ln_5_scale",
+        "qkv_ln_5_bias",
+    };
+    for (auto& from : froms) {
+      IR_NODE_LINK_TO(matched.at(from), matched.at("q_mul"));
+    }
+    IR_OP_VAR_LINK(matched.at("q_mul"), matched.at("qkv_ln_5_out"));
+  }
+
+ private:
+  std::string act_type_;
+};
+
+class XPUMultiEncoderFuser {
+ public:
+  bool IsDirectPredecessorOf(Node* op1, Node* op2) {
+    for (auto* out : op1->outlinks) {
+      for (auto* in : op2->inlinks) {
+        if (out == in) return true;
+      }
+    }
+    return false;
+  }
+
+  void operator()(SSAGraph* graph) {
+    std::vector<Node*> all_encoders;
+    for (auto* node : graph->StmtTopologicalOrder()) {
+      CHECK(node->IsStmt());
+      if (node->stmt()->op_info()->Type() == "single_encoder") {
+        all_encoders.push_back(node);
+      }
+    }
+    VLOG(3) << "Found " << all_encoders.size() << " single_encoder";
+    if (all_encoders.size() == 0) {
+      return;
+    }
+
+    // TODO(miaotianxiang): more verification
+    for (size_t i = 0; i < all_encoders.size() - 1; ++i) {
+      CHECK(IsDirectPredecessorOf(all_encoders[i], all_encoders[i + 1]));
+    }
+    std::string mask_name;
+    for (auto* encoder : all_encoders) {
+      auto* op_info = encoder->stmt()->op_info();
+      if (mask_name.empty()) {
+        mask_name = op_info->Input("Mask").front();
+      } else {
+        // CHECK(mask_name == op_info->Input("Mask").front());
+      }
+    }
+
+    std::unordered_set<const Node*> to_remove;
+    Node* first_encoder = all_encoders[0];
+    std::string in_name, out_name;
+    std::vector<std::string> arg_names{
+        "FCWeight", "FCBias", "LNScale", "LNBias"};
+    std::unordered_map<std::string, std::vector<std::string>> arg_map;
+    for (size_t i = 0; i < all_encoders.size(); ++i) {
+      Node* cur_encoder = all_encoders[i];
+      auto* op_info = cur_encoder->stmt()->op_info();
+      for (auto arg_name : arg_names) {
+        auto real_names = op_info->Input(arg_name);
+        for (auto name : real_names) {
+          auto* arg_node = graph->RetrieveArgument(name);
+          DirectedLink(arg_node, first_encoder);
+          arg_map[arg_name].push_back(name);
+        }
+      }
+
+      auto* cur_out =
+          graph->RetrieveArgument(op_info->Output("Outputs").front());
+      if (i == 0) {
+        // first encoder
+        to_remove.insert(cur_out);
+        in_name = op_info->Input("Inputs").front();
+        mask_name = op_info->Input("Mask").front();
+      } else if (i == all_encoders.size() - 1) {
+        // last encoder
+        to_remove.insert(cur_encoder);
+        DirectedLink(first_encoder, cur_out);
+        out_name = op_info->Output("Outputs").front();
+      } else {
+        to_remove.insert(cur_encoder);
+        to_remove.insert(cur_out);
+      }
+    }
+    GraphSafeRemoveNodes(graph, to_remove);
+
+    auto* multi_encoder_stmt = first_encoder->stmt();
+    cpp::OpDesc op_desc;
+    op_desc.SetType("__xpu__multi_encoder");
+    op_desc.SetInput("Input", {in_name});
+    for (auto kv : arg_map) {
+      op_desc.SetInput(kv.first, kv.second);
+    }
+    op_desc.SetInput("Mask", {mask_name});
+    op_desc.SetOutput("Output", {out_name});
+    op_desc.SetAttr<int>("xpu", 1);
+    auto* first_encoder_op_info = multi_encoder_stmt->op_info();
+    op_desc.SetAttr<int>("head_num",
+                         first_encoder_op_info->GetAttr<int>("head_num"));
+    op_desc.SetAttr<int>("size_per_head",
+                         first_encoder_op_info->GetAttr<int>("size_per_head"));
+    op_desc.SetAttr<int>("n_layers", all_encoders.size());
+    op_desc.SetAttr<std::string>(
+        "act_type", first_encoder_op_info->GetAttr<std::string>("act_type"));
+
+    auto* scope = multi_encoder_stmt->op()->scope();
+    std::vector<float> fc_weight_max(arg_map["FCWeight"].size());
+    auto& fc_weight_names = arg_map["FCWeight"];
+    for (size_t i = 0; i < fc_weight_names.size(); ++i) {
+      auto* weight_t = scope->FindMutableTensor(fc_weight_names[i]);
+      auto weight_dims = weight_t->dims();
+      int weight_len = weight_t->numel();
+      float* weight_on_host = weight_t->mutable_data<float>();
+      float max_f =
+          paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+
+      std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
+      std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
+      paddle::lite::xpu::math::ConvertFP32ToInt16(
+          weight_on_host, weight_int16.get(), max_f, weight_len);
+      paddle::lite::xpu::math::Transpose(weight_int16.get(),
+                                         weight_trans_int16.get(),
+                                         weight_dims[0],
+                                         weight_dims[1]);
+      memcpy(weight_on_host,
+             weight_trans_int16.get(),
+             weight_len * sizeof(int16_t));
+      fc_weight_max[i] = max_f;
+    }
+
+    std::string max_name = "encoder_max";
+    auto* max_filter_node = graph->NewArgumentNode(max_name);
+    max_filter_node->arg()->is_weight = true;
+    max_filter_node->arg()->type = LiteType::GetTensorTy(
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    DirectedLink(max_filter_node, first_encoder);
+    auto* max_filter_tensor = scope->NewTensor(max_name);
+    max_filter_tensor->Resize({static_cast<int>(fc_weight_max.size())});
+    memcpy(max_filter_tensor->mutable_data<float>(),
+           &fc_weight_max[0],
+           sizeof(float) * fc_weight_max.size());
+    op_desc.SetInput("FCWeightMax", {max_name});
+
+    auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());
+    multi_encoder_op->Attach(op_desc, scope);
+    multi_encoder_op->SetValidPlaces(multi_encoder_stmt->op()->valid_places());
+    auto kernels =
+        multi_encoder_op->CreateKernels(multi_encoder_op->valid_places());
+    multi_encoder_stmt->SetOp(multi_encoder_op);
+    multi_encoder_stmt->SetKernels(std::move(kernels));
+
+    // temp remove useless cast
+    std::unordered_set<const Node*> to_remove2;
+    Node* stack = nullptr;
+    for (auto* node : graph->StmtTopologicalOrder()) {
+      CHECK(node->IsStmt());
+      if (node->stmt()->op_info()->Type() == "stack") {
+        stack = node;
+      }
+    }
+    Node* stack_out = stack->outlinks.front();
+    for (Node* cast : stack_out->outlinks) {
+      Node* cast_out = cast->outlinks.front();
+      if (cast_out->outlinks.size() == 0) {
+        // remove
+        to_remove2.insert(cast_out);
+        to_remove2.insert(cast);
+      }
+    }
+    GraphSafeRemoveNodes(graph, to_remove2);
+  }
+};
+
+}  // namespace fusion
+
+class XPUMultiEncoderFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
+    // TODO(miaotianxiang): backup graph, recover from failed match
+    std::vector<std::string> act_types{"gelu", "relu"};
+    for (auto& act_type : act_types) {
+      fusion::XPUSingleEncoderFuser single_encoder_fuser(act_type);
+      single_encoder_fuser(graph.get());
+      fusion::XPUMultiEncoderFuser multi_encoder_fuser;
+      multi_encoder_fuser(graph.get());
+    }
+  }
+};
+
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle
+
+REGISTER_MIR_PASS(__xpu__multi_encoder_fuse_pass,
+                  paddle::lite::mir::XPUMultiEncoderFusePass)
+    .BindTargets({TARGET(kXPU)})
+    .BindKernel("matmul");

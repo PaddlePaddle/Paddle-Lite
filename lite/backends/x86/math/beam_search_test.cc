@@ -22,8 +22,8 @@ void PrepareCPUTensors(paddle::framework::LoDTensor* ids,
                        paddle::framework::LoDTensor* pre_scores) {
   // lod
   paddle::framework::LoD lod;
-  std::vector<size_t> level0({0, 2, 4});
-  std::vector<size_t> level1({0, 1, 2, 3, 4});
+  std::vector<uint64_t> level0({0, 2, 4});
+  std::vector<uint64_t> level1({0, 1, 2, 3, 4});
   lod.push_back(level0);
   lod.push_back(level1);
   ids->set_lod(lod);

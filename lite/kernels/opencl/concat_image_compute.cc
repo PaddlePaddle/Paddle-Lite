@@ -187,6 +187,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
+      event_ = std::shared_ptr<cl::Event>(new cl::Event);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
           cl::NullRange,
@@ -230,6 +231,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         status = kernel.setArg(++arg_idx, width_);
         CL_CHECK_FATAL(status);
         CL_CHECK_FATAL(status);
+        event_ = std::shared_ptr<cl::Event>(new cl::Event);
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
             kernel,
             cl::NullRange,
@@ -254,7 +256,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
+  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl
