@@ -50,7 +50,7 @@ if '${WITH_MKL}' == 'ON':
 # link lite.so to paddlelite.libs
 if os.name != 'nt':
     COMMAND = "patchelf --set-rpath '$ORIGIN/../libs/' ${PADDLE_BINARY_DIR}\
-    /inference_lite_lib/python/install/lite/lite.so"
+/inference_lite_lib/python/install/lite/lite.so"
     if os.system(COMMAND) != 0:
         raise Exception("patch third_party libs failed, command: %s" % COMMAND)
 
