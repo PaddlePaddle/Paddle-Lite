@@ -30,7 +30,7 @@ namespace core {
 // TODO(Superjomn) unify all the type representation across the lite framework.
 enum class Type {
   UNK = -1,
-  // primary types
+  // primary typesINT32,
   INT32,
   INT64,
   FLOAT32,
@@ -91,6 +91,8 @@ template <>
 Type StdTypeToRepr<float>();
 template <>
 Type StdTypeToRepr<bool>();
+template <>
+Type StdTypeToRepr<double>();
 template <>
 Type StdTypeToRepr<std::vector<char>>();
 template <>

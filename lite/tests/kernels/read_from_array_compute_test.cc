@@ -88,7 +88,7 @@ TEST(ReadFromArray, precision) {
   Place place;
   float abs_error = 1e-5;
 #ifdef LITE_WITH_ARM
-  place = TARGET(kARM);
+  place = TARGET(kHost);
 #else
   return;
 #endif

@@ -41,6 +41,7 @@ class PoolOpLite : public OpLite {
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+    AttachParam(&param_);
     auto x = op_desc.Input("X").front();
     auto out = op_desc.Output("Out").front();
 
@@ -105,7 +106,7 @@ inline void UpdatePadding(std::vector<int> *paddings,
                           const std::vector<int> &ksize) {
   // when padding_algorithm is "VALID" or "SAME"
   if (padding_algorithm == "SAME") {
-    for (int i = 0; i < strides.size(); ++i) {
+    for (size_t i = 0; i < strides.size(); ++i) {
       int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
       int pad_sum =
           std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],

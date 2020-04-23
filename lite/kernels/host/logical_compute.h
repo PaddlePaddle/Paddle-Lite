@@ -13,25 +13,33 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/assign_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class AssignCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+template <class Functor>
+class BinaryLogicalCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::AssignParam;
-
   void Run() override;
 
-  virtual ~AssignCompute() = default;
+  ~BinaryLogicalCompute() {}
 };
 
-}  // namespace arm
+template <class Functor>
+class UnaryLogicalCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
+
+  ~UnaryLogicalCompute() {}
+};
+
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -13,7 +13,13 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#if !defined(_WIN32)
 #include <sys/time.h>
+#else
+#include <windows.h>
+#include "lite/backends/x86/port.h"
+#endif
+#define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 #include <time.h>
 #include <algorithm>
 #include <cstdio>

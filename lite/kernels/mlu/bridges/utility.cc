@@ -59,10 +59,10 @@ void dequant(float* dst,
              size_t size,
              size_t size_in,
              std::vector<float> scales) {
-  for (int out = 0; out < size_o; ++out) {
-    for (int s = 0; s < size; ++s) {
+  for (size_t out = 0; out < size_o; ++out) {
+    for (size_t s = 0; s < size; ++s) {
       auto scale = scales[s];
-      for (int in = 0; in < size_in; ++in) {
+      for (size_t in = 0; in < size_in; ++in) {
         int idx = in + s * size_in + out * size_in * size;
         dst[idx] = static_cast<float>(src[idx]) * scale;
       }

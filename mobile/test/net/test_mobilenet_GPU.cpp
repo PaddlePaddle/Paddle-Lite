@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
               << " <input_w>\n"
               << " <repeats>\n"
               << " <warmup>\n"
-              << " <print_output>"
-              << std::endl;
+              << " <print_output>" << std::endl;
     return 0;
   }
 
@@ -54,11 +53,8 @@ int main(int argc, char **argv) {
     print_output_elem = atoi(argv[8]);
   }
 
-  std::cout << "input shape(NCHW):"
-            << N << " "
-            << C << " "
-            << H << " "
-            << W << std::endl;
+  std::cout << "input shape(NCHW):" << N << " " << C << " " << H << " " << W
+            << std::endl;
   std::cout << "repeats:" << repeats << std::endl;
   std::cout << "model_dir:" << model_dir << std::endl;
 
@@ -76,9 +72,8 @@ int main(int argc, char **argv) {
   }
 
   auto load_end = paddle_mobile::time();
-  std::cout << "load cost:"
-            << paddle_mobile::time_diff(load_start, load_end)
-            << " ms"  << std::endl;
+  std::cout << "load cost:" << paddle_mobile::time_diff(load_start, load_end)
+            << " ms" << std::endl;
 
   // input tensor
   std::vector<float> input;
@@ -104,8 +99,8 @@ int main(int argc, char **argv) {
     sum_duration += duration;
     min_duration = (duration > min_duration) ? min_duration : duration;
     max_duration = (duration < max_duration) ? max_duration : duration;
-    std::cout << "ridx:" << ridx + 1 << "/" << repeats
-              << " " << duration << " ms" << std::endl;
+    std::cout << "ridx:" << ridx + 1 << "/" << repeats << " " << duration
+              << " ms" << std::endl;
   }
 
   // benchmark result

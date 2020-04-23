@@ -19,3 +19,10 @@ if(LITE_WITH_RKNPU)
       RKNPU_DEPS ${rknpu_kernels} ${rknpu_bridges}
       ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_full_quant SERIAL)
 endif()
+
+if(LITE_WITH_APU)
+    lite_cc_test(test_mobilenetv1_int8_apu SRCS test_mobilenetv1_int8_apu.cc
+      DEPS ${lite_model_test_DEPS} paddle_api_full
+      APU_DEPS ${apu_kernels} ${apu_bridges}
+      ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_full_quant SERIAL)
+endif()

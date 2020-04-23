@@ -54,6 +54,7 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
 using NPUContext = Context<TargetType::kNPU>;
+using APUContext = Context<TargetType::kAPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
@@ -84,6 +85,21 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_APU
+template <>
+class Context<TargetType::kAPU> {
+ public:
+  Context() {}
+  explicit Context(const APUContext& ctx);
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(APUContext* ctx) {}
+
+  APUContext& operator=(const APUContext& ctx) {}
+  std::string name() const { return "APUContext"; }
 };
 #endif
 
@@ -324,27 +340,17 @@ class Context<TargetType::kX86> {
 template <>
 class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_;
-  using WaitListType =
-      std::unordered_map<decltype(static_cast<const void*>(nullptr)),
-                         std::shared_ptr<cl::Event>>;
-  std::shared_ptr<WaitListType> cl_wait_list_;
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
-  WaitListType* cl_wait_list() { return cl_wait_list_.get(); }
 
   void InitOnce() {
     // Init cl runtime.
     CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
-
     cl_context_ = std::make_shared<CLContext>();
-    cl_wait_list_ = std::make_shared<WaitListType>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) {
-    ctx->cl_context_ = cl_context_;
-    ctx->cl_wait_list_ = cl_wait_list_;
-  }
+  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
 };
 #endif
 
@@ -406,6 +412,12 @@ class ContextScheduler {
       case TARGET(kNPU):
         kernel_contexts_[TargetType::kNPU].As<NPUContext>().CopySharedTo(
             &ctx->As<NPUContext>());
+        break;
+#endif
+#ifdef LITE_WITH_APU
+      case TARGET(kAPU):
+        kernel_contexts_[TargetType::kAPU].As<APUContext>().CopySharedTo(
+            &ctx->As<APUContext>());
         break;
 #endif
 #ifdef LITE_WITH_RKNPU
@@ -482,6 +494,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_APU
+    InitContext<TargetType::kAPU, APUContext>();
 #endif
 #ifdef LITE_WITH_RKNPU
     InitContext<TargetType::kRKNPU, RKNPUContext>();

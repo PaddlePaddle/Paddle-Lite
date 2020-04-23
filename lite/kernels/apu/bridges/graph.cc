@@ -12,29 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/assign_compute.h"
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
+#include "lite/kernels/apu/bridges/graph.h"
+#include <utility>
+#include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace subgraph {
+namespace apu {
 
-void AssignCompute::Run() {
-  auto& param = Param<param_t>();
-  param.Out->CopyDataFrom(*param.X);
+int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
+  auto it = nodes_.find(name);
+
+  if (it != nodes_.end()) {
+    LOG(FATAL) << "[APU] Node" << name << " is redefined.";
+    return -1;
+  } else {
+    VLOG(3) << " Add: " << name << " : " << node->index();
+    auto ret = nodes_.insert(
+        std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
+    CHECK(ret.second);
+    it = ret.first;
+  }
+  operandIdx_ += 1;
+  it->second.push_back(node);
+
+  return it->second.size();
 }
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace apu
+}  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    assign, kARM, kAny, kNCHW, paddle::lite::kernels::arm::AssignCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .Finalize();

@@ -43,20 +43,20 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto output_shape = output->dims().Vectorize();
   const auto bs = input_dims[0];
   const auto oc = filter_dims[0];
-  CHECK_EQ(input_dims.size(), 4);
-  CHECK_EQ(filter_dims.size(), 4);
+  CHECK_EQ(input_dims.size(), 4u);
+  CHECK_EQ(filter_dims.size(), 4u);
   const auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  CHECK_EQ(strides.size(), 2L);
-  CHECK_EQ(dilations.size(), 2L);
-  if (paddings.size() == 2L) {
+  CHECK_EQ(strides.size(), 2u);
+  CHECK_EQ(dilations.size(), 2u);
+  if (paddings.size() == 2u) {
     for (size_t i = 0; i < strides.size(); ++i) {
       int copy_pad = *(paddings.begin() + 2 * i);
       paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
     }
   }
-  CHECK_EQ(paddings.size(), 4L)
+  CHECK_EQ(paddings.size(), 4u)
       << "Paddings size should be the same or twice as the input size.";
 
   const std::string padding_algorithm =

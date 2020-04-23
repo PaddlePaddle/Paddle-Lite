@@ -107,7 +107,7 @@ void TestCase::PrepareInputsForInstruction() {
           CHECK(!shared_tensor_array->empty())
               << "shared_tensor_array is empty yet";
           target_tensor_array->resize(shared_tensor_array->size());
-          for (int i = 0; i < shared_tensor_array->size(); i++) {
+          for (size_t i = 0; i < shared_tensor_array->size(); i++) {
             target_tensor_array->at(i).Resize(
                 shared_tensor_array->at(i).dims());
             TargetCopy(param_type->type->target(),
@@ -219,7 +219,7 @@ bool TestCase::CheckPrecision(const std::string& var_name,
     auto b_tensor_array =
         base_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
     CHECK_EQ(a_tensor_array->size(), b_tensor_array->size());
-    for (int i = 0; i < a_tensor_array->size(); i++) {
+    for (size_t i = 0; i < a_tensor_array->size(); i++) {
       Tensor* a_tensor = &(a_tensor_array->at(i));
       Tensor* b_tensor = &(b_tensor_array->at(i));
       if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0) {
