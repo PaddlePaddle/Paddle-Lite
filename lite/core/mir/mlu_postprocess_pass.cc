@@ -62,15 +62,6 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
   cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
 
   auto v_places = graph->valid_places();
-  for (auto it = v_places.begin(); it != v_places.end();) {
-    if (it->target != TARGET(kMLU) && it->target != TARGET(kHost) &&
-        it->target != TARGET(kX86)) {
-      it = v_places.erase(it);
-    } else {
-      ++it;
-    }
-  }
-
   // create kernels
   auto kernels = cast_op->CreateKernels(v_places);
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;
@@ -157,15 +148,6 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
   cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
 
   auto v_places = graph->valid_places();
-  for (auto it = v_places.begin(); it != v_places.end();) {
-    if (it->target != TARGET(kMLU) && it->target != TARGET(kHost) &&
-        it->target != TARGET(kX86)) {
-      it = v_places.erase(it);
-    } else {
-      ++it;
-    }
-  }
-
   // create kernels
   auto kernels = cast_op->CreateKernels(v_places);
   std::vector<std::unique_ptr<KernelBase>> selected_kernels;

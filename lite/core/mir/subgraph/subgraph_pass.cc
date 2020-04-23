@@ -84,6 +84,20 @@ void RKNPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+#ifdef LITE_WITH_MLU
+  // remove invalid places, since only support X86, host, MLU
+  auto v_places = graph->valid_places();
+  for (auto it = v_places.begin(); it != v_places.end();) {
+    if (it->target != TARGET(kMLU) && it->target != TARGET(kHost) &&
+        it->target != TARGET(kX86)) {
+      it = v_places.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  graph->SetValidPlaces(v_places);
+#endif
+
   std::unordered_set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
