@@ -271,10 +271,12 @@ class Context<TargetType::kMLU> {
   void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
 
   cnmlCoreVersion_t MLUCoreVersion() {
-    return DeviceInfo::Global().MLUCoreVersion();
+    return paddle::lite::TargetWrapperMlu::MLUCoreVersion();
   }
 
-  int MLUCoreNumber() { return DeviceInfo::Global().MLUCoreNumber(); }
+  int MLUCoreNumber() {
+    return paddle::lite::TargetWrapperMlu::MLUCoreNumber();
+  }
 
   u32_t affinity() { return affinity_; }
 
