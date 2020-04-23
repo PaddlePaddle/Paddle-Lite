@@ -82,7 +82,7 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
          "command argument 'valid_targets'";
 }
 
-void OptBase::SetLiteOut(const std::string& optimized_out_name) {
+void OptBase::SetLiteOut(const std::string& lite_out_name) {
   lite_out_name_ = lite_out_name;
 }
 
@@ -99,7 +99,7 @@ void OptBase::Run() {
   } else {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
-        optimize_out_path_, model_type_, record_strip_info_);
+        lite_out_name_, model_type_, record_strip_info_);
     auto resulted_model_name =
         record_strip_info_ ? "information of striped model" : "optimized model";
     std::cout << "Save the " << resulted_model_name
@@ -116,7 +116,7 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
   SetModelFile(model_path);
   SetParamFile(param_path);
   SetValidPlaces(valid_places);
-  SetOptimizeOut(optimized_out_path);
+  SetLiteOut(optimized_out_path);
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
   opt_config_.set_valid_places(valid_places_);
@@ -125,7 +125,7 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
   } else {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
-        optimize_out_path_, model_type_, record_strip_info_);
+        lite_out_name_, model_type_, record_strip_info_);
     auto resulted_model_name =
         record_strip_info_ ? "information of striped model" : "optimized model";
     std::cout << "Save the " << resulted_model_name
@@ -154,7 +154,7 @@ void OptBase::SetModelSetDir(const std::string& model_set_path) {
 }
 void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
   // 1. mkdir of outputed optimized model set.
-  lite::MkDirRecur(optimize_out_path_);
+  lite::MkDirRecur(lite_out_name_);
   auto model_dirs = lite::ListDir(model_set_dir_, true);
   if (model_dirs.size() == 0) {
     LOG(FATAL) << "[" << model_set_dir_ << "] does not contain any model";
@@ -167,7 +167,7 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
     std::string input_model_dir =
         lite::Join<std::string>({model_set_dir_, name}, "/");
     std::string output_model_dir =
-        lite::Join<std::string>({optimize_out_path_, name}, "/");
+        lite::Join<std::string>({lite_out_name_, name}, "/");
 
     if (opt_config_.model_file() != "" && opt_config_.param_file() != "") {
       auto model_file_path =
