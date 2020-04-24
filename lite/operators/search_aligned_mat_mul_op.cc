@@ -93,6 +93,29 @@ bool SearchAlignedMatMulOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float SearchAlignedMatMulOpLite::GetGops(){
+  const auto x_dims = param_.x->dims();
+  const auto y_dims = param_.y->dims();
+  const auto& x_lod = param_.x->lod();
+  const auto& y_lod = param_.y->lod();
+  const auto& x_lod_0 = x_lod[0];
+  const auto& y_lod_0 = y_lod[0];
+
+  int x_inner_size = x_dims[1];
+  int y_inner_size = y_dims[1];
+  int x_batch_size = x_lod_0[1];
+  int y_batch_size = y_lod_0[1];
+  int M = param_.x_transpose_ ? x_inner_size : x_batch_size;
+  int N = param_.y_transpose_ ? y_batch_size : y_inner_size;
+  int X_K = param_.x_transpose_ ? x_batch_size : x_inner_size;
+  int Y_K = param_.y_transpose_ ? y_inner_size : y_batch_size;
+  CHECK_EQ(X_K, Y_K) << "K of Input(X) and Input(Y) is not equal";
+  int K = X_K;
+  return 2.0 * M * N * K;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

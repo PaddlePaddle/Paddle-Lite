@@ -38,6 +38,10 @@ class SearchSeqFcOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
   std::string DebugString() const override { return "search_seq_fc"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SearchSeqFcParam param_;
 };

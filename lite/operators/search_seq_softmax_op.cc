@@ -44,6 +44,13 @@ bool SearchSeqSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float SearchSeqSoftmaxOp::GetGops(){
+  auto in_sum = param_.x->numel();
+  return 4.f * in_sum;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

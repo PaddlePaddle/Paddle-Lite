@@ -97,6 +97,14 @@ bool PoolOpLite::InferShapeImpl() const {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float PoolOpLite::GetGops(){
+  auto out_sum = param_.output->numel();
+  auto ksize = param_.param_.ksize[0] * param_.param_.ksize[1];
+  return 1.f * out_sum * ksize;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -38,6 +38,10 @@ class TransposeOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "transpose"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable TransposeParam param_;
 };
@@ -56,6 +60,10 @@ class Transpose2Op : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "transpose2"; }
+
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
 
  private:
   mutable TransposeParam param_;

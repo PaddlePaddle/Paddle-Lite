@@ -91,6 +91,10 @@ class PoolOpLite : public OpLite {
 
   std::string DebugString() const override { return "pool2d"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable PoolParam param_;
   std::string padding_algorithm_{""};

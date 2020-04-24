@@ -99,6 +99,12 @@ bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float SqueezeOp::GetGops(){
+  return 1.f;
+}
+#endif
+
 bool Squeeze2Op::CheckShape() const {
   SqueezeOp::CheckShape();
   CHECK_OR_FALSE(param_.XShape);
@@ -124,6 +130,12 @@ bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   CHECK(param_.XShape) << "Output(XShape) of SqueezeOp should not be null.";
   return true;
 }
+
+#ifdef LITE_WITH_PROFILE
+float Squeeze2Op::GetGops(){
+  return 1.f;
+}
+#endif
 
 }  // namespace operators
 }  // namespace lite

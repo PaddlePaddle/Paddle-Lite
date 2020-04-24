@@ -41,6 +41,10 @@ class SGDOpLite : public OpLite {
 
   std::string DebugString() const override { return "sgd"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SGDParam param_;
 };

@@ -40,6 +40,10 @@ class SearchSeqDepaddingOpLite : public OpLite {
 
   std::string DebugString() const override { return "search_seq_depadding"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SearchSeqDepaddingParam param_;
 };

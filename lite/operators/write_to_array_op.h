@@ -38,6 +38,10 @@ class WriteToArrayOp : public OpLite {
 
   std::string DebugString() const override { return "write_to_array"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable WriteToArrayParam param_;
 };

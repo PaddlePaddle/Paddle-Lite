@@ -56,6 +56,13 @@ bool SequencePoolConcatOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float SequencePoolConcatOp::GetGops(){
+  // todo
+  return 0.f;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

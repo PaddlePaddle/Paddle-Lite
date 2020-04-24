@@ -53,6 +53,13 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float SoftmaxOp::GetGops(){
+  auto in_sum = param_.x->numel();
+  return 4.f * in_sum;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

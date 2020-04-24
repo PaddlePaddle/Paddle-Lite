@@ -41,6 +41,10 @@ class UniformRandomOpLite : public OpLite {
 
   std::string DebugString() const override { return "uniform_random"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable UniformRandomParam param_;
 };

@@ -91,6 +91,12 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ReshapeOp::GetGops(){
+  return 1.f;
+}
+#endif
+
 bool Reshape2Op::CheckShape() const {
   ReshapeOp::CheckShape();
   CHECK_OR_FALSE(param_.xshape);
@@ -117,6 +123,12 @@ bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.xshape = xshape_var->GetMutable<lite::Tensor>();
   return true;
 }
+
+#ifdef LITE_WITH_PROFILE
+float Reshape2Op::GetGops(){
+  return 1.f;
+}
+#endif
 
 static bool CheckPositive(const DDim &dims) {
   for (size_t i = 0; i < dims.size(); ++i) {

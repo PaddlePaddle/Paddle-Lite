@@ -46,6 +46,10 @@ class SubgraphOp : public OpLite {
   void SetSubBlock(cpp::BlockDesc *desc) { param_.sub_block_desc = desc; }
   cpp::BlockDesc *GetSubBlock() { return param_.sub_block_desc; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SubgraphParam param_;
 };

@@ -38,6 +38,10 @@ class SliceOp : public OpLite {
 
   std::string DebugString() const override { return "slice"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SliceParam param_;
 };

@@ -92,6 +92,18 @@ bool ReduceProdOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ReduceProdOpLite::GetGops(){
+  auto dims = param_.dim;
+  auto in_sum = param_.x->numel();
+  if (dims.size() == 0 || dims.size() == 1){
+    return 1.f * in_sum;
+  } else if(dims.size() == 2){
+    return 2.f * in_sum;
+  }
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

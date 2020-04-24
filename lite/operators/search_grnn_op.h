@@ -39,6 +39,10 @@ class SearchGrnnOpLite : public OpLite {
 
   std::string DebugString() const override { return "search_grnn"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SearchGrnnParam param_;
 };

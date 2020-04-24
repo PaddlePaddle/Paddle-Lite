@@ -73,6 +73,14 @@ bool SearchFcOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float SearchFcOpLite::GetGops(){
+  auto x_dims = param_.X->dims();
+  auto w_dims = param_.W->dims();
+  return 2.f * x_dims[0] * x_dims[1] * w_dims[0];
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

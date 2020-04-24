@@ -39,6 +39,10 @@ class SplitLodTensorOpLite : public OpLite {
 
   std::string DebugString() const override { return "split_lod_tensor"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable SplitLodTensorParam param_;
 };

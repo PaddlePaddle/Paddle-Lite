@@ -38,6 +38,10 @@ class ReadFromArrayOp : public OpLite {
 
   std::string DebugString() const override { return "read_from_array"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable ReadFromArrayParam param_;
 };

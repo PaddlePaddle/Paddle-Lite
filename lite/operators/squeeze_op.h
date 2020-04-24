@@ -37,6 +37,10 @@ class SqueezeOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "squeeze"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  protected:
   mutable SqueezeParam param_;
 };
@@ -54,6 +58,10 @@ class Squeeze2Op : public SqueezeOp {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "squeeze2"; }
+
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
 };
 
 }  // namespace operators

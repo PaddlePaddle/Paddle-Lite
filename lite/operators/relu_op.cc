@@ -42,6 +42,13 @@ bool ReluOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ReluOp::GetGops(){
+  auto out_sum = param_.Out->numel();
+  return 1.f * out_sum;
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

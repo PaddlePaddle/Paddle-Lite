@@ -41,6 +41,10 @@ class ShuffleChannelOpLite : public OpLite {
 
   std::string DebugString() const override { return "shuffle_channel"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable ShuffleChannelParam param_;
 };

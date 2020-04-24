@@ -105,6 +105,20 @@ bool ReduceMeanOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float ReduceMeanOp::GetGops(){
+  auto dims = param_.dim;
+  auto in_sum = param_.X->numel();
+  if (dims.size() == 0){
+    return 1.f * in_sum;
+  } else if(dims.size() == 1){
+    return 2.f * in_sum;
+  } else if(dims.size() == 2){
+    return 4.f * in_sum;
+  }
+}
+#endif
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

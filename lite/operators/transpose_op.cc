@@ -88,6 +88,12 @@ bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float TransposeOp::GetGops(){
+  return 1.f;
+}
+#endif
+
 // Transpose2
 bool Transpose2Op::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
@@ -170,6 +176,11 @@ bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float Transpose2Op::GetGops(){
+  return 1.f;
+}
+#endif
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
