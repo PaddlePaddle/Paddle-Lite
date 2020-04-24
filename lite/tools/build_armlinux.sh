@@ -216,6 +216,7 @@ function main {
     if [ -z "$1" ]; then
         # compiling result contains light_api lib only, recommanded.
         make_tiny_publish_so
+        exit 0
     fi
 
     # Parse command line.
