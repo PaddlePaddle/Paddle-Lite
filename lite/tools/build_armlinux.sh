@@ -7,18 +7,22 @@ set -ex
 # armv7 or armv8 or armv7hf, default armv8.
 ARM_ABI=armv8
 # gcc or clang, default gcc.
-ARM_LANG=gcc
+TOOLCHAIN=gcc
 # ON or OFF, default OFF.
-BUILD_EXTRA=OFF
+WITH_EXTRA=OFF
 # controls whether to compile python lib, default is OFF.
-BUILD_PYTHON=OFF
+WITH_PYTHON=OFF
 # controls whether to compile cv functions into lib, default is OFF.
-BUILD_CV=OFF
+WITH_CV=OFF
 # controls whether to hide log information, default is ON.
 SHUTDOWN_LOG=ON
 # options of striping lib according to input model.
-BUILD_TAILOR=OFF
+WITH_STRIP=OFF
 OPTMODEL_DIR=""
+# options of compiling OPENCL lib.
+WITH_OPENCL=OFF
+# options of adding training ops
+WITH_TRAIN=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -31,15 +35,18 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party zip file to accelerate third-paty lib installation
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
-readonly workspace=$PWD
-# basic options for android compiling.
-function init_cmake_common_options {
-    CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                        -DLITE_WITH_ARM=ON \
-                        -DLITE_WITH_X86=OFF \
-                        -DARM_TARGET_OS=armlinux \
-                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-                        -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+# absolute path of Paddle-Lite.
+readonly workspace=$PWD/$(dirname $0)/../../
+# basic options for armlinux compiling.
+readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
+                            -DLITE_WITH_ARM=ON \
+                            -DLITE_WITH_X86=OFF \
+                            -DARM_TARGET_OS=armlinux \
+                            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+                            -DWITH_TESTING=OFF"
+# mutable options for armlinux compiling.
+function init_cmake_mutable_options {
+    cmake_mutable_options="-DLITE_BUILD_EXTRA=$BUILD_EXTRA \
                         -DLITE_WITH_CV=$BUILD_CV \
                         -DLITE_WITH_PYTHON=$BUILD_PYTHON \
                         -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
@@ -116,18 +123,45 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+    is_tiny=${1:ON}
+    if [ $WITH_PYTHON == "ON" -a $is_tiny == "ON" ]; then
+        echo "Warning: build full_publish to use python."
+        is_tiny=OFF
+    fi
+    if [ $BUILD_TAILOR == "ON" -a $OPTMODEL_DIR == "" ]; then
+        echo "Error: set OPTMODEL_DIR if BUILD_TAILOR is ON."
+    fi
+
+    if [ $is_tiny == "OFF" ]; then
+        prepare_thirdparty
+    fi
+
     build_dir=$workspace/build.lite.armlinux.$ARM_ABI.$ARM_LANG
-    if [ -d $build_dir ]
-    then
+    if [ "${WITH_OPENCL}" == "ON" ]; then
+       build_dir=${build_dir}.opencl
+    fi
+
+    if [ -d $build_dir ]; then
         rm -rf $build_dir
     fi
     mkdir -p $build_dir
     cd $build_dir
 
-    init_cmake_common_options
+    prepare_workspace $workspace $build_dir
+
+    if [ "${WITH_OPENCL}" == "ON" ]; then
+       prepare_opencl_source_code $workspace $build_dir
+    fi
+
+    init_cmake_mutable_options
     cmake $workspace \
-        ${CMAKE_COMMON_OPTIONS} \
-        -DLITE_ON_TINY_PUBLISH=ON
+       ${CMAKE_COMMON_OPTIONS} \
+       ${cmake_mutable_options}  \
+       -DLITE_ON_TINY_PUBLISH=$is_tiny
+
+    if [ "${WITH_OPENCL}" == "ON" ]; then
+       make opencl_clhpp -j$NUM_PROC 
+    fi
 
     make publish_inference -j$NUM_PROC
     cd - > /dev/null
@@ -137,76 +171,37 @@ function make_tiny_publish_so {
 # 4.2 function of full_publish compiling
 # here we compile both light_api lib and full_api lib
 function make_full_publish_so {
-    prepare_thirdparty
-
-    build_directory=$BUILD_DIR/build.lite.android.$ARM_ABI.$ARM_LANG
-    if [ -d $build_directory ]
-    then
-        rm -rf $build_directory
-    fi
-    mkdir -p $build_directory
-    cd $build_directory
-
-    prepare_workspace $workspace $build_directory
-
-    init_cmake_common_options
-    cmake $workspace \
-        ${CMAKE_COMMON_OPTIONS} \
-        -DLITE_ON_TINY_PUBLISH=OFF
-
-    make publish_inference -j$NUM_PROC
-    cd - > /dev/null
-}
-####################################################################################################
-
-# 4.3 function of opencl compiling
-# here we compile both light_api and full_api opencl lib
-function make_opencl {
-    prepare_thirdparty
-
-    build_dir=$workspace/build.lite.android.$ARM_ABI.$ARM_LANG.opencl
-    if [ -d $build_directory ]
-    then
-    rm -rf $build_directory
-    fi
-    mkdir -p $build_dir
-    cd $build_dir
-
-    prepare_workspace $workspace $build_dir
-    prepare_opencl_source_code $workspace $build_dir
-
-    cmake $workspace \
-        ${CMAKE_COMMON_OPTIONS} \
-        -DLITE_WITH_OPENCL=ON
-
-    make opencl_clhpp -j$NUM_PROC
-    make publish_inference -j$NUM_PROC
+    make_tiny_publish_so OFF
 }
 ####################################################################################################
 
 function print_usage {
-    set +x
-    echo -e "\n Methods of compiling Padddle-Lite armlinux library:"
-    echo "----------------------------------------"
-    echo -e "compile light_api library (recommanded): (armv8, gcc)"
-    echo -e "   ./lite/tools/build_armlinux.sh tiny_publish"
-    echo -e "compile both light_api and cxx_api library: (armv8, gcc)"
-    echo -e "   ./lite/tools/build_armlinux.sh full_publish"
-    echo -e "compile both light_api and cxx_api opencl library: (armv8, gcc)"
-    echo -e "   ./lite/tools/build_armlinux.sh opencl"
-    echo
-    echo -e "optional argument:"
-    echo -e "--arm_abi:\t armv8|armv7|armv7hf, default is armv8"
-    echo -e "--arm_lang:\t gcc|clang, defalut is gcc"
-    echo -e "--build_python: (OFF|ON); controls whether to publish python api lib, default is OFF"
-    echo -e "--build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF"
-    echo -e "--shutdown_log: (OFF|ON); controls whether to hide log information, default is ON"
-    echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
-    echo
-    echo -e "arguments of striping lib according to input model:"
-    echo -e "--build_tailor: (OFF|ON); controls whether to tailor the lib according to the model, default is OFF"
-    echo -e "--opt_model_dir: (path to optimized model dir); contains absolute path to optimized model dir"
-    echo "----------------------------------------"
+    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "| Methods of compiling Padddle-Lite Android library:                                                                                                   |"
+    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "|  compile android library: (armv8, gcc)                                                                                                               |"
+    echo -e "|     ./lite/tools/build_android.sh                                                                                                                    |"
+    echo -e "|  print help information:                                                                                                                             |"
+    echo -e "|     ./lite/tools/build_android.sh help                                                                                                               |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  optional argument:                                                                                                                                  |"
+    echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                                       |"
+    echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
+    echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
+    echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
+    echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
+    echo -e "|     --shutdown_log: (OFF|ON); controls whether to hide log information, default is ON                                                                |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
+    echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                              |"
+    echo -e "|     --with_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF                                                    |"
+    echo -e "|     --opt_model_dir: (absolute path to optimized model dir) required when compiling striped library                                                  |"
+    echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html                           |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of opencl library compiling:                                                                                                              |"
+    echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                                   |"
+    echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
+    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
 
@@ -225,18 +220,28 @@ function main {
                 shift
                 ;;
             # gcc or clang, default gcc
-            --arm_lang=*)
-                ARM_LANG="${i#*=}"
+            --toolchain=*)
+                TOOLCHAIN="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
-            --build_extra=*)
-                BUILD_EXTRA="${i#*=}"
+            --with_extra=*)
+                WITH_EXTRA="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
-            --build_cv=*)
-                BUILD_CV="${i#*=}"
+            --with_cv=*)
+                WITH_CV="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default ON
+            --shutdown_log=*)
+                SHUTDOWN_LOG="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
+            --with_strip=*)
+                BUILD_TAILOR="${i#*=}"
                 shift
                 ;;
             # string, absolute path to optimized model dir
@@ -245,32 +250,28 @@ function main {
                 shift
                 ;;
             # ON or OFF, default OFF
-            --build_tailor=*)
-                BUILD_TAILOR="${i#*=}"
+            --with_opencl=*)
+                WITH_OPENCL="${i#*=}"
                 shift
                 ;;
-            # ON or OFF, default ON
-            --shutdown_log=*)
-                SHUTDOWN_LOG="${i#*=}"
-                shift
-                ;;
-            # compiling result contains light_api lib only, recommanded.
-            tiny_publish)
-                make_tiny_publish_so
+            # ON or OFF, default OFF
+            --with_train=*)
+                WITH_TRAIN="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.
             full_publish)
                 make_full_publish_so
-                shift
+                exit 0
                 ;;
-            # compiling lib which can operate on opencl and cpu.
-            opencl)
-                make_opencl
-                shift
+            # print help info
+            help)
+                print_usage
+                exit 0
                 ;;
+            # unknown option
             *)
-                # unknown option
+                echo "Error: unsupported argument \"${i#*=}\""
                 print_usage
                 exit 1
                 ;;
