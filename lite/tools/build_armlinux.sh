@@ -46,14 +46,17 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DWITH_TESTING=OFF"
 # mutable options for armlinux compiling.
 function init_cmake_mutable_options {
-    cmake_mutable_options="-DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-                        -DLITE_WITH_CV=$BUILD_CV \
-                        -DLITE_WITH_PYTHON=$BUILD_PYTHON \
+    cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARM_ABI \
+                        -DARM_TARGET_LANG=$TOOLCHAIN \
+                        -DLITE_BUILD_EXTRA=$WITH_EXTRA \
+                        -DLITE_WITH_PYTHON=$WITH_PYTHON \
+                        -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
-                        -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+                        -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-                        -DARM_TARGET_ARCH_ABI=$ARM_ABI \
-                        -DARM_TARGET_LANG=$ARM_LANG"
+                        -DLITE_WITH_OPENCL=$WITH_OPENCL \
+                        -DLITE_WITH_TRAIN=$WITH_TRAIN \
+                        "
 }
 #####################################################################################################
 
@@ -126,6 +129,10 @@ function make_tiny_publish_so {
     is_tiny=${1:ON}
     if [ $WITH_PYTHON == "ON" -a $is_tiny == "ON" ]; then
         echo "Warning: build full_publish to use python."
+        is_tiny=OFF
+    fi
+    if [ $WITH_TRAIN == "ON" -a $is_tiny == "ON" ]; then
+        echo "Warning: build full_publish to add training ops."
         is_tiny=OFF
     fi
     if [ $BUILD_TAILOR == "ON" -a $OPTMODEL_DIR == "" ]; then
