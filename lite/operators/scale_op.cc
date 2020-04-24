@@ -38,6 +38,20 @@ bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.scale = op_desc.GetAttr<float>("scale");
   param_.bias = op_desc.GetAttr<float>("bias");
   param_.bias_after_scale = op_desc.GetAttr<bool>("bias_after_scale");
+  if (op_desc.HasAttr("activation_type")) {
+    auto act_type = op_desc.GetAttr<std::string>("activation_type");
+    param_.activation_type = act_type;
+    if (act_type == "relu") {
+      param_.fuse_relu = true;
+    } else if (act_type == "relu6") {
+      param_.alpha = op_desc.GetAttr<float>("alpha");  // 6.f
+    } else if (act_type == "leaky_relu") {
+      param_.alpha = op_desc.GetAttr<float>("alpha");
+    } else {
+      CHECK(false)
+          << "The fused conv only supports fuse with relu and leaky relu";
+    }
+  }
   CHECK(param_.x);
   CHECK(param_.output);
   return true;
