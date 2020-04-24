@@ -69,7 +69,8 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
   for (auto& kernel : kernels) {
     if (op_type == "cast") {
       const Type* in_arg_ty = kernel->GetInputDeclType("X");
-      if (PrecisionCompatibleTo(*in_arg_ty, *cur_node->AsArg().type)) {
+      if (PrecisionCompatibleTo(*in_arg_ty, *cur_node->AsArg().type) &&
+          DataLayoutCompatible(*in_arg_ty, *cur_node->AsArg().type)) {
         is_found = true;
       }
     } else if (op_type == "layout") {
@@ -564,6 +565,16 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
                                     old_type->precision(),
                                     paddle::lite_api::DataLayoutType::kNHWC,
                                     old_type->device());
+          // modify inst feed to NHWC, while set_mlu_input_layout(kNHWC)
+          // invoked, to keep consistent with actual data layout
+          auto place = node.AsStmt().place();
+          place.layout = DATALAYOUT(kNHWC);
+          std::vector<Place> valid_places = {place};
+          auto updated_op_info = *node.AsStmt().op_info();
+          node.AsStmt().ResetOp(updated_op_info, valid_places, nullptr);
+          auto kernel = &(node.AsStmt().picked_kernel());
+          VLOG(4) << "kernel info: " << kernel->name();
+          node.AsStmt().op()->AttachKernel(kernel);
         }
       }
     }

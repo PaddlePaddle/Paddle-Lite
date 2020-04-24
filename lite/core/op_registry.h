@@ -126,6 +126,15 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //

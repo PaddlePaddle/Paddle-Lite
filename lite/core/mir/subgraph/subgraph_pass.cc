@@ -95,7 +95,26 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       ++it;
     }
   }
+  // add x86 NHWC place
+  std::vector<paddle::lite_api::PrecisionType> precisions{PRECISION(kFloat),
+                                                          PRECISION(kFP16)};
+  if (lite::TargetWrapperMlu::UseFirstConv())
+    precisions.emplace_back(PRECISION(kInt8));
+  for (auto& prec : precisions) {
+    auto is_x86_nhwc = [prec](const Place& it) {
+      return it.layout == DATALAYOUT(kNHWC) && it.target == TARGET(kX86) &&
+             it.precision == prec;
+    };
+    if (std::find_if(v_places.cbegin(), v_places.cend(), is_x86_nhwc) ==
+        v_places.end()) {
+      v_places.emplace_back(Place{TARGET(kX86), prec, DATALAYOUT(kNHWC)});
+    }
+  }
   graph->SetValidPlaces(v_places);
+  VLOG(4) << "valid places after modified:";
+  for (auto& p : v_places) {
+    VLOG(4) << p.DebugString();
+  }
 #endif
 
   std::unordered_set<std::string> supported_lists;
