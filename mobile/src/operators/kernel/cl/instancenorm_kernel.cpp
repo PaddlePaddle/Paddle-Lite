@@ -30,8 +30,6 @@ bool InstanceNormKernel<GPU_CL, float>::Init(InstanceNormParam<GPU_CL> *param) {
     build_options = "-DLOCAL_MEM_128";
   } else if (h == 64) {
     build_options = "-DLOCAL_MEM_64";
-  } else if (h > 256) {
-    PADDLE_MOBILE_THROW_EXCEPTION("instance norm unsupported input height");
   }
   this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl",
                              build_options);
