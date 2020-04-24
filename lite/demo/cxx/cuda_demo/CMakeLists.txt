@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(demo CXX C)
 
+add_definitions(-DLITE_WITH_CUDA)
+
 set(TARGET demo)
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3")
 
