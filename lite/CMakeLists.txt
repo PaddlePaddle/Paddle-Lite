@@ -238,8 +238,8 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
 
     add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
-           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/"
            )
     add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
     add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
