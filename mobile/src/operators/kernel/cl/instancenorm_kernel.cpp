@@ -30,7 +30,7 @@ bool InstanceNormKernel<GPU_CL, float>::Init(InstanceNormParam<GPU_CL> *param) {
     build_options = "-DLOCAL_MEM_128";
   } else if (h == 64) {
     build_options = "-DLOCAL_MEM_64";
-  } 
+  }
   this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl",
                              build_options);
   return true;
