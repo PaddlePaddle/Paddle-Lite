@@ -6,15 +6,17 @@ on:
 
 jobs:
   build:
+    env:
+      NEUWARE_HOME: /usr/local/neuware
 
     runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@v2
     - name: modity build.sh
-      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/-j$NUM_CORES_FOR_COMPILE/-j1/' lite/tools/build_mlu.sh
+      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/-j$NUM_CORES_FOR_COMPILE/-j1/' lite/tools/build_mlu.sh && sed -i 's/PRINT_HW_TIME false/PRINT_HW_TIME true/' lite/kernels/mlu/bridges/graph.h
     - name: build
-      run: NEUWARE_HOME=/usr/local/neuware ./lite/tools/build_mlu.sh build
+      run: ./lite/tools/build_mlu.sh build
     - name: test_act_converter_mlu
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_act_converter_mlu
     - name: test_batch_norm_converter_mlu
@@ -39,3 +41,26 @@ jobs:
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_softmax_converter_mlu
     - name: test_transpose_converter_mlu
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_transpose_converter_mlu
+    - name: test_classification
+      run: |
+        cd ..
+        rm -rf Paddle-Lite-models
+        git clone -b adapt_api git@github.com:Cambricon/Paddle-Lite-models.git
+        cd Paddle-Lite-models
+        sed -i 's/\/home\/dingminghui\/paddle/${PWD}\/../' prepare_paddle_env.sh
+        sed -i 's/\/home\/dingminghui\/paddle\/data/\/opt\/share\/paddle_model\//' classification/classification_demo.cpp
+        cp /opt/share/datasets/imagenet/val_1000.txt classification/filelist
+        sed -i 's/^/\/opt\/share\/datasets\/imagenet\//' classification/filelist
+        LD_LIBRARY_PATH=${PWD}/../Paddle-Lite/build.lite.mlu/third_party/mklml/src/extern_mklml/lib ./prepare_paddle_env.sh 0
+        cd classification 
+        LD_LIBRARY_PATH=${PWD}/../../Paddle-Lite/build.lite.mlu/third_party/mklml/src/extern_mklml/lib ./classification_demo 1 &> log
+    - name: compare_subgraph_num
+      run: |
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' ${PWD}/../Paddle-Lite-models/classification/log` -eq 1 ]
+    - name: compare_hardward_time
+      run: |
+        tmp=`awk '/hardware/ {print $6}' ${PWD}/../Paddle-Lite-models/classification/log` && hardware_time=${tmp:8} && [ `awk -v a=$hardware_time -v b=6.0 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
+    - name: compare_top1_&_top5
+      run: |
+        tmp=`awk '/top1/ {print $5}' ${PWD}/../Paddle-Lite-models/classification/log` && [ `awk -v a=$tmp -v b=0.7 'BEGIN{print(a>b)?"0":"1"}'` -eq 0 ]
+        tmp=`awk '/top5/ {print $5}' ${PWD}/../Paddle-Lite-models/classification/log` && [ `awk -v a=$tmp -v b=0.9 'BEGIN{print(a>b)?"0":"1"}'` -eq 0 ]
