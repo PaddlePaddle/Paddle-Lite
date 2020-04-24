@@ -340,7 +340,7 @@ struct ConcatParam : ParamBase {
 struct ActivationParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  lite_api::ActivationType active_type;
+  lite_api::ActivationType active_type{lite_api::ActivationType::kIndentity};
   bool has_active{false};
   float Leaky_relu_alpha{0};   // leaky_relu param
   float Relu_clipped_coef{6};  // relu_clipped param
@@ -1489,6 +1489,26 @@ struct XPUMultiEncoderParam : ParamBase {
   int head_num{};
   int size_per_head{};
   std::string act_type{};
+};
+
+struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
+  std::vector<lite::Tensor*> Ids;
+  std::vector<lite::Tensor*> Tables;
+  lite::Tensor* Out{};
+  int64_t padding_idx{-1};
+};
+
+struct XPUFcParam : ParamBase {
+  lite::Tensor* input{nullptr};
+  lite::Tensor* w{nullptr};
+  lite::Tensor* bias{nullptr};
+  lite::Tensor* output{nullptr};
+
+  int in_num_col_dims{1};
+  lite::DDim in_mat_dims;
+  float w_max{0.0f};
+  bool transpose_w{true};
+  std::string activation_type{""};
 };
 
 }  // namespace operators

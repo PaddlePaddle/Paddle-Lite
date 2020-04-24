@@ -162,15 +162,27 @@ TEST(fc, compute) {
 
         // run opencl kernel
         kernel->Launch();
-
         CLRuntime::Global()->command_queue().finish();
-#if 0
+
+#if 0  // NOTE(ysh329): note event
+        auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
+        auto* out_ptr = param.output->data<float, cl::Buffer>();
+        auto it = wait_list->find(out_ptr);
+        if (it != wait_list->end()) {
+          VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
+          auto& event = *(it->second);
+          event.wait();
+        CLRuntime::Global()->command_queue().finish();
           double start_nanos =
               event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
           double stop_nanos =
               event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
           double elapsed_micros = (stop_nanos - start_nanos) / 1000.0;
           LOG(INFO) << "Kernel Run Cost Time: " << elapsed_micros << " us.";
+        } else {
+          LOG(FATAL)
+              << "Could not find the sync event for the target cl tensor.";
+        }
 #endif
 
         std::vector<float> out_data_from_gpu(out_dim.production());
@@ -201,18 +213,17 @@ TEST(fc, compute) {
                                            out_data_from_gpu.data()[eidx]);
           auto relative_diff = COMPUTE_RELATIVE_DIFF(
               out_ref_data[eidx], out_data_from_gpu.data()[eidx]);
-          // EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
-          //              (abs_diff <= FP16_MAX_DIFF),
-          //          true);
+          EXPECT_EQ(
+              (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+              true);
           if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
-            LOG(ERROR) << "error idx:" << eidx << ", out_ref_data[" << eidx
+            LOG(FATAL) << "error idx:" << eidx << ", out_ref_data[" << eidx
                        << "]:" << out_ref_data[eidx]
                        << ", out_data_from_gpu.data()[" << eidx
                        << "]:" << out_data_from_gpu.data()[eidx]
                        << " abs_diff:" << abs_diff
                        << " relative_diff:" << relative_diff
                        << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
-            return;
           }
         }
 

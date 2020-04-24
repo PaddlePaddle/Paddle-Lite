@@ -44,16 +44,21 @@ class LITE_API OptBase {
  public:
   OptBase() = default;
   void SetModelSetDir(const std::string &model_set_path);
-  void SetModelDir(const std::string &model_path);
+  void SetModelDir(const std::string &model_dir_path);
   void SetModelFile(const std::string &model_path);
   void SetParamFile(const std::string &param_path);
   void SetValidPlaces(const std::string &valid_places);
-  void SetOptimizeOut(const std::string &optimized_out_path);
+  void SetLiteOut(const std::string &lite_out_name);
+  void RecordModelInfo(bool record_strip_info = true);
   // set optimized_model type
   void SetModelType(std::string model_type);
   // transform and save the optimized model
-  void RunOptimize(bool record_strip_info = false);
-
+  void Run();
+  void RunOptimize(const std::string &model_dir_path = "",
+                   const std::string &model_path = "",
+                   const std::string &param_path = "",
+                   const std::string &valid_places = "",
+                   const std::string &optimized_out_path = "");
   // fuctions of printing info
   // 1. help info
   void PrintHelpInfo();
@@ -71,12 +76,12 @@ class LITE_API OptBase {
   // valid places for the optimized_model
   std::vector<Place> valid_places_;
   // filename of the optimized_model
-  std::string optimize_out_path_;
+  std::string lite_out_name_;
   // type of the optimized_model, kNaiveBuffer default.
   LiteModelType model_type_{LiteModelType::kNaiveBuffer};
   // Dir path of a set of models, this should be combined with model
   std::string model_set_dir_;
-
+  bool record_strip_info_{false};
   void RunOptimizeFromModelSet(bool record_strip_info = false);
 };
 
