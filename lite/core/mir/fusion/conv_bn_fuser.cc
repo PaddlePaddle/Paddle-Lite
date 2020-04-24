@@ -202,7 +202,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   } else {
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
-    if (conv_type_ == "conv2d_transpose"&& !depthwise) {
+    if (conv_type_ == "conv2d_transpose" && !depthwise) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
