@@ -176,7 +176,7 @@ class LITE_API CxxConfig : public ConfigBase {
 #endif
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
-  int multi_stream() const { return multi_stream_; }
+  bool multi_stream() const { return multi_stream_; }
 #endif
 
 #ifdef LITE_WITH_MLU
