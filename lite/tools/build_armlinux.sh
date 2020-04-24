@@ -14,8 +14,8 @@ WITH_EXTRA=OFF
 WITH_PYTHON=OFF
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
-# controls whether to hide log information, default is ON.
-SHUTDOWN_LOG=ON
+# controls whether to print log information, default is ON.
+WITH_LOG=ON
 # options of striping lib according to input model.
 WITH_STRIP=OFF
 OPTMODEL_DIR=""
@@ -46,6 +46,11 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DWITH_TESTING=OFF"
 # mutable options for armlinux compiling.
 function init_cmake_mutable_options {
+    SHUTDOWN_LOG=ON
+    if [ "$WITH_LOG" = "ON"]; then
+        SHUTDOWN_LOG=OFF
+    fi
+
     cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARM_ABI \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
@@ -196,7 +201,7 @@ function print_usage {
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
-    echo -e "|     --shutdown_log: (OFF|ON); controls whether to hide log information, default is ON                                                                |"
+    echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                              |"
@@ -242,8 +247,8 @@ function main {
                 shift
                 ;;
             # ON or OFF, default ON
-            --shutdown_log=*)
-                SHUTDOWN_LOG="${i#*=}"
+            --with_log=*)
+                WITH_LOG="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
