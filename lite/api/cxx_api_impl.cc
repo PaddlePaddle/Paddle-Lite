@@ -103,10 +103,6 @@ std::vector<std::string> CxxPaddleApiImpl::GetParamNames() {
   return raw_predictor_->GetParamNames();
 }
 
-std::vector<std::string> CxxPaddleApiImpl::GetParamNames() {
-  return raw_predictor_.GetParamNames();
-}
-
 std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_->GetOutputNames();
 }
