@@ -36,46 +36,46 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
   auto x_dims = x->dims();
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
   for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
+    i_x_shape_data[i] = static_cast<int>(x_dims[i]);
   }
   auto y_var_name = op_info->Input("Y").front();
   auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
   auto y_dims = y->dims();
-  const int64_t* y_shape_data = const_cast<const int64_t*>(&y_dims.data()[0]);
   std::vector<int32_t> i_y_shape_data(y_dims.size());
   for (size_t i = 0; i < y_dims.size(); i++) {
-    i_y_shape_data[i] = static_cast<int>(y_shape_data[i]);
+    i_y_shape_data[i] = static_cast<int>(y_dims[i]);
   }
   // output
   auto output_var_name = op_info->Output("Out").front();
+  auto out = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto out_dims = out->dims();
+  std::vector<int32_t> i_out_shape_data(out_dims.size());
+  for (size_t i = 0; i < out_dims.size(); i++) {
+    i_out_shape_data[i] = static_cast<int>(out_dims[i]);
+  }
   bool transpose_x = op_info->GetAttr<bool>("transpose_X");
   bool transpose_y = op_info->GetAttr<bool>("transpose_Y");
   float alpha = op_info->GetAttr<float>("alpha");
+  CHECK_EQ(alpha, 1.f);
+  CHECK_EQ(transpose_x, 0);
+  CHECK_EQ(transpose_y, 0);
 
-  LOG(INFO) << x_dims << " " << y_dims << " " << alpha << " " << transpose_x
-            << " " << transpose_y;
-
-#if 0
-  add_const_binary_layer(graph->GetCompilerHandle(),
+  const float* y_data = const_cast<const float*>(y->mutable_data<float>());
+  const float* x_data = const_cast<const float*>(x->mutable_data<float>());
+  add_batch_matmul_layer(graph->GetCompilerHandle(),
                          static_cast<const char*>(x_var_name.c_str()),
                          const_cast<const int*>(&i_x_shape_data[0]),
                          x_dims.size(),
-                         scale,
-                         static_cast<const char*>(unique_op_scale_name.c_str()),
-                         BINARY_MUL,
-                         0);
-  add_const_binary_layer(graph->GetCompilerHandle(),
-                         static_cast<const char*>(unique_op_scale_name.c_str()),
-                         const_cast<const int*>(&i_x_shape_data[0]),
-                         x_dims.size(),
-                         bias,
-                         static_cast<const char*>(output_var_name.c_str()),
-                         BINARY_ADD,
-                         0);
-#endif
+                         0,
+                         x_data,
+                         static_cast<const char*>(y_var_name.c_str()),
+                         const_cast<const int*>(&i_y_shape_data[0]),
+                         y_dims.size(),
+                         0,
+                         y_data,
+                         static_cast<const char*>(output_var_name.c_str()));
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
