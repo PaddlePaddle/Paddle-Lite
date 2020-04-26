@@ -48,7 +48,7 @@ class Factory {
   using creator_t = std::function<item_ptr_t()>;
 
   static Factory& Global() {
-    static Factory* x = new self_t;
+    static auto x = std::unique_ptr<self_t>(new self_t);
     return *x;
   }
 

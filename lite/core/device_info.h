@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cstdarg>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/tensor.h"
@@ -43,7 +44,7 @@ typedef enum {
 class DeviceInfo {
  public:
   static DeviceInfo& Global() {
-    static auto* x = new DeviceInfo;
+    static auto x = std::unique_ptr<DeviceInfo>(new DeviceInfo);
     return *x;
   }
 
@@ -156,7 +157,7 @@ class Env {
   typedef TargetWrapper<Type> API;
   typedef std::vector<Device<Type>> Devs;
   static Devs& Global() {
-    static Devs* devs = new Devs();
+    static auto devs = std::unique_ptr<Devs>(new Devs);
     return *devs;
   }
   static void Init(int max_stream = 6) {

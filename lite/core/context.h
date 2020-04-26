@@ -395,7 +395,7 @@ class KernelContext {
 class ContextScheduler {
  public:
   static ContextScheduler& Global() {
-    static auto* x = new ContextScheduler;
+    static auto x = std::unique_ptr<ContextScheduler>(new ContextScheduler);
     return *x;
   }
 
