@@ -84,7 +84,8 @@ TEST(slice_image2d_fp16, compute) {
   }
 
   LOG(INFO) << "prepare input";
-  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
+  std::unique_ptr<CLImageConverterDefault> default_converter(
+      new CLImageConverterDefault());
   DDim image_shape = default_converter->InitImageDimInfoWith(in_dim);
   LOG(INFO) << "image_shape = " << image_shape[0] << " " << image_shape[1];
   std::vector<half_t> x_image_data(image_shape.production() * 4);  // 4 : RGBA
@@ -98,16 +99,7 @@ TEST(slice_image2d_fp16, compute) {
   LOG(INFO) << "out_image:" << out_image;
   kernel->Launch();
 
-  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-  auto* out_ptr = param.Out->data<half_t, cl::Image2D>();
-  auto it = wait_list->find(out_ptr);
-  if (it != wait_list->end()) {
-    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
-    auto& event = *(it->second);
-    event.wait();
-  } else {
-    LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-  }
+  CLRuntime::Global()->command_queue().finish();
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   slice_channel(input_v.data(), in_dim, out_ref.get(), 2, 5);

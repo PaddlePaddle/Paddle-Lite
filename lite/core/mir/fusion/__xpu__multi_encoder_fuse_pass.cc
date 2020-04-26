@@ -16,6 +16,7 @@
 #include <vector>
 #include "lite/backends/xpu/math.h"
 #include "lite/core/mir/pass_registry.h"
+#include "lite/core/mir/type_precision_cast_pass.h"  // For UpdateInputs()
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 #include "lite/operators/subgraph_op.h"
 
@@ -588,8 +589,7 @@ class XPUMultiEncoderFuser {
     multi_encoder_stmt->SetOp(multi_encoder_op);
     multi_encoder_stmt->SetKernels(std::move(kernels));
 
-    // temp remove useless cast
-    std::unordered_set<const Node*> to_remove2;
+    // remove dangling/useless cast
     Node* stack = nullptr;
     for (auto* node : graph->StmtTopologicalOrder()) {
       CHECK(node->IsStmt());
@@ -597,16 +597,39 @@ class XPUMultiEncoderFuser {
         stack = node;
       }
     }
-    Node* stack_out = stack->outlinks.front();
-    for (Node* cast : stack_out->outlinks) {
-      Node* cast_out = cast->outlinks.front();
-      if (cast_out->outlinks.size() == 0) {
-        // remove
-        to_remove2.insert(cast_out);
-        to_remove2.insert(cast);
+    if (stack) {
+      std::unordered_set<const Node*> to_remove2;
+      Node* stack_out = stack->outlinks.front();
+      // avoid modification while traversing
+      auto stack_out_outlinks = stack_out->outlinks;
+      for (Node* cast : stack_out_outlinks) {
+        if (cast->stmt()->op_info()->Type() != "cast") {
+          continue;
+        }
+
+        Node* cast_out = cast->outlinks.front();
+        if (cast_out->outlinks.size() == 0) {
+          // dangling cast
+          to_remove2.insert(cast);
+          to_remove2.insert(cast_out);
+          VLOG(3) << "Remove dangling cast [" << cast_out->arg()->name << "]";
+        } else if (cast_out->outlinks.size() == 1) {
+          // useless cast
+          to_remove2.insert(cast);
+          to_remove2.insert(cast_out);
+          VLOG(3) << "Remove useless cast [" << cast_out->arg()->name << "]";
+
+          auto* multi_encoder = cast_out->outlinks.front();
+          DirectedLink(stack_out, multi_encoder);
+          UpdateInputs(multi_encoder->stmt()->op().get(),
+                       cast_out->arg()->name,
+                       stack_out->arg()->name);
+          auto update_op_info = *multi_encoder->stmt()->op_info();
+          multi_encoder->stmt()->ResetOp(update_op_info, graph->valid_places());
+        }
       }
+      GraphSafeRemoveNodes(graph, to_remove2);
     }
-    GraphSafeRemoveNodes(graph, to_remove2);
   }
 };
 

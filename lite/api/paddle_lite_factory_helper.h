@@ -19,7 +19,13 @@
 #pragma once
 
 // some platform-independent defintion
-#include "lite/utils/macros.h"
+
+#if defined(_WIN32)
+#define UNUSED
+#define __builtin_expect(EXP, C) (EXP)
+#else
+#define UNUSED __attribute__((unused))
+#endif
 
 #define USE_LITE_OP(op_type__)       \
   extern int touch_op_##op_type__(); \

@@ -26,13 +26,7 @@ bool WriteToArrayOp::CheckShape() const {
   return true;
 }
 
-bool WriteToArrayOp::InferShapeImpl() const {
-  int id = param_.I->data<int64_t>()[0];
-  if (param_.Out->size() < id + 1) {
-    param_.Out->resize(id + 1);
-  }
-  return true;
-}
+bool WriteToArrayOp::InferShapeImpl() const { return true; }
 
 bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto inputs = opdesc.Input("X").front();

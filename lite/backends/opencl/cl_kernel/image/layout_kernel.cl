@@ -18,7 +18,7 @@ limitations under the License. */
 ////////////////////////////////////////////////////////
 // buffer -> image2d
 ////////////////////////////////////////////////////////
-__kernel void buffer_to_image2d(__global CL_DTYPE *in,
+__kernel void buffer_to_image2d(__global CL_DTYPE* in,
                                 __write_only image2d_t output_image,
                                 __private const int out_H,
                                 __private const int out_W,
@@ -26,7 +26,6 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *in,
                                 __private const int Stride0,
                                 __private const int Stride1,
                                 __private const int Stride2) {
-
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -66,16 +65,25 @@ __kernel void buffer_to_image2d(__global CL_DTYPE *in,
 
 #ifdef DEBUG
   if (out_w > 2045) {
-    printf("out_w:%d, out_C - 4 * out_c:%d, input[pos0~pos3]:%.2f %.2f %.2f %.2f\n",
-		   out_w,
-           out_C - 4 * out_c,
-           (float)(in[input_pos0]),
-           (float)(in[input_pos1]),
-           (float)(in[input_pos2]),
-           (float)(in[input_pos3]));
-    printf("buffer2image ===> %d,%d,%d, out(%d,%d): %.2f %.2f %.2f %.2f \n", out_c, out_w, out_nh,
-           output_pos.x, output_pos.y,
-           (float)(output.x), (float)(output.y), (float)(output.z), (float)(output.w));
+    printf(
+        "out_w:%d, out_C - 4 * out_c:%d, input[pos0~pos3]:%.2f %.2f %.2f "
+        "%.2f\n",
+        out_w,
+        out_C - 4 * out_c,
+        (float)(in[input_pos0]),
+        (float)(in[input_pos1]),
+        (float)(in[input_pos2]),
+        (float)(in[input_pos3]));
+    printf("buffer2image ===> %d,%d,%d, out(%d,%d): %.2f %.2f %.2f %.2f \n",
+           out_c,
+           out_w,
+           out_nh,
+           output_pos.x,
+           output_pos.y,
+           (float)(output.x),
+           (float)(output.y),
+           (float)(output.z),
+           (float)(output.w));
   }
 #endif
 
@@ -101,34 +109,42 @@ __kernel void image2d_to_buffer(__read_only image2d_t input,
   const int in_h = in_nh % in_height;
 
   const sampler_t sampler =
-    CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
   const int pos_x = mad24(in_c, in_width, in_w);
-  CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh));
+  CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(
+      CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh));
 
 #ifdef DEBUG
   if (in_w > 2045) {
-    printf("image2buffer ===> %d,%d,%d, in(%d,%d): %.2f %.2f %.2f %.2f \n", in_c, in_w, in_nh,
-            pos_x, in_nh,
-           (float)(in.x), (float)(in.y), (float)(in.z), (float)(in.w));
+    printf("image2buffer ===> %d,%d,%d, in(%d,%d): %.2f %.2f %.2f %.2f \n",
+           in_c,
+           in_w,
+           in_nh,
+           pos_x,
+           in_nh,
+           (float)(in.x),
+           (float)(in.y),
+           (float)(in.z),
+           (float)(in.w));
   }
 #endif
 
-  const int index = in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
+  const int index =
+      in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
   out[index] = CONVERT_TYPE_TO(in.x, CL_DTYPE);
   if (C - 4 * in_c >= 2) {
     out[index + size_ch] = CONVERT_TYPE_TO(in.y, CL_DTYPE);
   }
-  if(C - 4 * in_c >= 3) {
+  if (C - 4 * in_c >= 3) {
     out[index + size_ch * 2] = CONVERT_TYPE_TO(in.z, CL_DTYPE);
   }
-  if(C - 4 * in_c >= 4) {
+  if (C - 4 * in_c >= 4) {
     out[index + size_ch * 3] = CONVERT_TYPE_TO(in.w, CL_DTYPE);
   }
 }
 
-
-#if 0 // NOTE(ysh329): keep, un-used from paddle-mobile
+#if 0  // NOTE(ysh329): keep, un-used from paddle-mobile
 ////////////////////////////////////////////////////////
 // buffer -> image2d_nw
 ////////////////////////////////////////////////////////
@@ -182,8 +198,7 @@ __kernel void buffer_to_image2d_nw(__global CL_DTYPE* in,
 }
 #endif
 
-
-#if 0 // NOTE(ysh329): keep, un-used from paddle-mobile
+#if 0  // NOTE(ysh329): keep, un-used from paddle-mobile
 // image2d -> buffer
 __kernel void image2d_to_buffer_2d(__private const int in_height,
                                    __private const int in_width,
@@ -208,15 +223,14 @@ __kernel void image2d_to_buffer_2d(__private const int in_height,
 ////////////////////////////////////////////////////////
 // buffer -> image2d (divide by 255 to normalize)
 ////////////////////////////////////////////////////////
-__kernel void buffer_to_image2d_with_pre255(__global uchar *in,
+__kernel void buffer_to_image2d_with_pre255(__global uchar* in,
                                             __write_only image2d_t output_image,
                                             __private const int out_H,
                                             __private const int out_W,
                                             __private const int out_C,
                                             __private const int Stride0,
                                             __private const int Stride1,
-                                            __private const int Stride2){
-
+                                            __private const int Stride2) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -231,7 +245,6 @@ __kernel void buffer_to_image2d_with_pre255(__global uchar *in,
   const int in_h = out_h;
   const int in_w = out_w;
 
-
   int input_pos0 = in_n * Stride2 + in_c0 * Stride1 + in_h * Stride0 + in_w;
   int input_pos1 = in_n * Stride2 + in_c1 * Stride1 + in_h * Stride0 + in_w;
   int input_pos2 = in_n * Stride2 + in_c2 * Stride1 + in_h * Stride0 + in_w;
@@ -243,30 +256,29 @@ __kernel void buffer_to_image2d_with_pre255(__global uchar *in,
 
   CL_COMPUTE_DTYPE4 output = (CL_COMPUTE_DTYPE4)0.0f;
   output.x = CONVERT_TYPE_TO(in[input_pos0], CL_COMPUTE_DTYPE) / 255;
-  if(out_C - 4 * out_c>=2){
-      output.y = CONVERT_TYPE_TO(in[input_pos1], CL_COMPUTE_DTYPE) / 255;
+  if (out_C - 4 * out_c >= 2) {
+    output.y = CONVERT_TYPE_TO(in[input_pos1], CL_COMPUTE_DTYPE) / 255;
   }
-  if(out_C - 4 * out_c>=3){
-      output.z = CONVERT_TYPE_TO(in[input_pos2], CL_COMPUTE_DTYPE) / 255;
+  if (out_C - 4 * out_c >= 3) {
+    output.z = CONVERT_TYPE_TO(in[input_pos2], CL_COMPUTE_DTYPE) / 255;
   }
-  if(out_C - 4 * out_c>=4){
-      output.w = CONVERT_TYPE_TO(in[input_pos3], CL_COMPUTE_DTYPE) / 255;
+  if (out_C - 4 * out_c >= 4) {
+    output.w = CONVERT_TYPE_TO(in[input_pos3], CL_COMPUTE_DTYPE) / 255;
   }
   WRITE_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, output_image, output_pos, output);
 }
-
 
 ////////////////////////////////////////////////////////
 // image2d -> buffer (multiply by 255 to de-normalize)
 ////////////////////////////////////////////////////////
 __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
-                                            __private const int in_width,
-                                            __private const int in_height,
-                                            __global uchar* out,
-                                            __private const int size_ch,
-                                            __private const int size_block,
-                                            __private const int size_batch,
-                                            __private const int C) {
+                                             __private const int in_width,
+                                             __private const int in_height,
+                                             __global uchar* out,
+                                             __private const int size_ch,
+                                             __private const int size_block,
+                                             __private const int size_batch,
+                                             __private const int C) {
   const int in_c = get_global_id(0);
   const int in_w = get_global_id(1);
   const int in_nh = get_global_id(2);
@@ -277,22 +289,34 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
   const int pos_x = mad24(in_c, in_width, in_w);
-  CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh)) * 255;
+  CL_COMPUTE_DTYPE4 in =
+      READ_IMG_TYPE(
+          CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh)) *
+      255;
 
 #ifdef DEBUG
   printf("in_c:%d, in_w:%d, in_nh:%d ===> in(%d,%d): %.2f %.2f %.2f %.2f\n",
-          in_c, in_w, in_nh, pos_x, in_nh, in.x, in.y, in.z, in.w);
+         in_c,
+         in_w,
+         in_nh,
+         pos_x,
+         in_nh,
+         in.x,
+         in.y,
+         in.z,
+         in.w);
 #endif
 
-  const int index = in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
+  const int index =
+      in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
   out[index] = convert_uchar_sat(in.x);
-  if(C - 4 * in_c>=2){
+  if (C - 4 * in_c >= 2) {
     out[index + size_ch] = convert_uchar_sat(in.y);
   }
-  if(C - 4 * in_c>=3){
+  if (C - 4 * in_c >= 3) {
     out[index + size_ch * 2] = convert_uchar_sat(in.z);
   }
-  if(C - 4 * in_c>=4){
+  if (C - 4 * in_c >= 4) {
     out[index + size_ch * 3] = convert_uchar_sat(in.w);
   }
 }
