@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #endif
+#include <typeinfo>
 
 #ifdef LITE_ON_TINY_PUBLISH
 namespace paddle {
