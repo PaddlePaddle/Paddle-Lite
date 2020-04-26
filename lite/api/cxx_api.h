@@ -77,6 +77,15 @@ class LITE_API Predictor {
     }
     program_->Run();
   }
+#ifdef LITE_WITH_PROFILE
+  // Run the predictor to calculate model ops.
+  std::vector<float> RunGops() {
+    if (!program_generated_) {
+      GenRuntimeProgram();
+    }
+    return program_->RunGops();
+  }
+#endif 
 
   // Get offset-th col of feed inputs.
   lite::Tensor* GetInput(size_t offset);

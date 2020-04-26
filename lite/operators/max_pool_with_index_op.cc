@@ -68,6 +68,12 @@ bool MaxPoolWithIndexOpLite::InferShapeImpl() const {
   return true;
 }
 
+#ifdef LITE_WITH_PROFILE
+float MaxPoolWithIndexOpLite::GetGops(){
+  // todo
+  return 0.f;
+}
+#endif
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

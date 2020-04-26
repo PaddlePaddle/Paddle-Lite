@@ -132,6 +132,8 @@ struct Instruction {
       kernel_->SetProfiler(profiler_, profile_id_);
     }
   }
+  // compute gops
+  float ComputeGops();
 #endif
 
  private:
@@ -198,6 +200,7 @@ class LITE_API RuntimeProgram {
       i->set_profiler(&profiler_);
     }
   }
+  float RunGops();
 #endif
 };
 

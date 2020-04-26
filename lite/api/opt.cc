@@ -171,6 +171,27 @@ void RunOptimize(const std::string& model_dir,
   }
 }
 
+std::vector<float> GetModelGops(const std::string& model_dir,
+                 const std::string& model_file,
+                 const std::string& param_file,
+                 const std::vector<Place>& valid_places){
+  if (!model_file.empty() && !param_file.empty()) {
+    LOG(WARNING)
+        << "Load combined-param model. Option model_dir will be ignored";
+  }
+
+  lite_api::CxxConfig config;
+  config.set_model_dir(model_dir);
+  config.set_model_file(model_file);
+  config.set_param_file(param_file);
+  config.set_valid_places(valid_places);
+  auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  // get GOPS
+  return gops = predictor->RunGops();
+ 
+}
+
 void CollectModelMetaInfo(const std::string& output_dir,
                           const std::vector<std::string>& models,
                           const std::string& filename) {
@@ -210,6 +231,8 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   for (size_t i = 0; i < targets.size(); i++) {
     std::cout << std::setw(10) << targets[i].substr(1);
   }
+  // ops
+  std::cout << std::setw(10) << "ops";
   std::cout << std::endl;
   if (valid_ops.empty()) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
@@ -381,6 +404,13 @@ void CheckIfModelSupported() {
     exit(1);
   }
   if (FLAGS_print_model_ops) {
+    std::vector<float> gops = GetModelGops(FLAGS_model_dir, FLAGS_model_file,
+                                  FLAGS_param_file, FLAGS_valid_targets);
+    float sum = 0.f;
+    for (auto val : gops){
+      sum += val;
+    }
+    std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum;
     std::cout << "Paddle-Lite supports this model!" << std::endl;
     exit(1);
   }

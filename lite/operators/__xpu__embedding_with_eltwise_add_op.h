@@ -37,6 +37,10 @@ class XPUEmbeddingWithEltwiseAddOp : public OpLite {
 
   std::string DebugString() const override { return "EmbeddingWithEltwiseAdd"; }
 
+#ifdef LITE_WITH_PROFILE
+  float GetGops();
+#endif
+
  private:
   mutable XPUEmbeddingWithEltwiseAddParam param_;
 };

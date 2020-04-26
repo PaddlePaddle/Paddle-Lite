@@ -267,6 +267,28 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
   }
 }
 
+#ifdef LITE_WITH_PROFILE
+std::vector<float> RuntimeProgram::RunGops(){
+  std::vector<float> gops;
+  for (auto& inst : instructions_) {
+    float ops = inst.ComputeGops();
+    gops.push_back(ops);
+  }
+  return  gops;
+}
+
+float Instruction::ComputeGops() {
+  CHECK(op_) << "op null";
+  CHECK(kernel_) << "kernel null";
+  if (first_epoch_) {
+    first_epoch_ = false;
+    CHECK(op_->CheckShape());
+  }
+  op_->InferShape();
+  float ops = op_->GetGops();
+  return ops;
+}
+#endif
 void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
