@@ -48,7 +48,7 @@ bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 
 #ifdef LITE_WITH_PROFILE
 float CalibOpLite::GetGops(){
-  auto num = param_.output->production();
+  auto num = param_.output->numel();
   return 1.f * num;
 }
 #endif

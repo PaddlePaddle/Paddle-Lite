@@ -118,7 +118,7 @@ float ActivationOp::GetGops(){
     case lite_api::ActivationType::kReciprocal:
       return gops;
     default:
-      std::cout << "This Type :" << act_type << "doesn't support! " << std::endl;
+      std::cout << "This Type :" << static_cast<int>(act_type) << "doesn't support! " << std::endl;
       return gops;
   }
 }

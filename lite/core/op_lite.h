@@ -127,7 +127,7 @@ class OpLite : public Registry {
   virtual ~OpLite() = default;
 
 #ifdef LITE_WITH_PROFILE
-  virtual float GetGops();
+  virtual float GetGops(){ return 0.f;}
 #endif
 
  protected:

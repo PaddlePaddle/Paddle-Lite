@@ -62,8 +62,8 @@ bool MulOpLite::InferShapeImpl() const {
 float MulOpLite::GetGops(){
   auto x_dims = param_.x->dims();
   auto y_dims = param_.y->dims();
-  auto x_mat_dims = x_dims.Flatten2D(param_.x_num_col_dims_);
-  auto y_mat_dims = y_dims.Flatten2D(param_.y_num_col_dims_);
+  auto x_mat_dims = x_dims.Flatten2D(param_.x_num_col_dims);
+  auto y_mat_dims = y_dims.Flatten2D(param_.y_num_col_dims);
 
   return 1.f * x_mat_dims[0] * x_mat_dims[1] * y_mat_dims[1];
 }

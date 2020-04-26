@@ -155,7 +155,7 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 float ConvTransposeOpLite::GetGops(){
   const auto filter_dims = param_.filter->dims();
   auto out_dims = param_.output->dims();
-  auto num = filter_dims->numel();
+  auto num = filter_dims.production();
   // mul(kw * kh) + add(kw * kh - 1)-- out
   return 2.f * num * out_dims[0] * out_dims[3] * out_dims[3];
 }

@@ -188,7 +188,7 @@ std::vector<float> GetModelGops(const std::string& model_dir,
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   // get GOPS
-  return gops = predictor->RunGops();
+  return predictor->RunGops();
  
 }
 
@@ -405,7 +405,7 @@ void CheckIfModelSupported() {
   }
   if (FLAGS_print_model_ops) {
     std::vector<float> gops = GetModelGops(FLAGS_model_dir, FLAGS_model_file,
-                                  FLAGS_param_file, FLAGS_valid_targets);
+                                  FLAGS_param_file, valid_places);
     float sum = 0.f;
     for (auto val : gops){
       sum += val;

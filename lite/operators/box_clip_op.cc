@@ -56,7 +56,7 @@ bool BoxClipOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
 #ifdef LITE_WITH_PROFILE
 float BoxClipOpLite::GetGops(){
-  auto num = param_.Output->production();
+  auto num = param_.Output->numel();
   return 2.f * num;
 }
 #endif

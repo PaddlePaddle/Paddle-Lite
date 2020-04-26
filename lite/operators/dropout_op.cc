@@ -63,7 +63,7 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
 #ifdef LITE_WITH_PROFILE
 float DropoutOp::GetGops(){
-  return 1.f * param_.output->production();
+  return 1.f * param_.output->numel();
 }
 #endif
 

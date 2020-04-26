@@ -113,6 +113,10 @@ float ReduceMaxOp::GetGops(){
     return 1.f * in_sum;
   } else if(dims.size() == 2){
     return 2.f * in_sum;
+  } else {
+    std::cout << "This dims size: " << dims.size()
+        << " doesn't support";
+    return 0.f;
   }
 }
 #endif

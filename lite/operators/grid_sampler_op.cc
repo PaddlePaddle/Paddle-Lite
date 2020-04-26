@@ -59,7 +59,6 @@ bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
 #ifdef LITE_WITH_PROFILE
 float GridSamplerOp::GetGops(){
-  auto pro = param_.x->numel();
   // todo 
   return 0.f;
 }

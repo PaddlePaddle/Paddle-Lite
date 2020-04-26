@@ -188,6 +188,9 @@ class LITE_API RuntimeProgram {
   // be added in vars_.
   void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
+#ifdef LITE_WITH_PROFILE
+  std::vector<float> RunGops();
+#endif
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<Instruction> instructions_;
@@ -200,7 +203,6 @@ class LITE_API RuntimeProgram {
       i->set_profiler(&profiler_);
     }
   }
-  float RunGops();
 #endif
 };
 

@@ -57,7 +57,7 @@ bool AssignValueOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 
 #ifdef LITE_WITH_PROFILE
 float AssignValueOpLite::GetGops(){
-  int gops = param_.X->numel();
+  int gops = param_.Out->numel();
   return 1.0 * gops;
 }
 #endif

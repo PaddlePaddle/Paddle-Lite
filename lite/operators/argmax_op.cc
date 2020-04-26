@@ -66,7 +66,6 @@ float ArgmaxOpLite::GetGops(){
   auto axis = param_.Axis;
   int x_rank = x_dims.size();
   int numel = out_dims.production();
-  int axis_num = x_dims[axis];
   int max_num = 1;
   if (axis < 0) {
     axis += x_rank;
