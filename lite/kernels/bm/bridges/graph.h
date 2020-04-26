@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <pthread.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -36,10 +37,12 @@ class Graph {
   }
   void CreateCompilerHandle();
   void* GetCompilerHandle() { return compiler_handle_; }
+  void UnlockCompilerMutex();
 
  private:
   std::unordered_map<std::string, std::string> nodes_;
   void* compiler_handle_;
+  static pthread_mutex_t mutex_compiler_;
 };
 
 }  // namespace bm
