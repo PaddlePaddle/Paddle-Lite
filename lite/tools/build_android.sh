@@ -1,46 +1,12 @@
 #!/bin/bash
 set +x
-#####################################################################################################
-# 1. global variables, you can change them according to your requirements
-#####################################################################################################
-# armv7 or armv8, default armv8.
-ARM_ABI=armv8
-# c++_static or c++_shared, default c++_static.
-ANDROID_STL=c++_static
-# gcc or clang, default gcc.
-TOOLCHAIN=gcc
-# ON or OFF, default OFF.
-WITH_EXTRA=OFF
-# ON or OFF, default ON. 
-WITH_JAVA=ON
-# controls whether to compile cv functions into lib, default is OFF.
-WITH_CV=OFF
-# controls whether to hide log information, default is ON.
-SHUTDOWN_LOG=ON
-# options of striping lib according to input model.
-OPTMODEL_DIR=""
-WITH_STRIP=OFF
-# options of compiling NPU lib.
-WITH_HUAWEI_KIRIN_NPU=OFF
-HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
-# options of compiling OPENCL lib.
-WITH_OPENCL=OFF
-# options of adding training ops
-WITH_TRAIN=OFF
-# num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
-#####################################################################################################
 
-
-
+# 1. using functions and variables defined in basicfuncs library file
+source basicfuncs
 
 #####################################################################################################
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
-# url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
-# absolute path of Paddle-Lite.
-readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DLITE_WITH_ARM=ON \
@@ -48,77 +14,12 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DLITE_WITH_X86=OFF \
                                -DWITH_TESTING=OFF \
                                -DARM_TARGET_OS=android"
-# on mac environment, we should expand the maximum file num to compile successfully
-os_name=`uname -s`
-if [ ${os_name} == "Darwin" ]; then
-   ulimit -n 1024
-fi
-#####################################################################################################
-
-
-
-
 
 ####################################################################################################
-# 3. functions of prepare workspace before compiling
+# 3. compiling functions
 ####################################################################################################
 
-# 3.1 generate `__generated_code__.cc`, which is dependended by some targets in cmake.
-# here we fake an empty file to make cmake works.
-function prepare_workspace {
-    local root_dir=$1
-    local build_dir=$2
-    # 1. Prepare gen_code file
-    GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
-    mkdir -p ${GEN_CODE_PATH_PREFIX}
-    touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-    # 2.Prepare debug tool
-    DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
-    mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
-    cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
-}
-
-
-# 3.2 prepare source code of opencl lib
-# here we bundle all cl files into a cc file to bundle all opencl kernels into a single lib
-function prepare_opencl_source_code {
-    local root_dir=$1
-    local build_dir=$2
-    # in build directory
-    # Prepare opencl_kernels_source.cc file
-    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
-    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
-    mkdir -p ${GEN_CODE_PATH_OPENCL}
-    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
-}
-
-# 3.3 prepare third_party libraries for compiling
-# here we store third_party libraries into Paddle-Lite/third-party
-function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
-        rm -rf $workspace/third-party
-
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
-            wget $THIRDPARTY_TAR
-        fi
-        tar xzf third-party-05b862.tar.gz
-    else
-        git submodule update --init --recursive
-    fi
-}
-####################################################################################################
-
-
-
-
-
-####################################################################################################
-# 4. compiling functions
-####################################################################################################
-
-# 4.1 function of tiny_publish compiling
+# 3.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
   build_dir=$workspace/build.lite.android.$ARM_ABI.$TOOLCHAIN
@@ -170,7 +71,7 @@ function make_tiny_publish_so {
   cd - > /dev/null
 }
 
-# 4.2 function of full_publish compiling
+# 3.2 function of full_publish compiling
 # here we compile both light_api lib and full_api lib
 function make_full_publish_so {
 
@@ -220,7 +121,7 @@ function make_full_publish_so {
 }
 
 
-# 4.3 function of print help information
+# 3.3 function of print help information
 function print_usage {
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
     echo -e "| Methods of compiling Padddle-Lite Android library:                                                                                   |"
@@ -263,7 +164,7 @@ function print_usage {
 
 
 ####################################################################################################
-# 5. main functions: choose compiling method according to input argument
+# 4. main functions: choose compiling method according to input argument
 ####################################################################################################
 function main {
     if [ -z "$1" ]; then
