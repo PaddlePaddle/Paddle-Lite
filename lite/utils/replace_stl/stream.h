@@ -51,10 +51,20 @@ class ostream {
   }
 
   template <typename T>
-  ostream& operator<<(const T& obj);
+  ostream& operator<<(const T& obj) {
+    fprintf(stderr,
+            "'ostream& operator<<(const %s& obj)' is unimplemented in "
+            "replace_stl\n",
+            typeid(T).name());
+  }
 
   template <typename T>
-  ostream& operator<<(const T* obj);
+  ostream& operator<<(const T* obj) {
+    fprintf(stderr,
+            "'ostream& operator<<(const %s* obj)' is unimplemented in "
+            "replace_stl\n",
+            typeid(T).name());
+  }
 
  private:
   void pad(const std::string& text);
