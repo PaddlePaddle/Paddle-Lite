@@ -22,6 +22,10 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
 
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/config.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
 
@@ -266,6 +270,16 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
   lite::Context<TargetType::kXPU>::SetDev(dev_no);
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
+#ifdef LITE_WITH_XPU
+  paddle::lite::xpu::XPUConfig::multi_encoder_precision = precision;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_multi_encoder_precision' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }

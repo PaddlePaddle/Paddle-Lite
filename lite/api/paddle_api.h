@@ -216,6 +216,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+  void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <memory>
+#include <set>
 #include <vector>
+#include "lite/backends/xpu/config.h"
 #include "lite/backends/xpu/math.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/type_precision_cast_pass.h"  // For UpdateInputs()
@@ -451,6 +453,9 @@ class XPUSingleEncoderFuser : public FuseBase {
 
 class XPUMultiEncoderFuser {
  public:
+  explicit XPUMultiEncoderFuser(const std::set<int>& fc_int31_ids)
+      : fc_int31_ids_(fc_int31_ids) {}
+
   bool IsDirectPredecessorOf(Node* op1, Node* op2) {
     for (auto* out : op1->outlinks) {
       for (auto* in : op2->inlinks) {
@@ -542,6 +547,8 @@ class XPUMultiEncoderFuser {
     op_desc.SetAttr<int>("n_layers", all_encoders.size());
     op_desc.SetAttr<std::string>(
         "act_type", first_encoder_op_info->GetAttr<std::string>("act_type"));
+    op_desc.SetAttr<std::string>("precision",
+                                 (fc_int31_ids_.empty() ? "int16" : "int31"));
 
     auto* scope = multi_encoder_stmt->op()->scope();
     std::vector<float> fc_weight_max(arg_map["FCWeight"].size());
@@ -553,18 +560,33 @@ class XPUMultiEncoderFuser {
       float* weight_on_host = weight_t->mutable_data<float>();
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+      // i ranges from 0 to 6*encoder_num, so we need to do i%6 to get relative
+      // position in the encoder
+      if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
+        // FCs in encoder use int31
+        VLOG(3) << "Use FC-int31 in FC-" << i << ", " << i / 6 << "-" << i % 6;
+        std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
+        paddle::lite::xpu::math::Transpose(weight_on_host,
+                                           weight_trans_fp32.get(),
+                                           weight_dims[0],
+                                           weight_dims[1]);
 
-      std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
-      std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-      paddle::lite::xpu::math::ConvertFP32ToInt16(
-          weight_on_host, weight_int16.get(), max_f, weight_len);
-      paddle::lite::xpu::math::Transpose(weight_int16.get(),
-                                         weight_trans_int16.get(),
-                                         weight_dims[0],
-                                         weight_dims[1]);
-      memcpy(weight_on_host,
-             weight_trans_int16.get(),
-             weight_len * sizeof(int16_t));
+        memcpy(weight_on_host,
+               weight_trans_fp32.get(),
+               weight_len * sizeof(float));
+      } else {
+        std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
+        std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
+        paddle::lite::xpu::math::ConvertFP32ToInt16(
+            weight_on_host, weight_int16.get(), max_f, weight_len);
+        paddle::lite::xpu::math::Transpose(weight_int16.get(),
+                                           weight_trans_int16.get(),
+                                           weight_dims[0],
+                                           weight_dims[1]);
+        memcpy(weight_on_host,
+               weight_trans_int16.get(),
+               weight_len * sizeof(int16_t));
+      }
       fc_weight_max[i] = max_f;
     }
 
@@ -631,6 +653,9 @@ class XPUMultiEncoderFuser {
       GraphSafeRemoveNodes(graph, to_remove2);
     }
   }
+
+ private:
+  std::set<int> fc_int31_ids_;
 };
 
 }  // namespace fusion
@@ -641,15 +666,28 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(miaotianxiang): backup graph, recover from failed match
     std::vector<std::string> act_types{"gelu", "relu"};
+
+    std::set<int> fc_int31_ids;
+    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
+        paddle::lite::xpu::XPUConfig::multi_encoder_precision == "int31") {
+      fc_int31_ids = {0, 1, 2, 3, 4, 5};
+      VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
+              << "XPUConfig::multi_encoder_precision="
+              << paddle::lite::xpu::XPUConfig::multi_encoder_precision;
+    } else {
+      VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
+              << "XPUConfig::multi_encoder_precision="
+              << paddle::lite::xpu::XPUConfig::multi_encoder_precision;
+    }
+
     for (auto& act_type : act_types) {
       fusion::XPUSingleEncoderFuser single_encoder_fuser(act_type);
       single_encoder_fuser(graph.get());
-      fusion::XPUMultiEncoderFuser multi_encoder_fuser;
+      fusion::XPUMultiEncoderFuser multi_encoder_fuser(fc_int31_ids);
       multi_encoder_fuser(graph.get());
     }
   }
 };
-
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
