@@ -62,11 +62,11 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 // Android log macors
 #define ANDROID_LOG_TAG "Paddle-Lite"
 #define ANDROID_LOG_I(msg) \
-  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_W(msg) \
-  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_F(msg) \
-  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, "%s", msg)
 #endif
 
 // NOLINTFILE()

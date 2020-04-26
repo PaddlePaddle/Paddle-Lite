@@ -13,26 +13,34 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+
+#include <memory>
+#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/kernels/xpu/utils.h"  // XPUFreeDeleter
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class WriteToArrayCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class XPUEmbeddingWithEltwiseAddCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
+  using param_t = operators::XPUEmbeddingWithEltwiseAddParam;
+
+  void PrepareForRun() override;
+
   void Run() override;
 
-  ~WriteToArrayCompute() {}
-
  private:
+  std::vector<const int64_t*> arg_ids_;
+  std::vector<const float*> arg_tables_;
+  std::unique_ptr<void, XPUFreeDeleter> table_lens_guard_;
+  std::vector<int> table_lens_cpu_;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

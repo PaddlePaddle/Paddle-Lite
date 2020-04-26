@@ -84,6 +84,7 @@ bool SqueezeOp::InferShapeImpl() const {
 }
 
 bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   auto x_var = scope->FindVar(opdesc.Input("X").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(x_var);

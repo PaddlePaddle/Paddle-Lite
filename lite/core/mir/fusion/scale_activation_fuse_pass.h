@@ -13,28 +13,20 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <memory>
+#include <string>
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace mir {
 
-class ReadFromArrayCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class ScaleActivationFusePass : public ProgramPass {
  public:
-  using param_t = operators::ReadFromArrayParam;
-
-  void Run() override;
-
-  ~ReadFromArrayCompute() {}
-
- private:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

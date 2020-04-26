@@ -16,7 +16,7 @@ set workspace=%source_path%
 
 :round
 @echo off
-if /I "%1"=="build_extra" (
+if /I "%1"=="with_extra" (
     set BUILD_EXTRA=ON
 ) else if /I "%1"=="with_python" (
     set BUILD_PYTHON=ON

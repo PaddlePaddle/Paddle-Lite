@@ -48,7 +48,7 @@ cuda的编译结果位于 `build_cuda/inference_lite_lib`
 
 4、 `demo` 文件夹：c++ demo.
 
-如果编译打开了python选项，则会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite_core.so`。
+如果编译打开了python选项，则会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite.so`。
 
 ## 运行
 
@@ -66,7 +66,7 @@ wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/kite.jpg
 
 二： 运行   
 
-**NOTE:**此处示例使用的是python接口。
+**NOTE：** 此处示例使用的是python接口。
 
 ``` python
 #-*- coding: utf-8 -*-
@@ -75,7 +75,7 @@ import sys
 import numpy as np
 import cv2
 sys.path.append('build_cuda/inference_lite_lib/python/lib')
-from lite_core import *
+from lite import *
 
 def read_img(im_path, resize_h, resize_w):
   im = cv2.imread(im_path).astype('float32')

@@ -154,23 +154,20 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                     static_cast<size_t>(default_work_size.data()[1]),
                     static_cast<size_t>(default_work_size.data()[2])};
 
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_image, event_);
   }
 
  private:
   std::string kernel_func_name_{"reshape"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

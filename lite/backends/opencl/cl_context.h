@@ -28,6 +28,7 @@ namespace lite {
 class CLContext {
  public:
   ~CLContext() {
+    GetCommandQueue().finish();
     for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
       // Note(ysh329): Don't need `clReleaseKernel`
       kernels_[kidx].reset();

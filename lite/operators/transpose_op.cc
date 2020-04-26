@@ -70,6 +70,7 @@ bool TransposeOp::InferShapeImpl() const {
 }
 
 bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
