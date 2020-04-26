@@ -2,7 +2,7 @@
 setlocal
 setlocal enabledelayedexpansion
 
-set source_path=%~dp0
+set source_path=%~dp0\\..\\..\\
 rem  global variables
 set BUILD_EXTRA=OFF
 set BUILD_JAVA=ON
@@ -92,16 +92,16 @@ goto:eof
         ) else (
                echo "The directory of third_party exists, the third-party-05b862.tar.gz exists."
                call:rm_rebuild_dir "%workspace%\third-party"
-               !python_path! %workspace%\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
         )
     ) else (
         if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
             echo "The directory of third_party not exists, the third-party-05b862.tar.gz not exists."
             call:download_third_party
-            !python_path! %workspace%\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
         ) else (
             echo "The directory of third_party not exists, the third-party-05b862.tar.gz exists."
-               !python_path! %workspace%\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
         )
 
     )

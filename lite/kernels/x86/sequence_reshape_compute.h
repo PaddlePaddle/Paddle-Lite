@@ -56,8 +56,7 @@ class SequenceReshapeCompute
         out_lod[0][i + 1] = out_lod[0][i] + offset;
       }
     }
-    out->Resize(std::vector<int64_t>{in->numel()/out_width,
-                                     out_width});
+    out->Resize(std::vector<int64_t>{in->numel() / out_width, out_width});
     auto* dst_ptr = out->template mutable_data<T>();
     auto size = in->numel() * sizeof(T);
     std::memcpy(dst_ptr, in->template data<T>(), size);
@@ -76,8 +75,8 @@ class SequenceReshapeFloatCompute
     auto& param = *param_.get_mutable<operators::SequenceReshapeParam>();
     auto* in = param.x;
     auto* out = param.output;
-    auto out_data= out->mutable_data<T>();
-    for(int i=0;i<out->dims().production(); i++){
+    auto out_data = out->mutable_data<T>();
+    for (int i = 0; i < out->dims().production(); i++) {
       out_data[i] = 0;
     }
     int out_width = param.new_dim;
@@ -103,8 +102,7 @@ class SequenceReshapeFloatCompute
         out_lod[0][i + 1] = out_lod[0][i] + offset;
       }
     }
-    out->Resize(std::vector<int64_t>{in->numel()/out_width,
-                                     out_width});
+    out->Resize(std::vector<int64_t>{in->numel() / out_width, out_width});
     auto* dst_ptr = out->mutable_data<T>();
     auto size = in->numel() * sizeof(T);
     std::memcpy(dst_ptr, in->data<T>(), size);

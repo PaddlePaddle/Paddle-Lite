@@ -13,11 +13,11 @@
 // limitations under the License.
 #pragma once
 
+#include <chrono>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include <chrono>
 #include "lite/fluid/eigen.h"
 namespace paddle {
 namespace lite {
@@ -68,11 +68,13 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       y_matrix = *y;
     }
 
-
-Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> mat_test(x_matrix.mutable_data<T>(), x_matrix.dims()[0], x_matrix.dims()[1]);
-Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> mat1_test(y_matrix.mutable_data<T>(), y_matrix.dims()[0], y_matrix.dims()[1]);
-Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> out_test(z->mutable_data<T>(), z->dims()[0], z->dims()[1]);
-out_test = mat_test * mat1_test;
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> mat_test(
+        x_matrix.mutable_data<T>(), x_matrix.dims()[0], x_matrix.dims()[1]);
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> mat1_test(
+        y_matrix.mutable_data<T>(), y_matrix.dims()[0], y_matrix.dims()[1]);
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> out_test(
+        z->mutable_data<T>(), z->dims()[0], z->dims()[1]);
+    out_test = mat_test * mat1_test;
   }
 
   virtual ~MulCompute() = default;
