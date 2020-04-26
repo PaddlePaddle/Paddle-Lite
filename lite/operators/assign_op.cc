@@ -27,20 +27,33 @@ bool AssignOpLite::CheckShape() const {
 }
 
 bool AssignOpLite::InferShapeImpl() const {
-  lite::DDim input_dims;
-  input_dims = param_.X->dims();
-  param_.Out->Resize(lite::DDim(input_dims));
+  if (param_.X != nullptr) {
+    param_.Out->Resize(param_.X->dims());
+  } else if (param_.X_array != nullptr) {
+    param_.Out_array->resize(param_.Out_array->size());
+  } else {
+    LOG(FATAL) << "x or x_array must be set.";
+  }
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto input = op_desc.Input("X").front();
-  auto out = op_desc.Output("Out").front();
+  auto x_name = op_desc.Input("X").front();
+  auto out_name = op_desc.Output("Out").front();
 
-  param_.X = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  CHECK(scope->FindVar(out));
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  auto x_var = scope->FindVar(x_name);
+  if (x_var->IsType<Tensor>()) {
+    param_.X = scope->FindTensor(x_name);
+    param_.Out = scope->FindMutableTensor(out_name);
+  } else if (x_var->IsType<std::vector<Tensor>>()) {
+    param_.X_array = x_var->GetMutable<std::vector<Tensor>>();
+    param_.Out_array =
+        scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
+  } else {
+    LOG(FATAL) << "X type for assign op is unsupported. Expected type is "
+                  "tensor or tensor_array.";
+  }
 
   return true;
 }

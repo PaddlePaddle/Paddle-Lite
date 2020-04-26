@@ -29,7 +29,7 @@ bool ReduceMeanOp::CheckShape() const {
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
   if (dims.size() != 0) {
-    for (int i = 0; i < dims.size(); i++) {
+    for (size_t i = 0; i < dims.size(); i++) {
       if (dims[i] < 0) {
         dims[i] = x_rank + dims[i];
       }
@@ -46,7 +46,7 @@ bool ReduceMeanOp::InferShapeImpl() const {
   bool keep_dim = param_.keep_dim;
   auto x_rank = x_dims.size();
   if (dims.size() != 0) {
-    for (int i = 0; i < dims.size(); i++) {
+    for (size_t i = 0; i < dims.size(); i++) {
       if (dims[i] < 0) {
         dims[i] = x_rank + dims[i];
       }
@@ -65,7 +65,7 @@ bool ReduceMeanOp::InferShapeImpl() const {
       out_dims.push_back(1);
     }
   } else {
-    for (int i = 0; i < x_dims.size(); i++) {
+    for (size_t i = 0; i < x_dims.size(); i++) {
       out_dims.push_back(x_dims[i]);
     }
     if (keep_dim) {

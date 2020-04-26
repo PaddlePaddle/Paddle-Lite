@@ -38,6 +38,8 @@ class MulOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+    AttachParam(&param_);
+
     CHECK(!op_desc.Input("X").empty());
     CHECK(!op_desc.Input("Y").empty());
     CHECK(!op_desc.Output("Out").empty());
@@ -56,7 +58,6 @@ class MulOpLite : public OpLite {
     param_.output = var->GetMutable<Tensor>();
     param_.x_num_col_dims = op_desc.GetAttr<int>("x_num_col_dims");
     param_.y_num_col_dims = op_desc.GetAttr<int>("y_num_col_dims");
-
     return true;
   }
 

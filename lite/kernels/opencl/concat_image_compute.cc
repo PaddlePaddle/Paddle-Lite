@@ -187,15 +187,15 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
+
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
           cl::NullRange,
           global_work_size,
           cl::NullRange,
           nullptr,
-          event_.get());
+          nullptr);
       CL_CHECK_FATAL(status);
-      context.cl_wait_list()->emplace(out_buf, event_);
     } else {
       auto start = 0;
       for (int i = 0; i < inputs.size(); i++) {
@@ -230,15 +230,15 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         status = kernel.setArg(++arg_idx, width_);
         CL_CHECK_FATAL(status);
         CL_CHECK_FATAL(status);
+
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
             kernel,
             cl::NullRange,
             global_work_size,
             cl::NullRange,
             nullptr,
-            event_.get());
+            nullptr);
         CL_CHECK_FATAL(status);
-        context.cl_wait_list()->emplace(out_buf, event_);
         start += inputs[i]->dims()[axis_];
       }
     }
@@ -254,7 +254,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

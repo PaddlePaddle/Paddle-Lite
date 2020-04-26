@@ -185,15 +185,15 @@ class ElementwiseMulImageCompute
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(x_img_width),
                     static_cast<cl::size_type>(x_img_height)};
+
     auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 #endif
@@ -204,7 +204,6 @@ class ElementwiseMulImageCompute
   std::string kernel_func_name_{"elementwise_mul"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

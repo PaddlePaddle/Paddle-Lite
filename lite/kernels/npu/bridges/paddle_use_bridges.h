@@ -45,6 +45,8 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fill_constant, kNPU)
 USE_SUBGRAPH_BRIDGE(fill_constant_batch_size_like, kNPU)
 
+// USE_SUBGRAPH_BRIDGE(gather, kNPU);
+// USE_SUBGRAPH_BRIDGE(lookup_table, kNPU);
 USE_SUBGRAPH_BRIDGE(increment, kNPU);
 USE_SUBGRAPH_BRIDGE(instance_norm, kNPU);
 USE_SUBGRAPH_BRIDGE(fc, kNPU);
@@ -59,6 +61,7 @@ USE_SUBGRAPH_BRIDGE(reduce_mean, kNPU);
 USE_SUBGRAPH_BRIDGE(reshape, kNPU);
 USE_SUBGRAPH_BRIDGE(reshape2, kNPU);
 USE_SUBGRAPH_BRIDGE(scale, kNPU);
+// USE_SUBGRAPH_BRIDGE(shape, kNPU);
 USE_SUBGRAPH_BRIDGE(shuffle_channel, kNPU);
 USE_SUBGRAPH_BRIDGE(softmax, kNPU);
 USE_SUBGRAPH_BRIDGE(split, kNPU);

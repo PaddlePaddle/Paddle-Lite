@@ -148,9 +148,8 @@ class BilinearInterpImageCompute
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
 #ifndef LITE_SHUTDOWN_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
@@ -162,7 +161,6 @@ class BilinearInterpImageCompute
   std::string kernel_func_name_{"bilinear_interp"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{new cl::Event};
 };
 
 }  // namespace opencl

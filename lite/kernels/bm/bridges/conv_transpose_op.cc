@@ -108,3 +108,6 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(conv2d_transpose,
                          kBM,
                          paddle::lite::subgraph::bm::ConvTransposeConverter);
+REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d_transpose,
+                         kBM,
+                         paddle::lite::subgraph::bm::ConvTransposeConverter);

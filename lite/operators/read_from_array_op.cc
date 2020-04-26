@@ -26,12 +26,7 @@ bool ReadFromArrayOp::CheckShape() const {
   return true;
 }
 
-bool ReadFromArrayOp::InferShapeImpl() const {
-  int id = param_.I->data<int64_t>()[0];
-  auto out_dims = (*param_.X)[id].dims();
-  param_.Out->Resize(out_dims);
-  return true;
-}
+bool ReadFromArrayOp::InferShapeImpl() const { return true; }
 
 bool ReadFromArrayOp::AttachImpl(const cpp::OpDesc &opdesc,
                                  lite::Scope *scope) {

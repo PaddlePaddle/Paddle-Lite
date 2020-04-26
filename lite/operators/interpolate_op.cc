@@ -48,14 +48,14 @@ bool InterpolateOp::InferShapeImpl() const {
   auto OutSize = param_.OutSize;
   auto Scale = param_.Scale;
   if (!SizeTensor.empty()) {
-    CHECK_EQ(SizeTensor.size(), 2)
+    CHECK_EQ(SizeTensor.size(), 2u)
         << "Input(SizeTensor)'size of Op(interpolate) must be 2. "
            "Attr(out_shape)'s length must be 2 for 4-D input tensor.";
     out_h = SizeTensor[0]->data<int>()[0];
     out_w = SizeTensor[1]->data<int>()[0];
   } else if (OutSize) {
     auto OutSize_dims = OutSize->dims();
-    CHECK_EQ(OutSize_dims.size(), 1) << "Input(OutSize)'s dims size must be 1";
+    CHECK_EQ(OutSize_dims.size(), 1u) << "Input(OutSize)'s dims size must be 1";
     CHECK_EQ(OutSize_dims[0], 2) << "OutSize's dim[0] must be 2";
     auto OutSize_data = OutSize->data<int>();
     out_h = OutSize_data[0];

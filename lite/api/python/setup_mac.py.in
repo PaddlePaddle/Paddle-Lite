@@ -1,0 +1,73 @@
+# Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# module of pack whl installer for Paddle-lite
+
+import shutil
+import os
+from setuptools import setup, Distribution
+
+
+class BinaryDistribution(Distribution):
+    'binary distribution'
+    def has_ext_modules(foo):
+        return True
+
+
+# get paddle-lite version, if it's not based on a release tag, we use commit id instead
+PADDLELITE_COMMITE = "@PADDLE_LITE_COMMIT@"
+PADDLELITE_TAG = "@PADDLE_LITE_TAG@"
+if PADDLELITE_TAG == "":
+    PADDLELITE_VERSION = PADDLELITE_COMMITE
+else:
+    PADDLELITE_VERSION = PADDLELITE_TAG
+
+# core lib of paddlelite is stored as lite.so
+LITE_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
+PACKAGE_DATA = {'paddlelite': ['lite.so']}
+# put all thirdparty libraries in paddlelite.libs
+PACKAGE_DATA['paddlelite.libs'] = []
+LIB_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
+
+if '${WITH_MKL}' == 'ON':
+    shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
+    shutil.copy('${MKLML_SHARED_LIB}', LIB_PATH)
+    PACKAGE_DATA['paddlelite.libs'] += ['libmklml.dylib', 'libiomp5.dylib']
+
+# link lite.so to paddlelite.libs
+COMMAND = "install_name_tool -id \"@loader_path/../libs/\" ${PADDLE_BINARY_DIR}\
+/inference_lite_lib/python/install/lite/lite.so"
+if os.system(COMMAND) != 0:
+    raise Exception("patch third_party libs failed, command: %s" % COMMAND)
+
+# remove unused paddle/libs/__init__.py
+if os.path.isfile(LIB_PATH+'/__init__.py'):
+    os.remove(LIB_PATH+'/__init__.py')
+
+# set dir path of each package
+PACKAGE_DIR = {
+    # The paddle.fluid.proto will be generated while compiling.
+    # So that package points to other directory.
+    'paddlelite.libs': LIB_PATH,
+    'paddlelite': LITE_PATH
+}
+
+setup(
+    name='paddlelite',
+    version=PADDLELITE_VERSION,
+    description='Paddle-Lite Library',
+    packages=['paddlelite', 'paddlelite.libs'],
+    package_dir=PACKAGE_DIR,
+    package_data=PACKAGE_DATA,
+    distclass=BinaryDistribution
+)

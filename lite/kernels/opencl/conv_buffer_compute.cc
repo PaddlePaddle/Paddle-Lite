@@ -205,6 +205,7 @@ void ConvCompute::GemmlikeConv2d() {
     CL_CHECK_FATAL(status);
 
     auto global_work_size = cl::NDRange{static_cast<size_t>(out_stride)};
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         img2col_kernel,
         cl::NullRange,
@@ -306,10 +307,8 @@ void ConvCompute::GemmBatched(cl::Kernel& kernel,
       global_work_size,
       local_work_size,
       nullptr,
-      event_.get());
+      nullptr);
   CL_CHECK_FATAL(status);
-
-  context.cl_wait_list()->emplace(output_d, event_);
 }
 
 void ConvCompute::Run() { (this->*impl_)(); }

@@ -29,12 +29,12 @@ CLRuntime::~CLRuntime() {
     command_queue_->flush();
     command_queue_->finish();
   }
-  // For controlling the destruction order:
+  // For controlling the destruction order
   command_queue_.reset();
   context_.reset();
   device_.reset();
   platform_.reset();
-  LOG(INFO) << "release ~CLRuntime() ";
+  device_info_.clear();
 }
 
 bool CLRuntime::Init() {
@@ -45,6 +45,9 @@ bool CLRuntime::Init() {
   bool is_device_init = InitializeDevice();
   is_init_success_ = is_platform_init && is_device_init;
   initialized_ = true;
+
+  context_ = CreateContext();
+  command_queue_ = CreateCommandQueue(context());
   return initialized_;
 }
 
@@ -55,7 +58,7 @@ cl::Platform& CLRuntime::platform() {
 
 cl::Context& CLRuntime::context() {
   if (context_ == nullptr) {
-    context_ = CreateContext();
+    LOG(FATAL) << "context_ create failed. ";
   }
   return *context_;
 }
@@ -67,7 +70,7 @@ cl::Device& CLRuntime::device() {
 
 cl::CommandQueue& CLRuntime::command_queue() {
   if (command_queue_ == nullptr) {
-    command_queue_ = CreateCommandQueue(context());
+    LOG(FATAL) << "command_queue_ create failed. ";
   }
   return *command_queue_;
 }
@@ -96,7 +99,7 @@ std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
 
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
-  std::string build_option = options + " -cl-fast-relaxed-math ";
+  std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   VLOG(4) << "OpenCL build_option: " << build_option;
   status_ = program->build({*device_}, build_option.c_str());
   CL_CHECK_ERROR(status_);

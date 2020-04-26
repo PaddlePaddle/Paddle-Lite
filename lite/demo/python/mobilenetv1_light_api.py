@@ -23,7 +23,7 @@ import argparse
 import sys
 sys.path.append('../../python/lib')
 
-from lite_core import *
+from paddlelite.lite import *
 
 # Command arguments
 parser = argparse.ArgumentParser()

@@ -22,7 +22,7 @@ namespace operators {
 bool SliceOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_LT(param_.X->dims().size(), 7)
+  CHECK_LT(param_.X->dims().size(), 7u)
       << "The rank of input X should be less than 7";
   return true;
 }
@@ -67,7 +67,7 @@ bool SliceOp::InferShapeImpl() const {
       }
       out_dims[decrease_axis[i]] = 0;
     }
-    for (int i = 0; i < out_dims.size(); ++i) {
+    for (size_t i = 0; i < out_dims.size(); ++i) {
       if (out_dims[i] != 0) {
         new_out_shape.push_back(out_dims[i]);
       }
@@ -87,6 +87,7 @@ bool SliceOp::InferShapeImpl() const {
 }
 
 bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.X =
       scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
   param_.Out =
@@ -108,7 +109,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 
   // The priority: StartsTensor > StartsTensorList > attr(starts).
   // The priority: EndsTensor > EndsTensorList > attr(ends).
-  int starts_size, ends_size;
+  size_t starts_size, ends_size;
   if (opdesc.HasAttr("starts")) {
     param_.starts = opdesc.GetAttr<std::vector<int>>("starts");
   }
@@ -129,7 +130,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       param_.StartsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
-    CHECK_GT(param_.StartsTensorList.size(), 0)
+    CHECK_GT(param_.StartsTensorList.size(), 0u)
         << "StartsTensorList size can't be zero";
     starts_size = param_.StartsTensorList.size();
   }
@@ -141,7 +142,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       param_.EndsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
-    CHECK_GT(param_.EndsTensorList.size(), 0)
+    CHECK_GT(param_.EndsTensorList.size(), 0u)
         << "EndsTensorList size can't be zero";
     ends_size = param_.EndsTensorList.size();
   }

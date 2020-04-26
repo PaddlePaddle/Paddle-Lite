@@ -63,15 +63,10 @@ void ElementwiseAddCompute::Run() {
   CL_CHECK_FATAL(status);
 
   auto global_work_size = cl::NDRange{channels_, batch_};
+
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size,
-      cl::NullRange,
-      nullptr,
-      event_.get());
+      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_FATAL(status);
-  context.cl_wait_list()->emplace(out_buf, event_);
 }
 
 void ElementwiseAddCompute::UpdateParams() {

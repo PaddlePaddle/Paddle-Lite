@@ -17,6 +17,9 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/opencl/test_helper.h"
+
+#define FP16_MAX_DIFF (1e-2)
 
 namespace paddle {
 namespace lite {
@@ -67,24 +70,28 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
 }
 
 // #define PRINT_RESULT
-#define LOOP_TEST
+// #define LOOP_TEST
 TEST(fc, compute) {
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
 
 #ifdef LOOP_TEST
-  for (int m = 1; m < 213; m += 71) {
-    for (int k = 1; k < 123; k += 31) {
-      for (int n = 1; n < 123; n += 121) {
+  for (int m = 1; m < 4; m += 1) {
+    for (int k = 1; k < 4; k += 1) {
+      for (int n = 1; n < 4; n += 1) {
 #else
 #if 0
   const int m = 1;
   const int k = 1024;
   const int n = 1000;
 #else
-  const int m = 2;
-  const int k = 3;
-  const int n = 1;
+  // m,k,n:2,3,1
+  //       1,2,3
+  //       2,1,3
+  //       1,2,3
+  const int m = 1;
+  const int k = 2;
+  const int n = 3;
 #endif
 #endif
         LOG(INFO) << "m=" << m << " n=" << n << " k=" << k;
@@ -122,28 +129,42 @@ TEST(fc, compute) {
         auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
         auto* w_data = w.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
         auto* bias_data = bias.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        auto* out_data = out.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
         std::default_random_engine engine;
         std::uniform_real_distribution<float> dist(-5, 5);
-        auto* mapped_x = static_cast<float*>(TargetWrapperCL::Map(
-            x_data, 0, sizeof(float) * x_dim.production()));
-        for (int i = 0; i < x_dim.production(); ++i) {
-          mapped_x[i] = static_cast<int>(dist(engine));
+
+        std::vector<float> x_source(x_dim.production());
+        std::vector<float> w_source(w_dim.production());
+        std::vector<float> bias_source(bias_dim.production());
+
+        size_t x_size = x_dim.production() * sizeof(float);
+        size_t w_size = w_dim.production() * sizeof(float);
+        size_t bias_size = bias_dim.production() * sizeof(float);
+        size_t out_size = out_dim.production() * sizeof(float);
+
+        for (size_t i = 0; i < x_dim.production(); ++i) {
+          x_source[i] = static_cast<int>(dist(engine));
         }
-        auto* mapped_w = static_cast<float*>(TargetWrapperCL::Map(
-            w_data, 0, sizeof(float) * w_dim.production()));
-        for (int i = 0; i < w_dim.production(); ++i) {
-          mapped_w[i] = static_cast<int>((dist(engine)));
+        for (size_t i = 0; i < w_dim.production(); ++i) {
+          w_source[i] = static_cast<int>(dist(engine));
         }
-        auto* mapped_bias = static_cast<float*>(TargetWrapperCL::Map(
-            bias_data, 0, sizeof(float) * bias_dim.production()));
-        for (int i = 0; i < bias_dim.production(); ++i) {
-          mapped_bias[i] = static_cast<int>(/*(dist(engine))*/ 1);
+        for (size_t i = 0; i < bias_dim.production(); ++i) {
+          bias_source[i] = 10;  // static_cast<int>(dist(engine));
         }
+
+        TargetWrapperCL::MemcpySync(
+            x_data, x_source.data(), x_size, IoDirection::HtoD);
+        TargetWrapperCL::MemcpySync(
+            w_data, w_source.data(), w_size, IoDirection::HtoD);
+        TargetWrapperCL::MemcpySync(
+            bias_data, bias_source.data(), bias_size, IoDirection::HtoD);
 
         // run opencl kernel
         kernel->Launch();
+        CLRuntime::Global()->command_queue().finish();
 
+#if 0  // NOTE(ysh329): note event
         auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
         auto* out_ptr = param.output->data<float, cl::Buffer>();
         auto it = wait_list->find(out_ptr);
@@ -151,6 +172,7 @@ TEST(fc, compute) {
           VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
           auto& event = *(it->second);
           event.wait();
+        CLRuntime::Global()->command_queue().finish();
           double start_nanos =
               event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
           double stop_nanos =
@@ -161,32 +183,50 @@ TEST(fc, compute) {
           LOG(FATAL)
               << "Could not find the sync event for the target cl tensor.";
         }
+#endif
+
+        std::vector<float> out_data_from_gpu(out_dim.production());
+        TargetWrapperCL::MemcpySync(
+            out_data_from_gpu.data(), out_data, bias_size, IoDirection::DtoH);
 
         // run cpu ref
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-        gemm_bias<float>(
-            mapped_x, m, k, mapped_w, k, n, mapped_bias, out_ref_data);
-
-        auto* out_data = out.mutable_data<float, cl::Buffer>();
-        auto* mapped_out = static_cast<float*>(TargetWrapperCL::Map(
-            out_data, 0, sizeof(float) * out_dim.production()));
-
+        gemm_bias<float>(x_source.data(),
+                         m,
+                         k,
+                         w_source.data(),
+                         k,
+                         n,
+                         bias_source.data(),
+                         out_ref_data);
 #ifdef PRINT_RESULT
-        PrintData("mapped_x", static_cast<float*>(mapped_x), m, k);
-        PrintData("mapped_w", static_cast<float*>(mapped_w), k, n);
-        PrintData("mapped_bias", static_cast<float*>(mapped_bias), 1, n);
+        PrintData("x", static_cast<float*>(x_source.data()), m, k);
+        PrintData("w", static_cast<float*>(w_source.data()), k, n);
+        PrintData("bias", static_cast<float*>(bias_source.data()), 1, n);
         PrintData("out_ref_data", static_cast<float*>(out_ref_data), m, n);
-        PrintData("mapped_out", static_cast<float*>(mapped_out), m, n);
+        PrintData(
+            "gpu_out", static_cast<float*>(out_data_from_gpu.data()), m, n);
 #endif
 
-        for (int i = 0; i < out_dim.production(); i++) {
-          EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
+        for (int eidx = 0; eidx < out_dim.production(); ++eidx) {
+          auto abs_diff = COMPUTE_ABS_DIFF(out_ref_data[eidx],
+                                           out_data_from_gpu.data()[eidx]);
+          auto relative_diff = COMPUTE_RELATIVE_DIFF(
+              out_ref_data[eidx], out_data_from_gpu.data()[eidx]);
+          EXPECT_EQ(
+              (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+              true);
+          if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+            LOG(FATAL) << "error idx:" << eidx << ", out_ref_data[" << eidx
+                       << "]:" << out_ref_data[eidx]
+                       << ", out_data_from_gpu.data()[" << eidx
+                       << "]:" << out_data_from_gpu.data()[eidx]
+                       << " abs_diff:" << abs_diff
+                       << " relative_diff:" << relative_diff
+                       << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+          }
         }
 
-        TargetWrapperCL::Unmap(x_data, mapped_x);
-        TargetWrapperCL::Unmap(w_data, mapped_w);
-        TargetWrapperCL::Unmap(bias_data, mapped_bias);
-        TargetWrapperCL::Unmap(out_data, mapped_out);
 #ifdef LOOP_TEST
       }  // n
     }    // k

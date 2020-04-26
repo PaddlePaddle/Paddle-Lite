@@ -105,21 +105,11 @@ class IoCopykOpenCLToHostCompute
     }
 
     auto& context = ctx_->As<OpenCLContext>();
-    auto* wait_list = context.cl_wait_list();
 
-    auto it = wait_list->find(x_ptr);
-    if (it != wait_list->end()) {
 #ifndef LITE_SHUTDOWN_LOG
-      VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
+    VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
 #endif
-      auto& event = *(it->second);
-      event.wait();
-      auto command_queue = CLRuntime::Global()->command_queue();
-      command_queue.flush();
-      command_queue.finish();
-    } else {
-      LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-    }
+    CLRuntime::Global()->command_queue().finish();
 
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }

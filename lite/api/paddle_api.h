@@ -86,6 +86,8 @@ class LITE_API PaddlePredictor {
   virtual std::vector<std::string> GetInputNames() = 0;
   // Get output names
   virtual std::vector<std::string> GetOutputNames() = 0;
+  // Get output names
+  virtual std::vector<std::string> GetParamNames();
 
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
@@ -93,6 +95,9 @@ class LITE_API PaddlePredictor {
   /// Get a readonly tensor, return null if no one called `name` exists.
   virtual std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const = 0;
+  /// Get a mutable tensor, return null if on one called `name` exists
+  /// internal infereces API, not recommanded.
+  virtual std::unique_ptr<Tensor> GetMutableTensor(const std::string& name);
 
   /// Persist the optimized model to disk. This API is only supported by
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
@@ -136,6 +141,9 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
+#ifdef LITE_WITH_CUDA
+  bool multi_stream_{false};
+#endif
 #ifdef LITE_WITH_MLU
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
@@ -171,6 +179,10 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
+#ifdef LITE_WITH_CUDA
+  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
+  bool multi_stream() const { return multi_stream_; }
+#endif
 
 #ifdef LITE_WITH_MLU
   // set MLU core version, which is used when compiling MLU kernels
@@ -201,6 +213,8 @@ class LITE_API CxxConfig : public ConfigBase {
   // current thread.
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
   // XPU only, specify the target device ID for the current thread.
+  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
+  // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
 };
 

@@ -139,14 +139,8 @@ void ElementwiseSubImageCompute::Run() {
 #endif
 
   auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size,
-      cl::NullRange,
-      nullptr,
-      event_.get());
+      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
   CL_CHECK_FATAL(status);
-  context.cl_wait_list()->emplace(out_img, event_);
 }
 
 }  // namespace opencl

@@ -167,3 +167,5 @@ float ConvTransposeOpLite::GetGops(){
 
 REGISTER_LITE_OP(conv2d_transpose,
                  paddle::lite::operators::ConvTransposeOpLite);
+REGISTER_LITE_OP(depthwise_conv2d_transpose,
+                 paddle::lite::operators::ConvTransposeOpLite);

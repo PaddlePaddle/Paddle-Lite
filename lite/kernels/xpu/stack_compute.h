@@ -16,17 +16,13 @@
 
 #include <memory>
 #include <vector>
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
+#include "lite/kernels/xpu/utils.h"  // XPUFreeDeleter
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-
-struct XPUFreeDeleter {
-  void operator()(void* p) const { xpu_free(p); }
-};
 
 class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:

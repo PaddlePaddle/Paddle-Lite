@@ -153,15 +153,15 @@ void ElementwiseAddImageCompute::Run() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
+
   status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
       kernel,
       cl::NullRange,
       global_work_size_,
       cl::NullRange,
       nullptr,
-      event_.get());
+      nullptr);
   CL_CHECK_FATAL(status);
-  context.cl_wait_list()->emplace(out_img, event_);
 }
 
 }  // namespace opencl

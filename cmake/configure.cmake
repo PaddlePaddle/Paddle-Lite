@@ -34,6 +34,15 @@ elseif(SSE3_FOUND)
     set(SIMD_FLAG ${SSE3_FLAG})
 endif()
 
+if(WIN32)
+  # windows header option for all targets.
+  add_definitions(-D_XKEYCHECK_H)
+  
+  if (NOT MSVC)
+    message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
+  endif(NOT MSVC)
+endif(WIN32)
+
 if(LITE_WITH_CUDA)
     add_definitions(-DLITE_WITH_CUDA)
     add_definitions(-DEIGEN_USE_GPU)
@@ -70,7 +79,7 @@ endif()
 
 if (WITH_MKLML AND MKLML_IOMP_LIB)
     message(STATUS "Enable Intel OpenMP with ${MKLML_IOMP_LIB}")
-    if(WIN32)
+    if(WIN32 OR APPLE)
         # openmp not support well for now on windows
         set(OPENMP_FLAGS "")
     else(WIN32)
@@ -134,6 +143,14 @@ if (LITE_WITH_NPU)
     add_definitions("-DLITE_WITH_NPU")
 endif()
 
+if (LITE_WITH_APU)
+    add_definitions("-DLITE_WITH_APU")
+endif()
+
+if (LITE_WITH_RKNPU)
+    add_definitions("-DLITE_WITH_RKNPU")
+endif()
+
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
     if (LITE_WITH_XTCL)
@@ -181,3 +198,6 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
   add_definitions("-DLITE_ON_MODEL_OPTIMIZE_TOOL")
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
+if (LITE_WITH_PYTHON)
+  add_definitions("-DLITE_WITH_PYTHON")
+endif(LITE_WITH_PYTHON)
