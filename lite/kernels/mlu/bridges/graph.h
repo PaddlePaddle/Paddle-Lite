@@ -19,9 +19,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/mlu/bridges/tensor.h"
+#include "lite/utils/env.h"
 
 #define PRINT_HW_TIME false
 
@@ -96,7 +98,14 @@ class Graph {
   std::vector<std::shared_ptr<MLUTensor>>* MutableOutputs() {
     return &output_tensors_;
   }
-
+  void GenOfflineModel(const std::string& name) {
+    cnmlModel_t model;
+    std::string filename = name + ".offline.cambricon";
+    CNML_CALL(cnmlCreateModel(&model, name.c_str()));
+    CNML_CALL(cnmlAddFusionOpToModel(model, fusion_op_, filename.c_str()));
+    CNML_CALL(cnmlSaveModel(model, filename.c_str()));
+    CNML_CALL(cnmlDestroyModel(model));
+  }
   void FuseOp(cnmlBaseOp_t op) { CNML_CALL(cnmlFuseOp(op, fusion_op_)); }
 
   void Compile(cnmlCoreVersion_t core_version, int core_number) {
