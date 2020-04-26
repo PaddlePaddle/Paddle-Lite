@@ -20,86 +20,118 @@
 namespace paddle {
 namespace lite {
 
-bool _logical_xor_func(const bool& a, const bool& b) {
-  return (a || b) && !(a && b);
-}
-bool _logical_and_func(const bool& a, const bool& b) { return (a && b); }
-template <bool (*T)(const bool&, const bool&)>
-class LogicalXorTester : public arena::TestCase {
+struct _logical_and_func {
+  inline bool operator()(const bool& a, const bool& b) const { return a && b; }
+};
+
+struct _logical_or_func {
+  inline bool operator()(const bool& a, const bool& b) const { return a || b; }
+};
+
+struct _logical_xor_func {
+  inline bool operator()(const bool& a, const bool& b) const {
+    return (a || b) && !(a && b);
+  }
+};
+
+struct _logical_not_func {
+  inline bool operator()(const bool& a, const bool& b) const { return !a; }
+};
+
+template <class Functor>
+class LogicalTester : public arena::TestCase {
  protected:
-  std::string input_x_ = "x";
-  std::string input_y_ = "y";
-  std::string output_ = "out";
-  DDim dims_{{3, 5, 4, 4}};
+  std::string op_type_ = "logical_xor";
+  std::string x_ = "x";
+  std::string y_ = "y";
+  std::string out_ = "out";
+  DDim dims_{{2, 3, 4, 5}};
 
  public:
-  LogicalXorTester(const Place& place, const std::string& alias, DDim dims)
-      : TestCase(place, alias), dims_(dims) {}
+  LogicalTester(const Place& place,
+                const std::string& alias,
+                const std::string& op_type)
+      : TestCase(place, alias), op_type_(op_type) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
-    CHECK(out);
+    auto* x = scope->FindTensor(x_);
+    const bool* x_data = x->template data<bool>();
+    const Tensor* y = nullptr;
+    const bool* y_data = nullptr;
+    if (op_type_ != "logical_not") {
+      y = scope->FindTensor(y_);
+      y_data = y->template data<bool>();
+    }
+
+    auto* out = scope->NewTensor(out_);
     out->Resize(dims_);
-    bool* out_data = out->mutable_data<bool>();
-    auto* x = scope->FindTensor(input_x_);
-    const bool* x_data = x->data<bool>();
-    auto* y = scope->FindTensor(input_y_);
-    const bool* y_data = y->data<bool>();
+    bool* out_data = out->template mutable_data<bool>();
     for (int i = 0; i < dims_.production(); i++) {
-      // out_data[i] = (x_data[i] || y_data[i]) && !((x_data[i] && y_data[i]));
-      out_data[i] = T(x_data[i], y_data[i]);
+      bool y_tmp = (y_data == nullptr) ? true : y_data[i];
+      out_data[i] = Functor()(x_data[i], y_tmp);
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("logical_xor");
-    op_desc->SetInput("X", {input_x_});
-    op_desc->SetInput("Y", {input_y_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetType(op_type_);
+    op_desc->SetInput("X", {x_});
+    if (op_type_ != "logical_not") {
+      op_desc->SetInput("Y", {y_});
+    }
+    op_desc->SetOutput("Out", {out_});
   }
 
   void PrepareData() override {
-    // std::vector<bool> data(dims_.production());
-    // std::vector<char> datay(dims_.production());
-    bool* data;
-    bool* datay;
-    data = reinterpret_cast<bool*>(malloc(dims_.production() * sizeof(bool)));
-    datay = reinterpret_cast<bool*>(malloc(dims_.production() * sizeof(bool)));
-    LOG(INFO) << "dims_.production()"
-              << ":::" << dims_.production();
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = 1;
-      datay[i] = 1;
+    bool* dx = new bool[dims_.production()];
+    for (int64_t i = 0; i < dims_.production(); i++) {
+      dx[i] = (i % 3 == 0);
     }
+    SetCommonTensor(x_, dims_, dx);
+    delete dx;
 
-    SetCommonTensor(input_x_, dims_, data);
-    SetCommonTensor(input_y_, dims_, datay);
+    if (op_type_ != "logical_not") {
+      bool* dy = new bool[dims_.production()];
+      for (int64_t i = 0; i < dims_.production(); i++) {
+        dy[i] = (i % 2 == 0);
+      }
+      SetCommonTensor(y_, dims_, dy);
+      delete dy;
+    }
   }
 };
 
-void test_logical(Place place) {
-  DDimLite dims{{3, 5, 4, 4}};
-  std::unique_ptr<arena::TestCase> logical_xor_tester(
-      new LogicalXorTester<_logical_xor_func>(place, "def", dims));
-  arena::Arena arena_xor(std::move(logical_xor_tester), place, 1);
+void TestLogical(Place place, float abs_error) {
+  std::unique_ptr<arena::TestCase> logical_and_tester(
+      new LogicalTester<_logical_and_func>(place, "def", "logical_and"));
+  arena::Arena arena_and(std::move(logical_and_tester), place, abs_error);
+  arena_and.TestPrecision();
 
+  std::unique_ptr<arena::TestCase> logical_or_tester(
+      new LogicalTester<_logical_or_func>(place, "def", "logical_or"));
+  arena::Arena arena_or(std::move(logical_or_tester), place, abs_error);
+  arena_or.TestPrecision();
+
+  std::unique_ptr<arena::TestCase> logical_xor_tester(
+      new LogicalTester<_logical_xor_func>(place, "def", "logical_xor"));
+  arena::Arena arena_xor(std::move(logical_xor_tester), place, abs_error);
   arena_xor.TestPrecision();
 
-  std::unique_ptr<arena::TestCase> logical_and_tester(
-      new LogicalXorTester<_logical_and_func>(place, "def", dims));
-  arena::Arena arena_and(std::move(logical_and_tester), place, 1);
-
-  arena_and.TestPrecision();
+  std::unique_ptr<arena::TestCase> logical_not_tester(
+      new LogicalTester<_logical_not_func>(place, "def", "logical_not"));
+  arena::Arena arena_not(std::move(logical_not_tester), place, abs_error);
+  arena_not.TestPrecision();
 }
+
 TEST(Logical, precision) {
-// #ifdef LITE_WITH_X86
-// //   Place place(TARGET(kX86));
-// // #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_logical(place);
+  Place place;
+  float abs_error = 1e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  TestLogical(place, abs_error);
 }
 
 }  // namespace lite

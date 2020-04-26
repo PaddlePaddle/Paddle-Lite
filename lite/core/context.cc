@@ -19,6 +19,7 @@ namespace lite {
 
 #ifdef LITE_WITH_XPU
 thread_local xdnn::Context* Context<TargetType::kXPU>::_tls_raw_ctx{nullptr};
+int Context<TargetType::kXPU>::_workspace_l3_size_per_thread{0};
 #endif
 
 }  // namespace lite

@@ -121,6 +121,7 @@ static void conv_basic(const Dtype1* din,
     }
   }
 }
+
 int ConvOutputSize(int input_size,
                    int filter_size,
                    int dilation,
@@ -197,15 +198,23 @@ TEST(conv2d, compute_image2d_1x1) {
               if (bias_flag) {
                 param.bias = &bias;
               }
+
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
 
               std::vector<int> paddings = {pad, pad, pad, pad};
@@ -259,7 +268,7 @@ TEST(conv2d, compute_image2d_1x1) {
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * ic * ksize * ksize);
@@ -336,11 +345,6 @@ TEST(conv2d, compute_image2d_1x1) {
               for (int i = 0; i < x_image_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
               }
-              //                auto* filter_image2d =
-              //                filter.mutable_data<uint16_t, cl::Image2D>(
-              //                    filter_image_width,
-              //                    filter_image_height,
-              //                    filter_image_v.data());
               SHADOW_LOG << "卷积核 : ----  ";
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_v[i];
@@ -369,15 +373,6 @@ TEST(conv2d, compute_image2d_1x1) {
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -395,19 +390,7 @@ TEST(conv2d, compute_image2d_1x1) {
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target"
-                              "cl tensor.";
-              }
+              CLRuntime::Global()->command_queue().finish();
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),
@@ -530,11 +513,11 @@ const int stride = 2;
                 const int iw = 3;
                 const int oc = 2;
 #else  // big scale with group
-  const int stride = 1;
-  const int group = 32 / 1;
-  const int batch_size = 2;
-  const int ic = 32 / 1;
-  const int ih = 112 / 1;
+  const int stride = 2;
+  const int group = 1;
+  const int batch_size = 1;
+  const int ic = 3 / 1;
+  const int ih = 224 / 1;
   const int iw = 112 / 1;
   const int oc = 32 / 1;
 #endif
@@ -558,9 +541,6 @@ const int stride = 2;
                                                   PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
-              //              CHECK(batch_size == 1) << "conv3x3 only supprt
-              //              batch_size == 1";
-
               auto kernel = std::move(kernels.front());
               SHADOW_LOG << "created conv2d kernel";
 
@@ -575,15 +555,23 @@ const int stride = 2;
               if (bias_flag) {
                 param.bias = &bias;
               }
+
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
 
               std::vector<int> paddings = {pad, pad, pad, pad};
@@ -643,7 +631,7 @@ const int stride = 2;
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * filter_channel * ksize * ksize);
@@ -652,10 +640,10 @@ const int stride = 2;
 
               SHADOW_LOG << "gen input and filter ...";
               for (int i = 0; i < input_v.size(); ++i) {
-                input_v[i] = i * 0.001;  // gen(engine);
+                input_v[i] = gen(engine);
               }
               for (int i = 0; i < filter_v.size(); ++i) {
-                filter_v[i] = 1 * 0.001;  // gen(engine);
+                filter_v[i] = gen(engine);
               }
 
               SHADOW_LOG << "after gen input and filter ...";
@@ -724,28 +712,12 @@ const int stride = 2;
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
-              // filter kernel
-              //              auto* filter_image2d = filter.mutable_data<float,
-              //              cl::Image2D>(
-              //                  filter_image_width,
-              //                  filter_image_height,
-              //                  filter_image_v.data());
-
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -763,20 +735,7 @@ const int stride = 2;
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target "
-                              "cl tensor.";
-              }
-
+              CLRuntime::Global()->command_queue().finish();
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),
                                           out_image_width,
@@ -848,8 +807,13 @@ const int stride = 2;
               for (int i = 0; i < out_dim.production(); i++) {
                 auto relative_diff =
                     COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
-                EXPECT_LT(relative_diff, FP16_MAX_DIFF);
-                if (relative_diff > FP16_MAX_DIFF) {
+                auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
+                // EXPECT_LT(relative_diff, FP16_MAX_DIFF);
+                // EXPECT_LT(abs_diff, FP16_ABS_DIFF);
+
+                EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+                             abs_diff > FP16_ABS_DIFF);
+                if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
                   LOG(FATAL) << "error idx:" << i << "output_v[" << i
                              << "]:" << output_v[i] << " "
                                                        "out_ref_data["
@@ -932,14 +896,21 @@ TEST(conv2d, compute_image2d_5x5) {
                 param.bias = &bias;
               }
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
 
               std::vector<int> paddings = {pad, pad, pad, pad};
@@ -999,7 +970,7 @@ TEST(conv2d, compute_image2d_5x5) {
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * ic * ksize * ksize);
@@ -1076,28 +1047,12 @@ TEST(conv2d, compute_image2d_5x5) {
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
-              // filter kernel
-              //              auto* filter_image2d = filter.mutable_data<float,
-              //              cl::Image2D>(
-              //                  filter_image_width,
-              //                  filter_image_height,
-              //                  filter_image_v.data());
-
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -1115,19 +1070,7 @@ TEST(conv2d, compute_image2d_5x5) {
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target "
-                              "cl tensor.";
-              }
+              CLRuntime::Global()->command_queue().finish();
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),
@@ -1276,16 +1219,25 @@ TEST(conv2d, compute_image2d_7x7) {
               if (bias_flag) {
                 param.bias = &bias;
               }
+
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
+
               std::vector<int> paddings = {pad, pad, pad, pad};
               std::vector<int> dilations = {dilation, dilation};
 
@@ -1337,7 +1289,7 @@ TEST(conv2d, compute_image2d_7x7) {
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * ic * ksize * ksize);
@@ -1428,29 +1380,12 @@ TEST(conv2d, compute_image2d_7x7) {
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
-
-              //              auto* filter_image2d =
-              // filter.mutable_data < float,
-              //              cl::Image2D>(
-              //                  filter_image_width,
-              //                  filter_image_height,
-              //                  filter_image_v.data());
-
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -1468,19 +1403,7 @@ TEST(conv2d, compute_image2d_7x7) {
               auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
                   out_image_width, out_image_height);
 
-              auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-              auto* out_ptr = param.output->data<half_t, cl::Image2D>();
-              auto it = wait_list->find(out_ptr);
-
-              if (it != wait_list->end()) {
-                SHADOW_LOG << "--- Find the sync event for the target cl "
-                              "tensor. ---";
-                auto& event = *(it->second);
-                event.wait();
-              } else {
-                LOG(FATAL) << "Could not find the sync event for the target "
-                              "cl tensor.";
-              }
+              CLRuntime::Global()->command_queue().finish();
 
               TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                           output.data<half_t, cl::Image2D>(),

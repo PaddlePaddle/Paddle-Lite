@@ -151,14 +151,23 @@ class Context<TargetType::kXPU> {
     if (_tls_raw_ctx == nullptr) {
       _tls_raw_ctx = xdnn::create_context();
       CHECK(_tls_raw_ctx);
+      int r = xdnn::set_workspace_l3_size(_tls_raw_ctx,
+                                          _workspace_l3_size_per_thread);
+      if (r != 0) {
+        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
+                     << ", _workspace_l3_size_per_thread = "
+                     << _workspace_l3_size_per_thread;
+      }
     }
     return _tls_raw_ctx;
   }
 
   static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
-    xdnn::set_workspace_l3_size(GetRawContext(), l3_size);
+    _workspace_l3_size_per_thread = l3_size;
   }
 
+  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
+  // thread
   static void SetDev(int dev_no = 0) {
     const char* dev_env = getenv("LITE_XPU_DEV");
     if (dev_env) {
@@ -173,6 +182,7 @@ class Context<TargetType::kXPU> {
 
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;
+  static int _workspace_l3_size_per_thread;
 };
 #endif
 
@@ -340,27 +350,17 @@ class Context<TargetType::kX86> {
 template <>
 class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_;
-  using WaitListType =
-      std::unordered_map<decltype(static_cast<const void*>(nullptr)),
-                         std::shared_ptr<cl::Event>>;
-  std::shared_ptr<WaitListType> cl_wait_list_;
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
-  WaitListType* cl_wait_list() { return cl_wait_list_.get(); }
 
   void InitOnce() {
     // Init cl runtime.
     CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
-
     cl_context_ = std::make_shared<CLContext>();
-    cl_wait_list_ = std::make_shared<WaitListType>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) {
-    ctx->cl_context_ = cl_context_;
-    ctx->cl_wait_list_ = cl_wait_list_;
-  }
+  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
 };
 #endif
 

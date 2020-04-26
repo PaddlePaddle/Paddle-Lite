@@ -279,7 +279,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
       }
     }
     if (has_value_input == nullptr) {
-      VLOG(3) << "no input has value! just return" << std::endl;
+      VLOG(3) << "no input has value! just return";
       return;
     }
     auto input_width = has_value_input->value().dims()[1];
