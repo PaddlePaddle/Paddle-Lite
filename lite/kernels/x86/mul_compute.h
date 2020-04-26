@@ -13,7 +13,6 @@
 // limitations under the License.
 #pragma once
 
-#include <chrono>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
