@@ -2,7 +2,7 @@
 setlocal
 setlocal enabledelayedexpansion
 
-set source_path=%~dp0\\..\\
+set source_path=%~dp0\\..\\..\\
 set BUILD_EXTRA=OFF
 set BUILD_PYTHON=OFF
 set BUILD_DIR=%source_path%
