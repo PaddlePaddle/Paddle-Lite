@@ -21,6 +21,15 @@ WITH_STRIP=OFF
 OPTMODEL_DIR=""
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
+# options of compiling rockchip NPU lib.
+WITH_ROCKCHIP_NPU=OFF
+ROCKCHIP_NPU_SDK_ROOT=""
+# options of compiling mediatek APU lib.
+WITH_MEDIATEK_APU=OFF
+MEDIATEK_APU_SDK_ROOT=""
+# options of compiling baidu XPU lib.
+WITH_BAIDU_XPU=OFF
+BAIDU_XPU_SDK_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
@@ -37,14 +46,14 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
-# basic options for armlinux compiling.
+# basic options for linux compiling.
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DLITE_WITH_ARM=ON \
                             -DLITE_WITH_X86=OFF \
                             -DARM_TARGET_OS=armlinux \
                             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
                             -DWITH_TESTING=OFF"
-# mutable options for armlinux compiling.
+# mutable options for linux compiling.
 function init_cmake_mutable_options {
     SHUTDOWN_LOG=ON
     if [ "$WITH_LOG" = "ON"]; then
@@ -60,6 +69,12 @@ function init_cmake_mutable_options {
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
+                        -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
+                        -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
+                        -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
+                        -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
+                        -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
+                        -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN"
 }
 #####################################################################################################
@@ -188,12 +203,12 @@ function make_full_publish_so {
 
 function print_usage {
     echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
-    echo -e "| Methods of compiling Padddle-Lite Android library:                                                                                                   |"
+    echo -e "| Methods of compiling Padddle-Lite Linux library:                                                                                                   |"
     echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
-    echo -e "|  compile android library: (armv8, gcc)                                                                                                               |"
-    echo -e "|     ./lite/tools/build_android.sh                                                                                                                    |"
+    echo -e "|  compile linux library: (armv8, gcc)                                                                                                               |"
+    echo -e "|     ./lite/tools/build_linux.sh                                                                                                                    |"
     echo -e "|  print help information:                                                                                                                             |"
-    echo -e "|     ./lite/tools/build_android.sh help                                                                                                               |"
+    echo -e "|     ./lite/tools/build_linux.sh help                                                                                                               |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                                  |"
     echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                                       |"
@@ -204,14 +219,33 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
-    echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                              |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                                |"
     echo -e "|     --with_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF                                                    |"
     echo -e "|     --opt_model_dir: (absolute path to optimized model dir) required when compiling striped library                                                  |"
     echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html                           |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:                                                                                                              |"
-    echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                                   |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
     echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of opencl library compiling:                                                                                                              |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
+    echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of rockchip npu library compiling:                                                                                                        |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_rockchip_npu=ON --rockchip_npu_sdk_root=YourRockchipNpuSdkPath                                                |"
+    echo -e "|     --with_rockchip_npu: (OFF|ON); controls whether to compile lib for rockchip_npu, default is OFF                                                  |"
+    echo -e "|     --rockchip_npu_sdk_root: (path to rockchip_npu DDK file) required when compiling rockchip_npu library                                            |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of mediatek apu library compiling:                                                                                                        |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourMediatekApuSdkPath                                                |"
+    echo -e "|     --with_mediatek_apu: (OFF|ON); controls whether to compile lib for mediatek_apu, default is OFF                                                  |"
+    echo -e "|     --mediatek_apu_sdk_root: (path to mediatek_apu DDK file) required when compiling mediatek_apu library                                            |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON --baidu_xpu_sdk_root=YourBaiduXpuSdkPath                              |"
+    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF                          |"
+    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) required when compiling baidu_xpu library                                  |"
     echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -264,6 +298,42 @@ function main {
             # ON or OFF, default OFF
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on huawei npu.
+            --with_rockchip_npu=*)
+                WITH_ROCKCHIP_NPU="${i#*=}"
+                shift
+                ;;
+            --rockchip_npu_sdk_root=*)
+                ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on rockchip npu.
+            --with_rockchip_npu=*)
+                WITH_ROCKCHIP_NPU="${i#*=}"
+                shift
+                ;;
+            --rockchip_npu_sdk_root=*)
+                ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on mediatek apu.
+            --with_mediatek_apu=*)
+                WITH_MEDIATEK_APU="${i#*=}"
+                shift
+                ;;
+            --mediatek_apu_sdk_root=*)
+                MEDIATEK_APU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on baidu xpu.
+            --with_baidu_xpu=*)
+                WITH_BAIDU_XPU="${i#*=}"
+                shift
+                ;;
+            --baidu_xpu_sdk_root=*)
+                BAIDU_XPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
