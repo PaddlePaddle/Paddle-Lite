@@ -110,11 +110,7 @@ class Tensor {
 
   template <typename Dtype>
   Dtype* mutableData(DataType dataType, const Shape& shape) {
-    // std::cout << "enter \n";
-    // std::cout << "before new shape\n";
-    // this->shape_ = new Shape(shape);
     this->shape_.reset(new Shape(shape));
-    // std::cout << "new shape \n";
     this->dataType_ = dataType;
     return mutableData<Dtype>();
   }
@@ -123,14 +119,11 @@ class Tensor {
   Dtype* mutableData() {
     size_t memorySize =
         shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
-    // std::cout << "mem_size:" << memorySize << std::endl;
     if (placeHolder_ != nullptr) {
-      // std::cout << "placeHolder_ not null"<< std::endl;
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
       }
     } else {
-      // std::cout << "placeHolder_ null"<< std::endl;
       placeHolder_.reset(new PlaceHolder(memorySize));
     }
     return data<Dtype>();
@@ -256,16 +249,11 @@ class Tensor {
   void shareDataWith(Tensor* src) { shareDataWith(src, src->shape()); }
 
   void shareDataWith(Tensor* src, const Shape& shape, int offset = 0) {
-    // if (shape_ != nullptr) {
-    //   delete shape_;
-    // }
-
     this->placeHolder_ = src->placeHolder_;
     this->dataType_ = src->dataType_;
     this->aligned_ = src->aligned_;
     this->dateLocation_ = src->dateLocation_;
     this->offset = offset;
-    // shape_ = new Shape(const_cast<Shape&>(shape));
     shape_.reset(new Shape(shape));
   }
 
@@ -312,7 +300,6 @@ class Tensor {
 
   void flush() {
     if (released) {
-      // std::cout << "flush::" << this << std::endl;
       return;
     }
 
@@ -474,7 +461,6 @@ class Tensor {
   float mem_scale_factor_ = 1.0f;
   std::shared_ptr<PlaceHolder> placeHolder_;
   std::shared_ptr<Shape> shape_;
-  // Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
   bool aligned_ = false;
   DataSyncStatus synchedStatus_ = Synched;
