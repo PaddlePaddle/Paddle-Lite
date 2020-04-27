@@ -3,20 +3,22 @@
 Paddle Lite已支持RK NPU的预测部署。
 其接入原理是与之前华为NPU类似，即加载并分析Paddle模型，将Paddle算子转成RK组网API进行网络构建，在线生成并执行模型。
 
-## 已支持的芯片
+## 支持现状
+
+### 已支持的芯片
 
 - RK1808, RK1806
 - RK1126, RK1109
 
-## 已支持的平台
+### 已支持的设备
 
 - RK1808 EVB，暂时不支持RK3399Pro。
 
-## 已支持的模型
+### 已支持的Paddle模型
 
 - [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
 
-## 已支持（或部分支持）的Paddle算子
+### 已支持（或部分支持）的Paddle算子
 
 - relu
 - conv2d
@@ -31,23 +33,25 @@ Paddle Lite已支持RK NPU的预测部署。
 - elementwise_mul
 - elementwise_div
 
-## 测试平台
+## 参考示例演示
+
+### 测试设备
 
 ![rk1808_evb_front](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/rk1808_evb_front.jpg)
 
 ![rk1808_evb_back](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/rk1808_evb_back.jpg)
 
-## 准备环境
+### 准备设备环境
 
 - 需要依赖特定版本的firmware，请参照[rknpu_ddk](https://github.com/airockchip/rknpu_ddk)的说明对设备进行firmware的更新；
 - 由于RK1808 EVB在刷firmware后，只是一个纯净的Linux系统，无法像Ubuntu那样使用apt-get命令方便的安装软件，因此，示例程序和PaddleLite库的编译均采用交叉编译方式；
 - 将MicroUSB线插入到设备的MicroUSB OTG口，就可以使用Android的adb命令进行设备的交互，再也不用配置网络使用ssh或者通过串口的方式访问设备了，这个设计非常赞！
 
-## 准备交叉编译环境
+### 准备交叉编译环境
 
 - 为了保证编译环境一致，建议参考[源码编译](../user_guides/source_compile)中的Docker开发环境进行配置。
 
-## 运行图像分类示例程序
+### 运行图像分类示例程序
 
 - 从[https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-armlinux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-armlinux-demo.tar.gz)下载示例程序，解压后清单如下：
 
@@ -80,42 +84,44 @@ Paddle Lite已支持RK NPU的预测部署。
         - libpaddle_light_api_shared.so # 预编译PaddleLite库
 ```
 
-- 进入PaddleLite-armlinux-demo/image_classification_demo直接执行./run.sh即可，注意：run.sh的执行不能在docker环境，否则无法找到设备；
+- 进入PaddleLite-armlinux-demo/image_classification_demo，再定频后直接执行./run.sh即可，注意：run.sh的执行不能在docker环境，否则无法找到设备；
 ```shell
 $ cd PaddleLite-armlinux-demo/image_classification_demo
+$ adb shell
+  / # echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+  / # echo 1608000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed
+  / # echo userspace > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+  / # echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed
 $ ./run.sh
 ...
-iter 8 cost: 8.715000 ms
-[I  8/ 6  5:38: 7.618 ...e/lite/kernels/rknpu/subgraph_compute.cc:215 Run] [RKNPU]:Run
-[I  8/ 6  5:38: 7.619 ...e/lite/kernels/rknpu/subgraph_compute.cc:172 LaunchDeviceProgram] [RKNPU]:LaunchDeviceProgram
-iter 9 cost: 8.592000 ms
-warmup: 5 repeat: 10, average: 8.078400 ms, max: 8.846000 ms, min: 7.307000 ms
+iter 9 cost: 6.509000 ms
+warmup: 5 repeat: 10, average: 6.486600 ms, max: 6.544000 ms, min: 6.450000 ms
 results: 3
 Top0  tabby, tabby cat - 0.438732
 Top1  Egyptian cat - 0.438732
 Top2  tiger cat - 0.116995
-Preprocess time: 2.452000 ms
-Prediction time: 8.078400 ms
-Postprocess time: 0.324000 ms
+Preprocess time: 2.447000 ms
+Prediction time: 6.486600 ms
+Postprocess time: 0.101000 ms
 ```
 - 如果需要更改测试图片，可通过convert_to_raw_image.py工具生成；
 - 如果需要重新编译示例程序，直接运行./build.sh即可，注意：build.sh的执行必须在docker环境中，否则可能编译出错。
 
 
-## 更新模型
+### 更新模型
 
 - 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
 - 参考[模型量化-有校准数据训练后量化](../user_guides/post_quant_with_data)使用PaddleSlim对float32模型进行量化（注意：由于RK NPU只支持tensor-wise的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成RKNPU模型，仅需要将valid_targets设置为rknpu,arm即可。
 ```shell
-./opt --model_dir=mobilenet_v1_int8_224_fluid \
+$ ./opt --model_dir=mobilenet_v1_int8_224_fluid \
     --optimize_out_type=naive_buffer \
     --optimize_out=mobilenet_v1_int8_224_for_rknpu \
     --valid_targets=rknpu,arm
 ```
 - 注意：opt生成的模型只是标记了RKNPU支持的Paddle算子，并没有真正生成RK NPU模型，只有在执行时才会将标记的Paddle算子转成RK NPU组网API，最终生成并执行HiAI模型。
 
-## 更新支持RK NPU的Paddle Lite库
+### 更新支持RK NPU的Paddle Lite库
 
 - 下载PaddleLite源码和RK DDK；
 ```shell
