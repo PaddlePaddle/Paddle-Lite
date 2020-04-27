@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/host/compare_compute.h"
+#include <cmath>
 #include <vector>
 
 namespace paddle {
