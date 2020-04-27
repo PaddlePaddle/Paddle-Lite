@@ -90,6 +90,9 @@ class KernelBase {
     profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
     profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     Run();
+#ifdef LITE_WITH_OPENCL
+    CLRuntime::Global()->command_queue().finish();
+#endif
     profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
 #else
     Run();
