@@ -186,7 +186,12 @@ std::vector<float> GetModelGops(const std::string& model_dir,
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);
-
+  
+  auto input_tensor = predictor->GetInput(0);
+  auto dims = input_tensor->shape();
+  printf("dims size: %ld \n", dims.size());
+  for (auto val: dims) printf("dim: %ld \n", val);
+  input_tensor->Resize({1,3,160,160});
   // get GOPS
   return predictor->RunGops();
  
@@ -410,7 +415,7 @@ void CheckIfModelSupported() {
     for (auto val : gops){
       sum += val;
     }
-    std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum;
+    std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum << std::endl;
     std::cout << "Paddle-Lite supports this model!" << std::endl;
     exit(1);
   }

@@ -145,6 +145,11 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
   raw_predictor_.SaveModel(model_dir, model_type, record_info);
 }
 
+#ifdef LITE_WITH_PROFILE
+std::vector<float> CxxPaddleApiImpl::RunGops(){
+  return raw_predictor_.RunGops();
+}
+#endif
 }  // namespace lite
 
 namespace lite_api {
