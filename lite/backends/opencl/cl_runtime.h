@@ -108,24 +108,15 @@ class CLRuntime {
       GPUPriorityLevel gpu_priority_level);
 
   std::shared_ptr<cl::Context> CreateContext() {
+    // note(ysh329): gpu perf mode and priority level of adreno gpu referred
+    // from xiaomi/mace.
+    // However, no performance gain after `PERF_HIGH` and `PRIORITY_HIGH` set.
     auto perf_mode = GPUPerfMode::PERF_HIGH;
     auto priority_level = GPUPriorityLevel::PRIORITY_HIGH;
     std::vector<cl_context_properties> context_properties;
     if (gpu_type_ == GpuType::QUALCOMM_ADRENO) {
-      context_properties.push_back(CL_CONTEXT_PERF_MODE_QCOM);
-      context_properties.push_back(CL_PERF_MODE_HIGH_QCOM);
-      context_properties.push_back(CL_CONTEXT_PRIORITY_LEVEL_QCOM);
-      context_properties.push_back(CL_PRIORITY_HINT_HIGH_QCOM);
-      context_properties.push_back(0);
-      // GetAdrenoContextProperties(&context_properties, perf_mode,
-      // priority_level);
-    }
-#if 0
-    auto context = std::make_shared<cl::Context>(
-        std::vector<cl::Device>{device()}, nullptr, nullptr, nullptr, &status_);
-#else
-    for (size_t i = 0; i < context_properties.size(); ++i) {
-      LOG(INFO) << i << " " << context_properties[i];
+      GetAdrenoContextProperties(
+          &context_properties, perf_mode, priority_level);
     }
     auto context =
         std::make_shared<cl::Context>(std::vector<cl::Device>{device()},
@@ -133,7 +124,6 @@ class CLRuntime {
                                       nullptr,
                                       nullptr,
                                       &status_);
-#endif
     CL_CHECK_FATAL(status_);
     return context;
   }
