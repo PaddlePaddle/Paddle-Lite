@@ -94,7 +94,6 @@ $ adb shell
   / # echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed
 $ ./run.sh
 ...
-iter 9 cost: 6.509000 ms
 warmup: 5 repeat: 10, average: 6.486600 ms, max: 6.544000 ms, min: 6.450000 ms
 results: 3
 Top0  tabby, tabby cat - 0.438732
