@@ -54,6 +54,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/opencl
   demo_guides/fpga
   demo_guides/npu
+  demo_guides/rknpu
   
 .. toctree::
   :maxdepth: 1
