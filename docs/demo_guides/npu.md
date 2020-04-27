@@ -126,3 +126,32 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 - 华为达芬奇架构的NPU内部大量采用float16进行运算，因此，预测结果会存在偏差，但大部分情况下精度不会有较大损失，可参考[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中Image Classification Demo for Android对同一张图片CPU与NPU的预测结果。
 - 华为Kirin 810/990 Soc搭载的自研达芬奇架构的NPU，与Kirin 970/980 Soc搭载的寒武纪NPU不一样，同样的，与Hi3559A、Hi3519A使用的NNIE也不一样，Paddle Lite只支持华为自研达芬奇架构NPU。
 - 我们正在持续增加能够适配HiAI IR的Paddle算子bridge/converter，以便适配更多Paddle模型，同时华为研发同学也在持续对HiAI IR性能进行优化。
+
+
+## 手动分割子图
+
+### 背景
+- Paddle-Lite已经支持了大量的华为NPU的算子，但是仍然不能满足所有模型的需求。对于一个有部分算子不支持的模型，Paddle-Lite会将模型划分为可以跑在NPU上的子图和跑在CPU上的子图，实现NPU和CPU自动调度的功能，通常情况下可以获得比较好的性能。在一些特殊情况下，模型会被自动划分为比较多的子图，导致CPU和NPU的切换开销很大，从而导致整体性能变差。因此，需要手动分割子图的功能来指定一些算子跑在CPU上，避免子图过多。
+
+### 功能
+- 通过配置文件来指定需要强制跑在CPU上的算子
+
+### 使用方法
+- 1、通过netron打开paddle模型文件，可以查看模型结构，获得算子的类型、输入名称。输出名称。
+- 2、生成配置文件 ```split_cfg.txt```，记录需要跑在CPU上的算子信息。
+    - 每行一条OP记录信息，以冒号":"分隔"op名称"，"op输入名"，"op输出名"，以逗号","分隔"op输入名"和"op输出名"中的不同var名。
+    - 可以部分省略输入或者输出名。比如：```op3:in3_var0```表示，指定类型为"op3"，输入为"in3_var0"的算子；```op4```表示所有类型为"op4的算子"
+    - 例如：
+    ```
+    op0:in0_var0,in0_var1:out0_var0,out0_var1
+    op1:in1_var0,in1_var1:out1_var0
+    op2::out2_var0
+    op3:in3_var0
+    op4
+    ```
+- 3、使用环境变量```SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE```指定配置文件的位置。
+    - 例如：
+    ```
+    export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=/data/local/tmp/split_sfg.txt
+    ```
+- 4、以上步骤完成后，运行的模型中符合条件的算子将被强制跑在CPU上。
