@@ -69,7 +69,7 @@ bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float Im2SequenceOp::GetGops(){
   //  todo
   return 0.f;

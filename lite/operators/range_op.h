@@ -36,7 +36,7 @@ class RangeOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "range"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

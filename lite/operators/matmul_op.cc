@@ -150,7 +150,7 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float MatMulOpLite::GetGops(){
   auto x_dims = param_.X->dims();
   auto y_dims = param_.Y->dims();

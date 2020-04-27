@@ -47,7 +47,7 @@ bool LrnOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float LrnOpLite::GetGops(){
   auto out_sum = param_.Out->numel();
   auto local_size = param_.k;

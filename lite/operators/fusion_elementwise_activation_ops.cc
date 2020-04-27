@@ -50,7 +50,7 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float FusionElementwiseActivationOp::GetGops(){
   auto num = param_.Out->numel();
   if (param_.act_type == "relu") {

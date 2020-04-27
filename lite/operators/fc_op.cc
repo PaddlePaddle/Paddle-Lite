@@ -114,7 +114,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float FcOpLite::GetGops(){
   auto m = param_.input->dims().count(0, param_.in_num_col_dims);
   auto w_dims = param_.w->dims();

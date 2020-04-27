@@ -37,7 +37,7 @@ class SequenceArithmeticOp : public OpLite {
 
   std::string DebugString() const override { return "sequence_arithmetic"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

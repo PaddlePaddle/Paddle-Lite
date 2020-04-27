@@ -34,7 +34,7 @@ class ActivationOp : public OpLite {
 
   std::string DebugString() const override { return "activation_op"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

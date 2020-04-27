@@ -132,6 +132,9 @@ struct Instruction {
       kernel_->SetProfiler(profiler_, profile_id_);
     }
   }
+#endif
+
+#ifdef LITE_WITH_OPS
   // compute gops
   float ComputeGops();
 #endif
@@ -188,7 +191,7 @@ class LITE_API RuntimeProgram {
   // be added in vars_.
   void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   std::vector<float> RunGops();
 #endif
  private:

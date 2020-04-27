@@ -92,7 +92,7 @@ bool ReduceProdOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float ReduceProdOpLite::GetGops(){
   auto dims = param_.dim;
   auto in_sum = param_.x->numel();

@@ -106,7 +106,7 @@ class LITE_API PaddlePredictor {
       LiteModelType model_type = LiteModelType::kProtobuf,
       bool record_info = false);
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   virtual std::vector<float> RunGops()=0;
 #endif
 

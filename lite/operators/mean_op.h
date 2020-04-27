@@ -35,7 +35,7 @@ class MeanOp : public OpLite {
 
   std::string DebugString() const override { return "mean"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
  private:

@@ -201,3 +201,8 @@ endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
+
+# add OPS
+if (LITE_WITH_OPS)
+  add_definitions("-DLITE_WITH_OPS")
+endif(LITE_WITH_OPS)

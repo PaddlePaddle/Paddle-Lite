@@ -41,7 +41,7 @@ bool SequenceConcatOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float SequenceConcatOp::GetGops(){
   // todo
   return 0.f;

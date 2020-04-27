@@ -73,7 +73,7 @@ bool SearchFcOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float SearchFcOpLite::GetGops(){
   auto x_dims = param_.X->dims();
   auto w_dims = param_.W->dims();

@@ -40,7 +40,7 @@ class SearchSeqDepaddingOpLite : public OpLite {
 
   std::string DebugString() const override { return "search_seq_depadding"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

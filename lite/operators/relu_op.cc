@@ -42,7 +42,7 @@ bool ReluOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float ReluOp::GetGops(){
   auto out_sum = param_.Out->numel();
   return 1.f * out_sum;

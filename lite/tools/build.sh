@@ -104,7 +104,7 @@ function build_opt {
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
-      -DLITE_WITH_PROFILE=ON \
+      -DLITE_WITH_OPS=ON \
       -DWITH_MKL=OFF
     make opt -j$NUM_PROC
 }

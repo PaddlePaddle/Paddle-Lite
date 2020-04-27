@@ -46,7 +46,7 @@ bool PowerOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float PowerOp::GetGops(){
   auto out_sum = param_.Out->numel();
   return 3.f * out_sum;

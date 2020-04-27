@@ -40,7 +40,7 @@ class SequenceTopkAvgPoolingOpLite : public OpLite {
     return "sequence_topk_avg_pooling";
   }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

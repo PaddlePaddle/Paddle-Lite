@@ -42,7 +42,7 @@ class ConvTransposeOpLite : public OpLite {
 
   std::string DebugString() const override { return "conv_transpose"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

@@ -39,7 +39,7 @@ class RoiAlignOpLite : public OpLite {
 
   std::string DebugString() const override { return "roi_align"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

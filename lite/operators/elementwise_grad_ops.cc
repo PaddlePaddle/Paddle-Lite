@@ -62,7 +62,7 @@ bool ElementwiseGradOp::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float ElementwiseGradOp::GetGops(){
   return 1.f * param_.OutGrad->production();
 }

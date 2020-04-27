@@ -44,7 +44,7 @@ bool SearchSeqSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float SearchSeqSoftmaxOp::GetGops(){
   auto in_sum = param_.x->numel();
   return 4.f * in_sum;

@@ -37,7 +37,7 @@ class FlattenOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "flatten"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops(){ return 1.f; }
 #endif
 
@@ -60,7 +60,7 @@ class Flatten2Op : public FlattenOp {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "flatten2"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops(){ return 1.f; }
 #endif
 

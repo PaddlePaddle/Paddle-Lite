@@ -35,7 +35,7 @@ class ElementwiseGradOp : public OpLite {
 
   std::string DebugString() const override { return "elementwise_grad_op"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

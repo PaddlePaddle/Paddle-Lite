@@ -70,7 +70,7 @@ bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float InstanceNormOp::GetGops(){
     auto x_dims = param_.x->dims();
     auto nc = x_dims[0] * x_dims[1];

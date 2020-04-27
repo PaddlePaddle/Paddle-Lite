@@ -56,7 +56,7 @@ bool SplitLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float SplitLodTensorOpLite::GetGops(){
   return 1.f;
 }

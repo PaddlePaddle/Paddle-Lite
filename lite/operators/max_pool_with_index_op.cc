@@ -68,7 +68,7 @@ bool MaxPoolWithIndexOpLite::InferShapeImpl() const {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float MaxPoolWithIndexOpLite::GetGops(){
   // todo
   return 0.f;

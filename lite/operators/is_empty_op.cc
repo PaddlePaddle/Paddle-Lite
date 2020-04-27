@@ -38,7 +38,7 @@ bool IsEmptyOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float IsEmptyOp::GetGops(){
   return 1.f;
 }

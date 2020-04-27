@@ -38,7 +38,7 @@ class NormOp : public OpLite {
 
   std::string DebugString() const override { return "norm"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

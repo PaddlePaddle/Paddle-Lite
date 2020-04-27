@@ -61,7 +61,7 @@ bool LookupTableV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float LookupTableV2OpLite::GetGops(){
   // todo
   return 0.f;

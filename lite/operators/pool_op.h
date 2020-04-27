@@ -92,7 +92,7 @@ class PoolOpLite : public OpLite {
 
   std::string DebugString() const override { return "pool2d"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops();
 #endif
 

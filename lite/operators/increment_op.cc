@@ -42,7 +42,7 @@ bool IncrementOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float IncrementOp::GetGops(){
   auto sum = param_.X->numel();
   return 1.f * sum;

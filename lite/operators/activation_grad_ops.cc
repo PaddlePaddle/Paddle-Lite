@@ -55,7 +55,7 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float ActivationGradOp::GetGops(){
   // todo
   return 0.0;

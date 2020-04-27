@@ -89,7 +89,7 @@ bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float TransposeOp::GetGops(){
   return 1.f;
 }
@@ -177,7 +177,7 @@ bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float Transpose2Op::GetGops(){
   return 1.f;
 }

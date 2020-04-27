@@ -63,7 +63,7 @@ class FakeChannelWiseDequantizeMaxAbsOpLite : public OpLite {
     return "fake_channel_wise_dequantize_max_abs";
   }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops(){
     // todo
     return 0.f;

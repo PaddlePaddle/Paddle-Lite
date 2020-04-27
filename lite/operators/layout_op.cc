@@ -43,7 +43,7 @@ bool LayoutOp::AttachImpl(const cpp::OpDesc &opdesc,
 }
 std::string LayoutOp::DebugString() const { return "layout_op"; }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float LayoutOp::GetGops(){
   return 1.f;
 }

@@ -73,7 +73,7 @@ bool SearchSeqFcOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
 float SearchSeqFcOpLite::GetGops(){
   auto x_dims = param_.x->dims();
   auto w_dims = param_.w->dims();

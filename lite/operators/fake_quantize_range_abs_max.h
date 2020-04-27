@@ -62,7 +62,7 @@ class FakeQuantizeRangeMaxAbsOpLite : public OpLite {
     return "fake_quantize_range_max_abs";
   }
 
-#ifdef LITE_WITH_PROFILE
+#ifdef LITE_WITH_OPS
   float GetGops(){
     // todo
     return 0.f;
