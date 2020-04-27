@@ -350,6 +350,7 @@ function make_cuda {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_STATIC_CUDA=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_XPU=$BUILD_XPU \
