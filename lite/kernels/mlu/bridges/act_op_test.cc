@@ -116,7 +116,7 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
     opdesc.SetAttr("offset", 0.5f);
   }
 
-  // create and convert op to NPU model, then run it on NPU
+  // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::ActivationOp>(opdesc, &scope);
   // execute reference implementation and save to output tensor
   act_ref(op);
