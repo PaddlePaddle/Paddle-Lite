@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "lite/backends/fpga/KD/debugger.hpp"
+// #include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/kernels/host/one_hot_compute.h"
 #include "lite/utils/paddle_enforce.h"
 

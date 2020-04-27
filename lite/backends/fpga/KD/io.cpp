@@ -12,32 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
-#include <stdio.h>
-
-#include "lite/backends/fpga/KD/llapi/filter.h"
-#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+#include "io.hpp"
 
 namespace paddle {
 namespace zynqmp {
 
-class DLEngine {
- public:
-  static DLEngine& get_instance() {
-    static DLEngine s_instance;
-    return s_instance;
-  }
+// FpgaIO::FpgaIO() {}
+// void FpgaIO::setMutex(std::mutex* mtx) { mtx_ = mtx; }
 
-  DeviceInfo& deviceInfo();
+// void FpgaIO::setConditionVariable(std::condition_variable* condition) {
+//   condition_ = condition;
+// }
 
-  bool isZU3() { return info_.device_type / 100 == 3; }
+// void FpgaIO::lock() {
+//   if (mtx_ != nullptr && !locked_) {
+//     mtx_->lock();
+//     locked_ = true;
+//   }
+// }
 
-  float* out_data = nullptr;
+// void FpgaIO::unlock() {
+//   if (mtx_ != nullptr) {
+//     mtx_->unlock();
+//     condition_->notify_one();
+//   }
+//   locked_ = false;
+// }
 
- private:
-  DLEngine();
-  DeviceInfo info_;
-};
 }  // namespace zynqmp
 }  // namespace paddle

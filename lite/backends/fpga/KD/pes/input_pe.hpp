@@ -29,6 +29,7 @@ class InputPE : public PE {
   }
 
   bool dispatch() {
+    // std::cout << "input_dispatch()\n";
     Tensor* input = param_.input;
     Tensor* output = param_.output;
 

@@ -240,8 +240,8 @@ int8_t* format_filter(float* data_in,
   for (int n = 0; n < num; n++) {
     float* filter_start = data_in + n * chw;
     int8_t* quantized_start = quantized_data + n * chw;
-    quantize(filter_start, quantized_start, chw, max);
-    filter_max.push_back(1);
+    quantize(filter_start, quantized_start, chw, f_max);
+    filter_max.push_back(f_max);
   }
 
   int8_t* hwc_data =
