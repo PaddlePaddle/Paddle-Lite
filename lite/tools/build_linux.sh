@@ -5,7 +5,7 @@ set -ex
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
 # armv7 or armv8 or armv7hf, default armv8.
-ARM_ABI=armv8
+ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
@@ -24,9 +24,6 @@ WITH_OPENCL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT=""
-# options of compiling mediatek APU lib.
-WITH_MEDIATEK_APU=OFF
-MEDIATEK_APU_SDK_ROOT=""
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
@@ -60,7 +57,7 @@ function init_cmake_mutable_options {
         SHUTDOWN_LOG=OFF
     fi
 
-    cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARM_ABI \
+    cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARCH \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
@@ -71,8 +68,6 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
-                        -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
-                        -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN"
@@ -162,7 +157,7 @@ function make_tiny_publish_so {
         prepare_thirdparty
     fi
 
-    build_dir=$workspace/build.lite.armlinux.$ARM_ABI.$ARM_LANG
+    build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
     if [ "${WITH_OPENCL}" = "ON" ]; then
        build_dir=${build_dir}.opencl
     fi
@@ -202,16 +197,16 @@ function make_full_publish_so {
 ####################################################################################################
 
 function print_usage {
-    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
-    echo -e "| Methods of compiling Padddle-Lite Linux library:                                                                                                   |"
-    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
-    echo -e "|  compile linux library: (armv8, gcc)                                                                                                               |"
-    echo -e "|     ./lite/tools/build_linux.sh                                                                                                                    |"
+    echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "| Methods of compiling Padddle-Lite Linux library:                                                                                                     |"
+    echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "|  compile linux library: (armv8, gcc)                                                                                                                 |"
+    echo -e "|     ./lite/tools/build_linux.sh                                                                                                                      |"
     echo -e "|  print help information:                                                                                                                             |"
-    echo -e "|     ./lite/tools/build_linux.sh help                                                                                                               |"
+    echo -e "|     ./lite/tools/build_linux.sh help                                                                                                                 |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                                  |"
-    echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                                       |"
+    echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                                          |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
@@ -228,25 +223,16 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
     echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
     echo -e "|                                                                                                                                                      |"
-    echo -e "|  arguments of opencl library compiling:                                                                                                              |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
-    echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
-    echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of rockchip npu library compiling:                                                                                                        |"
     echo -e "|     ./lite/tools/build_linux.sh --with_rockchip_npu=ON --rockchip_npu_sdk_root=YourRockchipNpuSdkPath                                                |"
     echo -e "|     --with_rockchip_npu: (OFF|ON); controls whether to compile lib for rockchip_npu, default is OFF                                                  |"
     echo -e "|     --rockchip_npu_sdk_root: (path to rockchip_npu DDK file) required when compiling rockchip_npu library                                            |"
     echo -e "|                                                                                                                                                      |"
-    echo -e "|  arguments of mediatek apu library compiling:                                                                                                        |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourMediatekApuSdkPath                                                |"
-    echo -e "|     --with_mediatek_apu: (OFF|ON); controls whether to compile lib for mediatek_apu, default is OFF                                                  |"
-    echo -e "|     --mediatek_apu_sdk_root: (path to mediatek_apu DDK file) required when compiling mediatek_apu library                                            |"
-    echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON --baidu_xpu_sdk_root=YourBaiduXpuSdkPath                              |"
-    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF                          |"
-    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) required when compiling baidu_xpu library                                  |"
-    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON --baidu_xpu_sdk_root=YourBaiduXpuSdkPath                                                         |"
+    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF                                                        |"
+    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) required when compiling baidu_xpu library                                                     |"
+    echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
 
@@ -261,8 +247,8 @@ function main {
     for i in "$@"; do
         case $i in
             # armv7 or armv8, default armv8
-            --arm_abi=*)
-                ARM_ABI="${i#*=}"
+            --arch=*)
+                ARCH="${i#*=}"
                 shift
                 ;;
             # gcc or clang, default gcc
@@ -316,15 +302,6 @@ function main {
                 ;;
             --rockchip_npu_sdk_root=*)
                 ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on mediatek apu.
-            --with_mediatek_apu=*)
-                WITH_MEDIATEK_APU="${i#*=}"
-                shift
-                ;;
-            --mediatek_apu_sdk_root=*)
-                MEDIATEK_APU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.
