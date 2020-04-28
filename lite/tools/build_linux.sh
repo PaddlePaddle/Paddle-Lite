@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
