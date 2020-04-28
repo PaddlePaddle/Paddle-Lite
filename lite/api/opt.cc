@@ -137,7 +137,12 @@ std::vector<Place> ParserValidPlaces() {
 
   return valid_places;
 }
-
+#ifdef LITE_WITH_OPS
+void GetModelGops(const std::string& model_dir,
+                 const std::string& model_file,
+                 const std::string& param_file,
+                 std::shared_ptr<PaddlePredictor> predictor);
+#endif
 void RunOptimize(const std::string& model_dir,
                  const std::string& model_file,
                  const std::string& param_file,
@@ -173,30 +178,71 @@ void RunOptimize(const std::string& model_dir,
     LOG(INFO) << "Record the information of tailored model into :"
               << optimize_out;
   }
+#ifdef LITE_WITH_OPS
+  // print model ops
+  GetModelGops(model_dir, model_file, param_file, predictor);
+#endif
 }
 
 #ifdef LITE_WITH_OPS
 void GetModelGops(const std::string& model_dir,
                  const std::string& model_file,
                  const std::string& param_file,
-                 const std::vector<Place>& valid_places,
-                 const std::vector<std::vector<int64_t>>& input_shapes){
+                 std::shared_ptr<PaddlePredictor> predictor) {
   if (!model_file.empty() && !param_file.empty()) {
     LOG(WARNING)
         << "Load combined-param model. Option model_dir will be ignored";
   }
+  auto valid_places = paddle::lite_api::ParserValidPlaces(); 
+  auto split_string =
+      [](const std::string& str_in) -> std::vector<std::string> {
+    std::vector<std::string> str_out;
+    std::string tmp_str = str_in;
+    while (!tmp_str.empty()) {
+      size_t next_offset = tmp_str.find(":");
+      str_out.push_back(tmp_str.substr(0, next_offset));
+      if (next_offset == std::string::npos) {
+        break;
+      } else {
+        tmp_str = tmp_str.substr(next_offset + 1);
+      }
+    }
+    return str_out;
+  };
 
+  auto get_shape = [](const std::string& str_shape) -> std::vector<int64_t> {
+    std::vector<int64_t> shape;
+    std::string tmp_str = str_shape;
+    while (!tmp_str.empty()) {
+      int dim = atoi(tmp_str.data());
+      shape.push_back(dim);
+      size_t next_offset = tmp_str.find(",");
+      if (next_offset == std::string::npos) {
+        break;
+      } else {
+        tmp_str = tmp_str.substr(next_offset + 1);
+      }
+    }
+    return shape;
+  };
+  LOG(INFO) << "input shapes: " << FLAGS_input_shape;
+  std::vector<std::string> str_input_shapes = split_string(FLAGS_input_shape);
+  std::vector<std::vector<int64_t>> input_shapes;
+  for (size_t i = 0; i < str_input_shapes.size(); ++i) {
+    LOG(INFO) << "input shape: " << str_input_shapes[i];
+    input_shapes.push_back(get_shape(str_input_shapes[i]));
+  }
+  if (predictor == nullptr) {
   lite_api::CxxConfig config;
   config.set_model_dir(model_dir);
   config.set_model_file(model_file);
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-  
+  predictor = lite_api::CreatePaddlePredictor(config);
+  }
   for (int i = 0; i < input_shapes.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
     input_tensor->Resize(input_shapes[i]);
-    auto input_data = input_tensor->mutable_data<float>();
   }
   // get GOPS
   auto gops = predictor->RunGops();
@@ -211,17 +257,36 @@ void GetModelGops(const std::string& model_dir,
         res[val.op_type] = val.ops;
       }
     }
+    std::cout << std::endl;
     float sum = 0.f;
-    std::cout << "==== Model Computation ====" << std::endl;
-    std::cout << std::setw(25) << std::left<< "Operator Type"
-        << " " << std::setw(40) << std::left << "OPS" << std::endl;
-    // std::map<std::string, float>::iter iter;
+    for (int i = 0; i < 27; i++) {
+        std::cout << " ";
+    }
+    std::cout <<" Model Computation";
+    for (int i = 0; i < 27; i++) {
+        std::cout << " ";
+    }
+    std::cout << " " << std::endl;
+    for (int i = 0; i < 70; i++) {
+        std::cout << "-";
+    }
+    std::cout << "--" << std::endl;
+    std::cout << "| " << std::setw(25) << std::left<< "Operator Type"
+        << " | " << std::setw(40) << std::left << "OPS(Operator computation)" << std::setw(30) << " |" << std::endl;
+    for (int i = 0; i < 70; i++) {
+        std::cout << "-";
+    }
+    std::cout << "--" << std::endl;
     for (auto iter = res.begin(); iter != res.end(); iter++) {
       sum += iter->second;
-      std::cout << std::setw(25) << std::left << std::fixed
-          << iter->first << " " << std::setw(40) << std::left
-          << std::fixed << iter->second << std::endl;
+      std::cout << "| " << std::setw(25) << std::left << std::fixed
+          << iter->first << " | " << std::setw(40) << std::left
+          << std::fixed << iter->second << std::setw(30) << " |"<< std::endl;
     }
+    for (int i = 0; i < 70; i++) {
+        std::cout << "-";
+    }
+    std::cout << "--" << std::endl;
     std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum << std::endl;
 }
 #endif
@@ -304,8 +369,8 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   }
 #ifdef LITE_WITH_OPS
   // print model ops
-  GetModelGops(FLAGS_model_dir, FLAGS_model_file,
-        FLAGS_param_file, valid_places, FLAGS_input_shape);
+  auto valid_places = paddle::lite_api::ParserValidPlaces();
+  GetModelGops(FLAGS_model_dir, FLAGS_model_file, FLAGS_param_file, nullptr);
 #endif
 }
 /// Print help information

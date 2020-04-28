@@ -105,7 +105,7 @@ function build_opt {
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_OPS=ON \
-      -DLITE_WITH_OPS=ON \
+      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
       -DWITH_MKL=OFF
     make opt -j$NUM_PROC
 }
