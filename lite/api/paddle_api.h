@@ -32,6 +32,14 @@ using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
+#ifdef LITE_WITH_OPS
+struct LITE_API  GopsInfo{
+  std::string op_type;
+  std::string op_name{std::string("N/A")};
+  float ops;
+};
+#endif
+
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
@@ -107,7 +115,7 @@ class LITE_API PaddlePredictor {
       bool record_info = false);
 
 #ifdef LITE_WITH_OPS
-  virtual std::vector<GopsInfo> RunGops()=0;
+  virtual std::vector<GopsInfo> RunGops() = 0;
 #endif
 
   virtual ~PaddlePredictor() = default;

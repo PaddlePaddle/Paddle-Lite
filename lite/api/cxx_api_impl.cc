@@ -146,8 +146,17 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
 }
 
 #ifdef LITE_WITH_OPS
-std::vector<GopsInfo> CxxPaddleApiImpl::RunGops(){
-  return raw_predictor_.RunGops();
+std::vector<lite_api::GopsInfo> CxxPaddleApiImpl::RunGops(){
+  auto res = raw_predictor_.RunGops();
+  std::vector<lite_api::GopsInfo> lite_res;
+  for (auto val : res) {
+      lite_api::GopsInfo var;
+      var.op_type = val.op_type;
+      var.op_name = val.op_name;
+      var.ops = val.ops;
+      lite_res.push_back(var);
+  }
+  return lite_res;
 }
 #endif
 }  // namespace lite

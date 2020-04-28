@@ -177,7 +177,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       bool record_info = false) override;
 
 #ifdef LITE_WITH_OPS
-  std::vector<GopsInfo> RunGops() override;
+  //typedef std::unique_ptr<GopsInfo> gops_ptr;
+  std::vector<lite_api::GopsInfo> RunGops() override;
 #endif
  private:
   Predictor raw_predictor_;

@@ -423,14 +423,14 @@ void CheckIfModelSupported() {
     }
     float sum = 0.f;
     std::cout << "==== Model Computation ====" << std::endl;
-    std::cout << std::setw(10) << "Operator Type"
-        << std::setw(10) << "OPS" << std::endl;
-    std::Map<std::string, float>::iter iter;
-    for (iter = res.begin(); iter != res.end(); iter++) {
+    std::cout << std::setw(25) << std::left<< "Operator Type"
+        << " " << std::setw(40) << std::left << "OPS" << std::endl;
+    // std::map<std::string, float>::iter iter;
+    for (auto iter = res.begin(); iter != res.end(); iter++) {
       sum += iter->second;
-      std::cout << std::setw(10) << iter->first
-          << std::setw(10)<< iter->second
-          << std::endl;
+      std::cout << std::setw(25) << std::left << std::fixed
+          << iter->first << " " << std::setw(40) << std::left
+          << std::fixed << iter->second << std::endl;
     }
     std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum << std::endl;
 #endif
