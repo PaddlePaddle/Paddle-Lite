@@ -200,6 +200,6 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 - 6、性能测试
 
     - 设备：华为mate30 5G
-    - HIAI ddk版本：310
+    - HIAI ddk版本：320
     - 性能：CPU约71.8ms，NPU约16.6ms。
     
