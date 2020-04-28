@@ -97,7 +97,7 @@ lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
-lite_option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+lite_option(LITE_WITH_LOG "Enable log printing or not." ON)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
