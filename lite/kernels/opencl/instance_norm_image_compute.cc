@@ -96,7 +96,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
                                        static_cast<cl::size_type>(lws1),
                                        static_cast<cl::size_type>(lws2)};
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:" << static_cast<int>(global_work_size[0])
             << " " << static_cast<int>(global_work_size[1]) << " "
             << static_cast<int>(global_work_size[2]);
@@ -200,7 +200,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     int in_h = in_dims[2];
     int in_w = in_dims[3];
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
@@ -211,7 +211,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
@@ -229,7 +229,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(group_size_y),
                     static_cast<cl::size_type>(1)};
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "local_work_size:[2D]:" << local_work_size[0] << " "
             << local_work_size[1] << " " << local_work_size[2];
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "

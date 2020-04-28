@@ -22,7 +22,7 @@
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
     defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -60,5 +60,5 @@ void gen_log(STL::ostream& log_stream_,
 }  // namespace lite
 }  // namespace paddle
 
-#endif  // LITE_SHUTDOWN_LOG
+#endif  // LITE_WITH_LOG
 #endif  // LITE_WITH_LIGHT_FRAMEWORK

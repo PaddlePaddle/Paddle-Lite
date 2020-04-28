@@ -11,7 +11,7 @@ set BUILD_DIR=%source_path%
 set OPTMODEL_DIR=""
 set BUILD_TAILOR=OFF
 set BUILD_CV=OFF
-set SHUTDOWN_LOG=ON  
+set WITH_LOG=ON  
 
 set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 

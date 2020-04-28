@@ -131,8 +131,8 @@ $ git clone https://github.com/airockchip/rknpu_ddk.git
 ```
 - 编译full_publish and tiny_publish for armv8（注意：RKNPU_DDK只支持armv8）
 ```shell
-$ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --shutdown_log=OFF --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk full_publish
-$ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --shutdown_log=OFF --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk tiny_publish
+$ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk full_publish
+$ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk tiny_publish
 ```
 - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-armlinux-demo/Paddle-Lite/include目录；
 - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-armlinux-demo/Paddle-Lite/libs/armv8/libpaddle_light_api_shared.so文件。
