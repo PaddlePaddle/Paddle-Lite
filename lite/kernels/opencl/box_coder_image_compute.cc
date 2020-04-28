@@ -61,7 +61,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->proposals->mutable_data<half_t, cl::Image2D>(
             image_shape["width"], image_shape["height"]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "boxcoder input shape:  ";
 
 #endif
@@ -93,7 +93,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
 
       int out_C = new_dims[1];
       int out_H = new_dims[2];
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
       VLOG(4) << "output shape: " << out_dims[0] << ", " << out_dims[1] << ", "
               << out_dims[2] << ", " << out_dims[3];
@@ -130,7 +130,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
           nullptr);
       CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
               << global_work_size[1];
 #endif

@@ -186,8 +186,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   add_definitions("-DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK")
 endif()
 
-if (LITE_SHUTDOWN_LOG)
-  add_definitions("-DLITE_SHUTDOWN_LOG")
+if (LITE_WITH_LOG)
+  add_definitions("-DLITE_WITH_LOG")
 endif()
 
 if (LITE_ON_TINY_PUBLISH)

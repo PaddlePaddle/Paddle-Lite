@@ -80,7 +80,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                     static_cast<cl::size_type>(default_work_size[1]),
                     static_cast<cl::size_type>(default_work_size[2] / 4)};
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
     VLOG(4) << "global_work_size_:[2D]:" << global_work_size_[0] << " "
@@ -102,7 +102,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape_[0],
                                                            out_img_shape_[1]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     auto in_dims = x->dims();
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
