@@ -50,7 +50,6 @@ metal, web的模块相对独立，会继续在 `./metal` 和 `./web` 目录下�
 Paddle Lite 借鉴了以下开源项目：
 - [ARM compute library]((https://github.com/ARM-software/ComputeLibrary))
 - [Anakin](https://github.com/PaddlePaddle/Anakin) ，Anakin对应底层的一些优化实现已被集成到Paddle Lite。Anakin作为PaddlePaddle组织下的一个高性能预测项目，极具前瞻性，对Paddle Lite有重要贡献。Anakin已和本项目实现整合。之后，Anakin不再升级。
-- [mace](https://github.com/xiaomi/mace)
 
 ##  交流与反馈
 * 欢迎您通过Github Issues来提交问题、报告与建议
