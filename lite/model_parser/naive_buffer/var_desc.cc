@@ -155,7 +155,6 @@ void VarDesc::SetDataType(VarDescAPI::VarDataType data_type) {
   }
 #undef SET_DATA_TYPE_CASE_ITEM
 }
-// VarDescAPI::VarDataType VarDesc::GetDataType() const;
 
 // Get var's shape
 std::vector<int64_t> VarDesc::GetShape() const {
