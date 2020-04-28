@@ -85,7 +85,7 @@ class ElementwiseMulImageCompute
     auto* y = ele_param_->Y;
     auto* out = ele_param_->Out;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "y->target():" << TargetToStr(y->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
@@ -108,7 +108,7 @@ class ElementwiseMulImageCompute
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape[0],
                                                            out_img_shape[1]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;
     VLOG(4) << "y_img_shape[w,h]:" << y_img_shape[0] << " " << y_img_shape[1];
     VLOG(4) << "out_img_shape[w,h]:" << out_img_shape[0] << " "
@@ -194,7 +194,7 @@ class ElementwiseMulImageCompute
         nullptr,
         nullptr);
     CL_CHECK_FATAL(status);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 #endif
   }
