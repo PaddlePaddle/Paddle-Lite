@@ -79,7 +79,7 @@ class LITE_API Predictor {
   }
 #ifdef LITE_WITH_OPS
   // Run the predictor to calculate model ops.
-  std::vector<float> RunGops() {
+  std::vector<GopsInfo> RunGops() {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
@@ -177,7 +177,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       bool record_info = false) override;
 
 #ifdef LITE_WITH_OPS
-  std::vector<float> RunGops() override;
+  std::vector<GopsInfo> RunGops() override;
 #endif
  private:
   Predictor raw_predictor_;

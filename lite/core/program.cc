@@ -268,16 +268,16 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
 }
 
 #ifdef LITE_WITH_OPS
-std::vector<float> RuntimeProgram::RunGops(){
-  std::vector<float> gops;
+std::vector<GopsInfo> RuntimeProgram::RunGops(){
+  std::vector<GopsInfo> gops;
   for (auto& inst : instructions_) {
-    float ops = inst.ComputeGops();
+    GopsInfo ops = inst.ComputeGops();
     gops.push_back(ops);
   }
   return  gops;
 }
 
-float Instruction::ComputeGops() {
+GopsInfo Instruction::ComputeGops() {
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
   if (first_epoch_) {
@@ -286,7 +286,11 @@ float Instruction::ComputeGops() {
   }
   op_->InferShape();
   float ops = op_->GetGops();
-  return ops;
+  GopsInfo tmp;
+  tmp.ops = ops;
+  tmp.op_type= op_->Type();
+  tmp.op_name = kernel_->name();
+  return tmp;
 }
 #endif
 void Instruction::Run() {

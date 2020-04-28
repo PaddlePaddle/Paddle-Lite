@@ -29,6 +29,13 @@ namespace lite {
 
 static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 
+#ifdef LITE_WITH_OPS
+struct GopsInfo{
+  std::string op_type;
+  std::string op_name{std::string("N/A")};
+  float ops;
+};
+#endif
 // A program is used to represent a code program, in Paddle, a code program
 // contains:
 // - main block, which is a list of OpLite
@@ -136,7 +143,7 @@ struct Instruction {
 
 #ifdef LITE_WITH_OPS
   // compute gops
-  float ComputeGops();
+  GopsInfo ComputeGops();
 #endif
 
  private:
@@ -192,7 +199,7 @@ class LITE_API RuntimeProgram {
   void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
 #ifdef LITE_WITH_OPS
-  std::vector<float> RunGops();
+  std::vector<GopsInfo> RunGops();
 #endif
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;

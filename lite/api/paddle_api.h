@@ -107,7 +107,7 @@ class LITE_API PaddlePredictor {
       bool record_info = false);
 
 #ifdef LITE_WITH_OPS
-  virtual std::vector<float> RunGops()=0;
+  virtual std::vector<GopsInfo> RunGops()=0;
 #endif
 
   virtual ~PaddlePredictor() = default;

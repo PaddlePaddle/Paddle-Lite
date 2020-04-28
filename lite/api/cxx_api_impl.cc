@@ -146,7 +146,7 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
 }
 
 #ifdef LITE_WITH_OPS
-std::vector<float> CxxPaddleApiImpl::RunGops(){
+std::vector<GopsInfo> CxxPaddleApiImpl::RunGops(){
   return raw_predictor_.RunGops();
 }
 #endif

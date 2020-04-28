@@ -171,7 +171,8 @@ void RunOptimize(const std::string& model_dir,
   }
 }
 
-std::vector<float> GetModelGops(const std::string& model_dir,
+#ifdef LITE_WITH_OPS
+std::vector<GopsInfo> GetModelGops(const std::string& model_dir,
                  const std::string& model_file,
                  const std::string& param_file,
                  const std::vector<Place>& valid_places){
@@ -194,8 +195,8 @@ std::vector<float> GetModelGops(const std::string& model_dir,
   input_tensor->Resize({1,3,160,160});
   // get GOPS
   return predictor->RunGops();
- 
 }
+#endif
 
 void CollectModelMetaInfo(const std::string& output_dir,
                           const std::vector<std::string>& models,
@@ -236,8 +237,6 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   for (size_t i = 0; i < targets.size(); i++) {
     std::cout << std::setw(10) << targets[i].substr(1);
   }
-  // ops
-  std::cout << std::setw(10) << "ops";
   std::cout << std::endl;
   if (valid_ops.empty()) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
@@ -409,13 +408,32 @@ void CheckIfModelSupported() {
     exit(1);
   }
   if (FLAGS_print_model_ops) {
-    std::vector<float> gops = GetModelGops(FLAGS_model_dir, FLAGS_model_file,
+#ifdef LITE_WITH_OPS
+    std::vector<GopsInfo> gops = GetModelGops(FLAGS_model_dir, FLAGS_model_file,
                                   FLAGS_param_file, valid_places);
+    std::map<std::string, float> res;
+    for (int i = 0; i < gops.size(); i++){
+      GopsInfo val = gops[i];
+      auto re = res.find(val.op_type);
+      if (res.size() > 0 && re != res.end()){ // find
+        res[val.op_type] += val.ops;
+      } else{
+        res[val.op_type] = val.ops;
+      }
+    }
     float sum = 0.f;
-    for (auto val : gops){
-      sum += val;
+    std::cout << "==== Model Computation ====" << std::endl;
+    std::cout << std::setw(10) << "Operator Type"
+        << std::setw(10) << "OPS" << std::endl;
+    std::Map<std::string, float>::iter iter;
+    for (iter = res.begin(); iter != res.end(); iter++) {
+      sum += iter->second;
+      std::cout << std::setw(10) << iter->first
+          << std::setw(10)<< iter->second
+          << std::endl;
     }
     std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum << std::endl;
+#endif
     std::cout << "Paddle-Lite supports this model!" << std::endl;
     exit(1);
   }
