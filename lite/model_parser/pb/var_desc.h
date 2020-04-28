@@ -84,7 +84,7 @@ class VarDesc : public VarDescAPI {
 
   std::vector<std::vector<int64_t>> GetShapes() const;
 
-  void SetDataType(framework::proto::VarType::Type data_type);
+  void SetDataType(VarDescAPI::VarDataType data_type);
 
   void SetDataTypes(
       const std::vector<framework::proto::VarType::Type> &multiple_data_type);
