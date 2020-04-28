@@ -30,7 +30,7 @@ BAIDU_XPU_SDK_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-3}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 
 
@@ -257,6 +257,11 @@ function main {
                 shift
                 ;;
             # ON or OFF, default OFF
+            --with_python=*)
+                WITH_PYTHON="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
             --with_cv=*)
                 WITH_CV="${i#*=}"
                 shift
@@ -276,18 +281,9 @@ function main {
                 OPTMODEL_DIR="${i#*=}"
                 shift
                 ;;
-            # ON or OFF, default OFF
+            # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on huawei npu.
-            --with_rockchip_npu=*)
-                WITH_ROCKCHIP_NPU="${i#*=}"
-                shift
-                ;;
-            --rockchip_npu_sdk_root=*)
-                ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on rockchip npu.
