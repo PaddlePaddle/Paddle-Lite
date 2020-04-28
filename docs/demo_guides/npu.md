@@ -141,8 +141,8 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     - 注意：Paddle-Lite会对模型进行优化，模型算子可以改变，需要以优化后的模型算子为准。后面会举例说明。
 - 2、生成配置文件 ```split_cfg.txt```，记录需要跑在CPU上的算子信息。
     - 每行一条OP记录信息，以冒号":"分隔"op名称"，"op输入名"，"op输出名"，以逗号","分隔"op输入名"和"op输出名"中的不同var名。
-    - 可以部分省略输入或者输出名。比如：```op3:in3_var0```表示，指定类型为"op3"，输入为"in3_var0"的算子；```op4```表示所有类型为"op4的算子"
-    - 例如：
+    - 可以部分省略输入或者输出名。比如：```op3:in3_var0```表示，指定类型为"op3"，输入为"in3_var0"的算子；```op4```表示所有类型为"op4"的算子
+    - 例子1：
     ```
     op0:in0_var0,in0_var1:out0_var0,out0_var1
     op1:in1_var0,in1_var1:out1_var0
@@ -150,6 +150,12 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     op3:in3_var0
     op4
     ```
+    - 例子2：
+    ```
+    transpose:conv2d_22.tmp_1:transpose_0.tmp_0
+    ```
+    ![image](https://user-images.githubusercontent.com/50474132/80475316-4a5fda80-897b-11ea-910a-6aee13243387.png)
+
 - 3、使用环境变量```SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE```指定配置文件的位置。
     - 例如：
     ```
@@ -158,19 +164,26 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 - 4、以上步骤完成后，运行的模型中符合条件的算子将被强制跑在CPU上。
 
 ### 举例
-- 以模型[ssd_mobilenet_v1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)为例
+- 以模型[image](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)为例
+
 - 1、可以使用netron查看模型
+
 - 2、初步分析
+
     - 下图是ssd_mobilenet_v1中的部分结构。其中红色部分暂时不支持在NPU上运行，蓝色部分可能NPU上的性能不理想。此时，如果直接让预测库自动调度的话，可能会分成多个子图，而且整体性能不佳。因此，可以将蓝色部分和绿色部分整体指定在CPU上运行，让其他部分自动运行在NPU上(红色部分会自动在CPU上运行)。
     ![ssd_mobilenet_v1_example](https://user-images.githubusercontent.com/50474132/80453173-525b5280-895a-11ea-847f-c7dd5b5799de.png)
+
 - 3、使用opt转换模型
+
     - opt转换过程中会打印log信息。在log中搜索```digraph G```和```// end G```可以找到优化后的模型图。
     ![image](https://user-images.githubusercontent.com/50474132/80454098-145f2e00-895c-11ea-9f16-dde1483a9beb.png)
     ![image](https://user-images.githubusercontent.com/50474132/80454123-1de89600-895c-11ea-86b9-a62d78a6616d.png)
     - 将从```digraph G```开始的，到```// end G```结束的整段模型图信息，保存到```.dot```格式的文件中。可以用```graphviz```打开查看，或者在[网页版](http://dreampuf.github.io/GraphvizOnline/)查看。
     ![image](https://user-images.githubusercontent.com/50474132/80454841-47ee8800-895d-11ea-9531-5689c5560fcb.png)
-    - 在此处确认需要被指定的算子是否被优化了。(期望是被指定的算子都还独立存在，如果被融合为了一个算子，需要指定此时融合后的算子))。
+    - 在此处确认需要被指定的算子是否被优化了。(期望是被指定的算子都还独立存在，如果被融合为了一个算子，需要指定此时融合后的算子)。
+
 - 4、写配置文件
+
     - 在配置文件中指定可以支持NPU但是需要指定在CPU上运行的算子。
     ```
     reshape
@@ -179,9 +192,13 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     softmax
     ```
     - 由于这些算子都指定在NPU上运行，因此不需要特意配置算子的输入输出名称。
+
 - 5、指定配置文件路径
+
     - 通过```export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=your_split_config_file```的方式实现。
+
 - 6、性能测试
+
     - 设备：华为mate30 5G
     - HIAI ddk版本：310
     - 性能：CPU约71.8ms，NPU约16.6ms。
