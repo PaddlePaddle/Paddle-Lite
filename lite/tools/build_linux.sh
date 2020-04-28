@@ -30,7 +30,7 @@ BAIDU_XPU_SDK_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-3}
 #####################################################################################################
 
 
@@ -52,17 +52,12 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DWITH_TESTING=OFF"
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
-    SHUTDOWN_LOG=ON
-    if [ "$WITH_LOG" = "ON"]; then
-        SHUTDOWN_LOG=OFF
-    fi
-
     cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARCH \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DLITE_WITH_CV=$WITH_CV \
-                        -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+                        -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
