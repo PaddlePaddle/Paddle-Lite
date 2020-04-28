@@ -4,6 +4,9 @@ lite_cc_library(subgraph_detector
 lite_cc_library(subgraph_pass
     SRCS subgraph_pass.cc
     DEPS mir_pass types context ${mir_fusers} subgraph_detector)
+if (LITE_BUILD_EXTRA)
+  target_compile_definitions(subgraph_pass PUBLIC "-DLITE_BUILD_EXTRA")
+endif()
 if (WITH_TESTING AND NOT LITE_WITH_CUDA)
     lite_cc_test(test_subgraph_detector
         SRCS subgraph_detector_test.cc
