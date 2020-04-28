@@ -80,11 +80,18 @@ class LITE_API Predictor {
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
-  std::shared_ptr<Predictor> Clone() const {
+  std::shared_ptr<Predictor> Clone(
+      cosnst std::vector<std::string> var_names) const {
     //    CHECK(program_desc_) << "Both program and scope of current predicotr
     //    should  be not be nullptr in Clone mode." ;
     //    CHECK(scope_) << "Both program and scope of current predicotr should
     //    be not be nullptr in Clone mode.";
+    for (auto i : var_names) {
+      exec_scope_->Var(i);
+      auto* tensor = scope_->Var(i)->GetMutable<lite::Tensor>();
+      auto* sub_tensor = exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+      sub_tensor->CopyDataFrom(tensor);
+    }
     auto predictor =
         std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
     return predictor;
