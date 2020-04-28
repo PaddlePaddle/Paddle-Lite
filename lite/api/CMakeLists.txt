@@ -1,4 +1,4 @@
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_SHUTDOWN_LOG)
+if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)

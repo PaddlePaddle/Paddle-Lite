@@ -37,7 +37,7 @@ void ostream::pad(const std::string& text) {
   }
 }
 
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define ADD_DATA_AS_STRING(data_, obj_)
 #else
 #define ADD_DATA_AS_STRING(data_, obj_)    \
