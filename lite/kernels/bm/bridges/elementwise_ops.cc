@@ -127,7 +127,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const float* x_data = const_cast<const float*>(x->mutable_data<float>());
   auto unique_op_name = lite::subgraph::bm::UniqueName("expand_ndims");
   std::vector<int32_t> i_expand_shape_data(3);
-  LOG(INFO) << x_dims << " " << y_dims << " " << output_dims;
   if (x_is_const && y_is_const) {
     float* cpu_data = compute_elementwise_both_const(op);
     bm_add_const_tensor(graph->GetCompilerHandle(),
@@ -163,9 +162,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         shape[1] = &i_expand_shape_data[0];
         y_data = nullptr;
       }
-    } else if (4 == dim[1] && 1 == shape[1][2] && 1 == shape[1][3]) {
-      LOG(INFO) << "aaaaaaa";
-      y_data = nullptr;
     }
     add_binary_layer_v2(graph->GetCompilerHandle(),
                         name[0],
