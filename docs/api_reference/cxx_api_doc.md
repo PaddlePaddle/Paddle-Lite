@@ -400,7 +400,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 - `None`
 
-返回：内存中模型结构数据
+返回：内存中模型参数数据
 
 返回类型：`const std::string&`
 
