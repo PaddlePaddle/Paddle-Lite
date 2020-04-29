@@ -137,52 +137,6 @@ std::vector<Place> ParserValidPlaces() {
 
   return valid_places;
 }
-#ifdef LITE_WITH_OPS
-void GetModelGops(const std::string& model_dir,
-                 const std::string& model_file,
-                 const std::string& param_file,
-                 std::shared_ptr<PaddlePredictor> predictor);
-#endif
-void RunOptimize(const std::string& model_dir,
-                 const std::string& model_file,
-                 const std::string& param_file,
-                 const std::string& optimize_out,
-                 const std::string& optimize_out_type,
-                 const std::vector<Place>& valid_places,
-                 bool record_tailoring_info) {
-  if (!model_file.empty() && !param_file.empty()) {
-    LOG(WARNING)
-        << "Load combined-param model. Option model_dir will be ignored";
-  }
-
-  lite_api::CxxConfig config;
-  config.set_model_dir(model_dir);
-  config.set_model_file(model_file);
-  config.set_param_file(param_file);
-  config.set_valid_places(valid_places);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-
-  LiteModelType model_type;
-  if (optimize_out_type == "protobuf") {
-    model_type = LiteModelType::kProtobuf;
-  } else if (optimize_out_type == "naive_buffer") {
-    model_type = LiteModelType::kNaiveBuffer;
-  } else {
-    LOG(FATAL) << "Unsupported Model type :" << optimize_out_type;
-  }
-
-  OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
-  predictor->SaveOptimizedModel(
-      optimize_out, model_type, record_tailoring_info);
-  if (record_tailoring_info) {
-    LOG(INFO) << "Record the information of tailored model into :"
-              << optimize_out;
-  }
-#ifdef LITE_WITH_OPS
-  // print model ops
-  GetModelGops(model_dir, model_file, param_file, predictor);
-#endif
-}
 
 #ifdef LITE_WITH_OPS
 void GetModelGops(const std::string& model_dir,
@@ -290,6 +244,47 @@ void GetModelGops(const std::string& model_dir,
     std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum << std::endl;
 }
 #endif
+
+void RunOptimize(const std::string& model_dir,
+                 const std::string& model_file,
+                 const std::string& param_file,
+                 const std::string& optimize_out,
+                 const std::string& optimize_out_type,
+                 const std::vector<Place>& valid_places,
+                 bool record_tailoring_info) {
+  if (!model_file.empty() && !param_file.empty()) {
+    LOG(WARNING)
+        << "Load combined-param model. Option model_dir will be ignored";
+  }
+
+  lite_api::CxxConfig config;
+  config.set_model_dir(model_dir);
+  config.set_model_file(model_file);
+  config.set_param_file(param_file);
+  config.set_valid_places(valid_places);
+  auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  LiteModelType model_type;
+  if (optimize_out_type == "protobuf") {
+    model_type = LiteModelType::kProtobuf;
+  } else if (optimize_out_type == "naive_buffer") {
+    model_type = LiteModelType::kNaiveBuffer;
+  } else {
+    LOG(FATAL) << "Unsupported Model type :" << optimize_out_type;
+  }
+
+  OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
+  predictor->SaveOptimizedModel(
+      optimize_out, model_type, record_tailoring_info);
+  if (record_tailoring_info) {
+    LOG(INFO) << "Record the information of tailored model into :"
+              << optimize_out;
+  }
+#ifdef LITE_WITH_OPS
+  // print model ops
+  GetModelGops(model_dir, model_file, param_file, predictor);
+#endif
+}
 
 void CollectModelMetaInfo(const std::string& output_dir,
                           const std::vector<std::string>& models,
