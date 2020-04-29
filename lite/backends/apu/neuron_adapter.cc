@@ -61,17 +61,17 @@ bool NeuronAdapter::InitHandle() {
 void NeuronAdapter::InitFunctions() {
   CHECK(handle_ != nullptr) << "The library handle can't be null!";
 
-#define PADDLE_DLSYM(neuron_adapter_func)                                \
-  do {                                                                   \
-    neuron_adapter_func##_ =                                             \
-        (neuron_adapter_func##Type)dlsym(handle_, #neuron_adapter_func); \
-    if (neuron_adapter_func##_ == nullptr) {                             \
-      LOG(FATAL) << "Cannot find the " << #neuron_adapter_func           \
-                 << " symbol in libneuron_adapter.so!";                  \
-      break;                                                             \
-    }                                                                    \
-    VLOG(4) << "Loaded the " << #neuron_adapter_func                     \
-            << " symbol successfully.";                                  \
+#define PADDLE_DLSYM(neuron_adapter_func)                                 \
+  do {                                                                    \
+    neuron_adapter_func##_ =                                              \
+        (neuron_adapter_func##_Type)dlsym(handle_, #neuron_adapter_func); \
+    if (neuron_adapter_func##_ == nullptr) {                              \
+      LOG(FATAL) << "Cannot find the " << #neuron_adapter_func            \
+                 << " symbol in libneuron_adapter.so!";                   \
+      break;                                                              \
+    }                                                                     \
+    VLOG(4) << "Loaded the " << #neuron_adapter_func                      \
+            << " symbol successfully.";                                   \
   } while (false)
 
   PADDLE_DLSYM(Neuron_getVersion);
