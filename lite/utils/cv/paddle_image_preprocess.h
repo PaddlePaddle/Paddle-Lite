@@ -189,7 +189,7 @@ class ImagePreprocess {
                     float* means,
                     float* scales);
   /*
-   * change image data to tensor data
+  * change image data to tensor data
   * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
   * and
   * NCHW
@@ -211,6 +211,21 @@ class ImagePreprocess {
                     float* means,
                     float* scales);
 
+  /*
+  * image crop process
+  * color format support 1-channel image, 3-channel image and 4-channel image
+  * param src: input image data
+  * param dst: output image data
+  */
+  void imageCrop(const uint8_t* src,
+                uint8_t* dst,
+                ImageFormat srcFormat,
+                int srcw,
+                int srch,
+                int left_x,
+                int left_y,
+                int dsth,
+                int dstw);
  private:
   ImageFormat srcFormat_;
   ImageFormat dstFormat_;
