@@ -33,8 +33,12 @@ bool NeuronAdapter::InitHandle() {
   const std::vector<std::string> paths = {
     "libneuron_adapter.so",
 #if defined(__aarch64__)
+    "/vendor/lib64/libneuron_adapter.so",
+    "/system/lib64/libneuron_adapter.so",
     "/system/vendor/lib64/libneuron_adapter.so",
 #else
+    "/vendor/lib/libneuron_adapter.so",
+    "/system/lib/libneuron_adapter.so",
     "/system/vendor/lib/libneuron_adapter.so",
 #endif
   };
@@ -81,6 +85,7 @@ void NeuronAdapter::InitFunctions() {
   PADDLE_DLSYM(NeuronModel_identifyInputsAndOutputs);
   PADDLE_DLSYM(NeuronCompilation_create);
   PADDLE_DLSYM(NeuronCompilation_free);
+  PADDLE_DLSYM(NeuronCompilation_finish);
   PADDLE_DLSYM(NeuronExecution_create);
   PADDLE_DLSYM(NeuronExecution_free);
   PADDLE_DLSYM(NeuronExecution_setInput);
