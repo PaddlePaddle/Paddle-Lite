@@ -24,10 +24,10 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-void RunModel(std::string model_dir) {
+void RunModel(std::string model_name) {
   // 1. Create MobileConfig
   MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_name);
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
