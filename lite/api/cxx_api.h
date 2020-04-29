@@ -81,16 +81,16 @@ class LITE_API Predictor {
              const std::vector<std::string>& passes = {});
 
   std::shared_ptr<Predictor> Clone(
-      cosnst std::vector<std::string> var_names) const {
+      const std::vector<std::string>& var_names) const {
     //    CHECK(program_desc_) << "Both program and scope of current predicotr
     //    should  be not be nullptr in Clone mode." ;
     //    CHECK(scope_) << "Both program and scope of current predicotr should
     //    be not be nullptr in Clone mode.";
     for (auto i : var_names) {
-      exec_scope_->Var(i);
-      auto* tensor = scope_->Var(i)->GetMutable<lite::Tensor>();
-      auto* sub_tensor = exec_scope_->Var(i)->GetMutable<lite::Tensor>();
-      sub_tensor->CopyDataFrom(tensor);
+      this->exec_scope_->Var(i);
+      auto* tensor = this->scope_->Var(i)->GetMutable<lite::Tensor>();
+      auto* sub_tensor = this->exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+      sub_tensor->CopyDataFrom(*tensor);
     }
     auto predictor =
         std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
@@ -150,7 +150,7 @@ class LITE_API Predictor {
   Optimizer optimizer_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
-  const Scope* exec_scope_;
+  Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
   std::vector<std::string> input_names_;
@@ -173,7 +173,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
   void Run() override;
 
-  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+  std::shared_ptr<lite_api::PaddlePredictor> Clone(
+      const std::vector<std::string>& var_names);
 
   std::string GetVersion() const override;
 

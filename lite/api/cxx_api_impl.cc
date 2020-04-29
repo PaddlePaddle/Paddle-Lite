@@ -120,7 +120,7 @@ void CxxPaddleApiImpl::Run() {
 }
 
 std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone(
-    cosnst std::vector<std::string> var_names) {
+    const std::vector<std::string> &var_names) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto predictor = std::make_shared<lite::CxxPaddleApiImpl>(
       raw_predictor_->Clone(var_names));
