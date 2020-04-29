@@ -197,15 +197,23 @@ TEST(conv2d, compute_image2d_1x1) {
               if (bias_flag) {
                 param.bias = &bias;
               }
+
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
 
               std::vector<int> paddings = {pad, pad, pad, pad};
@@ -337,7 +345,7 @@ TEST(conv2d, compute_image2d_1x1) {
                 SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
               }
               //                auto* filter_image2d =
-              //                filter.mutable_data<uint16_t, cl::Image2D>(
+              //                filter.mutable_data<half_t, cl::Image2D>(
               //                    filter_image_width,
               //                    filter_image_height,
               //                    filter_image_v.data());
@@ -563,15 +571,23 @@ const int stride = 2;
               if (bias_flag) {
                 param.bias = &bias;
               }
+
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
 
               std::vector<int> paddings = {pad, pad, pad, pad};
@@ -912,14 +928,21 @@ TEST(conv2d, compute_image2d_5x5) {
                 param.bias = &bias;
               }
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
 
               std::vector<int> paddings = {pad, pad, pad, pad};
@@ -1244,16 +1267,25 @@ TEST(conv2d, compute_image2d_7x7) {
               if (bias_flag) {
                 param.bias = &bias;
               }
+
               if (relu_flag == "relu") {
-                param.fuse_relu = true;
+                param.fuse_relu = true;  // relu only
+                param.activation_param.has_active = true;
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kRelu;
               } else if (relu_flag == "None") {
                 param.fuse_relu = false;
+                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else {
+                param.fuse_relu = false;  // relu only
+                param.activation_param.has_active = false;
               }
+
               std::vector<int> paddings = {pad, pad, pad, pad};
               std::vector<int> dilations = {dilation, dilation};
 

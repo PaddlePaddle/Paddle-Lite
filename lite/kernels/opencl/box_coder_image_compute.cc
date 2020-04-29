@@ -41,9 +41,8 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->box_normalized == true) {
       kernel_func_name_ = "decode_center_size";
     } else {
-      printf("This code_type %s doesn't support \n",
-             boxcoder_param_->code_type.c_str());
-      return;
+      LOG(FATAL) << "This code_type " << boxcoder_param_->code_type
+                 << " doesn't support";
     }
     CHECK(context.cl_context() != nullptr);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;

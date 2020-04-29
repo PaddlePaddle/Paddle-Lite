@@ -376,7 +376,7 @@ void scale_leaky_relu<float>(const float* din,
         "vst1.32  {d16-d19}, [%[dout]]!         @ store result, add pointer\n"
 
         "vbif q10, q14, q12                       @ choose \n"
-        "vbif q11, q15, q13                      @ choose \n"  
+        "vbif q11, q15, q13                      @ choose \n"
         "subs %[cnt], #1                        @ loop count minus 1\n"
         "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
 

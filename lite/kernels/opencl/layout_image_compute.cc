@@ -118,8 +118,11 @@ class LayoutComputeBufferChwToImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
     CL_CHECK_FATAL(status);
 
+#ifndef LITE_SHUTDOWN_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
+#endif
+
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
                     static_cast<cl::size_type>(new_dims[3]),

@@ -31,7 +31,7 @@ BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
-LITE_WITH_ARM_LANG=OFF
+PYTHON_EXECUTABLE_OPTION=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -48,14 +48,6 @@ fi
 function prepare_workspace {
     local root_dir=$1
     local build_dir=$2
-    # ARM LANG
-    if [ ${ARM_LANG} == "clang" ]; then
-        LITE_WITH_ARM_LANG=ON
-    else
-        LITE_WITH_ARM_LANG=OFF
-    fi
-    echo "ARM_LANG is  ${ARM_LANG}"
-    echo "LITE_WITH_ARM_LANG is ${LITE_WITH_ARM_LANG}"
     # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
@@ -137,7 +129,6 @@ function make_tiny_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -230,7 +221,6 @@ function make_full_publish_so {
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -271,7 +261,6 @@ function make_all_tests {
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
@@ -349,6 +338,7 @@ function make_cuda {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_STATIC_CUDA=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_XPU=$BUILD_XPU \
@@ -387,7 +377,8 @@ function make_x86 {
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            $PYTHON_EXECUTABLE_OPTION
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -481,7 +472,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		            ;;
+		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 shift
@@ -512,6 +503,10 @@ function main {
                 ;;
             --xpu_sdk_root=*)
                 XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --python_executable=*)
+                PYTHON_EXECUTABLE_OPTION="-DPYTHON_EXECUTABLE=${i#*=}"
                 shift
                 ;;
             --build_apu=*)

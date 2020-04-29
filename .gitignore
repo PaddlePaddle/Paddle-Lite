@@ -63,6 +63,16 @@ test/models/
 
 test/images/
 
+*.pyc
+
+# model
+*.nb
+*.svg
+*.dot
+
+# vim intermediate files
+*.swp
+
 # Emacs intermediate files
 *~
 

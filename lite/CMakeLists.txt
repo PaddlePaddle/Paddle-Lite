@@ -16,7 +16,6 @@ message(STATUS "LITE_WITH_MLU:\t${LITE_WITH_MLU}")
 message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
-message(STATUS "LITE_WITH_ARM_LANG:\t${LITE_WITH_ARM_LANG}")
 
 set(LITE_MODEL_DIR "${THIRD_PARTY_PATH}/install")
 set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
@@ -369,6 +368,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/test_cv/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/test_cv/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mask_detection" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mask_detection/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mask_detection/Makefile"
+                COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/test_libs" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/test_libs/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/test_libs/Makefile"
             )
             add_dependencies(publish_inference_android_cxx_demos logging gflags)
             add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)

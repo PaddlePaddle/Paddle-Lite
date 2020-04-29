@@ -400,16 +400,28 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
 
+  // build options
   std::string build_options_single(" -DCL_DTYPE_half");
   // relu options
-  if (relu_fused) {
-    build_options_single += " -DRELU";
-  } else if (param.activation_param.active_type ==
-             lite_api::ActivationType::kRelu6) {
-    build_options_single += " -DRELU6";
-  } else {
-    // do nothing, may add more activation fuse
+  VLOG(3) << "relu_fused:" << relu_fused
+          << " param.activation_param.active_type:"
+          << static_cast<int>(param.activation_param.active_type)
+          << " param.activation_param.has_active:"
+          << param.activation_param.has_active;
+  if (param.activation_param.has_active) {
+    if (param.activation_param.active_type ==
+        lite_api::ActivationType::kRelu) {  // Note: judge using `relu_fused`
+                                            // also is ok
+      build_options_single += " -DRELU";
+    } else if (param.activation_param.active_type ==
+               lite_api::ActivationType::kRelu6) {
+      build_options_single += " -DRELU6";
+    } else {
+      LOG(FATAL) << "Unsupported activation type:"
+                 << static_cast<int>(param.activation_param.active_type);
+    }
   }
+
   // bias options
   const bool has_bias = param.bias != nullptr;
   const bool is_element_wise_bias =
@@ -648,7 +660,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
   int filter_height = filter_dims[2];
   int filter_channel = filter_dims[1];
   auto out_image_shape = InitImageDimInfoWith(output_dims);
-  auto* out_image = param.output->mutable_data<uint16_t, cl::Image2D>(
+  auto* out_image = param.output->mutable_data<half_t, cl::Image2D>(
       out_image_shape["width"], out_image_shape["height"]);
 
   const bool has_bias = param.bias != nullptr;
@@ -724,7 +736,7 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
 
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
-    bias_image = bias_gpu_image_->data<uint16_t, cl::Image2D>();
+    bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
   }
 
   auto& context = ctx_->As<OpenCLContext>();

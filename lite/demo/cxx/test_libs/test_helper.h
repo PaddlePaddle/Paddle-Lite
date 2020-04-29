@@ -13,9 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_SHUTDOWN_LOG)
-#include "lite/utils/logging.h"
-#else  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-#include <glog/logging.h>
-#endif  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#include <string>
+#include <vector>
+
+#include "opencv2/core.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/imgproc.hpp"
+
+double GetCurrentUS();
+
+int64_t ShapeProduction(const std::vector<int64_t>& shape);
+
+std::vector<int64_t> GetIntNumsFromStr(const std::string& str);
+std::vector<double> GetDoubleNumsFromStr(const std::string& str);
+
+void neon_mean_scale(
+    const float* din, float* dout, int size, float* mean, float* scale);
+
+void process_img(const cv::Mat& img,
+                 int width,
+                 int height,
+                 float* dst_data,
+                 float* means,
+                 float* scales);
