@@ -40,7 +40,7 @@ class GenerateProposalsOpLite : public OpLite {
 
   std::string DebugString() const override { return "generate_proposals"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
  private:

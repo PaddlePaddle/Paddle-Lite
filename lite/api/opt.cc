@@ -138,7 +138,7 @@ std::vector<Place> ParserValidPlaces() {
   return valid_places;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 void GetModelGops(const std::string& model_dir,
                  const std::string& model_file,
                  const std::string& param_file,
@@ -280,7 +280,7 @@ void RunOptimize(const std::string& model_dir,
     LOG(INFO) << "Record the information of tailored model into :"
               << optimize_out;
   }
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   // print model ops
   GetModelGops(model_dir, model_file, param_file, predictor);
 #endif
@@ -362,7 +362,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
       std::cout << std::endl;
     }
   }
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   // print model ops
   auto valid_places = paddle::lite_api::ParserValidPlaces();
   GetModelGops(FLAGS_model_dir, FLAGS_model_file, FLAGS_param_file, nullptr);
@@ -382,6 +382,7 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        `--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`\n"
+      "        `--input_shape= model's input shape to calculate FLOPs(floating point operations)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "

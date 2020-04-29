@@ -40,7 +40,7 @@ class CollectFpnProposalsOpLite : public OpLite {
 
   std::string DebugString() const override { return "collect_fpn_proposals"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

@@ -42,7 +42,7 @@ class DistributeFpnProposalsOpLite : public OpLite {
     return "distribute_fpn_proposals";
   }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

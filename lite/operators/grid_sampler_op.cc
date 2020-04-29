@@ -57,7 +57,7 @@ bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float GridSamplerOp::GetGops(){
   // todo 
   return 0.f;

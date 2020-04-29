@@ -35,7 +35,7 @@ class MeanGradOp : public OpLite {
 
   std::string DebugString() const override { return "mean_grad"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

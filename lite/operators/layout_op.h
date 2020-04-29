@@ -33,7 +33,7 @@ class LayoutOp : public OpLite {
  protected:
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

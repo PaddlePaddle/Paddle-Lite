@@ -165,7 +165,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float SliceOp::GetGops(){
   return 1.f;
 }

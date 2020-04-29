@@ -89,7 +89,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float ActivationOp::GetGops(){
   // todo
   auto act_type = param_.active_type;

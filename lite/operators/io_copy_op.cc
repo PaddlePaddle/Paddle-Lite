@@ -43,7 +43,7 @@ bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
 }
 std::string IoCopyOp::DebugString() const { return "io_copy_op"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float IoCopyOp::GetGops(){
   return 1.f;
 }

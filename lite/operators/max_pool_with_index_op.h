@@ -78,7 +78,7 @@ class MaxPoolWithIndexOpLite : public OpLite {
 
   std::string DebugString() const override { return "max_pool2d_with_index"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

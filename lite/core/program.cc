@@ -267,7 +267,7 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
   }
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 std::vector<GopsInfo> RuntimeProgram::RunGops(){
   std::vector<GopsInfo> gops;
   for (auto& inst : instructions_) {

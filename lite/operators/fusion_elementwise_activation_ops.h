@@ -39,7 +39,7 @@ class FusionElementwiseActivationOp : public OpLite {
     return "fusion_elementwise_activation_op";
   }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

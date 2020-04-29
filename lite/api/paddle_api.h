@@ -32,7 +32,7 @@ using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 struct LITE_API  GopsInfo{
   std::string op_type;
   std::string op_name{std::string("N/A")};
@@ -114,7 +114,7 @@ class LITE_API PaddlePredictor {
       LiteModelType model_type = LiteModelType::kProtobuf,
       bool record_info = false);
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   virtual std::vector<GopsInfo> RunGops() = 0;
 #endif
 

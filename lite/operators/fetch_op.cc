@@ -49,7 +49,7 @@ class FetchOp : public OpLite {
 
   std::string DebugString() const override { return "fetch"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops(){ return 1.f; }
 #endif
 

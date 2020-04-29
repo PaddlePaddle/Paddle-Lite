@@ -48,7 +48,7 @@ bool SequenceArithmeticOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float SequenceArithmeticOp::GetGops(){
   // todo
   return 0.f;

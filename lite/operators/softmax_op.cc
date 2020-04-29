@@ -55,7 +55,7 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float SoftmaxOp::GetGops(){
   auto in_sum = param_.x->numel();
   return 4.f * in_sum;

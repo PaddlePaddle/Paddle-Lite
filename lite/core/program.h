@@ -29,7 +29,7 @@ namespace lite {
 
 static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 struct GopsInfo{
   std::string op_type;
   std::string op_name{std::string("N/A")};
@@ -141,7 +141,7 @@ struct Instruction {
   }
 #endif
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   // compute gops
   GopsInfo ComputeGops();
 #endif
@@ -198,7 +198,7 @@ class LITE_API RuntimeProgram {
   // be added in vars_.
   void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   std::vector<GopsInfo> RunGops();
 #endif
  private:

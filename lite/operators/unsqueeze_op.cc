@@ -124,7 +124,7 @@ bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float UnsqueezeOp::GetGops(){
   return 1.f;
 }
@@ -156,7 +156,7 @@ bool Unsqueeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float Unsqueeze2Op::GetGops(){
   return 1.f;
 }

@@ -69,7 +69,7 @@ bool AffineChannelOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float AffineChannelOpLite::GetGops(){
   float gops = static_cast<float>(param_.X->numel());
   return 2.0 * gops;

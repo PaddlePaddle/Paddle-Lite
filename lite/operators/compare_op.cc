@@ -49,7 +49,7 @@ bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float CompareOp::GetGops(){
   return 1.f * param_.Out->numel();
 }

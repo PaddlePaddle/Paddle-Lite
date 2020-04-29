@@ -51,7 +51,7 @@ bool SGDOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float SGDOpLite::GetGops(){
   // todo
   return 0.f;

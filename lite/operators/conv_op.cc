@@ -110,7 +110,7 @@ bool ConvOpLite::InferShapeImpl() const {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float ConvOpLite::GetGops(){
   const auto filter_dims = param_.filter->dims();
   auto out_dims = param_.output->dims();

@@ -202,7 +202,7 @@ if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
 
-# add OPS
-if (LITE_WITH_OPS)
-  add_definitions("-DLITE_WITH_OPS")
-endif(LITE_WITH_OPS)
+# add FLOPS = Float point operations, including multiply and add operations
+if (LITE_WITH_FLOPS)
+  add_definitions("-DLITE_WITH_FLOPS")
+endif(LITE_WITH_FLOPS)

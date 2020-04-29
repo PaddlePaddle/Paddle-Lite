@@ -58,7 +58,7 @@ bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float AssignOpLite::GetGops(){
   int gops = param_.X->numel();
   return 1.0 * gops;

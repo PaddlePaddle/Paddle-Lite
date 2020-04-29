@@ -41,7 +41,7 @@ class MatMulOpLite : public OpLite {
 
   std::string DebugString() const override { return "matmul"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

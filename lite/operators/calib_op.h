@@ -50,7 +50,7 @@ class CalibOpLite : public OpLite {
 
   std::string DebugString() const override { return "calib"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
  private:

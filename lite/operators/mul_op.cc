@@ -58,7 +58,7 @@ bool MulOpLite::InferShapeImpl() const {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float MulOpLite::GetGops(){
   auto x_dims = param_.x->dims();
   auto y_dims = param_.y->dims();

@@ -38,7 +38,7 @@ class LodResetOp : public OpLite {
 
   std::string DebugString() const override { return "lod_reset"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
  private:

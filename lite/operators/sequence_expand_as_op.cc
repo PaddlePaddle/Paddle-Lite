@@ -68,7 +68,7 @@ bool SequenceExpandAsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float SequenceExpandAsOpLite::GetGops(){
   // todo
   return 0.f;

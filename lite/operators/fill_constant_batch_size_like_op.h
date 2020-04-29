@@ -41,7 +41,7 @@ class FillConstantBatchSizeLikeOp : public OpLite {
     return "fill_constant_batch_size_like";
   }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops(){ return 1.f; }
 #endif
 

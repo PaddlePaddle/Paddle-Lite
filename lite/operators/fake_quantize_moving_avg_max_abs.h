@@ -60,7 +60,7 @@ class FakeQuantizeMovingAvgMaxAbsOpLite : public OpLite {
     return "fake_quantize_moving_avg_max_abs";
   }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops(){
     // todo
     return 0.f;

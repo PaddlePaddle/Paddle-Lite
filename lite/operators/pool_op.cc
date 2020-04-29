@@ -97,7 +97,7 @@ bool PoolOpLite::InferShapeImpl() const {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float PoolOpLite::GetGops(){
   auto out_sum = param_.output->numel();
   auto ksize = param_.ksize[0] * param_.ksize[1];

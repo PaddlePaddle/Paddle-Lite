@@ -48,7 +48,7 @@ bool GatherOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float GatherOp::GetGops(){
   return 1.f;
 }

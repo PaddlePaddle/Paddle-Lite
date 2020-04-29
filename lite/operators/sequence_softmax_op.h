@@ -38,7 +38,7 @@ class SequenceSoftmaxOp : public OpLite {
 
   std::string DebugString() const override { return "im2suquence"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

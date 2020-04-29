@@ -100,7 +100,7 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float ElementwiseOp::GetGops(){
   return 1.f * param_.Out->numel();
 }

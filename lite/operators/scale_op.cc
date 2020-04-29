@@ -57,7 +57,7 @@ bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float ScaleOp::GetGops(){
   auto in_sum = param_.x->numel();
   return 1.f * in_sum;

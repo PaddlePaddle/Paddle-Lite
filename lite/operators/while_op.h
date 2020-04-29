@@ -38,7 +38,7 @@ class WhileOpLite : public OpLite {
   std::string DebugString() const override { return "while"; }
   void SetSubBlock(cpp::BlockDesc *desc) { sub_block_ = desc; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

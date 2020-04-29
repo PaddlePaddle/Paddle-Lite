@@ -39,7 +39,7 @@ class AxpyOpLite : public OpLite {
 
   std::string DebugString() const override { return "axpy"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

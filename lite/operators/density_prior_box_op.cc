@@ -86,7 +86,7 @@ bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float DensityPriorBoxOpLite::GetGops(){
   // todo
   return 0.f;

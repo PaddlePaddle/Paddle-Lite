@@ -40,7 +40,7 @@ class MatchMatrixTensorOpLite : public OpLite {
 
   std::string DebugString() const override { return "match_matrix_tensor"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 

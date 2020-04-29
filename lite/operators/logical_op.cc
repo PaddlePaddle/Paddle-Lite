@@ -48,7 +48,7 @@ bool BinaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float BinaryLogicalOp::GetGops(){
   return 3.f * param_.Out->numel();
 }
@@ -78,7 +78,7 @@ bool UnaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
 float UnaryLogicalOp::GetGops(){
   return 3.f * param_.Out->numel();
 }

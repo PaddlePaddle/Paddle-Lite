@@ -37,7 +37,7 @@ class ReduceProdOpLite : public OpLite {
 
   std::string DebugString() const override { return "reduce_prod"; }
 
-#ifdef LITE_WITH_OPS
+#ifdef LITE_WITH_FLOPS
   float GetGops();
 #endif
 
