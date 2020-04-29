@@ -52,11 +52,6 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DWITH_TESTING=OFF"
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
-    SHUTDOWN_LOG=ON
-    if [ "$WITH_LOG" = "ON"]; then
-        SHUTDOWN_LOG=OFF
-    fi
-
     cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARCH \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
@@ -262,6 +257,11 @@ function main {
                 shift
                 ;;
             # ON or OFF, default OFF
+            --with_python=*)
+                WITH_PYTHON="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
             --with_cv=*)
                 WITH_CV="${i#*=}"
                 shift
@@ -281,18 +281,9 @@ function main {
                 OPTMODEL_DIR="${i#*=}"
                 shift
                 ;;
-            # ON or OFF, default OFF
+            # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on huawei npu.
-            --with_rockchip_npu=*)
-                WITH_ROCKCHIP_NPU="${i#*=}"
-                shift
-                ;;
-            --rockchip_npu_sdk_root=*)
-                ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on rockchip npu.
