@@ -326,9 +326,9 @@ function main {
                 exit 1
                 ;;
         esac
-        # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so
     done
+    # compiling result contains light_api lib only, recommanded.
+    make_tiny_publish_so
 }
 
 main $@

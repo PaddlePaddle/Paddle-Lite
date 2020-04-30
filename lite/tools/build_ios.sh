@@ -150,8 +150,8 @@ function main {
                 exit 1
                 ;;
         esac
-        make_ios $ARM_ABI
     done
+    make_ios $ARM_ABI
 }
 
 main $@
