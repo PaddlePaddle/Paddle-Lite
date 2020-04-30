@@ -28,58 +28,18 @@ namespace lite {
 namespace kernels {
 namespace apu {
 
-inline void* LoadFunc(void* libHandle, const char* name) {
-  CHECK(libHandle != nullptr);
-  CHECK(name != nullptr);
-  void* fn = dlsym(libHandle, name);
-  if (fn == nullptr) {
-    LOG(WARNING) << "Unable to open Neuron Runtime function [" << name
-                 << "] Because " << dlerror();
-  }
-  return fn;
-}
-
-#define LOAD_FUNCTIONS(libHandle, FUNC_NAME, VARIABLE_NAME) \
-  FUNC_NAME VARIABLE_NAME =                                 \
-      reinterpret_cast<FUNC_NAME>(LoadFunc(libHandle, #FUNC_NAME));
-
 int SubgraphEngine::BuildDeviceProgram() {
-  typedef int (*Neuron_getVersion)(uint32_t * version);
-  typedef int (*NeuronModel_create)(NeuronModel * *model);
-  typedef void (*NeuronModel_free)(NeuronModel * model);
-  typedef int (*NeuronModel_finish)(NeuronModel * model);
-  typedef int (*NeuronModel_identifyInputsAndOutputs)(NeuronModel * model,
-                                                      uint32_t inputCount,
-                                                      const uint32_t* inputs,
-                                                      uint32_t outputCount,
-                                                      const uint32_t* outputs);
-
-  // Open the share library
-  libHandle_ = dlopen("libneuron_adapter.so", RTLD_LAZY);
-  if (libHandle_ == nullptr) {
-    LOG(WARNING) << "Failed to open libneuron_adapter.so. " << dlerror();
-    return subgraph::FAILED;
-  }
-
-  LOAD_FUNCTIONS(libHandle_, Neuron_getVersion, neuron_getVersion)
-  LOAD_FUNCTIONS(libHandle_, NeuronModel_create, neuron_model_create)
-  LOAD_FUNCTIONS(libHandle_, NeuronModel_finish, neuron_model_finish)
-  LOAD_FUNCTIONS(libHandle_,
-                 NeuronModel_identifyInputsAndOutputs,
-                 neuron_model_identifyInputsAndOutputs)
-
   unsigned int version;
-  (*neuron_getVersion)(&version);
+  Neuron_getVersion(&version);
   VLOG(3) << "Neuron Adapter version: " << version;
 
   int status = 0;
   subgraph::apu::Graph graph;
-  int neuron_errCode = (*neuron_model_create)(&model_);
+  int neuron_errCode = NeuronModel_create(&model_);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Fail to create model";
     return subgraph::FAILED;
   }
-  graph.set_libHandle(libHandle_);
   graph.set_model(model_);
   graph.set_input_names(input_names_);
   graph.set_output_names(output_names_);
@@ -151,9 +111,9 @@ int SubgraphEngine::BuildDeviceProgram() {
 
   VLOG(3) << "ins size: " << ins.size() << " outs size:" << outs.size();
   // Set subgraph input/output
-  (*neuron_model_identifyInputsAndOutputs)(
+  NeuronModel_identifyInputsAndOutputs(
       model_, ins.size(), &ins[0], outs.size(), &outs[0]);
-  neuron_errCode = (*neuron_model_finish)(model_);
+  neuron_errCode = NeuronModel_finish(model_);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Fail to create NIR model:" << neuron_errCode;
     return subgraph::FAILED;
@@ -166,7 +126,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
   auto start_time = GetCurrentUS();
-  compilation_ = lite::apu::Device::Global().Build(libHandle_, model_);
+  compilation_ = lite::apu::Device::Global().Build(model_);
   if (compilation_ == nullptr) {
     LOG(WARNING) << "[APU] Build APU DLA model failed!";
     return subgraph::FAILED;
@@ -178,30 +138,6 @@ int SubgraphEngine::BuildDeviceProgram() {
 }
 
 int SubgraphEngine::LaunchDeviceProgram() {
-  typedef int (*NeuronExecution_create)(NeuronCompilation * compilation,
-                                        NeuronExecution * *execution);
-  typedef void (*NeuronExecution_free)(NeuronExecution * execution);
-  typedef int (*NeuronExecution_setInput)(NeuronExecution * execution,
-                                          int32_t index,
-                                          const NeuronOperandType* type,
-                                          const void* buffer,
-                                          size_t length);
-  typedef int (*NeuronExecution_setOutput)(NeuronExecution * execution,
-                                           int32_t index,
-                                           const NeuronOperandType* type,
-                                           void* buffer,
-                                           size_t length);
-  typedef int (*NeuronExecution_compute)(NeuronExecution * execution);
-
-  LOAD_FUNCTIONS(libHandle_, NeuronExecution_create, neuron_execution_create)
-  LOAD_FUNCTIONS(libHandle_, NeuronExecution_free, neuron_execution_free)
-  LOAD_FUNCTIONS(
-      libHandle_, NeuronExecution_setInput, neuron_execution_setInput)
-  LOAD_FUNCTIONS(
-      libHandle_, NeuronExecution_setOutput, neuron_execution_setOutput)
-  LOAD_FUNCTIONS(libHandle_, NeuronExecution_compute, neuron_execution_compute)
-
-  NeuronExecution* run1 = NULL;
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
@@ -209,7 +145,8 @@ int SubgraphEngine::LaunchDeviceProgram() {
   };
 
   auto start_time = GetCurrentUS();
-  int neuron_errCode = (*neuron_execution_create)(compilation_, &run1);
+  NeuronExecution* run = NULL;
+  int neuron_errCode = NeuronExecution_create(compilation_, &run);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "[APU] Build APU runtime failed!";
     return subgraph::FAILED;
@@ -226,21 +163,21 @@ int SubgraphEngine::LaunchDeviceProgram() {
     for (int j = 0; j < origin_itensors_[i]->data_size(); j++) {
       input_data[j] += (uint8_t)128;
     }
-    (*neuron_execution_setInput)(
-        run1, i, NULL, input_data, origin_itensors_[i]->memory_size());
+    NeuronExecution_setInput(
+        run, i, NULL, input_data, origin_itensors_[i]->memory_size());
   }
 
   // Set output buffer
   for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    (*neuron_execution_setOutput)(
-        run1,
+    NeuronExecution_setOutput(
+        run,
         i,
         NULL,
         reinterpret_cast<void*>(origin_otensors_[i]->raw_data()),
         origin_otensors_[i]->memory_size());
   }
 
-  neuron_errCode = (*neuron_execution_compute)(run1);
+  neuron_errCode = NeuronExecution_compute(run);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Fail to run execution!" << neuron_errCode;
     return subgraph::FAILED;
@@ -253,9 +190,18 @@ int SubgraphEngine::LaunchDeviceProgram() {
       output_data[j] -= (int8_t)128;
     }
   }
-  (*neuron_execution_free)(run1);
+  NeuronExecution_free(run);
   VLOG(3) << "[APU] Process cost " << GetCurrentUS() - start_time << " us";
   return 0;
+}
+
+SubgraphEngine::~SubgraphEngine() {
+  if (compilation_) {
+    NeuronCompilation_free(compilation_);
+  }
+  if (model_) {
+    NeuronModel_free(model_);
+  }
 }
 
 void SubgraphCompute::PrepareForRun() {
