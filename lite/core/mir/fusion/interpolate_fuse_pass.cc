@@ -23,11 +23,15 @@ namespace lite {
 namespace mir {
 
 void InterpolateFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::InterpolateFuser bilinear_interp_fuser("bilinear_interp");
-  bilinear_interp_fuser(graph.get());
+  std::vector<std::string> Interpolate_type_cases{"bilinear_interp",
+                                                  "nearest_interp"};
+  for (auto type_ : Interpolate_type_cases) {
+    fusion::InterpolateFuser interp_fuser(type_);
+    interp_fuser(graph.get());
 
-  fusion::InterpolateFuser nearest_interp_fuser("nearest_interp");
-  nearest_interp_fuser(graph.get());
+    fusion::InterpolateFuser2 interp_fuser2(type_);
+    interp_fuser2(graph.get());
+  }
 }
 
 }  // namespace mir

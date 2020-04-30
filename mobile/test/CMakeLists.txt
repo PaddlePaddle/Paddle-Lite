@@ -549,6 +549,9 @@ if (ENABLE_ALL_TEST)
         ADD_EXECUTABLE(test-net-performance net/test_net_performance.cpp test_helper.h test_include.h executor_for_test.h)
         target_link_libraries(test-net-performance paddle-mobile)
 
+        ADD_EXECUTABLE(test-infer-imfix net/test_inference_imfix.cpp test_helper.h test_include.h executor_for_test.h)
+        target_link_libraries(test-infer-imfix paddle-mobile)
+
 #        ADD_EXECUTABLE(test-inference-ercy net/test_inference_ercy.cpp test_helper.h test_include.h executor_for_test.h)
 #        target_link_libraries(test-inference-api-v2 paddle-mobile)
 
