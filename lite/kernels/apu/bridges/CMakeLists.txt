@@ -3,7 +3,7 @@ if(NOT LITE_WITH_APU)
 endif()
 
 
-lite_cc_library(subgraph_bridge_utility_apu SRCS utility.cc DEPS tensor)
+lite_cc_library(subgraph_bridge_utility_apu SRCS utility.cc DEPS tensor neuron_adapter)
 lite_cc_library(subgraph_bridge_graph_apu SRCS graph.cc DEPS subgraph_bridge_utility_apu)
 
 set(apu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_apu subgraph_bridge_graph_apu)
