@@ -54,6 +54,12 @@ ostream& ostream::operator<<(const char* obj) {
 }
 
 template <>
+ostream& ostream::operator<<(char* const& obj) {
+  data_ = data_ + std::string(obj);
+  return *this;
+}
+
+template <>
 ostream& ostream::operator<<(const char& obj) {
   data_ = data_ + obj;
   return *this;
