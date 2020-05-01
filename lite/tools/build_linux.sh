@@ -258,6 +258,11 @@ function main {
                 shift
                 ;;
             # ON or OFF, default OFF
+            --with_python=*)
+                WITH_PYTHON="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
             --with_cv=*)
                 WITH_CV="${i#*=}"
                 shift
@@ -277,18 +282,9 @@ function main {
                 OPTMODEL_DIR="${i#*=}"
                 shift
                 ;;
-            # ON or OFF, default OFF
+            # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on huawei npu.
-            --with_rockchip_npu=*)
-                WITH_ROCKCHIP_NPU="${i#*=}"
-                shift
-                ;;
-            --rockchip_npu_sdk_root=*)
-                ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on rockchip npu.
@@ -331,9 +327,9 @@ function main {
                 exit 1
                 ;;
         esac
-        # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so
     done
+    # compiling result contains light_api lib only, recommanded.
+    make_tiny_publish_so
 }
 
 main $@
