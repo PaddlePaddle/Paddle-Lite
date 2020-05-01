@@ -541,12 +541,12 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d_1x1 params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -846,7 +846,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   const bool is_element_wise_bias =
       has_bias && param.output->dims() == param.bias->dims();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   // VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
   //         << input_image_shape["height"];
@@ -893,7 +893,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -922,7 +922,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -975,7 +975,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -1025,7 +1025,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1052,7 +1052,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -1103,7 +1103,7 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
       has_bias && param.output->dims() == param.bias->dims();
 
 // default_work_size[2] = h_blk;
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   // VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
   //         << input_image_shape["height"];
@@ -1223,7 +1223,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -1273,7 +1273,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1300,7 +1300,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -1349,7 +1349,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   const bool is_element_wise_bias =
       has_bias && param.output->dims() == param.bias->dims();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d 7x7 params ============";
   // VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
   //         << input_image_shape["height"];
@@ -1479,7 +1479,7 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
     bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1546,7 +1546,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
 
   auto kernel = kernel_;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "setArg";
   VLOG(4) << "strides = " << strides[0];
   VLOG(4) << "offset = " << offset;
@@ -1576,7 +1576,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
     bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1649,7 +1649,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ depthwise conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -1700,7 +1700,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1731,7 +1731,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   status = kernel.setArg(++arg_idx, filter_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
