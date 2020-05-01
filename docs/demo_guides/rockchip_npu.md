@@ -7,12 +7,11 @@ Paddle Lite已支持RK NPU的预测部署。
 
 ### 已支持的芯片
 
-- RK1808, RK1806
-- RK1126, RK1109
+- RK1808, RK1806，暂时不支持RK3399Pro。
 
 ### 已支持的设备
 
-- RK1808 EVB，暂时不支持RK3399Pro。
+- RK1808/1806 EVB。
 
 ### 已支持的Paddle模型
 
@@ -35,7 +34,7 @@ Paddle Lite已支持RK NPU的预测部署。
 
 ## 参考示例演示
 
-### 测试设备
+### 测试设备(RK1808 EVB)
 
 ![rk1808_evb_front](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/rk1808_evb_front.jpg)
 
@@ -58,50 +57,59 @@ Paddle Lite已支持RK NPU的预测部署。
 ```shell
 - PaddleLite-armlinux-demo
   - image_classification_demo
-    - images 
-      - tabby_cat.jpg # 测试图片
-      - tabby_cat.raw # 已处理成raw数据的测试图片
-    - labels
-      - synset_words.txt # 1000分类label文件
-    - models
-      - mobilenet_v1_int8_224_for_rknpu.nb # 已通过opt转好的mobilenetv1全量化模型
-    - CMakeLists.txt # 示例程序CMake脚本
-    - build
-      - image_classification_demo # 已编译好的示例程序
-    - image_classification_demo.cc # 示例程序源码
-    - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
-    - build.sh # 示例程序编译脚本
-    - run.sh # 示例程序运行脚本
-  - Paddle-Lite
-    - include # PaddleLite头文件
-    - libs
-      - armv8
-        - libGAL.so # RK DDK库
-        - libOpenVX.so
-        - libVSC.so
-        - librknpu_ddk.so
-        - libgomp.so.1 # gnuomp库
-        - libpaddle_light_api_shared.so # 预编译PaddleLite库
+    - assets
+      - images 
+        - tabby_cat.jpg # 测试图片
+        - tabby_cat.raw # 已处理成raw数据的测试图片
+      - labels
+        - synset_words.txt # 1000分类label文件
+      - models
+        - mobilenet_v1_int8_224_for_cpu.nb # 已通过opt转好的、适合arm cpu的mobilenetv1量化模型
+        - mobilenet_v1_int8_224_for_rknpu.nb # 已通过opt转好的、适合rknpu的mobilenetv1量化模型
+    - shell
+      - CMakeLists.txt # 示例程序CMake脚本
+      - build
+        - image_classification_demo # 已编译好的示例程序
+      - image_classification_demo.cc # 示例程序源码
+      - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
+      - build.sh # 示例程序编译脚本
+      - run.sh # 示例程序运行脚本
+  - libs
+    - PaddleLite
+      - arm64
+        - include # PaddleLite头文件
+        - lib
+          - libGAL.so # RK DDK库
+          - libOpenVX.so
+          - libVSC.so
+          - librknpu_ddk.so
+          - libgomp.so.1 # gnuomp库
+          - libpaddle_light_api_shared.so # 预编译PaddleLite库
+      - armhf
+        - include # PaddleLite头文件
+        - lib
+          - libGAL.so
+          - libOpenVX.so
+          - libVSC.so
+          - librknpu_ddk.so
+          - libgomp.so.1
+          - libpaddle_light_api_shared.so
 ```
 
-- 进入PaddleLite-armlinux-demo/image_classification_demo，再定频后直接执行./run.sh即可，注意：run.sh的执行不能在docker环境，否则无法找到设备；
+- 进入PaddleLite-armlinux-demo/image_classification_demo/shell，直接执行./run.sh arm64即可，注意：run.sh不能在docker环境执行，否则无法找到设备；
 ```shell
-$ cd PaddleLite-armlinux-demo/image_classification_demo
-$ adb shell
-  / # echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-  / # echo 1608000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed
-  / # echo userspace > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
-  / # echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed
-$ ./run.sh
+$ cd PaddleLite-armlinux-demo/image_classification_demo/shell
+$ ./run.sh arm64 # For RK1808 EVB
+$ ./run.sh armhf # For RK1806 EVB 
 ...
-warmup: 5 repeat: 10, average: 6.486600 ms, max: 6.544000 ms, min: 6.450000 ms
+warmup: 5 repeat: 10, average: 6.499500 ms, max: 6.554000 ms, min: 6.468000 ms
 results: 3
-Top0  tabby, tabby cat - 0.438732
-Top1  Egyptian cat - 0.438732
-Top2  tiger cat - 0.116995
-Preprocess time: 2.447000 ms
-Prediction time: 6.486600 ms
-Postprocess time: 0.101000 ms
+Top0  Egyptian cat - 0.532328
+Top1  tabby, tabby cat - 0.345136
+Top2  tiger cat - 0.111146
+Preprocess time: 2.414000 ms
+Prediction time: 6.499500 ms
+Postprocess time: 0.414000 ms
 ```
 - 如果需要更改测试图片，可通过convert_to_raw_image.py工具生成；
 - 如果需要重新编译示例程序，直接运行./build.sh即可，注意：build.sh的执行必须在docker环境中，否则可能编译出错。
@@ -118,7 +126,7 @@ $ ./opt --model_dir=mobilenet_v1_int8_224_fluid \
     --optimize_out=mobilenet_v1_int8_224_for_rknpu \
     --valid_targets=rknpu,arm
 ```
-- 注意：opt生成的模型只是标记了RKNPU支持的Paddle算子，并没有真正生成RK NPU模型，只有在执行时才会将标记的Paddle算子转成RK NPU组网API，最终生成并执行HiAI模型。
+- 注意：opt生成的模型只是标记了RKNPU支持的Paddle算子，并没有真正生成RK NPU模型，只有在执行时才会将标记的Paddle算子转成RK NPU组网API，最终生成并执行模型。
 
 ### 更新支持RK NPU的Paddle Lite库
 
@@ -129,13 +137,20 @@ $ cd Paddle-Lite
 $ git checkout <release-version-tag>
 $ git clone https://github.com/airockchip/rknpu_ddk.git
 ```
-- 编译full_publish and tiny_publish for armv8（注意：RKNPU_DDK只支持armv8）
+- 编译full_publish and tiny_publish for RK1808 and RK1806 EVB
 ```shell
+For RK1808 EVB
 $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk full_publish
 $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk tiny_publish
+
+For RK1806 EVB
+$ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv7 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk full_publish
+$ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv7 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk tiny_publish
 ```
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-armlinux-demo/Paddle-Lite/include目录；
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-armlinux-demo/Paddle-Lite/libs/armv8/libpaddle_light_api_shared.so文件。
+- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-armlinux-demo/libs/PaddleLite/arm64/include目录；
+- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-armlinux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/include替换PaddleLite-armlinux-demo/libs/PaddleLite/armhf/include目录；
+- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-armlinux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件。
 
 ## 其它说明
 
