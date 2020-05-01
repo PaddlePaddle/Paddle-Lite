@@ -38,7 +38,7 @@ Paddle Lite已支持MTK APU的预测部署。
 
 ### 准备设备环境
 
-- 由于需要依赖特定版本的firmware，感兴趣的同学通过MTK官网[https://www.mediatek.cn/about/contact-us](https://www.mediatek.cn/about/contact-us)提供的联系方式（类别请选择"销售"），获得相应的测试设备和firmware；
+- 由于需要依赖特定版本的firmware，感兴趣的同学通过MTK官网[https://www.mediatek.cn/about/contact-us](https://www.mediatek.cn/about/contact-us)提供的联系方式（类别请选择"销售"），获取测试设备和firmware；
 
 ### 准备交叉编译环境
 
@@ -87,9 +87,10 @@ Paddle Lite已支持MTK APU的预测部署。
 ```
 
 - Android shell端的示例程序
-  - 进入PaddleLite-android-demo/image_classification_demo/shell，直接执行./run.sh即可，注意：run.sh不能在docker环境执行，否则无法找到设备；
-  - 如果需要更改测试图片，可将图片拷贝到assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
-  - 如果需要重新编译示例程序，直接运行./build.sh即可，注意：build.sh的执行必须在docker环境中，否则可能编译出错。
+  - 进入PaddleLite-android-demo/image_classification_demo/shell，直接执行./run.sh即可，注意：run.sh不能在docker环境执行，否则可能无法找到设备；
+  - 如果需要更改测试图片，可将图片拷贝到PaddleLite-android-demo/image_classification_demo/assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
+  - 如果需要重新编译示例程序，直接运行./build.sh即可，注意：build.sh的执行必须在docker环境中，否则可能编译出错；
+  - 需要说明的是，由于MTK APU暂时只支持NHWC的数据布局格式，而PaddleLite默认使用NCHW的数据布局格式，导致额外增加了预测中输入张量的NCHW到NHWC的转换，大约耗费8~9ms。
 ```shell
 $ cd PaddleLite-android-demo/image_classification_demo/shell
 $ ./run.sh
@@ -119,6 +120,11 @@ Postprocess time: 0.069000 ms
   - 安装Android Studio 3.4
   - 打开Android Studio，在"Welcome to Android Studio"窗口点击"Open an existing Android Studio project"，在弹出的路径选择窗口中进入"image_classification_demo"目录，然后点击右下角的"Open"按钮即可导入工程
   - 通过USB连接Android手机、平板或开发板；
+  - 临时关闭selinux模式，允许app调用系统库；
+```shell
+$ adb root
+# setenforce 0
+```
   - 载入工程后，点击菜单栏的Run->Run 'App'按钮，在弹出的"Select Deployment Target"窗口选择已经连接的Android设备，然后点击"OK"按钮；
   - 等待大约1分钟后（第一次时间比较长，需要耐心等待），app已经安装到设备上。默认使用ARM CPU模型进行预测，由于MT8168的CPU由四核Arm-Cortex A53组成，性能较一般手机的A7x系列要弱很多，如下图所示，只有6fps；
 
