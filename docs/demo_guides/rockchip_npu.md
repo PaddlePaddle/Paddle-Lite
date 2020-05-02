@@ -52,10 +52,10 @@ Paddle Lite已支持RK NPU的预测部署。
 
 ### 运行图像分类示例程序
 
-- 从[https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-armlinux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-armlinux-demo.tar.gz)下载示例程序，解压后清单如下：
+- 从[https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-linux-demo.tar.gz)下载示例程序，解压后清单如下：
 
 ```shell
-- PaddleLite-armlinux-demo
+- PaddleLite-linux-demo
   - image_classification_demo
     - assets
       - images 
@@ -96,9 +96,9 @@ Paddle Lite已支持RK NPU的预测部署。
           - libpaddle_light_api_shared.so
 ```
 
-- 进入PaddleLite-armlinux-demo/image_classification_demo/shell，直接执行./run.sh arm64即可，注意：run.sh不能在docker环境执行，否则无法找到设备；
+- 进入PaddleLite-linux-demo/image_classification_demo/shell，直接执行./run.sh arm64即可，注意：run.sh不能在docker环境执行，否则无法找到设备；
 ```shell
-$ cd PaddleLite-armlinux-demo/image_classification_demo/shell
+$ cd PaddleLite-linux-demo/image_classification_demo/shell
 $ ./run.sh arm64 # For RK1808 EVB
 $ ./run.sh armhf # For RK1806 EVB 
 ...
@@ -147,10 +147,10 @@ For RK1806 EVB
 $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv7 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk full_publish
 $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv7 --arm_lang=gcc --build_extra=ON --with_log=ON --build_rknpu=ON --rknpu_ddk_root=./rknpu_ddk tiny_publish
 ```
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-armlinux-demo/libs/PaddleLite/arm64/include目录；
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-armlinux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
-- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/include替换PaddleLite-armlinux-demo/libs/PaddleLite/armhf/include目录；
-- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-armlinux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件。
+- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
+- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
+- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件。
 
 ## 其它说明
 
