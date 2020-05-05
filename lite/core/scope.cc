@@ -46,6 +46,15 @@ Variable *Scope::Var(const std::string &name) {
   return vars_[name].get();
 }
 
+Variable *Scope::LocalVar(const std::string &name) {
+  SCOPE_VARS_WRITER_LOCK
+  auto *var = FindLocalVar(name);
+  if (var) return var;
+  // create a new variable.
+  vars_.emplace(name, std::unique_ptr<Variable>(new Variable));
+  return vars_[name].get();
+}
+
 Variable *Scope::FindVar(const std::string &name) const {
   Variable *var{nullptr};
   var = FindLocalVar(name);

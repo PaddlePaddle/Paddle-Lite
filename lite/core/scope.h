@@ -44,6 +44,8 @@ class Scope final {
 
   Variable* Var(const std::string& name);
 
+  Variable* LocalVar(const std::string& name);
+
   Variable* FindVar(const std::string& name) const;
 
   Variable* FindLocalVar(const std::string& name) const;

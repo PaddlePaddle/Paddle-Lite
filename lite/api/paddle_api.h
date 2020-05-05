@@ -79,6 +79,8 @@ class LITE_API PaddlePredictor {
 
   virtual void Run() = 0;
   virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
+  virtual std::shared_ptr<PaddlePredictor> Clone(
+      const std::vector<std::string>& var_names) = 0;
 
   virtual std::string GetVersion() const = 0;
 

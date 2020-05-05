@@ -81,12 +81,27 @@ class LITE_API Predictor {
              const std::vector<std::string>& passes = {});
 
   std::shared_ptr<Predictor> Clone() const {
+    auto predictor =
+        std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
+    return predictor;
+  }
+
+  std::shared_ptr<Predictor> Clone(
+      const std::vector<std::string>& var_names) const {
     //    CHECK(program_desc_) << "Both program and scope of current predicotr
     //    should  be not be nullptr in Clone mode." ;
     //    CHECK(scope_) << "Both program and scope of current predicotr should
     //    be not be nullptr in Clone mode.";
     auto predictor =
         std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
+
+    for (auto i : var_names) {
+      predictor->exec_scope_->LocalVar(i);
+      auto* tensor = predictor->scope_->Var(i)->GetMutable<lite::Tensor>();
+      auto* sub_tensor =
+          predictor->exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+      sub_tensor->CopyDataFrom(*tensor);
+    }
     return predictor;
   }
 
@@ -143,7 +158,7 @@ class LITE_API Predictor {
   Optimizer optimizer_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
-  const Scope* exec_scope_;
+  Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
   std::vector<std::string> input_names_;
@@ -153,9 +168,14 @@ class LITE_API Predictor {
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
  public:
-  CxxPaddleApiImpl() { raw_predictor_ = std::make_shared<Predictor>(); }
+  CxxPaddleApiImpl() {
+    raw_predictor_ = std::make_shared<Predictor>();
+    status_is_cloned_ = false;
+  }
   explicit CxxPaddleApiImpl(const std::shared_ptr<Predictor>& raw_predictor)
-      : raw_predictor_(raw_predictor) {}
+      : raw_predictor_(raw_predictor) {
+    status_is_cloned_ = true;
+  }
 
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
@@ -167,6 +187,9 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   void Run() override;
 
   std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+
+  std::shared_ptr<lite_api::PaddlePredictor> Clone(
+      const std::vector<std::string>& var_names) override;
 
   std::string GetVersion() const override;
 
@@ -196,7 +219,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::shared_ptr<Predictor> raw_predictor_;
   lite_api::CxxConfig config_;
   std::mutex mutex_;
-  bool status_is_cloned_{false};
+  bool status_is_cloned_;
 };
 
 /*
