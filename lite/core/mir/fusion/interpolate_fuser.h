@@ -36,6 +36,19 @@ class InterpolateFuser : public FuseBase {
   std::string interp_type_;
 };
 
+class InterpolateFuser2 : public FuseBase {
+ public:
+  explicit InterpolateFuser2(const std::string& interp_type)
+      : interp_type_(interp_type) {}
+
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  std::string interp_type_;
+};
+
 }  // namespace fusion
 }  // namespace mir
 }  // namespace lite

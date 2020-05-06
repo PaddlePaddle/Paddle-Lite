@@ -52,7 +52,7 @@ class FcCompute
       n_ = w_dims[1];
       CHECK_EQ(k_, static_cast<int>(w_dims[0]));
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
               << " " << x_dims[3];
       VLOG(4) << "w_dims:" << w_dims[0] << " " << w_dims[1] << " " << w_dims[2]
@@ -66,7 +66,7 @@ class FcCompute
       } else {  // gemm
         kernel_func_name_ = "fc_gemm_4x4";
       }
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 #endif
 

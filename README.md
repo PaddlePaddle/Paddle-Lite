@@ -61,7 +61,8 @@ For demands of Apple's GPU Metal and web front end inference, please see `./meta
 Paddle Lite has referenced the following open-source projects:
 
 - [ARM compute library](http://agroup.baidu.com/paddle-infer/md/article/%28https://github.com/ARM-software/ComputeLibrary%29)
-- [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite. 
+- [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite.  
+
 
 
 ## Feedback and Community Support

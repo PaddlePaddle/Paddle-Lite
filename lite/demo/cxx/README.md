@@ -54,7 +54,7 @@ git checkout release/v2.3
     --arm_lang=gcc \
     --android_stl=c++_static \
     --build_extra=ON \
-    --shutdown_log=OFF \
+    --with_log=ON \
     full_publish
 ```
 

@@ -80,8 +80,10 @@ void conv_compute_6x6_3x3(const float* input,
                           const operators::ConvParam& param,
                           ARMContext* ctx) {
   auto act_param = param.activation_param;
-  const int pad_h = (*param.paddings)[0];
-  const int pad_w = (*param.paddings)[2];
+  const int pad_h0 = (*param.paddings)[0];
+  const int pad_h1 = (*param.paddings)[1];
+  const int pad_w0 = (*param.paddings)[2];
+  const int pad_w1 = (*param.paddings)[3];
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
@@ -96,8 +98,8 @@ void conv_compute_6x6_3x3(const float* input,
   int tile_h = (hout + 5) / 6;
   int size_tile = tile_h * tile_w;
 
-  int w_pad = win + pad_w * 2;
-  int h_pad = hin + pad_h * 2;
+  int w_pad = win + pad_w0 + pad_w1;
+  int h_pad = hin + pad_h0 + pad_h1;
 
   const int zero_len = w_pad;
   float zero_ptr[zero_len];  // NOLINT
@@ -127,10 +129,10 @@ void conv_compute_6x6_3x3(const float* input,
       prepack_input_nxwc4_dw(input + ni * in_n_stride,
                              input_c4 + i * new_c_stride,
                              i * 4,
-                             -pad_h,
-                             hin + pad_h,
-                             -pad_w,
-                             win + pad_w,
+                             -pad_h0,
+                             hin + pad_h1,
+                             -pad_w0,
+                             win + pad_w1,
                              chin,
                              win,
                              hin,
@@ -367,8 +369,10 @@ void conv_compute_2x2_3x3(const float* input,
                           const operators::ConvParam& param,
                           ARMContext* ctx) {
   auto act_param = param.activation_param;
-  const int pad_h = (*param.paddings)[0];
-  const int pad_w = (*param.paddings)[2];
+  const int pad_h0 = (*param.paddings)[0];
+  const int pad_h1 = (*param.paddings)[1];
+  const int pad_w0 = (*param.paddings)[2];
+  const int pad_w1 = (*param.paddings)[3];
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
@@ -383,8 +387,8 @@ void conv_compute_2x2_3x3(const float* input,
   int tile_h = (hout + 1) / 2;
   int size_tile = tile_h * tile_w;
 
-  int w_pad = win + pad_w * 2;
-  int h_pad = hin + pad_h * 2;
+  int w_pad = win + pad_w0 + pad_w1;
+  int h_pad = hin + pad_h0 + pad_h1;
 
   const int zero_len = w_pad;
   float zero_ptr[zero_len];  // NOLINT
@@ -414,10 +418,10 @@ void conv_compute_2x2_3x3(const float* input,
       prepack_input_nxwc4_dw(input + ni * in_n_stride,
                              input_c4 + i * new_c_stride,
                              i * 4,
-                             -pad_h,
-                             hin + pad_h,
-                             -pad_w,
-                             win + pad_w,
+                             -pad_h0,
+                             hin + pad_h1,
+                             -pad_w0,
+                             win + pad_w1,
                              chin,
                              win,
                              hin,
@@ -628,8 +632,10 @@ void conv_compute_2x2_3x3_small(const float* input,
                                 const operators::ConvParam& param,
                                 ARMContext* ctx) {
   auto act_param = param.activation_param;
-  const int pad_h = (*param.paddings)[0];
-  const int pad_w = (*param.paddings)[2];
+  const int pad_h0 = (*param.paddings)[0];
+  const int pad_h1 = (*param.paddings)[1];
+  const int pad_w0 = (*param.paddings)[2];
+  const int pad_w1 = (*param.paddings)[3];
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
 
@@ -644,8 +650,8 @@ void conv_compute_2x2_3x3_small(const float* input,
   int tile_h = (hout + 1) / 2;
   int size_tile = tile_h * tile_w;
 
-  int w_pad = win + pad_w * 2;
-  int h_pad = hin + pad_h * 2;
+  int w_pad = win + pad_w0 + pad_w1;
+  int h_pad = hin + pad_h0 + pad_h1;
 
   const int zero_len = w_pad;
   float zero_ptr[zero_len];  // NOLINT
@@ -676,10 +682,10 @@ void conv_compute_2x2_3x3_small(const float* input,
       prepack_input_nxwc4_dw(input + ni * in_n_stride,
                              input_c4 + i * new_c_stride,
                              i * 4,
-                             -pad_h,
-                             hin + pad_h,
-                             -pad_w,
-                             win + pad_w,
+                             -pad_h0,
+                             hin + pad_h1,
+                             -pad_w0,
+                             win + pad_w1,
                              chin,
                              win,
                              hin,

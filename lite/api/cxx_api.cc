@@ -151,6 +151,11 @@ std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
 std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
+// get param names
+std::vector<std::string> Predictor::GetParamNames() {
+  return exec_scope_->AttributeVarNames();
+}
+
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
   if (!program_) {
@@ -293,6 +298,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   for (auto &valid_place : valid_places) {
+    if (valid_place.target == TARGET(kOpenCL)) continue;
     inner_places.emplace_back(
         Place(TARGET(kHost), valid_place.precision, valid_place.layout));
   }
@@ -345,7 +351,14 @@ void Predictor::GenRuntimeProgram() {
 
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
+  CHECK(var) << "no variable named with " << name << " in exec_scope";
   return &var->Get<lite::Tensor>();
+}
+
+lite::Tensor *Predictor::GetMutableTensor(const std::string &name) {
+  auto *var = exec_scope_->FindVar(name);
+  CHECK(var) << "no variable named with " << name << " in exec_scope";
+  return var->GetMutable<lite::Tensor>();
 }
 
 // get input by name

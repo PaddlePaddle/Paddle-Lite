@@ -42,7 +42,7 @@ class IoCopyHostToOpenCLCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "param.x->memory_size():" << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
     VLOG(2) << "param.x->dims():" << param.x->dims();
@@ -87,7 +87,7 @@ class IoCopykOpenCLToHostCompute
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "copy size " << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
     VLOG(2) << "param.x->dims():" << param.x->dims();
@@ -106,7 +106,7 @@ class IoCopykOpenCLToHostCompute
 
     auto& context = ctx_->As<OpenCLContext>();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
 #endif
     CLRuntime::Global()->command_queue().finish();
