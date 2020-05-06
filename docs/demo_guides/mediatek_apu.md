@@ -7,7 +7,7 @@ Paddle Lite已支持MTK APU的预测部署。
 
 ### 已支持的芯片
 
-- [MT8168](https://www.mediatek.cn/products/tablets/mt8168)/[MT8175](https://www.mediatek.cn/products/tablets/mt8175)。
+- [MT8168](https://www.mediatek.cn/products/tablets/mt8168)/[MT8175](https://www.mediatek.cn/products/tablets/mt8175)及其他智能芯片。
 
 ### 已支持的设备
 
@@ -148,7 +148,7 @@ $ ./opt --model_dir=mobilenet_v1_int8_224_fluid \
 ```
 - 注意：opt生成的模型只是标记了MTK APU支持的Paddle算子，并没有真正生成MTK APU模型，只有在执行时才会将标记的Paddle算子转成MTK Neuron adapter API调用实现组网，最终生成并执行模型。
 
-### 更新支持RK NPU的Paddle Lite库
+### 更新支持MTK APU的Paddle Lite库
 
 - 下载PaddleLite源码和APU DDK；
 ```shell
