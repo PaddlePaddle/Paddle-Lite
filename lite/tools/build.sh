@@ -22,6 +22,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
+WITH_PROFILE=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -228,6 +229,7 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -387,6 +389,8 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
+            -DWITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -498,11 +502,15 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
+            --with_profile=*)
+                WITH_PROFILE="${i#*=}"
+                shift
+                ;;
             --build_npu=*)
                 BUILD_NPU="${i#*=}"
                 shift
                 ;;
-           --npu_ddk_root=*)
+            --npu_ddk_root=*)
                 NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
