@@ -167,6 +167,20 @@ lod_t Tensor::lod() const { return ctensor(raw_tensor_)->lod(); }
 
 void Tensor::SetLoD(const lod_t &lod) { tensor(raw_tensor_)->set_lod(lod); }
 
+std::unique_ptr<Tensor> PaddlePredictor::GetMutableTensor(
+    const std::string &name) {
+  LOG(FATAL)
+      << "The GetMutableTensor API is only supported by CxxConfig predictor.";
+  return nullptr;
+}
+
+std::vector<std::string> PaddlePredictor::GetParamNames() {
+  std::vector<std::string> null_result = {};
+  LOG(FATAL)
+      << "The GetParamNames API is only supported by CxxConfig predictor.";
+  return null_result;
+}
+
 void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
                                          LiteModelType model_type,
                                          bool record_info) {

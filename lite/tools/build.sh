@@ -21,7 +21,7 @@ BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
-SHUTDOWN_LOG=ON
+WITH_LOG=ON
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -32,6 +32,7 @@ APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 LITE_WITH_ARM_LANG=OFF
+PYTHON_EXECUTABLE_OPTION=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -132,7 +133,7 @@ function make_tiny_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -188,7 +189,7 @@ function make_opencl {
       -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
@@ -226,7 +227,7 @@ function make_full_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -309,7 +310,7 @@ function make_ios {
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_JAVA=OFF \
-            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_WITH_LOG=ON \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -388,7 +389,8 @@ function make_x86 {
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            $PYTHON_EXECUTABLE_OPTION
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -412,7 +414,7 @@ function print_usage {
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
     echo -e "optional argument:"
-    echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
+    echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo -e "--build_train: (OFF|ON); controls whether to publish training operators and kernels, build_train is only for full_publish library now"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
@@ -482,7 +484,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		            ;;
+		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 shift
@@ -491,8 +493,8 @@ function main {
                 BUILD_TAILOR="${i#*=}"
                 shift
                 ;;
-            --shutdown_log=*)
-                SHUTDOWN_LOG="${i#*=}"
+            --with_log=*)
+                WITH_LOG="${i#*=}"
                 shift
                 ;;
             --build_npu=*)
@@ -513,6 +515,10 @@ function main {
                 ;;
             --xpu_sdk_root=*)
                 XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --python_executable=*)
+                PYTHON_EXECUTABLE_OPTION="-DPYTHON_EXECUTABLE=${i#*=}"
                 shift
                 ;;
             --build_apu=*)

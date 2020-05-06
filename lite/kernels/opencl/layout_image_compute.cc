@@ -76,7 +76,7 @@ class LayoutComputeBufferChwToImageDefault
     const int Stride1 = out_H * out_W;
     const int Stride0 = out_W;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
@@ -118,7 +118,7 @@ class LayoutComputeBufferChwToImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
     CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
 #endif
@@ -186,7 +186,7 @@ class LayoutComputeImageDefaultToBufferChw
       new_dims[4 - x_dims.size() + j] = x_dims[j];
     }
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
@@ -228,7 +228,7 @@ class LayoutComputeImageDefaultToBufferChw
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(C));
     CL_CHECK_FATAL(status);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
             << " " << (new_dims[0] * new_dims[2]);
 #endif

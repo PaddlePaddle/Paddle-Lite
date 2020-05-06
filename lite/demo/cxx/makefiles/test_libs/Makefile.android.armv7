@@ -1,0 +1,97 @@
+ARM_ABI = arm7
+export ARM_ABI
+
+include ../Makefile.def
+
+LITE_ROOT=../../../
+
+THIRD_PARTY_DIR=${LITE_ROOT}/third_party
+
+OPENCV_VERSION=opencv4.1.0
+
+OPENCV_LIBS = ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/libs/libopencv_imgcodecs.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/libs/libopencv_imgproc.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/libs/libopencv_core.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/libtegra_hal.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/liblibjpeg-turbo.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/liblibwebp.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/liblibpng.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/liblibjasper.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/liblibtiff.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/libIlmImf.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/libtbb.a \
+              ../../../third_party/${OPENCV_VERSION}/armeabi-v7a/3rdparty/libs/libcpufeatures.a
+
+OPENCV_INCLUDE = -I../../../third_party/${OPENCV_VERSION}/armeabi-v7a/include
+
+CXX_INCLUDES = $(INCLUDES) ${OPENCV_INCLUDE} -I$(LITE_ROOT)/cxx/include -I${THIRD_PARTY_DIR}/gflags/include
+
+CXX_LIBS = ${OPENCV_LIBS} ${THIRD_PARTY_DIR}/gflags/lib/libgflags.a $(SYSTEM_LIBS)
+
+LITE_FULL_SHAPRED_LIBS=-L$(LITE_ROOT)/cxx/lib/ -lpaddle_full_api_shared
+LITE_FULL_STATIC_LIBS=$(LITE_ROOT)/cxx/lib/libpaddle_api_full_bundled.a
+LITE_LIGHT_SHAPRED_LIBS=-L$(LITE_ROOT)/cxx/lib/ -lpaddle_light_api_shared
+LITE_LIGHT_STATIC_LIBS=$(LITE_ROOT)/cxx/lib/libpaddle_api_light_bundled.a
+
+##########
+fetch_opencv:
+	@ test -d ${THIRD_PARTY_DIR} ||  mkdir ${THIRD_PARTY_DIR}
+	@ test -e ${THIRD_PARTY_DIR}/${OPENCV_VERSION}.tar.gz || \
+      (echo "fetch opencv libs" && \
+      wget -P ${THIRD_PARTY_DIR} https://paddle-inference-dist.bj.bcebos.com/${OPENCV_VERSION}.tar.gz)
+	@ test -d ${THIRD_PARTY_DIR}/${OPENCV_VERSION} || \
+      tar -zxvf ${THIRD_PARTY_DIR}/${OPENCV_VERSION}.tar.gz -C ${THIRD_PARTY_DIR}
+
+test_helper.o: test_helper.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_helper.o -c test_helper.cc
+
+classification_full.o: classification_full.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o classification_full.o -c classification_full.cc
+
+classification_light.o: classification_light.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o classification_light.o -c classification_light.cc
+
+classification_full_shared: fetch_opencv classification_full.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) classification_full.o test_helper.o -o classification_full_shared  $(CXX_LIBS) $(LDFLAGS) ${LITE_FULL_SHAPRED_LIBS}
+
+classification_full_static: fetch_opencv classification_full.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) classification_full.o test_helper.o -o classification_full_static  ${LITE_FULL_STATIC_LIBS} $(CXX_LIBS) $(LDFLAGS)
+
+classification_light_shared: fetch_opencv classification_light.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) classification_light.o test_helper.o -o classification_light_shared  $(CXX_LIBS) $(LDFLAGS) ${LITE_LIGHT_SHAPRED_LIBS}
+
+classification_light_static: fetch_opencv classification_light.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) classification_light.o test_helper.o -o classification_light_static  ${LITE_LIGHT_STATIC_LIBS} $(CXX_LIBS) $(LDFLAGS)
+
+######
+yolov3_full.o: yolov3_full.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o yolov3_full.o -c yolov3_full.cc
+
+yolov3_light.o: yolov3_light.cc
+	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o yolov3_light.o -c yolov3_light.cc
+
+yolov3_full_shared: fetch_opencv yolov3_full.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) yolov3_full.o test_helper.o -o yolov3_full_shared  $(CXX_LIBS) $(LDFLAGS) ${LITE_FULL_SHAPRED_LIBS}
+
+yolov3_full_static: fetch_opencv yolov3_full.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) yolov3_full.o test_helper.o -o yolov3_full_static   ${LITE_FULL_STATIC_LIBS} $(CXX_LIBS) $(LDFLAGS)
+
+yolov3_light_shared: fetch_opencv yolov3_light.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) yolov3_light.o test_helper.o -o yolov3_light_shared  $(CXX_LIBS) $(LDFLAGS) ${LITE_LIGHT_SHAPRED_LIBS}
+
+yolov3_light_static: fetch_opencv yolov3_full.o test_helper.o
+	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) yolov3_light.o test_helper.o -o yolov3_light_static   ${LITE_LIGHT_STATIC_LIBS} $(CXX_LIBS) $(LDFLAGS)
+
+#####
+all: classification_full_shared classification_full_static classification_light_shared classification_light_static yolov3_full_shared yolov3_full_static yolov3_light_shared yolov3_light_static 
+
+clean:
+	rm -f *.o
+	rm -f classification_full_shared
+	rm -r classification_full_static
+	rm -r classification_light_shared
+	rm -f classification_light_static
+	rm -f yolov3_full_shared
+	rm -f yolov3_full_static
+	rm -f yolov3_light_shared
+	rm -f yolov3_light_static

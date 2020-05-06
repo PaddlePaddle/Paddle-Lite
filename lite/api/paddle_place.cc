@@ -161,6 +161,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kBM),
                                                TARGET(kMLU),
                                                TARGET(kAPU),
+                                               TARGET(kRKNPU),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;
