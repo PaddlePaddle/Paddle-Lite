@@ -226,7 +226,7 @@ class ImagePreprocess {
                  int left_y,
                  int dstw,
                  int dsth);
-  
+
  private:
   ImageFormat srcFormat_;
   ImageFormat dstFormat_;
