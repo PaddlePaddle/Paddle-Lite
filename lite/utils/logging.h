@@ -36,17 +36,17 @@
 // Android log macors
 #define ANDROID_LOG_TAG "Paddle-Lite"
 #define ANDROID_LOG_I(msg) \
-  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_W(msg) \
-  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_F(msg) \
-  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, "%s", msg)
 #endif
 
 // NOLINTFILE()
 
 // LOG()
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define LOG(status) LOG_##status
 #define LOG_INFO paddle::lite::Voidify()
 #define LOG_ERROR LOG_INFO
@@ -62,7 +62,7 @@
   paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
 #endif
 
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define VLOG(level) paddle::lite::Voidify()
 #else
 // VLOG()
@@ -72,7 +72,7 @@
 
 // CHECK()
 // clang-format off
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define CHECK(x) if (!(x)) paddle::lite::VoidifyFatal()
 #define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y)
 #else
@@ -91,7 +91,7 @@
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
 void gen_log(STL::ostream& log_stream_,
              const char* file,
              const char* func,

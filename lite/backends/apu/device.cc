@@ -20,48 +20,19 @@ namespace paddle {
 namespace lite {
 namespace apu {
 
-inline void* LoadFunc(void* libHandle, const char* name) {
-  CHECK(libHandle != nullptr);
-  CHECK(name != nullptr);
-  void* fn = dlsym(libHandle, name);
-  if (fn == nullptr) {
-    LOG(WARNING) << "Unable to open Neuron Runtime function [" << name
-                 << "] Because " << dlerror();
-  }
-  return fn;
-}
-
-NeuronCompilation* Device::Build(void* libHandle, NeuronModel* model) {
-  typedef int (*NeuronCompilation_create)(NeuronModel * model,
-                                          NeuronCompilation * *compilation);
-  typedef void (*NeuronCompilation_free)(NeuronCompilation * compilation);
-  typedef int (*NeuronCompilation_finish)(NeuronCompilation * compilation);
-
-#define LOAD_FUNCTIONS(libHandle, FUNC_NAME, VARIABLE_NAME) \
-  FUNC_NAME VARIABLE_NAME =                                 \
-      reinterpret_cast<FUNC_NAME>(LoadFunc(libHandle, #FUNC_NAME));
-  LOAD_FUNCTIONS(libHandle, NeuronCompilation_create, neuron_compilation_create)
-  LOAD_FUNCTIONS(libHandle, NeuronCompilation_free, neuron_compilation_free)
-  LOAD_FUNCTIONS(libHandle, NeuronCompilation_finish, neuron_compilation_finish)
-#undef LOAD_FUNCTIONS
-
-  int neuron_errCode = 0;
-  NeuronCompilation* compilation = NULL;
-
+NeuronCompilation* Device::Build(NeuronModel* model) {
   VLOG(3) << "[APU] Compile model";
-
-  neuron_errCode = (*neuron_compilation_create)(model, &compilation);
+  NeuronCompilation* compilation = NULL;
+  int neuron_errCode = NeuronCompilation_create(model, &compilation);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "[APU] create compile failed! " << neuron_errCode;
     return nullptr;
   }
-
-  neuron_errCode = (*neuron_compilation_finish)(compilation);
+  neuron_errCode = NeuronCompilation_finish(compilation);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "[APU] compile failed! " << neuron_errCode;
     return nullptr;
   }
-
   VLOG(3) << "[APU] Build done";
   return compilation;
 }

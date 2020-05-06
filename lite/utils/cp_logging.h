@@ -14,7 +14,7 @@
 
 #pragma once
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || !defined(LITE_WITH_LOG)
 #include "lite/utils/logging.h"
 #else  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 #include <glog/logging.h>

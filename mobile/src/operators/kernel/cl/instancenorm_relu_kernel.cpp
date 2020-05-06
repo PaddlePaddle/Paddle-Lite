@@ -26,13 +26,11 @@ bool InstanceNormReluKernel<GPU_CL, float>::Init(
     FusionInstanceNormReluParam<GPU_CL> *param) {
   auto &dims = param->Out()->dims();
   const int h = dims[2];
-  std::string build_options = "-DRELU";
+  std::string build_options = " -DRELU";
   if (h == 128) {
     build_options += " -DLOCAL_MEM_128";
   } else if (h == 64) {
     build_options += " -DLOCAL_MEM_64";
-  } else if (h > 256) {
-    PADDLE_MOBILE_THROW_EXCEPTION("instance norm unsupported input height");
   }
   this->cl_helper_.AddKernel("instancenorm", "instancenorm_kernel.cl",
                              build_options);

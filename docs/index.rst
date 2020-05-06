@@ -54,6 +54,9 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/opencl
   demo_guides/fpga
   demo_guides/npu
+  demo_guides/baidu_xpu
+  demo_guides/rockchip_npu
+  demo_guides/mediatek_apu
   
 .. toctree::
   :maxdepth: 1

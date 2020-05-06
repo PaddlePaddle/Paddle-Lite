@@ -8,8 +8,8 @@ ARM_LANG="gcc"                      # gcc only yet
 DDK_ROOT="$(pwd)/rknpu"       
 TARGET_NAME="test_subgraph_pass"    # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
-WITH_TESTING=ON 	            # ON/OFF
-SHUTDOWN_LOG=OFF                    # ON(disable logging)/OFF
+WITH_TESTING=ON     	            # ON/OFF
+WITH_LOG=ON                         # ON(disable logging)/OFF
 ON_TINY_PUBLISH=OFF                 # ON(tiny publish)/OFF(full publish)
 
 function print_usage {
@@ -65,7 +65,7 @@ function build_npu {
     local publish_dir
     if [[ "${ON_TINY_PUBLISH}" == "ON" ]]; then
         WITH_TESTING=OFF
-        SHUTDOWN_LOG=ON
+        WITH_LOG=OFF
         publish_dir="tiny_publish"
     else
         publish_dir="full_publish"
@@ -89,7 +89,7 @@ function build_npu {
         -DWITH_ARM_DOTPROD=ON   \
         -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
-        -DLITE_SHUTDOWN_LOG=${SHUTDOWN_LOG} \
+        -DLITE_WITH_LOG=${WITH_LOG} \
         -DLITE_ON_TINY_PUBLISH=${ON_TINY_PUBLISH} \
         -DARM_TARGET_OS=${ARM_OS} \
         -DARM_TARGET_ARCH_ABI=${ARM_ABI} \

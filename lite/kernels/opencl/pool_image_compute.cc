@@ -60,7 +60,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     std::vector<int> strides = param.strides;
     std::vector<int> ksize = param.ksize;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_pooling: " << global_pooling;
     VLOG(4) << "pooling_type: " << pooling_type;
     VLOG(4) << "paddings : " << paddings[0] << "  " << paddings[1] << "  "
@@ -75,7 +75,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       }
     }
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
             << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
     VLOG(4) << "out_dims : [" << out_dims.size() << "]" << out_dims[0] << "  "
@@ -103,7 +103,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     //    VLOG(4) << "x_image" << x_img;
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 #endif
@@ -119,7 +119,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int w = out_dims[3];
     int nh = out_dims[0] * out_dims[2];
     auto global_work_size = cl::NDRange(c_block, w, nh);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size : [" << 3 << "]" << c_block << "  " << w
             << "  " << nh << "  ";
 #endif
@@ -150,23 +150,20 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
 
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:
   std::string kernel_func_name_{"pool_"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

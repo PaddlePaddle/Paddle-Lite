@@ -32,12 +32,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[APU] Converting [" + op_type + "] ";
 
-  auto libHandle = graph->libHandle();
-  LOAD_FUNCTIONS(libHandle, NeuronModel_addOperand, neuron_model_addOperand)
-  LOAD_FUNCTIONS(
-      libHandle, NeuronModel_setOperandValue, neuron_model_setOperandValue)
-  LOAD_FUNCTIONS(libHandle, NeuronModel_addOperation, neuron_model_addOperation)
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
@@ -127,7 +121,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Get(x_name);
   } else {
     // add input operand
-    (*neuron_model_addOperand)(model, &xType);  // 0: x
+    NeuronModel_addOperand(model, &xType);  // 0: x
     x_node = graph->Add(x_name, dims_x);
   }
   VLOG(3) << "x_scale: " << x_scale << ", xType: " << xType.dimensions[0] << ":"
@@ -140,39 +134,39 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<uint32_t> dims_int32 = {0};
 
   std::shared_ptr<Node> paddingL_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 1: padding left
+  NeuronModel_addOperand(model, &int32Type);  // 1: padding left
   paddingL_node = graph->Add(x_name + "_padding_left", dims_int32);
 
   std::shared_ptr<Node> paddingR_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 2: padding right
+  NeuronModel_addOperand(model, &int32Type);  // 2: padding right
   paddingR_node = graph->Add(x_name + "_padding_right", dims_int32);
 
   std::shared_ptr<Node> paddingT_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 3: padding top
+  NeuronModel_addOperand(model, &int32Type);  // 3: padding top
   paddingT_node = graph->Add(x_name + "_padding_top", dims_int32);
 
   std::shared_ptr<Node> paddingB_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 4: padding bottom
+  NeuronModel_addOperand(model, &int32Type);  // 4: padding bottom
   paddingB_node = graph->Add(x_name + "_padding_bottom", dims_int32);
 
   std::shared_ptr<Node> strideW_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 5: stride width
+  NeuronModel_addOperand(model, &int32Type);  // 5: stride width
   strideW_node = graph->Add(x_name + "_stride_width", dims_int32);
 
   std::shared_ptr<Node> strideH_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 6: stride height
+  NeuronModel_addOperand(model, &int32Type);  // 6: stride height
   strideH_node = graph->Add(x_name + "_stride_height", dims_int32);
 
   std::shared_ptr<Node> filterW_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 7: filter width
+  NeuronModel_addOperand(model, &int32Type);  // 7: filter width
   filterW_node = graph->Add(x_name + "_filter_width", dims_int32);
 
   std::shared_ptr<Node> filterH_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 8: filter height
+  NeuronModel_addOperand(model, &int32Type);  // 8: filter height
   filterH_node = graph->Add(x_name + "_filter_height", dims_int32);
 
   std::shared_ptr<Node> fuse_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 9: fuse
+  NeuronModel_addOperand(model, &int32Type);  // 9: fuse
   fuse_node = graph->Add(x_name + "_fuse", dims_int32);
 
   // Add out type
@@ -191,7 +185,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(out_name)) {
     out_node = graph->Get(out_name);
   } else {
-    (*neuron_model_addOperand)(model, &outType);  // out
+    NeuronModel_addOperand(model, &outType);  // out
     out_node = graph->Add(out_name, dims_out);
   }
   VLOG(3) << "output_scale: " << x_scale
@@ -202,39 +196,39 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Add padding value
   int32_t padding_val[1];
   padding_val[0] = paddings[2];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingL_node->index(), padding_val, sizeof(int32_t) * 1);
   padding_val[0] = paddings[3];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingR_node->index(), padding_val, sizeof(int32_t) * 1);
   padding_val[0] = paddings[0];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingT_node->index(), padding_val, sizeof(int32_t) * 1);
   padding_val[0] = paddings[1];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingB_node->index(), padding_val, sizeof(int32_t) * 1);
 
   // Add Stride
   int32_t stride_val[1];
   stride_val[0] = strides[1];  // width
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, strideW_node->index(), stride_val, sizeof(int32_t) * 1);
   stride_val[0] = strides[0];  // height
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, strideH_node->index(), stride_val, sizeof(int32_t) * 1);
 
   // Add filter
   int32_t filter_val[1];
   filter_val[0] = global_pooling ? x_dims[3] : ksize[1];  // width
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, filterW_node->index(), filter_val, sizeof(int32_t) * 1);
   filter_val[0] = global_pooling ? x_dims[2] : ksize[0];  // height
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, filterH_node->index(), filter_val, sizeof(int32_t) * 1);
 
   // Add fuse
   int32_t fuse_val[1] = {0};
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
 
   std::vector<uint32_t> addInIndex = {x_node->index(),
@@ -251,19 +245,19 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   int neuron_errCode;
   if (pooling_type == "max") {
-    neuron_errCode = (*neuron_model_addOperation)(model,
-                                                  NEURON_MAX_POOL_2D,
-                                                  addInIndex.size(),
-                                                  &addInIndex[0],
-                                                  addOutIndex.size(),
-                                                  &addOutIndex[0]);
+    neuron_errCode = NeuronModel_addOperation(model,
+                                              NEURON_MAX_POOL_2D,
+                                              addInIndex.size(),
+                                              &addInIndex[0],
+                                              addOutIndex.size(),
+                                              &addOutIndex[0]);
   } else {
-    neuron_errCode = (*neuron_model_addOperation)(model,
-                                                  NEURON_AVERAGE_POOL_2D,
-                                                  addInIndex.size(),
-                                                  &addInIndex[0],
-                                                  addOutIndex.size(),
-                                                  &addOutIndex[0]);
+    neuron_errCode = NeuronModel_addOperation(model,
+                                              NEURON_AVERAGE_POOL_2D,
+                                              addInIndex.size(),
+                                              &addInIndex[0],
+                                              addOutIndex.size(),
+                                              &addOutIndex[0]);
   }
 
   return REBUILD_WHEN_SHAPE_CHANGED;

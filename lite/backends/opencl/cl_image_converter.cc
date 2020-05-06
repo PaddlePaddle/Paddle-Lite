@@ -73,7 +73,7 @@ void CLImageConverterDefault::NCHWToImage(float *nchw,
             i2 += 4;
             p++;
           } else {
-            image[i2] = 0.0;
+            image[i2] = Float2Half(0.f);
             i2 += 4;
           }
         }
@@ -261,7 +261,7 @@ void CLImageConverterNWBlock::NCHWToImage(float *tensor,
             image[index] = Float2Half(*p);
             p++;
           } else {
-            image[index] = 0.0;
+            image[index] = Float2Half(0.f);
           }
           if (index >= (width * height * 4)) {
             LOG(INFO) << " index out of range ";
