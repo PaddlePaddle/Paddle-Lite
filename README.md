@@ -42,7 +42,7 @@ Framework compatibility: In addition to models trained on PaddlePaddle, those tr
 
 ## Architecture
 
-Paddle Lite is designed to support a wide range of hardwares and devices, and it enables mixed execution of a single model on multiple devices, optimization on various phases, and leight-weighted applications on devices.
+Paddle Lite is designed to support a wide range of hardwares and devices, and it enables mixed execution of a single model on multiple devices, optimization on various phases, and light-weighted applications on devices.
 
 ![img](https://user-images.githubusercontent.com/45189361/70908123-6ce4fd00-2045-11ea-97e1-ad08446c5c86.png)
 
