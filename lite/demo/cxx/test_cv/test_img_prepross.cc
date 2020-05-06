@@ -105,8 +105,8 @@ bool test_convert(bool cv_run,
       clock_t begin = clock();
       // convert bgr-gray
       if (dstFormat == srcFormat) {
-         cv::Rect rect(0, 0, dstw, dsth);
-         im_resize = img(rect);
+        cv::Rect rect(0, 0, dstw, dsth);
+        im_resize = img(rect);
       } else if ((dstFormat == ImageFormat::BGR ||
                   dstFormat == ImageFormat::RGB) &&
                  srcFormat == ImageFormat::GRAY) {
@@ -190,7 +190,7 @@ bool test_convert(bool cv_run,
   }
   delete[] resize_cv;
   delete[] resize_lite;
-  return true;
+  return false;
 }
 
 bool test_flip(bool cv_run,
@@ -388,9 +388,9 @@ bool test_rotate(bool cv_run,
       return true;
     }
   }
-   delete[] resize_cv;
-   delete[] resize_lite;
-   return false;
+  delete[] resize_cv;
+  delete[] resize_lite;
+  return false;
 }
 
 bool test_resize(bool cv_run,
@@ -494,15 +494,15 @@ bool test_crop(bool cv_run,
                const uint8_t* src,
                cv::Mat img,
                ImagePreprocess image_preprocess,
-                 int in_size,
-                 int out_size,
-                 ImageFormat dstFormat,
-                 int left_x,
-                 int left_y,
-                 int dstw,
-                 int dsth,
-                 std::string dst_path,
-                 int test_iter = 1){
+               int in_size,
+               int out_size,
+               ImageFormat dstFormat,
+               int left_x,
+               int left_y,
+               int dstw,
+               int dsth,
+               std::string dst_path,
+               int test_iter = 1){
   uint8_t* resize_cv = new uint8_t[out_size];
   uint8_t* resize_lite = new uint8_t[out_size];
   
@@ -519,14 +519,15 @@ bool test_crop(bool cv_run,
       clock_t end = clock();
       to_cv += (end - begin);
     }
- }
- // lite
+  }
+  // lite
   int srcw = img.cols;
   int srch = img.rows;
   std::cout << "lite compute:" << std::endl;
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
-    image_preprocess.imageCrop(src, resize_lite, dstFormat, srcw, srch, left_x, left_y, dstw, dsth);
+    image_preprocess.imageCrop(
+        src, resize_lite, dstFormat, srcw, srch, left_x, left_y, dstw, dsth);
     clock_t end = clock();
     to_lite += (end - begin);
   }
@@ -695,22 +696,22 @@ void test_custom(bool has_img,  // input is image
   tparam1.rotate_param = rotate;
 
   ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
-  std::cout << "cv_run: " << cv_run << std::endl; 
+  std::cout << "cv_run: " << cv_run << std::endl;
   std::cout << "image crop testing" << std::endl;
   bool res = test_crop(cv_run,
                        src,
-                         img,
-                         image_preprocess,
-                         in_size,
-                         out_size,
-                         dstFormat,
-                         flag_left_x,
-                         flag_left_y,
-                         dstw,
-                         dsth,
-                         dst_path,
-                         test_iter);
-   if (!res) {
+                       img,
+                       image_preprocess,
+                       in_size,
+                       out_size,
+                       dstFormat,
+                       flag_left_x,
+                       flag_left_y,
+                       dstw,
+                       dsth,
+                       dst_path,
+                       test_iter);
+  if (!res) {
     return;
   }
   std::cout << "image convert testing" << std::endl;
