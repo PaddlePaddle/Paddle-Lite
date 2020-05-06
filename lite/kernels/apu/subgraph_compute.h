@@ -38,12 +38,12 @@ class SubgraphEngine : public subgraph::Engine {
       : subgraph::Engine(
             ctx, block_idx, block_desc, input_names, output_names, scope) {}
 
+  ~SubgraphEngine();
+
  protected:
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
 
-  std::string model_name_;
-  void *libHandle_;
   NeuronModel *model_;
   NeuronCompilation *compilation_;
 };

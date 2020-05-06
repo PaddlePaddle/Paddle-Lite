@@ -79,7 +79,7 @@ class BilinearInterpImageCompute
     int out_h = out_dims[2];
     int out_w = out_dims[3];
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
@@ -92,7 +92,7 @@ class BilinearInterpImageCompute
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     // VLOG(4) << "x_image: " << x_img;
     // VLOG(4) << "out_image: " << out_img;
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
@@ -114,7 +114,7 @@ class BilinearInterpImageCompute
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
 #endif
@@ -150,7 +150,7 @@ class BilinearInterpImageCompute
         nullptr,
         nullptr);
     CL_CHECK_FATAL(status);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
 #endif

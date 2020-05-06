@@ -16,7 +16,7 @@ WITH_JAVA=ON
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
-SHUTDOWN_LOG=ON
+WITH_LOG=ON
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -144,7 +144,7 @@ function make_tiny_publish_so {
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
@@ -193,7 +193,7 @@ function make_full_publish_so {
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
@@ -236,7 +236,7 @@ function print_usage {
     echo -e "|     --android_stl: (c++_static|c++_shared|gnu_static|gnu_shared), default is c++_static                                              |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
-    echo -e "|     --shutdown_log: (OFF|ON); controls whether to hide log information, default is ON                                                |"
+    echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
@@ -315,8 +315,8 @@ function main {
                 shift
                 ;;
             # ON or OFF, default ON
-            --shutdown_log=*)
-                SHUTDOWN_LOG="${i#*=}"
+            --with_log=*)
+                WITH_LOG="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on opencl and cpu.
@@ -355,9 +355,9 @@ function main {
                 exit 1
                 ;;
         esac
-        # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so
     done
+    # compiling result contains light_api lib only, recommanded.
+    make_tiny_publish_so
 }
 
 main $@

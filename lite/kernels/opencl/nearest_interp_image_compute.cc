@@ -89,7 +89,7 @@ class NearestInterpComputeImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
     CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
     VLOG(4) << "out_image_shape(w,h):" << out_image_shape["width"] << " "
