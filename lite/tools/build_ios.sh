@@ -67,6 +67,7 @@ function make_ios {
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_BUILD_TAILOR=$WITH_STRIP \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
