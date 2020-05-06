@@ -4,7 +4,7 @@ set +x
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
 # armv7 or armv8, default armv8.
-ARM_ABI=armv8
+ARCH=armv8
 # c++_static or c++_shared, default c++_static.
 ANDROID_STL=c++_static
 # gcc or clang, default gcc.
@@ -121,7 +121,7 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
-  build_dir=$workspace/build.lite.android.$ARM_ABI.$TOOLCHAIN
+  build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
   fi
@@ -152,7 +152,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
-      -DARM_TARGET_ARCH_ABI=$ARM_ABI \
+      -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
@@ -176,7 +176,7 @@ function make_full_publish_so {
 
   prepare_thirdparty
 
-  build_directory=$workspace/build.lite.android.$ARM_ABI.$ARM_LANG
+  build_directory=$workspace/build.lite.android.$ARCH.$ARM_LANG
 
   if [ -d $build_directory ]
   then
@@ -201,7 +201,7 @@ function make_full_publish_so {
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
-      -DARM_TARGET_ARCH_ABI=$ARM_ABI \
+      -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$ARM_LANG \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
@@ -268,15 +268,15 @@ function print_usage {
 function main {
     if [ -z "$1" ]; then
         # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so $ARM_ABI $TOOLCHAIN $ANDROID_STL
+        make_tiny_publish_so $ARCH $TOOLCHAIN $ANDROID_STL
     fi
 
     # Parse command line.
     for i in "$@"; do
         case $i in
             # armv7 or armv8, default armv8
-            --arm_abi=*)
-                ARM_ABI="${i#*=}"
+            --arch=*)
+                ARCH="${i#*=}"
                 shift
                 ;;
             # gcc or clang, default gcc
