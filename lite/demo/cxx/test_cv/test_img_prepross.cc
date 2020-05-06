@@ -502,10 +502,10 @@ bool test_crop(bool cv_run,
                int dstw,
                int dsth,
                std::string dst_path,
-               int test_iter = 1){
+               int test_iter = 1) {
   uint8_t* resize_cv = new uint8_t[out_size];
   uint8_t* resize_lite = new uint8_t[out_size];
-  
+
   cv::Mat im_resize;
 
   double to_cv = 0.0;
