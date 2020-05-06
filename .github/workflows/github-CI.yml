@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: modity build.sh
-      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/-j$NUM_CORES_FOR_COMPILE/-j1/' lite/tools/build_mlu.sh && sed -i 's/PRINT_HW_TIME false/PRINT_HW_TIME true/' lite/kernels/mlu/bridges/graph.h
+      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/PRINT_HW_TIME false/PRINT_HW_TIME true/' lite/kernels/mlu/bridges/graph.h
     - name: build
       run: ./lite/tools/build_mlu.sh build
     - name: test_act_converter_mlu
