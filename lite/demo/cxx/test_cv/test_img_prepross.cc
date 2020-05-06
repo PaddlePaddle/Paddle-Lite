@@ -28,7 +28,7 @@ typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 using namespace paddle::lite_api;  // NOLINT
 
-// cop point
+// crop point
 int flag_left_x = 50;
 int flag_left_y = 50;
 void fill_with_mat(cv::Mat& mat, uint8_t* src, int num) {  // NOLINT
@@ -74,7 +74,6 @@ double compare_diff(uint8_t* data1, uint8_t* data2, int size, uint8_t* diff_v) {
 }
 void print_data(const uint8_t* data, int size) {
   for (int i = 0; i < size; i++) {
-    printf("%d ", data[i]);
     if ((i + 1) % 10 == 0) {
       std::cout << std::endl;
     }
@@ -143,14 +142,10 @@ bool test_convert(bool cv_run,
   std::cout << "compare diff: " << std::endl;
 
   if (cv_run) {
-    printf("img_reisze: %d, %d, %x \n", im_resize.cols, im_resize.rows, im_resize.data);
     resize_cv = im_resize.data;
-    printf("--- \n");
     uint8_t* diff_v = new uint8_t[out_size];
-    printf("out_size: %d \n", out_size);
     double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
     if (diff > 1) {
-      printf("diff: %d \n", diff);
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
       std::cout << "cv out: " << std::endl;
@@ -582,14 +577,10 @@ bool test_crop(bool cv_run,
       }
       fill_with_mat(resize_mat, resize_lite, num);
       cv::imwrite(resize_name, resize_mat);
-      cv::imwrite(dst_path+"/crop1.jpg", im_resize);
       std::cout << "crop successed!" << std::endl;
       delete[] diff_v;
-      printf("--\n");
-      //delete[] resize_cv;
-      printf("--\n");
+      delete[] resize_cv;
       delete[] resize_lite;
-      printf("--\n");
       return true;
     }
   }
