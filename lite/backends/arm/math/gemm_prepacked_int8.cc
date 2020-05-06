@@ -673,6 +673,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_INT8_INT8_OUT                                         \
   GEMM_TRANS_INT32_TO_FP32                                         \
+  GEMM_INT8_RELU                                                   \
   GEMM_INT8_RELU6                                                  \
   GEMM_INT8_LEAKY_RELU                                             \
   "ld1    {v8.4s},   [%[vmax]] \n"          /* v8 = -127 */        \

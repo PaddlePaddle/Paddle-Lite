@@ -27,7 +27,10 @@ inline void write_gemv_out(const int* in,
                            const float* scale,
                            const float* bias,
                            int size,
-                           bool is_relu);
+                           bool flag_act,
+                           lite_api::ActivationType act,
+                           float six,
+                           float alpha);
 
 template <>
 inline void write_gemv_out(const int* in,
@@ -35,7 +38,10 @@ inline void write_gemv_out(const int* in,
                            const float* scale,
                            const float* bias,
                            int size,
-                           bool is_relu) {
+                           bool flag_act,
+                           lite_api::ActivationType act,
+                           float six,
+                           float alpha) {
   int i = 0;
   float32x4_t vzero = vdupq_n_f32(0.f);
   for (; i < size - 7; i += 8) {
@@ -49,9 +55,27 @@ inline void write_gemv_out(const int* in,
     float32x4_t vinf1 = vcvtq_f32_s32(vin1);
     vout0 = vmlaq_f32(vout0, vinf0, vscale0);
     vout1 = vmlaq_f32(vout1, vinf1, vscale1);
-    if (is_relu) {
+    if (flag_act) {
+      if (act == lite_api::ActivationType::kRelu) {
+        vout0 = vmaxq_f32(vout0, vzero);
+        vout1 = vmaxq_f32(vout1, vzero);
+      } else if (act == lite_api::ActivationType::kRelu6) {
+        float32x4_t vsix = vdupq_n_f32(six);
+        vout0 = vmaxq_f32(vout0, vzero);
+        vout1 = vmaxq_f32(vout1, vzero);
+        vout0 = vminq_f32(vout0, vsix);
+        vout1 = vminq_f32(vout1, vsix);
+      }
       vout0 = vmaxq_f32(vout0, vzero);
       vout1 = vmaxq_f32(vout1, vzero);
+    } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      float32x4_t valpha = vdupq_n_f32(alpha);
+      uint32x4_t maska = vcgeq_f32(vout0, vzero);
+      uint32x4_t maskb = vcgeq_f32(vout1, vzero);
+      float32x4_t suma = vmulq_f32(vout0, valpha);
+      float32x4_t sumb = vmulq_f32(vout1, valpha);
+      vout0 = vbslq_f32(maska, vout0, suma);
+      vout1 = vbslq_f32(maskb, vout1, sumb);
     }
     vst1q_f32(out, vout0);
     vst1q_f32(out + 4, vout1);
@@ -63,7 +87,15 @@ inline void write_gemv_out(const int* in,
   for (; i < size; ++i) {
     out[0] = *(in++) * *(scale)++;
     out[0] += bias ? *(bias++) : 0.f;
-    out[0] = is_relu ? (out[0] > 0.f ? out[0] : 0.f) : out[0];
+    if (flag_act) {
+      if (act == lite_api::ActivationType::kRelu) {
+        out[0] = out[0] > 0.f ? out[0] : 0.f;
+      } else if (act == lite_api::ActivationType::kRelu6) {
+        out[0] = out[0] > 0.f ? (out[0] > six ? six : out[0]) : 0.f;
+      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+        out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
+      }
+    }
     out++;
   }
 }
@@ -74,14 +106,23 @@ inline void write_gemv_out(const int* in,
                            const float* scale,
                            const float* bias,
                            int size,
-                           bool flag_relu) {
+                           bool flag_act,
+                           lite_api::ActivationType act,
+                           float six,
+                           float alpha) {
   if (bias) {
     for (int i = 0; i < size; ++i) {
       out[0] =
           saturate_cast<signed char>(roundf(*(in++) * *(scale++) + *(bias++)));
       out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
-      if (flag_relu) {
-        out[0] = out[0] > 0 ? out[0] : 0;
+      if (flag_act) {
+        if (act == lite_api::ActivationType::kRelu) {
+          out[0] = out[0] > 0.f ? out[0] : 0.f;
+        } else if (act == lite_api::ActivationType::kRelu6) {
+          out[0] = out[0] > 0.f ? (out[0] > six ? six : out[0]) : 0.f;
+        } else if (act == lite_api::ActivationType::kLeakyRelu) {
+          out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
+        }
       }
       out++;
     }
@@ -89,8 +130,14 @@ inline void write_gemv_out(const int* in,
     for (int i = 0; i < size; ++i) {
       out[0] = saturate_cast<signed char>(roundf(*(in++) * *(scale++)));
       out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
-      if (flag_relu) {
-        out[0] = out[0] > 0 ? out[0] : 0;
+      if (flag_act) {
+        if (act == lite_api::ActivationType::kRelu) {
+          out[0] = out[0] > 0.f ? out[0] : 0.f;
+        } else if (act == lite_api::ActivationType::kRelu6) {
+          out[0] = out[0] > 0.f ? (out[0] > six ? six : out[0]) : 0.f;
+        } else if (act == lite_api::ActivationType::kLeakyRelu) {
+          out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
+        }
       }
       out++;
     }
@@ -107,7 +154,10 @@ bool gemv_int8_oth(const int8_t* A,
                    const float* scale,
                    bool is_bias,
                    const float* bias,
-                   bool is_relu) {
+                    bool flag_act,
+                    lite_api::ActivationType act,
+                    float six,
+                    float alpha) {
   if (transA) {
     LOG(ERROR) << "ERROR: sgemv, transA is not supported now";
     return false;
@@ -260,7 +310,7 @@ bool gemv_int8_oth(const int8_t* A,
       ptr_out[7] += ptr_in[i] * ptr_w7[i];
     }
 
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 8, is_relu);
+    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
   }
 
 //! deal with remains
@@ -304,7 +354,7 @@ bool gemv_int8_oth(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, is_relu);
+    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
 #else  //  __aarch64__
   int out_cnt = M >> 2;
@@ -398,7 +448,7 @@ bool gemv_int8_oth(const int8_t* A,
       ptr_out[2] += ptr_in[i] * ptr_w2[i];
       ptr_out[3] += ptr_in[i] * ptr_w3[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 4, is_relu);
+    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 4, flag_act, act, six, alpha);
   }
 //! deal with remains
 #pragma omp parallel for
@@ -439,7 +489,7 @@ bool gemv_int8_oth(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, is_relu);
+    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
 #endif  //  __aarch64__
   return true;
@@ -456,7 +506,10 @@ bool gemv_int8_sdot(const int8_t* A,
                     const float* scale,
                     bool is_bias,
                     const float* bias,
-                    bool is_relu) {
+                    bool flag_act,
+                    lite_api::ActivationType act,
+                    float six,
+                    float alpha) {
   if (transA) {
     LOG(ERROR) << "ERROR: sgemv, transA is not supported now";
     return false;
@@ -594,7 +647,7 @@ bool gemv_int8_sdot(const int8_t* A,
       ptr_out[6] += ptr_in[i] * ptr_w6[i];
       ptr_out[7] += ptr_in[i] * ptr_w7[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 8, is_relu);
+    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
   }
 //! deal with remains
 #pragma omp parallel for
@@ -634,7 +687,7 @@ bool gemv_int8_sdot(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, is_relu);
+    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
   return true;
 }
@@ -650,19 +703,22 @@ bool gemv_int8<float>(const int8_t* A,
                       const float* scale,
                       bool is_bias,
                       const float* bias,
-                      bool is_relu,
-                      const ARMContext* ctx) {
+                      bool flag_act,
+                      lite_api::ActivationType act,
+                      const ARMContext* ctx,
+                      float six,
+                      float alpha) {
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
     return gemv_int8_sdot<float>(
-        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
   } else {
     return gemv_int8_oth<float>(
-        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
   }
 #else
   return gemv_int8_oth<float>(
-      A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
 #endif
 }
 
@@ -676,19 +732,22 @@ bool gemv_int8<int8_t>(const int8_t* A,
                        const float* scale,
                        bool is_bias,
                        const float* bias,
-                       bool is_relu,
-                       const ARMContext* ctx) {
+                       bool flag_act,
+                       lite_api::ActivationType act,
+                       const ARMContext* ctx,
+                       float six,
+                       float alpha) {
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
     return gemv_int8_sdot<int8_t>(
-        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
   } else {
     return gemv_int8_oth<int8_t>(
-        A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
   }
 #else
   return gemv_int8_oth<int8_t>(
-      A, x, y, transA, M, N, scale, is_bias, bias, is_relu);
+      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
 #endif
 }
 
