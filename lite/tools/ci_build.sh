@@ -396,7 +396,7 @@ function test_arm_android {
 
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s ${device} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
