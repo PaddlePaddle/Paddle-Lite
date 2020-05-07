@@ -16,9 +16,11 @@
 
 #include <cnml.h>
 #include <cnrt.h>
+
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
@@ -32,6 +34,38 @@ namespace mlu {
 void transpose2d(float* input_data,
                  float* output_data,
                  std::vector<int> input_shape);
+template <typename dtype>
+void transpose(dtype input_data,
+               dtype output_data,
+               std::vector<int> input_shape,
+               std::vector<int> axis);
+
+template <typename dtype>
+void transpose(dtype input_data,
+               dtype output_data,
+               std::vector<int> input_shape,
+               std::vector<int> axis) {
+  int old_index = -1;
+  int new_index = -1;
+  int dim[4] = {0};
+  std::vector<int> shape = input_shape;
+  for (dim[0] = 0; dim[0] < input_shape[0]; dim[0]++) {
+    for (dim[1] = 0; dim[1] < input_shape[1]; dim[1]++) {
+      for (dim[2] = 0; dim[2] < input_shape[2]; dim[2]++) {
+        for (dim[3] = 0; dim[3] < input_shape[3]; dim[3]++) {
+          old_index = dim[0] * shape[1] * shape[2] * shape[3] +
+                      dim[1] * shape[2] * shape[3] + dim[2] * shape[3] + dim[3];
+          new_index =
+              dim[axis[0]] * shape[axis[1]] * shape[axis[2]] * shape[axis[3]] +
+              dim[axis[1]] * shape[axis[2]] * shape[axis[3]] +
+              dim[axis[2]] * shape[axis[3]] + dim[axis[3]];
+          output_data[new_index] = input_data[old_index];
+        }
+      }
+    }
+  }
+}
+
 void transpose(float* input_data,
                float* output_data,
                std::vector<int> input_shape,

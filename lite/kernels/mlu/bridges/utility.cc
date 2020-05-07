@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/mlu/bridges/utility.h"
+
 #include <utility>
 
 namespace paddle {
