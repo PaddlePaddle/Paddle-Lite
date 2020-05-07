@@ -186,8 +186,8 @@ adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/loc
 adb shell chmod +x /data/local/tmp/opencl/test_mobilenetv1
 
 adb shell "export GLOG_v=1; \
-   /data/local/tmp/opencl-image/test_mobilenetv1 \
-  --model_dir=/data/local/tmp/opencl-image/mobilenetv1_fluid/ \
+   /data/local/tmp/opencl/test_mobilenetv1 \
+  --model_dir=/data/local/tmp/opencl/mobilenetv1_fluid/ \
   --warmup=10 \
   --repeats=100"
 ```
