@@ -82,10 +82,12 @@ class Graph {
   void AddInput(std::shared_ptr<MLUTensor> tensor) {
     inputs_.push_back(tensor->mlu_tensor());
     input_tensors_.push_back(tensor);
-    constexpr int input_dimNb = 4;
-    bool input_dim_mutable[4] = {true, false, false, false};
-    cnmlSetTensorDimMutable(
-        tensor->mlu_tensor(), input_dim_mutable, input_dimNb);
+    if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+      constexpr int input_dimNb = 4;
+      bool input_dim_mutable[4] = {true, false, false, false};
+      cnmlSetTensorDimMutable(
+          tensor->mlu_tensor(), input_dim_mutable, input_dimNb);
+    }
   }
 
   void AddOutput(std::shared_ptr<MLUTensor> tensor) {

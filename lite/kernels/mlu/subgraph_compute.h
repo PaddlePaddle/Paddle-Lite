@@ -81,9 +81,13 @@ class SubgraphEngine : public subgraph::Engine {
   bool InputShapeChanged() {
     std::vector<std::vector<int64_t>> new_shape;
     for (auto origin_itensor : origin_itensors_) {
-      auto iv = origin_itensor->dims().Vectorize();
-      iv.erase(iv.begin());
-      new_shape.push_back(iv);
+      if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+        auto iv = origin_itensor->dims().Vectorize();
+        iv.erase(iv.begin());
+        new_shape.push_back(iv);
+      } else {
+        new_shape.push_back(origin_itensor->dims().Vectorize());
+      }
     }
     inputs_shape_ = new_shape;
     if (shape_graph_map_.count(inputs_shape_) > 0) {
@@ -123,9 +127,13 @@ class SubgraphEngine : public subgraph::Engine {
       auto data_type = input_tensor->precision();
       cnmlDataType_t fp_type = PrecisionToDatatype(data_type);
       origin_itensors_.push_back(input_tensor);
-      auto iv = input_tensor->dims().Vectorize();
-      iv.erase(iv.begin());
-      new_shape.push_back(iv);
+      if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+        auto iv = input_tensor->dims().Vectorize();
+        iv.erase(iv.begin());
+        new_shape.push_back(iv);
+      } else {
+        new_shape.push_back(input_tensor->dims().Vectorize());
+      }
 
       CHECK(input_tensor);
       auto input_node = graph->AddNode(input_name,
@@ -256,7 +264,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (size_t i = 0; i < origin_itensors_.size(); ++i) {
       paddle::lite::subgraph::mlu::MLUTensor tmp(
           origin_itensors_[i]->dims().Vectorize());
-          // graph_input->at(i)->get_origin_shape());
+      // graph_input->at(i)->get_origin_shape());
       tmp.set_mlu_dtype(graph_input->at(i)->dtype());
       tmp.set_mlu_ptr(const_cast<void*>(origin_itensors_[i]->raw_data()));
       graph_in.push_back(
@@ -270,7 +278,7 @@ class SubgraphEngine : public subgraph::Engine {
                   Precision>::T>(TARGET(kMLU)));
       paddle::lite::subgraph::mlu::MLUTensor tmp(
           origin_otensors_[i]->dims().Vectorize());
-          // graph_output->at(i)->get_origin_shape());
+      // graph_output->at(i)->get_origin_shape());
       tmp.set_mlu_dtype(graph_output->at(i)->dtype());
       tmp.set_mlu_ptr(p_data);
       graph_out.push_back(
