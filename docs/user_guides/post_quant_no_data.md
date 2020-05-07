@@ -1,6 +1,6 @@
 # 模型量化-无校准数据训练后量化
 
-本文首先简单介绍无校准数据训练后量化，然后说明产出量化模型，最好阐述量化模型预测。
+本文首先简单介绍无校准数据训练后量化，然后说明产出量化模型，最后阐述量化模型预测。
 
 ## 1 简介
 
@@ -18,7 +18,7 @@
 * 权重量化成INT8类型，模型精度会受到影响，模型大小为原始的1/4
 
 缺点：
-* 暂无
+* 只可以减小模型大小，不能加快模型推理
 
 ## 2 产出量化模型
 
@@ -43,9 +43,14 @@ model_dir = path/to/fp32_model_params
 save_model_dir = path/to/save_model_path
 weight_quant = WeightQuantization(model_dir=model_dir)
 weight_quant.quantize_weight_to_int(save_model_dir=save_model_dir,
-                                    weight_bits=16,
-                                    quantizable_op_type=['conv2d', 'depthwise_conv2d', 'mul'])
+                                    weight_bits=8,
+                                    quantizable_op_type=['conv2d', 'mul'],
+                                    weight_quantize_type="channel_wise_abs_max",
+                                    generate_test_model=False)
 ```
+
+执行完成后，可以在 `save_model_dir/quantized_model` 目录下得到量化模型。
+
 
 对于调用无校准数据训练后量化，以下对api接口进行详细介绍。
 
@@ -58,24 +63,29 @@ class WeightQuantization(model_dir, model_filename=None, params_filename=None)
 * params_filename(str, optional)：待量化模型的权重文件名，如果所有权重保存成一个文件，则需要使用params_filename设置权重文件名。
 
 ```python
-WeightQuantization.quantize_weight_to_int(save_model_dir,
-                                          save_model_filename=None,
-                                          save_params_filename=None,
-                                          quantizable_op_type=['conv2d', 'mul'],
-                                          weight_bits=8,
-                                          threshold_rate=0.0)
+WeightQuantization.quantize_weight_to_int(self,
+                               save_model_dir,
+                               save_model_filename=None,
+                               save_params_filename=None,
+                               quantizable_op_type=["conv2d", "mul"],
+                               weight_bits=8,
+                               weight_quantize_type="channel_wise_abs_max",
+                               generate_test_model=False,
+                               threshold_rate=0.0)
 ```
 参数说明如下：
 * save_model_dir(str)：保存量化模型的路径。
 * save_model_filename(str, optional)：如果save_model_filename等于None，则模型的网络结构保存到__model__文件，如果save_model_filename不等于None，则模型的网络结构保存到特定的文件。默认为None。
 * save_params_filename(str, optional)：如果save_params_filename等于None，则模型的参数分别保存到一系列文件中，如果save_params_filename不等于None，则模型的参数会保存到一个文件中，文件名为设置的save_params_filename。默认为None。
-* quantizable_op_type(list[str]): 需要量化的op类型，默认是`['conv2d', 'mul']`，列表中的值可以是任意支持量化的op类型 `['conv2d', 'depthwise_conv2d', 'mul']`。
-* weight_bits(int, optional)：权重量化保存的比特数，可以是8~16，一般设置为8/16。默认为8。
+* quantizable_op_type(list[str]): 需要量化的op类型，默认是`['conv2d', 'mul']`，列表中的值可以是任意支持量化的op类型 `['conv2d', 'depthwise_conv2d', 'mul']`。一般不对 `depthwise_conv2d` 量化，因为对减小模型大小收益不大，同时可能影响模型精度。
+* weight_bits(int, optional)：权重量化保存的比特数，可以是8~16，一般设置为8/16，默认为8。量化为8bit，模型体积最多可以减小4倍，可能存在微小的精度损失。量化成16bit，模型大小最多可以减小2倍，基本没有精度损失。
+* weight_quantize_type(str, optional): 权重量化的方式，支持 `channel_wise_abs_max` 和 `abs_max`，一般都是 `channel_wise_abs_max`，量化模型精度损失小。
+* generate_test_model(bool, optional): 是否产出测试模型，用于测试量化模型部署时的精度。测试模型保存在 `save_model_dir/test_model` 目录下，可以和FP32模型一样使用Fluid加载测试，但是该模型不能用于预测端部署。
 
 
 ## 3 量化模型预测
 
-目前，对于无校准数据训练后量化产出的量化模型，不支持PaddlePaddle加载执行，只能使用PaddleLite进行预测部署。
+目前，对于无校准数据训练后量化产出的量化模型，只能使用PaddleLite进行预测部署。
 
 很简单，首先使用PaddleLite提供的模型转换工具（opt）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
 
