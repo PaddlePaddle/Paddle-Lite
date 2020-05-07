@@ -347,6 +347,7 @@ function make_cuda {
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT
  
+  make -j$NUM_PROC
   make publish_inference -j$NUM_PROC
   cd -
 }

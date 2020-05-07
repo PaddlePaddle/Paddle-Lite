@@ -5,7 +5,7 @@ set +x
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
 # armv7 or armv8, default armv8.
-ARM_ABI=armv8
+ARCH=armv8
 # ON or OFF, default OFF.
 WITH_EXTRA=OFF
 # controls whether to compile cv functions into lib, default is OFF.
@@ -36,24 +36,24 @@ fi
 # 3. compiling functions
 ####################################################################################################
 function make_ios {
-    local abi=$1
+    local arch=$1
 
-    if [ ${abi} == "armv8" ]; then
+    if [ ${arch} == "armv8" ]; then
         local os=ios64
-    elif [ ${abi} == "armv7" ]; then
+    elif [ ${arch} == "armv7" ]; then
         local os=ios
     else
-        echo -e "Error: unsupported arm_abi: ${abi} \t --arm_abi: armv8|armv7"
+        echo -e "Error: unsupported arch: ${arch} \t --arch: armv8|armv7"
         exit 1
     fi
 
-    build_dir=$workspace/build.ios.${os}.${abi}
+    build_dir=$workspace/build.ios.${os}.${arch}
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
     fi
     echo "building ios target into $build_dir"
-    echo "target abi: $abi"
+    echo "target arch: $arch"
     mkdir -p ${build_dir}
     cd ${build_dir}
     GEN_CODE_PATH_PREFIX=lite/gen_code
@@ -67,10 +67,11 @@ function make_ios {
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_BUILD_TAILOR=$WITH_STRIP \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-            -DARM_TARGET_ARCH_ABI=$abi \
+            -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
             -DLITE_WITH_CV=$WITH_CV \
             -DARM_TARGET_OS=$os
@@ -87,14 +88,14 @@ function print_usage {
     echo -e "|  compile iOS armv8 library:                                                                                                          |"
     echo -e "|     ./lite/tools/build_ios.sh                                                                                                        |"
     echo -e "|  compile iOS armv7 library:                                                                                                          |"
-    echo -e "|     ./lite/tools/build_ios.sh  --arm_abi=armv7                                                                                       |"
+    echo -e "|     ./lite/tools/build_ios.sh  --arch=armv7                                                                                          |"
     echo -e "|  print help information:                                                                                                             |"
     echo -e "|     ./lite/tools/build_ios.sh help                                                                                                   |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                       |"
+    echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                          |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
-    echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                |"
+    echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
@@ -108,16 +109,15 @@ function print_usage {
 
 function main {
     if [ -z "$1" ]; then
-        make_ios $ARM_ABI
+        make_ios $ARCH
         exit -1
     fi
 
     # Parse command line.
     for i in "$@"; do
         case $i in
-            --arm_abi=*)
-                ARM_ABI="${i#*=}"
-                make_ios $ARM_ABI
+            --arch=*)
+                ARCH="${i#*=}"
                 shift
                 ;;
             --with_extra=*)
@@ -151,7 +151,7 @@ function main {
                 ;;
         esac
     done
-    make_ios $ARM_ABI
+    make_ios $ARCH
 }
 
 main $@
