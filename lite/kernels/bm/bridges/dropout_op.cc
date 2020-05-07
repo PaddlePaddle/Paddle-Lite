@@ -51,15 +51,23 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto dropout_prob = op_info->GetAttr<float>("dropout_prob");
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");
-  CHECK_EQ(dropout_implementation, "downgrade_in_infer");
-  add_const_binary_layer(graph->GetCompilerHandle(),
-                         static_cast<const char*>(x_var_name.c_str()),
-                         const_cast<const int*>(&i_x_shape_data[0]),
-                         x_dims.size(),
-                         1.f - dropout_prob,
-                         static_cast<const char*>(output_var_name.c_str()),
-                         BINARY_MUL,
-                         0);
+
+  if (dropout_implementation == "downgrade_in_infer") {
+    add_const_binary_layer(graph->GetCompilerHandle(),
+                           static_cast<const char*>(x_var_name.c_str()),
+                           const_cast<const int*>(&i_x_shape_data[0]),
+                           x_dims.size(),
+                           1.f - dropout_prob,
+                           static_cast<const char*>(output_var_name.c_str()),
+                           BINARY_MUL,
+                           0);
+  } else {
+    add_identity_layer(graph->GetCompilerHandle(),
+                       static_cast<const char*>(x_var_name.c_str()),
+                       const_cast<const int*>(&i_x_shape_data[0]),
+                       x_dims.size(),
+                       static_cast<const char*>(output_var_name.c_str()));
+  }
 
   graph->AddNode(output_var_name);
   return SUCCESS;

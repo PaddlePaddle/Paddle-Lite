@@ -52,7 +52,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ConvParam>();
     lite::Tensor filter = *param.filter;
-    param.output->mutable_data<T>();
+    param.output->template mutable_data<T>();
     const int batch_size = static_cast<int>(param.x->dims()[0]);
 
     std::vector<int64_t> filter_shape_vec(filter.dims().Vectorize());
@@ -95,9 +95,9 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto blas =
         paddle::lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
     for (int i = 0; i < batch_size; i++) {
-      lite::Tensor in_batch = param.x->Slice<T>(i, i + 1);
+      lite::Tensor in_batch = param.x->template Slice<T>(i, i + 1);
       in_batch.Resize(input_shape);
-      lite::Tensor out_batch = param.output->Slice<T>(i, i + 1);
+      lite::Tensor out_batch = param.output->template Slice<T>(i, i + 1);
       out_batch.Resize(output_matrix_shape);
       for (int g = 0; g < param.groups; g++) {
         lite::Tensor in_slice =

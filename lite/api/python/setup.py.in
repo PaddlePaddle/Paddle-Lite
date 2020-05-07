@@ -33,21 +33,33 @@ else:
     PADDLELITE_VERSION = PADDLELITE_TAG
 
 # core lib of paddlelite is stored as lite.so
-LITE_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
-PACKAGE_DATA = {'paddlelite': ['lite.so']}
+files = os.listdir('${PADDLE_BINARY_DIR}')
+INFERENCE_LITE_LIB_PATH = ''
+for file in files:
+    if file.find('inference_lite_lib') == 0:
+        INFERENCE_LITE_LIB_PATH = '${PADDLE_BINARY_DIR}/' + file
+        break
+LITE_PATH = INFERENCE_LITE_LIB_PATH + '/python/install/lite'
+PACKAGE_DATA = {'paddlelite': ['lite.so' if os.name!='nt' else 'lite.pyd']}
 # put all thirdparty libraries in paddlelite.libs
 PACKAGE_DATA['paddlelite.libs'] = []
-LIB_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
+LIB_PATH = INFERENCE_LITE_LIB_PATH + '/python/install/libs/'
 if '${WITH_MKL}' == 'ON':
     shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
     shutil.copy('${MKLML_SHARED_LIB}', LIB_PATH)
-    PACKAGE_DATA['paddlelite.libs'] += ['libmklml_intel.so', 'libiomp5.so']
-
+    if os.name != 'nt':
+        PACKAGE_DATA['paddlelite.libs'] += ['libmklml_intel.so', 'libiomp5.so']
+    else:
+        PACKAGE_DATA['paddlelite.libs'] += ['libiomp5md.dll', 'mklml.dll']
+        shutil.copy('${MKLML_SHARED_LIB_DEPS}', LIB_PATH)
+        PACKAGE_DATA['paddlelite.libs'] += ['msvcr120.dll']
 # link lite.so to paddlelite.libs
-COMMAND = "patchelf --set-rpath '$ORIGIN/../libs/' ${PADDLE_BINARY_DIR}\
-/inference_lite_lib/python/install/lite/lite.so"
-if os.system(COMMAND) != 0:
-    raise Exception("patch third_party libs failed, command: %s" % COMMAND)
+if os.name != 'nt':
+    COMMAND = "patchelf --set-rpath '$ORIGIN/../libs/' " + LITE_PATH + "/lite.so"
+    if os.system(COMMAND) != 0:
+        raise Exception("patch third_party libs failed, command: %s" % COMMAND)
+
+  
 
 # remove unused paddle/libs/__init__.py
 if os.path.isfile(LIB_PATH+'/__init__.py'):
@@ -60,6 +72,14 @@ PACKAGE_DIR = {
     'paddlelite.libs': LIB_PATH,
     'paddlelite': LITE_PATH
 }
+
+if os.name == 'nt':
+    # fix the path separator under windows
+    fix_package_dir = {}
+    for k, v in PACKAGE_DIR.items():
+        fix_package_dir[k] = v.replace('/', '\\')
+    PACKAGE_DIR = fix_package_dir
+
 
 setup(
     name='paddlelite',

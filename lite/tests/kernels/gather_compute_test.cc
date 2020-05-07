@@ -91,10 +91,12 @@ class GatherComputeTest : public arena::TestCase {
 };
 
 TEST(Gather, precision) {
-  LOG(INFO) << "test gather op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
@@ -104,8 +106,7 @@ TEST(Gather, precision) {
 
   for (auto x_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 4}, {8, 3, 5}, {12, 3}}) {
-    for (auto index_dims :
-         std::vector<std::vector<int64_t>>{{3, 1}, {7, 1}, {10, 1}}) {
+    for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       std::unique_ptr<arena::TestCase> tester(
           new GatherComputeTest(place, "def", DDim(x_dims), DDim(index_dims)));
       arena::Arena arena(std::move(tester), place, abs_error);

@@ -5,7 +5,7 @@ set -ex
 BM_SDK_ROOT="$(pwd)/third-party/bmlibs/bm_sc3_libs"     # BM SDK
 TARGET_NAME="BM1682"     # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
-WITH_TESTING=OFF                    # ON/OFF
+WITH_TESTING=ON                  # ON/OFF
 
 function print_usage {
     echo -e "\nUSAGE:"

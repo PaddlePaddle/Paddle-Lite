@@ -21,12 +21,18 @@ BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
-SHUTDOWN_LOG=ON
+WITH_LOG=ON
+WITH_PROFILE=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
+BUILD_XTCL=OFF
 XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
-LITE_WITH_ARM_LANG=OFF
+BUILD_APU=OFF
+APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
+BUILD_RKNPU=OFF
+RKNPU_DDK_ROOT="$(pwd)/rknpu/"
+PYTHON_EXECUTABLE_OPTION=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -43,14 +49,6 @@ fi
 function prepare_workspace {
     local root_dir=$1
     local build_dir=$2
-    # ARM LANG
-    if [ ${ARM_LANG} == "clang" ]; then
-        LITE_WITH_ARM_LANG=ON
-    else
-        LITE_WITH_ARM_LANG=OFF
-    fi
-    echo "ARM_LANG is  ${ARM_LANG}"
-    echo "LITE_WITH_ARM_LANG is ${LITE_WITH_ARM_LANG}"
     # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
@@ -127,18 +125,22 @@ function make_tiny_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_APU=$BUILD_APU \
+      -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -178,7 +180,7 @@ function make_opencl {
       -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
@@ -216,18 +218,23 @@ function make_full_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+      -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
+      -DLITE_WITH_APU=$BUILD_APU \
+      -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -256,11 +263,15 @@ function make_all_tests {
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
-      -DLITE_WITH_ARM_LANG=$LITE_WITH_ARM_LANG \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
+      -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DLITE_WITH_APU=$BUILD_APU \
+      -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_WITH_RKNPU=$BUILD_RKNPU \
+      -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -289,7 +300,7 @@ function make_ios {
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_JAVA=OFF \
-            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_WITH_LOG=ON \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -329,9 +340,14 @@ function make_cuda {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_STATIC_CUDA=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
  
+  make -j$NUM_PROC
   make publish_inference -j$NUM_PROC
   cd -
 }
@@ -358,13 +374,16 @@ function make_x86 {
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_PYTHON=$BUILD_PYTHON \
             -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
+            -DWITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
-            -DLITE_WITH_XPU=$BUID_XPU \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
+            $PYTHON_EXECUTABLE_OPTION
 
   make publish_inference -j$NUM_PROC
   cd -
@@ -388,7 +407,7 @@ function print_usage {
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
     echo -e "optional argument:"
-    echo -e "--shutdown_log: (OFF|ON); controls whether to shutdown log, default is ON"
+    echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo -e "--build_train: (OFF|ON); controls whether to publish training operators and kernels, build_train is only for full_publish library now"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
@@ -458,7 +477,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		            ;;
+		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 shift
@@ -467,15 +486,19 @@ function main {
                 BUILD_TAILOR="${i#*=}"
                 shift
                 ;;
-            --shutdown_log=*)
-                SHUTDOWN_LOG="${i#*=}"
+            --with_log=*)
+                WITH_LOG="${i#*=}"
+                shift
+                ;;
+            --with_profile=*)
+                WITH_PROFILE="${i#*=}"
                 shift
                 ;;
             --build_npu=*)
                 BUILD_NPU="${i#*=}"
                 shift
                 ;;
-           --npu_ddk_root=*)
+            --npu_ddk_root=*)
                 NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
@@ -483,8 +506,32 @@ function main {
                 BUILD_XPU="${i#*=}"
                 shift
                 ;;
+            --build_xtcl=*)
+                BUILD_XTCL="${i#*=}"
+                shift
+                ;;
             --xpu_sdk_root=*)
                 XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --python_executable=*)
+                PYTHON_EXECUTABLE_OPTION="-DPYTHON_EXECUTABLE=${i#*=}"
+                shift
+                ;;
+            --build_apu=*)
+                BUILD_APU="${i#*=}"
+                shift
+                ;;
+           --apu_ddk_root=*)
+                APU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --build_rknpu=*)
+                BUILD_RKNPU="${i#*=}"
+                shift
+                ;;
+            --rknpu_ddk_root=*)
+                RKNPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             tiny_publish)

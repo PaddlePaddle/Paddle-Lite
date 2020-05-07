@@ -33,7 +33,7 @@ add_kernel(slice_opencl OPENCL basic SRCS slice_image_compute.cc DEPS ${cl_kerne
 add_kernel(instance_norm_opencl OPENCL basic SRCS instance_norm_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(dropout_opencl OPENCL basic SRCS dropout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(pad2d_opencl OPENCL basic SRCS pad2d_image_compute.cc DEPS ${cl_kernel_deps})
-
+add_kernel(box_coder_opencl OPENCL basic SRCS box_coder_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -97,6 +97,10 @@ lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
                  
 lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
                  DEPS pad2d_opencl layout_opencl op_registry program context)
+
+lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
+                 DEPS box_coder_opencl op_registry program context)
+
 ######################
 # buffer kernel      #
 ######################
@@ -107,7 +111,8 @@ lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
 #add_kernel(pool_opencl OPENCL basic SRCS pool_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(concat_opencl OPENCL basic SRCS concat_buffer_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fc_opencl OPENCL basic SRCS fc_buffer_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(mul_opencl OPENCL basic SRCS mul_buffer_compute.cc DEPS ${cl_kernel_deps})
+# NOTE(ysh329): use fc as `mul`, and mul is not used.
+#add_kernel(mul_opencl OPENCL basic SRCS mul_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(elementwise_add_opencl OPENCL basic SRCS elementwise_add_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(fusion_elementwise_add_activation_opencl
 #           OPENCL basic SRCS fusion_elementwise_add_activation_buffer_compute.cc
@@ -143,8 +148,8 @@ add_kernel(io_copy_opencl OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${ten
 lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
              DEPS fc_opencl op_registry program context)
 
-lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
-             DEPS mul_opencl op_registry program context)
+#lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
+#             DEPS mul_opencl op_registry program context)
 
 #lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
 #             DEPS elementwise_add_opencl op_registry program context)

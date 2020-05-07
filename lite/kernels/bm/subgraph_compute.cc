@@ -40,6 +40,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
+    LOG(INFO) << op_type;
     if (!bridges.Exists(op_type, TARGET(kBM))) {
       return subgraph::FAILED;
     }
@@ -59,6 +60,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   unsigned int data_size = 0;
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
   finish_bmcompiler_data(graph.GetCompilerHandle(), &bmodel_data, &data_size);
+  graph.UnlockCompilerMutex();
   bmrt_hd_ = bmrt_create(bm_hd_);
   if (false == bmrt_load_bmodel_data(bmrt_hd_, bmodel_data, data_size)) {
     return subgraph::FAILED;
@@ -88,18 +90,27 @@ int SubgraphEngine::BuildDeviceProgram() {
   // output
   origin_odims_.resize(output_names_.size());
   origin_otensors_.resize(output_names_.size());
-  device_outputs_.resize(output_names_.size());
-  for (size_t i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = scope_->FindMutableTensor(net_info_->output_names[i]);
-    CHECK(origin_otensors_[i]);
-    origin_odims_[i] = origin_otensors_[i]->dims();
-    origin_otensors_[i]->mutable_data<float>();
+  device_outputs_.resize(net_info_->output_num);
+  int out_index = 0;
+  for (int i = 0; i < output_names_.size(); i++) {
+    outname_map_.insert(std::pair<std::string, int>(output_names_[i], i));
+  }
+
+  for (int i = 0; i < net_info_->output_num; i++) {
+    Tensor* t_cur = scope_->FindMutableTensor(net_info_->output_names[i]);
+    CHECK(t_cur != nullptr);
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
-    CHECK_EQ(bm_malloc_device_byte(
-                 bm_hd_, p_mem, origin_otensors_[i]->memory_size()),
-             BM_SUCCESS);
+    if (outname_map_.find(net_info_->output_names[i]) != outname_map_.end()) {
+      origin_otensors_[out_index] = t_cur;
+      origin_odims_[out_index] = origin_otensors_[out_index]->dims();
+      origin_otensors_[out_index]->mutable_data<float>();
+      out_index += 1;
+    }
+    CHECK_EQ(
+        bm_malloc_device_byte(bm_hd_, p_mem, net_info_->max_output_bytes[i]),
+        BM_SUCCESS);
     bmrt_tensor_with_device(&device_outputs_[i],
                             *p_mem,
                             net_info_->output_dtypes[i],
@@ -123,10 +134,14 @@ int SubgraphEngine::LaunchDeviceProgram() {
                         true,
                         false);
   bm_thread_sync(bm_hd_);
+  int out_index = 0;
   for (size_t i = 0; i < device_outputs_.size(); i++) {
-    bm_memcpy_d2s(bm_hd_,
-                  const_cast<void*>(origin_otensors_[i]->raw_data()),
-                  device_outputs_[i].device_mem);
+    if (outname_map_.find(net_info_->output_names[i]) != outname_map_.end()) {
+      bm_memcpy_d2s(bm_hd_,
+                    const_cast<void*>(origin_otensors_[out_index]->raw_data()),
+                    device_outputs_[i].device_mem);
+      out_index++;
+    }
   }
   return 0;
 }

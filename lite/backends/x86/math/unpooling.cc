@@ -36,7 +36,7 @@ class Unpool2dMaxFunctor<lite::TargetType::kX86, T> {
     int output_feasize = output_height * output_width;
     const T* input_data = input.data<T>();
     const int* indices_data = indices.data<int>();
-    T* output_data = output->mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
     for (int b = 0; b < batch_size; ++b) {
       for (int c = 0; c < output_channels; ++c) {
         for (int i = 0; i < input_feasize; ++i) {
@@ -70,7 +70,8 @@ class Unpool2dMaxGradFunctor<lite::TargetType::kX86, T> {
     int output_feasize = output_height * output_width;
     const int* indices_data = indices.data<int>();
     const T* output_grad_data = output_grad.data<T>();
-    T* input_grad_data = input_grad->mutable_data<T>(lite::TargetType::kX86);
+    T* input_grad_data =
+        input_grad->template mutable_data<T>(lite::TargetType::kX86);
 
     for (int b = 0; b < batch_size; ++b) {
       for (int c = 0; c < output_channels; ++c) {

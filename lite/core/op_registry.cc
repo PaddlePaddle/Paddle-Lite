@@ -98,6 +98,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kNPU): {
       CREATE_KERNEL(kNPU);
     } break;
+    case TARGET(kAPU): {
+      CREATE_KERNEL(kAPU);
+    } break;
     case TARGET(kXPU): {
       CREATE_KERNEL(kXPU);
     } break;
@@ -109,6 +112,9 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     } break;
     case TARGET(kMLU): {
       CREATE_KERNEL(kMLU);
+    } break;
+    case TARGET(kRKNPU): {
+      CREATE_KERNEL(kRKNPU);
     } break;
     default:
       CHECK(false) << "not supported kernel target " << TargetToStr(target);
@@ -151,14 +157,30 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kMLU, kInt16, kNHWC);
   INIT_FOR(kMLU, kInt16, kNCHW);
 
-  INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kAny, kNCHW);
+  INIT_FOR(kHost, kAny, kNHWC);
+  INIT_FOR(kHost, kAny, kAny);
+  INIT_FOR(kHost, kBool, kNCHW);
+  INIT_FOR(kHost, kBool, kNHWC);
+  INIT_FOR(kHost, kBool, kAny);
+  INIT_FOR(kHost, kFloat, kNCHW);
   INIT_FOR(kHost, kFloat, kNHWC);
   INIT_FOR(kHost, kFloat, kAny);
-  INIT_FOR(kHost, kAny, kNHWC);
-  INIT_FOR(kHost, kAny, kAny);
-  INIT_FOR(kHost, kAny, kNHWC);
-  INIT_FOR(kHost, kAny, kAny);
+  INIT_FOR(kHost, kFP16, kNCHW);
+  INIT_FOR(kHost, kFP16, kNHWC);
+  INIT_FOR(kHost, kFP16, kAny);
+  INIT_FOR(kHost, kInt8, kNCHW);
+  INIT_FOR(kHost, kInt8, kNHWC);
+  INIT_FOR(kHost, kInt8, kAny);
+  INIT_FOR(kHost, kInt16, kNCHW);
+  INIT_FOR(kHost, kInt16, kNHWC);
+  INIT_FOR(kHost, kInt16, kAny);
+  INIT_FOR(kHost, kInt32, kNCHW);
+  INIT_FOR(kHost, kInt32, kNHWC);
+  INIT_FOR(kHost, kInt32, kAny);
+  INIT_FOR(kHost, kInt64, kNCHW);
+  INIT_FOR(kHost, kInt64, kNHWC);
+  INIT_FOR(kHost, kInt64, kAny);
 
   INIT_FOR(kX86, kFloat, kNCHW);
   INIT_FOR(kX86, kAny, kNCHW);
@@ -201,6 +223,7 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kNPU, kAny, kNHWC);
   INIT_FOR(kNPU, kAny, kAny);
 
+  INIT_FOR(kAPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kFloat, kNCHW);
   INIT_FOR(kXPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kAny, kNCHW);
@@ -216,6 +239,11 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kBM, kInt8, kNCHW);
   INIT_FOR(kBM, kAny, kNCHW);
   INIT_FOR(kBM, kAny, kAny);
+
+  INIT_FOR(kRKNPU, kFloat, kNCHW);
+  INIT_FOR(kRKNPU, kInt8, kNCHW);
+  INIT_FOR(kRKNPU, kAny, kNCHW);
+  INIT_FOR(kRKNPU, kAny, kAny);
 #undef INIT_FOR
 }
 

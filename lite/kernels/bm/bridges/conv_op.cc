@@ -91,7 +91,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                  dilations[1],
                  static_cast<int>(has_bias));
   graph->AddNode(output_var_name);
-  LOG(INFO) << output_var_name << input_dims << " " << output_dims;
   return SUCCESS;
 }
 

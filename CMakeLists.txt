@@ -36,6 +36,31 @@ message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
         "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
 
+
+if(WIN32)
+    option(MSVC_STATIC_CRT "use static C Runtime library by default" ON)
+
+    set(CMAKE_SUPPRESS_REGENERATION ON)
+    set(CMAKE_STATIC_LIBRARY_PREFIX lib)
+    add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
+
+    if (MSVC_STATIC_CRT)
+      set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
+      set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MT")
+      set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MTd")
+      set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MT")
+    endif()
+
+    add_compile_options(/wd4068 /wd4129 /wd4244 /wd4267 /wd4297 /wd4530 /wd4577 /wd4819 /wd4838)
+    add_compile_options(/MP)
+    message(STATUS "Using parallel compiling (/MP)")
+    set(PADDLE_LINK_FLAGS "/IGNORE:4006 /IGNORE:4098 /IGNORE:4217 /IGNORE:4221")
+    set(CMAKE_STATIC_LINKER_FLAGS  "${CMAKE_STATIC_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+
+endif()
+
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     find_package(CUDA QUIET)
 endif()
@@ -59,8 +84,12 @@ lite_option(LITE_WITH_CUDA "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86  "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
+lite_option(LITE_WITH_RKNPU  "Enable RKNPU in lite mode"  OFF)
+lite_option(LITE_WITH_MLU  "Enable MLU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
+lite_option(LITE_WITH_XTCL  "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
 lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
+lite_option(LITE_WITH_APU  "Enable APU in lite mode"  OFF)
 lite_option(LITE_WITH_TRAIN "Enable training operators and kernels in lite" OFF)
 lite_option(LITE_WITH_OPENMP "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL   "Enable OpenCL support in lite" OFF)
@@ -68,7 +97,7 @@ lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
-lite_option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+lite_option(LITE_WITH_LOG "Enable log printing or not." ON)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
@@ -103,9 +132,16 @@ set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
 
 # CMAKE_BUILD_TYPE
 if(NOT CMAKE_BUILD_TYPE)
+    if(WIN32)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+        FORCE)
+    else()
+    
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
             "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
             FORCE)
+    endif()
 endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
@@ -127,6 +163,10 @@ if (LITE_WITH_PYTHON)
     include(external/pybind11)    # download, build, install pybind11
 endif()
 
+if(LITE_WITH_RKNPU)
+   include(device/rknpu)
+endif()
+
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -134,6 +174,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(device/npu) # check and prepare NPU DDK
     include(device/xpu) # check and prepare XPU SDK
+    include(device/apu) # check and prepare APU SDK
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
@@ -177,8 +218,13 @@ if(LITE_WITH_XPU)
     include(device/xpu)
 endif()
 
+if(LITE_WITH_MLU)
+    include(mlu)
+endif()
+
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
+
 include(external/libxsmm)   # download, build, install libxsmm
 include(external/gflags)    # download, build, install gflags
 include(external/glog)      # download, build, install glog
@@ -203,7 +249,9 @@ include(generic)            # simplify cmake module
 include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
-include(flags)
+if(NOT APPLE)
+  include(flags)
+endif()
 
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

@@ -148,6 +148,33 @@ class SquareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~SquareCompute() = default;
 };
 
+class HardSwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~HardSwishCompute() = default;
+};
+
+class ReciprocalCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~ReciprocalCompute() = default;
+};
+
+class AbsCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~AbsCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

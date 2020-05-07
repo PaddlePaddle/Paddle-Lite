@@ -5,9 +5,11 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   DEPS target_wrapper_host place
   X86_DEPS target_wrapper_x86
   CUDA_DEPS target_wrapper_cuda
+  XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper
   FPGA_DEPS fpga_target_wrapper
-  BM_DEPS target_wrapper_bm)
+  BM_DEPS target_wrapper_bm
+  MLU_DEPS target_wrapper_mlu)
 
 lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
 
@@ -22,13 +24,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
     proto_library(framework_proto SRCS framework.proto)
 endif()
 
-if (LITE_WITH_X86)
 lite_cc_library(variable SRCS variable.cc DEPS tensor)
 lite_cc_library(types SRCS types.cc)
-else()
-lite_cc_library(variable SRCS variable.cc DEPS tensor)
-lite_cc_library(types SRCS types.cc)
-endif()
 lite_cc_library(op_registry SRCS op_registry.cc DEPS kernel)
 lite_cc_library(scope SRCS scope.cc DEPS tensor)
 lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
@@ -36,7 +33,7 @@ lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 if (LITE_WITH_ARM)
 lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context)
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context CUDA_DEPS cuda_context)
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------

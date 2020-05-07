@@ -33,6 +33,7 @@ void add_bias_rowwise(Tensor* input,
     for (int w = start_w; w < w_adds; ++w) {
       i_data[w] += b_data[w];
     }
+    i_data += width;
   }
 }
 void vector_dot(
@@ -67,15 +68,8 @@ void vector_dot(
   for (int i = 0; i < remain; ++i) {
     if (!v2) {
       out_ptr[i] = in_ptr[i] * v1_ptr[i];
-      ++out_ptr;
-      ++in_ptr;
-      ++v1_ptr;
     } else {
       out_ptr[i] = in_ptr[i] + v1_ptr[i] * v2_ptr[i];
-      ++out_ptr;
-      ++in_ptr;
-      ++v1_ptr;
-      ++v2_ptr;
     }
   }
 }

@@ -22,7 +22,7 @@ namespace operators {
 bool FillConstantBatchSizeLikeOp::CheckShape() const {
   CHECK(param_.out);
   CHECK(param_.input);
-  CHECK_GT(param_.shape.size(), 0);
+  CHECK_GT(param_.shape.size(), 0u);
   CHECK_GE(param_.input_dim_idx, 0);
   CHECK_GE(param_.output_dim_idx, 0);
   return true;

@@ -25,8 +25,6 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ActConverter(void* ctx, OpLite* op);
-
 template void FillTensor<float, int>(Tensor* x,
                                      float lower = -2,
                                      float upper = -2);
@@ -46,40 +44,40 @@ void act_ref(const std::shared_ptr<operators::ActivationOp> op) {
 
   // "sigmoid","relu","tanh","relu_clipped","leaky_relu","softsign","hard_sigmoid"
   if (op_type == "sigmoid") {
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = 1.f / (1.f + std::exp(-x_data[i]));
     }
   } else if (op_type == "relu") {
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = std::max(0.f, x_data[i]);
     }
   } else if (op_type == "tanh") {
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = (std::exp(x_data[i]) - std::exp(-x_data[i])) /
                     (std::exp(x_data[i]) + std::exp(-x_data[i]));
     }
   } else if (op_type == "relu_clipped") {
     auto relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = std::min(std::max(0.f, x_data[i]), relu_clipped_coef);
     }
   } else if (op_type == "relu6") {
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = std::min(std::max(0.f, x_data[i]), 6.f);
     }
   } else if (op_type == "leaky_relu") {
     auto alpha = op_info->GetAttr<float>("alpha");
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = std::max(x_data[i], x_data[i] * alpha);
     }
   } else if (op_type == "softsign") {
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = x_data[i] / (1 + std::abs(x_data[i]));
     }
   } else if (op_type == "hard_sigmoid") {
     auto slope = op_info->GetAttr<float>("slope");
     auto offset = op_info->GetAttr<float>("offset");
-    for (size_t i = 0; i < out->numel(); i++) {
+    for (int i = 0; i < out->numel(); i++) {
       out_data[i] = std::min(1.f, slope * x_data[i] + offset);
       out_data[i] = std::max(0.f, out_data[i]);
     }
@@ -136,7 +134,7 @@ void test_act(std::vector<int64_t> x_shape, std::string op_type) {
 
 TEST(MLUBridges, activation) {
   std::vector<std::vector<int64_t>> shapes{{1}, {2, 3}, {1, 2, 3, 4}};
-  std::vector<std::string> types{"sigmoid", "relu", "tanh"};
+  std::vector<std::string> types{"sigmoid", "relu", "tanh", "leaky_relu"};
   for (auto x_shape : shapes) {
     for (auto op_type : types) {
       test_act(x_shape, op_type);
@@ -149,8 +147,7 @@ TEST(MLUBridges, activation) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(MLU, relu, paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU,
-                         sigmoid,
-                         paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(MLU, tanh, paddle::lite::subgraph::mlu::ActConverter);
+USE_SUBGRAPH_BRIDGE(sigmoid, kMLU)
+USE_SUBGRAPH_BRIDGE(relu, kMLU)
+USE_SUBGRAPH_BRIDGE(tanh, kMLU)
+USE_SUBGRAPH_BRIDGE(leaky_relu, kMLU)

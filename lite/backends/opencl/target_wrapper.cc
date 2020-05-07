@@ -66,7 +66,8 @@ void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
   cl_int status;
   cl::Image2D *cl_image =
       new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR : 0),
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
+                                                    : CL_MEM_ALLOC_HOST_PTR),
                       img_format,
                       cl_image2d_width,
                       cl_image2d_height,
@@ -89,7 +90,8 @@ void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
   cl_int status;
   cl::Image2D *cl_image =
       new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR : 0),
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
+                                                    : CL_MEM_ALLOC_HOST_PTR),
                       img_format,
                       cl_image2d_width,
                       cl_image2d_height,
@@ -112,7 +114,8 @@ void *TargetWrapperCL::MallocImage<int32_t>(const size_t cl_image2d_width,
   cl_int status;
   cl::Image2D *cl_image =
       new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR : 0),
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
+                                                    : CL_MEM_ALLOC_HOST_PTR),
                       img_format,
                       cl_image2d_width,
                       cl_image2d_height,
@@ -192,7 +195,6 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                  size_t size,
                                  IoDirection dir) {
   cl_int status;
-  cl::Event event;
   auto stream = CLRuntime::Global()->command_queue();
   switch (dir) {
     case IoDirection::DtoD:
@@ -202,9 +204,9 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                         0,
                                         size,
                                         nullptr,
-                                        &event);
+                                        nullptr);
       CL_CHECK_FATAL(status);
-      event.wait();
+      CLRuntime::Global()->command_queue().finish();
       break;
     case IoDirection::HtoD:
       status = stream.enqueueWriteBuffer(*static_cast<cl::Buffer *>(dst),
@@ -283,7 +285,6 @@ void TargetWrapperCL::ImgcpySync(void *dst,
   cl::array<size_t, 3> origin = {0, 0, 0};
   cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
-  cl::Event event;
   auto stream = CLRuntime::Global()->command_queue();
   switch (dir) {
     case IoDirection::DtoD:
@@ -293,9 +294,9 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                        origin,
                                        region,
                                        nullptr,
-                                       &event);
+                                       nullptr);
       CL_CHECK_FATAL(status);
-      event.wait();
+      CLRuntime::Global()->command_queue().finish();
       break;
     case IoDirection::HtoD:
       status = stream.enqueueWriteImage(*static_cast<cl::Image2D *>(dst),

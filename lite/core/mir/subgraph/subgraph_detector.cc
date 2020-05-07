@@ -30,10 +30,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-using inference::analysis::Dot;
-
 std::string SubgraphVisualizer::operator()() {
-  inference::analysis::Dot dot;
+  Dot dot;
   const std::vector<std::string> subgraph_colors{
       "red",          "green",          "cyan",           "bisque3",
       "coral",        "darkseagreen1",  "goldenrod1",     "darkorchid",
@@ -49,8 +47,8 @@ std::string SubgraphVisualizer::operator()() {
       "turquoise4",   "snow3",          "sienna4",        "salmon2",
   };
   std::unordered_map<Node *, int> subgraph_indices;
-  for (int i = 0; i < subgraphs_.size(); i++) {
-    for (int j = 0; j < subgraphs_[i].size(); j++) {
+  for (size_t i = 0; i < subgraphs_.size(); i++) {
+    for (size_t j = 0; j < subgraphs_[i].size(); j++) {
       subgraph_indices[subgraphs_[i][j]] = i;
     }
   }
@@ -314,8 +312,14 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
 
 std::vector<std::vector<Node *>> SubgraphDetector::ExtractSubgraphs(
     node_map_t *nodes) {
-  for (auto &it : *nodes) {
-    node_dat_t *node = it.second;
+  for (auto &ordered_node : graph_->NodeTopologicalOrder()) {
+    // different orders when traversing nodes in graph may lead to
+    // different subgraph division, which may generate different result
+    // with device such as MLU. These different results are all "right"
+    // but a little confusing. Thus the topological order is used instead
+    // of the address of the node in graph.
+    CHECK(nodes->find(ordered_node) != nodes->end());
+    node_dat_t *node = (*nodes)[ordered_node];
     if (!node->marked) {
       continue;
     }
@@ -534,7 +538,8 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph, teller)();
   SubgraphVisualizer(graph, subgraphs)();
-  for (int subgraph_idx = 0; subgraph_idx < subgraphs.size(); subgraph_idx++) {
+  for (size_t subgraph_idx = 0; subgraph_idx < subgraphs.size();
+       subgraph_idx++) {
     if (subgraphs[subgraph_idx].size() >= min_subgraph_size) {
       InsertNewNode(graph, subgraph_idx, subgraphs[subgraph_idx]);
     }
@@ -573,13 +578,14 @@ void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,
         unused_var_nodes->insert(var_node);
         continue;
       }
-      // Var can have more than one next op node, So, if any one in the
-      // op_nodes then continue
-      bool next_op_in_nodes = false;
+      // Var can have more than one next op node, So, if all next nodes are in
+      // op_nodes then it should be put into local_var_nodes
+      bool next_op_in_nodes = true;
       for (auto &next_op_node : var_node->outlinks) {
-        if (std::find(op_nodes.begin(), op_nodes.end(), next_op_node) !=
+        if (std::find(op_nodes.begin(), op_nodes.end(), next_op_node) ==
             op_nodes.end()) {
-          next_op_in_nodes = true;
+          next_op_in_nodes = false;
+          break;
         }
       }
       if (next_op_in_nodes) {
