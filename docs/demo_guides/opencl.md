@@ -152,7 +152,7 @@ adb push inference_lite_lib.android.armv7.opencl/cxx/lib/libpaddle_light_api_sha
 # push model with optimized(opt) to device
 adb push ./mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb /data/local/tmp/opencl/
 
-# run demo(just for benchmark) on device
+# run demo on device
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
@@ -160,7 +160,7 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            100 10 0" # round=100, warmup=10, print_output_tensor=0
 ```
 
-**注：** `GLOG_v`是指定需要显示VLOG的日志级别，默认为0。权重参数会在第一次运行时加载，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
+**注：** 权重参数会在第一次运行时加载，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
 
 ### 2.2 运行示例2: test_mobilenetv1单元测试
 
