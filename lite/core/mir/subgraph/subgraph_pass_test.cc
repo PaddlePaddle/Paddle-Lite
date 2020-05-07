@@ -132,6 +132,9 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   mobile_config.set_model_from_file(optimized_model_dir + ".nb");
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
+#ifdef LITE_WITH_NPU
+  mobile_config.set_subgraph_model_dir("/data/local/tmp");
+#endif
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
   FillInputTensors(predictor, input_tensor_shape, input_tensor_type, 1);
   // Run optimized model

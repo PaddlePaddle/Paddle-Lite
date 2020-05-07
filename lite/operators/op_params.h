@@ -94,6 +94,7 @@ struct SubgraphParam : ParamBase {
   int sub_block_idx{-1};
   cpp::BlockDesc* sub_block_desc{nullptr};
   Scope* scope{nullptr};
+  std::string subgraph_model_dir{""};
 };
 
 /// -------------------------- NN operators ------------------------------------

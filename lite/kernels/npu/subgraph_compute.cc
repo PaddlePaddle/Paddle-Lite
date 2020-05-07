@@ -15,6 +15,7 @@
 #include "lite/kernels/npu/subgraph_compute.h"
 #include <sys/time.h>
 #include <time.h>
+#include <algorithm>
 #include <utility>
 #include "hiai_ir_build.h"  // NOLINT
 #include "lite/backends/npu/device.h"
@@ -22,11 +23,40 @@
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
 #include "lite/kernels/npu/bridges/utility.h"
+#include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace npu {
+
+std::string SubgraphEngine::GenerateSubgraphModelName() const {
+  auto inames = device_inames_;
+  auto onames = device_onames_;
+  std::sort(inames.begin(), inames.end());
+  std::sort(onames.begin(), onames.end());
+
+  std::string subgraph_model_name = "";
+  for (auto iname : inames) {
+    auto itensor = scope_->FindTensor(iname);
+    std::replace(iname.begin(), iname.end(), '/', '_');
+    subgraph_model_name += "_" + iname;
+    for (auto i : itensor->dims().Vectorize()) {
+      subgraph_model_name += "_" + std::to_string(i);
+    }
+  }
+  for (auto oname : onames) {
+    auto otensor = scope_->FindTensor(oname);
+    std::replace(oname.begin(), oname.end(), '/', '_');
+    subgraph_model_name += "_" + oname;
+    for (auto i : otensor->dims().Vectorize()) {
+      subgraph_model_name += "_" + std::to_string(i);
+    }
+  }
+  subgraph_model_name += "_.om";
+
+  return subgraph_model_name;
+}
 
 int SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
@@ -89,7 +119,10 @@ int SubgraphEngine::BuildDeviceProgram() {
     return status;
   }
   auto device_client = lite::npu::Device::Global().Build(
-      model_name_, device_inodes, device_onodes);
+      model_name_,
+      device_inodes,
+      device_onodes,
+      subgraph_model_dir_ + "/" + GenerateSubgraphModelName());
   if (device_client == nullptr) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return subgraph::FAILED;
@@ -268,7 +301,8 @@ void SubgraphCompute::PrepareForRun() {
                                    param.sub_block_desc,
                                    param.input_data_names,
                                    param.output_data_names,
-                                   param.scope));
+                                   param.scope,
+                                   param.subgraph_model_dir));
   CHECK(engine_);
   engine_->Build();
 }

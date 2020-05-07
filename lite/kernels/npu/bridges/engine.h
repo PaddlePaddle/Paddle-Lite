@@ -33,13 +33,15 @@ class Engine {
          cpp::BlockDesc *block_desc,
          const std::vector<std::string> &input_names,
          const std::vector<std::string> &output_names,
-         lite::Scope *scope)
+         lite::Scope *scope,
+         std::string subgraph_model_dir = "")
       : ctx_(ctx),
         block_idx_(block_idx),
         block_desc_(block_desc),
         input_names_(input_names),
         output_names_(output_names),
-        scope_(scope) {}
+        scope_(scope),
+        subgraph_model_dir_(subgraph_model_dir) {}
   virtual ~Engine() = default;
 
   virtual int Build();
@@ -73,6 +75,7 @@ class Engine {
   std::vector<Tensor *> origin_itensors_;
   std::vector<Tensor *> origin_otensors_;
   std::vector<Instruction> origin_program_;
+  std::string subgraph_model_dir_{""};
 };
 
 }  // namespace subgraph
