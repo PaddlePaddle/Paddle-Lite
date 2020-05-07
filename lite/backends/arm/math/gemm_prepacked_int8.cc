@@ -1919,7 +1919,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmax.f32  q3,q3, q15\n"    /* relu */      \
   "vmax.f32  q4,q4, q15\n"    /* relu */      \
   "vmax.f32  q5,q5, q15\n"    /* relu */      \
-  "b: 9f\n"
+  "b  9f\n"
 
 #define GEMM_INT8_RELU6  \
   /* do relu6 */       \
@@ -1944,7 +1944,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmin.f32  q3,q3, q14\n"    /* relu6 */     \
   "vmin.f32  q4,q4, q14\n"    /* relu6 */     \
   "vmin.f32  q5,q5, q14\n"    /* relu6 */     \
-  "b: 9f\n"
+  "b  9f\n"
 
 #define GEMM_INT8_LEAKY_RELU  \
   /* do relu6 */       \
@@ -1975,7 +1975,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmul.f32   q11, q5, q14                @ vmulq_f32 \n"   \
   "vbif       q4, q7, q6                @ choose    \n"     \
   "vbif       q5, q11, q10                @ choose    \n"   \
-  "9: \n"
+  "9:  \n"
 
 #define GEMM_INT8_FP32_OUT          \
   GEMM_INT8_TRANS_INT32_TO_FP32   \

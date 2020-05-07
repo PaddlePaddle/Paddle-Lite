@@ -176,13 +176,15 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
     act_param.active_type = (paddle::lite_api::ActivationType)
         flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
     if (flag_act == 1) {
-      param.fuse_relu = true;
+      param_fp32_out.fuse_relu = true;
+      param_int8_out.fuse_relu = true;
     } else if (flag_act == 2) {
       act_param.Relu_clipped_coef = six;
     } else if (flag_act == 4) {
-      act_param.Leaky_relu_alpha = leakey_relu_scale;
+      act_param.Leaky_relu_alpha = alpha;
     }
-    param.activation_param = act_param;
+    param_fp32_out.activation_param = act_param;
+    param_int8_out.activation_param = act_param;
   }
 
   std::vector<float> scale_in{1.f / 127};
@@ -319,6 +321,18 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                                 1,
                                                 1,
                                                 dim_out.production());
+          if (flag_act == 2) { // relu6
+             for (int i = 0; i < dim_out.production(); i++) {
+                 dout_basic_int8[i] = dout_basic_int8[i] > six ? six : dout_basic_int8[i];
+             }
+          } else if (flag_act == 4) { // leakyRelu
+             for (int i = 0; i < dim_out.production(); i++) {
+               float tmp = dout_basic_fp32[i] / scale_out.data()[0];
+               tmp = tmp > 0 ? tmp : tmp * alpha;
+               dout_basic_int8[i] = static_cast<int8_t>(roundf(tmp));
+               dout_basic_int8[i] = dout_basic_int8[i] < -127 ? -127: dout_basic_int8[i];
+            }
+          }
         }
 
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *

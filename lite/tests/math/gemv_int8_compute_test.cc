@@ -23,6 +23,7 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
+#include "lite/backends/arm/math/saturate.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
@@ -154,6 +155,11 @@ bool test_gemv_int8(bool tra,
                                           1,
                                           1,
                                           tc_basic_fp32.numel());
+   if (flag_act == 2) { // relu6
+      for (int i = 0; i < tc_basic_int8.numel(); i++) {
+          dc_basic_int8[i] = dc_basic_int8[i] > six ? six : dc_basic_int8[i];
+      }
+  }
   }
   Timer t0;
   //! compute

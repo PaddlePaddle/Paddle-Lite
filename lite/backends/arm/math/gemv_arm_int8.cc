@@ -112,33 +112,34 @@ inline void write_gemv_out(const int* in,
                            float alpha) {
   if (bias) {
     for (int i = 0; i < size; ++i) {
-      out[0] =
-          saturate_cast<signed char>(roundf(*(in++) * *(scale++) + *(bias++)));
-      out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+      float tmp = *(in++) * *(scale++) + *(bias++);
       if (flag_act) {
         if (act == lite_api::ActivationType::kRelu) {
-          out[0] = out[0] > 0.f ? out[0] : 0.f;
+          tmp = tmp > 0.f ? tmp : 0.f;
         } else if (act == lite_api::ActivationType::kRelu6) {
-          out[0] = out[0] > 0.f ? (out[0] > six ? six : out[0]) : 0.f;
+          tmp = tmp > 0.f ? (tmp > six ? six : tmp) : 0.f;
         } else if (act == lite_api::ActivationType::kLeakyRelu) {
-          out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
+          tmp = tmp > 0.f ? tmp : (tmp * alpha);
         }
       }
+      out[0] = saturate_cast<signed char>(roundf(tmp));
+      out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
       out++;
     }
   } else {
     for (int i = 0; i < size; ++i) {
-      out[0] = saturate_cast<signed char>(roundf(*(in++) * *(scale++)));
-      out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+      float tmp = *(in++) * *(scale++);
       if (flag_act) {
         if (act == lite_api::ActivationType::kRelu) {
-          out[0] = out[0] > 0.f ? out[0] : 0.f;
+          tmp = tmp > 0.f ? tmp : 0.f;
         } else if (act == lite_api::ActivationType::kRelu6) {
-          out[0] = out[0] > 0.f ? (out[0] > six ? six : out[0]) : 0.f;
+          tmp = tmp > 0.f ? (tmp > six ? six : tmp) : 0.f;
         } else if (act == lite_api::ActivationType::kLeakyRelu) {
-          out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
+          tmp = tmp > 0.f ? tmp : tmp * alpha;
         }
       }
+      out[0] = saturate_cast<signed char>(roundf(tmp));
+      out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
       out++;
     }
   }
@@ -711,14 +712,14 @@ bool gemv_int8<float>(const int8_t* A,
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
     return gemv_int8_sdot<float>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
   } else {
     return gemv_int8_oth<float>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
   }
 #else
   return gemv_int8_oth<float>(
-      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
+      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
 #endif
 }
 
@@ -740,14 +741,14 @@ bool gemv_int8<int8_t>(const int8_t* A,
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
     return gemv_int8_sdot<int8_t>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
   } else {
     return gemv_int8_oth<int8_t>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
+        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
   }
 #else
   return gemv_int8_oth<int8_t>(
-      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, six, alpha);
+      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
 #endif
 }
 
