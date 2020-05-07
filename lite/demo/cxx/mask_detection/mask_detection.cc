@@ -285,7 +285,7 @@ void RunModel(std::string det_model_file,
   int start = img_path.find_last_of("/");
   int end = img_path.find_last_of(".");
   std::string img_name = img_path.substr(start + 1, end - start - 1);
-  std::string result_name = img_name + "_mask_detection_result.jpg";
+  std::string result_name = img_name + "_result.jpg";
   cv::imwrite(result_name, img);
   std::cout << "write result to file: " << result_name << ", success."
             << std::endl;
