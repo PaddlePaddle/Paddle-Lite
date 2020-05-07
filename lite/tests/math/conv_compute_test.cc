@@ -223,7 +223,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                                    leakey_relu_scale);
         if (flag_act == 2) { // relu6
              for (int i = 0; i < dim_out.production(); i++) {
-                 dout_basic_fp32[i] = dout_basic[i] > six ? six : dout_basic[i];
+                 dout_basic[i] = dout_basic[i] > six ? six : dout_basic[i];
              }
         }
         }

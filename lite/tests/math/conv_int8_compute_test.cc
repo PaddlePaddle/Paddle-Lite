@@ -563,7 +563,7 @@ TEST(TestConv1x1s1Int8, test_conv1x1s1) {
       for (auto& cout : {1, 5, 17}) {
         for (auto& g : {1, 2}) {
           for (auto& flag_bias : {false, true}) {
-            for (auto& flag_act : {0, 1, 2, 4}) {
+            for (auto& flag_act : {0, 1, 2}) {
               std::vector<DDim> dims;
               if (cin % g != 0 || cout % g != 0) {
                 continue;
