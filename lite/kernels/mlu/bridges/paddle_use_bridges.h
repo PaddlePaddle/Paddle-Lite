@@ -15,6 +15,7 @@
 #pragma once
 
 USE_SUBGRAPH_BRIDGE(relu, kMLU);
+USE_SUBGRAPH_BRIDGE(relu6, kMLU)
 USE_SUBGRAPH_BRIDGE(conv2d, kMLU);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kMLU);
 USE_SUBGRAPH_BRIDGE(elementwise_add, kMLU);
