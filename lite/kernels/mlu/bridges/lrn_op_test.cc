@@ -165,13 +165,9 @@ void test_lrn(float alpha,
   out_ref->Resize(x_dim);
   auto* x_data = x->mutable_data<float>();
   FillTensor<float, float>(x, 0.f, 1.f);
-  /* for (size_t i = 0; i < x->data_size(); i++) { */
-  /*   x_data[i] = i; */
-  /* } */
   float *dmax, *dmin;
   std::tie(dmin, dmax) =
       std::minmax_element(x_data, x_data + x->data_size() - 1);
-  printf("max: %f, min: %f\n", *dmax, *dmin);
 
   cpp::OpDesc opdesc;
   opdesc.SetType("lrn");
@@ -190,9 +186,31 @@ void test_lrn(float alpha,
   lrn_compute_ref(op);
   out_ref->CopyDataFrom(*out);
 
+  Tensor input_x;
+  input_x.Resize(x->dims());
+  transpose(x->mutable_data<float>(),
+            input_x.mutable_data<float>(),
+            {static_cast<int>(x_dim[0]),
+             static_cast<int>(x_dim[1]),
+             static_cast<int>(x_dim[2]),
+             static_cast<int>(x_dim[3])},
+            {0, 2, 3, 1});
+  x->CopyDataFrom(input_x);
+
   LaunchOp(op, {x_var_name}, {out_var_name});
 
-  auto* output_data = out->mutable_data<float>();
+  Tensor output_trans;
+  auto os = out->dims();
+  output_trans.Resize(os);
+  transpose(out->mutable_data<float>(),
+            output_trans.mutable_data<float>(),
+            {static_cast<int>(os[0]),
+             static_cast<int>(os[2]),
+             static_cast<int>(os[3]),
+             static_cast<int>(os[1])},
+            {0, 3, 1, 2});
+
+  auto output_data = output_trans.mutable_data<float>();
   auto* output_ref_data = out_ref->mutable_data<float>();
   for (size_t i = 0; i < out->data_size(); i++) {
     EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-4);
