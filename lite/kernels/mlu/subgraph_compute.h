@@ -255,7 +255,8 @@ class SubgraphEngine : public subgraph::Engine {
 
     for (size_t i = 0; i < origin_itensors_.size(); ++i) {
       paddle::lite::subgraph::mlu::MLUTensor tmp(
-          graph_input->at(i)->get_origin_shape());
+          origin_itensors_[i]->dims().Vectorize());
+          // graph_input->at(i)->get_origin_shape());
       tmp.set_mlu_dtype(graph_input->at(i)->dtype());
       tmp.set_mlu_ptr(const_cast<void*>(origin_itensors_[i]->raw_data()));
       graph_in.push_back(
@@ -268,7 +269,8 @@ class SubgraphEngine : public subgraph::Engine {
               ->mutable_data<typename paddle::lite::subgraph::mlu::FPTypeTraits<
                   Precision>::T>(TARGET(kMLU)));
       paddle::lite::subgraph::mlu::MLUTensor tmp(
-          graph_output->at(i)->get_origin_shape());
+          origin_otensors_[i]->dims().Vectorize());
+          // graph_output->at(i)->get_origin_shape());
       tmp.set_mlu_dtype(graph_output->at(i)->dtype());
       tmp.set_mlu_ptr(p_data);
       graph_out.push_back(
