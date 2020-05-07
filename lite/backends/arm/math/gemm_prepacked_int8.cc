@@ -487,7 +487,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "cmp    %w[is_relu],    #0\n"    /* skip relu */ \
   "beq   9f                     \n"   /* no act end */ \
   "cmp    %w[is_relu],    #1\n"    /* skip relu */ \
-  "beq   10f                     \n"   /* other act */ \
+  "bne   10f                     \n"   /* other act */ \
   "movi   v0.4s, #0\n"             /* for relu */  \
   "fmax   v16.4s, v16.4s, v0.4s\n" /* relu */      \
   "fmax   v17.4s, v17.4s, v0.4s\n" /* relu */      \
@@ -511,7 +511,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   /* do relu6 */                                    \
   "10: \n"                                           \
   "cmp   %w[is_relu],  #2       \n"   /* check relu6 */ \
-  "beq   11f                     \n"   /* no act end */ \
+  "bne   11f                     \n"   /* no act end */ \
   "movi   v0.4s, #0\n"             /* for relu6 */  \
   "fmax   v16.4s, v16.4s, v0.4s\n" /* relu */      \
   "fmax   v17.4s, v17.4s, v0.4s\n" /* relu */      \
@@ -1211,7 +1211,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "cmp    %w[relu],   #0\n"       /* skip relu */  \
   "beq    12f\n"                                   \
   "cmp    %w[relu],    #1\n"    /* skip relu */    \
-  "beq    13f\n"                /* other act */    \
+  "bne    13f\n"                /* other act */    \
   "movi   v2.4s, #0\n"             /* for relu*/   \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/       \
@@ -1242,7 +1242,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 #define GEMM_SDOT_RELU6                             \
   "13:    \n"                                      \
   "cmp    %w[relu],   #2\n"       /* skip relu6 */ \
-  "beq   14f\n"                                     \
+  "bne   14f\n"                                     \
   "movi   v2.4s, #0\n"             /* for relu*/   \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/       \
@@ -1909,7 +1909,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "cmp    %[is_relu], #0\n"   /* skip relu */ \
   "beq    9f\n"               /* skip relu */ \
   "cmp        %[is_relu], #1\n"  /* check if has relu6 */  \
-  "beq    10f\n"               /* skip relu */ \
+  "bne    10f\n"               /* skip relu */ \
   "vmov.i32   q15, #0\n"      /* for relu */  \
   "vmax.f32   q8, q8, q15\n"  /* relu */      \
   "vmax.f32   q9, q9, q15\n"  /* relu */      \
@@ -1925,7 +1925,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   /* do relu6 */       \
   "10: \n"             \
   "cmp    %[is_relu], #2\n"   /*heck if has relu6*/  \
-  "beq    11f\n"               /* skip relu */ \
+  "bne    11f\n"               /* skip relu */ \
   "vmov.i32   q15, #0\n"      /* for relu */  \
   "vmax.f32   q8, q8, q15\n"  /* relu */      \
   "vmax.f32   q9, q9, q15\n"  /* relu */      \
