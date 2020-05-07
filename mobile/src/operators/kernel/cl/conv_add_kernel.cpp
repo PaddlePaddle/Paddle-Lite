@@ -96,10 +96,18 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
     //
     //    } else {
 
-    param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
-    this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file, build_options);
+
+    if (param->groups > 1) {
+      param->ExecMode() =
+          ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_WITH_GROUP_FLOAT;
+      this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    } else {
+      param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
+      this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file,
+                                 build_options);
+    }
     //    }
 
   } else if (param->Filter()->dims()[2] == 7 &&
@@ -130,6 +138,7 @@ void ConvAddKernel<GPU_CL, float>::Compute(
       WinogradConv3x3<4, 3>(&this->cl_helper_, param, false, param.Bias());
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_WITH_GROUP_FLOAT:
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW5x5_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:

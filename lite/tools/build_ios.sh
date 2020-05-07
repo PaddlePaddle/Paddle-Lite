@@ -11,7 +11,7 @@ WITH_EXTRA=OFF
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
-SHUTDOWN_LOG=ON
+WITH_LOG=ON
 # absolute path of Paddle-Lite.
 workspace=$PWD/$(dirname $0)/../../
 # options of striping lib according to input model.
@@ -67,7 +67,7 @@ function make_ios {
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-            -DLITE_SHUTDOWN_LOG=$SHUTDOWN_LOG \
+            -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_BUILD_TAILOR=$WITH_STRIP \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
             -DARM_TARGET_ARCH_ABI=$abi \
@@ -94,7 +94,7 @@ function print_usage {
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --arm_abi: (armv8|armv7), default is armv8                                                                                       |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
-    echo -e "|     --shutdown_log: (OFF|ON); controls whether to hide log information, default is ON                                                |"
+    echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
@@ -136,8 +136,8 @@ function main {
                 WITH_STRIP="${i#*=}"
                 shift
                 ;;
-            --shutdown_log=*)
-                SHUTDOWN_LOG="${i#*=}"
+            --with_log=*)
+                WITH_LOG="${i#*=}"
                 shift
                 ;;
             help)
@@ -150,8 +150,8 @@ function main {
                 exit 1
                 ;;
         esac
-        make_ios $ARM_ABI
     done
+    make_ios $ARM_ABI
 }
 
 main $@

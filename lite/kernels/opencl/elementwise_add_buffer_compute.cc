@@ -43,7 +43,7 @@ void ElementwiseAddCompute::Run() {
   STL::stringstream kernel_key;
   kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
   auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << TargetToStr(ele_param_->X->target());
   VLOG(4) << TargetToStr(ele_param_->Y->target());
   VLOG(4) << TargetToStr(ele_param_->Out->target());
@@ -86,7 +86,7 @@ void ElementwiseAddCompute::UpdateParams() {
   for (int i = static_cast<int>(y_dims.size() + axis); i < x_dims.size(); ++i) {
     num_ *= x_dims[i];
   }
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "axis: " << axis;
   VLOG(4) << "batch: " << batch_;
   VLOG(4) << "channels: " << channels_;

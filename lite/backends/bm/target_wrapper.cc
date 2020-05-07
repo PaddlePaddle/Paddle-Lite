@@ -24,16 +24,17 @@ std::map<int, void*> TargetWrapperBM::bm_hds_;
 
 size_t TargetWrapperBM::num_devices() {
   int count = 0;
-  bm_dev_getcount(&count);
+  bm_status_t ret = bm_dev_getcount(&count);
+  CHECK_EQ(ret, BM_SUCCESS) << "Failed with error code: "
+                            << static_cast<int>(ret);
   return count;
 }
 
+int TargetWrapperBM::GetDevice() { return device_id_; }
 void TargetWrapperBM::SetDevice(int id) {
-  /*
-    if (id < 0 || (size_t)id >= num_devices()) {
-      LOG(FATAL) << "Failed with invalid device id " << id;
-    }
-  */
+  if (id < 0 || (size_t)id >= num_devices()) {
+    LOG(FATAL) << "Failed with invalid device id " << id;
+  }
   device_id_ = id;
   if (bm_hds_.find(id) == bm_hds_.end()) {
     bm_handle_t bm_handle;
