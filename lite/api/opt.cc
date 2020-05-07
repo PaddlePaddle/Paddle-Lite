@@ -187,12 +187,12 @@ void GetModelGops(const std::string& model_dir,
     input_shapes.push_back(get_shape(str_input_shapes[i]));
   }
   if (predictor == nullptr) {
-  lite_api::CxxConfig config;
-  config.set_model_dir(model_dir);
-  config.set_model_file(model_file);
-  config.set_param_file(param_file);
-  config.set_valid_places(valid_places);
-  predictor = lite_api::CreatePaddlePredictor(config);
+    lite_api::CxxConfig config;
+    config.set_model_dir(model_dir);
+    config.set_model_file(model_file);
+    config.set_param_file(param_file);
+    config.set_valid_places(valid_places);
+    predictor = lite_api::CreatePaddlePredictor(config);
   }
   for (int i = 0; i < input_shapes.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
@@ -226,7 +226,7 @@ void GetModelGops(const std::string& model_dir,
     }
     std::cout << "--" << std::endl;
     std::cout << "| " << std::setw(25) << std::left<< "Operator Type"
-        << " | " << std::setw(40) << std::left << "OPS(Operator computation)" << std::setw(30) << " |" << std::endl;
+        << " | " << std::setw(40) << std::left << "GOPS(Operator computation)" << std::setw(30) << " |" << std::endl;
     for (int i = 0; i < 70; i++) {
         std::cout << "-";
     }
@@ -235,13 +235,13 @@ void GetModelGops(const std::string& model_dir,
       sum += iter->second;
       std::cout << "| " << std::setw(25) << std::left << std::fixed
           << iter->first << " | " << std::setw(40) << std::left
-          << std::fixed << iter->second << std::setw(30) << " |"<< std::endl;
+          << std::fixed << iter->second / 1000000.0f << std::setw(30) << " |"<< std::endl;
     }
     for (int i = 0; i < 70; i++) {
         std::cout << "-";
     }
     std::cout << "--" << std::endl;
-    std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum << std::endl;
+    std::cout << "Model: " << FLAGS_model_dir << " computation  is " << sum / 1000000.0f << std::endl;
 }
 #endif
 
