@@ -321,10 +321,12 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                                 1,
                                                 1,
                                                 dim_out.production());
-          if (flag_act == 2) { // relu6
+          if (flag_act == 2) {  // relu6
             for (int i = 0; i < dim_out.production(); i++) {
-              dout_basic_int8[i] = dout_basic_int8[i] > six ? six : dout_basic_int8[i];
-              dout_basic_fp32[i] = dout_basic_fp32[i] > six ? six : dout_basic_fp32[i];
+              dout_basic_int8[i] =
+                  dout_basic_int8[i] > six ? six : dout_basic_int8[i];
+              dout_basic_fp32[i] =
+                  dout_basic_fp32[i] > six ? six : dout_basic_fp32[i];
             }
           }
         }
@@ -526,7 +528,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1, 2, 3, 4}) {
         for (auto& flag_bias : {false, true}) {
-          for (auto& flag_act: {0, 1}) {
+          for (auto& flag_act : {0, 1}) {
             for (auto& c : {1, 5, 15, 33}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});

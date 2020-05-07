@@ -301,7 +301,7 @@ static void conv_basic(const Dtype1* din,
                 dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
                                             ? dst_data_ref[out_idx]
                                             : (Dtype2)0;
-                //dst_data_ref[out_idx] = dst_data_ref[out_idx] < (Dtype2)six
+                // dst_data_ref[out_idx] = dst_data_ref[out_idx] < (Dtype2)six
                 //                            ? dst_data_ref[out_idx]
                 //                            : (Dtype2)six;
               } else if (act_type == 4) {

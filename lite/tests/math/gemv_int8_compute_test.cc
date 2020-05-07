@@ -23,7 +23,6 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/backends/arm/math/saturate.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
@@ -99,8 +98,7 @@ bool test_gemv_int8(bool tra,
   }
 
   LOG(INFO) << "gemv_int8 M: " << m << ", N: " << n
-            << ", transA: " << (tra ? "true" : "false")
-            << ", act: " << flag_act
+            << ", transA: " << (tra ? "true" : "false") << ", act: " << flag_act
             << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
   auto da = ta.mutable_data<int8_t>();
@@ -155,7 +153,7 @@ bool test_gemv_int8(bool tra,
                                           1,
                                           1,
                                           tc_basic_fp32.numel());
-    if (flag_act == 2) { // relu6
+    if (flag_act == 2) {  // relu6
       for (int i = 0; i < tc_basic_int8.numel(); i++) {
         dc_basic_fp32[i] = dc_basic_fp32[i] > six ? six : dc_basic_fp32[i];
         dc_basic_int8[i] = dc_basic_int8[i] > six ? six : dc_basic_int8[i];

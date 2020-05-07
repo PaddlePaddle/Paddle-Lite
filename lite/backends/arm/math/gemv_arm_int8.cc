@@ -311,7 +311,8 @@ bool gemv_int8_oth(const int8_t* A,
       ptr_out[7] += ptr_in[i] * ptr_w7[i];
     }
 
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
+    write_gemv_out(
+        ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
   }
 
 //! deal with remains
@@ -355,7 +356,8 @@ bool gemv_int8_oth(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
+    write_gemv_out(
+        ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
 #else  //  __aarch64__
   int out_cnt = M >> 2;
@@ -449,7 +451,8 @@ bool gemv_int8_oth(const int8_t* A,
       ptr_out[2] += ptr_in[i] * ptr_w2[i];
       ptr_out[3] += ptr_in[i] * ptr_w3[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 4, flag_act, act, six, alpha);
+    write_gemv_out(
+        ptr_out, out_ptr, scale_ptr, bias_ptr, 4, flag_act, act, six, alpha);
   }
 //! deal with remains
 #pragma omp parallel for
@@ -490,7 +493,8 @@ bool gemv_int8_oth(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
+    write_gemv_out(
+        ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
 #endif  //  __aarch64__
   return true;
@@ -648,7 +652,8 @@ bool gemv_int8_sdot(const int8_t* A,
       ptr_out[6] += ptr_in[i] * ptr_w6[i];
       ptr_out[7] += ptr_in[i] * ptr_w7[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
+    write_gemv_out(
+        ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
   }
 //! deal with remains
 #pragma omp parallel for
@@ -688,7 +693,8 @@ bool gemv_int8_sdot(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
+    write_gemv_out(
+        ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
   return true;
 }

@@ -95,8 +95,8 @@ bool test_gemm_int8(bool tra,
   std::vector<float> scale_merge_int8(static_cast<size_t>(m));
   ActivationParam act_param;
   act_param.has_active = has_relu;
-  if (has_relu){
-     act_param.active_type = (paddle::lite_api::ActivationType)1;
+  if (has_relu) {
+    act_param.active_type = (paddle::lite_api::ActivationType)1;
   }
   for (int j = 0; j < m; ++j) {
     scale_merge_fp32[j] = scale_a[j] * scale_b[0];

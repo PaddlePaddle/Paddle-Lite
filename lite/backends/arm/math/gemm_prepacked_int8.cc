@@ -4222,15 +4222,48 @@ void gemm_prepack_int8(const int8_t* A_packed,
   }
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
-    gemm_prepack_sdot_int8<float32_t>(
-        A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx);
+    gemm_prepack_sdot_int8<float32_t>(A_packed,
+                                      B,
+                                      bias,
+                                      C,
+                                      M,
+                                      N,
+                                      K,
+                                      is_bias,
+                                      flag_act,
+                                      is_transB,
+                                      scale,
+                                      alpha,
+                                      ctx);
   } else {
-    gemm_prepack_oth_int8<float32_t>(
-        A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx);
+    gemm_prepack_oth_int8<float32_t>(A_packed,
+                                     B,
+                                     bias,
+                                     C,
+                                     M,
+                                     N,
+                                     K,
+                                     is_bias,
+                                     flag_act,
+                                     is_transB,
+                                     scale,
+                                     alpha,
+                                     ctx);
   }
 #else
-  gemm_prepack_oth_int8<float32_t>(
-      A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx);
+  gemm_prepack_oth_int8<float32_t>(A_packed,
+                                     B,
+                                     bias,
+                                     C,
+                                     M,
+                                     N,
+                                     K,
+                                     is_bias,
+                                     flag_act,
+                                     is_transB,
+                                     scale,
+                                     alpha,
+                                     ctx);
 #endif
 }
 
@@ -4271,11 +4304,33 @@ void gemm_prepack_int8(const int8_t* A_packed,
   }
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
   if (ctx->has_dot()) {
-    gemm_prepack_sdot_int8<int8_t>(
-        A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx);
+    gemm_prepack_sdot_int8<int8_t>(A_packed,
+                                   B,
+                                   bias,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
   } else {
-    gemm_prepack_oth_int8<int8_t>(
-        A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx);
+    gemm_prepack_oth_int8<int8_t>(A_packed,
+                                   B,
+                                   bias,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
   }
 #else
   gemm_prepack_oth_int8<int8_t>(
