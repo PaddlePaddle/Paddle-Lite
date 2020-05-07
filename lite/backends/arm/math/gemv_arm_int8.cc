@@ -155,10 +155,10 @@ bool gemv_int8_oth(const int8_t* A,
                    const float* scale,
                    bool is_bias,
                    const float* bias,
-                    bool flag_act,
-                    lite_api::ActivationType act,
-                    float six,
-                    float alpha) {
+                   bool flag_act,
+                   lite_api::ActivationType act,
+                   float six,
+                   float alpha) {
   if (transA) {
     LOG(ERROR) << "ERROR: sgemv, transA is not supported now";
     return false;
