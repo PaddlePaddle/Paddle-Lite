@@ -123,8 +123,8 @@ class Graph {
 
   void Compute(cnrtInvokeFuncParam_t forward_param,
                cnrtQueue_t que,
-               std::vector<std::shared_ptr<MLUTensor>> in,
-               std::vector<std::shared_ptr<MLUTensor>> out) {
+               const std::vector<std::shared_ptr<MLUTensor>>& in,
+               const std::vector<std::shared_ptr<MLUTensor>>& out) {
     std::vector<cnmlTensor_t> in_tensor;
     std::vector<cnmlTensor_t> out_tensor;
     input_addrs_.resize(in.size());
