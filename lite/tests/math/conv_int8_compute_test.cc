@@ -322,11 +322,11 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                                 1,
                                                 dim_out.production());
           if (flag_act == 2) { // relu6
-             for (int i = 0; i < dim_out.production(); i++) {
-                 dout_basic_int8[i] = dout_basic_int8[i] > six ? six : dout_basic_int8[i];
-                 dout_basic_fp32[i] = dout_basic_fp32[i] > six ? six : dout_basic_fp32[i];
-             }
-         }
+            for (int i = 0; i < dim_out.production(); i++) {
+              dout_basic_int8[i] = dout_basic_int8[i] > six ? six : dout_basic_int8[i];
+              dout_basic_fp32[i] = dout_basic_fp32[i] > six ? six : dout_basic_fp32[i];
+            }
+          }
         }
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
                       weight_dim[3] / group;
