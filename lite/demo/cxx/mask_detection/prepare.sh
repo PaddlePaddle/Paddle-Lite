@@ -15,7 +15,7 @@ cp ../../../cxx/lib/libpaddle_light_api_shared.so ${gf}
 
 if [ ! -f "mask_models_img.tar.gz" ];
 then
-   wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLiteDemo/mask_models_img.tgz 
+   wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLiteDemo/mask_models_img.tar.gz 
 fi
 tar zxvf mask_models_img.tar.gz
 mv mask_models_img ${gf}

@@ -246,7 +246,7 @@ void RunModel(std::string det_model_file,
 
     text += prob_str.substr(0, point_idx + 3) + "%";
     int font_face = cv::FONT_HERSHEY_SIMPLEX;
-    double font_scale = 0.25;
+    double font_scale = 0.38;
     float thickness = 1;
     cv::Size text_size =
         cv::getTextSize(text, font_face, font_scale, thickness, nullptr);
