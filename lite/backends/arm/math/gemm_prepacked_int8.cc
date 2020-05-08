@@ -1788,9 +1788,9 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmlal.s8  q7, d3, d7\n"             /* a1 * b1 = c31 */                \
   "cmp    %[rem],    #0\n"             /* skip remain */                  \
   "beq    5f\n"                                                           \
-  "mov r0,    #32\n"                   /* address offset */               \
+  "mov %[k],    #32\n"                   /* address offset */               \
   "vld1.8 {d0}, [%[a_ptr]]\n"          /* load a to d0, final */          \
-  "vld1.8 {d4-d5}, [%[b_ptr]], r0\n"   /* load b to d4, d5 */             \
+  "vld1.8 {d4-d5}, [%[b_ptr]], %[k]\n"   /* load b to d4, d5 */             \
   "5:\n"                               /* skip rem */                     \
   "vpadal.s16 q12, q4\n"               /* pair add and accumulate, c20 */ \
   "vpadal.s16 q13, q5\n"               /* pair add and accumulate, c21 */ \
@@ -2113,7 +2113,6 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  "q13",
                  "q14",
                  "q15",
-                 "r0",
                  "cc",
                  "memory");
 }
@@ -2162,7 +2161,6 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  "q13",
                  "q14",
                  "q15",
-                 "r0",
                  "cc",
                  "memory");
 }
