@@ -41,6 +41,12 @@ jobs:
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_softmax_converter_mlu
     - name: test_transpose_converter_mlu
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_transpose_converter_mlu
+    - name: test_slice_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_slice_converter_mlu
+    - name: test_argmax_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_argmax_converter_mlu
+    - name: test_split_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_split_converter_mlu
     - name: test_classification
       run: |
         cd ..
