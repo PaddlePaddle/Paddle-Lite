@@ -22,7 +22,9 @@
 #include <string>
 #include <vector>
 #include "lite/core/program.h"
+#ifdef LITE_WITH_X86
 #include "lite/fluid/float16.h"
+#endif
 
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_image_converter.h"
