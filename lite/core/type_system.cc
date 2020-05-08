@@ -21,9 +21,9 @@ namespace lite {
 size_t ParamTypeRegistry::KernelIdTy::hash() const {
   std::hash<std::string> h;
   size_t hash = h(kernel_type);
-  hash = hash_combine(hash, place.hash());
-  hash = hash_combine(hash, std::hash<int>()(static_cast<int>(io)));
-  hash = hash_combine(hash, std::hash<std::string>()(arg_name));
+  lite::CombineHash(place.hash(), &hash);
+  lite::CombineHash(std::hash<int>()(static_cast<int>(io)), &hash);
+  lite::CombineHash(std::hash<std::string>()(arg_name), &hash);
   return hash;
 }
 
@@ -48,8 +48,7 @@ const Type *Type::GetTensorTy(TargetType target,
   // NOTE quite naive implementation here, but not performance sensitive.
   DataType::ID type_id = DataType::ID::Tensor;
 
-#define HASH_ONE(x) v = hash_combine(v, hasher(static_cast<int>(x)))
-
+#define HASH_ONE(x) CombineHash(hasher(static_cast<int>(x)), &v);
   std::hash<int> hasher;
   size_t v = hasher(static_cast<int>(type_id));
   HASH_ONE(target);
@@ -80,8 +79,7 @@ const Type *Type::GetTensorListTy(TargetType target,
   static std::map<size_t, const Type *> type_repo;
   DataType::ID type_id = DataType::ID::TensorList;
 
-#define HASH_ONE(x) v = hash_combine(v, hasher(static_cast<int>(x)))
-
+#define HASH_ONE(x) CombineHash(hasher(static_cast<int>(x)), &v);
   std::hash<int> hasher;
   size_t v = hasher(static_cast<int>(type_id));
   HASH_ONE(target);
