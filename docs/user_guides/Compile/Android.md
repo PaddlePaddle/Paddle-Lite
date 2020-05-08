@@ -104,4 +104,3 @@ https://developer.huawei.com/consumer/cn/hiai/
 ```shell
 --with_opencl: (OFF|ON);  是否编译opencl预测库, 默认为 OFF
 ```
-
