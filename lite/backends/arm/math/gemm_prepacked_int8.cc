@@ -4252,18 +4252,18 @@ void gemm_prepack_int8(const int8_t* A_packed,
   }
 #else
   gemm_prepack_oth_int8<float32_t>(A_packed,
-                                     B,
-                                     bias,
-                                     C,
-                                     M,
-                                     N,
-                                     K,
-                                     is_bias,
-                                     flag_act,
-                                     is_transB,
-                                     scale,
-                                     alpha,
-                                     ctx);
+                                   B,
+                                   bias,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
 #endif
 }
 
@@ -4319,22 +4319,33 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                    ctx);
   } else {
     gemm_prepack_oth_int8<int8_t>(A_packed,
-                                   B,
-                                   bias,
-                                   C,
-                                   M,
-                                   N,
-                                   K,
-                                   is_bias,
-                                   flag_act,
-                                   is_transB,
-                                   scale,
-                                   alpha,
-                                   ctx);
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
   }
 #else
-  gemm_prepack_oth_int8<int8_t>(
-      A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx);
+  gemm_prepack_oth_int8<int8_t>(A_packed,
+                                B,
+                                bias,
+                                C,
+                                M,
+                                N,
+                                K,
+                                is_bias,
+                                flag_act,
+                                is_transB,
+                                scale,
+                                alpha,
+                                ctx);
 #endif
 }
 

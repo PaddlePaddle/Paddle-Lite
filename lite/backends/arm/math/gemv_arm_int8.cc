@@ -65,17 +65,15 @@ inline void write_gemv_out(const int* in,
         vout1 = vmaxq_f32(vout1, vzero);
         vout0 = vminq_f32(vout0, vsix);
         vout1 = vminq_f32(vout1, vsix);
+      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+        float32x4_t valpha = vdupq_n_f32(alpha);
+        uint32x4_t maska = vcgeq_f32(vout0, vzero);
+        uint32x4_t maskb = vcgeq_f32(vout1, vzero);
+        float32x4_t suma = vmulq_f32(vout0, valpha);
+        float32x4_t sumb = vmulq_f32(vout1, valpha);
+        vout0 = vbslq_f32(maska, vout0, suma);
+        vout1 = vbslq_f32(maskb, vout1, sumb);
       }
-      vout0 = vmaxq_f32(vout0, vzero);
-      vout1 = vmaxq_f32(vout1, vzero);
-    } else if (act == lite_api::ActivationType::kLeakyRelu) {
-      float32x4_t valpha = vdupq_n_f32(alpha);
-      uint32x4_t maska = vcgeq_f32(vout0, vzero);
-      uint32x4_t maskb = vcgeq_f32(vout1, vzero);
-      float32x4_t suma = vmulq_f32(vout0, valpha);
-      float32x4_t sumb = vmulq_f32(vout1, valpha);
-      vout0 = vbslq_f32(maska, vout0, suma);
-      vout1 = vbslq_f32(maskb, vout1, sumb);
     }
     vst1q_f32(out, vout0);
     vst1q_f32(out + 4, vout1);
