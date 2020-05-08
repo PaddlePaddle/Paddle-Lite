@@ -160,7 +160,6 @@ $ tar -xvf apu_ddk.tar.gz
 ```
 - 编译full_publish and tiny_publish for MT8168-P2V1 Tablet
 ```shell
-$ ./lite/tools/build.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --build_extra=ON --with_log=ON --build_apu=ON --apu_ddk_root=./apu_ddk full_publish
 $ ./lite/tools/build.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --build_extra=ON --with_log=ON --build_apu=ON --apu_ddk_root=./apu_ddk tiny_publish
 ```
 - 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
