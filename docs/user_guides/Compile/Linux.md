@@ -1,5 +1,5 @@
 
-# 编译ArmLinux预测库
+# 编译Linux预测库
 
 **注意：本编译方法只适用于release/v2.6.0之后版本（包括 v2.6.0)**
 **注意：本编译方法暂时只适用于ARM的设备**
@@ -89,6 +89,7 @@ inference_lite_lib.armlinux.armv8/
 --with_rockchip_npu: (OFF|ON);   是否编译编译 huawei_kirin_npu 的预测库，默认为OFF
 --rockchip_npu_sdk_root:     `rockchip_npu DDK`文件的绝对路径
 ```
+详情请参考：[PaddleLite使用RK NPU预测部署](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html)
 
 - 使用 baidu xpu 方法：
 
@@ -96,3 +97,4 @@ inference_lite_lib.armlinux.armv8/
 --with_baidu_xpu: (OFF|ON);   是否编译编译 baidu_xpu 的预测库，默认为OFF
 --baidu_xpu_sdk_root:     `baidu_xpu DDK`文件的绝对路径
 ```
+详情请参考：[PaddleLite使用百度XPU预测部署](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/baidu_xpu.html)
