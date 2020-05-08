@@ -22,8 +22,8 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
-#include "lite/tests/utils/tensor_utils.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
