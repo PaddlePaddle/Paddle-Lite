@@ -74,7 +74,7 @@ class Optimizer {
            "lite_scale_activation_fuse_pass",             //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
-           "lite_elementwise_add_activation_fuse_pass",  //
+           "lite_elementwise_activation_fuse_pass",  //
 #endif
            "__xpu__resnet_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
