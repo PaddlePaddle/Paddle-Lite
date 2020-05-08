@@ -103,14 +103,44 @@ inline const ::paddle::lite::DDimLite DimNCHW2NHWC(
       std::vector<int64_t>({dim[0], dim[2], dim[3], dim[1]}));
 }
 
-inline const std::vector<int64_t> DimNHWC2NCHW(
-    const std::vector<int64_t>& dim) {
-  return std::vector<int64_t>({dim[0], dim[3], dim[1], dim[2]});
+inline const std::vector<DDimLite::value_type> DimNHWC2NCHW(
+    const std::vector<DDimLite::value_type>& dim) {
+  switch (dim.size()) {
+    case 1:
+      return dim;
+    case 2:
+      return dim;
+    case 3:
+      return std::vector<DDimLite::value_type>({dim[0], dim[2], dim[1]});
+    case 4:
+      return std::vector<DDimLite::value_type>(
+          {dim[0], dim[3], dim[1], dim[2]});
+    case 5:
+      return std::vector<DDimLite::value_type>(
+          {dim[0], dim[4], dim[1], dim[2], dim[3]});
+    default:
+      CHECK(0) << "unsupport dimension";
+  }
 }
 
-inline const std::vector<int64_t> DimNCHW2NHWC(
-    const std::vector<int64_t>& dim) {
-  return std::vector<int64_t>({dim[0], dim[2], dim[3], dim[1]});
+inline const std::vector<DDimLite::value_type> DimNCHW2NHWC(
+    const std::vector<DDimLite::value_type>& dim) {
+  switch (dim.size()) {
+    case 1:
+      return dim;
+    case 2:
+      return dim;
+    case 3:
+      return std::vector<DDimLite::value_type>({dim[0], dim[2], dim[1]});
+    case 4:
+      return std::vector<DDimLite::value_type>(
+          {dim[0], dim[2], dim[3], dim[1]});
+    case 5:
+      return std::vector<DDimLite::value_type>(
+          {dim[0], dim[2], dim[3], dim[4], dim[1]});
+    default:
+      CHECK(0) << "unsupport dimension";
+  }
 }
 
 template <paddle::lite_api::PrecisionType>
