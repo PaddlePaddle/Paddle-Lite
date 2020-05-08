@@ -36,7 +36,7 @@ void ConvImageCompute::PrepareForRun() {
   float* filter_cpu = param.filter->mutable_data<float>();
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-
+  const bool is_mali = context.cl_context()->IsArmMali();
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
@@ -63,6 +63,7 @@ void ConvImageCompute::PrepareForRun() {
   bool stride_equal = stride_h == stride_w;
   bool dilation_equal = dilations[0] == dilations[1];
 
+  VLOG(3) << "Is arm mali  / " << (is_mali ? "Yes" : "No");
   VLOG(3) << "Is relu fused? / " << (relu_fused ? "Yes" : "No");
   VLOG(3) << "groups:" << groups << " stride_h:" << stride_h
           << " stride_w:" << stride_w << " pad_h:" << pad_h
@@ -278,7 +279,6 @@ void ConvImageCompute::PrepareForRun() {
 
 #endif
 #undef CONV3x3OPT_FALL_BACK
-
   } else if (kernel_h == 5 && kernel_w == 5) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
@@ -393,7 +393,6 @@ void ConvImageCompute::PrepareForRun() {
     }
 #endif
 #undef CONV_7x7_OPT
-
   } else {
     LOG(FATAL) << "conv image compute not support this condition yet! ";
   }
@@ -477,6 +476,8 @@ void ConvImageCompute::PrepareForRun() {
     double min_turn_time = DBL_MAX;
     cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
         global_work_size_, max_work_group_size);
+    VLOG(3) << "origin  :local_work_size_ : " << best_local_work_size[0] << " "
+            << best_local_work_size[1] << " " << best_local_work_size[2];
     cl::NDRange last_local_work_size = cl::NDRange{
         static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
     if (use_turn_) {
@@ -495,7 +496,30 @@ void ConvImageCompute::PrepareForRun() {
           // skiped turned lws
           continue;
         }
-        auto turn_time = this->Turn(5);
+        auto turn_time = this->Turn(10);
+        if (min_turn_time > turn_time) {
+          min_turn_time = turn_time;
+          best_local_work_size = local_work_size_;
+        }
+        last_local_work_size = local_work_size_;
+      }
+      // reverse
+      for (size_t i = 1; i < 15; i++) {
+        if (kernel_h == 1 && kernel_w == 1) {
+          // todo use diff logics
+          local_work_size_ = context.cl_context()->LocalWorkSizeTurnReverse(
+              global_work_size_, max_work_group_size, i);
+        } else {
+          local_work_size_ = context.cl_context()->LocalWorkSizeTurnReverse(
+              global_work_size_, max_work_group_size, i);
+        }
+        if (last_local_work_size[0] == local_work_size_[0] &&
+            last_local_work_size[1] == local_work_size_[1] &&
+            last_local_work_size[2] == local_work_size_[2]) {
+          // skiped turned lws
+          continue;
+        }
+        auto turn_time = this->Turn(10);
         if (min_turn_time > turn_time) {
           min_turn_time = turn_time;
           best_local_work_size = local_work_size_;
@@ -504,6 +528,8 @@ void ConvImageCompute::PrepareForRun() {
       }
     }
     local_work_size_ = best_local_work_size;
+    VLOG(3) << "chossen :local_work_size_ : " << local_work_size_[0] << " "
+            << local_work_size_[1] << " " << local_work_size_[2];
     VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
             << local_work_size_[1] << "," << local_work_size_[2] << "}";
   }

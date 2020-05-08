@@ -157,6 +157,48 @@ cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
                      static_cast<size_t>(gws0)};
 #endif
 }
+cl::NDRange CLContext::LocalWorkSizeTurnReverse(cl::NDRange global_work_size,
+                                                size_t max_work_size,
+                                                int divisor) {
+  int preferred_lws = 0;
+#if 0
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
+#else
+  auto gws2 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws0 = global_work_size[2];
+#endif
+  if (divisor > 1) {
+    max_work_size /= divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
+  }
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
+  }
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
+  }
+#if 0
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
+#else
+  return cl::NDRange{static_cast<size_t>(gws2),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws0)};
+#endif
+}
+
+bool CLContext::IsArmMali() {
+  return CLRuntime::Global()->GetGpuType() == GpuType::ARM_MALI;
+}
 
 cl::NDRange CLContext::LocalWorkSize(cl::NDRange global_work_size,
                                      size_t max_work_size) {
