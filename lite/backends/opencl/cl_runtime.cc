@@ -191,6 +191,9 @@ bool CLRuntime::InitializeDevice() {
     }
     return t_str;
   };
+  const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "device_version:" << device_version;
+
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
 
@@ -316,6 +319,8 @@ std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
   InitializeDevice();
   return device_info_;
 }
+
+GpuType& CLRuntime::GetGpuType() { return gpu_type_; }
 
 void CLRuntime::GetAdrenoContextProperties(
     std::vector<cl_context_properties>* properties,
