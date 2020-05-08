@@ -49,16 +49,19 @@ void CastCompute::Run() {
     const int32_t* x_data_begin = param.X->data<int32_t>();
     const int32_t* x_data_end = x_data_begin + param.X->numel();
     float* out_data = param.Out->mutable_data<float>();
-    // std::transform(x_data_begin, x_data_end, out_data, TransOp<int32_t,
-    // float>);
-    // todo: the input type actually is float.
-    memcpy(out_data, x_data_begin, sizeof(float) * param.X->numel());
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<int32_t, float>);
   } else if (param.in_dtype == 20 && param.out_dtype == 5) {  // uint8->float32
     const unsigned char* x_data_begin = param.X->data<unsigned char>();
     const unsigned char* x_data_end = x_data_begin + param.X->numel();
     float* out_data = param.Out->mutable_data<float>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<unsigned char, float>);
+  } else if (param.in_dtype == 3 && param.out_dtype == 2) {
+    const int64_t* x_data_begin = param.X->data<int64_t>();
+    const int64_t* x_data_end = x_data_begin + param.X->numel();
+    int32_t* out_data = param.Out->mutable_data<int32_t>();
+    std::transform(
+        x_data_begin, x_data_end, out_data, TransOp<int64_t, int32_t>);
   } else {
     LOG(FATAL) << "other has not been implemented";
   }
@@ -70,7 +73,7 @@ void CastCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    cast, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    cast, kARM, kAny, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -12,20 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import sys
 import logging
 from ast import RegisterLiteKernelParser
 
+if len(sys.argv) != 5:
+    print("Error: parse_kernel_registry.py requires four inputs!")
+    exit(1)
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
+minkernels_list_path = sys.argv[3]
+tailored = sys.argv[4]
 
 out_lines = [
     '#pragma once',
     '#include "paddle_lite_factory_helper.h"',
     '',
 ]
-
-
+minlines = set()
+if tailored == "ON":
+    with open(minkernels_list_path) as fd:
+        for line in fd:
+            minlines.add(line.strip())
 with open(ops_list_path) as f:
     paths = set([path for path in f])
     for path in paths:
@@ -35,6 +44,15 @@ with open(ops_list_path) as f:
             kernel_parser.parse()
 
             for k in kernel_parser.kernels:
+                  kernel = "%s, %s, %s, %s, %s" % (
+                     k.op_type,
+                     k.target,
+                     k.precision,
+                     k.data_layout,
+                     k.alias,
+                  )
+                  if tailored == "ON":
+                      if kernel not in minlines: continue
                   key = "USE_LITE_KERNEL(%s, %s, %s, %s, %s);" % (
                      k.op_type,
                      k.target,

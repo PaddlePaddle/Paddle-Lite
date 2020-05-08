@@ -48,6 +48,7 @@ enum PaddleDType {
   FLOAT16,
   INT64,
   INT8,
+  UINT8,
 };
 
 enum LayoutType {
@@ -173,6 +174,7 @@ class PaddlePredictor {
   virtual bool Run(const std::vector<PaddleTensor>& inputs,
                    std::vector<PaddleTensor>* output_data,
                    int batch_size = -1) = 0;
+  virtual std::string GetExceptionMsg() { return ""; }
   // Destroy the Predictor.
   virtual ~PaddlePredictor() = default;
 
@@ -189,6 +191,10 @@ class PaddlePredictor {
   virtual void FetchPaddleTensors(PaddleTensor* outputs, int id) = 0;
   virtual void GetPaddleTensor(const std::string& name,
                                PaddleTensor* output) = 0;
+#else
+  virtual void Feed(const std::string& var_name, const PaddleTensor& input) = 0;
+  virtual void Fetch(const std::string& var_name, PaddleTensor* output) = 0;
+  virtual bool Run() = 0;
 #endif
 
  protected:
@@ -206,16 +212,20 @@ struct PaddleModelMemoryPack {
 struct PaddleMobileConfig : public PaddlePredictor::Config {
   enum Precision { FP32 = 0 };
   enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2, kGPU_CL = 3 };
+  enum PrePostType { NONE_PRE_POST = 0, UINT8_255 = 1 };
 
   enum Precision precision;
   enum Device device;
+  enum PrePostType pre_post_type;
 
   int batch_size = 1;
   bool optimize = true;
   bool quantification = false;
+  int quantification_fold = 1;
   bool lod_mode = false;
   int thread_num = 1;
   bool load_when_predict = false;
+  bool mem_opt = true;
   std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };

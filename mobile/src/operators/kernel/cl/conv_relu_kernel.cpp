@@ -46,7 +46,13 @@ bool ConvReluKernel<GPU_CL, float>::Init(FusionConvReluParam<GPU_CL> *param) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_1x1_spl", conv_kernel_file, build_options);
+    if (param->Input()->dims()[1] % 4 == 0) {
+      this->cl_helper_.AddKernel("conv_1x1_simple", conv_kernel_file,
+                                 build_options);
+    } else {
+      this->cl_helper_.AddKernel("conv_1x1_wrapped", conv_kernel_file,
+                                 build_options);
+    }
     DLOG << "conv 1x1";
 
   } else if (param->Filter()->dims()[1] == 1 &&
@@ -66,6 +72,14 @@ bool ConvReluKernel<GPU_CL, float>::Init(FusionConvReluParam<GPU_CL> *param) {
 
     DLOG << "depth_conv 3x3";
 
+  } else if (param->Filter()->dims()[1] == 1 &&
+             param->Input()->dims()[1] == param->Output()->dims()[1] &&
+             param->Filter()->dims()[2] != 3) {
+    param->Filter()->InitDWImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT;
+    this->cl_helper_.AddKernel("depth_conv", conv_kernel_file, build_options);
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     //    if (param->Strides()[0] == param->Strides()[1] &&
@@ -82,17 +96,16 @@ bool ConvReluKernel<GPU_CL, float>::Init(FusionConvReluParam<GPU_CL> *param) {
     //      winograd_transform_weight<4, 3>(&this->cl_helper_, param->Filter());
     //
     //    } else {
-    if (param->Strides()[0] == 1 && param->Dilations()[0] == 1) {
-      param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3S1_FLOAT;
-      param->Filter()->InitCLImage(cl_helper_.CLContext(),
-                                   cl_helper_.CLCommandQueue());
-      this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file,
-                                 build_options);
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+    if (param->groups > 1) {
+      param->ExecMode() =
+          ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_WITH_GROUP_FLOAT;
+      this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
     } else {
       param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
-      param->Filter()->InitCLImage(cl_helper_.CLContext(),
-                                   cl_helper_.CLCommandQueue());
-      this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+      this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file,
+                                 build_options);
     }
     //    }
     DLOG << "conv 3x3";
@@ -112,14 +125,18 @@ void ConvReluKernel<GPU_CL, float>::Compute(
       WinogradConv3x3<4, 3>(&this->cl_helper_, param, true);
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
-    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_WITH_GROUP_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param, true);
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
       DWConvAddBnRelu(&this->cl_helper_, param, true);
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+      SWConvAddBnRelu(&this->cl_helper_, param, true);
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
       SWConvAddBnRelu(&this->cl_helper_, param, true);
       break;
     default:

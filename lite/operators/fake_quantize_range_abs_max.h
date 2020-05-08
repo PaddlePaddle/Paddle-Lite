@@ -36,17 +36,19 @@ class FakeQuantizeRangeMaxAbsOpLite : public OpLite {
 
   bool CheckShape() const override { return true; }
 
-  bool InferShape() const override { return true; }
+  bool InferShapeImpl() const override { return true; }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
     auto x = op_desc.Input("X").front();
-    auto in_scale = op_desc.Input("InScale").front();
+    if (op_desc.HasInput("InScale")) {
+      auto in_scale = op_desc.Input("InScale").front();
+      param_.in_scale = scope->FindVar(in_scale)->GetMutable<lite::Tensor>();
+    }
 
     auto out = op_desc.Output("Out").front();
     auto out_scale = op_desc.Output("OutScale").front();
 
     param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-    param_.in_scale = scope->FindVar(in_scale)->GetMutable<lite::Tensor>();
 
     param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
     param_.out_scale = scope->FindVar(out_scale)->GetMutable<lite::Tensor>();

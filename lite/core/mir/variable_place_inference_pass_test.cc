@@ -63,18 +63,6 @@ TEST(variable_place_inference_pass, test) {
       "type_target_cast_pass",          //
   });
 
-  Place prefered_place{
-#ifdef PADDLE_WITH_CUDA
-      TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW),
-#else
-#ifdef PADDLE_WITH_ARM
-      TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW),
-#else   // X86
-      TARGET(kX86), PRECISION(kFloat), DATALAYOUT(kNCHW),
-#endif  // ARM
-#endif
-  };
-  optimizer.KernelPickPreferPlace(prefered_place);
   optimizer.Run(std::move(program), places, factor, passes);
 }
 

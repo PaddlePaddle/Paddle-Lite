@@ -148,8 +148,8 @@ void PrepareModelInputTensor(const DebugConfig& conf,
     auto* input_tensor = &feed_var->at(item.first);
     input_tensor->Resize(DDim(dim));
     switch (val_type) {
-#define FILL_TENSOR_BY_TYPE_ONCE(pb_type__, type__)         \
-  case framework::proto::VarType::pb_type__:                \
+#define FILL_TENSOR_BY_TYPE_ONCE(var_type__, type__)        \
+  case VarDescAPI::Type::var_type__:                        \
     FillTensorData<type__>(input_tensor, conf, item.first); \
     break
 

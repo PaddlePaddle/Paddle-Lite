@@ -21,6 +21,7 @@
 #include "lite/utils/hash.h"
 #include "lite/utils/io.h"
 #include "lite/utils/macros.h"
+#include "lite/utils/string.h"
 #include "lite/utils/varient.h"
 
 #ifdef LITE_ON_TINY_PUBLISH

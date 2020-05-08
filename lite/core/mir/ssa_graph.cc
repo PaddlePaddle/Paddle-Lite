@@ -26,8 +26,8 @@ namespace mir {
 bool SSAGraph::CheckBidirectionalConnection() {
   VLOG(4) << "node count " << node_storage_.size();
   for (auto &node : node_storage_) {
-    if (node.IsStmt()) VLOG(4) << node.AsStmt().op_info()->Type();
-    if (node.IsArg()) VLOG(4) << node.AsArg().name << " " << node.AsArg().id;
+    if (node.IsStmt()) VLOG(6) << node.AsStmt().op_info()->Type();
+    if (node.IsArg()) VLOG(6) << node.AsArg().name << " " << node.AsArg().id;
     for (auto *in : node.inlinks) {
       CHECK(in->outlinks.end() !=
             std::find(in->outlinks.begin(), in->outlinks.end(), &node));
@@ -54,6 +54,26 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
         CHECK(adj_n->IsStmt());
         nodes.push_back(adj_n);
       }
+    }
+    std::sort(nodes.begin(),
+              nodes.end(),
+              [](mir::Node *node1, mir::Node *node2) { return node1 > node2; });
+    adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
+                        std::make_move_iterator(nodes.end()));
+  }
+  return adj_list;
+}
+
+std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
+  std::map<mir::Node *, std::set<mir::Node *>> adj_list;
+
+  for (auto &n : mutable_nodes()) {
+    if (adj_list.find(&n) == adj_list.end()) {
+      adj_list[&n] = std::set<mir::Node *>();
+    }
+    std::vector<mir::Node *> nodes;
+    for (auto &var : n.inlinks) {
+      nodes.push_back(var);
     }
     std::sort(nodes.begin(),
               nodes.end(),
@@ -98,6 +118,24 @@ std::vector<mir::Node *> SSAGraph::StmtTopologicalOrder() {
   return res;
 }
 
+std::vector<mir::Node *> SSAGraph::NodeTopologicalOrder() {
+  CheckBidirectionalConnection();
+
+  std::stack<mir::Node *> stack;
+  std::set<mir::Node *> visited;
+  std::vector<mir::Node *> res;
+
+  auto adj_list = BuildNodeAdjList();
+
+  for (auto adj : adj_list) {
+    if (visited.find(adj.first) == visited.end()) {
+      SortHelper(adj_list, adj.first, &visited, &res);
+    }
+  }
+
+  return res;
+}
+
 Node *SSAGraph::GraphCreateInstructNode(
     const std::shared_ptr<OpLite> &op, const std::vector<Place> &valid_places) {
   node_storage_.emplace_back();
@@ -123,6 +161,9 @@ void SSAGraph::Build(const Program &program,
     return true;
   };
 
+  std::unordered_map<std::string, PrecisionType> var_types =
+      program.var_data_type();
+
   std::unordered_map<std::string, mir::Node *> arg_update_node_map_;
   for (auto &op : program.ops()) {
     VLOG(3) << op->op_info()->Type();
@@ -137,6 +178,19 @@ void SSAGraph::Build(const Program &program,
         arg_node->AsArg(name, node_storage_.size() - 1);
         arg_update_node_map_[name] = arg_node;
       }
+      if (var_types.count(name)) {
+        if (!arg_node->arg()->type) {
+          arg_node->arg()->type = LiteType::GetTensorTy(
+              TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+        }
+        // Store the original data type of the output tensors for
+        // type_precision_cast_pass, to keep the consistency between the
+        // output types of original graph and optimized graph's
+        if (op->op_info()->Type() == "fetch") {
+          op->mutable_op_info()->SetAttr<int>(
+              "data_type", static_cast<int>(var_types[name]));
+        }
+      }
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
       DirectedLink(arg_node, op_node);
@@ -146,6 +200,10 @@ void SSAGraph::Build(const Program &program,
       auto *arg_node = &node_storage_.back();
       arg_node->AsArg(name, node_storage_.size() - 1);
       arg_update_node_map_[name] = arg_node;
+      if (var_types.count(name) && !arg_node->arg()->type) {
+        arg_node->arg()->type = LiteType::GetTensorTy(
+            TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+      }
 
       if (is_weights(name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
@@ -193,9 +251,10 @@ std::vector<mir::Node *> SSAGraph::outputs() {
 }
 
 mir::Node *SSAGraph::RetrieveArgument(const std::string &arg) {
-  auto it = arguments_.find(arg);
-  if (it != arguments_.end()) {
-    return it->second;
+  for (auto &node : node_storage_) {
+    if (node.IsArg() && node.arg()->name == arg) {
+      return &node;
+    }
   }
   return nullptr;
 }

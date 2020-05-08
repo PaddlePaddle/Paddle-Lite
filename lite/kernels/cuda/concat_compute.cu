@@ -9,7 +9,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include <algorithm>
 #include <vector>
 #include "lite/core/op_registry.h"
@@ -42,15 +41,21 @@ __global__ void Concat(const int num,
   }
 }
 
-void ConcatCompute::Run() {
+template <typename Dtype>
+void ConcatCompute<Dtype>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
 
   std::vector<Tensor*> input = param.x;
   Tensor* output = param.output;
-  auto* output_data = output->mutable_data<float>(TARGET(kCUDA));
+  auto* output_data = output->mutable_data<Dtype>(TARGET(kCUDA));
   int axis = param.axis;
+  Tensor* axis_tensor = param.axis_tensor;
+  if (axis_tensor != nullptr) {
+    const int* axis_tensor_data = axis_tensor->data<int>();
+    axis = axis_tensor_data[0];
+  }
   int inner_size = 1;
   int outer_size = 1;
   auto input_dims = input[0]->dims();
@@ -67,7 +72,7 @@ void ConcatCompute::Run() {
   int offset_concat_axis = 0;
 
   for (int i = 0; i < in_num; i++) {
-    auto* input_data = input[i]->data<float>();
+    auto* input_data = input[i]->data<Dtype>();
     int input_concat_axis = input[i]->dims()[axis];
     int input_concat_size = input_concat_axis * inner_size;
     int num = input_concat_size * outer_size;
@@ -94,8 +99,10 @@ REGISTER_LITE_KERNEL(concat,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::ConcatCompute,
+                     paddle::lite::kernels::cuda::ConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

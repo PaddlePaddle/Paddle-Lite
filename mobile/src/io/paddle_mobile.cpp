@@ -37,7 +37,8 @@ void PaddleMobile<Device, T>::SetThreadNum(int thread_num,
 template <typename Device, typename T>
 PMStatus PaddleMobile<Device, T>::Load(const std::string &dirname,
                                        bool optimize, bool quantification,
-                                       int batch_size, bool lod_mode) {
+                                       int batch_size, bool lod_mode,
+                                       int quantification_fold) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
@@ -46,8 +47,9 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &dirname,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
-        loader_->Load(dirname, optimize, quantification), config_, batch_size,
-        optimize, lod_mode);
+        loader_->Load(dirname, optimize, quantification, false,
+                      quantification_fold),
+        config_, batch_size, optimize, lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -59,7 +61,8 @@ template <typename Device, typename T>
 PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
                                        const std::string &para_path,
                                        bool optimize, bool quantification,
-                                       int batch_size, bool lod_mode) {
+                                       int batch_size, bool lod_mode,
+                                       int quantification_fold) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
@@ -69,8 +72,9 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
-        loader_->Load(model_path, para_path, optimize, quantification), config_,
-        batch_size, optimize, lod_mode);
+        loader_->Load(model_path, para_path, optimize, quantification,
+                      quantification_fold),
+        config_, batch_size, optimize, lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -82,11 +86,12 @@ template <typename Device, typename T>
 PMStatus PaddleMobile<Device, T>::Load(const PaddleMobileConfig &config) {
   if (!config.model_dir.empty()) {
     return this->Load(config.model_dir, config.optimize, config.quantification,
-                      config.batch_size, config.lod_mode);
+                      config.batch_size, config.lod_mode,
+                      config.quantification_fold);
   } else if (!config.prog_file.empty() && !config.param_file.empty()) {
     return this->Load(config.prog_file, config.param_file, config.optimize,
-                      config.quantification, config.batch_size,
-                      config.lod_mode);
+                      config.quantification, config.batch_size, config.lod_mode,
+                      config.quantification_fold);
   } else {
     LOG(kLOG_ERROR) << "Failed to load inference model";
     return PMNotInitialized;
@@ -97,7 +102,7 @@ template <typename Device, typename T>
 bool PaddleMobile<Device, T>::LoadCombinedMemory(
     size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
     uint8_t *combined_params_buf, bool optimize, bool quantification,
-    int batch_size, bool lod_mode) {
+    int batch_size, bool lod_mode, int quantification_fold) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
@@ -107,7 +112,7 @@ bool PaddleMobile<Device, T>::LoadCombinedMemory(
     executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimize,
-                                    quantification),
+                                    quantification, quantification_fold),
         config_, batch_size, optimize, lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";

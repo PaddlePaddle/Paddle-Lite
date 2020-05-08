@@ -12,6 +12,23 @@ fi
 python gen_code.py "${merge_cl_to_so}" > "${opencl_kernels}"
 cd -
 
+# get cl headers
+opencl_header_dir="../third_party/opencl/OpenCL-Headers"
+commit_id="320d7189b3e0e7b6a8fc5c10334c79ef364b5ef6"
+if [[ -d "$opencl_header_dir" && -d "$opencl_header_dir/.git" ]]; then
+    echo "pulling opencl headers"
+    cd $opencl_header_dir
+    git stash
+    git pull
+    git checkout $commit_id
+    cd -
+else
+    echo "cloning opencl headers"
+    rm -rf $opencl_header_dir
+    git clone https://github.com/KhronosGroup/OpenCL-Headers $opencl_header_dir
+    git checkout $commit_id
+fi
+
 build_for_mac() {
     if [ ! `which brew` ]; then
         echo "building failed! homebrew not found, please install homebrew."
@@ -113,7 +130,7 @@ build_for_arm_linux() {
             -B"../build/release/arm-linux" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
-            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian " \
+            -DCMAKE_CXX_FLAGS=" " \
             -DNET="${NETS}" \
             -D"V7"=true
     else
@@ -121,7 +138,7 @@ build_for_arm_linux() {
             -B"../build/release/arm-linux" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
-            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -ftree-vectorize -funsafe-math-optimizations -pipe -mlittle-endian " \
+            -DCMAKE_CXX_FLAGS=" " \
             -DNET="${NETS}" \
             -D"V7"=true
     fi

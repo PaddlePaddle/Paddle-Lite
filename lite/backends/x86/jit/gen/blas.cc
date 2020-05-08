@@ -181,10 +181,10 @@ DECLARE_BLAS_CREATOR(VAddBias);
 
 namespace gen = paddle::lite::jit::gen;
 
-REGISTER_JITKERNEL_GEN(kVMul, gen::VMulCreator);
-REGISTER_JITKERNEL_GEN(kVAdd, gen::VAddCreator);
-REGISTER_JITKERNEL_GEN(kVSub, gen::VSubCreator);
-REGISTER_JITKERNEL_GEN(kVAddRelu, gen::VAddReluCreator);
-REGISTER_JITKERNEL_GEN(kVScal, gen::VScalCreator);
-REGISTER_JITKERNEL_GEN(kVAddBias, gen::VAddBiasCreator);
-REGISTER_JITKERNEL_GEN(kNCHW16CMulNC, gen::NCHW16CMulNCCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVMul, gen::VMulCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVAdd, gen::VAddCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVSub, gen::VSubCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVAddRelu, gen::VAddReluCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVScal, gen::VScalCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVAddBias, gen::VAddBiasCreator);
+REGISTER_JITKERNEL_GEN_LITE(kNCHW16CMulNC, gen::NCHW16CMulNCCreator);

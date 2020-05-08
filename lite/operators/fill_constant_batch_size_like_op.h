@@ -32,7 +32,7 @@ class FillConstantBatchSizeLikeOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
@@ -45,6 +45,6 @@ class FillConstantBatchSizeLikeOp : public OpLite {
   mutable FillConstantBatchSizeLikeParam param_;
 };
 
-} /* namespace operators */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace operators
+}  // namespace lite
+}  // namespace paddle

@@ -32,6 +32,9 @@ class Conv2DTransposeCompute
   void Run() override;
 
   ~Conv2DTransposeCompute() = default;
+
+ protected:
+  int workspace_size_{0};
 };
 
 }  // namespace arm

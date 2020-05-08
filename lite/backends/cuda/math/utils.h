@@ -25,6 +25,26 @@ namespace lite {
 namespace cuda {
 namespace math {
 
+enum class BinaryOperation {
+  kADD = 0,
+  kMUL = 1,
+  kDIV = 2,
+  kSUB = 3,
+};
+
+template <typename T>
+__device__ T binary_calc(T x, T y, BinaryOperation type);
+
+template <>
+__device__ __forceinline__ float binary_calc(float x,
+                                             float y,
+                                             BinaryOperation type) {
+  if (type == BinaryOperation::kADD) return x + y;
+  if (type == BinaryOperation::kMUL) return x * y;
+  if (type == BinaryOperation::kDIV) return x / y;
+  if (type == BinaryOperation::kSUB) return x - y;
+}
+
 template <typename T>
 __device__ T from_float(float x);
 

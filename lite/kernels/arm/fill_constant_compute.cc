@@ -12,31 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/kernels/arm/fill_constant_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T>
-class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::FillConstantParam;
+void FillConstantCompute::Run() {
+  auto& param = *param_.get_mutable<param_t>();
+  auto& context = ctx_->As<ARMContext>();
 
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<ARMContext>();
-
-    auto data = param.Out->template mutable_data<T>();
-    for (int i = 0; i < param.Out->numel(); i++) {
+  if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
+    auto data = param.out->template mutable_data<float>();
+    for (int i = 0; i < param.out->numel(); i++) {
       data[i] = param.value;
     }
+  } else if (param.dtype ==
+             static_cast<int32_t>(lite::core::FluidType::INT32)) {
+    auto data = param.out->template mutable_data<int32_t>();
+    for (int i = 0; i < param.out->numel(); i++) {
+      data[i] = param.value;
+    }
+  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT8)) {
+    auto data = param.out->template mutable_data<int8_t>();
+    for (int i = 0; i < param.out->numel(); i++) {
+      data[i] = param.value;
+    }
+  } else if (param.dtype ==
+             static_cast<int32_t>(lite::core::FluidType::INT64)) {
+    auto data = param.out->template mutable_data<int64_t>();
+    for (int i = 0; i < param.out->numel(); i++) {
+      data[i] = param.value;
+    }
+  } else {
+    LOG(FATAL) << "not supported dtype " << param.dtype;
   }
-
-  virtual ~FillConstantCompute() = default;
-};
+}
 
 }  // namespace arm
 }  // namespace kernels
@@ -46,9 +58,13 @@ class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 // float
 REGISTER_LITE_KERNEL(fill_constant,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::FillConstantCompute<float>,
+                     paddle::lite::kernels::arm::FillConstantCompute,
                      def)
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("ShapeTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

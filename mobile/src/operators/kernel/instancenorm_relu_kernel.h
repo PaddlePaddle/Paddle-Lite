@@ -30,10 +30,10 @@ using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
 class InstanceNormReluKernel
-    : public OpKernelBase<DeviceType, InstanceNormParam<DeviceType>> {
+    : public OpKernelBase<DeviceType, FusionInstanceNormReluParam<DeviceType>> {
  public:
-  void Compute(const InstanceNormParam<DeviceType> &param);
-  bool Init(InstanceNormParam<DeviceType> *param);
+  void Compute(const FusionInstanceNormReluParam<DeviceType> &param);
+  bool Init(FusionInstanceNormReluParam<DeviceType> *param);
 };
 
 }  // namespace operators

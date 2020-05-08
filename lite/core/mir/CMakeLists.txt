@@ -16,10 +16,19 @@ lite_cc_library(mir_passes
       fusion/interpolate_fuse_pass.cc
       fusion/conv_elementwise_fuse_pass.cc
       fusion/conv_activation_fuse_pass.cc
+      fusion/var_conv_2d_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
+      fusion/sequence_pool_concat_fuse_pass.cc
+      fusion/scale_activation_fuse_pass.cc
+      fusion/__xpu__resnet_fuse_pass.cc
+      fusion/__xpu__multi_encoder_fuse_pass.cc
+      fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
+      fusion/__xpu__fc_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
+      elimination/identity_dropout_eliminate_pass.cc
+      elimination/elementwise_mul_constant_eliminate_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
@@ -32,7 +41,11 @@ lite_cc_library(mir_passes
       demo_pass.cc
       runtime_context_assign_pass.cc
       memory_optimize_pass.cc
-  DEPS mir_pass types context ${mir_fusers} ${subgraph_passes})
+      multi_stream_analysis_pass.cc
+      mlu_postprocess_pass.cc
+      weight_quantization_preprocess_pass.cc
+      quantized_op_attributes_inference_pass.cc
+  DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
         #mir_ssa_graph scope op
@@ -64,10 +77,10 @@ set(pattern_deps mir_node mir_ssa_graph op)
 if (WITH_TESTING)
   list(APPEND pattern_deps gtest)
 endif()
-lite_cc_library(pattern_matcher SRCS pattern_matcher.cc DEPS ${pattern_deps})
+lite_cc_library(pattern_matcher SRCS pattern_matcher.cc xpu_pattern_matcher.cc DEPS ${pattern_deps})
 lite_cc_test(test_pattern_matcher SRCS pattern_matcher_test.cc DEPS pattern_matcher)
 
-lite_cc_library(pattern_matcher_high_api SRCS pattern_matcher_high_api.cc DEPS pattern_matcher)
+lite_cc_library(pattern_matcher_high_api SRCS pattern_matcher_high_api.cc xpu_pattern_matcher_high_api.cc DEPS pattern_matcher)
 
 
 # for mobile, unnecessary to compile the following testings.

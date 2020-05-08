@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/gru_compute.h"
+#include "lite/utils/env.h"
 
-DEFINE_int32(paddle_num_threads,
-             1,
-             "Number of threads for each paddle instance.");
+// DEFINE_int32(paddle_num_threads,
+//              1,
+//              "Number of threads for each paddle instance.");
+int32_t paddle_num_threads =
+    paddle::lite::GetIntFromEnv("paddle_num_threads", 1);
 
 REGISTER_LITE_KERNEL(gru,
                      kX86,
@@ -28,9 +31,8 @@ REGISTER_LITE_KERNEL(gru,
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_gate", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_reset_hidden_prev",
-                {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Batch_hidden", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("BatchGate", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("BatchResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("BatchHidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

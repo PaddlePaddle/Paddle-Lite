@@ -35,7 +35,8 @@ class ConvCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
 };
 
 template <PrecisionType Ptype_out>
-class ConvComputeInt8 : public KernelLite<TARGET(kCUDA), PRECISION(kInt8)> {
+class ConvComputeInt8
+    : public KernelLite<TARGET(kCUDA), PRECISION(kInt8), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ConvParam;
 

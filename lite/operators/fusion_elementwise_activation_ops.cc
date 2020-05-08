@@ -27,7 +27,7 @@ bool FusionElementwiseActivationOp::CheckShape() const {
   return true;
 }
 
-bool FusionElementwiseActivationOp::InferShape() const {
+bool FusionElementwiseActivationOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.X->dims().size() >= param_.Y->dims().size());
   param_.Out->Resize(param_.X->dims());
   return true;
@@ -59,7 +59,7 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
 //   return true;
 // }
 
-// bool FusionElementwiseActivationGradExplicitOp::InferShape() const {
+// bool FusionElementwiseActivationGradExplicitOp::InferShapeImpl() const {
 //   param_.X_grad->Resize(param_.Out_grad->dims());
 //   param_.Y_grad->Resize(param_.Y->dims());
 //   return true;
@@ -100,8 +100,8 @@ REGISTER_LITE_OP(fusion_elementwise_max_activation,
 REGISTER_LITE_OP(fusion_elementwise_div_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
 
-#ifdef LITE_WITH_TRAIN
-REGISTER_LITE_OP(
-    fusion_elementwise_sub_activation_grad,
-    paddle::lite::operators::FusionElementwiseActivationGradExplicitOp);
-#endif
+// #ifdef LITE_WITH_TRAIN
+// REGISTER_LITE_OP(
+//     fusion_elementwise_sub_activation_grad,
+//     paddle::lite::operators::FusionElementwiseActivationGradExplicitOp);
+// #endif

@@ -40,7 +40,7 @@ bool SequenceExpandOp::CheckShape() const {
   return true;
 }
 
-bool SequenceExpandOp::InferShape() const {
+bool SequenceExpandOp::InferShapeImpl() const {
   const auto x_lod = param_.X->lod();
   auto x_dims = param_.X->dims();
   int ref_level = param_.ref_level;

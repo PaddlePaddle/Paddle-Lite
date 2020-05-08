@@ -89,7 +89,7 @@ All kernels are inlcuded in `lite/backends/x86/jit/kernels.h`, which is automati
 3. Add reference function of `your_key`. 
 Note:
     - this should be run on CPU and do not depend on any third-party.
-    - Add `USE_JITKERNEL_REFER(your_key)` in `refer/CmakeLists.txt` to make sure this code can be used.
+    - Add `USE_JITKERNEL_REFER_LITE(your_key)` in `refer/CmakeLists.txt` to make sure this code can be used.
 4. Add unit test in `test.cc`, and verfiy at least `float` and `double`.
 Test more data type for some special functions if necessary, for example `int8`.
 5. Add functions in `benchmark.cc` to test all function of same `KernelType`. Make sure `GetDefaultBestFunc` always get the best one.

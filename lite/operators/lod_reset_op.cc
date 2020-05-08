@@ -25,7 +25,7 @@ bool LodResetOp::CheckShape() const {
   return true;
 }
 
-bool LodResetOp::InferShape() const {
+bool LodResetOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   param_.Out->Resize(param_.X->dims());

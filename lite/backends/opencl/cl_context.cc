@@ -1,11 +1,8 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,8 +38,7 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
     return *(it->second);
   }
 
-  auto program = CLRuntime::Global()->CreateProgram(
-      GetContext(), CLRuntime::Global()->cl_path() + "/cl_kernel/" + file_name);
+  auto program = CLRuntime::Global()->CreateProgram(GetContext(), file_name);
 
   VLOG(3) << " --- begin build program -> " << program_key << " --- ";
   CLRuntime::Global()->BuildProgram(program.get(), options);
@@ -55,19 +51,20 @@ cl::Program &CLContext::GetProgram(const std::string &file_name,
 
 void CLContext::AddKernel(const std::string &kernel_name,
                           const std::string &file_name,
-                          const std::string &options) {
+                          const std::string &options,
+                          const std::string &time_stamp) {
   cl_int status{CL_SUCCESS};
   VLOG(3) << " --- to get program " << file_name << " --- ";
   auto program = GetProgram(file_name, options);
   VLOG(3) << " --- end get program --- ";
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
-  std::unique_ptr<cl::Kernel> kernel(
+  std::shared_ptr<cl::Kernel> kernel(
       new cl::Kernel(program, kernel_name.c_str(), &status));
   CL_CHECK_FATAL(status);
   VLOG(3) << " --- end create kernel --- ";
   kernels_.emplace_back(std::move(kernel));
   STL::stringstream kernel_key;
-  kernel_key << kernel_name << options;
+  kernel_key << kernel_name << options << time_stamp;
   kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
@@ -120,6 +117,74 @@ cl::NDRange CLContext::DefaultWorkSize(const CLImage &image) {
     LOG(FATAL) << "Not support this dimension, need to be implemented!";
     return cl::NDRange{};
   }
+}
+
+cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
+                                         size_t max_work_size,
+                                         int divisor) {
+  int preferred_lws = 0;
+#if 1
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
+#else
+  auto gws2 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws0 = global_work_size[2];
+#endif
+  if (divisor > 1) {
+    max_work_size /= divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
+  }
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
+  }
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
+  }
+#if 1
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
+#else
+  return cl::NDRange{static_cast<size_t>(gws2),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws0)};
+#endif
+}
+
+cl::NDRange CLContext::LocalWorkSize(cl::NDRange global_work_size,
+                                     size_t max_work_size) {
+  int preferred_lws = 0;
+  int divisor = 2;
+
+  auto gws0 = global_work_size[0];
+  auto gws1 = global_work_size[1];
+  auto gws2 = global_work_size[2];
+
+  if (divisor > 1) {
+    max_work_size /= divisor;
+  }
+  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
+    max_work_size = preferred_lws;
+  }
+  while (gws1 > max_work_size && max_work_size > 0) {
+    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
+  }
+  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
+    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
+  }
+  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
+    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
+  }
+  return cl::NDRange{static_cast<size_t>(gws0),
+                     static_cast<size_t>(gws1),
+                     static_cast<size_t>(gws2)};
 }
 
 }  // namespace lite

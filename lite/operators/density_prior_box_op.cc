@@ -27,7 +27,7 @@ bool DensityPriorBoxOpLite::CheckShape() const {
   return true;
 }
 
-bool DensityPriorBoxOpLite::InferShape() const { return true; }
+bool DensityPriorBoxOpLite::InferShapeImpl() const { return true; }
 
 bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
                                        lite::Scope* scope) {

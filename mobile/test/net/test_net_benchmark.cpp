@@ -17,20 +17,26 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
+#ifdef PADDLE_MOBILE_CL
+  paddle_mobile::PaddleMobileConfigInternal config;
+  config.load_when_predict = false;
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
+#else
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+#endif
   paddle_mobile.SetThreadNum(1);
   auto time1 = paddle_mobile::time();
 
-  auto isok =
-      paddle_mobile.Load(std::string(g_yolo) + "/model",
-                         std::string(g_yolo) + "/params", true, false, 1, true);
+  auto isok = paddle_mobile.Load(std::string(g_mobilenet_combined) + "/model",
+                                 std::string(g_mobilenet_combined) + "/params",
+                                 true, false, 1, false);
   if (isok) {
     auto time2 = paddle_mobile::time();
-    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time1) << "ms"
+    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
               << std::endl;
 
     std::vector<float> input;
-    std::vector<int64_t> dims{1, 3, 64, 64};
+    std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
     paddle_mobile::framework::DDim ddim =

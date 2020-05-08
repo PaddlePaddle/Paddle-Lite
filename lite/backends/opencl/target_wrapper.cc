@@ -14,11 +14,9 @@
 
 #include "lite/backends/opencl/target_wrapper.h"
 #include <algorithm>
-#include <array>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
-
 namespace paddle {
 namespace lite {
 
@@ -26,6 +24,8 @@ static cl_channel_type GetCLChannelType(const PrecisionType type) {
   switch (type) {
     case PRECISION(kFloat):
       return CL_FLOAT;
+    case PRECISION(kFP16):
+      return CL_HALF_FLOAT;
     case PRECISION(kInt32):
       return CL_SIGNED_INT32;
     case PRECISION(kInt8):
@@ -58,20 +58,69 @@ void TargetWrapperCL::Free(void *ptr) {
   }
 }
 
-void *TargetWrapperCL::MallocImage(const std::array<size_t, 2> &image_shape,
-                                   PrecisionType data_type) {
-  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(data_type));
+template <>
+void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
+                                          const size_t cl_image2d_height,
+                                          void *host_ptr) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFloat)));
   cl_int status;
-  size_t width = image_shape[0];
-  size_t height = image_shape[1];
   cl::Image2D *cl_image =
       new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
+                                                    : CL_MEM_ALLOC_HOST_PTR),
                       img_format,
-                      width,
-                      height,
+                      cl_image2d_width,
+                      cl_image2d_height,
                       0,
-                      nullptr,
+                      host_ptr,
+                      &status);
+  if (status != CL_SUCCESS) {
+    delete cl_image;
+    cl_image = nullptr;
+  }
+  CL_CHECK_FATAL(status);
+  return cl_image;
+}
+
+template <>  // use uint16_t represents half float
+void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
+                                             const size_t cl_image2d_height,
+                                             void *host_ptr) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFP16)));
+  cl_int status;
+  cl::Image2D *cl_image =
+      new cl::Image2D(CLRuntime::Global()->context(),
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
+                                                    : CL_MEM_ALLOC_HOST_PTR),
+                      img_format,
+                      cl_image2d_width,
+                      cl_image2d_height,
+                      0,
+                      host_ptr,
+                      &status);
+  if (status != CL_SUCCESS) {
+    delete cl_image;
+    cl_image = nullptr;
+  }
+  CL_CHECK_FATAL(status);
+  return cl_image;
+}
+
+template <>
+void *TargetWrapperCL::MallocImage<int32_t>(const size_t cl_image2d_width,
+                                            const size_t cl_image2d_height,
+                                            void *host_ptr) {
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt32)));
+  cl_int status;
+  cl::Image2D *cl_image =
+      new cl::Image2D(CLRuntime::Global()->context(),
+                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
+                                                    : CL_MEM_ALLOC_HOST_PTR),
+                      img_format,
+                      cl_image2d_width,
+                      cl_image2d_height,
+                      0,
+                      host_ptr,
                       &status);
   if (status != CL_SUCCESS) {
     delete cl_image;
@@ -108,15 +157,13 @@ void *TargetWrapperCL::Map(void *buffer, size_t offset, size_t size) {
 }
 
 void *TargetWrapperCL::MapImage(void *image,
-                                const std::array<size_t, 2> &image_shape,
-                                std::array<size_t, 2> *image_pitch) {
+                                const size_t cl_image2d_width,
+                                const size_t cl_image2d_height,
+                                size_t cl_image2d_row_pitch,
+                                size_t cl_image2d_slice_pitch) {
   cl::Image2D *cl_image = static_cast<cl::Image2D *>(image);
-  size_t width = image_shape[0];
-  size_t height = image_shape[1];
-  size_t *row_pitch = image_pitch->data();
-  size_t *slice_pitch = image_pitch->data() + 1;
-  std::array<size_t, 3> origin{{0, 0, 0}};
-  std::array<size_t, 3> region{{width, height, 1}};
+  cl::array<size_t, 3> origin = {0, 0, 0};
+  cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
   void *mapped_ptr = CLRuntime::Global()->command_queue().enqueueMapImage(
       *cl_image,
@@ -124,8 +171,8 @@ void *TargetWrapperCL::MapImage(void *image,
       CL_MAP_READ | CL_MAP_WRITE,
       origin,
       region,
-      row_pitch,
-      slice_pitch,
+      &cl_image2d_row_pitch,
+      &cl_image2d_slice_pitch,
       nullptr,
       nullptr,
       &status);
@@ -148,7 +195,6 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                  size_t size,
                                  IoDirection dir) {
   cl_int status;
-  cl::Event event;
   auto stream = CLRuntime::Global()->command_queue();
   switch (dir) {
     case IoDirection::DtoD:
@@ -158,9 +204,9 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                         0,
                                         size,
                                         nullptr,
-                                        &event);
+                                        nullptr);
       CL_CHECK_FATAL(status);
-      event.wait();
+      CLRuntime::Global()->command_queue().finish();
       break;
     case IoDirection::HtoD:
       status = stream.enqueueWriteBuffer(*static_cast<cl::Buffer *>(dst),
@@ -231,17 +277,14 @@ void TargetWrapperCL::MemcpyAsync(void *dst,
 
 void TargetWrapperCL::ImgcpySync(void *dst,
                                  const void *src,
-                                 const std::array<size_t, 2> &image_shape,
-                                 const std::array<size_t, 2> &image_pitch,
+                                 const size_t cl_image2d_width,
+                                 const size_t cl_image2d_height,
+                                 const size_t cl_image2d_row_pitch,
+                                 const size_t cl_image2d_slice_pitch,
                                  IoDirection dir) {
-  size_t width = image_shape[0];
-  size_t height = image_shape[1];
-  size_t row_pitch = image_pitch[0];
-  size_t slice_pitch = image_pitch[1];
-  std::array<size_t, 3> origin{{0, 0, 0}};
-  std::array<size_t, 3> region{{width, height, 1}};
+  cl::array<size_t, 3> origin = {0, 0, 0};
+  cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
-  cl::Event event;
   auto stream = CLRuntime::Global()->command_queue();
   switch (dir) {
     case IoDirection::DtoD:
@@ -251,17 +294,17 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                        origin,
                                        region,
                                        nullptr,
-                                       &event);
+                                       nullptr);
       CL_CHECK_FATAL(status);
-      event.wait();
+      CLRuntime::Global()->command_queue().finish();
       break;
     case IoDirection::HtoD:
       status = stream.enqueueWriteImage(*static_cast<cl::Image2D *>(dst),
                                         CL_TRUE,
                                         origin,
                                         region,
-                                        row_pitch,
-                                        slice_pitch,
+                                        cl_image2d_row_pitch,
+                                        cl_image2d_slice_pitch,
                                         src,
                                         nullptr,
                                         nullptr);
@@ -272,8 +315,8 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                        CL_TRUE,
                                        origin,
                                        region,
-                                       row_pitch,
-                                       slice_pitch,
+                                       cl_image2d_row_pitch,
+                                       cl_image2d_slice_pitch,
                                        dst,
                                        nullptr,
                                        nullptr);
@@ -286,16 +329,14 @@ void TargetWrapperCL::ImgcpySync(void *dst,
 
 void TargetWrapperCL::ImgcpyAsync(void *dst,
                                   const void *src,
-                                  const std::array<size_t, 2> &image_shape,
-                                  const std::array<size_t, 2> &image_pitch,
+                                  const size_t cl_image2d_width,
+                                  const size_t cl_image2d_height,
+                                  const size_t cl_image2d_row_pitch,
+                                  const size_t cl_image2d_slice_pitch,
                                   IoDirection dir,
                                   const stream_t &stream) {
-  size_t width = image_shape[0];
-  size_t height = image_shape[1];
-  size_t row_pitch = image_pitch[0];
-  size_t slice_pitch = image_pitch[1];
-  std::array<size_t, 3> origin{{0, 0, 0}};
-  std::array<size_t, 3> region{{width, height, 1}};
+  cl::array<size_t, 3> origin = {0, 0, 0};
+  cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
   switch (dir) {
     case IoDirection::DtoD:
@@ -313,8 +354,8 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                         CL_FALSE,
                                         origin,
                                         region,
-                                        row_pitch,
-                                        slice_pitch,
+                                        cl_image2d_row_pitch,
+                                        cl_image2d_slice_pitch,
                                         src,
                                         nullptr,
                                         nullptr);
@@ -325,8 +366,8 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                        CL_FALSE,
                                        origin,
                                        region,
-                                       row_pitch,
-                                       slice_pitch,
+                                       cl_image2d_row_pitch,
+                                       cl_image2d_slice_pitch,
                                        dst,
                                        nullptr,
                                        nullptr);

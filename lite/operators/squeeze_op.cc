@@ -28,7 +28,7 @@ static DDim GetOutputShape(const std::vector<int> &squeeze_dims,
   // Determines number of dimensions of output tensor after squeeze.
   // Mark and count the dimensions need to be squeezed
   if (num_squeeze_dims == 0) {
-    for (int idx = 0; idx < in_dims.size(); ++idx) {
+    for (size_t idx = 0; idx < in_dims.size(); ++idx) {
       if (in_dims[idx] == 1) {
         should_squeeze[idx] = true;
         ++cnt_squeezed_dims;
@@ -57,7 +57,7 @@ static DDim GetOutputShape(const std::vector<int> &squeeze_dims,
 
   // Make output dimensions
   std::vector<int64_t> output_shape(in_dims.size() - cnt_squeezed_dims, 0);
-  for (int in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
+  for (size_t in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
     if (!should_squeeze[in_idx]) {
       output_shape[out_idx++] = in_dims[in_idx];
     }
@@ -75,7 +75,7 @@ bool SqueezeOp::CheckShape() const {
   return true;
 }
 
-bool SqueezeOp::InferShape() const {
+bool SqueezeOp::InferShapeImpl() const {
   std::vector<int> squeeze_dims = param_.axes;
   DDim in_dims = param_.X->dims();
   DDim out_dim = GetOutputShape(squeeze_dims, in_dims, true);
@@ -84,6 +84,7 @@ bool SqueezeOp::InferShape() const {
 }
 
 bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   auto x_var = scope->FindVar(opdesc.Input("X").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(x_var);
@@ -105,8 +106,8 @@ bool Squeeze2Op::CheckShape() const {
   return true;
 }
 
-bool Squeeze2Op::InferShape() const {
-  SqueezeOp::InferShape();
+bool Squeeze2Op::InferShapeImpl() const {
+  SqueezeOp::InferShapeImpl();
   auto x_dims = param_.X->dims();
   std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
   for (size_t i = 0; i < x_dims.size(); i++) {

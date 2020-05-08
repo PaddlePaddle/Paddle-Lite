@@ -15,6 +15,8 @@
 #include "lite/kernels/x86/pool_compute.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -58,16 +60,22 @@ TEST(pool2d_x86, run_test) {
   param.x = &x;
   param.output = &out;
   param.strides = {2, 2};
-  param.paddings = {0, 0};
+  std::vector<int> paddings = {0, 0, 0, 0};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
   param.ksize = {2, 2};
   param.pooling_type = "max";
-
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  pool2d.SetContext(std::move(ctx));
   pool2d.SetParam(param);
   pool2d.Run();
 
   LOG(INFO) << "output: ";
+  float ref_result[12] = {
+      5., 7., 13., 15., 21., 23., 29., 31., 37., 39., 45., 47.};
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
+    EXPECT_NEAR(out_data[i], ref_result[i], 1e-5);
   }
 }
 

@@ -19,7 +19,37 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-void ScaleCompute::Run() {}
+void ScaleCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  param.output->mutable_data<float16>();
+
+  zynqmp::ScaleParam& scale_param = pe_.param();
+
+  scale_param.input = param.x->ZynqTensor();
+  scale_param.output = param.output->ZynqTensor();
+
+  int channel = scale_param.input->shape().channel();
+  zynqmp::Tensor* scale = new zynqmp::Tensor();
+  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  zynqmp::Shape shape(zynqmp::N, {channel});
+  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
+  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+
+  float scale_value = param.scale;
+  float bias_value = param.bias_after_scale ? param.bias : 0;
+
+  for (int i = 0; i < channel; ++i) {
+    scale_data[i] = scale_value;
+    bias_data[i] = bias_value;
+  }
+  scale_param.scale = scale;
+  scale_param.bias = bias;
+
+  pe_.init();
+  pe_.apply();
+}
+
+void ScaleCompute::Run() { pe_.dispatch(); }
 
 }  // namespace fpga
 }  // namespace kernels

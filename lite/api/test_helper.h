@@ -15,13 +15,26 @@
 #pragma once
 
 #include <gflags/gflags.h>
+#if !defined(_WIN32)
 #include <sys/time.h>
+#else
+#include <windows.h>
+#include "lite/backends/x86/port.h"
+#endif
 #include <time.h>
+#include <cmath>
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+DEFINE_int32(power_mode,
+             3,
+             "arm power mode: "
+             "0 for big cluster, "
+             "1 for little cluster, "
+             "2 for all cores, "
+             "3 for no bind");
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(im_width, 224, "image width");
 DEFINE_int32(im_height, 224, "image height");
@@ -34,6 +47,32 @@ inline double GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
+}
+
+template <typename T>
+double compute_mean(const T* in, const size_t length) {
+  double sum = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    sum += in[i];
+  }
+  return sum / length;
+}
+
+template <typename T>
+double compute_standard_deviation(const T* in,
+                                  const size_t length,
+                                  bool has_mean = false,
+                                  double mean = 10000) {
+  if (!has_mean) {
+    mean = compute_mean<T>(in, length);
+  }
+
+  double variance = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    variance += pow((in[i] - mean), 2);
+  }
+  variance /= length;
+  return sqrt(variance);
 }
 
 }  // namespace lite

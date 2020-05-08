@@ -13,11 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -25,91 +24,73 @@ namespace lite {
 class WriteToArrayComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string input_0 = "x";
-  std::string input_1 = "i";
-  std::string output_0 = "out0";
-  std::string output_1 = "out1";
-  std::string output_2 = "out2";
-  DDim dims_{{3, 5, 4, 4}};
-  int i_;
+  std::string x_ = "x";
+  std::string idn_ = "i";
+  std::string out_ = "out";
+  DDim x_dims_{{3, 5, 4, 4}};
+  int out_size_ = 0;
+  int id_ = 0;
 
  public:
   WriteToArrayComputeTester(const Place& place,
                             const std::string& alias,
-                            const int i,
-                            DDim dims)
-      : TestCase(place, alias), i_(i), dims_(dims) {}
+                            DDim x_dims,
+                            int out_size = 0,
+                            int id = 0)
+      : TestCase(place, alias), x_dims_(x_dims), out_size_(out_size), id_(id) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out_0 = scope->NewTensor(output_0);
-    auto* out_1 = scope->NewTensor(output_1);
-    auto* out_2 = scope->NewTensor(output_2);
-    CHECK(out_0);
-    CHECK(out_1);
-    CHECK(out_2);
-    std::vector<TensorLite*> out_vec = {out_0, out_1, out_2};
+    auto out = scope->Var(out_)->GetMutable<std::vector<Tensor>>();
+    auto x = scope->FindTensor(x_);
 
-    auto* x = scope->FindTensor(input_0);
-    const auto* x_data = x->data<float>();
-    auto* id = scope->FindTensor(input_1);
-    const auto* id_data = id->data<float>();
-    int n = x->numel();
-    int cur_out_num = out_vec.size();
-    for (int i = cur_out_num; i < id_data[0] + 1; i++) {
-      char buffer[30];
-      snprintf(buffer, sizeof(buffer), "out%d", i);
-      auto out = scope->NewTensor(buffer);
-      out_vec.push_back(out);
+    if (out->size() < id_ + 1) {
+      out->resize(id_ + 1);
     }
-    out_vec[id_data[0]]->Resize(dims_);
-    auto* out_data = out_vec[id_data[0]]->mutable_data<float>();
-    memcpy(out_data, x_data, sizeof(float) * n);
+    out->at(id_).Resize(x->dims());
+    auto out_data = out->at(id_).mutable_data<float>();
+    memcpy(out_data, x->data<float>(), sizeof(float) * x->numel());
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("write_to_array");
-    op_desc->SetInput("X", {input_0});
-    op_desc->SetInput("I", {input_1});
-    op_desc->SetOutput("Out", {output_0, output_1, output_2});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetInput("I", {idn_});
+    op_desc->SetOutput("Out", {out_});
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
+    std::vector<float> dx(x_dims_.production());
+    fill_data_rand(dx.data(), -1.f, 1.f, x_dims_.production());
+    SetCommonTensor(x_, x_dims_, dx.data());
 
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
-    }
-
-    SetCommonTensor(input_0, dims_, data.data());
-
-    std::vector<int> data_1(1);
-    data_1[0] = i_;
-    DDimLite dims_2{{1}};
-    SetCommonTensor(input_1, dims_2, data_1.data());
-
-    SetCommonTensor(output_0, dims_2, data_1.data());
-    SetCommonTensor(output_1, dims_2, data_1.data());
-    SetCommonTensor(output_2, dims_2, data_1.data());
+    std::vector<int64_t> didn(1);
+    didn[0] = id_;
+    SetCommonTensor(idn_, DDim{{1}}, didn.data());
   }
 };
-void test_write_to_array(Place place) {
+
+void TestWriteToArray(Place place, float abs_error) {
   DDimLite dims{{3, 5, 4, 4}};
-  for (int i : {1, 4}) {
-    std::unique_ptr<arena::TestCase> tester(
-        new WriteToArrayComputeTester(place, "def", i, dims));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    arena.TestPrecision();
+  for (int out_size : {0, 3}) {
+    for (int id : {0, 1, 4}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new WriteToArrayComputeTester(place, "def", dims, out_size, id));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
   }
 }
 
 TEST(WriteToArray, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
+  Place place;
+  float abs_error = 1e-5;
 #ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_write_to_array(place);
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  TestWriteToArray(place, abs_error);
 }
 
 }  // namespace lite

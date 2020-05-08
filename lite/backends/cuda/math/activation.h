@@ -26,20 +26,6 @@ namespace math {
 template <typename T>
 void relu(int num, const T* din, T* dout, float alpha, cudaStream_t stream);
 
-// For int8
-template <typename out_type>
-void bias_relu_int8_nhwc4(int num,
-                          const void* in,
-                          const void* bias,
-                          void* out,
-                          int N,
-                          int K,
-                          int H,
-                          int W,
-                          const void* scale,
-                          float alpha,
-                          cudaStream_t stream);
-
 template <typename out_type>
 void relu_int8_nhwc4(int num,
                      const void* in,
@@ -51,6 +37,40 @@ void relu_int8_nhwc4(int num,
                      const void* scale,
                      float alpha,
                      cudaStream_t stream);
+
+template <typename T>
+void bias_relu(int num,
+               const T* din,
+               const float* bias,
+               T* dout,
+               float alpha,
+               cudaStream_t stream);
+
+// For int8
+template <typename out_type>
+void bias_relu_int8_nhwc(int num,
+                         const void* in,
+                         const void* bias,
+                         void* out,
+                         int N,
+                         int C,
+                         int H,
+                         int W,
+                         const void* scale,
+                         float alpha,
+                         cudaStream_t stream);
+
+template <typename out_type>
+void bias_int8_nhwc(int num,
+                    const void* in,
+                    const void* bias,
+                    void* out,
+                    int N,
+                    int C,
+                    int H,
+                    int W,
+                    const void* scale,
+                    cudaStream_t stream);
 
 }  // namespace math
 }  // namespace cuda

@@ -1,8 +1,11 @@
 if(NOT LITE_WITH_CUDA)
     return()
 endif()
+get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
 
-nv_library(target_wrapper_cuda SRCS target_wrapper.cc)
-nv_library(cuda_blas SRCS blas.cc)
+nv_library(target_wrapper_cuda SRCS target_wrapper.cc DEPS ${cuda_deps})
+nv_library(cuda_blas SRCS blas.cc DEPS ${cuda_deps})
+
+lite_cc_library(cuda_context SRCS context.cc DEPS device_info)
  
 add_subdirectory(math)

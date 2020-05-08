@@ -65,7 +65,7 @@ struct TensorSetConstantCPU {
       : tensor_(tensor), value_(value) {}
   template <typename T>
   void apply() const {
-    auto* begin = tensor_->mutable_data<T>(lite::TargetType::kX86);
+    auto* begin = tensor_->template mutable_data<T>(lite::TargetType::kX86);
     std::fill(begin, begin + tensor_->numel(), static_cast<T>(value_));
   }
   lite::Tensor* tensor_;
@@ -110,11 +110,7 @@ void set_constant(const lite::Context<Target>& context,
                   lite::Tensor* tensor,
                   float value) {
   TensorSetConstantWithTarget<Target> func(context, tensor, value);
-  //#ifdef PADDLE_WITH_CUDA
-  // tensor->target().apply_visitor(func);
-  //#else
   func();
-  //#endif
 }
 
 template <typename T>
@@ -123,17 +119,18 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
                   const lite::Tensor& input,
                   const lite::Tensor& vector,
                   lite::Tensor* output) {
-    auto in_dims = input.dims();
+    const auto& in_dims = input.dims();
     auto size = input.numel() / in_dims[0];
     PADDLE_ENFORCE_EQ(vector.numel(), size);
     PADDLE_ENFORCE_EQ(output->dims(), in_dims);
 
-    auto in = lite::fluid::EigenMatrix<T>::From(input);
-    auto vec = lite::fluid::EigenVector<T>::Flatten(vector);
-    auto out = lite::fluid::EigenMatrix<T>::From(*output);
-
+    const T* input_data = input.data<T>();
+    const T* vector_data = vector.data<T>();
+    T* output_data = output->template mutable_data<T>();
     for (int64_t i = 0; i < in_dims[0]; ++i) {
-      out.chip(i, 0) = in.chip(i, 0) + vec;
+      for (int64_t j = 0; j < size; ++j) {
+        output_data[i * size + j] = input_data[i * size + j] + vector_data[j];
+      }
     }
   }
 };

@@ -25,11 +25,12 @@ bool SGDOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.LearningRate);
   CHECK_OR_FALSE(param_.Grad);
   CHECK_OR_FALSE(param_.ParamOut);
+  CHECK_EQ_OR_FALSE(param_.LearningRate->dims().production(), 1);
+  CHECK_EQ_OR_FALSE(param_.Param->dims(), param_.Grad->dims());
   return true;
 }
 
-bool SGDOpLite::InferShape() const {
-  auto lr_dims = param_.LearningRate->dims().data();
+bool SGDOpLite::InferShapeImpl() const {
   param_.ParamOut->Resize(param_.Param->dims());
   return true;
 }
@@ -38,6 +39,8 @@ bool SGDOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto Param_name = opdesc.Input("Param").front();
   auto LearningRate_name = opdesc.Input("LearningRate").front();
   auto Grad_name = opdesc.Input("Grad").front();
+  // param_out and param usually have the same name,
+  // and share the same memory
   auto ParamOut_name = opdesc.Output("ParamOut").front();
 
   param_.Param = GetVar<lite::Tensor>(scope, Param_name);

@@ -19,11 +19,14 @@
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/mlu_utils.h"
+#endif
 
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
 
 typedef enum {
   kAPPLE = 0,
@@ -52,6 +55,20 @@ class DeviceInfo {
   int Setup();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
+#ifdef LITE_WITH_MLU
+  void SetMLURunMode(lite_api::MLUCoreVersion core_version,
+                     int core_number,
+                     bool use_first_conv,
+                     const std::vector<float>& mean_vec,
+                     const std::vector<float>& std_vec,
+                     DataLayoutType input_layout);
+  cnmlCoreVersion_t MLUCoreVersion();
+  int MLUCoreNumber();
+  bool UseFirstConv();
+  const std::vector<float>& MeanVec() const;
+  const std::vector<float>& StdVec() const;
+  DataLayoutType InputLayout() const;
+#endif
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
 
@@ -79,7 +96,6 @@ class DeviceInfo {
   int core_num_;
   std::vector<int> max_freqs_;
   std::vector<int> min_freqs_;
-  int mem_size_;
   std::string dev_name_;
 
   std::vector<int> L1_cache_;
@@ -94,14 +110,24 @@ class DeviceInfo {
   std::vector<bool> fp16_;
   std::vector<bool> dot_;
 
-  ARMArch arch_;
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  lite_api::PowerMode mode_;
-  std::vector<int> active_ids_;
-  TensorLite workspace_;
-  int64_t count_{0};
+  static thread_local lite_api::PowerMode mode_;
+  static thread_local ARMArch arch_;
+  static thread_local int mem_size_;
+  static thread_local std::vector<int> active_ids_;
+  static thread_local TensorLite workspace_;
+  static thread_local int64_t count_;
+
+#ifdef LITE_WITH_MLU
+  static thread_local cnmlCoreVersion_t mlu_core_version_;
+  static thread_local int mlu_core_number_;
+  static thread_local bool use_first_conv_;
+  static thread_local std::vector<float> mean_vec_;
+  static thread_local std::vector<float> std_vec_;
+  static thread_local DataLayoutType input_layout_;
+#endif
 
   void SetDotInfo(int argc, ...);
   void SetFP16Info(int argc, ...);
@@ -119,7 +145,6 @@ class DeviceInfo {
 
   DeviceInfo() = default;
 };
-
 #endif  // LITE_WITH_ARM
 
 template <TargetType Type>
@@ -134,7 +159,10 @@ class Env {
     static Devs* devs = new Devs();
     return *devs;
   }
-  static void Init(int max_stream = 4) {
+  static void Init(int max_stream = 6) {
+#ifdef LITE_WITH_MLU
+    CNRT_CALL(cnrtInit(0));
+#endif
     Devs& devs = Global();
     if (devs.size() > 0) {
       return;
@@ -143,10 +171,11 @@ class Env {
     // Get device count
     count = API::num_devices();
     if (count == 0) {
-      CHECK(false) << "No device found!";
+      LOG(INFO) << "No " << TargetToStr(Type) << " device(s) found!";
     } else {
       LOG(INFO) << "Found " << count << " device(s)";
     }
+    CHECK_GT(max_stream, 0) << "max_stream must be greater than 0.";
     // create all device
     for (int i = 0; i < count; i++) {
       auto dev = Device<Type>(i, max_stream);
@@ -156,6 +185,84 @@ class Env {
     LOG(INFO) << "dev size = " << devs.size();
   }
 };
+
+#ifdef LITE_WITH_MLU
+void SetMluDevice(int device_id);
+
+template <>
+class Device<TARGET(kMLU)> {
+ public:
+  Device(int dev_id, int max_queue = 1) : idx_(dev_id), max_queue_(max_queue) {}
+  void Init();
+
+  int id() { return idx_; }
+  int max_queue() { return max_queue_; }
+  void SetId(int idx) { idx_ = idx; }
+  std::string name() { return "MLU"; }
+  int core_num() { return 16; }
+  float max_memory() { return 16 * 1024; }
+  std::vector<cnrtQueue_t> io_queues() { return io_queue_; }
+  std::vector<cnrtQueue_t> exec_queues() { return exec_queue_; }
+
+ private:
+  void CreateQueue();
+  void GetInfo();
+
+ private:
+  int idx_{0};
+  int max_queue_;
+  std::string device_name_;
+  float max_memory_;
+
+  std::vector<cnrtQueue_t> io_queue_;
+  std::vector<cnrtQueue_t> exec_queue_;
+};
+
+template class Env<TARGET(kMLU)>;
+#endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_BM
+template <>
+class Device<TARGET(kBM)> {
+ public:
+  Device(int dev_id, int max_stream = 1)
+      : idx_(dev_id), max_stream_(max_stream) {}
+  void Init();
+
+  int id() { return idx_; }
+  int max_stream() { return 1; }
+  std::string name() { return "BM"; }
+  float max_memory() { return 16; }
+  int core_num();
+  void SetId(int idx);
+
+  int sm_version() { return 0; }
+  bool has_fp16() { return false; }
+  bool has_int8() { return false; }
+  bool has_hmma() { return false; }
+  bool has_imma() { return false; }
+  int runtime_version() { return 0; }
+
+ private:
+  void CreateQueue() {}
+  void GetInfo() {}
+
+ private:
+  int idx_{0};
+  int max_stream_{1};
+  std::string device_name_;
+  float max_memory_;
+
+  int sm_version_;
+  bool has_fp16_;
+  bool has_int8_;
+  bool has_hmma_;
+  bool has_imma_;
+  int runtime_version_;
+};
+
+template class Env<TARGET(kBM)>;
+#endif
 
 #ifdef LITE_WITH_CUDA
 template <>
@@ -171,8 +278,8 @@ class Device<TARGET(kCUDA)> {
   std::string name() { return device_prop_.name; }
   int core_num() { return device_prop_.multiProcessorCount; }
   float max_memory() { return device_prop_.totalGlobalMem / 1048576.; }
-  std::vector<cudaStream_t> exec_streams() { return exec_stream_; }
-  std::vector<cudaStream_t> io_streams() { return io_stream_; }
+  const std::vector<cudaStream_t>& exec_streams() { return exec_stream_; }
+  const std::vector<cudaStream_t>& io_streams() { return io_stream_; }
 
   int sm_version() { return sm_version_; }
   bool has_fp16() { return has_fp16_; }

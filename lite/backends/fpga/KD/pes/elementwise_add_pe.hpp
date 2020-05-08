@@ -58,15 +58,29 @@ class ElementwiseAddPE : public PE {
   bool dispatch() {
     param_.inputs[0]->syncToDevice();
     param_.inputs[1]->syncToDevice();
-    InplaceArgs inplace_args = {0};
-    if (param_.relu.enabled) {
-      inplace_args.relu_enable = true;
-      config_inplace(inplace_args);
+    // InplaceArgs inplace_ = {0};
+
+    if (param_.activeParam.type == TYPE_RELU) {
+      inplace_.relu_enable = true;
+    } else if (param_.activeParam.type == TYPE_RELU6) {
+      inplace_.relu6_enable = true;
+    } else if (param_.activeParam.type == TYPE_SIGMOID) {
+      inplace_.sigmoid_enable = true;
+    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
+      inplace_.leaky_relu_enable = true;
+    }
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
+        inplace_.relu6_enable || inplace_.sigmoid_enable) {
+      config_inplace(inplace_);
     }
     compute_fpga_ewadd(param_.ewargs);
-    if (param_.relu.enabled) {
-      inplace_args.relu_enable = false;
-      config_inplace(inplace_args);
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
+        inplace_.relu6_enable || inplace_.sigmoid_enable) {
+      inplace_.relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
+      inplace_.leaky_relu_enable = false;
+      config_inplace(inplace_);
     }
     return true;
   }
@@ -75,6 +89,7 @@ class ElementwiseAddPE : public PE {
 
  private:
   ElementwiseAddParam param_;
+  InplaceArgs inplace_ = {0};
 };
 
 }  // namespace zynqmp

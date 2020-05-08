@@ -18,7 +18,7 @@
 namespace refer = paddle::lite::jit::refer;
 
 #define REGISTER_REFER_KERNEL(func) \
-  REGISTER_JITKERNEL_REFER(         \
+  REGISTER_JITKERNEL_REFER_LITE(    \
       k##func, refer::func##Kernel<float>, refer::func##Kernel<double>)
 
 REGISTER_REFER_KERNEL(VMul);

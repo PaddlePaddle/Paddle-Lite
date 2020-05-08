@@ -1,9 +1,10 @@
 #!/bin/bash
+# The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
 set -ex
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
-
+CUDNN_ROOT="/usr/local/cudnn"
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -12,6 +13,16 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
+
+# global variables
+#whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
+USE_ADB_EMULATOR=ON
+
+# if operating in mac env, we should expand the maximum file num
+os_nmae=`uname -s`
+if [ ${os_nmae} == "Darwin" ]; then
+   ulimit -n 1024
+fi
 
 function prepare_thirdparty {
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
@@ -26,6 +37,41 @@ function prepare_thirdparty {
     fi
 }
 
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+}
+
+# prepare adb devices
+# if USE_ADB_EMULATOR=ON , we create adb emulator port_armv8 and port_armv7 for usage, else we will use actual mobilephone according to adbindex.
+function prepare_adb_devices {
+    port_armv8=5554
+    port_armv7=5556
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+       prepare_emulator $port_armv8 $port_armv7
+       device_armv8=emulator-$port_armv8
+       device_armv7=emulator-$port_armv7
+    else
+       adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
+       # adbindex is the env variable registered in ci agent to tell which mobile is to used as adb
+       adbindex_pos=`expr ${adbindex} + 1`
+       if [ ${adbindex_pos} -gt ${#adb_devices[@]} ]; then
+           echo -e "Error: the adb devices on ci agent are not enough, at least ${adbindex_pos} adb devices are needed."
+           exit 1
+       fi
+       echo ${adb_devices[${adbindex}]}
+       device_armv8=${adb_devices[${adbindex}]}
+       device_armv7=${adb_devices[${adbindex}]}
+    fi
+}
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
@@ -72,11 +118,13 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_LOG=ON \
+        -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
 function run_gen_code_test {
-    local port=$1
+    local device=$1
     local gen_code_file_name="__generated_code__.cc"
     local gen_code_file_path="./lite/gen_code/${gen_code_file_path}"
     local adb_work_dir="/data/local/tmp"
@@ -86,20 +134,20 @@ function run_gen_code_test {
 
     # 2. run test_cxx_api_lite in emulator to get opt model 
     local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api)
-    adb -s emulator-${port} push "./third_party/install/lite_naive_model" ${adb_work_dir}
-    adb -s emulator-${port} push ${test_cxx_api_lite_path} ${adb_work_dir}
-    adb -s emulator-${port} shell "${adb_work_dir}/test_cxx_api --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
+    adb -s ${device} push "./third_party/install/lite_naive_model" ${adb_work_dir}
+    adb -s ${device} push ${test_cxx_api_lite_path} ${adb_work_dir}
+    adb -s ${device} shell "${adb_work_dir}/test_cxx_api --model_dir=${adb_work_dir}/lite_naive_model --optimized_model=${adb_work_dir}/lite_naive_model_opt"
 
     # 3. build test_gen_code
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
 
     # 4. run test_gen_code_lite in emulator to get __generated_code__.cc
     local test_gen_code_lite_path=$(find ./lite -name test_gen_code)
-    adb -s emulator-${port} push ${test_gen_code_lite_path} ${adb_work_dir}
-    adb -s emulator-${port} shell "${adb_work_dir}/test_gen_code --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
+    adb -s ${device} push ${test_gen_code_lite_path} ${adb_work_dir}
+    adb -s ${device} shell "${adb_work_dir}/test_gen_code --optimized_model=${adb_work_dir}/lite_naive_model_opt --generated_code_file=${adb_work_dir}/${gen_code_file_name}"
 
     # 5. pull __generated_code__.cc down and mv to build real path
-    adb -s emulator-${port} pull "${adb_work_dir}/${gen_code_file_name}" .
+    adb -s ${device} pull "${adb_work_dir}/${gen_code_file_name}" .
     mv ${gen_code_file_name} ${gen_code_file_path}
 
     # 6. build test_generated_code
@@ -136,17 +184,19 @@ function build_opencl {
         return 0
     fi
 
-    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}.opencl
+    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
     mkdir -p $build_dir
     cd $build_dir
 
-    cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp
-    build $TESTS_FILE
+    prepare_opencl_source_code $cur_dir $build_dir
 
-    # test publish inference lib
-    make publish_inference
+    cmake_opencl ${os} ${abi} ${lang}
+    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
+    build $TESTS_FILE
 }
+
+
 
 # This method is only called in CI.
 function cmake_x86_for_CI {
@@ -160,6 +210,11 @@ function cmake_x86_for_CI {
     # ctest -R test_cxx_api
     # ctest -R test_gen_code
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
+}
+
+function cmake_cuda_for_CI {
+    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
+    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT} -DWITH_LITE=OFF
 }
 
 function cmake_gpu {
@@ -194,9 +249,8 @@ function build {
 function test_server {
     # Due to the missing of x86 kernels, we skip the following tests temporarily.
     # TODO(xxx) clear the skip list latter
-    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
-                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
-                     "test_inceptionv4_lite_x86" "test_light_api"
+    local skip_list=("test_paddle_api" "test_cxx_api"
+                     "test_light_api"
                      "test_apis" "test_model_bin"
                     )
     local to_skip=0
@@ -227,6 +281,18 @@ function build_test_server {
     test_model_optimize_tool_compile
 }
 
+# The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
+# The cuDNN version is cudnn-10.1-linux-x64-v7.5.0.56.
+function build_test_cuda_server {
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cmake_cuda_for_CI
+    make -j$NUM_CORES_FOR_COMPILE
+    # temporary remove cuda unittest because the ci PR_CI_Paddle-Lite-server-cuda10.1(ubt16-gcc5.4) is in cpu machine and only build.
+    # ctest -R "/*_cuda_test" -V
+}
+
 function build_test_train {
     mkdir -p ./build
     cd ./build
@@ -248,15 +314,72 @@ function build_test_train {
 
 }
 
+function cmake_xpu {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DXPU_SDK_ROOT="$(pwd)/../../XPU_SDK"
+}
+
+function build_xpu {
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+# It will eagerly test all lite related unittests.
+function test_xpu {
+    # Due to the missing of xpu kernels, we skip the following tests temporarily.
+    # TODO(xxx) clear the skip list latter
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
+                    )
+    local to_skip=0
+    for _test in $(cat $TESTS_FILE); do
+        to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name = $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+
+        if [ $to_skip -eq 0 ]; then
+            ctest -R $_test -V
+        fi
+    done
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_xpu {
+    cur_dir=$(pwd)
+
+    build_dir=$cur_dir/build.lite.xpu
+    mkdir -p $build_dir
+    cd $build_dir
+
+    cmake_xpu
+    build_xpu
+
+    test_xpu
+}
+
 # test_arm_android <some_test_name> <adb_port_number>
 function test_arm_android {
     local test_name=$1
-    local port=$2
+    local device=$2
     if [[ "${test_name}x" == "x" ]]; then
         echo "test_name can not be empty"
         exit 1
     fi
-    if [[ "${port}x" == "x" ]]; then
+    if [[ "${device}x" == "x" ]]; then
         echo "Port can not be empty"
         exit 1
     fi
@@ -264,27 +387,27 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
 
     local testpath=$(find ./lite -name ${test_name})
 
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s emulator-${port} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${device} push ${testpath} ${adb_work_dir}
+    adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
+    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
 function test_npu {
     local test_name=$1
-    local port=$2
+    local device=$2
     if [[ "${test_name}x" == "x" ]]; then
         echo "test_name can not be empty"
         exit 1
     fi
-    if [[ "${port}x" == "x" ]]; then
+    if [[ "${device}x" == "x" ]]; then
         echo "Port can not be empty"
         exit 1
     fi
@@ -300,33 +423,33 @@ function test_npu {
     local testpath=$(find ./lite -name ${test_name})
 
     # note the ai_ddk_lib is under paddle-lite root directory
-    adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
+    adb -s ${device} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
+    adb -s ${device} push ${testpath} ${adb_work_dir}
 
     if [[ ${test_name} == "test_npu_pass" ]]; then
         local model_name=mobilenet_v1
-        adb -s emulator-${port} push "./third_party/install/${model_name}" ${adb_work_dir}
-        adb -s emulator-${port} shell "rm -rf ${adb_work_dir}/${model_name}_opt "
-        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name} --optimized_model=./${model_name}_opt"
+        adb -s ${device} push "./third_party/install/${model_name}" ${adb_work_dir}
+        adb -s ${device} shell "rm -rf ${adb_work_dir}/${model_name}_opt "
+        adb -s ${device} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name} --optimized_model=./${model_name}_opt"
     elif [[ ${test_name} == "test_subgraph_pass" ]]; then
         local model_name=mobilenet_v1
-        adb -s emulator-${port} push "./third_party/install/${model_name}" ${adb_work_dir}
-        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name}"
+        adb -s ${device} push "./third_party/install/${model_name}" ${adb_work_dir}
+        adb -s ${device} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; export GLOG_v=0; ./${test_name} --model_dir=./${model_name}"
     else
-        adb -s emulator-${port} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; ./${test_name}"
+        adb -s ${device} shell "cd ${adb_work_dir}; export LD_LIBRARY_PATH=./ ; ./${test_name}"
     fi
 }
 
 function test_npu_model {
     local test_name=$1
-    local port=$2
+    local device=$2
     local model_dir=$3
 
     if [[ "${test_name}x" == "x" ]]; then
         echo "test_name can not be empty"
         exit 1
     fi
-    if [[ "${port}x" == "x" ]]; then
+    if [[ "${device}x" == "x" ]]; then
         echo "Port can not be empty"
         exit 1
     fi
@@ -339,17 +462,17 @@ function test_npu_model {
     adb_work_dir="/data/local/tmp"
 
     testpath=$(find ./lite -name ${test_name})
-    adb -s emulator-${port} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
-    adb -s emulator-${port} push ${model_dir} ${adb_work_dir}
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
+    adb -s ${device} push ../ai_ddk_lib/lib64/* ${adb_work_dir}
+    adb -s ${device} push ${model_dir} ${adb_work_dir}
+    adb -s ${device} push ${testpath} ${adb_work_dir}
+    adb -s ${device} shell chmod +x "${adb_work_dir}/${test_name}"
     local adb_model_path="${adb_work_dir}/`basename ${model_dir}`"
-    adb -s emulator-${port} shell "export LD_LIBRARY_PATH=${adb_work_dir}; ${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
+    adb -s ${device} shell "export LD_LIBRARY_PATH=${adb_work_dir}; ${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
 # test the inference high level api
 function test_arm_api {
-    local port=$1
+    local device=$1
     local test_name="test_paddle_api"
 
     make $test_name -j$NUM_CORES_FOR_COMPILE
@@ -358,23 +481,23 @@ function test_arm_api {
     local remote_model=${adb_work_dir}/paddle_api
     local testpath=$(find ./lite -name ${test_name})
 
-    arm_push_necessary_file $port $model_path $remote_model
-    adb -s emulator-${port} shell mkdir -p $remote_model
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
-    adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir $remote_model"
+    arm_push_necessary_file $device $model_path $remote_model
+    adb -s ${device} shell mkdir -p $remote_model
+    adb -s ${device} push ${testpath} ${adb_work_dir}
+    adb -s ${device} shell chmod +x "${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "${adb_work_dir}/${test_name} --model_dir $remote_model"
 }
 
 function test_arm_model {
     local test_name=$1
-    local port=$2
+    local device=$2
     local model_dir=$3
 
     if [[ "${test_name}x" == "x" ]]; then
         echo "test_name can not be empty"
         exit 1
     fi
-    if [[ "${port}x" == "x" ]]; then
+    if [[ "${device}x" == "x" ]]; then
         echo "Port can not be empty"
         exit 1
     fi
@@ -387,11 +510,11 @@ function test_arm_model {
     adb_work_dir="/data/local/tmp"
 
     testpath=$(find ./lite -name ${test_name})
-    adb -s emulator-${port} push ${model_dir} ${adb_work_dir}
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
-    adb -s emulator-${port} shell chmod +x "${adb_work_dir}/${test_name}"
+    adb -s ${device} push ${model_dir} ${adb_work_dir}
+    adb -s ${device} push ${testpath} ${adb_work_dir}
+    adb -s ${device} shell chmod +x "${adb_work_dir}/${test_name}"
     local adb_model_path="${adb_work_dir}/`basename ${model_dir}`"
-    adb -s emulator-${port} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
+    adb -s ${device} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
 # function _test_model_optimize_tool {
@@ -414,15 +537,15 @@ function test_model_optimize_tool_compile {
     cd $workspace
     cd build
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    make model_optimize_tool -j$NUM_CORES_FOR_COMPILE
+    make opt -j$NUM_CORES_FOR_COMPILE
 }
 
 function _test_paddle_code_generator {
-    local port=$1
+    local device=$1
     local test_name=paddle_code_generator
     local remote_test=$ADB_WORK_DIR/$test_name
     local remote_model=$ADB_WORK_DIR/lite_naive_model.opt
-    local adb="adb -s emulator-${port}"
+    local adb="adb -s ${device}"
 
     make paddle_code_generator -j$NUM_CORES_FOR_COMPILE
     local test_path=$(find . -name $test_name | head -n1)
@@ -473,6 +596,7 @@ function cmake_arm {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -503,8 +627,44 @@ function build_arm {
     cmake_arm ${os} ${abi} ${lang}
     build $TESTS_FILE
 
-    # test publish inference lib
-    make publish_inference
+}
+
+# $1: ARM_TARGET_OS in "ios", "ios64"
+# $2: ARM_TARGET_ARCH_ABI in "armv7", "armv8"
+function build_ios {
+    local os=$1
+    local abi=$2
+    build_dir=build.ios.${os}.${abi}
+    echo "building ios target into $build_dir"
+    echo "target os: $os"
+    echo "target abi: $abi"
+    mkdir -p ${build_dir}
+    cd ${build_dir}
+    GEN_CODE_PATH_PREFIX=lite/gen_code
+    mkdir -p ./${GEN_CODE_PATH_PREFIX}
+    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+
+    cmake .. \
+            -DWITH_GPU=OFF \
+            -DWITH_MKL=OFF \
+            -DWITH_LITE=ON \
+            -DLITE_WITH_CUDA=OFF \
+            -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_ARM=ON \
+            -DWITH_TESTING=OFF \
+            -DLITE_WITH_JAVA=OFF \
+            -DLITE_WITH_LOG=OFF \
+            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_OPENMP=OFF \
+            -DWITH_ARM_DOTPROD=OFF \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DARM_TARGET_ARCH_ABI=$abi \
+            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DLITE_WITH_CV=$BUILD_CV \
+            -DARM_TARGET_OS=$os
+
+    make publish_inference -j$NUM_PROC
+    cd -
 }
 
 # $1: ARM_TARGET_OS in "android"
@@ -541,7 +701,7 @@ function test_arm {
     os=$1
     abi=$2
     lang=$3
-    port=$4
+    device=$4
 
     if [[ ${os} == "armlinux" ]]; then
         # TODO(hongming): enable test armlinux on armv8, armv7 and armv7hf
@@ -555,16 +715,16 @@ function test_arm {
     fi
 
     # prepare for CXXApi test
-    local adb="adb -s emulator-${port}"
+    local adb="adb -s ${device}"
     $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
 
     echo "test file: ${TESTS_FILE}"
     for _test in $(cat $TESTS_FILE); do
-        test_arm_android $_test $port
+        test_arm_android $_test $device
     done
 
     # test finally
-    test_arm_api $port
+    test_arm_api $device
 
     # _test_model_optimize_tool $port
     # _test_paddle_code_generator $port
@@ -588,23 +748,65 @@ function prepare_emulator {
 }
 
 function arm_push_necessary_file {
-    local port=$1
+    local device=$1
     local testpath=$2
     local adb_work_dir=$3
 
-    adb -s emulator-${port} push ${testpath} ${adb_work_dir}
+    adb -s ${device} push ${testpath} ${adb_work_dir}
+}
+
+
+function test_opencl {
+    os=$1
+    abi=$2
+    lang=$3
+    device=$4
+
+    if [[ ${os} == "armlinux" ]]; then
+        # TODO(hongming): enable test armlinux on armv8, armv7 and armv7hf
+        echo "Skip test arm linux yet. armlinux must in another docker"
+        return 0
+    fi
+
+    if [[ ${os} == "android" && ${abi} == "armv7hf" ]]; then
+        echo "android do not need armv7hf"
+        return 0
+    fi
+
+    # prepare for CXXApi test
+    local adb="adb -s ${device}"
+    $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
+
+    # opencl test should be marked with `opencl`
+    opencl_test_mark="opencl"
+
+    for _test in $(cat $TESTS_FILE); do
+        # tell if this test is marked with `opencl`
+        if [[ $_test == *$opencl_test_mark* ]]; then
+            test_arm_android $_test $device
+        fi
+    done
+
 }
 
 function build_test_arm_opencl {
     ########################################################################
     cur=$PWD
+    # job 1-4 must be in one runner
+    prepare_adb_devices
 
     # job 1
     build_opencl "android" "armv8" "gcc"
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv8}
+    test_opencl "android" "armv8" "gcc" ${device_armv8}
     cd $cur
 
     # job 2
     build_opencl "android" "armv7" "gcc"
+    adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv7}
+    test_opencl "android" "armv7" "gcc" ${device_armv7}
     cd $cur
 
     echo "Done"
@@ -615,15 +817,13 @@ function build_test_arm_opencl {
 function build_test_arm_subtask_android {
     ########################################################################
     # job 1-4 must be in one runner
-    port_armv8=5554
-    port_armv7=5556
-
-    prepare_emulator $port_armv8 $port_armv7
+    prepare_adb_devices
 
     # job 1
     build_arm "android" "armv8" "gcc"
-    run_gen_code_test ${port_armv8}
-    test_arm "android" "armv8" "gcc" ${port_armv8}
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv8}
+    test_arm "android" "armv8" "gcc" ${device_armv8}
     cd -
 
     # job 2
@@ -634,8 +834,9 @@ function build_test_arm_subtask_android {
 
     # job 3
     build_arm "android" "armv7" "gcc"
-    run_gen_code_test ${port_armv7}
-    test_arm "android" "armv7" "gcc" ${port_armv7}
+    adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv7}
+    test_arm "android" "armv7" "gcc" ${device_armv7}
     cd -
 
     # job 4
@@ -644,7 +845,9 @@ function build_test_arm_subtask_android {
     #test_arm "android" "armv7" "clang" ${port_armv7}
     #cd -
 
-    adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+        adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    fi
     echo "Done"
 }
 
@@ -653,26 +856,39 @@ function build_test_arm_subtask_armlinux {
     cur=$PWD
     # job 5
     build_arm "armlinux" "armv8" "gcc"
-    test_arm "armlinux" "armv8" "gcc" $port_armv8
+    test_arm "armlinux" "armv8" "gcc" $device_armv8
     cd $cur
 
     # job 6
     build_arm "armlinux" "armv7" "gcc"
-    test_arm "armlinux" "armv7" "gcc" $port_armv8
+    test_arm "armlinux" "armv7" "gcc" $device_armv8
     cd $cur
 
     # job 7
     build_arm "armlinux" "armv7hf" "gcc"
-    test_arm "armlinux" "armv7hf" "gcc" $port_armv8
+    test_arm "armlinux" "armv7hf" "gcc" $device_armv8
     cd $cur
 
     echo "Done"
 }
 
-# sub-task-model
+# sub-task3
+# this task will test IOS compiling, which requires cmake_version>=3.15
+function build_test_arm_subtask_ios {
+    cur=$PWD
+    # job 8
+    build_ios "ios" "armv7"
+    cd $cur
+
+    # job 9
+    build_ios "ios64" "armv8"
+    cd $cur
+
+    echo "Done"
+}
+
+# this method need to invoke `build_test_arm_subtask_android` first.
 function build_test_arm_subtask_model {
-    local port_armv8=5554
-    local port_armv7=5556
     # We just test following single one environment to limit the CI time.
     local os=android
     local abi=armv8
@@ -683,35 +899,36 @@ function build_test_arm_subtask_model {
 
     cur_dir=$(pwd)
     build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
-    mkdir -p $build_dir
     cd $build_dir
-    cmake_arm $os $abi $lang
     make $test_name -j$NUM_CORES_FOR_COMPILE
 
-    prepare_emulator $port_armv8 $port_armv7
+    # prepare adb devices
+    prepare_adb_devices
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
 
     # just test the model on armv8
-    test_arm_model $test_name $port_armv8 "./third_party/install/$model_name"
+    test_arm_model $test_name $device_armv8 "./third_party/install/$model_name"
 
-    adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    if [ $USE_ADB_EMULATOR == "ON" ]; then
+        adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
+    fi
     echo "Done"
     cd -
-    rm -rf $build_dir
 }
 
 
 # this test load a model, optimize it and check the prediction result of both cxx and light APIS.
 function test_arm_predict_apis {
-    local port=$1
+    local device=$1
     local workspace=$2
     local naive_model_path=$3
     local api_test_path=$(find . -name "test_apis")
     # the model is pushed to ./lite_naive_model
-    adb -s emulator-${port} push ${naive_model_path} ${workspace}
-    adb -s emulator-${port} push $api_test_path ${workspace}
+    adb -s ${device} push ${naive_model_path} ${workspace}
+    adb -s ${device} push $api_test_path ${workspace}
 
     # test cxx_api first to store the optimized model.
-    adb -s emulator-${port} shell ./test_apis --model_dir ./lite_naive_model --optimized_model ./lite_naive_model_opt
+    adb -s ${device} shell ./test_apis --model_dir ./lite_naive_model --optimized_model ./lite_naive_model_opt
 }
 
 
@@ -719,9 +936,6 @@ function test_arm_predict_apis {
 function build_test_arm {
     ########################################################################
     # job 1-4 must be in one runner
-    port_armv8=5554
-    port_armv7=5556
-
     build_test_arm_subtask_android
     build_test_arm_subtask_armlinux
 }
@@ -743,16 +957,19 @@ function build_test_npu {
     # just test the model on armv8
     # prepare_emulator $port_armv8
 
+    prepare_emulator $port_armv8 $port_armv7
+    local device_armv8=emulator-$port_armv8
+
     if [[ "${test_name}x" != "x" ]]; then
-        test_npu ${test_name} ${port_armv8}
+        test_npu ${test_name} ${device_armv8}
     else
         # run_gen_code_test ${port_armv8}
         for _test in $(cat $TESTS_FILE | grep npu); do
-            test_npu $_test $port_armv8
+            test_npu $_test $device_armv8
         done
     fi
 
-    test_npu_model $test_model_name $port_armv8 "./third_party/install/$model_name"
+    test_npu_model $test_model_name $device_armv8 "./third_party/install/$model_name"
     cd -
     # just test the model on armv8
     # adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
@@ -783,7 +1000,7 @@ function mobile_publish {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=OFF \
         -DLITE_WITH_JAVA=ON \
-        -DLITE_SHUTDOWN_LOG=ON \
+        -DLITE_WITH_LOG=OFF \
         -DLITE_ON_TINY_PUBLISH=ON \
         -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -837,6 +1054,10 @@ function main {
                 ARM_PORT="${i#*=}"
                 shift
                 ;;
+            --use_adb_emulator=*)
+                USE_ADB_EMULATOR="${i#*=}"
+                shift
+                ;;
             build)
                 build $TESTS_FILE
                 build $LIBS_FILE
@@ -848,6 +1069,10 @@ function main {
                 ;;
             cmake_x86)
                 cmake_x86
+                shift
+                ;;
+            cmake_xpu)
+                cmake_xpu
                 shift
                 ;;
             cmake_opencl)
@@ -874,6 +1099,10 @@ function main {
                 test_server
                 shift
                 ;;
+            test_xpu)
+                test_xpu
+                shift
+                ;;
             test_arm)
                 test_arm $ARM_OS $ARM_ABI $ARM_LANG $ARM_PORT
                 shift
@@ -886,8 +1115,16 @@ function main {
                 test_arm_android $TEST_NAME $ARM_PORT
                 shift
                 ;;
+            build_test_cuda_server)
+                build_test_cuda_server
+                shift
+                ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_test_xpu)
+                build_test_xpu
                 shift
                 ;;
             build_test_train)
@@ -904,31 +1141,25 @@ function main {
                 ;;
             build_test_arm_opencl)
                 build_test_arm_opencl
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
             build_test_arm_subtask_android)
                 build_test_arm_subtask_android
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
+                build_test_arm_subtask_model test_resnet50 resnet50
+                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
                 shift
                 ;;
             build_test_arm_subtask_armlinux)
                 build_test_arm_subtask_armlinux
                 shift
                 ;;
-            build_test_arm_model_mobilenetv1)
-                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
-                build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
-                shift
-                ;;
-            build_test_arm_model_mobilenetv2)
-                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
-                shift
-                ;;
-            build_test_arm_model_resnet50)
-                build_test_arm_subtask_model test_resnet50 resnet50
-                shift
-                ;;
-            build_test_arm_model_inceptionv4)
-                build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
+            build_test_arm_subtask_ios)
+                build_test_arm_subtask_ios
                 shift
                 ;;
             check_style)

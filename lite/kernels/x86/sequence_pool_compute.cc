@@ -22,4 +22,5 @@ REGISTER_LITE_KERNEL(sequence_pool,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

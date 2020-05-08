@@ -34,7 +34,7 @@ class ConvTransposeOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
@@ -44,6 +44,7 @@ class ConvTransposeOpLite : public OpLite {
 
  private:
   mutable ConvParam param_;
+  std::string padding_algorithm_{""};
 };
 
 }  // namespace operators

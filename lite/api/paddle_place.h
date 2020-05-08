@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <set>
 #include <string>
 
 // Generic helper definitions for shared library support
@@ -48,10 +49,15 @@ enum class TargetType : int {
   kCUDA = 3,
   kARM = 4,
   kOpenCL = 5,
+  kAny = 6,  // any target
   kFPGA = 7,
   kNPU = 8,
-  kAny = 6,  // any target
-  NUM = 9,   // number of fields.
+  kXPU = 9,
+  kBM = 10,
+  kMLU = 11,
+  kRKNPU = 12,
+  kAPU = 13,
+  NUM = 14,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -69,8 +75,11 @@ enum class DataLayoutType : int {
   kUnk = 0,
   kNCHW = 1,
   kNHWC = 3,
-  kAny = 2,  // any data layout
-  NUM = 4,   // number of fields.
+  kImageDefault = 4,  // for opencl image2d
+  kImageFolder = 5,   // for opencl image2d
+  kImageNW = 6,       // for opencl image2d
+  kAny = 2,           // any data layout
+  NUM = 7,            // number of fields.
 };
 
 typedef enum {
@@ -82,6 +91,8 @@ typedef enum {
   LITE_POWER_RAND_LOW = 5
 } PowerMode;
 
+typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
+
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,
@@ -90,7 +101,12 @@ enum class ActivationType : int {
   kLeakyRelu = 4,
   kSigmoid = 5,
   kTanh = 6,
-  kSwish = 7
+  kSwish = 7,
+  kExp = 8,
+  kAbs = 9,
+  kHardSwish = 10,
+  kReciprocal = 11,
+  NUM = 12,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -101,6 +117,8 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 1;
     case PrecisionType::kInt32:
       return 4;
+    case PrecisionType::kInt64:
+      return 8;
     case PrecisionType::kFP16:
       return 2;
     default:
@@ -108,9 +126,39 @@ static size_t PrecisionTypeLength(PrecisionType type) {
   }
 }
 
+template <typename T>
+struct PrecisionTypeTrait {
+  constexpr static PrecisionType Type() { return PrecisionType::kUnk; }
+};
+
+#define _ForEachPrecisionTypeHelper(callback, cpp_type, precision_type) \
+  callback(cpp_type, ::paddle::lite_api::PrecisionType::precision_type);
+
+#define _ForEachPrecisionType(callback)                   \
+  _ForEachPrecisionTypeHelper(callback, bool, kBool);     \
+  _ForEachPrecisionTypeHelper(callback, float, kFloat);   \
+  _ForEachPrecisionTypeHelper(callback, int8_t, kInt8);   \
+  _ForEachPrecisionTypeHelper(callback, int16_t, kInt16); \
+  _ForEachPrecisionTypeHelper(callback, int, kInt32);     \
+  _ForEachPrecisionTypeHelper(callback, int64_t, kInt64);
+
+#define DefinePrecisionTypeTrait(cpp_type, precision_type)           \
+  template <>                                                        \
+  struct PrecisionTypeTrait<cpp_type> {                              \
+    constexpr static PrecisionType Type() { return precision_type; } \
+  }
+
+_ForEachPrecisionType(DefinePrecisionTypeTrait);
+
+#undef _ForEachPrecisionTypeHelper
+#undef _ForEachPrecisionType
+#undef DefinePrecisionTypeTrait
+
 #define TARGET(item__) paddle::lite_api::TargetType::item__
 #define PRECISION(item__) paddle::lite_api::PrecisionType::item__
 #define DATALAYOUT(item__) paddle::lite_api::DataLayoutType::item__
+
+const std::string& ActivationTypeToStr(ActivationType act);
 
 const std::string& TargetToStr(TargetType target);
 
@@ -123,6 +171,17 @@ const std::string& TargetRepr(TargetType target);
 const std::string& PrecisionRepr(PrecisionType precision);
 
 const std::string& DataLayoutRepr(DataLayoutType layout);
+
+// Get a set of all the elements represented by the target.
+std::set<TargetType> ExpandValidTargets(TargetType target = TARGET(kAny));
+
+// Get a set of all the elements represented by the precision.
+std::set<PrecisionType> ExpandValidPrecisions(
+    PrecisionType precision = PRECISION(kAny));
+
+// Get a set of all the elements represented by the layout.
+std::set<DataLayoutType> ExpandValidLayouts(
+    DataLayoutType layout = DATALAYOUT(kAny));
 
 /*
  * Place specifies the execution context of a Kernel or input/output for a

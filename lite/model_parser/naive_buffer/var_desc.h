@@ -51,6 +51,8 @@ class VarDesc : public VarDescAPI {
 
   void SetPersistable(bool persistable) override;
 
+  VarDescAPI::VarDataType GetDataType() const;
+
  private:
   const proto::VarType &GetVarType() const;
   proto::VarType *GetMutableVarType();

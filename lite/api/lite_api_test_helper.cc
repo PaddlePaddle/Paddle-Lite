@@ -24,24 +24,16 @@ namespace lite {
 const lite::Tensor* RunHvyModel() {
   lite::Predictor predictor;
 #ifndef LITE_WITH_CUDA
-  std::vector<Place> valid_places({Place{TARGET(kHost), PRECISION(kFloat)},
-                                   Place{TARGET(kX86), PRECISION(kFloat)}});
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 #else
   std::vector<Place> valid_places({
-      Place{TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kNCHW)},
-      Place{TARGET(kHost), PRECISION(kAny), DATALAYOUT(kNCHW)},
       Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)},
-      Place{TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)},
   });
 #endif
 
-  predictor.Build(FLAGS_model_dir,
-                  "",
-                  "",
-                  Place{TARGET(kX86), PRECISION(kFloat)},  // origin cuda
-                  valid_places);
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>({100, 100})));

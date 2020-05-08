@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <memory.h>
 
+#include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/bias_scale.h"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
@@ -54,7 +55,7 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
   *data_in = ptr_aligned;
 }
 
-void interleave(float **data_in, int num_after_alignment) {
+size_t interleave(float **data_in, int num_after_alignment) {
   float *ptr_uninterleaved = *data_in;
   float *ptr_interleaved =
       (float *)fpga_malloc(2 * num_after_alignment * sizeof(float));  // NOLINT
@@ -69,6 +70,7 @@ void interleave(float **data_in, int num_after_alignment) {
 
   fpga_free(ptr_uninterleaved);
   *data_in = ptr_interleaved;
+  return 2 * num_after_alignment * sizeof(float);
 }
 
 void format_bias_scale_array(float **bias_scale_array,
@@ -78,8 +80,9 @@ void format_bias_scale_array(float **bias_scale_array,
   int div_num = (num + element_num_per_division - 1) / element_num_per_division;
   int element_num_after_division =
       align_to_x(element_num_per_division, BS_NUM_ALIGNMENT);
-  interleave(bias_scale_array, div_num * element_num_after_division);
-  fpga_flush(*bias_scale_array, 2 * element_num_after_division * sizeof(float));
+  size_t mem =
+      interleave(bias_scale_array, div_num * element_num_after_division);
+  fpga_flush(*bias_scale_array, mem);
 }
 void format_bias_array(float **bias_array, int num) {
   float *ptr_unaligned = *bias_array;

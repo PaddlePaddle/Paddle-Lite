@@ -27,18 +27,21 @@ TEST(basic_record, init) {
   timer.SetKey("hello");
 }
 
-TEST(basic_profile, init) {
-  auto& rcd = BasicProfiler<BasicTimer>::Global().NewRcd("fc");
-  for (int i = 11; i < 100; i++) {
-    rcd.Log(i);
-  }
-
-  LOG(INFO) << BasicProfiler<BasicTimer>::Global().basic_repr();
-}
-
 TEST(basic_profile, real_latency) {
-  LITE_PROFILE_ONE(test0);
-  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+  auto profile_id = profile::BasicProfiler<profile::BasicTimer>::Global()
+                        .NewRcd("test0")
+                        .id();
+  auto& profiler =
+      *BasicProfiler<profile::BasicTimer>::Global().mutable_record(profile_id);
+  // Set op info
+  profiler.SetCustomInfo("op_type", "fc");
+  profiler.SetCustomInfo("op_info", "size:5x6");
+
+  profile::ProfileBlock x(profile_id, "instruction");
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  profile::ProfileBlock y(profile_id, "kernel");
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
 }  // namespace profile

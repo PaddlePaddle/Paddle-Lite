@@ -22,7 +22,7 @@ namespace math {
 
 void topk(const float* din,
           float* out_val,
-          int* out_ind,
+          int64_t* out_ind,
           int m,
           int n,
           int k,

@@ -109,8 +109,7 @@ macro(PROMPT_PROTOBUF_LIB)
 
     ADD_LIBRARY(protobuf ${protobuf_LIBTYPE} IMPORTED GLOBAL)
     SET_PROPERTY(TARGET protobuf PROPERTY IMPORTED_LOCATION ${PROTOBUF_LIBRARY})
-
-    ADD_LIBRARY(protobuf_lite ${protobuf_LIBTYPE} IMPORTED GLOBAL)
+ADD_LIBRARY(protobuf_lite ${protobuf_LIBTYPE} IMPORTED GLOBAL)
     SET_PROPERTY(TARGET protobuf_lite PROPERTY IMPORTED_LOCATION ${PROTOBUF_LITE_LIBRARY})
 
     ADD_LIBRARY(libprotoc ${protobuf_LIBTYPE} IMPORTED GLOBAL)
@@ -253,6 +252,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
+            BUILD_ALWAYS 1
             CONFIGURE_COMMAND ${CMAKE_COMMAND} ${SOURCE_DIR}/cmake
                 ${OPTIONAL_ARGS}
                 -Dprotobuf_BUILD_TESTS=OFF

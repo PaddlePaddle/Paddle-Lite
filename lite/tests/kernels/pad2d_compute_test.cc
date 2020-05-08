@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -23,8 +24,8 @@ namespace lite {
 class Pad2dComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string input_ = "X";
-  std::string output_ = "Out";
+  std::string x_ = "X";
+  std::string out_ = "Out";
   DDim dims_{{1, 1, 14, 14}};
   std::string mode_{"constant"};
   std::vector<int> paddings_;
@@ -46,13 +47,13 @@ class Pad2dComputeTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override {
     LOG(INFO) << "into runbase";
-    auto* out = scope->NewTensor(output_);
+    auto* out = scope->NewTensor(out_);
     CHECK(out);
     int out_h = dims_[2] + paddings_[0] + paddings_[1];
     int out_w = dims_[3] + paddings_[2] + paddings_[3];
     out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
     auto* out_data = out->mutable_data<float>();
-    auto* x = scope->FindTensor(input_);
+    auto* x = scope->FindTensor(x_);
     const auto* x_data = x->data<float>();
     LOG(INFO) << "get nums";
 
@@ -125,8 +126,8 @@ class Pad2dComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("pad2d");
-    op_desc->SetInput("X", {input_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("mode", mode_);
     op_desc->SetAttr("pad_value", pad_value_);
     op_desc->SetAttr("paddings", paddings_);
@@ -134,17 +135,13 @@ class Pad2dComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1;
-    }
-
-    SetCommonTensor(input_, dims_, data.data());
+    std::vector<float> x(dims_.production());
+    fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(x_, dims_, x.data());
   }
 };
 
-void TestPad2d(const Place& place) {
+void TestPad2d(const Place& place, float abs_error = 2e-5) {
   std::string data_format = "NCHW";
   for (int pad_top : {0, 1}) {
     for (int pad_bottom : {0, 1}) {
@@ -158,7 +155,7 @@ void TestPad2d(const Place& place) {
                         << paddings[2] << " " << paddings[3];
               std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
                   place, "def", pad_mode, paddings, pad_value, data_format));
-              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena::Arena arena(std::move(tester), place, abs_error);
               arena.TestPrecision();
             }
           }
@@ -169,13 +166,17 @@ void TestPad2d(const Place& place) {
 }
 
 TEST(Scale, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  TestPad2d(place);
-#endif
+  TestPad2d(place, abs_error);
 }
 
 }  // namespace lite

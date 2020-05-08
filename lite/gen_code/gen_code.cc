@@ -111,11 +111,11 @@ void Module::AddOpDescHelper(const std::string &op_id,
 
     switch (type) {
       case AttrType::INT:
-        return std::to_string(desc.GetAttr<int>(name));
+        return paddle::lite::to_string(desc.GetAttr<int>(name));
       case AttrType::FLOAT:
-        return std::to_string(desc.GetAttr<float>(name));
+        return paddle::lite::to_string(desc.GetAttr<float>(name));
       case AttrType::BOOLEAN:
-        return std::to_string(desc.GetAttr<bool>(name));
+        return paddle::lite::to_string(desc.GetAttr<bool>(name));
       case AttrType::STRING:
         return "\"" + desc.GetAttr<std::string>(name) + "\"";
       case AttrType::FLOATS: {

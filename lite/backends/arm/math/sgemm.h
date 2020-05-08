@@ -39,7 +39,7 @@ void sgemm(bool is_transA,
            int ldc,
            const float* bias,
            bool is_bias,
-           bool is_relu,
+           const operators::ActivationParam act_param,
            ARMContext* ctx);
 
 }  // namespace math

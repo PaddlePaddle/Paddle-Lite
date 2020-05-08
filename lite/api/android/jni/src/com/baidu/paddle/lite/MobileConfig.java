@@ -64,6 +64,44 @@ public class MobileConfig extends ConfigBase {
         return powerMode.value();
     }
 
+    /**
+     * Set model from file.
+     *
+     * @return
+     */
+    public void setModelFromFile(String modelFile) {
+        this.liteModelFile = modelFile;
+    }
+
+    /**
+     * Returns name of model_file.
+     *  
+     * @return liteModelFile
+     */
+    public String getModelFromFile() {
+        return liteModelFile;
+    }
+
+    /**
+     * Set model from buffer.
+     *
+     * @return
+     */
+    public void setModelFromBuffer(String modelBuffer) {
+        this.liteModelBuffer = modelBuffer;
+    }
+
+    /**
+     * Returns model buffer
+     *  
+     * @return liteModelBuffer
+     */
+    public String getModelFromBuffer() {
+        return liteModelBuffer;
+    }
+
     private PowerMode powerMode = PowerMode.LITE_POWER_HIGH;
     private int threads = 1;
+    private String liteModelFile;
+    private String liteModelBuffer;
 }

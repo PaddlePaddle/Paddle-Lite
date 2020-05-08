@@ -35,17 +35,8 @@ class FcOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
-  /*
-  bool Run() override {
-    CHECK(kernel_);
-    kernel_->Run();
-    return true;
-  }
-   */
-
-  // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }

@@ -54,29 +54,6 @@ class MeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~MeanCompute() = default;
 };
 
-template <typename T>
-class MeanGradCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::MeanGradParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<X86Context>();
-    CHECK_EQ(param.Out_grad->raw_tensor().numel(), 1);
-    CHECK(context.x86_device_context());
-
-    param.X_grad->template mutable_data<T>();
-    T x_grad_size = static_cast<T>(param.X_grad->raw_tensor().numel());
-    Eigen::DSizes<int, 1> bcast(static_cast<int>(x_grad_size));
-    EigenVector<T>::Flatten(param.X_grad->raw_tensor())
-        .device(*(context.x86_device_context()->eigen_device())) =
-        (EigenVector<T>::From(param.Out_grad->raw_tensor()) / x_grad_size)
-            .broadcast(bcast);
-  }
-
-  virtual ~MeanGradCompute() = default;
-};
-
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
@@ -92,17 +69,4 @@ REGISTER_LITE_KERNEL(mean,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(mean_grad,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::MeanGradCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput(paddle::framework::GradVarName("Out"),
-               {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput(paddle::framework::GradVarName("X"),
-                {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

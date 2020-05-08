@@ -19,25 +19,24 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool WriteToArrayOp::CheckShape() const { return true; }
-
-bool WriteToArrayOp::InferShape() const {
-  auto in_dims = param_.X->dims();
-  for (auto out : *param_.Out) {
-    out.Resize(in_dims);
-  }
+bool WriteToArrayOp::CheckShape() const {
+  CHECK(param_.X);
+  CHECK(param_.I);
+  CHECK(param_.Out);
   return true;
 }
 
+bool WriteToArrayOp::InferShapeImpl() const { return true; }
+
 bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto inputs = opdesc.Input("X").front();
-  param_.X = scope->FindVar(inputs)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindTensor(inputs);
 
   auto id = opdesc.Input("I").front();
-  param_.I = scope->FindVar(id)->GetMutable<lite::Tensor>();
+  param_.I = scope->FindTensor(id);
 
   auto out = opdesc.Output("Out").front();
-  param_.Out = scope->FindVar(out)->GetMutable<std::vector<lite::Tensor>>();
+  param_.Out = scope->FindVar(out)->GetMutable<std::vector<Tensor>>();
   return true;
 }
 

@@ -23,9 +23,11 @@ namespace paddle_mobile {
 namespace framework {
 
 bool CLEngine::Init() {
+  LOG(paddle_mobile::kNO_LOG) << "CLEngine::Init()";
   if (initialized_) {
     return true;
   }
+  LOG(paddle_mobile::kNO_LOG) << "CLEngine::Init() ...";
   cl_int status;
   bool is_setplatform_success = SetPlatform();
   bool is_setcldeviceid_success = SetClDeviceId();
@@ -53,12 +55,14 @@ bool CLEngine::SetPlatform() {
     return false;
   }
   /**For clarity, choose the first available platform. */
+  LOG(paddle_mobile::kNO_LOG) << "numPlatforms: " << numPlatforms;
   if (numPlatforms > 0) {
     cl_platform_id *platforms = reinterpret_cast<cl_platform_id *>(
         malloc(numPlatforms * sizeof(cl_platform_id)));
     status = clGetPlatformIDs(numPlatforms, platforms, NULL);
     platform_ = platforms[0];
     free(platforms);
+    LOG(paddle_mobile::kNO_LOG) << "platform: " << platform_;
     return status == CL_SUCCESS;
   }
 
@@ -67,70 +71,21 @@ bool CLEngine::SetPlatform() {
 
 bool CLEngine::SetClDeviceId() {
   cl_uint numDevices = 0;
-  devices_ = NULL;
+  LOG(paddle_mobile::kNO_LOG) << "platform: " << platform_;
   cl_int status =
       clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
   if (status != CL_SUCCESS) {
     return false;
   }
+  LOG(paddle_mobile::kNO_LOG) << "numDevices: " << numDevices;
+
   if (numDevices > 0) {
-    devices_ = reinterpret_cast<cl_device_id *>(
-        malloc(numDevices * sizeof(cl_device_id)));
     status = clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, numDevices, devices_,
                             NULL);
+    LOG(paddle_mobile::kNO_LOG) << "devices_[0]" << devices_[0];
     return status == CL_SUCCESS;
   }
   return false;
 }
-
-// std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
-//    const std::string &kernel_name) {
-//  std::unique_ptr<_cl_kernel, clKernel_deleter> kernel(
-//      clCreateKernel(program_.get(), kernel_name.c_str(), NULL));
-//  return std::move(kernel);
-//}
-//
-// bool CLEngine::SetClCommandQueue() {
-//  cl_int status;
-//  command_queue_.reset(
-//          clCreateCommandQueue(context_.get(), devices_[0], 0, &status));
-//  return true;
-//}
-
-// bool CLEngine::SetClContext() {
-//  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
-//  return true;
-//}
-
-// bool CLEngine::LoadKernelFromFile(const char *kernel_file) {
-//  size_t size;
-//  char *str;
-//  std::fstream f(kernel_file, (std::fstream::in | std::fstream::binary));
-//
-//  if (!f.is_open()) {
-//    return false;
-//  }
-//
-//  size_t fileSize;
-//  f.seekg(0, std::fstream::end);
-//  size = fileSize = (size_t)f.tellg();
-//  f.seekg(0, std::fstream::beg);
-//  str = new char[size + 1];
-//  if (!str) {
-//    f.close();
-//    return 0;
-//  }
-//
-//  f.read(str, fileSize);
-//  f.close();
-//  str[size] = '\0';
-//  const char *source = str;
-//  size_t sourceSize[] = {strlen(source)};
-//  program_.reset(
-//      clCreateProgramWithSource(context_.get(), 1, &source, sourceSize,
-//      NULL));
-//  return true;
-//}
-
 }  // namespace framework
 }  // namespace paddle_mobile

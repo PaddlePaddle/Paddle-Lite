@@ -20,18 +20,7 @@
 namespace paddle {
 namespace lite {
 namespace arm {
-namespace math {
-void increment(const int* input,
-               const int n,
-               const float step,
-               int* out,
-               Context<TARGET(kARM)>* ctx) {
-  for (int i = 0; i < n; i++) {
-    out[i] = input[i] + step;
-  }
-}
-
-}  // namespace math
+namespace math {}  // namespace math
 }  // namespace arm
 }  // namespace lite
 }  // namespace paddle

@@ -32,8 +32,47 @@
 
 using LiteType = paddle::lite::Type;
 
+class OpKernelInfoCollector {
+ public:
+  static OpKernelInfoCollector &Global() {
+    static auto *x = new OpKernelInfoCollector;
+    return *x;
+  }
+  void AddOp2path(const std::string &op_name, const std::string &op_path) {
+    size_t index = op_path.find_last_of('/');
+    if (index != std::string::npos) {
+      op2path_.insert(std::pair<std::string, std::string>(
+          op_name, op_path.substr(index + 1)));
+    }
+  }
+  void AddKernel2path(const std::string &kernel_name,
+                      const std::string &kernel_path) {
+    size_t index = kernel_path.find_last_of('/');
+    if (index != std::string::npos) {
+      kernel2path_.insert(std::pair<std::string, std::string>(
+          kernel_name, kernel_path.substr(index + 1)));
+    }
+  }
+  void SetKernel2path(
+      const std::map<std::string, std::string> &kernel2path_map) {
+    kernel2path_ = kernel2path_map;
+  }
+  const std::map<std::string, std::string> &GetOp2PathDict() {
+    return op2path_;
+  }
+  const std::map<std::string, std::string> &GetKernel2PathDict() {
+    return kernel2path_;
+  }
+
+ private:
+  std::map<std::string, std::string> op2path_;
+  std::map<std::string, std::string> kernel2path_;
+};
+
 namespace paddle {
 namespace lite {
+
+const std::map<std::string, std::string> &GetOp2PathDict();
 
 using KernelFunc = std::function<void()>;
 using KernelFuncCreator = std::function<std::unique_ptr<KernelFunc>()>;
@@ -59,7 +98,6 @@ class OpLiteRegistor : public Registor<OpClass> {
               });
         }) {}
 };
-
 template <TargetType Target, PrecisionType Precision, DataLayoutType Layout>
 using KernelRegistryForTarget =
     Factory<KernelLite<Target, Precision, Layout>, std::unique_ptr<KernelBase>>;
@@ -71,17 +109,25 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kCUDA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kCUDA),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNHWC)> *,  //
+
               KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -94,9 +140,13 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
-              KernelRegistryForTarget<TARGET(kCUDA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
@@ -106,12 +156,74 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kARM),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kARM),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kARM),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kARM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
+
               KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageFolder)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageNW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kImageDefault)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kImageFolder)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kImageNW)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageDefault)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageFolder)> *,  //
+              KernelRegistryForTarget<TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageNW)> *,  //
+
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
@@ -121,6 +233,43 @@ class KernelRegistry final {
               KernelRegistryForTarget<TARGET(kNPU),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+
+              KernelRegistryForTarget<TARGET(kAPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kXPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+
+              KernelRegistryForTarget<TARGET(kBM),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kBM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kBM),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+
+              KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny)> *,  //
+              KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
@@ -144,7 +293,32 @@ class KernelRegistry final {
                                       DATALAYOUT(kAny)> *,  //
               KernelRegistryForTarget<TARGET(kFPGA),
                                       PRECISION(kAny),
-                                      DATALAYOUT(kAny)> *  //
+                                      DATALAYOUT(kAny)> *,  //
+
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt16),
+                                      DATALAYOUT(kNCHW)> *  //
               >;
 
   KernelRegistry();
@@ -266,6 +440,7 @@ class KernelRegistor : public lite::Registor<KernelType> {
   static paddle::lite::OpLiteRegistor<OpClass> LITE_OP_REGISTER_INSTANCE( \
       op_type__)(#op_type__);                                             \
   int touch_op_##op_type__() {                                            \
+    OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);     \
     return LITE_OP_REGISTER_INSTANCE(op_type__).Touch();                  \
   }
 
@@ -274,33 +449,36 @@ class KernelRegistor : public lite::Registor<KernelType> {
   op_type__##__##target__##__##precision__##__registor__
 #define LITE_KERNEL_REGISTER_INSTANCE(                   \
     op_type__, target__, precision__, layout__, alias__) \
-  op_type__##__##target__##__##precision__##__registor__instance__##alias__
+  op_type__##__##target__##__##precision__##__##layout__##registor__instance__##alias__  // NOLINT
+
 #define LITE_KERNEL_REGISTER_FAKE(op_type__, target__, precision__, alias__) \
   LITE_KERNEL_REGISTER_INSTANCE(op_type__, target__, precision__, alias__)
 
-#define REGISTER_LITE_KERNEL(                                                  \
-    op_type__, target__, precision__, layout__, KernelClass, alias__)          \
-  static paddle::lite::KernelRegistor<TARGET(target__),                        \
-                                      PRECISION(precision__),                  \
-                                      DATALAYOUT(layout__),                    \
-                                      KernelClass>                             \
-      LITE_KERNEL_REGISTER_INSTANCE(                                           \
-          op_type__, target__, precision__, layout__, alias__)(#op_type__,     \
-                                                               #alias__);      \
-  static KernelClass LITE_KERNEL_INSTANCE(                                     \
-      op_type__, target__, precision__, layout__, alias__);                    \
-  int touch_##op_type__##target__##precision__##layout__##alias__() {          \
-    LITE_KERNEL_INSTANCE(op_type__, target__, precision__, layout__, alias__)  \
-        .Touch();                                                              \
-    return 0;                                                                  \
-  }                                                                            \
-  static bool LITE_KERNEL_PARAM_INSTANCE(                                      \
-      op_type__, target__, precision__, layout__, alias__)                     \
-      __attribute__((unused)) =                                                \
-          paddle::lite::ParamTypeRegistry::NewInstance<TARGET(target__),       \
-                                                       PRECISION(precision__), \
-                                                       DATALAYOUT(layout__)>(  \
-              #op_type__ "/" #alias__)
+#define REGISTER_LITE_KERNEL(                                                 \
+    op_type__, target__, precision__, layout__, KernelClass, alias__)         \
+  static paddle::lite::KernelRegistor<TARGET(target__),                       \
+                                      PRECISION(precision__),                 \
+                                      DATALAYOUT(layout__),                   \
+                                      KernelClass>                            \
+      LITE_KERNEL_REGISTER_INSTANCE(                                          \
+          op_type__, target__, precision__, layout__, alias__)(#op_type__,    \
+                                                               #alias__);     \
+  static KernelClass LITE_KERNEL_INSTANCE(                                    \
+      op_type__, target__, precision__, layout__, alias__);                   \
+  int touch_##op_type__##target__##precision__##layout__##alias__() {         \
+    OpKernelInfoCollector::Global().AddKernel2path(                           \
+        #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__, \
+        __FILE__);                                                            \
+    LITE_KERNEL_INSTANCE(op_type__, target__, precision__, layout__, alias__) \
+        .Touch();                                                             \
+    return 0;                                                                 \
+  }                                                                           \
+  static bool LITE_KERNEL_PARAM_INSTANCE(                                     \
+      op_type__, target__, precision__, layout__, alias__) UNUSED =           \
+      paddle::lite::ParamTypeRegistry::NewInstance<TARGET(target__),          \
+                                                   PRECISION(precision__),    \
+                                                   DATALAYOUT(layout__)>(     \
+          #op_type__ "/" #alias__)
 
 #define LITE_KERNEL_INSTANCE(                            \
     op_type__, target__, precision__, layout__, alias__) \

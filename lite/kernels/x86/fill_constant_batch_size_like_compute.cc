@@ -21,6 +21,6 @@ REGISTER_LITE_KERNEL(
     kNCHW,
     paddle::lite::kernels::x86::FillConstantBatchSizeLikeCompute<float>,
     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

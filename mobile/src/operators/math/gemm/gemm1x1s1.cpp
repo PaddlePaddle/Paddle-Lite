@@ -1518,10 +1518,12 @@ void sgemm_conv_6x8(const float* A_packed, const float* B, const float* bias,
       (l2_cache - (MBLOCK_OTH * K)) / (sizeof(float) * (K + MBLOCK_OTH));
   x_block /= NBLOCK;
   x_block *= NBLOCK;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;
-  x_block *= NBLOCK;
+  if (x_block != 0) {
+    int x_num = (N + (x_block - 1)) / x_block;
+    x_block = (N + x_num - 1) / x_num;
+    x_block = (x_block + NBLOCK - 1) / NBLOCK;
+    x_block *= NBLOCK;
+  }
   x_block = x_block < NBLOCK ? NBLOCK : x_block;
   int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
   int tail_pre = (K & (KBLOCK - 1));

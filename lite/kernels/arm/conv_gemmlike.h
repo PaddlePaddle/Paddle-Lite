@@ -52,12 +52,19 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     int oc = o_dims[1];
     int kw = w_dims[3];
     int kh = w_dims[2];
+
+    auto paddings = *param.paddings;
+    auto dilations = *param.dilations;
+
     int sw = param.strides[1];
     int sh = param.strides[0];
-    int pw = param.paddings[1];
-    int ph = param.paddings[0];
-    int dw = param.dilations[1];
-    int dh = param.dilations[0];
+    int pw = paddings[2];
+    int ph = paddings[0];
+    int dw = dilations[1];
+    int dh = dilations[0];
+
+    bool pads_equal =
+        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
 
     int m = oc / param.groups;
     int k = ic * kh * kw / param.groups;
@@ -66,13 +73,13 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     bool kps_equal = (pw == ph) && (sw == sh) && (kw == kh);
     bool ks_equal = (sw == sh) && (kw == kh);
     //! select conv gemmlike kernel
-    if (kw == 1 && sw == 1 && pw == 0 && kps_equal) {
+    if (kw == 1 && sw == 1 && pw == 0 && kps_equal && pads_equal) {
       //! 1x1s1p0 gemmlike conv
       flag_1x1gemm_ = true;
     } else {
       //! im2col gemmlike conv
       flag_1x1gemm_ = false;
-      ctx.ExtendWorkspace(k * n * sizeof(float));
+      workspace_size_ = k * n * sizeof(float);
     }
     if (!flag_trans_weights_ && n > 1) {
       lite::arm::math::trans_gemm_weights<Ptype>(
@@ -97,6 +104,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   bool flag_trans_bias_{false};
   Tensor weights_;
   Tensor bias_;
+  int workspace_size_{0};
 };
 
 }  // namespace arm

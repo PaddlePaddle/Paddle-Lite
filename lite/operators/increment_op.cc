@@ -25,7 +25,7 @@ bool IncrementOp::CheckShape() const {
   return true;
 }
 
-bool IncrementOp::InferShape() const {
+bool IncrementOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();
@@ -34,10 +34,8 @@ bool IncrementOp::InferShape() const {
 }
 
 bool IncrementOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+  param_.X = scope->FindMutableTensor(opdesc.Input("X").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.step = opdesc.GetAttr<float>("step");

@@ -98,7 +98,7 @@ void FusionFcCompute(const FusionFcParam<GPU_CL> &param, cl_context context,
                              static_cast<float>(1), out, static_cast<float>(1),
                              false);
 
-  out_image->InitEmptyImage(context, commandQueue, out->dims());
+  //  out_image->InitEmptyImage(context, commandQueue, out->dims());
   framework::TensorToCLImage(out, out_image, context, commandQueue, kernel1);
 
   delete (input_x);

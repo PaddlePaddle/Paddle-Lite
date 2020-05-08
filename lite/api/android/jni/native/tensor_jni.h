@@ -16,8 +16,8 @@
 #include <jni.h>
 /* Header for class com_baidu_paddle_lite_Tensor */
 
-#ifndef PADDLE_FLUID_LITE_API_ANDROID_JNI_NATIVE_TENSOR_JNI_H_
-#define PADDLE_FLUID_LITE_API_ANDROID_JNI_NATIVE_TENSOR_JNI_H_
+#ifndef LITE_API_ANDROID_JNI_NATIVE_TENSOR_JNI_H_
+#define LITE_API_ANDROID_JNI_NATIVE_TENSOR_JNI_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +51,14 @@ Java_com_baidu_paddle_lite_Tensor_getByteData(JNIEnv *, jobject);
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    getIntData
+ * Signature: ()[I
+ */
+JNIEXPORT jintArray JNICALL
+Java_com_baidu_paddle_lite_Tensor_getIntData(JNIEnv *, jobject);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
  * Method:    nativeResize
  * Signature: ([J)Z
  */
@@ -75,6 +83,14 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3B(
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    nativeSetData
+ * Signature: ([I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3I(
+    JNIEnv *, jobject, jintArray);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
  * Method:    deleteCppTensor
  * Signature: (J)Z
  */
@@ -87,4 +103,4 @@ Java_com_baidu_paddle_lite_Tensor_deleteCppTensor(JNIEnv *, jobject, jlong);
 #ifdef __cplusplus
 }
 #endif
-#endif  // PADDLE_FLUID_LITE_API_ANDROID_JNI_NATIVE_TENSOR_JNI_H_
+#endif  // LITE_API_ANDROID_JNI_NATIVE_TENSOR_JNI_H_

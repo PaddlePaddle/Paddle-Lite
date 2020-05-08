@@ -11,68 +11,114 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 
-#include <Eigen/Core>
+#include <vector>
+#include "lite/backends/x86/jit/helper.h"
+#include "lite/backends/x86/jit/kernel_base.h"
+#include "lite/backends/x86/jit/kernels.h"
+#include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/parallel.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/operators/fc_op.h"
-#include "paddle/fluid/framework/eigen.h"
-#include "paddle/fluid/framework/operator.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <typename T>
-void fc_compute_eigen(const T* x,
-                      int x_h,
-                      int x_w,  //
-                      const T* w,
-                      int w_h,
-                      int w_w,     //
-                      const T* b,  //
-                      T* out) {
-  using matrix_t =
-      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+template <lite::TargetType Target, typename T>
+class FCFunctor {
+ public:
+  void operator()(const lite::X86Context& context,
+                  const int M,
+                  const int N,
+                  const int K,
+                  const T* X,
+                  const T* W,
+                  T* Y,
+                  const T* B = nullptr,
+                  bool relu = false,
+                  bool padding_weights = false) {
+    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    T* Y1_data = nullptr;
 
-  Eigen::Map<const matrix_t> X(x, x_h, x_w);
-  Eigen::Map<const matrix_t> W(w, w_h, w_w);
-  Eigen::Map<matrix_t> Out(out, x_h, w_w);
-
-  Out = X * W;
-
-  if (b) {
-    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>> B(b, w_w);
-    Out = Out.array().rowwise() + B.transpose().array();
-  }
-}
-
-template <typename T>
-void fc_compute_naive(const T* x,
-                      int x_h,
-                      int x_w,  //
-                      const T* w,
-                      int w_h,
-                      int w_w,     //
-                      const T* b,  //
-                      T* out) {
-  CHECK_EQ(x_w, w_h);
-  // out shape: (x_h, w_w)
-  memset(out, 0, x_h * w_w * sizeof(T));
-  for (int i = 0; i < x_h; i++) {
-    for (int j = 0; j < w_w; j++) {
-      T tmp = static_cast<T>(0);
-      for (int k = 0; k < x_w; k++) {
-        tmp += x[i * x_w + k] * w[k * w_w + j];
+    auto compute =
+        relu
+            ? jit::KernelFuncs<jit::VAddReluTuple<T>, fluid::CPUPlace>::Cache()
+                  .At(N)
+            : jit::KernelFuncs<jit::VAddTuple<T>, fluid::CPUPlace>::Cache().At(
+                  N);
+    auto parallel_compute = [&](int64_t begin, int64_t end) {
+      for (int64_t i = begin; i < end; i++) {
+        T* dst = Y + i * N;
+        T* src = Y1_data ? Y1_data + i * (N + 4) : dst;
+        compute(B, src, dst, N);
       }
-      out[i * w_w + j] = tmp + b[j];
+    };
+
+    // Because of the overhead of memcpy, we only do padding for GEMM
+    //  when weights is already padded in fc_fuse_pass.
+    if (padding_weights) {
+      const int NN = N + 4;
+      const int KK = K + 4;
+
+      // NOTE: here need to mutable_data for temporary Tensor X1 and Y1,
+      //  the overhead is unmeasured.
+      lite::Tensor X1;
+      X1.Resize(std::vector<int64_t>{M * KK});
+      T* X1_data = X1.mutable_data<T>();
+
+      lite::Tensor Y1;
+      Y1.Resize(std::vector<int64_t>{M * NN});
+      Y1_data = Y1.mutable_data<T>();
+
+      auto parallel_memcpy_x = [&](int64_t begin, int64_t end) {
+        for (int64_t i = begin; i < end; i++) {
+          memcpy(X1_data + i * KK, X + i * K, K * sizeof(T));
+        }
+      };
+      lite::x86::RunParallelFor(0, M, parallel_memcpy_x);
+
+      blas.GEMM(false,
+                false,
+                M,
+                N,
+                K,
+                static_cast<T>(1.0),
+                X1_data,
+                KK,
+                W,
+                NN,
+                static_cast<T>(0.0),
+                Y1_data,
+                NN);
+
+      if (!B) {
+        auto parallel_memcpy_y = [&](int64_t begin, int64_t end) {
+          for (int64_t i = begin; i < end; i++) {
+            memcpy(Y + i * N, Y1_data + i * NN, N * sizeof(T));
+          }
+        };
+        lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
+        return;
+      }
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
+    } else {
+      blas.MatMul(M, N, K, X, W, Y);
+      if (!B) {
+        return;
+      }
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
     }
   }
-}
+};
 
 template <typename T>
 class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
@@ -81,20 +127,35 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    CHECK_GE(param.input->dims().size(), 2UL);
-    CHECK_EQ(param.output->dims().size(), 2UL);
+    auto* input = param.input;
+    auto* w = param.w;
+    auto* bias = param.bias;
+    auto* output = param.output;
+    bool with_relu = (param.activation_type == "relu") ? true : false;
 
-    fc_compute_eigen(
-        param.input->data<T>(),  // x
-        param.input->dims().Slice(0, param.in_num_col_dims).production(),
-        param.input->dims()
-            .Slice(param.in_num_col_dims, param.input->dims().size())
-            .production(),
-        param.w->data<T>(),     // w
-        param.w->dims()[0],     // w_h
-        param.w->dims()[1],     // w_w
-        param.bias->data<T>(),  // b
-        param.output->mutable_data<T>());
+    bool padding_weights = param.padding_weights;
+    const auto& w_dims = w->dims();
+    auto w_dims0 = padding_weights ? w_dims[0] - 4 : w_dims[0];
+    auto w_dims1 = padding_weights ? w_dims[1] - 4 : w_dims[1];
+
+    int M = output->dims().production() / w_dims1;
+
+    const T* input_data = input->template data<T>();
+    const T* w_data = w->template data<T>();
+    T* output_data = output->template mutable_data<T>();
+
+    auto& context = ctx_->As<X86Context>();
+    FCFunctor<lite::TargetType::kX86, T> fc;
+    fc(context,
+       M,
+       w_dims1,
+       w_dims0,
+       input_data,
+       w_data,
+       output_data,
+       bias ? bias->template data<T>() : NULL,
+       with_relu,
+       padding_weights);
   }
 
   virtual ~FcCompute() = default;

@@ -66,9 +66,15 @@ class CudnnConv2DBase {
     if (handle_ != NULL) {
       CUDNN_CHECK(cudnnDestroy(handle_));
     }
+    ResetWorkSpace();
+  }
+
+ protected:
+  void ResetWorkSpace() {
     if (workspace_data_ != NULL) {
-      cudaFree(workspace_data_);
+      CUDA_CALL(cudaFree(workspace_data_));
     }
+    workspace_data_ = NULL;
   }
 
  protected:

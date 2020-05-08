@@ -15,6 +15,8 @@
 #include "lite/kernels/x86/batch_norm_compute.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -102,7 +104,7 @@ TEST(batch_norm_x86, run_test) {
   operators::BatchNormParam param;
 
   param.x = &x;
-  param.is_test = false;
+  param.is_test = true;
   param.scale = &scale;
   param.bias = &bias;
   param.mean = &mean;
@@ -116,6 +118,9 @@ TEST(batch_norm_x86, run_test) {
   param.saved_mean = &saved_mean;
   param.saved_variance = &saved_variance;
 
+  std::unique_ptr<KernelContext> ctx(new KernelContext);
+  ctx->As<X86Context>();
+  batch_norm.SetContext(std::move(ctx));
   batch_norm.SetParam(param);
   batch_norm.Run();
 

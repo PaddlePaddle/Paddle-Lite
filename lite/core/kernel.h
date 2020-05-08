@@ -30,6 +30,10 @@
 #include "lite/utils/all.h"
 #include "lite/utils/replace_stl/stream.h"
 
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif  // LITE_WITH_PROFILE
+
 namespace paddle {
 namespace lite {
 
@@ -53,6 +57,13 @@ class KernelBase {
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfiler(profile::Profiler* profiler, int id) {
+    profiler_ = profiler;
+    profile_id_ = id;
+  }
+#endif
+
   void Launch() {
     /// First run, init kernel, do weights transform once
     if (is_first_epoch_) {
@@ -72,7 +83,17 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
+#if defined(LITE_WITH_MLU)
+    WorkSpace::Global_MLU().AllocReset();
+#endif
+#ifdef LITE_WITH_PROFILE
+    profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
+    profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     Run();
+    profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+#else
+    Run();
+#endif
   }
 
   void SetContext(std::unique_ptr<KernelContext>&& ctx) {
@@ -157,6 +178,11 @@ class KernelBase {
   // is the unique ID for the kernel.
   std::string alias_{};
   bool is_first_epoch_{true};
+
+#ifdef LITE_WITH_PROFILE
+  profile::Profiler* profiler_{nullptr};
+  int profile_id_{-1};
+#endif
 };
 
 // Light-weight kernel implementation.

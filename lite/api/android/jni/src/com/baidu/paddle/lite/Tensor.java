@@ -109,6 +109,19 @@ public class Tensor {
     }
 
     /**
+     * Set the tensor int data.
+     *
+     * @param buf the int array buffer which will be copied into tensor.
+     * @return true if set data successfully.
+     */
+    public boolean setData(int[] buf) {
+        if (readOnly) {
+            return false;
+        }
+        return nativeSetData(buf);
+    }
+
+    /**
      * @return shape of the tensor as long array.
      */
     public native long[] shape();
@@ -123,11 +136,18 @@ public class Tensor {
      */
     public native byte[] getByteData();
 
+    /**
+     * @return the tensor data as int array.
+     */
+    public native int[] getIntData();
+
     private native boolean nativeResize(long[] dims);
 
     private native boolean nativeSetData(float[] buf);
 
     private native boolean nativeSetData(byte[] buf);
+
+    private native boolean nativeSetData(int[] buf);
 
     /**
      * Delete C++ Tenor object pointed by the input pointer, which is presented by a

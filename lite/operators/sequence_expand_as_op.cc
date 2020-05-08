@@ -34,7 +34,7 @@ bool SequenceExpandAsOpLite::CheckShape() const {
   return true;
 }
 
-bool SequenceExpandAsOpLite::InferShape() const {
+bool SequenceExpandAsOpLite::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   auto y_lod = param_.y->lod();
   auto out_dims = x_dims;

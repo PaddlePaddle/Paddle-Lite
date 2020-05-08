@@ -35,6 +35,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #endif
+#ifdef LITE_WITH_ANDROID
+#include <sys/system_properties.h>
+#endif
 #if __APPLE__
 #include "TargetConditionals.h"
 #if LITE_WITH_IPHONE
@@ -55,7 +58,22 @@
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
+thread_local lite_api::PowerMode DeviceInfo::mode_;
+thread_local ARMArch DeviceInfo::arch_;
+thread_local int DeviceInfo::mem_size_;
+thread_local std::vector<int> DeviceInfo::active_ids_;
+thread_local TensorLite DeviceInfo::workspace_;
+thread_local int64_t DeviceInfo::count_ = 0;
+
+#ifdef LITE_WITH_MLU
+thread_local cnmlCoreVersion_t DeviceInfo::mlu_core_version_{CNML_MLU270};
+thread_local int DeviceInfo::mlu_core_number_{1};
+thread_local bool DeviceInfo::use_first_conv_{false};
+thread_local std::vector<float> DeviceInfo::mean_vec_;
+thread_local std::vector<float> DeviceInfo::std_vec_;
+thread_local DataLayoutType DeviceInfo::input_layout_{DATALAYOUT(kNCHW)};
+#endif
 
 #ifdef TARGET_IOS
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
@@ -70,7 +88,7 @@ const int DEFAULT_L3_CACHE_SIZE = 0;
 int get_cpu_num() {
 #ifdef LITE_WITH_LINUX
   // get cpu count from /sys/devices/system/cpu/cpunum/uevent
-  int max_cpu_num = 20;
+  int max_cpu_num = 128;
   int cpu_num = 0;
   for (int i = 0; i < max_cpu_num; ++i) {
     char path[256];
@@ -218,23 +236,40 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
 #ifdef LITE_WITH_LINUX
 
 std::string get_cpu_name() {
+  std::string cpu_name = "";
   FILE* fp = fopen("/proc/cpuinfo", "rb");
   if (!fp) {
     return "";
   }
   char line[1024];
+  bool first_model_name = true;
   while (!feof(fp)) {
     char* s = fgets(line, 1024, fp);
     if (!s) {
       break;
     }
     if (strstr(line, "Hardware") != NULL) {
-      fclose(fp);
-      return std::string(line);
+      cpu_name += std::string(line);
+    }
+    if (strstr(line, "model name") != NULL && first_model_name) {
+      cpu_name += std::string(line);
+      first_model_name = false;
     }
   }
+#ifdef LITE_WITH_ANDROID
+  // cpu name concat board name, platform name and chip name
+  char board_name[128];
+  char platform_name[128];
+  char chip_name[128];
+  __system_property_get("ro.product.board", board_name);
+  __system_property_get("ro.board.platform", platform_name);
+  __system_property_get("ro.chipname", chip_name);
+  cpu_name =
+      cpu_name + "_" + board_name + "_" + platform_name + "_" + chip_name;
+#endif
+  std::transform(cpu_name.begin(), cpu_name.end(), cpu_name.begin(), ::toupper);
   fclose(fp);
-  return "";
+  return cpu_name;
 }
 
 int get_min_freq_khz(int cpuid) {
@@ -780,7 +815,9 @@ bool DeviceInfo::SetCPUInfoByName() {
     cluster_ids_ = {0, 0, 0, 0};
     SetArchInfo(1, kA53);
     return true;
-  } else if (dev_name_.find("KIRIN980") != std::string::npos) {  // Kirin 980
+  } else if (dev_name_.find("KIRIN980") != std::string::npos ||
+             dev_name_.find("KIRIN990") !=
+                 std::string::npos) {  // Kirin 980, Kirin 990
     core_num_ = 8;
     core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
     big_core_ids_ = {4, 5, 6, 7};
@@ -792,6 +829,21 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(2, 1, 4096 * 1024);
     SetFP16Info(1, 1);
     SetDotInfo(1, 1);
+    return true;
+  } else if (dev_name_.find("FT2000PLUS") != std::string::npos) {
+    core_num_ = 64;
+    core_ids_.resize(core_num_);
+    big_core_ids_.resize(core_num_);
+    cluster_ids_.resize(core_num_);
+    for (int i = 0; i < core_num_; ++i) {
+      core_ids_[i] = i;
+      big_core_ids_[i] = i;
+      cluster_ids_[i] = 0;
+    }
+    little_core_ids_ = {};
+    SetCacheInfo(0, 1, 64 * 1024);
+    SetCacheInfo(1, 1, 32 * 1024 * 1024);
+    SetCacheInfo(2, 1, 128 * 1024 * 1024);
     return true;
   }
   return false;
@@ -895,7 +947,7 @@ void DeviceInfo::RequestPowerNoBindMode(int thread_num) {
     active_ids_ = core_ids_;
   } else {
     active_ids_.resize(thread_num);
-    for (int i = 0; i < thread_num; ++i) {
+    for (uint32_t i = 0; i < thread_num; ++i) {
       if (i < big_core_ids_.size()) {
         active_ids_[i] = big_core_ids_[i];
       } else {
@@ -1016,7 +1068,7 @@ int DeviceInfo::Setup() {
               << ", max freq: " << max_freqs_[i]
               << ", min freq: " << min_freqs_[i]
               << ", cluster ID: " << cluster_ids_[core_ids_[i]]
-              << ", CPU ARCH: A" << archs_[i];
+              << ", CPU ARCH: A" << static_cast<int>(archs_[i]);
   }
   LOG(INFO) << "L1 DataCache size is: ";
   for (int i = 0; i < core_num_; ++i) {
@@ -1036,6 +1088,45 @@ int DeviceInfo::Setup() {
              1);  // use single thread by default
   return 0;
 }
+
+#ifdef LITE_WITH_MLU
+void DeviceInfo::SetMLURunMode(lite_api::MLUCoreVersion core_version,
+                               int core_number,
+                               bool use_first_conv,
+                               const std::vector<float>& mean_vec,
+                               const std::vector<float>& std_vec,
+                               DataLayoutType input_layout) {
+  switch (core_version) {
+    case (lite_api::MLUCoreVersion::MLU_220):
+      mlu_core_version_ = CNML_MLU220;
+      break;
+    case (lite_api::MLUCoreVersion::MLU_270):
+      mlu_core_version_ = CNML_MLU270;
+      break;
+    default:
+      mlu_core_version_ = CNML_MLU270;
+      break;
+  }
+  mlu_core_number_ = core_number;
+  use_first_conv_ = use_first_conv;
+  mean_vec_ = mean_vec;
+  std_vec_ = std_vec;
+  input_layout_ = input_layout;
+}
+
+cnmlCoreVersion_t DeviceInfo::MLUCoreVersion() { return mlu_core_version_; }
+
+int DeviceInfo::MLUCoreNumber() { return mlu_core_number_; }
+
+bool DeviceInfo::UseFirstConv() { return use_first_conv_; }
+
+const std::vector<float>& DeviceInfo::MeanVec() const { return mean_vec_; }
+
+const std::vector<float>& DeviceInfo::StdVec() const { return std_vec_; }
+
+DataLayoutType DeviceInfo::InputLayout() const { return input_layout_; }
+
+#endif  // LITE_WITH_MLU
 
 void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
 #ifdef ARM_WITH_OMP
@@ -1070,7 +1161,7 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
       RequestPowerRandLowMode(shift_num, thread_num);
       break;
     default:
-      LOG(FATAL) << "Unsupported power mode: " << mode;
+      LOG(FATAL) << "Unsupported power mode: " << static_cast<int>(mode);
       break;
   }
   if (active_ids_.empty()) {
@@ -1109,11 +1200,58 @@ void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
 }
 
 bool DeviceInfo::ExtendWorkspace(size_t size) {
-  workspace_.Resize({size + llc_size()});
+  workspace_.Resize(
+      {static_cast<int64_t>(size + static_cast<size_t>(llc_size()))});
   return workspace_.mutable_data<int8_t>() != nullptr;
 }
 
 #endif  // LITE_WITH_ARM
+
+#ifdef LITE_WITH_MLU
+void SetMluDevice(int device_id) {
+  LOG(INFO) << "Set mlu device " << device_id;
+  cnrtDev_t dev_handle;
+  CNRT_CALL(cnrtGetDeviceHandle(&dev_handle, device_id));
+  CNRT_CALL(cnrtSetCurrentDevice(dev_handle));
+}
+
+void Device<TARGET(kMLU)>::Init() {
+  SetMluDevice(idx_);
+  GetInfo();
+  CreateQueue();
+}
+
+void Device<TARGET(kMLU)>::GetInfo() {}
+
+void Device<TARGET(kMLU)>::CreateQueue() {
+  exec_queue_.clear();
+  io_queue_.clear();
+  for (size_t i = 0; i < max_queue_; ++i) {
+    cnrtQueue_t exec_queue;
+    cnrtQueue_t io_queue;
+    cnrtCreateQueue(&exec_queue);
+    cnrtCreateQueue(&io_queue);
+    exec_queue_.push_back(exec_queue);
+    io_queue_.push_back(io_queue);
+
+    cnrtCreateQueue(&exec_queue);
+    exec_queue_.push_back(exec_queue);
+  }
+}
+#endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_BM
+void Device<TARGET(kBM)>::SetId(int device_id) {
+  LOG(INFO) << "Set bm device " << device_id;
+  TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
+  idx_ = device_id;
+}
+
+void Device<TARGET(kBM)>::Init() { SetId(idx_); }
+int Device<TARGET(kBM)>::core_num() {
+  return TargetWrapper<TARGET(kBM)>::num_devices();
+}
+#endif  // LITE_WITH_BM
 
 #ifdef LITE_WITH_CUDA
 

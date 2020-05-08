@@ -44,15 +44,13 @@ namespace framework {
 struct CPUContext {
  private:
   CPUContext();
-  virtual ~CPUContext() {}
 
  public:
+  ~CPUContext() {}
+
   static CPUContext* Context() {
-    static CPUContext* ctx = nullptr;
-    if (ctx == nullptr) {
-      ctx = new CPUContext();
-    }
-    return ctx;
+    static CPUContext ctx;
+    return &ctx;
   }
 
   void set_thread_num(int thread_num,

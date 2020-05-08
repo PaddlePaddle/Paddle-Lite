@@ -24,19 +24,12 @@ bool MatMulOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Y);
   CHECK_OR_FALSE(param_.Out);
 
-  return true;
-}
-
-bool MatMulOpLite::InferShape() const {
   const auto x_dims = param_.X->dims();
   const auto y_dims = param_.Y->dims();
   bool x_transpose = param_.transpose_X;
   bool y_transpose = param_.transpose_Y;
-  std::vector<int64_t> dim_out_vec;
 
-  if (x_dims.size() > 2 && y_dims.size() >= 2) {
-    // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
-    // x: [B, M, K], y: [K, N], out: [B, M, N]
+  if (x_dims.size() > 1 && y_dims.size() > 1) {
     if (!x_transpose && !y_transpose) {
       CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[y_dims.size() - 2])
           << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
@@ -54,48 +47,49 @@ bool MatMulOpLite::InferShape() const {
           << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
           << ")";
     }
+  } else if (x_dims.size() > 2 && y_dims.size() == 1) {
+    CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[0])
+        << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
+        << ")";
+  }
+  return true;
+}
 
-    dim_out_vec.resize(x_dims.size());
-    for (size_t i = 0; i < x_dims.size() - 2; ++i) {
-      dim_out_vec[i] = x_dims[i];
+bool MatMulOpLite::InferShapeImpl() const {
+  const auto x_dims = param_.X->dims();
+  const auto y_dims = param_.Y->dims();
+  bool x_transpose = param_.transpose_X;
+  bool y_transpose = param_.transpose_Y;
+  std::vector<int64_t> dim_out_vec;
+
+  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
+      (x_dims.size() != 2 || y_dims.size() != 2)) {
+    // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
+    // x: [B, M, K], y: [K, N], out: [B, M, N]
+    // or
+    // x: [M, K], y: [B, ..., K, N], out: [B, ..., M, N]
+    // x: [M, K], y: [B, K, N], out: [B, M, N]
+    DDim dims = x_dims.size() >= y_dims.size() ? x_dims : y_dims;
+    dim_out_vec.resize(dims.size());
+    for (size_t i = 0; i < dims.size() - 2; ++i) {
+      dim_out_vec[i] = dims[i];
     }
     if (!x_transpose && !y_transpose) {
-      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 2];
-      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 1];
+      dim_out_vec[dims.size() - 2] = x_dims[x_dims.size() - 2];
+      dim_out_vec[dims.size() - 1] = y_dims[y_dims.size() - 1];
     } else if (!x_transpose && y_transpose) {
-      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 2];
-      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 2];
+      dim_out_vec[dims.size() - 2] = x_dims[x_dims.size() - 2];
+      dim_out_vec[dims.size() - 1] = y_dims[y_dims.size() - 2];
     } else if (x_transpose && !y_transpose) {
-      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 1];
-      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 1];
+      dim_out_vec[dims.size() - 2] = x_dims[x_dims.size() - 1];
+      dim_out_vec[dims.size() - 1] = y_dims[y_dims.size() - 1];
     } else {
-      dim_out_vec[x_dims.size() - 2] = x_dims[x_dims.size() - 1];
-      dim_out_vec[x_dims.size() - 1] = y_dims[y_dims.size() - 2];
+      dim_out_vec[dims.size() - 2] = x_dims[x_dims.size() - 1];
+      dim_out_vec[dims.size() - 1] = y_dims[y_dims.size() - 2];
     }
   } else if (x_dims.size() == 2 && y_dims.size() == 2) {
     // x: [M, K], y: [K, N], out: [M, N]
     // x: [M, K], y: [K, N], out: [M, N]
-    if (!x_transpose && !y_transpose) {
-      CHECK_EQ(x_dims[1], y_dims[0])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    } else if (!x_transpose && y_transpose) {
-      CHECK_EQ(x_dims[1], y_dims[1])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    } else if (x_transpose && !y_transpose) {
-      CHECK_EQ(x_dims[0], y_dims[0])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    } else {
-      CHECK_EQ(x_dims[0], y_dims[1])
-          << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-          << "), x_transpose is " << x_transpose << ", y_transpose is "
-          << y_transpose;
-    }
     dim_out_vec.resize(x_dims.size());
     if (x_transpose) {
       dim_out_vec[0] = x_dims[1];
@@ -109,9 +103,6 @@ bool MatMulOpLite::InferShape() const {
     }
   } else if (x_dims.size() > 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
-    CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[0])
-        << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-        << ")";
     dim_out_vec.resize(x_dims.size() - 1);
     for (size_t i = 0; i < dim_out_vec.size(); ++i) {
       dim_out_vec[i] = x_dims[i];
@@ -141,6 +132,7 @@ bool MatMulOpLite::InferShape() const {
 }
 
 bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   CHECK(!op_desc.Input("X").empty());
   CHECK(!op_desc.Input("Y").empty());
   CHECK(!op_desc.Output("Out").empty());

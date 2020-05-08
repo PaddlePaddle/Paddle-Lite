@@ -47,7 +47,7 @@ class EmbSeqPoolJitCode : public JitCode {
     } else if (type_ == SeqPoolType::kSqrt) {
       base += "_Sqrt";
     }
-    base += ("_W" + std::to_string(tbl_w_));
+    base += ("_W" + paddle::lite::to_string(tbl_w_));
     return base;
   }
   void genCode() override;

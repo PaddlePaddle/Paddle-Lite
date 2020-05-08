@@ -13,12 +13,26 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/conv_compute.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
+
+inline int ConvOutputSize(int input_size,
+                          int filter_size,
+                          int dilation,
+                          int pad_left,
+                          int pad_right,
+                          int stride) {
+  const int dkernel = dilation * (filter_size - 1) + 1;
+  int output_size = (input_size + pad_left + pad_right - dkernel) / stride + 1;
+  CHECK_GT_OR_FALSE(output_size, 0);
+
+  return output_size;
+}
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
@@ -35,6 +49,25 @@ void ConvCompute::Run() {
 template <PrecisionType Ptype_out>
 void ConvComputeInt8<Ptype_out>::PrepareForRun() {
   auto& param = this->Param<param_t>();
+
+  const auto in_dims = param.x->dims();
+  const auto filter_dims = param.filter->dims();
+  std::vector<int64_t> output_shape({in_dims[0]});
+
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
+  for (size_t i = 0; i < param.strides.size(); ++i) {
+    output_shape.push_back(ConvOutputSize(in_dims[i + 1],
+                                          filter_dims[i + 1],
+                                          dilations[i],
+                                          paddings[2 * i],
+                                          paddings[2 * i + 1],
+                                          param.strides[i]));
+  }
+  output_shape.push_back(filter_dims[0]);
+  param.output->Resize(lite::DDim(output_shape));
+
   auto& ctx = this->ctx_->template As<CUDAContext>();
   conv_impl_.reset(new lite::cuda::math::CudnnConv2DInt8<Ptype_out>);
   conv_impl_->init(param, &ctx);
@@ -43,6 +76,23 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
 template <PrecisionType Ptype_out>
 void ConvComputeInt8<Ptype_out>::Run() {
   auto& param = this->Param<param_t>();
+  const auto in_dims = param.x->dims();
+  const auto filter_dims = param.filter->dims();
+  std::vector<int64_t> output_shape({in_dims[0]});
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+
+  for (size_t i = 0; i < param.strides.size(); ++i) {
+    output_shape.push_back(ConvOutputSize(in_dims[i + 1],
+                                          filter_dims[i + 1],
+                                          dilations[i],
+                                          paddings[2 * i],
+                                          paddings[2 * i + 1],
+                                          param.strides[i]));
+  }
+  output_shape.push_back(filter_dims[0]);
+  param.output->Resize(lite::DDim(output_shape));
+
   conv_impl_->run(param);
 }
 
@@ -56,10 +106,42 @@ template class ConvComputeInt8<PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(
     conv2d, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::ConvCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Bias",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::ConvCompute,
+                     def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Bias",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -70,13 +152,19 @@ REGISTER_LITE_KERNEL(
     paddle::lite::kernels::cuda::ConvComputeInt8<PRECISION(kFloat)>,
     fp32_out)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt8))})
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC))})
     .BindInput("Bias",
                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
     .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt8))})
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Output",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

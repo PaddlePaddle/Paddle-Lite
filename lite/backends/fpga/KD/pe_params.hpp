@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
@@ -26,10 +27,16 @@ namespace zynqmp {
 struct ReLUParam {
  public:
   bool enabled = false;
+  float leaky_relu_factor = 0.0f;
+};
+
+struct ActiveParam {
+  enum ActiveType type = TYPE_NONE;
+  float leaky_relu_factor;
 };
 
 struct PEParam {
-  ReLUParam relu;
+  ActiveParam activeParam;
 };
 
 struct InputParam : PEParam {
@@ -133,6 +140,13 @@ struct ElementwiseAddParam : PEParam {
   EWAddArgs ewargs;
 };
 
+struct ElementwiseMulParam : PEParam {
+ public:
+  Tensor* input_x;
+  Tensor* input_y = nullptr;
+  Tensor* output = nullptr;
+};
+
 struct FullyConnectedParam : PEParam {
  public:
   Tensor* input = nullptr;
@@ -197,6 +211,17 @@ struct PriorBoxParam : PEParam {
   float offset;
 };
 
+struct YoloBoxParam : PEParam {
+  Tensor* input;
+  Tensor* imgSize;
+  Tensor* outputBoxes;
+  Tensor* outputScores;
+  int downsampleRatio;
+  std::vector<int> anchors;
+  int classNum;
+  float confThresh;
+};
+
 struct ScaleParam : PEParam {
  public:
   Tensor* input = nullptr;
@@ -229,5 +254,24 @@ struct CropParam : PEParam {
   std::vector<int> offsets;
   std::vector<int> shape;
 };
+
+struct GRUParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* h0 = nullptr;
+  Tensor* weight = nullptr;
+  Tensor* bias = nullptr;
+
+  Tensor* batch_gate = nullptr;
+  Tensor* batch_reset_hidden_prev = nullptr;
+  Tensor* batch_hidden = nullptr;
+  Tensor* hidden = nullptr;
+
+  std::string gate_activation = "sigmoid";
+  std::string activation = "tanh";
+  bool is_reverse = false;
+  bool origin_mode = false;
+};
+
 }  // namespace zynqmp
 }  // namespace paddle

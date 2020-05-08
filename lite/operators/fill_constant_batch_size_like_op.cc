@@ -13,57 +13,58 @@
 // limitations under the License.
 
 #include "lite/operators/fill_constant_batch_size_like_op.h"
-#include <algorithm>
-#include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
 bool FillConstantBatchSizeLikeOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.Input);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.out);
+  CHECK(param_.input);
+  CHECK_GT(param_.shape.size(), 0u);
+  CHECK_GE(param_.input_dim_idx, 0);
+  CHECK_GE(param_.output_dim_idx, 0);
   return true;
 }
 
-bool FillConstantBatchSizeLikeOp::InferShape() const {
-  auto shape = param_.shape;
-  std::vector<int64_t> shape_int64(shape.size(), 0);
-  std::transform(shape.begin(), shape.end(), shape_int64.begin(), [](int a) {
-    return static_cast<int64_t>(a);
-  });
-  lite::DDim output_dim(shape_int64);
-
-  int input_dim_idx = param_.input_dim_idx;
-  int output_dim_idx = param_.output_dim_idx;
-
-  output_dim[output_dim_idx] = param_.Input->dims()[input_dim_idx];
-  param_.Out->Resize(output_dim);
+bool FillConstantBatchSizeLikeOp::InferShapeImpl() const {
+  std::vector<int64_t> output_dim{param_.shape.begin(), param_.shape.end()};
+  if (param_.input_dim_idx == 0 && !param_.input->lod().empty()) {
+    output_dim[param_.output_dim_idx] = param_.input->lod().back().size() - 1;
+  } else {
+    output_dim[param_.output_dim_idx] =
+        param_.input->dims()[param_.input_dim_idx];
+  }
+  param_.out->Resize(output_dim);
   return true;
 }
 
-bool FillConstantBatchSizeLikeOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                             lite::Scope *scope) {
-  auto Input = op_desc.Input("X").front();
-  auto Out = op_desc.Output("Out").front();
-  param_.Input = scope->FindVar(Input)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
-  param_.shape = op_desc.GetAttr<std::vector<int>>("shape");
-  param_.input_dim_idx = op_desc.GetAttr<int>("input_dim_idx");
-  param_.output_dim_idx = op_desc.GetAttr<int>("output_dim_idx");
-  param_.dtype = op_desc.GetAttr<int>("dtype");
-  param_.value = op_desc.GetAttr<float>("value");
-  CHECK(param_.Input);
-  CHECK(param_.Out);
+bool FillConstantBatchSizeLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
+                                             lite::Scope* scope) {
+  auto out_name = opdesc.Output("Out").front();
+  auto input_name = opdesc.Input("Input").front();
+
+  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.input = GetMutableVar<lite::Tensor>(scope, input_name);
+  param_.dtype = opdesc.GetAttr<int>("dtype");
+  param_.shape = opdesc.GetAttr<std::vector<int>>("shape");
+  if (opdesc.HasAttr("value")) {
+    param_.value = opdesc.GetAttr<float>("value");
+  }
+  if (opdesc.HasAttr("input_dim_idx")) {
+    param_.input_dim_idx = opdesc.GetAttr<int>("input_dim_idx");
+  }
+  if (opdesc.HasAttr("output_dim_idx")) {
+    param_.output_dim_idx = opdesc.GetAttr<int>("output_dim_idx");
+  }
 
   return true;
 }
 
-} /* namespace operators */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace operators
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_OP(fill_constant_batch_size_like,
                  paddle::lite::operators::FillConstantBatchSizeLikeOp);

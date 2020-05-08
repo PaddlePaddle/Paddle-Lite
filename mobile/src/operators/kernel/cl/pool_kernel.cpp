@@ -50,6 +50,14 @@ void PoolKernel<GPU_CL, float>::Compute(const PoolParam<GPU_CL> &param) {
   std::vector<int> ksize = param.Ksize();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
+
+  if (param.isGlobalPooling()) {
+    for (size_t i = 0; i < ksize.size(); ++i) {
+      paddings[i] = 0;
+      ksize[i] = static_cast<int>(param.Input()->dims()[i + 2]);
+    }
+  }
+
   const int pad_top = paddings[0];
   const int pad_left = paddings[1];
   const int stride_h = strides[0];

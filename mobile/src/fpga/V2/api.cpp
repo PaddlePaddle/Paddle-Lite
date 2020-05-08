@@ -359,7 +359,7 @@ void expand_conv_arg(ConvArgs *arg) {
   if (((res_win % 2) != 0) && (res_win != 1)) {
     res_win = res_win - 1;
   }
-  PADDLE_MOBILE_ENFORCE(res_win >= 2, "window too bigger than fpga volume");
+  //  PADDLE_MOBILE_ENFORCE(res_win >= 2, "window too bigger than fpga volume");
   res_fit = res_win;
 
   auto block_num = (output_width + res_fit - 1) / res_fit;
@@ -623,7 +623,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
     arg->concat_arg.images_in[i] =
         (int8_t *)arg->conv_arg[i].output.address;  // NOLINT
-    arg->concat_arg.scales_in[i] = arg->conv_arg[i].output.scale_address;
+    arg->concat_arg.scales_in[i] = out->scale;
     arg->concat_arg.channel_num[i] = arg->conv_arg[i].filter_num;
 
     expand_conv_arg(&arg->conv_arg[i]);
@@ -885,7 +885,7 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      int padding_h, int padding_w, float *bias_ptr) {
   auto filter_ptr = filter->data<int16_t>();
   auto input_ptr = input->data<int8_t>();
-  auto output_ptr = out->mutable_data<int8_t>();
+  auto output_ptr = out->data<int8_t>();
   arg->sub_conv_num = 1;
   arg->relu_enabled = relu_enabled;
   // arg->output.activation.activation_type = activation_enable;

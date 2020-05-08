@@ -156,9 +156,9 @@ size_t VTanhCreator::CodeSize(const int& d) const {
 
 namespace gen = paddle::lite::jit::gen;
 
-REGISTER_JITKERNEL_GEN(kVRelu, gen::VReluCreator);
-REGISTER_JITKERNEL_GEN(kVSquare, gen::VSquareCreator);
-REGISTER_JITKERNEL_GEN(kVIdentity, gen::VIdentityCreator);
-REGISTER_JITKERNEL_GEN(kVExp, gen::VExpCreator);
-REGISTER_JITKERNEL_GEN(kVSigmoid, gen::VSigmoidCreator);
-REGISTER_JITKERNEL_GEN(kVTanh, gen::VTanhCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVRelu, gen::VReluCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVSquare, gen::VSquareCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVIdentity, gen::VIdentityCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVExp, gen::VExpCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVSigmoid, gen::VSigmoidCreator);
+REGISTER_JITKERNEL_GEN_LITE(kVTanh, gen::VTanhCreator);

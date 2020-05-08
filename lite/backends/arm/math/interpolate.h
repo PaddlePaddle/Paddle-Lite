@@ -44,11 +44,12 @@ void nearest_interp(const float* src,
 
 void interpolate(lite::Tensor* X,
                  lite::Tensor* OutSize,
+                 std::vector<const lite::Tensor*> SizeTensor,
+                 lite::Tensor* Scale,
                  lite::Tensor* Out,
                  int out_height,
                  int out_width,
-                 float height_scale,
-                 float width_scale,
+                 float scale,
                  bool with_align,
                  std::string interpolate_type);
 

@@ -121,9 +121,9 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size =
       this->cl_helper_.DefaultWorkSize(*param.OutputBoxes());
-  int c_block = default_work_size[0];
-  int w = default_work_size[1];
-  int nh = default_work_size[2];
+  auto c_block = default_work_size[0];
+  auto w = default_work_size[1];
+  auto nh = default_work_size[2];
 
   std::vector<int64_t> box_shape({num_priors});
   framework::DDim ddim = framework::make_ddim(box_shape);

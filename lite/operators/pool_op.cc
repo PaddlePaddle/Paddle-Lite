@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
+#include <algorithm>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -26,7 +27,7 @@ bool PoolOpLite::CheckShape() const {
   const auto& x_dims = param_.x->dims();
   const auto& ksize = param_.ksize;
   const auto& strides = param_.strides;
-  const auto& paddings = param_.paddings;
+  const auto& paddings = *param_.paddings;
 
   // "Pooling intput should be 4-D or 5-D tensor."
   CHECK_OR_FALSE(x_dims.size() == 4 || x_dims.size() == 5);
@@ -34,35 +35,49 @@ bool PoolOpLite::CheckShape() const {
   CHECK_OR_FALSE(x_dims.size() - ksize.size() == 2U);
   // Strides size and pooling size should be the same.
   CHECK_OR_FALSE(ksize.size() == strides.size());
-  // Paddings size and pooling size should be the same.
-  CHECK_OR_FALSE(ksize.size() == paddings.size());
+  // Paddings size must be 4.
+  CHECK_OR_FALSE(paddings.size() == 4L);
 
   return true;
 }
 
-int PoolOutputSize(
-    int input_size, int filter_size, int padding, int stride, bool ceil_mode) {
+int PoolOutputSize(int input_size,
+                   int filter_size,
+                   int pad_left,
+                   int pad_right,
+                   int stride,
+                   bool ceil_mode) {
   int output_size;
   if (!ceil_mode) {
-    output_size = (input_size - filter_size + 2 * padding) / stride + 1;
+    output_size =
+        (input_size - filter_size + pad_left + pad_right) / stride + 1;
   } else {
     output_size =
-        (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
+        (input_size - filter_size + pad_left + pad_right + stride - 1) /
+            stride +
+        1;
   }
   return output_size;
 }
 
-bool PoolOpLite::InferShape() const {
+bool PoolOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
+  // dynamic update 4-pad
+  UpdatePadding(param_.paddings.get(),
+                param_.global_pooling,
+                param_.adaptive,
+                padding_algorithm_,
+                x_dims,
+                param_.strides,
+                ksize);
   if (param_.global_pooling) {
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-      param_.paddings[i] = 0;
       ksize[i] = static_cast<int>(x_dims[i + 2]);
     }
   }
-
+  auto paddings = *param_.paddings;
   std::vector<int64_t> output_shape({x_dims[0], x_dims[1]});
   if (param_.adaptive) {
     output_shape.insert(
@@ -71,15 +86,14 @@ bool PoolOpLite::InferShape() const {
     for (size_t i = 0; i < param_.ksize.size(); ++i) {
       output_shape.push_back(PoolOutputSize(x_dims[i + 2],
                                             param_.ksize[i],
-                                            param_.paddings[i],
+                                            paddings[2 * i],
+                                            paddings[2 * i + 1],
                                             param_.strides[i],
                                             param_.ceil_mode));
     }
   }
   param_.output->Resize(lite::DDim(output_shape));
 
-  // ctx->SetOutputDim("Out", framework::make_ddim(output_shape));
-  // ctx->ShareLoD("X", "Out");
   return true;
 }
 

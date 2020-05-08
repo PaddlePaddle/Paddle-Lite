@@ -21,6 +21,7 @@
 USE_LITE_OP(mul);
 USE_LITE_OP(matmul);
 USE_LITE_OP(fc);
+USE_LITE_OP(assign);
 USE_LITE_OP(relu);
 USE_LITE_OP(relu6);
 USE_LITE_OP(scale);
@@ -47,6 +48,7 @@ USE_LITE_OP(concat)
 USE_LITE_OP(conv2d)
 USE_LITE_OP(depthwise_conv2d)
 USE_LITE_OP(pool2d)
+USE_LITE_OP(max_pool2d_with_index)
 USE_LITE_OP(batch_norm)
 USE_LITE_OP(fusion_elementwise_sub_activation)
 USE_LITE_OP(transpose)
@@ -62,6 +64,7 @@ USE_LITE_OP(swish)
 USE_LITE_OP(log)
 USE_LITE_OP(exp)
 USE_LITE_OP(conv2d_transpose)
+USE_LITE_OP(depthwise_conv2d_transpose)
 USE_LITE_OP(negative)
 USE_LITE_OP(pad2d)
 USE_LITE_OP(power)
@@ -107,7 +110,7 @@ USE_LITE_OP(while)
 USE_LITE_OP(lod_reset)
 USE_LITE_OP(lookup_table)
 USE_LITE_OP(multiclass_nms)
-USE_LITE_OP(graph_op)
+USE_LITE_OP(subgraph)
 USE_LITE_OP(sequence_expand)
 USE_LITE_OP(sequence_pool)
 USE_LITE_OP(reduce_max)
@@ -127,3 +130,4 @@ USE_LITE_OP(roi_align)
 USE_LITE_OP(box_clip)
 USE_LITE_OP(assign_value)
 USE_LITE_OP(hard_sigmoid)
+USE_LITE_OP(rsqrt)

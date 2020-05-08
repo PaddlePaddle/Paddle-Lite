@@ -30,7 +30,7 @@ class ReshapeOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
@@ -48,7 +48,7 @@ class Reshape2Op : public ReshapeOp {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
@@ -56,7 +56,8 @@ class Reshape2Op : public ReshapeOp {
   std::string DebugString() const override { return "reshape2"; }
 };
 
-DDim ValidateShape(const std::vector<int> &shape, const DDim &input_dims);
+std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
+                                            const DDim &input_dims);
 
 }  // namespace operators
 }  // namespace lite

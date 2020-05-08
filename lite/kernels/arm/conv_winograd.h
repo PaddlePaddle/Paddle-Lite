@@ -39,6 +39,10 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   using param_t = operators::ConvParam;
   Tensor weights_;
   DDim last_shape_;
+  int workspace_size_{0};
+  int last_function_{-1};
+  bool choose_small_{false};
+  int wino_iw{8};
 };
 
 }  // namespace arm
