@@ -668,6 +668,11 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::vector<std::string> act_types{"gelu", "relu"};
 
     std::set<int> fc_int31_ids;
+#ifdef LITE_WITH_XPU
+    // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
+    // access XPUConfig::multi_encoder_precision, but backend/xpu/config.cc
+    // where XPUConfig is defined is only compiled iff LITE_WITH_XPU==ON. To
+    // suppress linkage error, we use #ifdef here. Any better idea?
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
         paddle::lite::xpu::XPUConfig::multi_encoder_precision == "int31") {
       fc_int31_ids = {0, 1, 2, 3, 4, 5};
@@ -679,6 +684,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
               << "XPUConfig::multi_encoder_precision="
               << paddle::lite::xpu::XPUConfig::multi_encoder_precision;
     }
+#endif
 
     for (auto& act_type : act_types) {
       fusion::XPUSingleEncoderFuser single_encoder_fuser(act_type);
