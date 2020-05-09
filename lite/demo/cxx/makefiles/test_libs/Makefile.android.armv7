@@ -42,13 +42,13 @@ fetch_opencv:
 	@ test -d ${THIRD_PARTY_DIR}/${OPENCV_VERSION} || \
       tar -zxvf ${THIRD_PARTY_DIR}/${OPENCV_VERSION}.tar.gz -C ${THIRD_PARTY_DIR}
 
-test_helper.o: test_helper.cc
+test_helper.o: fetch_opencv test_helper.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o test_helper.o -c test_helper.cc
 
-classification_full.o: classification_full.cc
+classification_full.o: fetch_opencv classification_full.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o classification_full.o -c classification_full.cc
 
-classification_light.o: classification_light.cc
+classification_light.o: fetch_opencv classification_light.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o classification_light.o -c classification_light.cc
 
 classification_full_shared: fetch_opencv classification_full.o test_helper.o
@@ -64,10 +64,10 @@ classification_light_static: fetch_opencv classification_light.o test_helper.o
 	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) classification_light.o test_helper.o -o classification_light_static  ${LITE_LIGHT_STATIC_LIBS} $(CXX_LIBS) $(LDFLAGS)
 
 ######
-yolov3_full.o: yolov3_full.cc
+yolov3_full.o: fetch_opencv yolov3_full.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o yolov3_full.o -c yolov3_full.cc
 
-yolov3_light.o: yolov3_light.cc
+yolov3_light.o: fetch_opencv yolov3_light.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o yolov3_light.o -c yolov3_light.cc
 
 yolov3_full_shared: fetch_opencv yolov3_full.o test_helper.o
@@ -88,8 +88,8 @@ all: classification_full_shared classification_full_static classification_light_
 clean:
 	rm -f *.o
 	rm -f classification_full_shared
-	rm -r classification_full_static
-	rm -r classification_light_shared
+	rm -f classification_full_static
+	rm -f classification_light_shared
 	rm -f classification_light_static
 	rm -f yolov3_full_shared
 	rm -f yolov3_full_static

@@ -42,16 +42,14 @@ bool OpLite::InferShapeWithCache() {
     // combined dims value into new_hash value.
     auto &element_dims = (*iter)->dims();
     for (size_t i = 0; i < element_dims.size(); i++) {
-      new_hash =
-          lite::hash_combine(new_hash, static_cast<int>(element_dims[i]));
+      lite::CombineHash(static_cast<int64_t>(element_dims[i]), &new_hash);
     }
     // combine lod value into new_hash valud.
     auto &emement_lods = (*iter)->lod();
     for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
          lod_iter++) {
       for (size_t i = 0; i < lod_iter->size(); i++) {
-        new_hash =
-            lite::hash_combine(new_hash, static_cast<int>(lod_iter->at(i)));
+        lite::CombineHash(static_cast<int64_t>(lod_iter->at(i)), &new_hash);
       }
     }
   }
