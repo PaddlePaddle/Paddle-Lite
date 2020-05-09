@@ -292,8 +292,8 @@ size_t KernelGrade(
     const OpInfo &op_info,
     const lite::KernelBase &kernel,
     const std::vector<Place> &places,
-    const std::unordered_map<std::string, PrecisionType> &in_types,
-    const std::unordered_map<std::string, PrecisionType> &out_types,
+    const std::unordered_map<std::string, const Type *> &in_types,
+    const std::unordered_map<std::string, const Type *> &out_types,
     const std::vector<std::string> &in_names,
     const std::vector<std::string> &out_names,
     const core::KernelPickFactor &kernel_pick_factors);

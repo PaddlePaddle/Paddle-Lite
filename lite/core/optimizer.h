@@ -17,6 +17,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
@@ -44,18 +45,24 @@ class Optimizer {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
-    CHECK(!graph_) << "duplicate optimize found";
+    CHECK(!graph_.size()) << "duplicate optimize found";
 
-    graph_.reset(new mir::SSAGraph);
-    graph_->Build(program, valid_places);
-    graph_->SetValidPlaces(valid_places);
+    auto block_size = program.ops().size();
+    for (int block_idx = 0; block_idx < block_size; block_idx++) {
+      std::unique_ptr<mir::SSAGraph> graph;
+      graph.reset(new mir::SSAGraph);
+      graph->Build(program, valid_places, block_idx);
+      graph->SetValidPlaces(valid_places);
+      graph_.emplace_back(std::move(graph));
+    }
 
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
 
     if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
-          {"lite_quant_dequant_fuse_pass",         //
+          {"graph_visualize_pass",
+           "lite_quant_dequant_fuse_pass",         //
            "weight_quantization_preprocess_pass",  //
            "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",               //
@@ -130,7 +137,8 @@ class Optimizer {
 
            "mlu_postprocess_pass",
 
-           "memory_optimize_pass"}};
+           "memory_optimize_pass",
+           "graph_visualize_pass"}};
 
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of
@@ -162,7 +170,7 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
-    pass->Apply(graph_);
+    pass->Apply(graph_[0]);
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
@@ -182,13 +190,13 @@ class Optimizer {
   void GenCode(const std::string& code_dir);
 
   const mir::SSAGraph& ssa_graph() const {
-    CHECK(graph_);
-    return *graph_;
+    CHECK(graph_[0]);
+    return *graph_[0];
   }
 
   mir::SSAGraph* mutable_ssa_graph() {
-    CHECK(graph_);
-    return graph_.get();
+    CHECK(graph_[0]);
+    return graph_[0].get();
   }
 
   lite::Scope* exec_scope() { return exec_scope_; }
@@ -215,14 +223,16 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        pass->Apply(graph_);
+        for (int block_idx = 0; block_idx < 1 /*graph_.size()*/; block_idx++) {
+          pass->Apply(graph_[block_idx]);
+        }
         LOG(INFO) << "== Finished running: " << x;
       }
     }
   }
 
  private:
-  std::unique_ptr<mir::SSAGraph> graph_;
+  std::vector<std::unique_ptr<mir::SSAGraph>> graph_;
   std::vector<Place> valid_places_;
   lite::Scope* exec_scope_{};
   Program* program_{};

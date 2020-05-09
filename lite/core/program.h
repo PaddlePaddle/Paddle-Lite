@@ -58,8 +58,18 @@ struct Program {
   std::list<std::string>* mutable_weights() { return &weights_; }
   std::list<std::string>* mutable_tmp_vars() { return &tmp_vars_; }
 
-  const std::list<std::shared_ptr<OpLite>>& ops() const { return ops_; }
-  std::list<std::shared_ptr<OpLite>>* mutable_ops() { return &ops_; }
+  const std::list<std::shared_ptr<OpLite>>& ops(int block_idx) const {
+    return ops_[block_idx];
+  }
+  std::list<std::shared_ptr<OpLite>>* mutable_ops(int block_idx) {
+    return &ops_[block_idx];
+  }
+  const std::vector<std::list<std::shared_ptr<OpLite>>>& ops() const {
+    return ops_;
+  }
+  std::vector<std::list<std::shared_ptr<OpLite>>>* mutable_ops() {
+    return &ops_;
+  }
 
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
@@ -78,7 +88,7 @@ struct Program {
   std::unordered_map<std::string, PrecisionType> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
-  std::list<std::shared_ptr<OpLite>> ops_;
+  std::vector<std::list<std::shared_ptr<OpLite>>> ops_;
   // the scope to run the kernels, NOTE this is the execution scope.
   std::shared_ptr<lite::Scope> scope_;
   std::vector<Place> valid_places_;

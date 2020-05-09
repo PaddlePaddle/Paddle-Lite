@@ -148,7 +148,7 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 
   // Create the kernels of the target places, and filter out the specific
   // kernel with the target alias.
-  for (auto& op : program.ops()) {
+  for (auto& op : program.ops(0)) {
     auto kernel_type = op->op_info()->GetAttr<std::string>(kKernelTypeAttr);
     std::string op_type, alias;
     Place place;

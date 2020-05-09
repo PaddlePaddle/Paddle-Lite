@@ -70,14 +70,15 @@ void StepExecutor::Build() {
       auto kernels = op->CreateKernels(valid_places_);
       CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
       // Obtain the precision types of input arguments whose types are tensors.
-      std::unordered_map<std::string, PrecisionType> in_types;
+      std::unordered_map<std::string, const Type *> in_types;
       auto in_names = op->op_info()->input_names();
       for (auto &in_name : in_names) {
         auto in_var = scope_->FindVar(in_name);
         if (in_var->IsType<Tensor>()) {
           auto in_precision = in_var->GetMutable<Tensor>()->precision();
           if (in_precision != PRECISION(kUnk)) {
-            in_types[in_name] = in_precision;
+            in_types[in_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), in_precision, DATALAYOUT(kUnk));
           }
         }
       }

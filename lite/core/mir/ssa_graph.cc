@@ -151,7 +151,8 @@ Node *SSAGraph::GraphCreateInstructNode(
 }
 
 void SSAGraph::Build(const Program &program,
-                     const std::vector<Place> &valid_places) {
+                     const std::vector<Place> &valid_places,
+                     int block_idx) {
   CHECK(node_storage_.empty());
 
   auto weights_name = program.weights();
@@ -165,7 +166,7 @@ void SSAGraph::Build(const Program &program,
       program.var_data_type();
 
   std::unordered_map<std::string, mir::Node *> arg_update_node_map_;
-  for (auto &op : program.ops()) {
+  for (auto &op : program.ops(block_idx)) {
     VLOG(3) << op->op_info()->Type();
     auto *op_node = GraphCreateInstructNode(op, valid_places);
     for (const std::string &name : op->op_info()->input_names()) {

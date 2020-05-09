@@ -173,52 +173,57 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   // Create operators.
   auto program = prog;
   CHECK(program.BlocksSize());
-  auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
-  for (size_t i = 0; i < main_block.OpsSize(); ++i) {
-    auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
-    auto op_type = op_desc.Type();
-    // if (op_type == "feed" || op_type == "fetch") continue;
-    VLOG(4) << "create Op [" << op_type << "]";
-    auto op = LiteOpRegistry::Global().Create(op_type);
-    CHECK(op) << "no Op found for " << op_type;
-    if (op_type == "while" || op_type == "conditional_block" ||
-        op_type == "subgraph") {
-      auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
-      CHECK(sub_block_idx >= 0 && sub_block_idx < program.BlocksSize())
-          << "Invalid attribute sub_block(" << sub_block_idx << ") for "
-          << op_type;
-      auto sub_block_desc =
-          const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
-              sub_block_idx);
-      CHECK(sub_block_desc);
-      if (op_type == "while") {
-        if (!valid_places_.empty()) {
-          std::vector<std::string> valid_places;
-          for (auto& valid_place : valid_places_) {
-            STL::stringstream ss;
-            // We serialize the place value not the string representation here
-            // for
-            // easier deserialization.
-            ss << static_cast<int>(valid_place.target) << "/";
-            ss << static_cast<int>(valid_place.precision) << "/";
-            ss << static_cast<int>(valid_place.layout);
-            valid_places.push_back(ss.str());
+  ops_.resize(program.BlocksSize());
+  for (size_t b = 0; b < program.BlocksSize(); ++b) {
+    auto& main_block = *program.GetBlock<cpp::BlockDesc>(b);
+    for (size_t i = 0; i < main_block.OpsSize(); ++i) {
+      auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
+      auto op_type = op_desc.Type();
+      // if (op_type == "feed" || op_type == "fetch") continue;
+      VLOG(4) << "create Op [" << op_type << "]";
+      auto op = LiteOpRegistry::Global().Create(op_type);
+      CHECK(op) << "no Op found for " << op_type;
+      if (op_type == "while" || op_type == "conditional_block" ||
+          op_type == "subgraph") {
+        auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
+        CHECK(sub_block_idx >= 0 && sub_block_idx < program.BlocksSize())
+            << "Invalid attribute sub_block(" << sub_block_idx << ") for "
+            << op_type;
+        auto sub_block_desc =
+            const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
+                sub_block_idx);
+        CHECK(sub_block_desc);
+        if (op_type == "while") {
+          if (!valid_places_.empty()) {
+            std::vector<std::string> valid_places;
+            for (auto& valid_place : valid_places_) {
+              STL::stringstream ss;
+              // We serialize the place value not the string representation here
+              // for
+              // easier deserialization.
+              ss << static_cast<int>(valid_place.target) << "/";
+              ss << static_cast<int>(valid_place.precision) << "/";
+              ss << static_cast<int>(valid_place.layout);
+              valid_places.push_back(ss.str());
+            }
+            const_cast<cpp::OpDesc&>(op_desc).SetAttr<std::vector<std::string>>(
+                "valid_places", valid_places);
           }
-          const_cast<cpp::OpDesc&>(op_desc).SetAttr<std::vector<std::string>>(
-              "valid_places", valid_places);
+          static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(
+              sub_block_desc);
+        } else if (op_type == "conditional_block") {
+          static_cast<operators::ConditionalBlockOpLite*>(op.get())
+              ->SetSubBlock(sub_block_desc);
+        } else if (op_type == "subgraph") {
+          static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(
+              sub_block_desc);
         }
-        static_cast<operators::WhileOpLite*>(op.get())->SetSubBlock(
-            sub_block_desc);
-      } else if (op_type == "conditional_block") {
-        static_cast<operators::ConditionalBlockOpLite*>(op.get())->SetSubBlock(
-            sub_block_desc);
-      } else if (op_type == "subgraph") {
-        static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(
-            sub_block_desc);
       }
+      // ops_.emplace_back(std::move(op));
+      // ops_.back()->Attach(op_desc, exec_scope_);
+      ops_[b].emplace_back(std::move(op));
+      ops_[b].back()->Attach(op_desc, exec_scope_);
     }
-    ops_.emplace_back(std::move(op));
-    ops_.back()->Attach(op_desc, exec_scope_);
   }
 }
 
@@ -259,11 +264,13 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
     for (size_t i = 0; i < main_block.VarsSize(); ++i) {
       auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
       if (!var_desc.Persistable()) {
-        if (var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
-            VarPrecision2KernlPrecision(var_desc.GetDataType()) !=
-                PRECISION(kUnk)) {
+        if ((var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
+             VarPrecision2KernlPrecision(var_desc.GetDataType()) !=
+                 PRECISION(kUnk)) ||
+            var_desc.GetType() == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_data_type_[var_desc.Name()] =
               VarPrecision2KernlPrecision(var_desc.GetDataType());
+          LOG(INFO) << "var_data_type_[" << var_desc.Name() << "]";
         }
         tmp_vars_.push_back(var_desc.Name());
         VLOG(4) << "var name: " << var_desc.Name() << " type is "
@@ -292,6 +299,7 @@ void Instruction::Run() {
 #endif
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
+  LOG(INFO) << "op " << op_->Type();
 
   if (first_epoch_) {
     first_epoch_ = false;

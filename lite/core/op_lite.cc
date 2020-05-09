@@ -192,8 +192,8 @@ size_t KernelGrade(
     const OpInfo &op_info,
     const lite::KernelBase &kernel,
     const std::vector<Place> &places,
-    const std::unordered_map<std::string, PrecisionType> &in_types,
-    const std::unordered_map<std::string, PrecisionType> &out_types,
+    const std::unordered_map<std::string, const Type *> &in_types,
+    const std::unordered_map<std::string, const Type *> &out_types,
     const std::vector<std::string> &in_names,
     const std::vector<std::string> &out_names,
     const core::KernelPickFactor &kernel_pick_factors) {
@@ -257,18 +257,28 @@ size_t KernelGrade(
         std::string tmp;
         CHECK(op_info.GetInputArgname(in_names[i], &tmp));
         if (in_types.count(in_names[i]) &&
-            in_types.at(in_names[i]) !=
-                kernel.GetInputDeclType(tmp)->precision()) {
+            !PrecisionCompatibleTo(*in_types.at(in_names[i]),
+                                   *kernel.GetInputDeclType(tmp))) {
           type_match = false;
+        }
+        if (in_types.count(in_names[i])) {
+          LOG(INFO) << "in var name:" << in_names[i]
+                    << " type:" << *in_types.at(in_names[i])
+                    << " kernel arg type:" << *kernel.GetInputDeclType(tmp);
         }
       }
       for (size_t i = 0; i < out_names.size(); ++i) {
         std::string tmp;
         CHECK(op_info.GetOutputArgname(out_names[i], &tmp));
         if (out_types.count(out_names[i]) &&
-            out_types.at(out_names[i]) !=
-                kernel.GetOutputDeclType(tmp)->precision()) {
+            !PrecisionCompatibleTo(*out_types.at(out_names[i]),
+                                   *kernel.GetOutputDeclType(tmp))) {
           type_match = false;
+        }
+        if (out_types.count(out_names[i])) {
+          LOG(INFO) << "out var name:" << out_names[i]
+                    << " type:" << *out_types.at(out_names[i])
+                    << " kernel arg type:" << *kernel.GetOutputDeclType(tmp);
         }
       }
       if (type_match) {
