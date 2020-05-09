@@ -774,7 +774,202 @@ namespace math {
 
 #endif
 // clang-format on
-
+#ifdef __aarch64__
+template <typename Dtype>
+void conv3x3s1p1_kernel(const int8_t* din_ptr0,
+                        const int8_t* din_ptr1,
+                        const int8_t* din_ptr2,
+                        const int8_t* din_ptr3,
+                        Dtype* doutr0,
+                        Dtype* doutr1,
+                        const float* scale,
+                        float bias,
+                        const int cnt,
+                        unsigned int *vmask_ptr,
+                        unsigned int *rmask_ptr,
+                        unsigned char *rmask_ptr1,
+                        int flag_act,
+                        const float* alpha,
+                        int8xt_t wr00,
+                        int8xt_t wr01,
+                        int8xt_t wr02,
+                        int8xt_t wr10,
+                        int8xt_t wr11,
+                        int8xt_t wr12,
+                        int8xt_t wr20,
+                        int8xt_t wr21,
+                        int8xt_t wr22);
+template<>
+void conv3x3s1p1_kernel(const int8_t* din_ptr0,
+                        const int8_t* din_ptr1,
+                        const int8_t* din_ptr2,
+                        const int8_t* din_ptr3,
+                        float* doutr0,
+                        float* doutr1,
+                        const float* scale,
+                        float bias,
+                        const int cnt,
+                        unsigned int *vmask_ptr,
+                        unsigned int *rmask_ptr,
+                        unsigned char *rmask_ptr1,
+                        int flag_act,
+                        const float* alpha,
+                        int8xt_t wr00,
+                        int8xt_t wr01,
+                        int8xt_t wr02,
+                        int8xt_t wr10,
+                        int8xt_t wr11,
+                        int8xt_t wr12,
+                        int8xt_t wr20,
+                        int8xt_t wr21,
+                        int8xt_t wr22){
+  asm volatile(
+    INT8_INIT_S1
+    LEFT_RESULT_INT8_FP32_OUT_S1
+    MID_RESULT_INT8_FP32_OUT_S1
+    RIGHT_RESULT_INT8_FP32_OUT_S1
+    :[din_ptr0] "+r"(din_ptr0),
+     [din_ptr1] "+r"(din_ptr1),
+     [din_ptr1] "+r"(din_ptr2),
+     [din_ptr1] "+r"(din_ptr3),
+     [doutr0] "+r"(doutr0),
+     [doutr1] "+r"(doutr1),
+     [cnt] "+r"(cnt),
+     [vmask_ptr] "+r"(rmask_ptr),
+     [rmask_ptr] "+r"(rmask_ptr)
+    :[rmask_ptr1] "r"(rmask_ptr1),
+     [scale] "r"(scale),
+     [alpha] "r"(alpha),
+     [bias_val] "r"(bias),
+     [is_relu] "r"(flag_act),
+     [vr00] "w"(v0),
+     [vr01] "w"(v1),
+     [vr02] "w"(v2),
+     [vr10] "w"(v3),
+     [vr11] "w"(v4),
+     [vr12] "w"(v5),
+     [vr20] "w"(v6),
+     [vr21] "w"(v7),
+     [vr22] "w"(v8)
+    :"cc",
+     "memory",
+     "v0",
+     "v1",
+     "v2",
+     "v3",
+     "v4",
+     "v5",
+     "v6",
+     "v7",
+     "v8",
+     "v9",
+     "v10",
+     "v11",
+     "v12",
+     "v13",
+     "v14",
+     "v15",
+     "v16",
+     "v17",
+     "v18",
+     "v19",
+     "v20",
+     "v21",
+     "v22",
+     "v23",
+     "v24",
+     "v25",
+     "v26",
+     "v27",
+     "v28"
+     );
+}
+template<>
+void conv3x3s1p1_kernel(const int8_t* din_ptr0,
+                        const int8_t* din_ptr1,
+                        const int8_t* din_ptr2,
+                        const int8_t* din_ptr3,
+                        int8_t* doutr0,
+                        int8_t* doutr1,
+                        const float* scale,
+                        float bias,
+                        const int cnt,
+                        unsigned int *vmask_ptr,
+                        unsigned int *rmask_ptr,
+                        unsigned char *rmask_ptr1,
+                        int flag_act,
+                        const float* alpha,
+                        int8xt_t wr00,
+                        int8xt_t wr01,
+                        int8xt_t wr02,
+                        int8xt_t wr10,
+                        int8xt_t wr11,
+                        int8xt_t wr12,
+                        int8xt_t wr20,
+                        int8xt_t wr21,
+                        int8xt_t wr22){
+  asm volatile(
+    INT8_INIT_S1
+    LEFT_RESULT_INT8_INT8_OUT_S1
+    MID_RESULT_INT8_INT8_OUT_S1
+    RIGHT_RESULT_INT8_INT8_OUT_S1
+    :[din_ptr0] "+r"(din_ptr0),
+     [din_ptr1] "+r"(din_ptr1),
+     [din_ptr1] "+r"(din_ptr2),
+     [din_ptr1] "+r"(din_ptr3),
+     [doutr0] "+r"(doutr0),
+     [doutr1] "+r"(doutr1),
+     [cnt] "+r"(cnt),
+     [vmask_ptr] "+r"(rmask_ptr),
+     [rmask_ptr] "+r"(rmask_ptr)
+    :[rmask_ptr1] "r"(rmask_ptr1),
+     [scale] "r"(scale),
+     [alpha] "r"(alpha),
+     [bias_val] "r"(bias),
+     [is_relu] "r"(flag_act),
+     [vr00] "w"(v0),
+     [vr01] "w"(v1),
+     [vr02] "w"(v2),
+     [vr10] "w"(v3),
+     [vr11] "w"(v4),
+     [vr12] "w"(v5),
+     [vr20] "w"(v6),
+     [vr21] "w"(v7),
+     [vr22] "w"(v8)
+    :"cc",
+     "memory",
+     "v0",
+     "v1",
+     "v2",
+     "v3",
+     "v4",
+     "v5",
+     "v6",
+     "v7",
+     "v8",
+     "v9",
+     "v10",
+     "v11",
+     "v12",
+     "v13",
+     "v14",
+     "v15",
+     "v16",
+     "v17",
+     "v18",
+     "v19",
+     "v20",
+     "v21",
+     "v22",
+     "v23",
+     "v24",
+     "v25",
+     "v26",
+     "v27",
+     "v28"
+     );
+}
+#else
 template <typename Dtype>
 void conv3x3s1p1_kernel(const int8_t* din_ptr0,
                         const int8_t* din_ptr1,
@@ -784,7 +979,8 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
                         Dtype* doutr1,
                         const int8_t* weights,
                         const float* scale,
-                        const float* bias,
+                        float bias,
+                        const int cnt,
                         unsigned int *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
@@ -800,13 +996,51 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
                         float* doutr1,
                         const int8_t* weights,
                         const float* scale,
-                        const float* bias,
+                        float bias,
+                        const int cnt,
                         unsigned int *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
                         int flag_act,
                         const float* alpha){
-
+  asm volatile(
+    INT8_INIT_S1
+    LEFT_RESULT_INT8_FP32_OUT_S1
+    MID_RESULT_INT8_FP32_OUT_S1
+    RIGHT_RESULT_INT8_FP32_OUT_S1
+    :[din_ptr0] "+r"(din_ptr0),
+     [din_ptr1] "+r"(din_ptr1),
+     [din_ptr1] "+r"(din_ptr2),
+     [din_ptr1] "+r"(din_ptr3),
+     [doutr0] "+r"(doutr0),
+     [doutr1] "+r"(doutr1),
+     [cnt] "+r"(cnt),
+     [vmask_ptr] "+r"(rmask_ptr),
+     [rmask_ptr] "+r"(rmask_ptr)
+    :[rmask_ptr1] "r"(rmask_ptr1),
+     [wei_ptr] "r"(weights),
+     [scale] "r"(scale),
+     [alpha] "r"(alpha),
+     [bias_val] "r"(bias),
+     [is_relu] "r"(flag_act)
+    :"cc",
+     "memory",
+     "q0",
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "q5",
+     "q6",
+     "q7",
+     "q8",
+     "q9",
+     "q10",
+     "q11",
+     "q12",
+     "q13",
+     "q14",
+     "q15");
 }
 
 template <>
@@ -818,13 +1052,52 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
                         int8_t* doutr1,
                         const int8_t* weights,
                         const float* scale,
-                        const float* bias,
+                        float bias,
+                        const int cnt,
                         unsigned int *rmask_ptr,
                         unsigned int *vmask_ptr,
                         int flag_act,
                         const float* alpha){
-
+  asm volatile(
+    INT8_INIT_S1
+    LEFT_RESULT_INT8_INT8_OUT_S1
+    MID_RESULT_INT8_INT8_OUT_S1
+    RIGHT_RESULT_INT8_INT8_OUT_S1
+    :[din_ptr0] "+r"(din_ptr0),
+     [din_ptr1] "+r"(din_ptr1),
+     [din_ptr1] "+r"(din_ptr2),
+     [din_ptr1] "+r"(din_ptr3),
+     [doutr0] "+r"(doutr0),
+     [doutr1] "+r"(doutr1),
+     [cnt] "+r"(cnt),
+     [vmask_ptr] "+r"(rmask_ptr),
+     [rmask_ptr] "+r"(rmask_ptr)
+    :[rmask_ptr1] "r"(rmask_ptr1),
+     [wei_ptr] "r"(weights),
+     [scale] "r"(scale),
+     [alpha] "r"(alpha),
+     [bias_val] "r"(bias),
+     [is_relu] "r"(flag_act)
+    :"cc",
+     "memory",
+     "q0",
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "q5",
+     "q6",
+     "q7",
+     "q8",
+     "q9",
+     "q10",
+     "q11",
+     "q12",
+     "q13",
+     "q14",
+     "q15");
 }
+#endif
 template <typename Dtype>
 void conv_depthwise_3x3s1p1_int8(Dtype* dout,
                                const int8_t* din,
@@ -920,11 +1193,23 @@ void conv_depthwise_3x3s1p1_int8(Dtype* dout,
           float bias_val = flag_bias ? bias[c] : 0.0;
           const int8_t* wei_ptr = weights + c * w_stride;
           const float* scale_ptr = scale + c;
-          float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
           const int8_t *dr0 = din_ptr;
           const int8_t *dr1 = dr0 + win;
           const int8_t *dr2 = dr1 + win;
           const int8_t *dr3 = dr2 + win;
+#ifdef __aarch64__
+          int8x8_t wr00 = vdup_n_s8(wei_ptr[0]);
+          int8x8_t wr10 = vdup_n_s8(wei_ptr[3]);
+          int8x8_t wr20 = vdup_n_s8(wei_ptr[6]);
+
+          int8x8_t wr01 = vdup_n_s8(wei_ptr[1]);
+          int8x8_t wr11 = vdup_n_s8(wei_ptr[4]);
+          int8x8_t wr21 = vdup_n_s8(wei_ptr[7]);
+
+          int8x8_t wr02 = vdup_n_s8(wei_ptr[2]);
+          int8x8_t wr12 = vdup_n_s8(wei_ptr[5]);
+          int8x8_t wr22 = vdup_n_s8(wei_ptr[8]);
+#endif
           Dtype *doutr0 = dout_ptr;
           Dtype *doutr1 = dout_ptr + wout;
           for (int h = 0; h < hout; h += 2){
@@ -966,6 +1251,31 @@ void conv_depthwise_3x3s1p1_int8(Dtype* dout,
               unsigned int *vmask_ptr = vmask;
               unsigned int *rmask_ptr = rmask;
               // asm
+#ifdef __aarch64__
+              conv3x3s1p1_kernel<Dtype>(din_ptr0,
+                                        din_ptr1,
+                                        din_ptr2,
+                                        din_ptr3,
+                                        doutr0,
+                                        doutr1,
+                                        scale_ptr,
+                                        bias_val,
+                                        cnt_col,
+                                        vmask_ptr,
+                                        rmask_ptr,
+                                        rmask_1,
+                                        flag_act,
+                                        alpha,
+                                        wr00,
+                                        wr01,
+                                        wr02,
+                                        wr10,
+                                        wr11,
+                                        wr12,
+                                        wr20,
+                                        wr21,
+                                        wr22);
+#else
               conv3x3s1p1_kernel<Dtype>(din_ptr0,
                                         din_ptr1,
                                         din_ptr2,
@@ -974,13 +1284,14 @@ void conv_depthwise_3x3s1p1_int8(Dtype* dout,
                                         doutr1,
                                         wei_ptr,
                                         scale_ptr,
-                                        vbias,
+                                        bias_val,
+                                        cnt_col,
                                         vmask_ptr,
                                         rmask_ptr,
                                         rmask_1,
                                         flag_act,
                                         alpha);
-
+#endif
               din_ptr += 2 * win;
               dout_ptr += 2 * wout;
           }
