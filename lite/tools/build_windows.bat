@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 
 set source_path=%~dp0\\..\\..\\
 set BUILD_EXTRA=OFF
-set BUILD_PYTHON=OFF
+set WITH_PYTHON=OFF
 set BUILD_DIR=%source_path%
 set WITH_LOG=ON  
 set WITH_PROFILE=OFF
@@ -19,7 +19,7 @@ set workspace=%source_path%
 if /I "%1"=="with_extra" (
     set BUILD_EXTRA=ON
 ) else if /I "%1"=="with_python" (
-    set BUILD_PYTHON=ON
+    set WITH_PYTHON=ON
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
 ) else if /I  "%1"=="build_for_ci" (
@@ -41,7 +41,7 @@ cd "%workspace%"
 
 echo "------------------------------------------------------------------------------------------------------|"
 echo "|  BUILD_EXTRA=%BUILD_EXTRA%                                                                          |"
-echo "|  WITH_PYTHON=%BUILD_PYTHON%                                                                         |"
+echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                         |"
 echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                                                   |"
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
 echo "------------------------------------------------------------------------------------------------------|"
