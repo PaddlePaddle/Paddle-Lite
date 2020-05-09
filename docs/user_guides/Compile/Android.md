@@ -63,7 +63,7 @@ inference_lite_lib.android.armv8/
 - 其他可选编译命令：
 
 ```shell
---arm_abi: (armv8|armv7)     arm版本，默认为armv8
+--arch: (armv8|armv7)        arm版本，默认为armv8
 --toolchain: (gcc|clang)     编译器类型，默认为gcc
 --android_stl: (c++_static|c++_shared|gnu_static|gnu_shared)   NDK stl库链接方法，默认为静态链接c++_static
 --with_java: (OFF|ON)        是否编译Java预测库, 默认为 ON
