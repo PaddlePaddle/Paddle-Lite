@@ -245,12 +245,17 @@ Paddle-Lite支持在 “Docker 环境、Linux 环境、Mac 环境” 源码编�
 **编译方法参见**：[Android预测库编译方法](./Compile/Android)
 
 
-
 ### iOS 预测库编译方法
 
 Paddle-Lite只支持在 “Mac 环境” 源码编译iOS 预测库
 
 **编译方法参见**：[iOS预测库编译方法](./Compile/iOS)
+
+
+### Linux 预测库编译方法
+
+**编译方法参见**：[Linux预测库编译方法](./Compile/Linux)
+
 
 ### 加速第三方依赖库的下载
 
