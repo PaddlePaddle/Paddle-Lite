@@ -108,6 +108,11 @@ bool test_sgemv(bool tra,
                flag_act,
                six,
                alpha);
+    if (flag_act == 2) {  // relu6
+      for (int i = 0; i < tc_basic.numel(); i++) {
+        dc_basic[i] = dc_basic[i] > six ? six : dc_basic[i];
+      }
+    }
   }
   paddle::lite::profile::Timer t0;
   //! compute

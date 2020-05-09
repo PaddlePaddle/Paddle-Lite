@@ -221,6 +221,49 @@ class Device<TARGET(kMLU)> {
 template class Env<TARGET(kMLU)>;
 #endif  // LITE_WITH_MLU
 
+#ifdef LITE_WITH_BM
+template <>
+class Device<TARGET(kBM)> {
+ public:
+  Device(int dev_id, int max_stream = 1)
+      : idx_(dev_id), max_stream_(max_stream) {}
+  void Init();
+
+  int id() { return idx_; }
+  int max_stream() { return 1; }
+  std::string name() { return "BM"; }
+  float max_memory() { return 16; }
+  int core_num();
+  void SetId(int idx);
+
+  int sm_version() { return 0; }
+  bool has_fp16() { return false; }
+  bool has_int8() { return false; }
+  bool has_hmma() { return false; }
+  bool has_imma() { return false; }
+  int runtime_version() { return 0; }
+
+ private:
+  void CreateQueue() {}
+  void GetInfo() {}
+
+ private:
+  int idx_{0};
+  int max_stream_{1};
+  std::string device_name_;
+  float max_memory_;
+
+  int sm_version_;
+  bool has_fp16_;
+  bool has_int8_;
+  bool has_hmma_;
+  bool has_imma_;
+  int runtime_version_;
+};
+
+template class Env<TARGET(kBM)>;
+#endif
+
 #ifdef LITE_WITH_CUDA
 template <>
 class Device<TARGET(kCUDA)> {
