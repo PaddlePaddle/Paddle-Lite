@@ -25,6 +25,6 @@ mv ${gf}/cxx ${gf}/lite
 if [ ! -f "test_libs_models_imgs.tgz" ];then
     wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/test_libs_models_imgs.tgz
 fi
-tar zxvf test_libs_models_imgs.tgz
+tar zxf test_libs_models_imgs.tgz
 mv test_libs_models_imgs ${gf}
 mv ${gf}/test_libs_models_imgs ${gf}/models_imgs
