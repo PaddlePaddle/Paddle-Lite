@@ -97,6 +97,10 @@ function check_need_ci {
     git log -1 --oneline | grep "test=develop" || exit -1
 }
 
+function check_coverage() {
+    /bin/bash tools/coverage/paddle_coverage.sh
+}
+
 function cmake_x86 {
     prepare_workspace
     #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
@@ -281,6 +285,7 @@ function build_test_server {
 
     test_server
     test_model_optimize_tool_compile
+    check_coverage
 }
 
 # The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
