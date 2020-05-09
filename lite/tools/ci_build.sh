@@ -17,6 +17,7 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 # global variables
 #whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
 USE_ADB_EMULATOR=ON
+LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
 os_nmae=`uname -s`
@@ -98,7 +99,8 @@ function check_need_ci {
 
 function cmake_x86 {
     prepare_workspace
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
 }
 
 function cmake_opencl {
@@ -202,7 +204,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -240,7 +242,7 @@ function build_single {
 
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-
+    make coveralls_generate -j
     # test publish inference lib
     # make publish_inference
 }
@@ -396,7 +398,7 @@ function test_arm_android {
 
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "rm ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
@@ -593,6 +595,7 @@ function cmake_arm {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_COVERAGE=$LITE_WITH_COVERAGE \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -1056,6 +1059,10 @@ function main {
                 ;;
             --use_adb_emulator=*)
                 USE_ADB_EMULATOR="${i#*=}"
+                shift
+                ;;
+            --lite_with_coverage=*)
+                LITE_WITH_COVERAGE="${i#*=}"
                 shift
                 ;;
             build)
