@@ -118,14 +118,15 @@ Postprocess time: 0.069000 ms
 
 - 常规Android应用程序
   - 安装Android Studio 3.4
-  - 打开Android Studio，在"Welcome to Android Studio"窗口点击"Open an existing Android Studio project"，在弹出的路径选择窗口中进入"image_classification_demo"目录，然后点击右下角的"Open"按钮即可导入工程
+  - 打开Android Studio，在"Welcome to Android Studio"窗口点击"Open an existing Android Studio project"，在弹出的路径选择窗口中进入"PaddleLite-android-demo/image_classification_demo/apk"目录，然后点击右下角的"Open"按钮即可导入工程；
   - 通过USB连接Android手机、平板或开发板；
   - 临时关闭selinux模式，允许app调用系统库；
 ```shell
 $ adb root
 # setenforce 0
 ```
-  - 载入工程后，点击菜单栏的Run->Run 'App'按钮，在弹出的"Select Deployment Target"窗口选择已经连接的Android设备，然后点击"OK"按钮；
+  - 待工程加载完成后，点击菜单栏的Build->Rebuild Project按钮，如果提示CMake版本不匹配，请点击错误提示中的'Install CMake xxx.xxx.xx'按钮，重新安装CMake，然后再次点击菜单栏的Build->Rebuild Project按钮；
+  - 待工程编译完成后，点击菜单栏的Run->Run 'App'按钮，在弹出的"Select Deployment Target"窗口选择已经连接的Android设备，然后点击"OK"按钮；
   - 等待大约1分钟后（第一次时间比较长，需要耐心等待），app已经安装到设备上。默认使用ARM CPU模型进行预测，由于MT8168的CPU由四核Arm-Cortex A53组成，性能较一般手机的A7x系列要弱很多，如下图所示，只有6fps；
 
 ![mt8168_p2v1_tablet_cpu](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mt8168_p2v1_tablet_cpu.jpg)
@@ -158,7 +159,7 @@ $ git checkout <release-version-tag>
 $ wget https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 $ tar -xvf apu_ddk.tar.gz
 ```
-- 编译full_publish and tiny_publish for MT8168-P2V1 Tablet
+- 编译tiny_publish for MT8168-P2V1 Tablet
 ```shell
 $ ./lite/tools/build.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --build_extra=ON --with_log=ON --build_apu=ON --apu_ddk_root=./apu_ddk tiny_publish
 ```
