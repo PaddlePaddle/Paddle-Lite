@@ -41,11 +41,12 @@ bool OpLite::InferShapeWithCache() {
        iter++) {
     // combined dims value into new_hash value.
     auto cur_dim = (*iter)->dims();
-    hash_str.append((char *)(&(cur_dim[0])), sizeof(int64_t) * cur_dim.size());
+    hash_str.append(reinterpret_cast(char *)(&(cur_dim[0])),
+                    sizeof(int64_t) * cur_dim.size());
     auto &emement_lods = (*iter)->lod();
     for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
          lod_iter++) {
-      hash_str.append((char *)(&(lod_iter[0])),
+      hash_str.append(reinterpret_cast(char *)(&(lod_iter[0])),
                       sizeof(int64_t) * lod_iter->size());
       hash_str.append(1, 0);
     }
