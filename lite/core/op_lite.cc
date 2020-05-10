@@ -36,23 +36,22 @@ bool OpLite::InferShapeWithCache() {
   // 1. Get vector of current input tensors
   auto *current_inputs = op_param_->input_tensor_ptrs();
   // 2. Get hash value of current inputs shape and lod
-  size_t new_hash = 0;
+  std::string hash_str;
   for (auto iter = current_inputs->begin(); iter != current_inputs->end();
        iter++) {
     // combined dims value into new_hash value.
-    auto &element_dims = (*iter)->dims();
-    for (size_t i = 0; i < element_dims.size(); i++) {
-      lite::CombineHash(static_cast<int64_t>(element_dims[i]), &new_hash);
-    }
-    // combine lod value into new_hash valud.
+    auto cur_dim = (*iter)->dims();
+    hash_str.append((char *)(&(cur_dim[0])), sizeof(int64_t) * cur_dim.size());
     auto &emement_lods = (*iter)->lod();
     for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
          lod_iter++) {
-      for (size_t i = 0; i < lod_iter->size(); i++) {
-        lite::CombineHash(static_cast<int64_t>(lod_iter->at(i)), &new_hash);
-      }
+      hash_str.append((char *)(&(lod_iter[0])),
+                      sizeof(int64_t) * lod_iter->size());
+      hash_str.append(1, 0);
     }
+    hash_str.append(1, 0);
   }
+  std::size_t new_hash = std::hash<std::string>{}(hash_str);
   // 3. infer shapes of output tensors
   if (new_hash == io_shape_lod_hash_ && new_hash != 0) {
     // if current hash value is consistent with io_shape_lod_hash_,
