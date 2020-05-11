@@ -127,14 +127,6 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qk_softmax_out = VarNode("qk_softmax_out")
                                ->assert_is_op_output("softmax", "Out")
                                ->AsIntermediate();
-    auto* qk_dropout = OpNode("qk_dropout", "dropout")->AsIntermediate();
-    auto* qk_dropout_out = VarNode("qk_dropout_out")
-                               ->assert_is_op_output("dropout", "Out")
-                               ->assert_is_op_input("matmul", "X")
-                               ->AsIntermediate();
-    auto* qk_dropout_mask = VarNode("qk_dropout_mask")
-                                ->assert_is_op_output("dropout", "Mask")
-                                ->AsIntermediate();
 
     auto* v_mul_y =
         VarNode("v_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
@@ -205,16 +197,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_add = OpNode("qkv_add", "elementwise_add")->AsIntermediate();
     auto* qkv_add_out = VarNode("qkv_add_out")
                             ->assert_is_op_output("elementwise_add", "Out")
-                            ->assert_is_op_input("dropout", "X")
                             ->AsIntermediate();
-    auto* qkv_dropout = OpNode("qkv_dropout", "dropout")->AsIntermediate();
-    auto* qkv_dropout_out = VarNode("qkv_dropout_out")
-                                ->assert_is_op_output("dropout", "Out")
-                                ->assert_is_op_input("elementwise_add", "X")
-                                ->AsIntermediate();
-    auto* qkv_dropout_mask = VarNode("qkv_dropout_mask")
-                                 ->assert_is_op_output("dropout", "Mask")
-                                 ->AsIntermediate();
 
     auto* qkv_add_2 = OpNode("qkv_add_2", "elementwise_add")->AsIntermediate();
     auto* qkv_add_2_out = VarNode("qkv_add_2_out")
@@ -273,16 +256,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_add_4 = OpNode("qkv_add_4", "elementwise_add")->AsIntermediate();
     auto* qkv_add_4_out = VarNode("qkv_add_4_out")
                               ->assert_is_op_output("elementwise_add", "Out")
-                              ->assert_is_op_input("dropout", "X")
                               ->AsIntermediate();
-    auto* qkv_dropout_4 = OpNode("qkv_dropout_4", "dropout")->AsIntermediate();
-    auto* qkv_dropout_4_out = VarNode("qkv_dropout_4_out")
-                                  ->assert_is_op_output("dropout", "Out")
-                                  ->assert_is_op_input("elementwise_add", "X")
-                                  ->AsIntermediate();
-    auto* qkv_dropout_4_mask = VarNode("qkv_dropout_4_mask")
-                                   ->assert_is_op_output("dropout", "Mask")
-                                   ->AsIntermediate();
 
     auto* qkv_add_5 = OpNode("qkv_add_5", "elementwise_add")->AsIntermediate();
     auto* qkv_add_5_out = VarNode("qkv_add_5_out")
@@ -323,9 +297,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     *k_transpose2 >> *k_transpose2_xshape;
 
     *qk_matmul >> *qk_matmul_out >> *qk_add >> *qk_add_out >> *qk_softmax >>
-        *qk_softmax_out >> *qk_dropout >> *qk_dropout_out >> *qkv_matmul;
+        *qk_softmax_out >> *qkv_matmul;
     *qk_mask >> *qk_add;
-    *qk_dropout >> *qk_dropout_mask;
 
     *input >> *v_mul >> *v_mul_out >> *v_add >> *v_add_out >> *v_reshape2 >>
         *v_reshape2_out >> *v_transpose2 >> *v_transpose2_out >> *qkv_matmul;
@@ -336,13 +309,11 @@ class XPUSingleEncoderFuser : public FuseBase {
 
     *qkv_matmul >> *qkv_matmul_out >> *qkv_transpose2 >> *qkv_transpose2_out >>
         *qkv_reshape2 >> *qkv_reshape2_out >> *qkv_mul >> *qkv_mul_out >>
-        *qkv_add >> *qkv_add_out >> *qkv_dropout >> *qkv_dropout_out >>
-        *qkv_add_2;
+        *qkv_add >> *qkv_add_out >> *qkv_add_2;
     *qkv_transpose2 >> *qkv_transpose2_xshape;
     *qkv_reshape2 >> *qkv_reshape2_xshape;
     *qkv_mul_y >> *qkv_mul;
     *qkv_add_y >> *qkv_add;
-    *qkv_dropout >> *qkv_dropout_mask;
 
     *input >> *qkv_add_2 >> *qkv_add_2_out >> *qkv_ln_2 >> *qkv_ln_2_out;
     *qkv_ln_2_scale >> *qkv_ln_2;
@@ -352,13 +323,11 @@ class XPUSingleEncoderFuser : public FuseBase {
 
     *qkv_ln_2_out >> *qkv_mul_3 >> *qkv_mul_3_out >> *qkv_add_3 >>
         *qkv_add_3_out >> *qkv_act >> *qkv_act_out >> *qkv_mul_4 >>
-        *qkv_mul_4_out >> *qkv_add_4 >> *qkv_add_4_out >> *qkv_dropout_4 >>
-        *qkv_dropout_4_out >> *qkv_add_5;
+        *qkv_mul_4_out >> *qkv_add_4 >> *qkv_add_4_out >> *qkv_add_5;
     *qkv_mul_3_y >> *qkv_mul_3;
     *qkv_add_3_y >> *qkv_add_3;
     *qkv_mul_4_y >> *qkv_mul_4;
     *qkv_add_4_y >> *qkv_add_4;
-    *qkv_dropout_4 >> *qkv_dropout_4_mask;
 
     *qkv_ln_2_out >> *qkv_add_5 >> *qkv_add_5_out >> *qkv_ln_5 >> *qkv_ln_5_out;
     *qkv_ln_5_scale >> *qkv_ln_5;
