@@ -17,7 +17,7 @@ if [ ! -f "mask_models_img.tar.gz" ];
 then
    wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLiteDemo/mask_models_img.tar.gz 
 fi
-tar zxvf mask_models_img.tar.gz
+tar zxf mask_models_img.tar.gz
 mv mask_models_img ${gf}
 
 # clean
