@@ -218,14 +218,15 @@ class ImagePreprocess {
   * param dst: output image data
   */
   void imageCrop(const uint8_t* src,
-                uint8_t* dst,
-                ImageFormat srcFormat,
-                int srcw,
-                int srch,
-                int left_x,
-                int left_y,
-                int dstw,
-                int dsth);
+                 uint8_t* dst,
+                 ImageFormat srcFormat,
+                 int srcw,
+                 int srch,
+                 int left_x,
+                 int left_y,
+                 int dstw,
+                 int dsth);
+
  private:
   ImageFormat srcFormat_;
   ImageFormat dstFormat_;

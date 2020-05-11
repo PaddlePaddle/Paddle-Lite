@@ -28,7 +28,7 @@ typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 using namespace paddle::lite_api;  // NOLINT
 
-// cop point
+// crop point
 int flag_left_x = 50;
 int flag_left_y = 50;
 void fill_with_mat(cv::Mat& mat, uint8_t* src, int num) {  // NOLINT
@@ -74,7 +74,6 @@ double compare_diff(uint8_t* data1, uint8_t* data2, int size, uint8_t* diff_v) {
 }
 void print_data(const uint8_t* data, int size) {
   for (int i = 0; i < size; i++) {
-    printf("%d ", data[i]);
     if ((i + 1) % 10 == 0) {
       std::cout << std::endl;
     }
@@ -106,8 +105,8 @@ bool test_convert(bool cv_run,
       clock_t begin = clock();
       // convert bgr-gray
       if (dstFormat == srcFormat) {
-         cv::Rect rect(0, 0, dstw, dsth);
-         im_resize = img(rect);
+        cv::Rect rect(0, 0, dstw, dsth);
+        im_resize = img(rect);
       } else if ((dstFormat == ImageFormat::BGR ||
                   dstFormat == ImageFormat::RGB) &&
                  srcFormat == ImageFormat::GRAY) {
@@ -143,14 +142,10 @@ bool test_convert(bool cv_run,
   std::cout << "compare diff: " << std::endl;
 
   if (cv_run) {
-    printf("img_reisze: %d, %d, %x \n", im_resize.cols, im_resize.rows, im_resize.data);
     resize_cv = im_resize.data;
-    printf("--- \n");
     uint8_t* diff_v = new uint8_t[out_size];
-    printf("out_size: %d \n", out_size);
     double diff = compare_diff(resize_cv, resize_lite, out_size, diff_v);
     if (diff > 1) {
-      printf("diff: %d \n", diff);
       std::cout << "din: " << std::endl;
       print_data(src, in_size);
       std::cout << "cv out: " << std::endl;
@@ -195,7 +190,7 @@ bool test_convert(bool cv_run,
   }
   delete[] resize_cv;
   delete[] resize_lite;
-  return true;
+  return false;
 }
 
 bool test_flip(bool cv_run,
@@ -393,9 +388,9 @@ bool test_rotate(bool cv_run,
       return true;
     }
   }
-   delete[] resize_cv;
-   delete[] resize_lite;
-   return false;
+  delete[] resize_cv;
+  delete[] resize_lite;
+  return false;
 }
 
 bool test_resize(bool cv_run,
@@ -499,18 +494,18 @@ bool test_crop(bool cv_run,
                const uint8_t* src,
                cv::Mat img,
                ImagePreprocess image_preprocess,
-                 int in_size,
-                 int out_size,
-                 ImageFormat dstFormat,
-                 int left_x,
-                 int left_y,
-                 int dstw,
-                 int dsth,
-                 std::string dst_path,
-                 int test_iter = 1){
+               int in_size,
+               int out_size,
+               ImageFormat dstFormat,
+               int left_x,
+               int left_y,
+               int dstw,
+               int dsth,
+               std::string dst_path,
+               int test_iter = 1) {
   uint8_t* resize_cv = new uint8_t[out_size];
   uint8_t* resize_lite = new uint8_t[out_size];
-  
+
   cv::Mat im_resize;
 
   double to_cv = 0.0;
@@ -524,14 +519,15 @@ bool test_crop(bool cv_run,
       clock_t end = clock();
       to_cv += (end - begin);
     }
- }
- // lite
+  }
+  // lite
   int srcw = img.cols;
   int srch = img.rows;
   std::cout << "lite compute:" << std::endl;
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
-    image_preprocess.imageCrop(src, resize_lite, dstFormat, srcw, srch, left_x, left_y, dstw, dsth);
+    image_preprocess.imageCrop(
+        src, resize_lite, dstFormat, srcw, srch, left_x, left_y, dstw, dsth);
     clock_t end = clock();
     to_lite += (end - begin);
   }
@@ -582,14 +578,10 @@ bool test_crop(bool cv_run,
       }
       fill_with_mat(resize_mat, resize_lite, num);
       cv::imwrite(resize_name, resize_mat);
-      cv::imwrite(dst_path+"/crop1.jpg", im_resize);
       std::cout << "crop successed!" << std::endl;
       delete[] diff_v;
-      printf("--\n");
-      //delete[] resize_cv;
-      printf("--\n");
+      delete[] resize_cv;
       delete[] resize_lite;
-      printf("--\n");
       return true;
     }
   }
@@ -704,22 +696,22 @@ void test_custom(bool has_img,  // input is image
   tparam1.rotate_param = rotate;
 
   ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
-  std::cout << "cv_run: " << cv_run << std::endl; 
+  std::cout << "cv_run: " << cv_run << std::endl;
   std::cout << "image crop testing" << std::endl;
   bool res = test_crop(cv_run,
                        src,
-                         img,
-                         image_preprocess,
-                         in_size,
-                         out_size,
-                         dstFormat,
-                         flag_left_x,
-                         flag_left_y,
-                         dstw,
-                         dsth,
-                         dst_path,
-                         test_iter);
-   if (!res) {
+                       img,
+                       image_preprocess,
+                       in_size,
+                       out_size,
+                       dstFormat,
+                       flag_left_x,
+                       flag_left_y,
+                       dstw,
+                       dsth,
+                       dst_path,
+                       test_iter);
+  if (!res) {
     return;
   }
   std::cout << "image convert testing" << std::endl;
