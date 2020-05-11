@@ -83,7 +83,7 @@ class SubgraphEngine : public subgraph::Engine {
     // used in batch changable situation
     std::vector<std::vector<int64_t>> all_shape;
     for (auto origin_itensor : origin_itensors_) {
-      if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+      if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
         auto iv = origin_itensor->dims().Vectorize();
         all_shape.push_back(iv);
         iv.erase(iv.begin());
@@ -114,7 +114,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (auto& input_name : input_names_) {
       auto input_tensor = scope_->FindMutableTensor(input_name);
       origin_itensors_.push_back(input_tensor);
-      if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+      if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
         auto iv = input_tensor->dims().Vectorize();
         iv.erase(iv.begin());
         new_shape.push_back(iv);
@@ -234,6 +234,7 @@ class SubgraphEngine : public subgraph::Engine {
   }
 
   void InferOutputsShapeOnly() {
+    // infer outputs shape when enable BATCH_SIZE_CHANGEABLE
     const auto iter = in_out_shape_map_.find(all_inputs_shape_);
     if (iter != in_out_shape_map_.end()) {
       for (size_t i = 0; i < origin_otensors_.size(); ++i) {
@@ -271,7 +272,7 @@ class SubgraphEngine : public subgraph::Engine {
     CHECK_EQ(graph_input->size(), origin_itensors_.size());
     CHECK_EQ(graph_output->size(), origin_otensors_.size());
 
-    if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+    if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
       std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
           graph_in;
       if (shape_tensor_map_in_.find(all_inputs_shape_) !=
@@ -294,9 +295,14 @@ class SubgraphEngine : public subgraph::Engine {
         shape_tensor_map_in_[all_inputs_shape_] = graph_in;
       }
 
+      // TODO(zhangmingwei): we just call every op's infer_shape to get outputs'
+      // shape, may be it's better to use cnml's api to get output shape. This
+      // can be done when cnml's tensor dimension is totally equal to lite's
+      // tensor
+      // shape.
       InferOutputsShapeOnly();
       // const std::vector<std::vector<int64_t>> new_output_size =
-      // graph->InferOutputsShape(graph_in);
+      //    graph->InferOutputsShape(graph_in);
 
       std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
           graph_out;
@@ -382,12 +388,18 @@ class SubgraphEngine : public subgraph::Engine {
   std::map<std::vector<std::vector<int64_t>>,
            std::shared_ptr<paddle::lite::subgraph::mlu::Graph>>
       shape_graph_map_{};
+  // search output runtime MLUTensor for certain output shape when enable
+  // BATCH_SIZE_CHANGEABLE
   std::map<std::vector<std::vector<int64_t>>,
            std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>>
       shape_tensor_map_out_{};
+  // search input runtime MLUTensor for certain input shape when enable
+  // BATCH_SIZE_CHANGEABLE
   std::map<std::vector<std::vector<int64_t>>,
            std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>>
       shape_tensor_map_in_{};
+  // search output shape for certain input shape when enable
+  // BATCH_SIZE_CHANGEABLE
   std::map<std::vector<std::vector<int64_t>>, std::vector<std::vector<int64_t>>>
       in_out_shape_map_{};
 };  // namespace mlu
