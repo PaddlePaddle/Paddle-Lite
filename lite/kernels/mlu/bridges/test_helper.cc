@@ -50,23 +50,54 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   // Convert input data var and add it into the MLU IR graph
   for (auto& input_name : input_var_names) {
     auto input_tensor = scope->FindMutableTensor(input_name);
+    auto data_type = input_tensor->precision();
+    cnmlDataType_t fp_type;
+    switch (data_type) {
+      case paddle::lite_api::PrecisionType::kFP16:
+        fp_type = CNML_DATA_FLOAT16;
+        break;
+      case paddle::lite_api::PrecisionType::kFloat:
+        fp_type = CNML_DATA_FLOAT32;
+        break;
+      case paddle::lite_api::PrecisionType::kInt32:
+        fp_type = CNML_DATA_INT32;
+        break;
+      default:
+        CHECK(0);
+    }
     CHECK(input_tensor);
     Tensor temp_input;
     temp_input.Resize(input_tensor->dims().Vectorize());
     temp_input.CopyDataFrom(*input_tensor);
-    auto input_node =
-        graph.AddNode(input_name,
-                      input_tensor->dims().Vectorize(),
-                      CNML_TENSOR,
-                      CNML_NCHW,
-                      graph.FPType(),
-                      reinterpret_cast<void*>(
-                          input_tensor->mutable_data<float>(TARGET(kMLU))));
-    CHECK(input_node);
-    CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<float>(),
-                          temp_input.mutable_data<float>(),
-                          sizeof(float) * input_tensor->dims().production(),
-                          CNRT_MEM_TRANS_DIR_HOST2DEV));
+    if (fp_type == CNML_DATA_INT32) {
+      auto input_node =
+          graph.AddNode(input_name,
+                        input_tensor->dims().Vectorize(),
+                        CNML_TENSOR,
+                        CNML_NCHW,
+                        fp_type,
+                        reinterpret_cast<void*>(
+                            input_tensor->mutable_data<int>(TARGET(kMLU))));
+      CHECK(input_node);
+      CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<int>(),
+                            temp_input.mutable_data<int>(),
+                            sizeof(int) * input_tensor->dims().production(),
+                            CNRT_MEM_TRANS_DIR_HOST2DEV));
+    } else {
+      auto input_node =
+          graph.AddNode(input_name,
+                        input_tensor->dims().Vectorize(),
+                        CNML_TENSOR,
+                        CNML_NCHW,
+                        fp_type,
+                        reinterpret_cast<void*>(
+                            input_tensor->mutable_data<float>(TARGET(kMLU))));
+      CHECK(input_node);
+      CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<float>(),
+                            temp_input.mutable_data<float>(),
+                            sizeof(float) * input_tensor->dims().production(),
+                            CNRT_MEM_TRANS_DIR_HOST2DEV));
+    }
   }
   op->CheckShape();
   op->InferShape();
