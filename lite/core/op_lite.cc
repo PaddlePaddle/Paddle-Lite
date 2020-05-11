@@ -21,6 +21,12 @@
 
 namespace paddle {
 namespace lite {
+// Implementation of append string by memory copy
+inline char *concat(char *str1, const char *str2, int num) {
+  memcpy(str1 + strlen(str1), str2, num);
+  str1 = str1 + num;
+  return str1;
+}
 
 bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
@@ -37,17 +43,17 @@ bool OpLite::InferShapeWithCache() {
   auto *current_inputs = op_param_->input_tensor_ptrs();
   // 2. Get hash value of current inputs shape and lod
   std::string hash_str;
+
   for (auto iter = current_inputs->begin(); iter != current_inputs->end();
        iter++) {
     // combined dims value into new_hash value.
-    auto cur_dim = (*iter)->dims();
-    hash_str.append(reinterpret_cast<char *>(&(cur_dim[0])),
+    const auto &cur_dim = (*iter)->dims().data();
+    hash_str.append((const char *)(&cur_dim[0]),
                     sizeof(int64_t) * cur_dim.size());
     auto &emement_lods = (*iter)->lod();
     for (size_t i = 0; i < emement_lods.size(); i++) {
-      auto lod_iter = emement_lods[i];
-      hash_str.append(reinterpret_cast<char *>(&lod_iter[0]),
-                      sizeof(int64_t) * lod_iter.size());
+      hash_str.append((char *)(&(emement_lods[i][0])),
+                      sizeof(int64_t) * emement_lods[i].size());
       hash_str.append(1, 0);
     }
     hash_str.append(1, 0);
