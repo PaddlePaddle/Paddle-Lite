@@ -86,6 +86,21 @@ class SubgraphEngine : public subgraph::Engine {
     return true;
   }
 
+  inline cnmlDataType_t PrecisionToDatatype(PrecisionType data_type) {
+    switch (data_type) {
+      case paddle::lite_api::PrecisionType::kFP16:
+        return CNML_DATA_FLOAT16;
+      case paddle::lite_api::PrecisionType::kFloat:
+        return CNML_DATA_FLOAT32;
+      case paddle::lite_api::PrecisionType::kInt32:
+        return CNML_DATA_INT32;
+      case paddle::lite_api::PrecisionType::kInt8:
+        return CNML_DATA_INT8;
+      default:
+        return PrecisionToDatatype(fp_type_);
+    }
+  }
+
  protected:
   int BuildDeviceProgram() override {
     int status = 0;
@@ -99,7 +114,8 @@ class SubgraphEngine : public subgraph::Engine {
     status |= subgraph::REBUILD_WHEN_SHAPE_CHANGED;
     for (auto& input_name : input_names_) {
       auto input_tensor = scope_->FindMutableTensor(input_name);
-
+      auto data_type = input_tensor->precision();
+      cnmlDataType_t fp_type = PrecisionToDatatype(data_type);
       origin_itensors_.push_back(input_tensor);
       new_shape.push_back(input_tensor->dims().Vectorize());
 
@@ -108,7 +124,7 @@ class SubgraphEngine : public subgraph::Engine {
                                        input_tensor->dims().Vectorize(),
                                        CNML_TENSOR,
                                        CNML_NCHW,
-                                       graph->FPType());
+                                       fp_type);
       CHECK(input_node);
       // MLU doesn't support dynamic dimensions/shapes, so need to rebuild
       // the program when the shape of any input tensor is changed.
