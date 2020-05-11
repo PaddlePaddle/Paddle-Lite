@@ -236,10 +236,20 @@ int SubgraphEngine::Build() {
 void SubgraphEngine::InitDeviceTensor() {
   auto device_program = device_program_map_[inputs_shape_];
   for (size_t i = 0; i < device_itensors_.size(); i++) {
-    device_itensors_[i]->Init(&(device_program->device_idims[i]));
-    std::memcpy(device_itensors_[i]->GetBuffer(),
-                origin_itensors_[i]->raw_data(),
-                origin_itensors_[i]->memory_size());
+    if (device_itensors_[i]->GetBuffer() != origin_itensors_[i]->raw_data()) {
+      auto itype =
+          subgraph::npu::CvtPrecisionType(origin_itensors_[i]->precision());
+      device_itensors_[i]->Init(&(device_program->device_idims[i]), itype);
+      std::memcpy(device_itensors_[i]->GetBuffer(),
+                  origin_itensors_[i]->raw_data(),
+                  origin_itensors_[i]->memory_size());
+      // share data buf between device_itensor and origin_itensor
+      std::shared_ptr<Buffer> buffer =
+          std::make_shared<Buffer>(device_itensors_[i]->GetBuffer(),
+                                   lite_api::TargetType::kHost,
+                                   device_itensors_[i]->GetSize());
+      origin_itensors_[i]->ResetBuffer(buffer);
+    }
   }
   for (size_t i = 0; i < device_otensors_.size(); i++) {
     device_otensors_[i]->Init(&(device_program->device_odims[i]));
