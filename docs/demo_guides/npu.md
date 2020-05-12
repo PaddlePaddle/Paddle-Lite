@@ -110,16 +110,11 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 
 ## 通过JAVA接口加载并执行NPU模型
 
+**注意：由于华为手机root权限限制，现在仅支持JAVA接口加载和执行NPU模型**
+
 - 使用方法和[Java实例](java_demo)一致，无需额外设置任何参数，只需将模型换成NPU模型即可。[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中的Image Classification Demo for Android是同时支持CPU和NPU两种模型的图像分类Demo。
 
 注意：在拷贝libpaddle_lite_jni.so的时候，由于依赖HiAI DDK so和libc++_shared.so库，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，拷到libpaddle_lite_jni.so同级目录下。
-
-## 通过C++接口加载并执行NPU模型
-
-- 使用方法和[C++实例](cpp_demo)一致，同样无需额外设置任何参数，只需将模型换成NPU模型即可。
-
-注意：1）不能使用安卓模拟器，需要使用真实设备，且必须是支持NPU的华为手机。2）在使用adb push命令向手机推送目标程序时，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，推送到目标程序同级目录下。
-
 
 ## 其它说明
 
@@ -191,7 +186,7 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     concat
     softmax
     ```
-    - 由于这些算子都指定在NPU上运行，因此不需要特意配置算子的输入输出名称。
+    - 由于这些算子都指定在CPU上运行，因此不需要特意配置算子的输入输出名称。
 
 - 5、指定配置文件路径
 
