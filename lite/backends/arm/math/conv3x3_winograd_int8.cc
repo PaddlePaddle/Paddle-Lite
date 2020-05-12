@@ -109,7 +109,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
 
   // begin compute
   for (int ni = 0; ni < num; ++ni) {
-    // trans input to c4
+    // trans input to c8
     for (int i = 0; i < ic_8; ++i) {
       prepack_input_nxwc8_int8_dw(input + ni * in_n_stride,
                                   input_c8 + i * new_c_stride,
@@ -144,7 +144,6 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
       int tile_remain = size_tile - tile_index;
       int tile_count = tile_remain > tile_block ? tile_block : tile_remain;
 
-      auto t0 = std::chrono::steady_clock::now();
       // input trans
       int c_gi_stride = tile_count * oc_8 * 8;
       int b_gi_stride = tile_count * ic_8 * 8;
