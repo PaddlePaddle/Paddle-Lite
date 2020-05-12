@@ -73,6 +73,9 @@ REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kMLU,
                          paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu, kMLU, paddle::lite::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu6,
+                         kMLU,
+                         paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(tanh, kMLU, paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
                          kMLU,
