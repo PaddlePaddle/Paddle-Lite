@@ -110,8 +110,8 @@ class Graph {
     if (!disable_batch_size_changeable) {
       constexpr int input_dimNb = 4;
       bool input_dim_mutable[4] = {true, false, false, false};
-      cnmlSetTensorDimMutable(
-          tensor->mlu_tensor(), input_dim_mutable, input_dimNb);
+      CNML_CALL(cnmlSetTensorDimMutable(
+          tensor->mlu_tensor(), input_dim_mutable, input_dimNb));
     }
   }
 

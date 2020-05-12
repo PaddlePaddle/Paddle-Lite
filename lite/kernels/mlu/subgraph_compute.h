@@ -179,6 +179,8 @@ class SubgraphEngine : public subgraph::Engine {
       auto op = inst.op();
       CHECK(op);
       std::string op_type = op->op_info()->Type();
+      // since cnml's compile api will not return error now, we simply check
+      // op's type
       if (!disable_batch_size_changeable_ &&
           std::find(unsupport_batch_size_changeable_op_type_.begin(),
                     unsupport_batch_size_changeable_op_type_.end(),
