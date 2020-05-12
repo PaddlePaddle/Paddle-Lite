@@ -38,7 +38,7 @@ rm ./lite/api/paddle_use_ops.h
 
 # 设置编译参数并开始编译
 ./lite/tools/build_android.sh \
-  --arm_abi=armv7 \
+  --arch=armv7 \
   --toolchain=clang \
   --with_cv=OFF \
   --with_log=OFF \
