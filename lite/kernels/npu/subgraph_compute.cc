@@ -212,14 +212,6 @@ int SubgraphEngine::LaunchDeviceProgram() {
            hiai::AI_SUCCESS);
   VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
-  // Copy the data of output HiAI tensor to the buffer of origin output tensors
-  /*
-  for (size_t i = 0; i < device_otensors_.size(); i++) {
-    std::memcpy(const_cast<void*>(origin_otensors_[i]->raw_data()),
-                device_otensors_[i]->GetBuffer(),
-                device_otensors_[i]->GetSize());
-  }
-  */
   return 0;
 }
 
@@ -239,7 +231,8 @@ void SubgraphEngine::InitDeviceTensor() {
   auto device_program = device_program_map_[inputs_shape_];
   for (size_t i = 0; i < device_itensors_.size(); i++) {
     if (device_itensors_[i]->GetBuffer() != origin_itensors_[i]->raw_data()) {
-      LOG(INFO) << "--- share input tensor buf";
+      VLOG(3) << "init device_itensors and share input tensor buf between "
+                 "device and host";
       device_itensors_[i]->Init(&(device_program->device_idims[i]));
       std::memcpy(device_itensors_[i]->GetBuffer(),
                   origin_itensors_[i]->raw_data(),
@@ -254,7 +247,8 @@ void SubgraphEngine::InitDeviceTensor() {
   }
   for (size_t i = 0; i < device_otensors_.size(); i++) {
     if (device_otensors_[i]->GetBuffer() != origin_otensors_[i]->raw_data()) {
-      LOG(INFO) << "--- share output tensor buf";
+      VLOG(3) << "init device_otensors and share output tensor buf between "
+                 "device and host";
       device_otensors_[i]->Init(&(device_program->device_odims[i]));
       // share data buf between device_itensor and origin_itensor
       origin_otensors_[i]->Resize(device_program->origin_odims[i]);
