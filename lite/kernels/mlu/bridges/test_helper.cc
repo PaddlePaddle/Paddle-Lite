@@ -24,11 +24,35 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
+template <lite_api::PrecisionType Dtype>
+void PrepareInput(Graph* graph,
+                  const std::string& input_name,
+                  Tensor* input_tensor) {
+  thread_local Tensor temp_input;
+  temp_input.Resize(input_tensor->dims().Vectorize());
+  temp_input.CopyDataFrom(*input_tensor);
+  using data_type = typename MLUTypeTraits<Dtype>::type;
+  auto input_node = graph->AddNode(
+      input_name,
+      input_tensor->dims().Vectorize(),
+      CNML_TENSOR,
+      CNML_NCHW,
+      MLUTypeTraits<Dtype>::cnml_type,
+      CNML_NHWC,
+      reinterpret_cast<void*>(
+          input_tensor->template mutable_data<data_type>(TARGET(kMLU))));
+  CHECK(input_node);
+  CNRT_CHECK(cnrtMemcpy(input_tensor->template mutable_data<data_type>(),
+                        temp_input.mutable_data<data_type>(),
+                        sizeof(data_type) * input_tensor->dims().production(),
+                        CNRT_MEM_TRANS_DIR_HOST2DEV));
+}
+
 void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
               const std::vector<std::string>& output_var_names) {
   CNRT_CALL(cnrtInit(0));
-  ::paddle::lite::SetMluDevice(0);
+  lite::SetMluDevice(0);
   cnrtQueue_t queue_;
   cnrtInvokeFuncParam_t forward_param;
   u32_t affinity = 1;
@@ -51,69 +75,19 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   for (auto& input_name : input_var_names) {
     auto input_tensor = scope->FindMutableTensor(input_name);
     auto data_type = input_tensor->precision();
-    cnmlDataType_t fp_type;
+
     switch (data_type) {
-      case paddle::lite_api::PrecisionType::kFP16:
-        fp_type = CNML_DATA_FLOAT16;
-        break;
-      case paddle::lite_api::PrecisionType::kFloat:
-        fp_type = CNML_DATA_FLOAT32;
-        break;
-      case paddle::lite_api::PrecisionType::kInt32:
-        fp_type = CNML_DATA_INT32;
-        break;
+#define PREPARE_INPUT(type__)                                          \
+  case PRECISION(type__):                                              \
+    PrepareInput<PRECISION(type__)>(&graph, input_name, input_tensor); \
+    break;
+      PREPARE_INPUT(kFP16)
+      PREPARE_INPUT(kFloat)
+      PREPARE_INPUT(kInt8)
+      PREPARE_INPUT(kInt32)
+#undef PREPARE_INPUT
       default:
         CHECK(0);
-    }
-    CHECK(input_tensor);
-    Tensor temp_input;
-    temp_input.Resize(input_tensor->dims().Vectorize());
-    temp_input.CopyDataFrom(*input_tensor);
-    if (fp_type == CNML_DATA_INT32) {
-      auto input_node =
-          graph.AddNode(input_name,
-                        input_tensor->dims().Vectorize(),
-                        CNML_TENSOR,
-                        CNML_NCHW,
-                        fp_type,
-                        reinterpret_cast<void*>(
-                            input_tensor->mutable_data<int>(TARGET(kMLU))));
-      CHECK(input_node);
-      CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<int>(),
-                            temp_input.mutable_data<int>(),
-                            sizeof(int) * input_tensor->dims().production(),
-                            CNRT_MEM_TRANS_DIR_HOST2DEV));
-    } else if (fp_type == CNML_DATA_FLOAT16) {
-      auto input_node = graph.AddNode(
-          input_name,
-          input_tensor->dims().Vectorize(),
-          CNML_TENSOR,
-          CNML_NCHW,
-          fp_type,
-          reinterpret_cast<void*>(
-              input_tensor->mutable_data<paddle::lite::fluid::float16>(
-                  TARGET(kMLU))));
-      CHECK(input_node);
-      CNRT_CHECK(
-          cnrtMemcpy(input_tensor->mutable_data<paddle::lite::fluid::float16>(),
-                     temp_input.mutable_data<paddle::lite::fluid::float16>(),
-                     sizeof(paddle::lite::fluid::float16) *
-                         input_tensor->dims().production(),
-                     CNRT_MEM_TRANS_DIR_HOST2DEV));
-    } else {
-      auto input_node =
-          graph.AddNode(input_name,
-                        input_tensor->dims().Vectorize(),
-                        CNML_TENSOR,
-                        CNML_NCHW,
-                        fp_type,
-                        reinterpret_cast<void*>(
-                            input_tensor->mutable_data<float>(TARGET(kMLU))));
-      CHECK(input_node);
-      CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<float>(),
-                            temp_input.mutable_data<float>(),
-                            sizeof(float) * input_tensor->dims().production(),
-                            CNRT_MEM_TRANS_DIR_HOST2DEV));
     }
   }
   op->CheckShape();

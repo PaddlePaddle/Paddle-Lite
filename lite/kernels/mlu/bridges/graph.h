@@ -66,8 +66,9 @@ class Graph {
       const std::string& name,
       std::vector<int64_t> shape,
       cnmlTensorType_t tensor_type = CNML_TENSOR,
-      cnmlDataOrder_t data_order = CNML_NCHW,
+      cnmlDataOrder_t shape_order = CNML_NCHW,
       cnmlDataType_t mlu_dtype = CNML_DATA_FLOAT32,
+      cnmlDataOrder_t data_order = CNML_NHWC,
       void* raw_ptr = nullptr);
 
   std::shared_ptr<MLUTensor> GetNode(const std::string& name) {
