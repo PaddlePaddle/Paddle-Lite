@@ -118,11 +118,12 @@ int SubgraphEngine::BuildDeviceProgram() {
   if (device_program_map_.count(inputs_shape_) > 0) {
     return status;
   }
+  std::string subgraph_model_cache_full_dir =
+      subgraph_model_cache_dir_.empty()
+          ? ""
+          : subgraph_model_cache_dir_ + "/" + GenerateSubgraphModelCacheName();
   auto device_client = lite::npu::Device::Global().Build(
-      model_name_,
-      device_inodes,
-      device_onodes,
-      subgraph_model_cache_dir_ + "/" + GenerateSubgraphModelCacheName());
+      model_name_, device_inodes, device_onodes, subgraph_model_cache_full_dir);
   if (device_client == nullptr) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return subgraph::FAILED;

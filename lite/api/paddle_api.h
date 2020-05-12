@@ -133,15 +133,7 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
   // set subgraph_model_dir
-  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
-#ifdef LITE_WITH_NPU
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
-#else
-    LOG(WARNING) << "The invoking of the function "
-                    "'set_subgraph_model_cache_dir' is ignored, please "
-                    "rebuild it with LITE_WITH_NPU=ON.";
-#endif
-  }
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir);
   const std::string& subgraph_model_cache_dir() const {
     return subgraph_model_cache_dir_;
   }

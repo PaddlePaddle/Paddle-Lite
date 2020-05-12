@@ -218,6 +218,17 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+void ConfigBase::set_subgraph_model_cache_dir(
+    std::string subgraph_model_cache_dir) {
+#ifdef LITE_WITH_NPU
+  subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_subgraph_model_cache_dir' is ignored, please "
+                  "rebuild it with LITE_WITH_NPU=ON.";
+#endif
+}
+
 #ifdef LITE_WITH_MLU
 void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
   mlu_core_version_ = core_version;
