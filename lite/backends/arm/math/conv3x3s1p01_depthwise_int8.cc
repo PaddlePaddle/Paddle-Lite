@@ -37,10 +37,10 @@ namespace math {
   "ld1 {v2.8b}, [%[din_ptr1]], #8\n"                           \
   "ld1 {v4.8b}, [%[din_ptr2]], #8\n"                           \
   "ld1 {v6.8b}, [%[din_ptr3]], #8\n"                           \
-  "dup v12.4s,  %[bias_val]\n"                                 \
-  "dup v13.4s,  %[bias_val]\n"                                 \
-  "dup v14.4s,  %[bias_val]\n"                                 \
-  "dup v15.4s,  %[bias_val]\n"                                 \
+  "dup v12.4s,  %w[bias_val]\n"                                 \
+  "dup v13.4s,  %w[bias_val]\n"                                 \
+  "dup v14.4s,  %w[bias_val]\n"                                 \
+  "dup v15.4s,  %w[bias_val]\n"                                 \
   "ld1 {v1.8b}, [%[din_ptr0]]\n"                               \
   "ld1 {v3.8b}, [%[din_ptr1]]\n"                               \
   "ld1 {v5.8b}, [%[din_ptr2]]\n"                               \
@@ -114,10 +114,10 @@ namespace math {
   "scvtf  v18.4s , v25.4s\n"             /*convert to fp32 */   \
   "scvtf  v19.4s , v26.4s\n"             /*convert to fp32 */   \
   "cmp  %w[is_relu],    #0\n"          /* skip relu */          \
-  "fmlal v12.4s, v10.4s, v16.4s\n"                              \
-  "fmlal v13.4s, v11.4s, v16.4s\n"                              \
-  "fmlal v14.4s, v18.4s, v16.4s\n"                              \
-  "fmlal v15.4s, v19.4s, v16.4s\n"
+  "fmla v12.4s, v10.4s, v16.4s\n"                              \
+  "fmla v13.4s, v11.4s, v16.4s\n"                              \
+  "fmla v14.4s, v18.4s, v16.4s\n"                              \
+  "fmla v15.4s, v19.4s, v16.4s\n"
 
 #define S1_RELU                                                 \
   "beq 0f\n"                           /* no act*/              \
@@ -191,10 +191,10 @@ namespace math {
   "stp q12, q14, [%[ptr_out0]], #32\n"                          \
   "stp q13, q15, [%[ptr_out1]], #32\n"                          \
   "cmp  %w[cnt], #1\n"                                          \
-  "dup v12.4s,  %[bias_val]\n"                                 \
-  "dup v13.4s,  %[bias_val]\n"                                 \
-  "dup v14.4s,  %[bias_val]\n"                                 \
-  "dup v15.4s,  %[bias_val]\n"                                 \
+  "dup v12.4s,  %w[bias_val]\n"                                 \
+  "dup v13.4s,  %w[bias_val]\n"                                 \
+  "dup v14.4s,  %w[bias_val]\n"                                 \
+  "dup v15.4s,  %w[bias_val]\n"                                 \
   "blt 4f\n"
 
 #define LEFT_RESULT_INT8_INT8_OUT_S1                            \
@@ -207,10 +207,10 @@ namespace math {
   "st1 {v16.8b}, [%[ptr_out0]], #8\n"                           \
   "st1 {v17.8b}, [%[ptr_out1]], #8\n"                           \
   "cmp  %w[cnt], #1\n"                                          \
-  "dup v12.4s,  %[bias_val]\n"                                 \
-  "dup v13.4s,  %[bias_val]\n"                                 \
-  "dup v14.4s,  %[bias_val]\n"                                 \
-  "dup v15.4s,  %[bias_val]\n"                                 \
+  "dup v12.4s,  %w[bias_val]\n"                                 \
+  "dup v13.4s,  %w[bias_val]\n"                                 \
+  "dup v14.4s,  %w[bias_val]\n"                                 \
+  "dup v15.4s,  %w[bias_val]\n"                                 \
   "blt 4f\n"                                                    \
 
 #define INT8_MID_COMPUTE_S1                                     \
@@ -279,10 +279,10 @@ namespace math {
   "stp q12, q14, [%[ptr_out0]], #32\n"                          \
   "stp q13, q15, [%[ptr_out1]], #32\n"                          \
   "subs %w[cnt], %w[cnt], #1\n"                                 \
-  "dup v12.4s,  %[bias_val]\n"                                 \
-  "dup v13.4s,  %[bias_val]\n"                                 \
-  "dup v14.4s,  %[bias_val]\n"                                 \
-  "dup v15.4s,  %[bias_val]\n"                                 \
+  "dup v12.4s,  %w[bias_val]\n"                                 \
+  "dup v13.4s,  %w[bias_val]\n"                                 \
+  "dup v14.4s,  %w[bias_val]\n"                                 \
+  "dup v15.4s,  %w[bias_val]\n"                                 \
   "bne 3b\n"
 
 #define MID_RESULT_INT8_INT8_OUT_S1                             \
@@ -295,18 +295,18 @@ namespace math {
   "st1 {v16.8b}, [%[ptr_out0]], #8\n"                           \
   "st1 {v17.8b}, [%[ptr_out1]], #8\n"                           \
   "subs %w[cnt], %w[cnt], #1\n"                                 \
-  "dup v12.4s,  %[bias_val]\n"                                 \
-  "dup v13.4s,  %[bias_val]\n"                                 \
-  "dup v14.4s,  %[bias_val]\n"                                 \
-  "dup v15.4s,  %[bias_val]\n"                                 \
+  "dup v12.4s,  %w[bias_val]\n"                                 \
+  "dup v13.4s,  %w[bias_val]\n"                                 \
+  "dup v14.4s,  %w[bias_val]\n"                                 \
+  "dup v15.4s,  %w[bias_val]\n"                                 \
   "bne 3b\n"
 
 #define INT8_RIGHT_COMPUTE_S1                                   \
   "4:  \n"                                                      \
   "ld1 {v16.8b}, [%[vmask]], #8\n"                              \
   "ld1 {v17.8b}, [%[vmask]]\n"                                  \
-  "ld1 {v27.4s}, [%[rmask], #16\n"                              \
-  "ld1 {v28.4s}, [%[rmask]\n"                                   \
+  "ld1 {v27.4s}, [%[rmask]], #16\n"                             \
+  "ld1 {v28.4s}, [%[rmask]]\n"                                  \
   "bif v0.8b, v23.8b, v16.8b\n"                                 \
   "bif v2.8b, v23.8b, v16.8b\n"                                 \
   "bif v4.8b, v23.8b, v16.8b\n"                                 \
@@ -392,11 +392,12 @@ namespace math {
   "ld1 {v1.8b}, [%[ptr_out0]]\n"                                \
   "ld1 {v2.8b}, [%[ptr_out1]]\n"                                \
   "bif v16.8b, v1.8b, v0.8b\n"                                  \
-  "bif v17.8b, v2.9b, v0.8b\n"                                  \
+  "bif v17.8b, v2.8b, v0.8b\n"                                  \
   "st1 {v16.8b}, [%[ptr_out0]], #8\n"                           \
   "st1 {v17.8b}, [%[ptr_out1]], #8\n"
 
 #else
+
 #define INT8_INIT_S1                                            \
   "pld [%[din_ptr0]]                    @ preload data\n"       \
   "pld [%[din_ptr1]]                    @ preload data\n"       \
@@ -493,7 +494,7 @@ namespace math {
 #define S1_RELU                                                 \
   "beq 0f                                @ no act\n"            \
   "cmp  %[is_relu], #1                   @ skip relu\n"         \
-  "vmov.f32 q0, #0\n"                                           \
+  "vmov.u32 q0, #0\n"                                           \
   "bne 1f                                @ no relu\n"           \
   "vmax.f32 q12, q12, q0                 @ do relu\n"           \
   "vmax.f32 q13, q13, q0                 @ do relu\n"           \
@@ -533,24 +534,24 @@ namespace math {
   "0:   \n"
 
 #define FP32_TO_INT8_S1                                         \
-  "vmov.f32 q0, #0\n"                                           \
-  "vmov.f32 q8, #-0.5\n"                                        \
-  "vmov.f32 q9, #0.5\n"                                         \
+  "vmov.u32 q0, #0\n"                                           \
+  "vmov.u32 q8, #-0.5\n"                                        \
+  "vmov.u32 q9, #0.5\n"                                         \
   "vcgt.f32 q10, q12, q0\n"                                     \
   "vcgt.f32 q11, q13, q0\n"                                     \
   "vbif.f32 q9, q8, q10\n"                                      \
   "vadd.f32 q12, q12, q9\n"                                     \
-  "vmov.f32 q9, #0.5\n"                                         \
+  "vmov.u32 q9, #0.5\n"                                         \
   "vcgt.f32 q10, q14, q0\n"                                     \
   "vbif.f32 q9, q8, q11\n"                                      \
   "vadd.f32 q13, q13, q9\n"                                     \
-  "vmov.f32 q9, #0.5\n"                                         \
+  "vmov.u32 q9, #0.5\n"                                         \
   "vcgt.f32 q11, q15, q0\n"                                     \
   "vbif.f32 q9, q8, q10\n"                                      \
   /* data >= -127 */                                            \
   "vld1.32 {d0-d1}, [%[vmax]]\n"                                \
   "vadd.f32 q14, q14, q9\n"                                     \
-  "vmov.f32 q9, #0.5\n"                                         \
+  "vmov.u32 q9, #0.5\n"                                         \
   "vbif.f32 q9, q8, q11\n"                                      \
   "vadd.f32 q15, q15, q9\n"                                     \
   "vcge.f32 q8, q12, q0\n"                                      \
@@ -578,9 +579,11 @@ namespace math {
   S1_RELU                                                       \
   S1_RELU6                                                      \
   S1_LEAKY_RELU                                                 \
-  "cmp  %w[cnt], #1\n"                                          \
-  "stp q12, q13, [%[ptr_out0]!\n"                               \
-  "stp q14, q15, [%[ptr_out1]!\n"                               \
+  "cmp  %[cnt], #1\n"                                           \
+  "vst1.32 {d24-d25}, [%[ptr_out0]]!\n"                         \
+  "vst1.32 {d28-d29}, [%[ptr_out1]]!\n"                         \
+  "vst1.32 {d26-d27}, [%[ptr_out0]]!\n"                         \
+  "vst1.32 {d30-d31}, [%[ptr_out1]]!\n"                         \
   "blt 4f\n"
 
 #define LEFT_RESULT_INT8_INT8_OUT_S1                            \
@@ -590,9 +593,9 @@ namespace math {
   S1_RELU6                                                      \
   S1_LEAKY_RELU                                                 \
   FP32_TO_INT8_S1                                               \
-  "cmp  %w[cnt], #1\n"                                          \
-  "vst1.32 d16, [%[ptr_out0]!\n"                                \
-  "vst1.32 d17, [%[ptr_out1]!\n"                                \
+  "cmp  %[cnt], #1\n"                                           \
+  "vst1.32 d16, [%[ptr_out0]]!\n"                                \
+  "vst1.32 d17, [%[ptr_out1]]!\n"                                \
   "blt 4f\n"
 
 #define INT8_MID_COMPUTE_S1                                     \
@@ -658,8 +661,10 @@ namespace math {
   S1_RELU6                                                      \
   S1_LEAKY_RELU                                                 \
   "subs %[cnt], #1\n"                                           \
-  "stp q12, q13, [%[ptr_out0]!\n"                               \
-  "stp q14, q15, [%[ptr_out1]!\n"                               \
+  "vst1.32 {d24-d25}, [%[ptr_out0]]!\n"                         \
+  "vst1.32 {d28-d29}, [%[ptr_out1]]!\n"                         \
+  "vst1.32 {d26-d27}, [%[ptr_out0]]!\n"                         \
+  "vst1.32 {d30-d31}, [%[ptr_out1]]!\n"                         \
   "bne 3b\n"
 
 #define MID_RESULT_INT8_INT8_OUT_S1                             \
@@ -670,13 +675,13 @@ namespace math {
   S1_LEAKY_RELU                                                 \
   FP32_TO_INT8_S1                                               \
   "subs %[cnt], #1\n"                                           \
-  "vst1.32 d16, [%[ptr_out0]!\n"                                \
-  "vst1.32 d17, [%[ptr_out1]!\n"                                \
+  "vst1.32 d16, [%[ptr_out0]]!\n"                                \
+  "vst1.32 d17, [%[ptr_out1]]!\n"                                \
   "bne 3b\n"
 
 #define INT8_RIGHT_COMPUTE_S1                                   \
   "4:\n"                                                        \
-  "ld1 {d16-d17}, [%[vmask]]\n"                                 \
+  "vld1.8 {d16-d17}, [%[vmask]]\n"                              \
   "vbif.8 d12, d11, d16\n"                                      \
   "vbif.8 d14, d11, d16\n"                                      \
   "vbif.8 d13, d11, d17\n"                                      \
@@ -698,7 +703,7 @@ namespace math {
   "vld1.8 {d12-d13}, [%[din_ptr2]]\n"                           \
   "vld1.8 {d14-d15}, [%[din_ptr3]]\n"                           \
   "vmlal.s8 q10, d17, d4                @ a+=r0_2345*w02\n"     \
-  "ld1 {d16-d17}, [%[vmask]]\n"                                 \
+  "vld1.8 {d16-d17}, [%[vmask]]\n"                              \
   "vbif.8 d12, d11, d16\n"                                      \
   "vbif.8 d14, d11, d16\n"                                      \
   "vbif.8 d13, d11, d17\n"                                      \
@@ -743,19 +748,21 @@ namespace math {
   S1_RELU                                                       \
   S1_RELU6                                                      \
   S1_LEAKY_RELU                                                 \
-  "ld1 {d16-d19}, [%[rmask]]\n"                                 \
-  "ld1 {d0-d1}, [%[ptr_out0]], #16\n"                           \
-  "ld1 {d4-d5}, [%[ptr_out1]], #16\n"                           \
-  "ld1 {d2-d3}, [%[ptr_out0]]\n"                                \
-  "ld1 {d6-d7}, [%[ptr_out1]]\n"                                \
+  "vld1.32 {d16-d19}, [%[rmask]]\n"                             \
+  "vld1.32 {d0-d1}, [%[ptr_out0]]\n     "                       \
+  "vld1.32 {d4-d5}, [%[ptr_out1]]\n"                            \
+  "vld1.32 {d2-d3}, [%[ptr_out0]]\n"                            \
+  "vld1.32 {d6-d7}, [%[ptr_out1]]\n"                            \
   "sub %[ptr_out0], #16\n"                                      \
   "sub %[ptr_out1], #16\n"                                      \
   "vbif q12, q0, q8\n"                                          \
   "vbif q14, q2, q8\n"                                          \
   "vbif q13, q1, q9\n"                                          \
   "vbif q15, q3, q9\n"                                          \
-  "stp q12, q13, [%[ptr_out0]!\n"                               \
-  "stp q14, q15, [%[ptr_out1]!\n"
+  "vst1.32 {d24-d25}, [%[ptr_out0]]!\n"                         \
+  "vst1.32 {d28-d29}, [%[ptr_out1]]!\n"                         \
+  "vst1.32 {d26-d27}, [%[ptr_out0]]!\n"                         \
+  "vst1.32 {d30-d31}, [%[ptr_out1]]!\n"                         \
 
 #define RIGHT_RESULT_INT8_INT8_OUT_S1                           \
   INT8_RIGHT_COMPUTE_S1                                         \
@@ -764,65 +771,65 @@ namespace math {
   S1_RELU6                                                      \
   S1_LEAKY_RELU                                                 \
   FP32_TO_INT8_S1                                               \
-  "ld1 {d0}, [%[rmask1]]\n"                                     \
-  "ld1 {d1}, [%[ptr_out0]]\n"                                   \
-  "ld1 {d2}, [%[ptr_out1]]\n"                                   \
+  "vld1.8 {d0}, [%[rmask1]]\n"                                  \
+  "vld1.8 {d1}, [%[ptr_out0]]\n"                                \
+  "vld1.8 {d2}, [%[ptr_out1]]\n"                                \
   "vbif d16, d1, d0\n"                                          \
   "vbif d17, d2, d0\n"                                          \
-  "vst1.32 d16, [%[ptr_out0]!\n"                                \
-  "vst1.32 d17, [%[ptr_out1]!\n"
+  "vst1.32 d16, [%[ptr_out0]]!\n"                                \
+  "vst1.32 d17, [%[ptr_out1]]!\n"
 
 #endif
 // clang-format on
 #ifdef __aarch64__
 template <typename Dtype>
-void conv3x3s1p1_kernel(const int8_t* din_ptr0,
-                        const int8_t* din_ptr1,
-                        const int8_t* din_ptr2,
-                        const int8_t* din_ptr3,
+void conv3x3s1p1_kernel(int8_t* din_ptr0,
+                        int8_t* din_ptr1,
+                        int8_t* din_ptr2,
+                        int8_t* din_ptr3,
                         Dtype* doutr0,
                         Dtype* doutr1,
                         const float* scale,
                         float bias,
-                        const int cnt,
-                        unsigned int *vmask_ptr,
+                        int cnt,
+                        unsigned char *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
                         int flag_act,
                         const float* alpha,
-                        int8xt_t wr00,
-                        int8xt_t wr01,
-                        int8xt_t wr02,
-                        int8xt_t wr10,
-                        int8xt_t wr11,
-                        int8xt_t wr12,
-                        int8xt_t wr20,
-                        int8xt_t wr21,
-                        int8xt_t wr22);
+                        int8x8_t v0,
+                        int8x8_t v1,
+                        int8x8_t v2,
+                        int8x8_t v3,
+                        int8x8_t v4,
+                        int8x8_t v5,
+                        int8x8_t v6,
+                        int8x8_t v7,
+                        int8x8_t v8);
 template<>
-void conv3x3s1p1_kernel(const int8_t* din_ptr0,
-                        const int8_t* din_ptr1,
-                        const int8_t* din_ptr2,
-                        const int8_t* din_ptr3,
+void conv3x3s1p1_kernel(int8_t* din_ptr0,
+                        int8_t* din_ptr1,
+                        int8_t* din_ptr2,
+                        int8_t* din_ptr3,
                         float* doutr0,
                         float* doutr1,
                         const float* scale,
                         float bias,
-                        const int cnt,
-                        unsigned int *vmask_ptr,
+                        int cnt,
+                        unsigned char *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
                         int flag_act,
                         const float* alpha,
-                        int8xt_t wr00,
-                        int8xt_t wr01,
-                        int8xt_t wr02,
-                        int8xt_t wr10,
-                        int8xt_t wr11,
-                        int8xt_t wr12,
-                        int8xt_t wr20,
-                        int8xt_t wr21,
-                        int8xt_t wr22){
+                        int8x8_t v0,
+                        int8x8_t v1,
+                        int8x8_t v2,
+                        int8x8_t v3,
+                        int8x8_t v4,
+                        int8x8_t v5,
+                        int8x8_t v6,
+                        int8x8_t v7,
+                        int8x8_t v8){
   asm volatile(
     INT8_INIT_S1
     LEFT_RESULT_INT8_FP32_OUT_S1
@@ -830,27 +837,27 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
     RIGHT_RESULT_INT8_FP32_OUT_S1
     :[din_ptr0] "+r"(din_ptr0),
      [din_ptr1] "+r"(din_ptr1),
-     [din_ptr1] "+r"(din_ptr2),
-     [din_ptr1] "+r"(din_ptr3),
-     [doutr0] "+r"(doutr0),
-     [doutr1] "+r"(doutr1),
+     [din_ptr2] "+r"(din_ptr2),
+     [din_ptr3] "+r"(din_ptr3),
+     [ptr_out0] "+r"(doutr0),
+     [ptr_out1] "+r"(doutr1),
      [cnt] "+r"(cnt),
-     [vmask_ptr] "+r"(rmask_ptr),
-     [rmask_ptr] "+r"(rmask_ptr)
-    :[rmask_ptr1] "r"(rmask_ptr1),
+     [vmask] "+r"(vmask_ptr),
+     [rmask] "+r"(rmask_ptr)
+    :[rmask1] "r"(rmask_ptr1),
      [scale] "r"(scale),
      [alpha] "r"(alpha),
      [bias_val] "r"(bias),
      [is_relu] "r"(flag_act),
-     [vr00] "w"(v0),
-     [vr01] "w"(v1),
-     [vr02] "w"(v2),
-     [vr10] "w"(v3),
-     [vr11] "w"(v4),
-     [vr12] "w"(v5),
-     [vr20] "w"(v6),
-     [vr21] "w"(v7),
-     [vr22] "w"(v8)
+     [v0] "w"(v0),
+     [v1] "w"(v1),
+     [v2] "w"(v2),
+     [v3] "w"(v3),
+     [v4] "w"(v4),
+     [v5] "w"(v5),
+     [v6] "w"(v6),
+     [v7] "w"(v7),
+     [v8] "w"(v8)
     :"cc",
      "memory",
      "v0",
@@ -885,29 +892,30 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
      );
 }
 template<>
-void conv3x3s1p1_kernel(const int8_t* din_ptr0,
-                        const int8_t* din_ptr1,
-                        const int8_t* din_ptr2,
-                        const int8_t* din_ptr3,
+void conv3x3s1p1_kernel(int8_t* din_ptr0,
+                        int8_t* din_ptr1,
+                        int8_t* din_ptr2,
+                        int8_t* din_ptr3,
                         int8_t* doutr0,
                         int8_t* doutr1,
                         const float* scale,
                         float bias,
-                        const int cnt,
-                        unsigned int *vmask_ptr,
+                        int cnt,
+                        unsigned char *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
                         int flag_act,
                         const float* alpha,
-                        int8xt_t wr00,
-                        int8xt_t wr01,
-                        int8xt_t wr02,
-                        int8xt_t wr10,
-                        int8xt_t wr11,
-                        int8xt_t wr12,
-                        int8xt_t wr20,
-                        int8xt_t wr21,
-                        int8xt_t wr22){
+                        int8x8_t v0,
+                        int8x8_t v1,
+                        int8x8_t v2,
+                        int8x8_t v3,
+                        int8x8_t v4,
+                        int8x8_t v5,
+                        int8x8_t v6,
+                        int8x8_t v7,
+                        int8x8_t v8){
+  float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(
     INT8_INIT_S1
     LEFT_RESULT_INT8_INT8_OUT_S1
@@ -915,27 +923,28 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
     RIGHT_RESULT_INT8_INT8_OUT_S1
     :[din_ptr0] "+r"(din_ptr0),
      [din_ptr1] "+r"(din_ptr1),
-     [din_ptr1] "+r"(din_ptr2),
-     [din_ptr1] "+r"(din_ptr3),
-     [doutr0] "+r"(doutr0),
-     [doutr1] "+r"(doutr1),
+     [din_ptr2] "+r"(din_ptr2),
+     [din_ptr3] "+r"(din_ptr3),
+     [ptr_out0] "+r"(doutr0),
+     [ptr_out1] "+r"(doutr1),
      [cnt] "+r"(cnt),
-     [vmask_ptr] "+r"(rmask_ptr),
-     [rmask_ptr] "+r"(rmask_ptr)
-    :[rmask_ptr1] "r"(rmask_ptr1),
+     [vmask] "+r"(vmask_ptr),
+     [rmask] "+r"(rmask_ptr)
+    :[rmask1] "r"(rmask_ptr1),
      [scale] "r"(scale),
      [alpha] "r"(alpha),
      [bias_val] "r"(bias),
      [is_relu] "r"(flag_act),
-     [vr00] "w"(v0),
-     [vr01] "w"(v1),
-     [vr02] "w"(v2),
-     [vr10] "w"(v3),
-     [vr11] "w"(v4),
-     [vr12] "w"(v5),
-     [vr20] "w"(v6),
-     [vr21] "w"(v7),
-     [vr22] "w"(v8)
+     [vmax] "r"(vmax),
+     [v0] "w"(v0),
+     [v1] "w"(v1),
+     [v2] "w"(v2),
+     [v3] "w"(v3),
+     [v4] "w"(v4),
+     [v5] "w"(v5),
+     [v6] "w"(v6),
+     [v7] "w"(v7),
+     [v8] "w"(v8)
     :"cc",
      "memory",
      "v0",
@@ -971,34 +980,34 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
 }
 #else
 template <typename Dtype>
-void conv3x3s1p1_kernel(const int8_t* din_ptr0,
-                        const int8_t* din_ptr1,
-                        const int8_t* din_ptr2,
-                        const int8_t* din_ptr3,
+void conv3x3s1p1_kernel(int8_t* din_ptr0,
+                        int8_t* din_ptr1,
+                        int8_t* din_ptr2,
+                        int8_t* din_ptr3,
                         Dtype* doutr0,
                         Dtype* doutr1,
                         const int8_t* weights,
                         const float* scale,
                         float bias,
-                        const int cnt,
-                        unsigned int *vmask_ptr,
+                        int cnt,
+                        unsigned char *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
                         int flag_act,
                         const float* alpha);
 
 template <>
-void conv3x3s1p1_kernel(const int8_t* din_ptr0,
-                        const int8_t* din_ptr1,
-                        const int8_t* din_ptr2,
-                        const int8_t* din_ptr3,
+void conv3x3s1p1_kernel(int8_t* din_ptr0,
+                        int8_t* din_ptr1,
+                        int8_t* din_ptr2,
+                        int8_t* din_ptr3,
                         float* doutr0,
                         float* doutr1,
                         const int8_t* weights,
                         const float* scale,
                         float bias,
-                        const int cnt,
-                        unsigned int *vmask_ptr,
+                        int cnt,
+                        unsigned char *vmask_ptr,
                         unsigned int *rmask_ptr,
                         unsigned char *rmask_ptr1,
                         int flag_act,
@@ -1010,14 +1019,14 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
     RIGHT_RESULT_INT8_FP32_OUT_S1
     :[din_ptr0] "+r"(din_ptr0),
      [din_ptr1] "+r"(din_ptr1),
-     [din_ptr1] "+r"(din_ptr2),
-     [din_ptr1] "+r"(din_ptr3),
-     [doutr0] "+r"(doutr0),
-     [doutr1] "+r"(doutr1),
+     [din_ptr2] "+r"(din_ptr2),
+     [din_ptr3] "+r"(din_ptr3),
+     [ptr_out0] "+r"(doutr0),
+     [ptr_out1] "+r"(doutr1),
      [cnt] "+r"(cnt),
-     [vmask_ptr] "+r"(rmask_ptr),
-     [rmask_ptr] "+r"(rmask_ptr)
-    :[rmask_ptr1] "r"(rmask_ptr1),
+     [vmask] "+r"(vmask_ptr),
+     [rmask] "+r"(rmask_ptr)
+    :[rmask1] "r"(rmask_ptr1),
      [wei_ptr] "r"(weights),
      [scale] "r"(scale),
      [alpha] "r"(alpha),
@@ -1044,20 +1053,22 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
 }
 
 template <>
-void conv3x3s1p1_kernel(const int8_t* din_ptr0,
-                        const int8_t* din_ptr1,
-                        const int8_t* din_ptr2,
-                        const int8_t* din_ptr3,
+void conv3x3s1p1_kernel(int8_t* din_ptr0,
+                        int8_t* din_ptr1,
+                        int8_t* din_ptr2,
+                        int8_t* din_ptr3,
                         int8_t* doutr0,
                         int8_t* doutr1,
                         const int8_t* weights,
                         const float* scale,
                         float bias,
-                        const int cnt,
+                        int cnt,
+                        unsigned char *vmask_ptr,
                         unsigned int *rmask_ptr,
-                        unsigned int *vmask_ptr,
+                        unsigned char *rmask_ptr1,
                         int flag_act,
                         const float* alpha){
+  float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(
     INT8_INIT_S1
     LEFT_RESULT_INT8_INT8_OUT_S1
@@ -1065,18 +1076,19 @@ void conv3x3s1p1_kernel(const int8_t* din_ptr0,
     RIGHT_RESULT_INT8_INT8_OUT_S1
     :[din_ptr0] "+r"(din_ptr0),
      [din_ptr1] "+r"(din_ptr1),
-     [din_ptr1] "+r"(din_ptr2),
-     [din_ptr1] "+r"(din_ptr3),
-     [doutr0] "+r"(doutr0),
-     [doutr1] "+r"(doutr1),
+     [din_ptr2] "+r"(din_ptr2),
+     [din_ptr3] "+r"(din_ptr3),
+     [ptr_out0] "+r"(doutr0),
+     [ptr_out1] "+r"(doutr1),
      [cnt] "+r"(cnt),
-     [vmask_ptr] "+r"(rmask_ptr),
-     [rmask_ptr] "+r"(rmask_ptr)
-    :[rmask_ptr1] "r"(rmask_ptr1),
+     [vmask] "+r"(vmask_ptr),
+     [rmask] "+r"(rmask_ptr)
+    :[rmask1] "r"(rmask_ptr1),
      [wei_ptr] "r"(weights),
      [scale] "r"(scale),
      [alpha] "r"(alpha),
      [bias_val] "r"(bias),
+     [vmax] "r"(vmax),
      [is_relu] "r"(flag_act)
     :"cc",
      "memory",
@@ -1116,9 +1128,9 @@ void conv_depthwise_3x3s1p1_int8(Dtype* dout,
   //! pad is done implicit
   const int8_t zero[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   //! for 4x10 convolution window
-  const unsigned char right_pad_idx[16] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0};
+  const unsigned char right_pad_idx[16] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0};
   const unsigned int right_pad_rst[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-
+  const unsigned char right_pad_rst1[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int8_t *zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, win * sizeof(int8_t));
   Dtype *write_ptr = reinterpret_cast<Dtype*>(zero_ptr + win);
@@ -1147,9 +1159,9 @@ void conv_depthwise_3x3s1p1_int8(Dtype* dout,
 
   uint32x4_t vmask_result1 = vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(right_pad_rst));
   uint32x4_t vmask_result2 = vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(right_pad_rst + 4));
-  uint8x8_t vmask_result3 = vcgt_u8(vdup_n_u8(remain), vld1_u8(right_pad_rst));
+  uint8x8_t vmask_result3 = vcgt_u8(vdup_n_u8(remain), vld1_u8(right_pad_rst1));
 
-  unsigned int vmask[16];
+  uint8_t vmask[16];
   vst1q_u8(vmask, vmask_rp);
 
   unsigned int rmask[8];
@@ -1248,7 +1260,7 @@ void conv_depthwise_3x3s1p1_int8(Dtype* dout,
                           break;
                   }
               }
-              unsigned int *vmask_ptr = vmask;
+              unsigned char *vmask_ptr = vmask;
               unsigned int *rmask_ptr = rmask;
               // asm
 #ifdef __aarch64__
@@ -1373,8 +1385,9 @@ void conv_depthwise_3x3s1p0_int8(Dtype* dout,
   //! pad is done implicit
   const int8_t zero[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   //! for 4x10 convolution window
-  const unsigned char right_pad_idx[16] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0};
+  const unsigned char right_pad_idx[16] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0};;
   const unsigned int right_pad_rst[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+  const unsigned char right_pad_rst1[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
   int8_t *zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, win * sizeof(int8_t));
@@ -1400,9 +1413,9 @@ void conv_depthwise_3x3s1p0_int8(Dtype* dout,
 
   uint32x4_t vmask_result1 = vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(right_pad_rst));
   uint32x4_t vmask_result2 = vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(right_pad_rst + 4));
-  uint8x8_t vmask_result3 = vcgt_u8(vdup_n_u8(remain), vld1_u8(right_pad_rst));
+  uint8x8_t vmask_result3 = vcgt_u8(vdup_n_u8(remain), vld1_u8(right_pad_rst1));
 
-  unsigned int vmask[16];
+  unsigned char vmask[16];
   vst1q_u8(vmask, vmask_rp);
 
   unsigned int rmask[8];
@@ -1474,7 +1487,7 @@ void conv_depthwise_3x3s1p0_int8(Dtype* dout,
                           break;
                   }
               }
-              unsigned int *vmask_ptr = vmask;
+              unsigned char *vmask_ptr = vmask;
               unsigned int *rmask_ptr = rmask;
               // asm
               conv3x3s1p0_kernel<Dtype>(din_ptr0,
