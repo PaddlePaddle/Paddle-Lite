@@ -83,6 +83,23 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
                             temp_input.mutable_data<int>(),
                             sizeof(int) * input_tensor->dims().production(),
                             CNRT_MEM_TRANS_DIR_HOST2DEV));
+    } else if (fp_type == CNML_DATA_FLOAT16) {
+      auto input_node = graph.AddNode(
+          input_name,
+          input_tensor->dims().Vectorize(),
+          CNML_TENSOR,
+          CNML_NCHW,
+          fp_type,
+          reinterpret_cast<void*>(
+              input_tensor->mutable_data<paddle::lite::fluid::float16>(
+                  TARGET(kMLU))));
+      CHECK(input_node);
+      CNRT_CHECK(
+          cnrtMemcpy(input_tensor->mutable_data<paddle::lite::fluid::float16>(),
+                     temp_input.mutable_data<paddle::lite::fluid::float16>(),
+                     sizeof(paddle::lite::fluid::float16) *
+                         input_tensor->dims().production(),
+                     CNRT_MEM_TRANS_DIR_HOST2DEV));
     } else {
       auto input_node =
           graph.AddNode(input_name,
