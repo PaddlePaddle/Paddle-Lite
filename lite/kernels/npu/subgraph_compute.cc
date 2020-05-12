@@ -213,11 +213,13 @@ int SubgraphEngine::LaunchDeviceProgram() {
   VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
   // Copy the data of output HiAI tensor to the buffer of origin output tensors
+  /*
   for (size_t i = 0; i < device_otensors_.size(); i++) {
     std::memcpy(const_cast<void*>(origin_otensors_[i]->raw_data()),
                 device_otensors_[i]->GetBuffer(),
                 device_otensors_[i]->GetSize());
   }
+  */
   return 0;
 }
 
@@ -251,10 +253,17 @@ void SubgraphEngine::InitDeviceTensor() {
     }
   }
   for (size_t i = 0; i < device_otensors_.size(); i++) {
-    device_otensors_[i]->Init(&(device_program->device_odims[i]));
-  }
-  for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+    if (device_otensors_[i]->GetBuffer() != origin_otensors_[i]->raw_data()) {
+      LOG(INFO) << "--- share output tensor buf";
+      device_otensors_[i]->Init(&(device_program->device_odims[i]));
+      // share data buf between device_itensor and origin_itensor
+      origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+      std::shared_ptr<Buffer> buffer =
+          std::make_shared<Buffer>(device_otensors_[i]->GetBuffer(),
+                                   lite_api::TargetType::kHost,
+                                   device_otensors_[i]->GetSize());
+      origin_otensors_[i]->ResetBuffer(buffer, device_otensors_[i]->GetSize());
+    }
   }
 }
 
