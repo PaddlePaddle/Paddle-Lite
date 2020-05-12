@@ -106,7 +106,7 @@ class Graph {
   void AddInput(std::shared_ptr<MLUTensor> tensor) {
     inputs_.push_back(tensor->mlu_tensor());
     input_tensors_.push_back(tensor);
-    if (GetBoolFromEnv("BATCH_SIZE_CHANGEBLE")) {
+    if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
       constexpr int input_dimNb = 4;
       bool input_dim_mutable[4] = {true, false, false, false};
       cnmlSetTensorDimMutable(
