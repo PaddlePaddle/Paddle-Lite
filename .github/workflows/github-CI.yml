@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: modity build.sh
-      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/PRINT_HW_TIME false/PRINT_HW_TIME true/' lite/kernels/mlu/bridges/graph.h
+      run: sed -i 's/DLITE_WITH_PYTHON=ON/DLITE_WITH_PYTHON=OFF/' lite/tools/build_mlu.sh && sed -i 's/WITH_TESTING=OFF/WITH_TESTING=ON/' lite/tools/build_mlu.sh && sed -i 's/PRINT_HW_TIME false/PRINT_HW_TIME true/' lite/kernels/mlu/bridges/graph.h && sed -i 's/BUILD_EXTRA=OFF/BUILD_EXTRA=ON/' lite/tools/build_mlu.sh
     - name: build
       run: ./lite/tools/build_mlu.sh build
     - name: test_act_converter_mlu
@@ -47,6 +47,10 @@ jobs:
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_argmax_converter_mlu
     - name: test_split_converter_mlu
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_split_converter_mlu
+    - name: test_lrn_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_lrn_converter_mlu
+    - name: test_gather_converter_mlu
+      run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_gather_converter_mlu
     - name: test_classification
       run: |
         cd ..

@@ -50,6 +50,8 @@ set(mlu_subgraph_bridges
 if (LITE_BUILD_EXTRA)
   lite_cc_library(subgraph_bridge_lrn_op_mlu SRCS lrn_op.cc DEPS ${subgraph_bridge_deps_mlu})
   list(APPEND mlu_subgraph_bridges subgraph_bridge_lrn_op_mlu)
+  lite_cc_library(subgraph_bridge_gather_op_mlu SRCS gather_op.cc DEPS ${subgraph_bridge_deps_mlu})
+  list(APPEND mlu_subgraph_bridges subgraph_bridge_gather_op_mlu)
 endif()
 
 lite_cc_library(subgraph_test_helper_mlu SRCS test_helper.cc DEPS ${mlu_subgraph_bridges})
@@ -71,5 +73,6 @@ lite_cc_test(test_argmax_converter_mlu SRCS argmax_op_test.cc DEPS scope optimiz
 lite_cc_test(test_squeeze_converter_mlu SRCS squeeze_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 if (LITE_BUILD_EXTRA)
   lite_cc_test(test_lrn_converter_mlu SRCS lrn_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
+  lite_cc_test(test_gather_converter_mlu SRCS gather_op_test.cc DEPS scope optimizer target_wrapper_host model_parser program ${mlu_subgraph_bridges} subgraph_compute_mlu subgraph_test_helper_mlu)
 endif()
 message(STATUS "+++++ mlu_subgraph_bridges: ${mlu_subgraph_bridges}")
