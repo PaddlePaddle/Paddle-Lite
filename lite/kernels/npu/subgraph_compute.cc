@@ -237,6 +237,7 @@ void SubgraphEngine::InitDeviceTensor() {
   auto device_program = device_program_map_[inputs_shape_];
   for (size_t i = 0; i < device_itensors_.size(); i++) {
     if (device_itensors_[i]->GetBuffer() != origin_itensors_[i]->raw_data()) {
+      LOG(INFO) << "--- share input tensor buf";
       device_itensors_[i]->Init(&(device_program->device_idims[i]));
       std::memcpy(device_itensors_[i]->GetBuffer(),
                   origin_itensors_[i]->raw_data(),
