@@ -22,12 +22,16 @@
 
 #include "lite/api/paddle_place.h"
 #include "lite/core/kernel.h"
+#include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 #include "lite/core/types.h"
 #include "lite/kernels/mlu/bridges/graph.h"
+#include "lite/kernels/mlu/bridges/tensor.h"
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/utils/env.h"
 
 namespace paddle {
 namespace lite {
@@ -76,10 +80,20 @@ class SubgraphEngine : public subgraph::Engine {
 
   bool InputShapeChanged() {
     std::vector<std::vector<int64_t>> new_shape;
+    // used in batch changable situation
+    std::vector<std::vector<int64_t>> all_shape;
     for (auto origin_itensor : origin_itensors_) {
-      new_shape.push_back(origin_itensor->dims().Vectorize());
+      if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
+        auto iv = origin_itensor->dims().Vectorize();
+        all_shape.push_back(iv);
+        iv.erase(iv.begin());
+        new_shape.push_back(iv);
+      } else {
+        new_shape.push_back(origin_itensor->dims().Vectorize());
+      }
     }
     inputs_shape_ = new_shape;
+    all_inputs_shape_ = all_shape;
     if (shape_graph_map_.count(inputs_shape_) > 0) {
       return false;
     }
@@ -117,7 +131,13 @@ class SubgraphEngine : public subgraph::Engine {
       auto data_type = input_tensor->precision();
       cnmlDataType_t fp_type = PrecisionToDatatype(data_type);
       origin_itensors_.push_back(input_tensor);
-      new_shape.push_back(input_tensor->dims().Vectorize());
+      if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
+        auto iv = input_tensor->dims().Vectorize();
+        iv.erase(iv.begin());
+        new_shape.push_back(iv);
+      } else {
+        new_shape.push_back(input_tensor->dims().Vectorize());
+      }
 
       CHECK(input_tensor);
       auto input_node = graph->AddNode(input_name,
@@ -230,27 +250,30 @@ class SubgraphEngine : public subgraph::Engine {
     return name;
   }
 
+  void InferOutputsShapeOnly() {
+    // infer outputs shape when enable BATCH_SIZE_CHANGEABLE
+    const auto iter = in_out_shape_map_.find(all_inputs_shape_);
+    if (iter != in_out_shape_map_.end()) {
+      for (size_t i = 0; i < origin_otensors_.size(); ++i) {
+        origin_otensors_[i]->Resize(iter->second[i]);
+      }
+    } else {
+      for (auto& inst : origin_program_) {
+        auto op = inst.op();
+        CHECK(op);
+        op->CheckShape();
+        const_cast<OpLite*>(op)->InferShape();
+      }
+      std::vector<std::vector<int64_t>> outs_shape;
+      for (size_t i = 0; i < origin_otensors_.size(); ++i) {
+        outs_shape.push_back(origin_otensors_[i]->dims().Vectorize());
+      }
+      in_out_shape_map_[all_inputs_shape_] = outs_shape;
+    }
+  }
+
   int LaunchDeviceProgram() override {
     // prepare input and output memory
-    auto graph = shape_graph_map_[inputs_shape_];
-    auto* graph_input = graph->MutableInputs();
-    auto* graph_output = graph->MutableOutputs();
-    CHECK_EQ(graph_input->size(), origin_itensors_.size());
-    CHECK_EQ(graph_output->size(), origin_otensors_.size());
-
-    for (size_t i = 0; i < origin_itensors_.size(); ++i) {
-      graph_input->at(i)->set_mlu_ptr(
-          const_cast<void*>(origin_itensors_[i]->raw_data()));
-    }
-    for (size_t i = 0; i < origin_otensors_.size(); ++i) {
-      origin_otensors_[i]->Resize(graph_output->at(i)->get_origin_shape());
-      void* p_data = static_cast<void*>(
-          origin_otensors_[i]
-              ->mutable_data<typename paddle::lite::subgraph::mlu::FPTypeTraits<
-                  Precision>::T>(TARGET(kMLU)));
-      graph_output->at(i)->set_mlu_ptr(p_data);
-    }
-
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto exec_queue = mlu_context.exec_queue();
     u32_t affinity = mlu_context.affinity();
@@ -260,7 +283,91 @@ class SubgraphEngine : public subgraph::Engine {
     forward_param.affinity = &affinity;
     forward_param.end = CNRT_PARAM_END;
 
-    graph->Compute(forward_param, exec_queue);
+    auto graph = shape_graph_map_[inputs_shape_];
+    auto* graph_input = graph->MutableInputs();
+    auto* graph_output = graph->MutableOutputs();
+    CHECK_EQ(graph_input->size(), origin_itensors_.size());
+    CHECK_EQ(graph_output->size(), origin_otensors_.size());
+
+    if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
+      std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
+          graph_in;
+      if (shape_tensor_map_in_.find(all_inputs_shape_) !=
+          shape_tensor_map_in_.end()) {
+        graph_in = shape_tensor_map_in_[all_inputs_shape_];
+        for (size_t i = 0; i < origin_itensors_.size(); ++i) {
+          graph_in[i]->set_mlu_ptr(
+              const_cast<void*>(origin_itensors_[i]->raw_data()));
+        }
+      } else {
+        graph_in.reserve(origin_itensors_.size());
+        for (size_t i = 0; i < origin_itensors_.size(); ++i) {
+          paddle::lite::subgraph::mlu::MLUTensor tmp(
+              origin_itensors_[i]->dims().Vectorize());
+          tmp.set_mlu_dtype(graph_input->at(i)->dtype());
+          tmp.set_mlu_ptr(const_cast<void*>(origin_itensors_[i]->raw_data()));
+          graph_in.push_back(
+              std::make_shared<paddle::lite::subgraph::mlu::MLUTensor>(tmp));
+        }
+        shape_tensor_map_in_[all_inputs_shape_] = graph_in;
+      }
+
+      // TODO(zhangmingwei): we just call every op's infer_shape to get outputs'
+      // shape, may be it's better to use cnml's api to get output shape. This
+      // can be done when cnml's tensor dimension is totally equal to lite's
+      // tensor
+      // shape.
+      InferOutputsShapeOnly();
+      // const std::vector<std::vector<int64_t>> new_output_size =
+      //    graph->InferOutputsShape(graph_in);
+
+      std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
+          graph_out;
+
+      if (shape_tensor_map_out_.find(all_inputs_shape_) !=
+          shape_tensor_map_out_.end()) {
+        graph_out = shape_tensor_map_out_[all_inputs_shape_];
+        for (size_t i = 0; i < origin_otensors_.size(); ++i) {
+          // origin_otensors_[i]->Resize(new_output_size.at(i));
+          void* p_data = static_cast<void*>(
+              origin_otensors_[i]
+                  ->mutable_data<typename paddle::lite::subgraph::mlu::
+                                     FPTypeTraits<Precision>::T>(TARGET(kMLU)));
+          graph_out[i]->set_mlu_ptr(p_data);
+        }
+      } else {
+        graph_out.reserve(origin_otensors_.size());
+        for (size_t i = 0; i < origin_otensors_.size(); ++i) {
+          // origin_otensors_[i]->Resize(new_output_size.at(i));
+          void* p_data = static_cast<void*>(
+              origin_otensors_[i]
+                  ->mutable_data<typename paddle::lite::subgraph::mlu::
+                                     FPTypeTraits<Precision>::T>(TARGET(kMLU)));
+          paddle::lite::subgraph::mlu::MLUTensor tmp(
+              origin_otensors_[i]->dims().Vectorize());
+          tmp.set_mlu_dtype(graph_output->at(i)->dtype());
+          tmp.set_mlu_ptr(p_data);
+          graph_out.push_back(
+              std::make_shared<paddle::lite::subgraph::mlu::MLUTensor>(tmp));
+        }
+        shape_tensor_map_out_[all_inputs_shape_] = graph_out;
+      }
+      graph->Compute(forward_param, exec_queue, graph_in, graph_out);
+    } else {
+      for (size_t i = 0; i < origin_itensors_.size(); ++i) {
+        graph_input->at(i)->set_mlu_ptr(
+            const_cast<void*>(origin_itensors_[i]->raw_data()));
+      }
+      for (size_t i = 0; i < origin_otensors_.size(); ++i) {
+        origin_otensors_[i]->Resize(graph_output->at(i)->get_origin_shape());
+        void* p_data = static_cast<void*>(
+            origin_otensors_[i]
+                ->mutable_data<typename paddle::lite::subgraph::mlu::
+                                   FPTypeTraits<Precision>::T>(TARGET(kMLU)));
+        graph_output->at(i)->set_mlu_ptr(p_data);
+      }
+      graph->Compute(forward_param, exec_queue);
+    }
 
     // // =========== DUMP ===================
     // for (auto input_name : input_names_) {
@@ -294,9 +401,24 @@ class SubgraphEngine : public subgraph::Engine {
 
   paddle::lite_api::PrecisionType fp_type_;
   std::vector<std::vector<int64_t>> inputs_shape_{};
+  std::vector<std::vector<int64_t>> all_inputs_shape_{};
   std::map<std::vector<std::vector<int64_t>>,
            std::shared_ptr<paddle::lite::subgraph::mlu::Graph>>
       shape_graph_map_{};
+  // search output runtime MLUTensor for certain output shape when enable
+  // BATCH_SIZE_CHANGEABLE
+  std::map<std::vector<std::vector<int64_t>>,
+           std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>>
+      shape_tensor_map_out_{};
+  // search input runtime MLUTensor for certain input shape when enable
+  // BATCH_SIZE_CHANGEABLE
+  std::map<std::vector<std::vector<int64_t>>,
+           std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>>
+      shape_tensor_map_in_{};
+  // search output shape for certain input shape when enable
+  // BATCH_SIZE_CHANGEABLE
+  std::map<std::vector<std::vector<int64_t>>, std::vector<std::vector<int64_t>>>
+      in_out_shape_map_{};
 };  // namespace mlu
 
 template <PrecisionType Precision>

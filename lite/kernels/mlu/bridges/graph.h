@@ -47,7 +47,6 @@ class Graph {
     CNRT_CALL(cnrtCreateNotifier(&notifier_end_));
 #endif
   }
-
   ~Graph() {
     FreeConstData();
     CNML_CALL(cnmlDestroyFusionOp(&fusion_op_));
@@ -62,7 +61,6 @@ class Graph {
               << " process:" << total_time / time_log_.size() << std::endl;
 #endif
   }
-
   // Data node
   std::shared_ptr<MLUTensor> AddNode(
       const std::string& name,
@@ -81,9 +79,39 @@ class Graph {
     return nodes_.find(name) != nodes_.end();
   }
 
+  //  const std::vector<std::vector<int64_t>>
+  //  InferOutputsShape(std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
+  //  graph_in){
+  //    CHECK_EQ(graph_in.size(), inputs_.size());
+  //    std::vector<cnmlTensor_t> inputs(inputs_.size());
+  //    for (size_t i = 0; i < graph_in.size(); ++i) {
+  //      inputs[i] = graph_in[i]->mlu_tensor();
+  //    }
+  //    std::vector<cnmlTensor_t> outputs(outputs_.size());
+  //    cnmlInferFusionOpOutputShape(fusion_op_, inputs.data(), inputs.size(),
+  //    outputs.size(), outpus.size());
+  //
+  //    std::vector<std::vector<int64_t>> outputs_shape;
+  //    for (size_t i = 0; i < outputs.size(); ++i) {
+  //      int len;
+  //      cnmlGetTensorLen(outputs[i], &len);
+  //      std::vector<int64_t> tmp_shape(len);
+  //      cnmlGetTensorShape(outputs[i], tmp_shape.data())
+  //      outputs_shape.push_back(std::move(tmp_shape));
+  //    }
+  //
+  //    return outputs_shape;
+  //  }
+
   void AddInput(std::shared_ptr<MLUTensor> tensor) {
     inputs_.push_back(tensor->mlu_tensor());
     input_tensors_.push_back(tensor);
+    if (GetBoolFromEnv("BATCH_SIZE_CHANGEABLE")) {
+      constexpr int input_dimNb = 4;
+      bool input_dim_mutable[4] = {true, false, false, false};
+      cnmlSetTensorDimMutable(
+          tensor->mlu_tensor(), input_dim_mutable, input_dimNb);
+    }
   }
 
   void AddOutput(std::shared_ptr<MLUTensor> tensor) {
@@ -140,6 +168,49 @@ class Graph {
                                             output_addrs_.size(),
                                             &forward_param,
                                             que));
+#if PRINT_HW_TIME
+    CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));
+    CNRT_CALL(cnrtSyncQueue(que));
+    CNRT_CALL(cnrtNotifierDuration(notifier_start_, notifier_end_, &hw_time));
+    hw_time /= 1000.0f;
+    DLOG(INFO) << "cnml hardware time " << hw_time << "ms" << std::endl;
+    std::lock_guard<std::mutex> lk(time_mut_);
+    time_log_.push_back(hw_time);
+#endif
+  }
+
+  void Compute(cnrtInvokeFuncParam_t forward_param,
+               cnrtQueue_t que,
+               const std::vector<std::shared_ptr<MLUTensor>>& in,
+               const std::vector<std::shared_ptr<MLUTensor>>& out) {
+    std::vector<cnmlTensor_t> in_tensor;
+    std::vector<cnmlTensor_t> out_tensor;
+    input_addrs_.resize(in.size());
+    output_addrs_.resize(out.size());
+    for (size_t i = 0; i < input_addrs_.size(); ++i) {
+      input_addrs_[i] = in[i]->mlu_data();
+      in_tensor.push_back(in[i]->mlu_tensor());
+    }
+    for (size_t i = 0; i < output_addrs_.size(); ++i) {
+      output_addrs_[i] = out[i]->mlu_data();
+      out_tensor.push_back(out[i]->mlu_tensor());
+    }
+
+#if PRINT_HW_TIME
+    thread_local float hw_time;
+    CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que));
+#endif
+    /* Because of using cnmlSetTensorDimMutable, cnmlComputeFusionOpForward_V3
+     * -> cnmlComputeFusionOpForward_V4 */
+    CNML_CALL(cnmlComputeFusionOpForward_V4(fusion_op_,
+                                            &in_tensor[0],
+                                            input_addrs_.data(),
+                                            input_addrs_.size(),
+                                            &out_tensor[0],
+                                            output_addrs_.data(),
+                                            output_addrs_.size(),
+                                            que,
+                                            NULL));
 #if PRINT_HW_TIME
     CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));
     CNRT_CALL(cnrtSyncQueue(que));
