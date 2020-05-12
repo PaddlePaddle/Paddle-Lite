@@ -1492,6 +1492,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int head_num{};
   int size_per_head{};
   std::string act_type{};
+  std::string precision{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
