@@ -22,30 +22,13 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/kernels/mlu/bridges/utility.h"
 #include "lite/operators/layout_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace mlu {
-
-template <paddle::lite_api::PrecisionType>
-struct FPTypeTraits {};
-
-template <>
-struct FPTypeTraits<paddle::lite_api::PrecisionType::kFloat> {
-  using type = float;
-};
-
-template <>
-struct FPTypeTraits<paddle::lite_api::PrecisionType::kFP16> {
-  using type = paddle::lite::fluid::float16;
-};
-
-template <>
-struct FPTypeTraits<paddle::lite_api::PrecisionType::kInt8> {
-  using type = int8_t;
-};
 
 template <lite::TargetType Target, typename T>
 inline void LayoutTransCompute(const int dim,
@@ -81,7 +64,8 @@ class LayoutNchwToNhwcCompute
     auto& param = this->template Param<param_t>();
     auto* x = param.x;
     auto* out = param.y;
-    out->template mutable_data<typename FPTypeTraits<Precision>::type>();
+    out->template mutable_data<
+        typename subgraph::mlu::MLUTypeTraits<Precision>::type>();
     auto x_ndims = param.x->dims().size();
     auto& context = this->ctx_->template As<X86Context>();
 
@@ -107,7 +91,7 @@ class LayoutNchwToNhwcCompute
     }
 
     LayoutTransCompute<lite::TargetType::kX86,
-                       typename FPTypeTraits<Precision>::type>(
+                       typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
         x_ndims, context, *x, out, axis);
 
     if (x_ndims > 2) {
@@ -130,7 +114,8 @@ class LayoutNhwcToNchwCompute
     auto& param = this->template Param<param_t>();
     auto* x = param.x;
     auto* out = param.y;
-    out->template mutable_data<typename FPTypeTraits<Precision>::type>();
+    out->template mutable_data<
+        typename subgraph::mlu::MLUTypeTraits<Precision>::type>();
     auto& context = this->ctx_->template As<X86Context>();
 
     TensorLite tmp_t;
@@ -157,7 +142,7 @@ class LayoutNhwcToNchwCompute
     }
 
     LayoutTransCompute<lite::TargetType::kX86,
-                       typename FPTypeTraits<Precision>::type>(
+                       typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
         x_ndims, context, tmp_t, out, axis);
   }
 

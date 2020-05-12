@@ -27,10 +27,11 @@ std::shared_ptr<MLUTensor> Graph::AddNode(const std::string& name,
                                           cnmlTensorType_t tensor_type,
                                           cnmlDataOrder_t shape_order,
                                           cnmlDataType_t mlu_dtype,
+                                          cnmlDataOrder_t data_order,
                                           void* raw_ptr) {
   CHECK(!HasNode(name));
   auto node = std::shared_ptr<MLUTensor>(
-      new MLUTensor(shape, tensor_type, shape_order, mlu_dtype));
+      new MLUTensor(shape, tensor_type, shape_order, mlu_dtype, data_order));
   node->set_mlu_ptr(raw_ptr);
   nodes_.insert(std::make_pair(name, node));
   return node;

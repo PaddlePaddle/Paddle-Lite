@@ -14,6 +14,7 @@
 
 #include "lite/core/mir/mlu_postprocess_pass.h"
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -676,7 +677,7 @@ std::string CheckOutputAndInsert(cpp::BlockDesc* block_desc,
 void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
                                         const Type* op_type) {
   auto subgraph_op = subgraph_node->AsStmt().op();
-  CHECK(subgraph_op->Type() == "subgraph");
+  CHECK_EQ(subgraph_op->Type(), "subgraph");
   auto op = dynamic_cast<operators::SubgraphOp*>(subgraph_op.get());
   CHECK(op);
   auto block_desc = op->GetSubBlock();

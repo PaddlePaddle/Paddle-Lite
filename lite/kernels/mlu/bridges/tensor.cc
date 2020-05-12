@@ -16,6 +16,8 @@
 #include <glog/logging.h>
 #include <algorithm>
 #include <climits>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -26,8 +28,9 @@ namespace mlu {
 
 MLUTensor::MLUTensor(const std::vector<int64_t>& shape,
                      cnmlTensorType_t tensor_type,
-                     cnmlDataOrder_t data_order,
-                     cnmlDataType_t mlu_dtype)
+                     cnmlDataOrder_t shape_order,
+                     cnmlDataType_t mlu_dtype,
+                     cnmlDataOrder_t data_order)
     : mlu_tensor_(nullptr), tensor_type_(tensor_type), mlu_ptr_(nullptr) {
   std::vector<int> int_shape;
   for (auto i : shape) {
@@ -37,15 +40,17 @@ MLUTensor::MLUTensor(const std::vector<int64_t>& shape,
       LOG(FATAL) << "Shape size is beyond the limitation of MLUTensor!";
     }
   }
-  remember(int_shape, tensor_type, mlu_dtype, data_order);
+  remember(int_shape, tensor_type, mlu_dtype, shape_order, data_order);
 }
 
 void MLUTensor::remember(const std::vector<int>& shape,
                          cnmlTensorType_t tensor_type,
                          cnmlDataType_t mlu_dtype,
-                         cnmlDataOrder_t shape_order) {
+                         cnmlDataOrder_t shape_order,
+                         cnmlDataOrder_t data_order) {
   tensor_type_ = tensor_type;
   mlu_dtype_ = mlu_dtype;
+  data_order_ = data_order;
   origin_shape_.assign(shape.begin(), shape.end());
 
   int size = 4;
@@ -248,6 +253,12 @@ void MLUTensor::Create() {
   if (mlu_tensor_ == nullptr) {
     CNML_CALL(cnmlCreateTensor_V2(&mlu_tensor_, tensor_type_));
     std::vector<int> dim_shape(shape_);
+    if (data_order_ == CNML_NCHW) {
+      std::transform(origin_shape_.cbegin(),
+                     origin_shape_.cend(),
+                     dim_shape.begin(),
+                     [](DDim::value_type in) { return static_cast<int>(in); });
+    }
     int* dim_strides = nullptr;
     CNML_CALL(cnmlSetTensorShape_V2(
         mlu_tensor_, dim_, dim_shape.data(), dim_strides));
@@ -297,15 +308,23 @@ void MLUTensor::ToFile(std::string file_name) {
 
     // trans to nchw
     std::vector<float> cpu_data_trans(count);
-    transpose(
-        cpu_data_fp32.data(), cpu_data_trans.data(), shape_, {0, 3, 1, 2});
+    if (data_order_ != CNML_NCHW) {
+      transpose(
+          cpu_data_fp32.data(), cpu_data_trans.data(), shape_, {0, 3, 1, 2});
+    }
 
     // to file
+    std::ostringstream outs;
+    for (size_t i = 0; i < count; i++) {
+      if (data_order_ == CNML_NCHW) {
+        outs << cpu_data_fp32[i] << std::endl;
+      } else {
+        outs << cpu_data_trans[i] << std::endl;
+      }
+    }
     std::ofstream of;
     of.open(file_name, std::ios::out);
-    for (size_t i = 0; i < count; i++) {
-      of << cpu_data_trans[i] << std::endl;
-    }
+    of << outs.str();
     of.close();
   } else {
     LOG(FATAL) << "mlu ptr is null ,can not dump mlu content to : " << file_name
