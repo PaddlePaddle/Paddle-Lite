@@ -186,7 +186,7 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     concat
     softmax
     ```
-    - 由于这些算子都指定在NPU上运行，因此不需要特意配置算子的输入输出名称。
+    - 由于这些算子都指定在CPU上运行，因此不需要特意配置算子的输入输出名称。
 
 - 5、指定配置文件路径
 
