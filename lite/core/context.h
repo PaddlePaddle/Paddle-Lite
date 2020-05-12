@@ -178,6 +178,9 @@ class Context<TargetType::kXPU> {
 
   std::string name() const { return "XPUContext"; }
 
+ public:
+  static std::string _multi_encoder_precision;  // NOLINT
+
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;
   static int _workspace_l3_size_per_thread;
