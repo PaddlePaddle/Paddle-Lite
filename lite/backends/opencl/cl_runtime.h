@@ -93,6 +93,8 @@ class CLRuntime {
 
   std::map<std::string, size_t>& GetDeviceInfo();
 
+  GpuType& GetGpuType();
+
  private:
   CLRuntime() { Init(); }
 

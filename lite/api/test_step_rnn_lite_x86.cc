@@ -82,7 +82,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
 
   std::vector<std::vector<float>> results;
   // i = 1
-  results.emplace_back(std::vector<float>({0.5030127, 0.496987}));
+  results.emplace_back(std::vector<float>({0.5030127f, 0.496987f}));
   auto out = predictor->GetOutput(0);
 
   std::vector<int64_t> out_shape = out->shape();
