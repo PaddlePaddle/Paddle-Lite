@@ -3,7 +3,7 @@
 # else()
 # endif()
 
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_ON_MODEL_OPTIMIZE_TOOL)
+if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_ON_MODEL_OPTIMIZE_TOOL OR (NOT LITE_WITH_LOG))
   lite_cc_library(logging SRCS logging.cc)
   set(utils_DEPS logging)
   lite_cc_test(test_logging SRCS logging_test.cc DEPS ${utils_DEPS})

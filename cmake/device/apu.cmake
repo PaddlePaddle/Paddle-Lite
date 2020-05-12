@@ -32,34 +32,3 @@ endif()
 message(STATUS "APU_DDK_INC: ${APU_DDK_INC}")
 
 include_directories("${APU_DDK_ROOT}/include")
-
-set(APU_SUB_LIB_PATH "lib64")
-if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
-    set(APU_SUB_LIB_PATH "lib64")
-endif()
-
-find_library(APU_NEURON_FILE NAMES neuron
-  PATHS ${APU_DDK_ROOT}/${APU_SUB_LIB_PATH})
-
-find_library(APU_NEURON_ADAPTER_FILE NAMES neuron_adapter
-  PATHS ${APU_DDK_ROOT}/${APU_SUB_LIB_PATH})
-
-if(NOT APU_NEURON_FILE)
-  message(FATAL_ERROR "Can not find APU_NEURON_FILE in ${APU_DDK_ROOT}")
-else()
-  message(STATUS "Found APU NEURON Library: ${APU_NEURON_FILE}")
-  add_library(apu_neuron SHARED IMPORTED GLOBAL)
-  set_property(TARGET apu_neuron PROPERTY IMPORTED_LOCATION ${APU_NEURON_FILE})
-endif()
-
-if(NOT APU_NEURON_ADAPTER_FILE)
-  message(FATAL_ERROR "Can not find APU_NEURON_ADAPTER_FILE in ${APU_DDK_ROOT}")
-else()
-  message(STATUS "Found APU NEURON ADAPTER Library: ${APU_NEURON_ADAPTER_FILE}")
-  add_library(apu_neuron_adapter SHARED IMPORTED GLOBAL)
-  set_property(TARGET apu_neuron_adapter PROPERTY IMPORTED_LOCATION ${APU_NEURON_ADAPTER_FILE})
-endif()
-
-set(apu_runtime_libs apu_neuron apu_neuron_adapter CACHE INTERNAL "apu runtime libs")
-message(STATUS "${apu_runtime_libs}")
-

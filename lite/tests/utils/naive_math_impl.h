@@ -27,7 +27,7 @@ static void basic_trans_mat_to_c4(const type* input,
     k_round = K;
   }
   const int m_loop = m_round / 4;
-  type zero_buf[K];
+  type* zero_buf = new type[K];
   memset(zero_buf, 0, K * sizeof(type));
   for (int i = 0; i < m_loop; ++i) {
     const type* in0 = input + i * 4 * ldin;
@@ -59,6 +59,7 @@ static void basic_trans_mat_to_c4(const type* input,
       *output++ = static_cast<type>(0);
     }
   }
+  delete[] zero_buf;
 }
 template <typename type>
 static void basic_trans_mat_to_c8(const type* input,

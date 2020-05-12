@@ -92,19 +92,20 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
 
   int threads = ctx->threads();
   int16_t* g_tmp_data =
-      static_cast<int16_t*>(tmp_work_space + ic_8 * ic_8_stride +
-                            oc_8 * oc_8_stride * sizeof(int32_t));
+      (int16_t*)(tmp_work_space + ic_8 * ic_8_stride +  // NOLINT
+                 oc_8 * oc_8_stride * sizeof(int32_t));
   int tmp_input_thread_stride = tile_block * ic_8 * 128;
   int tmp_output_thread_stride = tile_block * oc_8 * 128;
   int tmp_data_thread_stride_size = tmp_input_thread_stride * sizeof(int16_t) +
                                     tmp_output_thread_stride * sizeof(int32_t);
   memset(g_tmp_data, 0, tmp_data_thread_stride_size);
-  int8_t* g_trans_remain_tmp_data = static_cast<int8_t*>(
-      g_tmp_data +
-      threads * (tmp_input_thread_stride +
-                 tmp_output_thread_stride * sizeof(int32_t) / sizeof(int16_t)));
+  int8_t* g_trans_remain_tmp_data =
+      (int8_t*)(g_tmp_data +  // NOLINT
+                threads * (tmp_input_thread_stride +
+                           tmp_output_thread_stride * sizeof(int32_t) /
+                               sizeof(int16_t)));
   int32_t* g_trans_tmp_data =
-      static_cast<int32_t*>(g_trans_remain_tmp_data + threads * 128);
+      (int32_t*)(g_trans_remain_tmp_data + threads * 128);  // NOLINT
 
   // begin compute
   for (int ni = 0; ni < num; ++ni) {
@@ -121,7 +122,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
                                   win,
                                   hin);
     }
-    int32_t* output_c8 = static_cast<int32_t*>(input_c8 + ic_8 * ic_8_stride);
+    int32_t* output_c8 = (int32_t*)(input_c8 + ic_8 * ic_8_stride);  // NOLINT
     Dtype* output_ptr = output + ni * out_n_stride;
 
     const int16_t* weight_ptr = weight;
@@ -202,7 +203,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
       // *
       //*
       int32_t* dst_temp_data =
-          static_cast<int32_t*>(tmp_data + tmp_input_thread_stride);
+          (int32_t*)(tmp_data + tmp_input_thread_stride);  // NOLINT
       int16_t* b_ptr = tmp_data;
       int w_gi_stride = ic_8 * oc_8 * 64;
       for (int gi = 0; gi < 16; ++gi) {
@@ -229,7 +230,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
 
         int32_t* src_ptr = dst_temp_data + ti * 8;
         int32_t* trans_remain_tmp_i32_data =
-            static_cast<int32_t*>(trans_remain_tmp_data);
+            (int32_t*)(trans_remain_tmp_data);  // NOLINT
         int32_t* dst_ptr = output_c8 + (dst_y * wout + dst_x) * 8;
 
         if (ex == 2 && ey == 2) {

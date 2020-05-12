@@ -110,9 +110,7 @@ class Context<TargetType::kBM> {
   Context() {}
   explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() { Init(0); }
-
-  void Init(int dev_id) { TargetWrapperBM::SetDevice(dev_id); }
+  void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
   void CopySharedTo(BMContext* ctx) {}
   void* GetHandle() { return TargetWrapperBM::GetHandle(); }
 
@@ -151,14 +149,23 @@ class Context<TargetType::kXPU> {
     if (_tls_raw_ctx == nullptr) {
       _tls_raw_ctx = xdnn::create_context();
       CHECK(_tls_raw_ctx);
+      int r = xdnn::set_workspace_l3_size(_tls_raw_ctx,
+                                          _workspace_l3_size_per_thread);
+      if (r != 0) {
+        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
+                     << ", _workspace_l3_size_per_thread = "
+                     << _workspace_l3_size_per_thread;
+      }
     }
     return _tls_raw_ctx;
   }
 
   static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
-    xdnn::set_workspace_l3_size(GetRawContext(), l3_size);
+    _workspace_l3_size_per_thread = l3_size;
   }
 
+  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
+  // thread
   static void SetDev(int dev_no = 0) {
     const char* dev_env = getenv("LITE_XPU_DEV");
     if (dev_env) {
@@ -173,6 +180,7 @@ class Context<TargetType::kXPU> {
 
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;
+  static int _workspace_l3_size_per_thread;
 };
 #endif
 

@@ -16,7 +16,6 @@ message(STATUS "LITE_WITH_MLU:\t${LITE_WITH_MLU}")
 message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
-message(STATUS "LITE_WITH_ARM_LANG:\t${LITE_WITH_ARM_LANG}")
 
 set(LITE_MODEL_DIR "${THIRD_PARTY_PATH}/install")
 set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
@@ -188,15 +187,17 @@ if (LITE_WITH_CUDA OR LITE_WITH_X86)
             COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             )
-        add_custom_target(publish_inference_third_party ${TARGET}
-                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-                COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party")
+        if (LITE_WITH_CUDA)
+            add_custom_target(publish_inference_third_party ${TARGET}
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+                    COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party")
+            add_dependencies(publish_inference publish_inference_third_party)
+        endif()
         add_dependencies(publish_inference_cxx_lib bundle_full_api)
         add_dependencies(publish_inference_cxx_lib bundle_light_api)
         add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
         add_dependencies(publish_inference_cxx_lib paddle_light_api_shared)
         add_dependencies(publish_inference publish_inference_cxx_lib)
-        add_dependencies(publish_inference publish_inference_third_party)
     endif()
 endif()
 
@@ -205,6 +206,7 @@ if (LITE_WITH_X86)
         add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api//${CMAKE_BUILD_TYPE}/test_model_bin.exe" "${INFER_LITE_PUBLISH_ROOT}/bin"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
@@ -215,7 +217,8 @@ if (LITE_WITH_X86)
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_light_bundled.lib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
         )
-
+       
+        add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
         add_dependencies(publish_inference_x86_cxx_lib bundle_full_api)
         add_dependencies(publish_inference_x86_cxx_lib bundle_light_api)
         add_dependencies(publish_inference publish_inference_x86_cxx_lib)
@@ -225,6 +228,7 @@ if (LITE_WITH_X86)
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/third_party/install" "${INFER_LITE_PUBLISH_ROOT}/third_party"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/lite/demo/cxx" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
         )
         add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
         add_dependencies(publish_inference_x86_cxx_demos paddle_api_full_bundled eigen3)
@@ -238,9 +242,13 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
 
     add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
+           COMMAND rm -rf "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
+           COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/eigen3" "${INFER_LITE_PUBLISH_ROOT}/third_party"
-           )
+           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/mklml" "${INFER_LITE_PUBLISH_ROOT}/third_party/"
+       )
     add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
     add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
     add_dependencies(publish_inference publish_inference_x86_cxx_lib)
@@ -369,6 +377,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/test_cv/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/test_cv/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mask_detection" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mask_detection/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mask_detection/Makefile"
+                COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/test_libs" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/test_libs/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/test_libs/Makefile"
             )
             add_dependencies(publish_inference_android_cxx_demos logging gflags)
             add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)

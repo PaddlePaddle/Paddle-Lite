@@ -195,18 +195,6 @@ int SubgraphEngine::LaunchDeviceProgram() {
   // Copy the data of origin input tensors to the buffer of input HiAI tensors
   // init device_itensors_, device_otensors_, origin_otensors_
   auto device_program = device_program_map_[inputs_shape_];
-  for (size_t i = 0; i < device_itensors_.size(); i++) {
-    device_itensors_[i]->Init(&(device_program->device_idims[i]));
-    std::memcpy(device_itensors_[i]->GetBuffer(),
-                origin_itensors_[i]->raw_data(),
-                origin_itensors_[i]->memory_size());
-  }
-  for (size_t i = 0; i < device_otensors_.size(); i++) {
-    device_otensors_[i]->Init(&(device_program->device_odims[i]));
-  }
-  for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    origin_otensors_[i]->Resize(device_program->origin_odims[i]);
-  }
 
   // Run the HiAI model by name
   std::string key = "model_name";  // Note: key seems must be model_name
@@ -233,15 +221,43 @@ int SubgraphEngine::LaunchDeviceProgram() {
   return 0;
 }
 
+int SubgraphEngine::Build() {
+  if (device_program_map_.count(inputs_shape_) > 0) {
+    return subgraph::SUCCESS;
+  }
+  // In order to attach all of the ops of the block desc, we need to build the
+  // original program firstly.
+  BuildOriginProgram();
+  // Run InferShape() of all of ops, and convert Paddle ops to NPU/XPU IR graph
+  build_device_program_status_ = BuildDeviceProgram();
+  return build_device_program_status_;
+}
+
+void SubgraphEngine::InitDeviceTensor() {
+  auto device_program = device_program_map_[inputs_shape_];
+  for (size_t i = 0; i < device_itensors_.size(); i++) {
+    device_itensors_[i]->Init(&(device_program->device_idims[i]));
+    std::memcpy(device_itensors_[i]->GetBuffer(),
+                origin_itensors_[i]->raw_data(),
+                origin_itensors_[i]->memory_size());
+  }
+  for (size_t i = 0; i < device_otensors_.size(); i++) {
+    device_otensors_[i]->Init(&(device_program->device_odims[i]));
+  }
+  for (size_t i = 0; i < origin_otensors_.size(); i++) {
+    origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+  }
+}
+
 bool SubgraphEngine::InputShapeChanged() {
   std::vector<std::vector<int64_t>> new_shape;
   for (auto origin_itensor : origin_itensors_) {
     new_shape.push_back(origin_itensor->dims().Vectorize());
   }
-  inputs_shape_ = new_shape;
-  if (device_program_map_.count(inputs_shape_) > 0) {
+  if (inputs_shape_ == new_shape) {
     return false;
   }
+  inputs_shape_ = new_shape;
   return true;
 }
 

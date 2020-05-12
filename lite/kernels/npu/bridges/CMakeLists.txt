@@ -49,6 +49,7 @@ lite_cc_library(subgraph_bridge_fill_constant_op_npu SRCS fill_constant_op.cc DE
 lite_cc_library(subgraph_bridge_fill_constant_batch_size_like_op_npu SRCS fill_constant_batch_size_like_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_increment_op_npu SRCS increment_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_compare_op_npu SRCS compare_op.cc DEPS ${npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_expand_op_npu SRCS expand_op.cc DEPS ${npu_subgraph_bridge_deps})
 #lite_cc_library(subgraph_bridge_shape_op_npu SRCS shape_op.cc DEPS ${npu_subgraph_bridge_deps})
 
 
@@ -87,6 +88,7 @@ set(npu_subgraph_bridges
         subgraph_bridge_fill_constant_batch_size_like_op_npu
         subgraph_bridge_increment_op_npu
         subgraph_bridge_compare_op_npu
+        subgraph_bridge_expand_op_npu
         CACHE INTERNAL "npu_subgraph_bridges")
 
 message(STATUS "+++++ npu_subgraph_bridges: ${npu_subgraph_bridges}")

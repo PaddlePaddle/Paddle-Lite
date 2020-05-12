@@ -22,6 +22,9 @@
 #include <string>
 #include <vector>
 #include "lite/core/program.h"
+#ifdef LITE_WITH_X86
+#include "lite/fluid/float16.h"
+#endif
 
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_image_converter.h"
@@ -52,6 +55,24 @@ static bool write_tensorfile(const Tensor* tensor, const std::string& locate) {
   return true;
 }
 
+static bool write_precision_summary_tofile(const std::string& string,
+                                           const std::string& log_dir = "") {
+  if (log_dir == "") {
+    LOG(INFO) << "The `log_dir` of precision summary file is not set. log_dir:"
+              << log_dir;
+    return false;
+  }
+  FILE* fp = fopen(log_dir.c_str(), "a");
+  if (fp == nullptr) {
+    LOG(INFO) << "Open precision summary file:" << log_dir << "failed.";
+    return false;
+  } else {
+    fprintf(fp, "%s\n", string.c_str());
+  }
+  fclose(fp);
+  return true;
+}
+
 class PrecisionProfiler {
  public:
   // TODO(ysh329): need to remove `explicit PrecisionProfiler`
@@ -67,7 +88,7 @@ class PrecisionProfiler {
     using std::left;
     using std::fixed;
     STL::stringstream ss;
-    ss << "========================================= "
+    ss << "\n\n========================================= "
        << "Detailed Precision Profiler Summary "
        << "=========================================" << std::endl;
     ss << setw(45) << left << "operator:(kernel_info)"
@@ -77,6 +98,13 @@ class PrecisionProfiler {
        << " " << setw(15) << left << "std_deviation"
        << " " << setw(15) << left << "ave_grow_rate*" << std::endl;
 
+    // write to file with path: `log_dir`
+    if (log_dir_ != "") {
+      FILE* fp = fopen(log_dir_.c_str(), "a");
+      std::string header_str{ss.str()};
+      fprintf(fp, "%s\n", header_str.c_str());
+      fclose(fp);
+    }
     return ss.str();
   }
 
@@ -194,6 +222,7 @@ class PrecisionProfiler {
       }
 #ifdef LITE_WITH_OPENCL
     } else if (target_type == TARGET(kOpenCL)) {
+      CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
           paddle::lite::CLImageConverterDefault default_convertor;
@@ -360,8 +389,12 @@ class PrecisionProfiler {
         }
       }
     }
+    write_precision_summary_tofile(ss.str(), log_dir_);
     return ss.str();
   }
+
+ private:
+  std::string log_dir_{"/storage/emulated/0/precision.log"};
 };
 
 }  // namespace profile
