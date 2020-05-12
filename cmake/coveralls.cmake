@@ -20,6 +20,9 @@ function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
     # will be converted from the format "1;2;3" to "1 2 3".
     set(COVERAGE_SRCS "")
     foreach (SINGLE_SRC ${_COVERAGE_SRCS})
+        if ("${SINGLE_SRC}" MATCHES "/Paddle-Lite/Paddle-Lite/third-party/*")
+            continue()
+        endif()
         set(COVERAGE_SRCS "${COVERAGE_SRCS}*${SINGLE_SRC}")
     endforeach()
 
@@ -94,6 +97,7 @@ if(WITH_COVERAGE)
     foreach(PADDLE_SRC ${PADDLE_SOURCES})
         set(PADDLE_SRCS "${PADDLE_SRCS};${CMAKE_SOURCE_DIR}/${PADDLE_SRC}")
     endforeach()
+
     set(COVERALLS_UPLOAD ON)
     code_coverage(
         "${PADDLE_SRCS}"
