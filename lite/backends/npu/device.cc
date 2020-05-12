@@ -54,10 +54,10 @@ bool ReadFromOMFile(domi::ModelBufferData* om_model_buff,
 }
 
 std::shared_ptr<hiai::AiModelMngerClient> Device::Build(
-    const std::string model_name,               // NOLINT
-    std::vector<ge::Operator>& input_nodes,     // NOLINT
-    std::vector<ge::Operator>& output_nodes,    // NOLINT
-    const std::string subgraph_model_name = ""  // NOLINT
+    const std::string model_name,                     // NOLINT
+    std::vector<ge::Operator>& input_nodes,           // NOLINT
+    std::vector<ge::Operator>& output_nodes,          // NOLINT
+    const std::string subgraph_model_cache_name = ""  // NOLINT
     ) {
   VLOG(3) << "[NPU] Build model";
   // Build the HiAI IR graph to the HiAI om model
@@ -68,11 +68,12 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Build(
   domi::HiaiIrBuild ir_build;
   domi::ModelBufferData om_model_buf;
 
-  if (IsFileExists(subgraph_model_name)) {
-    VLOG(3) << subgraph_model_name << " exists. Will read om model from file";
-    ReadFromOMFile(&om_model_buf, subgraph_model_name);
+  if (IsFileExists(subgraph_model_cache_name)) {
+    VLOG(3) << subgraph_model_cache_name
+            << " exists. Will read om model from file";
+    ReadFromOMFile(&om_model_buf, subgraph_model_cache_name);
   } else {
-    VLOG(3) << subgraph_model_name
+    VLOG(3) << subgraph_model_cache_name
             << " does not exist. Will write om model to file";
     if (!ir_build.CreateModelBuff(om_model, om_model_buf)) {
       LOG(WARNING) << "[NPU] CreateModelBuff failed!";
@@ -83,7 +84,7 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Build(
       ir_build.ReleaseModelBuff(om_model_buf);
       return nullptr;
     }
-    WriteToOMFile(om_model_buf, subgraph_model_name);
+    WriteToOMFile(om_model_buf, subgraph_model_cache_name);
   }
 
   // Create a HiAI model manager client to load the HiAI om model

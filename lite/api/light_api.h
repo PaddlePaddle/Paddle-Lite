@@ -79,8 +79,7 @@ class LITE_API LightPredictor {
   std::vector<std::string> GetOutputNames();
   void PrepareFeedFetch();
 
-#ifdef LITE_WITH_NPU
-  void SetSubgraphModelDir(std::string subgraph_model_dir) {
+  void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
     for (auto& inst : program_->instructions()) {
       auto kernel = const_cast<Instruction&>(inst).mutable_kernel();
       if (kernel->op_type() == "subgraph") {
@@ -89,7 +88,6 @@ class LITE_API LightPredictor {
       }
     }
   }
-#endif
 
  private:
   void Build(const std::string& lite_model_file,

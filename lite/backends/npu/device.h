@@ -41,11 +41,11 @@ class Device {
   // Build the HiAI IR graph to om model, return HiAI model manager client to
   // load om model and run inference.
   std::shared_ptr<hiai::AiModelMngerClient> Build(
-      const std::string model_name,             // NOLINT
-      std::vector<ge::Operator>& input_nodes,   // NOLINT
-      std::vector<ge::Operator>& output_nodes,  // NOLINT
-      const std::string subgraph_model_name     // NOLINT
-      );                                        // NOLINT
+      const std::string model_name,                // NOLINT
+      std::vector<ge::Operator>& input_nodes,      // NOLINT
+      std::vector<ge::Operator>& output_nodes,     // NOLINT
+      const std::string subgraph_model_cache_name  // NOLINT
+      );                                           // NOLINT
 
  private:
   int freq_level_{3};
