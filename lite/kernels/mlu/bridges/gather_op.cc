@@ -37,20 +37,18 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_dims = output->dims().Vectorize();
 
   CHECK(graph->HasNode(x_var_name));
-  auto x_tensor = graph->GetNode(x_var_name)->mlu_tensor();
-  auto index_tensor = graph->GetNode(index_var_name)->mlu_tensor();
+  auto x_tensor = graph->GetNode(x_var_name);
+  auto index_tensor = graph->GetNode(index_var_name);
 
-  auto output_tensor = graph
-                           ->AddNode(out_var_name,
-                                     output_dims,
-                                     CNML_TENSOR,
-                                     CNML_NCHW,
-                                     graph->FPType())
-                           ->mlu_tensor();
+  auto output_tensor = graph->AddNode(
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
 
   cnmlBaseOp_t gather_op;
-  CNML_CALL(cnmlCreateGatherV2Op(
-      &gather_op, x_tensor, index_tensor, output_tensor, CNML_DIM_N));
+  CNML_CALL(cnmlCreateGatherV2Op(&gather_op,
+                                 x_tensor->mlu_tensor(),
+                                 index_tensor->mlu_tensor(),
+                                 output_tensor->mlu_tensor(),
+                                 CNML_DIM_N));
   graph->FuseOp(gather_op);
   CNML_CALL(cnmlDestroyBaseOp(&gather_op));
   return SUCCESS;
