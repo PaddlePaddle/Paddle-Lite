@@ -83,8 +83,8 @@ class LITE_API LightPredictor {
     for (auto& inst : program_->instructions()) {
       auto kernel = const_cast<Instruction&>(inst).mutable_kernel();
       if (kernel->op_type() == "subgraph") {
-        kernel->Param<operators::SubgraphParam>().subgraph_model_dir =
-            subgraph_model_dir;
+        kernel->Param<operators::SubgraphParam>().subgraph_model_cache_dir =
+            subgraph_model_cache_dir;
       }
     }
   }
