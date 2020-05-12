@@ -237,9 +237,7 @@ void SubgraphEngine::InitDeviceTensor() {
   auto device_program = device_program_map_[inputs_shape_];
   for (size_t i = 0; i < device_itensors_.size(); i++) {
     if (device_itensors_[i]->GetBuffer() != origin_itensors_[i]->raw_data()) {
-      auto itype =
-          subgraph::npu::CvtPrecisionType(origin_itensors_[i]->precision());
-      device_itensors_[i]->Init(&(device_program->device_idims[i]), itype);
+      device_itensors_[i]->Init(&(device_program->device_idims[i]));
       std::memcpy(device_itensors_[i]->GetBuffer(),
                   origin_itensors_[i]->raw_data(),
                   origin_itensors_[i]->memory_size());
@@ -248,7 +246,7 @@ void SubgraphEngine::InitDeviceTensor() {
           std::make_shared<Buffer>(device_itensors_[i]->GetBuffer(),
                                    lite_api::TargetType::kHost,
                                    device_itensors_[i]->GetSize());
-      origin_itensors_[i]->ResetBuffer(buffer);
+      origin_itensors_[i]->ResetBuffer(buffer, device_itensors_[i]->GetSize());
     }
   }
   for (size_t i = 0; i < device_otensors_.size(); i++) {
