@@ -3856,7 +3856,7 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
                                        int height,
                                        int width,
                                        bool flag_relu,
-                                       float* bias,
+                                       const float* bias,
                                        bool flag_bias,
                                        Dtype* trash_ptr,
                                        const float* scale) {
@@ -3878,6 +3878,7 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
   int w_stride = we - ws;
   int valid_w = (we > width ? width : we) - ws;
   int cnt = valid_w / 4;
+  int remain = valid_w & 3;
 
   float32x4_t w_scale0 = vld1q_f32(scale);
   float32x4_t w_scale1 = vld1q_f32(scale + 4);
@@ -3933,10 +3934,10 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
                           w_bias1,
                           flag_relu);
     }
-    if (we > width) {
+    if (remain > 0) {
       int offset = 32 * cnt;
       din_hei_ptr = ptr_din + offset;
-      for (int j = ws + cnt * 4; j < width; ++j) {
+      for (int j = 0; j < remain; ++j) {
         if (flag_bias) {
           *(doutc0_ptr++) =
               cvt_kernel<Dtype>(din_hei_ptr[0], scale[0], bias[0], flag_relu);

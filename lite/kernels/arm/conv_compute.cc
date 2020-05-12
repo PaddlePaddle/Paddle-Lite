@@ -73,7 +73,6 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     // VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && ks_equal &&
              no_dilation) {
-    // TODO(MyPandaShaoxiang): winograd conv support any pad
     impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking winograd conv";
   } else if (param.groups == 1 && kw == 3 && stride == 2 &&
@@ -121,9 +120,9 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
-  } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
-             kps_equal && no_dilation) {
-    impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
+  } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
+             pads_equal) {
+    impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>;
@@ -166,9 +165,9 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
-  } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
-             kps_equal && no_dilation) {
-    impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
+  } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
+             pads_equal) {
+    impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>;

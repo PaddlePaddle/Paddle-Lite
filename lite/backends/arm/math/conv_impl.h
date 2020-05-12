@@ -359,6 +359,35 @@ void conv_compute_2x2_3x3_small(const float* input,
                                 const float* bias,
                                 const operators::ConvParam& param,
                                 ARMContext* ctx);
+void input_trans_c8_4x4_int8(const int8_t* src,
+                             int src_stride,
+                             int src_h_stride,
+                             int16_t* dest,
+                             int dest_stride,
+                             int dest_h_stride);
+void output_trans_c8_post_2x4_int8(const int32_t* src,
+                                   int src_stride,
+                                   int src_h_stride,
+                                   int32_t* dest,
+                                   int dest_stride,
+                                   int dest_h_stride);
+void weight_trans_c8_4x4_int8(
+    int16_t* dest, const int8_t* src, int ic, int oc, void* workspace);
+template <typename Dtype>
+void conv_compute_2x2_3x3_int8(const int8_t* input,
+                               Dtype* output,
+                               int num,
+                               int chout,
+                               int hout,
+                               int wout,
+                               int chin,
+                               int hin,
+                               int win,
+                               const int16_t* weight,
+                               const float* bias,
+                               float* scale,
+                               const operators::ConvParam& param,
+                               ARMContext* ctx);
 
 template <typename Dtype>
 void im2col(const Dtype* data_im,

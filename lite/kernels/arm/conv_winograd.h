@@ -15,11 +15,11 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -44,7 +44,27 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   bool choose_small_{false};
   int wino_iw{8};
 };
+template <PrecisionType OutType>
+class WinogradConv<PRECISION(kInt8), OutType>
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
+ public:
+  WinogradConv() = default;
+  ~WinogradConv() {}
+  virtual void PrepareForRun();
+  virtual void ReInitWhenNeeded();
+  virtual void Run();
 
+ protected:
+  using param_t = operators::ConvParam;
+  Tensor weights_;
+  Tensor bias_;
+  DDim last_shape_;
+  int workspace_size_{0};
+  int last_function_{-1};
+  bool choose_small_{true};
+  int wino_iw{4};
+  std::vector<float> w_scale_;
+};
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
