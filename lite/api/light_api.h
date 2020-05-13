@@ -91,14 +91,14 @@ class LITE_API LightPredictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool model_from_memory = false);
 
-  void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
+  void BuildRuntimeProgram(const cpp::ProgramDesc* program_desc);
 
   void DequantizeWeight();
 
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
-  cpp::ProgramDesc cpp_program_desc_;
+  cpp::ProgramDesc program_desc_;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
 };

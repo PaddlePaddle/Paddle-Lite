@@ -28,17 +28,16 @@ namespace host {
 
 class StepExecutor {
  public:
-  StepExecutor(cpp::BlockDesc *block_desc,
-               Scope *scope,
-               const std::vector<std::string> &valid_places);
+  StepExecutor(int block_idx, cpp::ProgramDesc *program_desc, Scope *scope)
+      : block_idx_(block_idx), program_desc_(program_desc), scope_(scope) {}
 
   void Build();
   void Run();
 
  private:
-  cpp::BlockDesc *block_desc_{nullptr};
+  int block_idx_{-1};
+  cpp::ProgramDesc *program_desc_{nullptr};
   Scope *scope_{nullptr};
-  std::vector<Place> valid_places_;
   std::vector<Instruction> insts_;
 };
 

@@ -24,16 +24,16 @@ namespace lite {
 void LightPredictor::Build(const std::string& lite_model_file,
                            bool model_from_memory) {
   if (model_from_memory) {
-    LoadModelNaiveFromMemory(lite_model_file, scope_.get(), &cpp_program_desc_);
+    LoadModelNaiveFromMemory(lite_model_file, scope_.get(), &program_desc_);
   } else {
-    LoadModelNaiveFromFile(lite_model_file, scope_.get(), &cpp_program_desc_);
+    LoadModelNaiveFromFile(lite_model_file, scope_.get(), &program_desc_);
   }
 
   // For weight quantization of post training, load the int8/16 weights
   // for optimized model, and dequant it to fp32.
   DequantizeWeight();
 
-  BuildRuntimeProgram(cpp_program_desc_);
+  BuildRuntimeProgram(&program_desc_);
   PrepareFeedFetch();
 }
 
@@ -45,15 +45,15 @@ void LightPredictor::Build(const std::string& model_dir,
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_dir, "", "", scope_.get(), &cpp_program_desc_);
+      LoadModelPb(model_dir, "", "", scope_.get(), &program_desc_);
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
         LoadModelNaiveFromMemory(
-            model_buffer, param_buffer, scope_.get(), &cpp_program_desc_);
+            model_buffer, param_buffer, scope_.get(), &program_desc_);
       } else {
-        LoadModelNaive(model_dir, scope_.get(), &cpp_program_desc_);
+        LoadModelNaive(model_dir, scope_.get(), &program_desc_);
       }
       break;
     }
@@ -62,7 +62,7 @@ void LightPredictor::Build(const std::string& model_dir,
   }
 
   DequantizeWeight();
-  BuildRuntimeProgram(cpp_program_desc_);
+  BuildRuntimeProgram(&program_desc_);
   PrepareFeedFetch();
 }
 
@@ -111,7 +111,7 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
-  auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
+  auto current_block = program_desc_.GetBlock<cpp::BlockDesc>(0);
   std::vector<cpp::OpDesc*> feeds;
   std::vector<cpp::OpDesc*> fetchs;
   for (size_t i = 0; i < current_block->OpsSize(); i++) {
@@ -134,10 +134,10 @@ void LightPredictor::PrepareFeedFetch() {
   }
 }
 
-void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
+void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc* program_desc) {
   std::vector<Instruction> insts;
   // 1. Create op first
-  Program program(prog, scope_, {});
+  Program program(program_desc, scope_, {});
 
 // 2. Create Instructs
 #ifdef LITE_WITH_OPENCL
@@ -209,8 +209,8 @@ void LightPredictor::DequantizeWeight() {
   };
 
   Tensor tmp_tensor;
-  for (size_t i = 0; i < cpp_program_desc_.BlocksSize(); i++) {
-    auto* block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(i);
+  for (size_t i = 0; i < program_desc_.BlocksSize(); i++) {
+    auto* block = program_desc_.GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {
       auto* op_desc = block->GetOp<cpp::OpDesc>(k);
       if (is_weight_quantized_op(op_desc)) {

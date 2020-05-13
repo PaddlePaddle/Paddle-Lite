@@ -35,12 +35,16 @@ class WhileOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "while"; }
-  void SetSubBlock(cpp::BlockDesc *desc) { sub_block_ = desc; }
+
+  void SetProgramDesc(cpp::ProgramDesc *program_desc) {
+    param_.program_desc = program_desc;
+  }
+  cpp::ProgramDesc *GetProgramDesc() { return param_.program_desc; }
 
  private:
   mutable WhileParam param_;
-  cpp::BlockDesc *sub_block_;
 };
 
 }  // namespace operators

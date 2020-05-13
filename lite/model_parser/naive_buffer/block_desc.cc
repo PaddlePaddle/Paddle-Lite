@@ -43,6 +43,12 @@ size_t BlockDesc::VarsSize() const { return GetVarListBuilder().size(); }
 void BlockDesc::ClearVars() { GetMutableVarListBuilder()->Clear(); }
 
 template <>
+const proto::VarDesc& BlockDesc::GetVar<proto::VarDesc>(int32_t idx) const {
+  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  return GetVarListBuilder().Get(idx);
+}
+
+template <>
 proto::VarDesc* BlockDesc::GetVar<proto::VarDesc>(int32_t idx) {
   CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
   return GetMutableVarListBuilder()->GetMutable(idx);
@@ -56,6 +62,12 @@ proto::VarDesc* BlockDesc::AddVar<proto::VarDesc>() {
 size_t BlockDesc::OpsSize() const { return GetOpListBuilder().size(); }
 
 void BlockDesc::ClearOps() { return GetMutableOpListBuilder()->Clear(); }
+
+template <>
+const proto::OpDesc& BlockDesc::GetOp<proto::OpDesc>(int32_t idx) const {
+  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  return GetOpListBuilder().Get(idx);
+}
 
 template <>
 proto::OpDesc* BlockDesc::GetOp<proto::OpDesc>(int32_t idx) {

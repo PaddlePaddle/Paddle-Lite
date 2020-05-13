@@ -30,11 +30,14 @@ int Engine::BuildOriginProgram() {
   // TODO(hong19860320) The block_desc need to be divided into subgraphs during
   // the exection time. But only see them as a subgraph now.
   origin_program_.clear();
-  for (size_t op_idx = 0; op_idx < block_desc_->OpsSize(); op_idx++) {
-    auto op_desc = block_desc_->GetOp<cpp::OpDesc>(op_idx);
+  CHECK(block_idx_ >= 0 && block_idx_ < program_desc_->BlocksSize());
+  auto* block_desc = program_desc_->GetBlock<cpp::BlockDesc>(block_idx_);
+  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+    auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
     auto op = LiteOpRegistry::Global().Create(op_desc->Type());
+    CHECK(op) << "no Op found for " << op_type;
     op->Attach(*op_desc, scope_);
     std::unique_ptr<KernelBase> picked_kernel;
     if (op_desc->HasAttr(kKernelTypeAttr)) {

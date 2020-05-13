@@ -61,8 +61,7 @@ class Optimizer {
 
     if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
-          {"graph_visualize_pass",
-           "lite_quant_dequant_fuse_pass",         //
+          {"lite_quant_dequant_fuse_pass",         //
            "weight_quantization_preprocess_pass",  //
            "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",               //
@@ -137,8 +136,7 @@ class Optimizer {
 
            "mlu_postprocess_pass",
 
-           "memory_optimize_pass",
-           "graph_visualize_pass"}};
+           "memory_optimize_pass"}};
 
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of
@@ -167,14 +165,18 @@ class Optimizer {
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
   // Generate a new program based on the mir graph.
-  std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
+  std::vector<std::unique_ptr<RuntimeProgram>> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
-    pass->Apply(graph_[0]);
-    auto program = pass->GenProgram();
-    CHECK(exec_scope_);
-    program->set_exec_scope(exec_scope_);
-    return program;
+    std::vector<std::unique_ptr<RuntimeProgram>> programs;
+    for (int block_idx = 0; block_idx < graph_.size(); block_idx++) {
+      pass->Apply(graph_[block_idx]);
+      auto program = pass->GenProgram();
+      CHECK(exec_scope_);
+      program->set_exec_scope(exec_scope_);
+      programs.emplace_back(std::move(program));
+    }
+    return programs;
   }
 
   void InitTargetTypeTransformPass() {
@@ -189,14 +191,14 @@ class Optimizer {
   // Generate C++ code which combines the inference program, model and weights.
   void GenCode(const std::string& code_dir);
 
-  const mir::SSAGraph& ssa_graph() const {
-    CHECK(graph_[0]);
-    return *graph_[0];
+  const mir::SSAGraph& ssa_graph(int block_idx) const {
+    CHECK(graph_[block_idx]);
+    return *graph_[block_idx];
   }
 
-  mir::SSAGraph* mutable_ssa_graph() {
-    CHECK(graph_[0]);
-    return graph_[0].get();
+  mir::SSAGraph* mutable_ssa_graph(int block_idx) {
+    CHECK(graph_[block_idx]);
+    return graph_[block_idx].get();
   }
 
   lite::Scope* exec_scope() { return exec_scope_; }
@@ -223,7 +225,7 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        for (int block_idx = 0; block_idx < 1 /*graph_.size()*/; block_idx++) {
+        for (int block_idx = 0; block_idx < graph_.size(); block_idx++) {
           pass->Apply(graph_[block_idx]);
         }
         LOG(INFO) << "== Finished running: " << x;

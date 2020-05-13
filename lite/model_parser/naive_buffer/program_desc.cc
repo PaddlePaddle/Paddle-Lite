@@ -23,6 +23,13 @@ size_t ProgramDesc::BlocksSize() const { return GetBlockListBuilder().size(); }
 void ProgramDesc::ClearBlocks() { GetMutableBlockListBuilder()->Clear(); }
 
 template <>
+const proto::BlockDesc& ProgramDesc::GetBlock<proto::BlockDesc>(
+    int32_t idx) const {
+  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  return GetBlockListBuilder().Get(idx);
+}
+
+template <>
 proto::BlockDesc* ProgramDesc::GetBlock<proto::BlockDesc>(int32_t idx) {
   CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
   return GetMutableBlockListBuilder()->GetMutable(idx);

@@ -28,17 +28,19 @@ namespace lite {
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
                           bool record_info) {
-  if (!program_) {
+  if (!programs_.size()) {
     GenRuntimeProgram();
   }
-  program_->SaveOpInfosToProgram(&program_desc_);
-  program_->UpdateVarsOfProgram(&program_desc_);
+  for (int block_idx = 0; block_idx < programs_.size(); block_idx++) {
+    programs_[block_idx]->SaveOpInfosToProgram(&program_desc_, block_idx);
+    programs_[block_idx]->UpdateVarsOfProgram(&program_desc_, block_idx);
+  }
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
-      SaveModelPb(dir, *program_->exec_scope(), program_desc_, true);
+      SaveModelPb(dir, *programs_[0]->exec_scope(), program_desc_, true);
       break;
     case lite_api::LiteModelType::kNaiveBuffer:
-      SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
+      SaveModelNaive(dir, *programs_[0]->exec_scope(), program_desc_);
       break;
     default:
       LOG(FATAL) << "Unknown model type";
@@ -52,17 +54,20 @@ void Predictor::SaveModel(const std::string &dir,
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   std::set<std::string> ops_info;
   std::set<std::string> kernels_info;
-  const auto &instructions_ = program_->instructions();
-  for (auto &node : instructions_) {
-    // parse op type infomation
-    auto op = node.op()->op_info();
-    ops_info.insert(op->Type());
-    // parse kernel type information
-    std::string kernel_type_str =
-        node.kernel()->op_type() + "," + TargetRepr(node.kernel()->target()) +
-        "," + PrecisionRepr(node.kernel()->precision()) + "," +
-        DataLayoutRepr(node.kernel()->layout()) + "," + node.kernel()->alias();
-    kernels_info.insert(kernel_type_str);
+  for (int block_idx = 0; block_idx < programs_.size(); block_idx++) {
+    const auto &instructions_ = programs_[block_idx]->instructions();
+    for (auto &node : instructions_) {
+      // parse op type infomation
+      auto op = node.op()->op_info();
+      ops_info.insert(op->Type());
+      // parse kernel type information
+      std::string kernel_type_str =
+          node.kernel()->op_type() + "," + TargetRepr(node.kernel()->target()) +
+          "," + PrecisionRepr(node.kernel()->precision()) + "," +
+          DataLayoutRepr(node.kernel()->layout()) + "," +
+          node.kernel()->alias();
+      kernels_info.insert(kernel_type_str);
+    }
   }
 
   // get souce_file name from op type and kernel type
@@ -153,14 +158,14 @@ std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
 // append the names of inputs and outputs into input_names_ and output_names_
 void Predictor::PrepareFeedFetch() {
-  if (!program_) {
+  if (!programs_.size()) {
     GenRuntimeProgram();
   }
 
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
-  const auto &insts = program_->instructions();
-  for (size_t i = 0; i < program_->num_instructions(); i++) {
+  const auto &insts = programs_[0]->instructions();
+  for (size_t i = 0; i < programs_[0]->num_instructions(); i++) {
     const auto &op = insts[i].op()->op_info();
     if (op->Type() == "feed") {
       feeds.push_back(op);
@@ -230,7 +235,9 @@ const cpp::ProgramDesc &Predictor::program_desc() const {
   return program_desc_;
 }
 
-const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
+const RuntimeProgram &Predictor::runtime_program() const {
+  return *programs_[0];
+}
 
 void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
@@ -283,13 +290,11 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  Build(program_desc_, valid_places, passes);
+  Build(valid_places, passes);
 }
 
-void Predictor::Build(const cpp::ProgramDesc &desc,
-                      const std::vector<Place> &valid_places,
+void Predictor::Build(const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
-  program_desc_ = desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   for (auto &valid_place : valid_places) {
@@ -325,7 +330,7 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
                         Place{TARGET(kARM), PRECISION(kInt8)});
   }
 
-  Program program(desc, scope_, inner_places);
+  Program program(&program_desc_, scope_, inner_places);
 
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
@@ -338,8 +343,10 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
 }
 
 void Predictor::GenRuntimeProgram() {
-  program_ = optimizer_.GenRuntimeProgram();
-  CHECK_EQ(exec_scope_, program_->exec_scope());
+  programs_ = optimizer_.GenRuntimeProgram();
+  for (int block_idx = 0; block_idx < programs_.size(); block_idx++) {
+    CHECK_EQ(exec_scope_, programs_[block_idx]->exec_scope());
+  }
   program_generated_ = true;
 }
 

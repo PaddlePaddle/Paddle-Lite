@@ -416,12 +416,13 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   // subgraph and sub_block_idx is set as a attribute of subgraph op,
   // sub_block_idx < 0 means it's a new subgraph op
   int sub_block_idx = -(subgraph_idx + 1);
-  auto sub_block_desc = new cpp::BlockDesc();
+  auto *sub_program_desc = new cpp::ProgramDesc();
+  auto *sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
   sub_block_desc->ClearOps();
   sub_block_desc->ClearVars();
   for (auto &op_node : subgraph_nodes) {
-    auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
-    *sub_block_op_desc = *op_node->AsStmt().op_info();
+    auto *sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
+    *sub_op_desc = *op_node->AsStmt().op_info();
   }
   subgraph_op_desc.SetAttr<int32_t>("sub_block", sub_block_idx);
 
@@ -499,7 +500,7 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   subgraph_op_desc.SetOutput("Outputs", output_var_names);
   auto subgraph_op = LiteOpRegistry::Global().Create("subgraph");
   static_cast<operators::SubgraphOp *>(subgraph_op.get())
-      ->SetSubBlock(sub_block_desc);
+      ->SetProgramDesc(sub_program_desc);
   auto any_op = (*subgraph_nodes.begin())->AsStmt().op();
   subgraph_op->Attach(subgraph_op_desc, any_op->scope());
 

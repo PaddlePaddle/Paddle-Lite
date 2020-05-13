@@ -134,16 +134,34 @@ class VariablePlaceInferencePass : public DebugPass {
             x_in->AsArg().type = type;
           }
         } else if (x_in->AsArg().type->target() == TARGET(kUnk) &&
-                   x_in->AsArg().type->precision() != PRECISION(kUnk) &&
-                   x_in->AsArg().type->layout() == DATALAYOUT(kUnk)) {
+                   x_in->AsArg().type->IsTensor() && type->IsTensor()) {
           // If is quantization, infer the Int8 type.
           if (type->precision() == PRECISION(kInt8)) {
             x_in->AsArg().type = type;
           } else {
-            PrecisionType tmp_ptype = x_in->AsArg().type->precision();
-            x_in->AsArg().type = LiteType::GetTensorTy(
-                type->target(), tmp_ptype, type->layout());
+            auto precision = x_in->AsArg().type->precision();
+            auto layout = x_in->AsArg().type->layout();
+            if (precision == PRECISION(kUnk)) {
+              precision = type->precision();
+            }
+            if (layout == DATALAYOUT(kUnk)) {
+              layout = type->layout();
+            }
+            x_in->AsArg().type =
+                LiteType::GetTensorTy(type->target(), precision, layout);
           }
+        } else if (x_in->AsArg().type->target() == TARGET(kUnk) &&
+                   x_in->AsArg().type->IsTensorList() && type->IsTensorList()) {
+          auto precision = x_in->AsArg().type->precision();
+          auto layout = x_in->AsArg().type->layout();
+          if (precision == PRECISION(kUnk)) {
+            precision = type->precision();
+          }
+          if (layout == DATALAYOUT(kUnk)) {
+            layout = type->layout();
+          }
+          x_in->AsArg().type =
+              LiteType::GetTensorListTy(type->target(), precision, layout);
         }
       }
 
@@ -165,16 +183,35 @@ class VariablePlaceInferencePass : public DebugPass {
             x_out->AsArg().type = type;
           }
         } else if (x_out->AsArg().type->target() == TARGET(kUnk) &&
-                   x_out->AsArg().type->precision() != PRECISION(kUnk) &&
-                   x_out->AsArg().type->layout() == DATALAYOUT(kUnk)) {
+                   x_out->AsArg().type->IsTensor() && type->IsTensor()) {
           // If is quantization, infer the Int8 type.
           if (type->precision() == PRECISION(kInt8)) {
             x_out->AsArg().type = type;
           } else {
-            PrecisionType tmp_ptype = x_out->AsArg().type->precision();
-            x_out->AsArg().type = LiteType::GetTensorTy(
-                type->target(), tmp_ptype, type->layout());
+            auto precision = x_out->AsArg().type->precision();
+            auto layout = x_out->AsArg().type->layout();
+            if (precision == PRECISION(kUnk)) {
+              precision = type->precision();
+            }
+            if (layout == DATALAYOUT(kUnk)) {
+              layout = type->layout();
+            }
+            x_out->AsArg().type =
+                LiteType::GetTensorTy(type->target(), precision, layout);
           }
+        } else if (x_out->AsArg().type->target() == TARGET(kUnk) &&
+                   x_out->AsArg().type->IsTensorList() &&
+                   type->IsTensorList()) {
+          auto precision = x_out->AsArg().type->precision();
+          auto layout = x_out->AsArg().type->layout();
+          if (precision == PRECISION(kUnk)) {
+            precision = type->precision();
+          }
+          if (layout == DATALAYOUT(kUnk)) {
+            layout = type->layout();
+          }
+          x_out->AsArg().type =
+              LiteType::GetTensorListTy(type->target(), precision, layout);
         }
       }
     }

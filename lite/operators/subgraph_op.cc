@@ -39,8 +39,8 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       op_desc.GetAttr<std::vector<std::string>>("input_data_names");
   param_.output_data_names =
       op_desc.GetAttr<std::vector<std::string>>("output_data_names");
-  CHECK(param_.sub_block_desc);
-  param_.sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
+  CHECK(param_.program_desc);
+  param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   param_.scope = scope;
   CHECK(param_.scope);
   return true;

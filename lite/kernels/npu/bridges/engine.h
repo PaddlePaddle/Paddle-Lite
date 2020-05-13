@@ -30,13 +30,13 @@ class Engine {
  public:
   Engine(KernelContext *ctx,
          int block_idx,
-         cpp::BlockDesc *block_desc,
+         cpp::ProgramDesc *program_desc,
          const std::vector<std::string> &input_names,
          const std::vector<std::string> &output_names,
          lite::Scope *scope)
       : ctx_(ctx),
         block_idx_(block_idx),
-        block_desc_(block_desc),
+        program_desc_(program_desc),
         input_names_(input_names),
         output_names_(output_names),
         scope_(scope) {}
@@ -58,8 +58,8 @@ class Engine {
   virtual bool InputShapeChanged();
 
   KernelContext *ctx_{nullptr};
-  int block_idx_;
-  cpp::BlockDesc *block_desc_;
+  int block_idx_{-1};
+  cpp::ProgramDesc *program_desc_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   Scope *scope_{nullptr};

@@ -15,36 +15,36 @@
 #include "lite/kernels/host/while_compute.h"
 #include <unordered_map>
 #include <utility>
+#include "lite/operators/conditional_block_op.h"
+#include "lite/operators/subgraph_op.h"
+#include "lite/operators/while_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
 
-StepExecutor::StepExecutor(cpp::BlockDesc *block_desc,
-                           Scope *scope,
-                           const std::vector<std::string> &valid_places)
-    : block_desc_(block_desc), scope_(scope) {
-  for (auto &valid_place : valid_places) {
-    auto parts = Split(valid_place, "/");
-    CHECK_EQ(parts.size(), 3);
-    TargetType target = static_cast<TargetType>(std::atoi(parts[0].c_str()));
-    PrecisionType precision =
-        static_cast<PrecisionType>(std::atoi(parts[1].c_str()));
-    DataLayoutType layout =
-        static_cast<DataLayoutType>(std::atoi(parts[2].c_str()));
-    valid_places_.push_back(Place(target, precision, layout));
-  }
-}
-
 void StepExecutor::Build() {
-  for (int op_idx = 0; op_idx < block_desc_->OpsSize(); op_idx++) {
-    auto op_desc = block_desc_->GetOp<cpp::OpDesc>(op_idx);
+  CHECK(block_idx_ >= 0 && block_idx_ < program_desc_->BlocksSize());
+  auto *block_desc = program_desc_->GetBlock<cpp::BlockDesc>(block_idx_);
+  for (int op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+    auto *op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
     if (op_type == "feed" || op_type == "fetch") continue;
     // Create op and pick up the best kernel
     auto op = LiteOpRegistry::Global().Create(op_type);
+    CHECK(op) << "no Op found for " << op_type;
+    if (op_type == "while") {
+      static_cast<operators::WhileOpLite *>(op.get())->SetProgramDesc(
+          program_desc_);
+    } else if (op_type == "conditional_block") {
+      /*static_cast<operators::ConditionalBlockOpLite*>(op.get())
+          ->SetProgramDesc(program_desc);*/
+    } else if (op_type == "subgraph") {
+      static_cast<operators::SubgraphOp *>(op.get())->SetProgramDesc(
+          program_desc_);
+    }
     op->Attach(*op_desc, scope_);
     std::unique_ptr<KernelBase> picked_kernel;
     if (op_desc->HasAttr(kKernelTypeAttr)) {
@@ -66,46 +66,17 @@ void StepExecutor::Build() {
       picked_kernel = std::move(*it);
     } else {
       VLOG(3) << "The attr '" << kKernelTypeAttr
-              << "' not found, pick the best kernel for " << op_type;
-      auto kernels = op->CreateKernels(valid_places_);
-      CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
-      // Obtain the precision types of input arguments whose types are tensors.
-      std::unordered_map<std::string, const Type *> in_types;
-      auto in_names = op->op_info()->input_names();
-      for (auto &in_name : in_names) {
-        auto in_var = scope_->FindVar(in_name);
-        if (in_var->IsType<Tensor>()) {
-          auto in_precision = in_var->GetMutable<Tensor>()->precision();
-          if (in_precision != PRECISION(kUnk)) {
-            in_types[in_name] = LiteType::GetTensorTy(
-                TARGET(kUnk), in_precision, DATALAYOUT(kUnk));
-          }
-        }
-      }
-      // Pick up the best kernel according to the precision types of input
-      // arguments and valid places
-      core::KernelPickFactor kernel_pick_factors;
-      kernel_pick_factors.ConsiderTarget();
-      kernel_pick_factors.ConsiderPrecision();
-      kernel_pick_factors.ConsiderDataLayout();
-      CHECK(kernel_pick_factors.any_factor_considered())
-          << "kernel_pick_factors should be specified first";
-      float highest_score = 0;
-      for (auto &&kernel : kernels) {
-        float score = KernelGrade(*op->op_info(),
-                                  *kernel,
-                                  valid_places_,
-                                  in_types,
-                                  {},
-                                  in_names,
-                                  {},
-                                  kernel_pick_factors);
-        VLOG(4) << "kernel->summary():" << kernel->summary()
-                << " score:" << score;
-        if (score > highest_score) {
-          picked_kernel = std::move(kernel);
-          highest_score = score;
-        }
+              << "' not found, pick the first kernel for " << op_type;
+      std::vector<std::unique_ptr<KernelBase>> kernels;
+#if defined(LITE_WITH_ARM)
+      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
+#elif defined(LITE_WITH_X86)
+      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
+#endif
+      if (kernels.size() > 0) {
+        picked_kernel = std::move(kernels.front());
+      } else {
+        LOG(WARNING) << "No kernels found for " << op_type;
       }
     }
     picked_kernel->SetContext(
@@ -129,7 +100,7 @@ void StepExecutor::Run() {
 void WhileCompute::PrepareForRun() {
   auto &param = this->Param<param_t>();
   executor_ = std::make_shared<StepExecutor>(
-      param.sub_block, param.scope, param.valid_places);
+      param.block_idx, param.program_desc, param.scope);
   executor_->Build();
 }
 

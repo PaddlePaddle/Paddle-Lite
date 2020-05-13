@@ -21,7 +21,7 @@ namespace lite {
 namespace operators {
 
 bool WhileOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.sub_block);
+  CHECK_OR_FALSE(param_.program_desc);
   CHECK_OR_FALSE(param_.scope);
   CHECK_OR_FALSE(param_.cond);
   return true;
@@ -30,23 +30,11 @@ bool WhileOpLite::CheckShape() const {
 bool WhileOpLite::InferShapeImpl() const { return true; }
 
 bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto inputs = op_desc.Input("X");
-  auto outs = op_desc.Output("Out");
-
-  for (auto var : inputs) {
-    // param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-  }
-  for (auto var : outs) {
-    // param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-  }
-  param_.sub_block = sub_block_;
-
   auto condition = op_desc.Input("Condition");
   param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
+  CHECK(param_.program_desc);
+  param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   param_.scope = scope;
-  param_.valid_places =
-      op_desc.GetAttr<std::vector<std::string>>("valid_places");
-
   return true;
 }
 

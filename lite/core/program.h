@@ -36,7 +36,7 @@ static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 struct Program {
  public:
   explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
-  Program(const cpp::ProgramDesc& desc,
+  Program(const cpp::ProgramDesc* desc,
           const std::shared_ptr<Scope>& root,
           const std::vector<Place>& valid_places)
       : scope_(root), valid_places_(valid_places), desc_(desc) {
@@ -74,18 +74,18 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
-  const std::unordered_map<std::string, PrecisionType>& var_data_type() const {
+  const std::unordered_map<std::string, const Type*>& var_data_type() const {
     return var_data_type_;
   }
 
  private:
   // Build from a program and scope.
-  void Build(const cpp::ProgramDesc& program);
+  void Build(const cpp::ProgramDesc* program_desc);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program);
+  void PrepareWorkspace(const cpp::ProgramDesc* program_desc);
 
  private:
-  std::unordered_map<std::string, PrecisionType> var_data_type_;
+  std::unordered_map<std::string, const Type*> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
   std::vector<std::list<std::shared_ptr<OpLite>>> ops_;
@@ -94,7 +94,7 @@ struct Program {
   std::vector<Place> valid_places_;
   // Runtime scope.
   lite::Scope* exec_scope_{};
-  cpp::ProgramDesc desc_;
+  const cpp::ProgramDesc* desc_;
 };
 
 struct Instruction {
@@ -189,12 +189,12 @@ class LITE_API RuntimeProgram {
 
   // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
   // in ProgramDesc.
-  void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
+  void SaveOpInfosToProgram(cpp::ProgramDesc* desc, int block_idx);
 
   // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
   // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
   // be added in vars_.
-  void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
+  void UpdateVarsOfProgram(cpp::ProgramDesc* desc, int block_idx);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;

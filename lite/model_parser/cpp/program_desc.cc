@@ -19,6 +19,12 @@ namespace lite {
 namespace cpp {
 
 template <>
+const BlockDesc& ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
+  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  return blocks_[idx];
+}
+
+template <>
 BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
   CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
   return &blocks_[idx];

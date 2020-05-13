@@ -64,8 +64,7 @@ class LITE_API Predictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
-  void Build(const cpp::ProgramDesc& desc,
-             const std::vector<Place>& valid_places,
+  void Build(const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
   void GenRuntimeProgram();
@@ -75,7 +74,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->Run();
+    programs_[0]->Run();
   }
 
   // Get offset-th col of feed inputs.
@@ -116,7 +115,7 @@ class LITE_API Predictor {
   cpp::ProgramDesc program_desc_;
   std::shared_ptr<Scope> scope_;
   const Scope* exec_scope_;
-  std::unique_ptr<RuntimeProgram> program_;
+  std::vector<std::unique_ptr<RuntimeProgram>> programs_;
   bool program_generated_{false};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;

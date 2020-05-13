@@ -36,13 +36,13 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::BlockDesc* block_desc,
+                 cpp::ProgramDesc* program_desc,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
                  Scope* scope,
                  ::paddle::lite_api::PrecisionType type)
       : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {
+            ctx, block_idx, program_desc, input_names, output_names, scope) {
     graph_.SetFPType(type);
   }
 
@@ -165,10 +165,9 @@ class SubgraphCompute
 
   void PrepareForRun() override {
     auto& param = this->template Param<param_t>();
-    // LOG(INFO) << "SUBGRAP Prepare RUN index " << param.sub_block_idx;
     engine_.reset(new SubgraphEngine<Precision>(this->ctx_.get(),
-                                                param.sub_block_idx,
-                                                param.sub_block_desc,
+                                                param.block_idx,
+                                                param.program_desc,
                                                 param.input_data_names,
                                                 param.output_data_names,
                                                 param.scope,

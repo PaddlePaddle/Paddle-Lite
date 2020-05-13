@@ -53,6 +53,9 @@ class BlockDesc : public BlockDescAPI {
   void ClearVars() override;
 
   template <typename T>
+  const T& GetVar(int32_t idx) const;
+
+  template <typename T>
   T* GetVar(int32_t idx);
 
   template <typename T>
@@ -61,6 +64,9 @@ class BlockDesc : public BlockDescAPI {
   size_t OpsSize() const override;
 
   void ClearOps() override;
+
+  template <typename T>
+  const T& GetOp(int32_t idx) const;
 
   template <typename T>
   T* GetOp(int32_t idx);

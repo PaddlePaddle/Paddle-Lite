@@ -36,12 +36,12 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
-                 cpp::BlockDesc *block_desc,
+                 cpp::ProgramDesc *program_desc,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
                  Scope *scope)
       : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {}
+            ctx, block_idx, program_desc, input_names, output_names, scope) {}
 
  protected:
   int BuildDeviceProgram() override;

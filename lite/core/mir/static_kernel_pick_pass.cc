@@ -48,18 +48,6 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     auto& instruct = node.AsStmt();
 
     // Get op's in/out vars' precision
-    /*std::unordered_map<std::string, PrecisionType> in_types;
-    std::unordered_map<std::string, PrecisionType> out_types;
-    for (auto* in_var : node.inlinks) {
-      if (in_var->arg()->type != nullptr) {
-        in_types[in_var->arg()->name] = in_var->arg()->type->precision();
-      }
-    }
-    for (auto* out_var : node.outlinks) {
-      if (out_var->arg()->type != nullptr) {
-        out_types[out_var->arg()->name] = out_var->arg()->type->precision();
-      }
-    }*/
     std::unordered_map<std::string, const Type*> in_types;
     std::unordered_map<std::string, const Type*> out_types;
     for (auto* in_var : node.inlinks) {

@@ -22,6 +22,7 @@
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/cpp/block_desc.h"
+#include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
 #include "lite/utils/variant.h"
@@ -91,8 +92,8 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
-  int sub_block_idx{-1};
-  cpp::BlockDesc* sub_block_desc{nullptr};
+  int block_idx{-1};
+  cpp::ProgramDesc* program_desc{nullptr};
   Scope* scope{nullptr};
 };
 
@@ -374,17 +375,17 @@ struct ConvParam : ParamBase {
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
   /* dilations type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
@@ -468,10 +469,10 @@ struct PoolParam : ParamBase {
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
@@ -937,7 +938,8 @@ struct CompareParam : ParamBase {
 struct WhileParam : ParamBase {
   Scope* scope{};
   Tensor* cond{};
-  cpp::BlockDesc* sub_block{};
+  int block_idx{-1};
+  cpp::ProgramDesc* program_desc{nullptr};
   std::vector<Tensor*> x{};
   std::vector<Tensor*> outs{};
   std::vector<std::string> valid_places;

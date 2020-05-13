@@ -259,13 +259,21 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
                 head_node->AsArg().name,
                 cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto* sub_block_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
-                             inst_node->AsStmt().op().get())
-                             ->GetSubBlock();
-  for (size_t i = 0; i < sub_block_desc->OpsSize(); ++i) {
-    auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
-    UpdateInputTo(
-        sub_block_op_desc, head_node->AsArg().name, cur_node->AsArg().name);
+  auto* sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+                               inst_node->AsStmt().op().get())
+                               ->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx =
+      inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
+  if (sub_block_idx < 0) {
+    sub_block_idx = 0;
+  }
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       sub_op_idx++) {
+    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx++);
+    UpdateInputTo(sub_op_desc, head_node->AsArg().name, cur_node->AsArg().name);
   }
 
   // recreate the op
@@ -408,21 +416,29 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
                  tail_node->AsArg().name,
                  cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto* sub_block_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
-                             inst_node->AsStmt().op().get())
-                             ->GetSubBlock();
-  for (size_t i = 0; i < sub_block_desc->OpsSize(); ++i) {
-    auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
+  auto* sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+                               inst_node->AsStmt().op().get())
+                               ->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx =
+      inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
+  if (sub_block_idx < 0) {
+    sub_block_idx = 0;
+  }
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       sub_op_idx++) {
+    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
     UpdateOutputTo(
-        sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
+        sub_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
     /* graph like this
      *        subgraph_op_0
      *          /       \
      *         /         \
      * subgraph_op_1   host_op
      */
-    UpdateInputTo(
-        sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
+    UpdateInputTo(sub_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
   }
 
   // recreate the op
@@ -447,14 +463,23 @@ void MLUPostprocessPass::RecreateOp(Node* inst_node, SSAGraph* graph) {
 }
 
 bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node, Node* inst) {
-  auto* block_desc =
+  auto* sub_program_desc =
       static_cast<operators::SubgraphOp*>(inst->AsStmt().op().get())
-          ->GetSubBlock();
-  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
-    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
-    CHECK(op_desc);
-    if (op_desc->Type() == "conv2d") {
-      for (auto& names : op_desc->inputs()) {
+          ->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx =
+      inst->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
+  if (sub_block_idx < 0) {
+    sub_block_idx = 0;
+  }
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       sub_op_idx++) {
+    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    CHECK(sub_op_desc);
+    if (sub_op_desc->Type() == "conv2d") {
+      for (auto& names : sub_op_desc->inputs()) {
         if (std::find(names.second.begin(),
                       names.second.end(),
                       arg_node->AsArg().name) != names.second.end()) {

@@ -19,6 +19,13 @@ namespace lite {
 namespace pb {
 
 template <>
+const framework::proto::VarDesc& BlockDesc::GetVar<framework::proto::VarDesc>(
+    int32_t idx) const {
+  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  return desc_->vars(idx);
+}
+
+template <>
 framework::proto::VarDesc* BlockDesc::GetVar<framework::proto::VarDesc>(
     int32_t idx) {
   CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
@@ -28,6 +35,13 @@ framework::proto::VarDesc* BlockDesc::GetVar<framework::proto::VarDesc>(
 template <>
 framework::proto::VarDesc* BlockDesc::AddVar<framework::proto::VarDesc>() {
   return desc_->add_vars();
+}
+
+template <>
+const framework::proto::OpDesc& BlockDesc::GetOp<framework::proto::OpDesc>(
+    int32_t idx) const {
+  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  return desc_->ops(idx);
 }
 
 template <>

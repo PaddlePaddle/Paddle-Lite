@@ -43,6 +43,9 @@ class ProgramDesc : public ProgramDescAPI {
   void ClearBlocks() override;
 
   template <typename T>
+  const T &GetBlock(int32_t idx) const;
+
+  template <typename T>
   T *GetBlock(int32_t idx);
 
   template <typename T>

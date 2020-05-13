@@ -178,6 +178,9 @@ class BlockDescAPI {
   // pb/nb backends
   // TODO(sangoly): refine this
   template <typename T>
+  const T& GetVar(int32_t idx) const;
+
+  template <typename T>
   T* GetVar(int32_t idx);
 
   template <typename T>
@@ -190,6 +193,9 @@ class BlockDescAPI {
   // NOTE: This ugly method is used to compatible interfaces between cpp and
   // pb/nb backends
   // TODO(sangoly): refine this
+  template <typename T>
+  const T& GetOp(int32_t idx) const;
+
   template <typename T>
   T* GetOp(int32_t idx);
 
@@ -212,6 +218,9 @@ class ProgramDescAPI {
   // NOTE: This ugly method is used to compatible interfaces between cpp and
   // pb/nb backends
   // TODO(sangoly): refine this
+  template <typename T>
+  const T& GetBlock(int32_t idx) const;
+
   template <typename T>
   T* GetBlock(int32_t idx);
 

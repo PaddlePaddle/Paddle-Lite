@@ -202,8 +202,8 @@ void SubgraphCompute::PrepareForRun() {
   LOG(INFO) << "[RKNPU]:PrepareForRun";
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
                                    param.input_data_names,
                                    param.output_data_names,
                                    param.scope));
