@@ -98,7 +98,7 @@ function check_need_ci {
 }
 
 function check_coverage() {
-    /bin/bash tools/coverage/paddle_lite_coverage.sh
+    bash tools/coverage/paddle_lite_coverage.sh
 }
 
 function cmake_x86 {
@@ -208,7 +208,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON 
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -285,7 +285,6 @@ function build_test_server {
 
     test_server
     test_model_optimize_tool_compile
-    check_coverage
 }
 
 # The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
@@ -1133,6 +1132,11 @@ function main {
                 ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_check_coverage)
+                build_test_server
+                check_coverage
                 shift
                 ;;
             build_test_xpu)

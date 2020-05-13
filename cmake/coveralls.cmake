@@ -6,7 +6,7 @@
 # Param _CMAKE_SCRIPT_PATH      CMake script path.
 function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
     # clean previous gcov data.
-    file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/*.gcda)
+    file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/*.gcda)
 
     # find curl for upload JSON soon.
     if (_COVERALLS_UPLOAD)
@@ -29,7 +29,7 @@ function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
     # query number of logical cores
     cmake_host_system_information(RESULT core_size QUERY NUMBER_OF_LOGICAL_CORES)
     # coveralls json file.
-    set(COVERALLS_FILE ${CMAKE_BINARY_DIR}/coveralls.json)
+    set(COVERALLS_FILE ${PROJECT_BINARY_DIR}/coveralls.json)
     add_custom_target(coveralls_generate
         # Run regress tests.
         COMMAND ${CMAKE_CTEST_COMMAND}
@@ -39,10 +39,10 @@ function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
         COMMAND ${CMAKE_COMMAND}
                 -DCOVERAGE_SRCS="${COVERAGE_SRCS}"
                 -DCOVERALLS_OUTPUT_FILE="${COVERALLS_FILE}"
-                -DCOV_PATH="${CMAKE_BINARY_DIR}"
-                -DPROJECT_ROOT="${CMAKE_SOURCE_DIR}"
+                -DCOV_PATH="${PROJECT_BINARY_DIR}"
+                -DPROJECT_ROOT="${PROJECT_SOURCE_DIR}"
                 -P "${_CMAKE_SCRIPT_PATH}/coverallsGcovJsons.cmake"
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Coveralls: generating coveralls output..."
     )
 
@@ -54,7 +54,7 @@ function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
                     -S -F json_file=@${COVERALLS_FILE}
                     https://coveralls.io/api/v1/jobs
             DEPENDS coveralls_generate
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
             COMMENT "Coveralls: uploading coveralls output...")
 
         add_custom_target(coveralls DEPENDS coveralls_upload)
@@ -65,7 +65,7 @@ function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
 endfunction()
 
 if(WITH_COVERAGE)
-    set(CMAKE_BUILD_TYPE "Debug")
+    #set(CMAKE_BUILD_TYPE "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
 
@@ -77,9 +77,9 @@ if(WITH_COVERAGE)
     )
 
     if(WITH_GPU)
-        file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${CMAKE_SOURCE_DIR}" "*.cpp" "*.cc" ".c" "*.cu")
+        file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${PROJECT_SOURCE_DIR}" "*.cpp" "*.cc" ".c" "*.cu")
     else()
-        file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${CMAKE_SOURCE_DIR}" "*.cpp" "*.cc" "*.c")
+        file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${PROJECT_SOURCE_DIR}" "*.cpp" "*.cc" "*.c")
     endif()
 
     # exclude trivial files in PADDLE_SOURCES
@@ -95,13 +95,13 @@ if(WITH_COVERAGE)
     # convert to absolute path
     set(PADDLE_SRCS "")
     foreach(PADDLE_SRC ${PADDLE_SOURCES})
-        set(PADDLE_SRCS "${PADDLE_SRCS};${CMAKE_SOURCE_DIR}/${PADDLE_SRC}")
+        set(PADDLE_SRCS "${PADDLE_SRCS};${PROJECT_SOURCE_DIR}/${PADDLE_SRC}")
     endforeach()
 
     set(COVERALLS_UPLOAD ON)
     code_coverage(
         "${PADDLE_SRCS}"
         ${COVERALLS_UPLOAD}
-        "${CMAKE_SOURCE_DIR}/cmake"
+        "${PROJECT_SOURCE_DIR}/cmake"
     )
 endif()
