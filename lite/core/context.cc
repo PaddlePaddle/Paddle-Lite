@@ -18,7 +18,7 @@ namespace paddle {
 namespace lite {
 
 #ifdef LITE_WITH_NPU
-std::string Context<TargetType::kNPU>::_subgraph_model_cache_dir{""};  // NOLINT
+std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
 #endif
 
 #ifdef LITE_WITH_XPU

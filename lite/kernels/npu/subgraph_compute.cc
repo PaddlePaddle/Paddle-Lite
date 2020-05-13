@@ -30,32 +30,32 @@ namespace lite {
 namespace kernels {
 namespace npu {
 
-std::string SubgraphEngine::GenerateSubgraphModelCacheName() const {
+std::string SubgraphEngine::GenerateModelCacheName() const {
   auto inames = device_inames_;
   auto onames = device_onames_;
   std::sort(inames.begin(), inames.end());
   std::sort(onames.begin(), onames.end());
 
-  std::string subgraph_model_cache_name = "";
+  std::string model_cache_name = "";
   for (auto iname : inames) {
     auto itensor = scope_->FindTensor(iname);
     std::replace(iname.begin(), iname.end(), '/', '_');
-    subgraph_model_cache_name += "_" + iname;
+    model_cache_name += "_" + iname;
     for (auto i : itensor->dims().Vectorize()) {
-      subgraph_model_cache_name += "_" + std::to_string(i);
+      model_cache_name += "_" + std::to_string(i);
     }
   }
   for (auto oname : onames) {
     auto otensor = scope_->FindTensor(oname);
     std::replace(oname.begin(), oname.end(), '/', '_');
-    subgraph_model_cache_name += "_" + oname;
+    model_cache_name += "_" + oname;
     for (auto i : otensor->dims().Vectorize()) {
-      subgraph_model_cache_name += "_" + std::to_string(i);
+      model_cache_name += "_" + std::to_string(i);
     }
   }
-  subgraph_model_cache_name += "_.om";
+  model_cache_name += "_.om";
 
-  return subgraph_model_cache_name;
+  return model_cache_name;
 }
 
 int SubgraphEngine::BuildDeviceProgram() {
@@ -118,12 +118,11 @@ int SubgraphEngine::BuildDeviceProgram() {
   if (device_program_map_.count(inputs_shape_) > 0) {
     return status;
   }
-  std::string subgraph_model_cache_full_dir =
-      subgraph_model_cache_dir_.empty()
-          ? ""
-          : subgraph_model_cache_dir_ + "/" + GenerateSubgraphModelCacheName();
+  std::string model_cache_full_dir =
+      model_cache_dir_.empty() ? "" : model_cache_dir_ + "/" +
+                                          GenerateModelCacheName();
   auto device_client = lite::npu::Device::Global().Build(
-      model_name_, device_inodes, device_onodes, subgraph_model_cache_full_dir);
+      model_name_, device_inodes, device_onodes, model_cache_full_dir);
   if (device_client == nullptr) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return subgraph::FAILED;

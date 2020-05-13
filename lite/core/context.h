@@ -87,14 +87,14 @@ class Context<TargetType::kNPU> {
   std::string name() const { return "NPUContext"; }
 
   static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
-    _subgraph_model_cache_dir = subgraph_model_cache_dir;
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
   }
   static std::string SubgraphModelCacheDir() {
-    return _subgraph_model_cache_dir;
+    return subgraph_model_cache_dir_;
   }
 
  private:
-  static std::string _subgraph_model_cache_dir;
+  static std::string subgraph_model_cache_dir_;
 };
 #endif
 
