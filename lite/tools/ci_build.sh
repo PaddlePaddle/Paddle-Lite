@@ -98,7 +98,7 @@ function check_need_ci {
 }
 
 function check_coverage() {
-    bash tools/coverage/paddle_lite_coverage.sh
+    bash ../tools/coverage/paddle_lite_coverage.sh
 }
 
 function cmake_x86 {

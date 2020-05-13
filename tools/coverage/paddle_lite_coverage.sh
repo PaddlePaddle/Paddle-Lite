@@ -42,8 +42,6 @@ function gen_full_html_report() {
         --rc lcov_branch_coverage=0
 
     mv -f coverage-full.tmp coverage-full.info
-    
-    genhtml -o coverage-full -t 'Full Coverage' --no-function-coverage --no-branch-coverage coverage-full.info
 }
 
 gen_full_html_report || true
