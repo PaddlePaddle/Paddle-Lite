@@ -246,7 +246,10 @@ void MLUTensor::remember(const std::vector<int>& shape,
         break;
     }
   }
-  dim_ = shape_.size();
+  auto shape_NCHW = DimNHWC2NCHW(shape_);
+  shape_NCHW.erase(shape_NCHW.begin() + shape.size(), shape_NCHW.end());
+  dim_ = shape_NCHW.size();
+  shape_ = DimNCHW2NHWC(shape_NCHW);
 }
 
 void MLUTensor::Create() {

@@ -27,7 +27,8 @@ namespace mlu {
 template <lite_api::PrecisionType Dtype>
 void PrepareInput(Graph* graph,
                   const std::string& input_name,
-                  Tensor* input_tensor) {
+                  Tensor* input_tensor,
+                  cnmlDataOrder_t order) {
   thread_local Tensor temp_input;
   temp_input.Resize(input_tensor->dims().Vectorize());
   temp_input.CopyDataFrom(*input_tensor);
@@ -38,7 +39,7 @@ void PrepareInput(Graph* graph,
       CNML_TENSOR,
       CNML_NCHW,
       MLUTypeTraits<Dtype>::cnml_type,
-      CNML_NHWC,
+      order,
       reinterpret_cast<void*>(
           input_tensor->template mutable_data<data_type>(TARGET(kMLU))));
   CHECK(input_node);
@@ -50,7 +51,8 @@ void PrepareInput(Graph* graph,
 
 void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
-              const std::vector<std::string>& output_var_names) {
+              const std::vector<std::string>& output_var_names,
+              cnmlDataOrder_t order) {
   CNRT_CALL(cnrtInit(0));
   lite::SetMluDevice(0);
   cnrtQueue_t queue_;
@@ -77,9 +79,9 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
     auto data_type = input_tensor->precision();
 
     switch (data_type) {
-#define PREPARE_INPUT(type__)                                          \
-  case PRECISION(type__):                                              \
-    PrepareInput<PRECISION(type__)>(&graph, input_name, input_tensor); \
+#define PREPARE_INPUT(type__)                                                 \
+  case PRECISION(type__):                                                     \
+    PrepareInput<PRECISION(type__)>(&graph, input_name, input_tensor, order); \
     break;
       PREPARE_INPUT(kFP16)
       PREPARE_INPUT(kFloat)

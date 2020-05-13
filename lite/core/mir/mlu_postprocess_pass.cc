@@ -620,7 +620,8 @@ std::string CheckInputAndInsert(Scope* scope,
     auto layout_op = block_desc->AddOp<cpp::OpDesc>();
     auto layout_arg_name = string_format("%s/layout", cur_node.c_str());
     scope->Var(layout_arg_name);
-    VLOG(5) << "insert layout in subgraph, arg tensor name: " << layout_arg_name;
+    VLOG(5) << "insert layout in subgraph, arg tensor name: "
+            << layout_arg_name;
     layout_op->SetType("layout");
     layout_op->SetInput("Input", {cur_node});
     layout_op->SetOutput("Out", {layout_arg_name});
@@ -663,7 +664,8 @@ std::string CheckOutputAndInsert(Scope* scope,
   if (DataLayoutCompatible(*tensor_type, *subgraph_type)) {
     auto layout_arg_name = string_format("%s/layout", cur_node.c_str());
     scope->Var(layout_arg_name);
-    VLOG(5) << "insert layout in subgraph, arg tensor name: " << layout_arg_name;
+    VLOG(5) << "insert layout in subgraph, arg tensor name: "
+            << layout_arg_name;
     layout_op = block_desc->AddOp<cpp::OpDesc>();
     layout_op->SetType("layout");
     layout_op->SetInput("Input", {layout_arg_name});
@@ -709,16 +711,22 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
     auto input_name = input->AsArg().name;
     if (!(input->AsArg().is_weight || input->AsArg().is_persist)) {
       i_names.emplace_back(input_name);
-      node_replace[input_name] = CheckInputAndInsert(
-          op->scope(), new_block_desc, input_name, input->AsArg().type, subgraph_type);
+      node_replace[input_name] = CheckInputAndInsert(op->scope(),
+                                                     new_block_desc,
+                                                     input_name,
+                                                     input->AsArg().type,
+                                                     subgraph_type);
     }
   }
   for (auto& output : subgraph_node->outlinks) {
     auto output_name = output->AsArg().name;
     if (!(output->AsArg().is_weight || output->AsArg().is_persist)) {
       o_names.emplace_back(output_name);
-      node_replace[output_name] = CheckOutputAndInsert(
-          op->scope(), block_desc, output_name, output->AsArg().type, subgraph_type);
+      node_replace[output_name] = CheckOutputAndInsert(op->scope(),
+                                                       block_desc,
+                                                       output_name,
+                                                       output->AsArg().type,
+                                                       subgraph_type);
     }
   }
 
