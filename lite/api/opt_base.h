@@ -47,11 +47,11 @@ class LITE_API OptBase {
   void SetModelDir(const std::string &model_dir_path);
   void SetModelFile(const std::string &model_path);
   void SetParamFile(const std::string &param_path);
-  void SetValidPlaces(const std::string &valid_places);
+  void SetValidPlaces(const std::string &valid_places = "arm");
   void SetLiteOut(const std::string &lite_out_name);
   void RecordModelInfo(bool record_strip_info = true);
   // set optimized_model type
-  void SetModelType(std::string model_type);
+  void SetModelType(std::string model_type = "naive_buffer");
   // internal inference for developer, not recommanded.
   // choose methods of model optimizing.
   void SetPassesInternal(const std::vector<std::string> &passes_internal = {});
@@ -60,6 +60,7 @@ class LITE_API OptBase {
   void RunOptimize(const std::string &model_dir_path = "",
                    const std::string &model_path = "",
                    const std::string &param_path = "",
+                   const std::string &model_type = "",
                    const std::string &valid_places = "",
                    const std::string &optimized_out_path = "");
   // fuctions of printing info

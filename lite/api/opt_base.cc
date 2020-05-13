@@ -115,11 +115,13 @@ void OptBase::Run() {
 void OptBase::RunOptimize(const std::string& model_dir_path,
                           const std::string& model_path,
                           const std::string& param_path,
+                          const std::string& model_type,
                           const std::string& valid_places,
                           const std::string& optimized_out_path) {
   SetModelDir(model_dir_path);
   SetModelFile(model_path);
   SetParamFile(param_path);
+  SetModelType(model_type);
   SetValidPlaces(valid_places);
   SetLiteOut(optimized_out_path);
   CheckIfModelSupported(false);
