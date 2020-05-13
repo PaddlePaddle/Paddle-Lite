@@ -19,6 +19,7 @@
 #endif
 
 #include <memory>
+#include <mutex>  // NOLINT
 #include <numeric>
 #include <string>
 #include <unordered_map>
@@ -350,9 +351,13 @@ struct KeyCounter {
     return x;
   }
 
-  int IncCounter(const std::string& key) { return dic_[key]++; }
+  int IncCounter(const std::string& key) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return dic_[key]++;
+  }
 
  private:
+  std::mutex mutex_;
   std::unordered_map<std::string, size_t> dic_;
 };
 
