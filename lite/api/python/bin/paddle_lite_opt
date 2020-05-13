@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# Copyright @ 2020 Baidu. All rights reserved.
+""" python wrapper file for Paddle-Lite opt tool """
+from __future__ import print_function
+import paddlelite.lite as lite
+import argparse
+
+
+def main():
+    """ main funcion """
+    a=lite.Opt()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_dir", type=str, required=False,\
+        help="path of the model. This option will be ignored if model_file and param_file exist")
+    parser.add_argument("--model_file", type=str, required=False,\
+        help="model file path of the combined-param model.")
+    parser.add_argument("--param_file", type=str, required=False,\
+        help="param file path of the combined-param model.")
+    parser.add_argument("--optimize_out_type", type=str, required=False,default="naive_buffer",\
+        choices=['protobuf', 'naive_buffer'], \
+        help="store type of the output optimized model. protobuf/naive_buffer.")
+    parser.add_argument("--optimize_out", type=str, required=False,\
+        help="path of the output optimized model")
+    parser.add_argument("--valid_targets", type=str, required=False,default="arm",\
+        help="The targets this model optimized for, should be one of (arm,opencl, x86), splitted by space.")
+
+   # arguments of help information
+    parser.add_argument("--print_supported_ops", type=str, default="false",\
+        help="{true, false}\
+               Print supported operators on the inputed target")
+    parser.add_argument("--print_all_ops", type=str, default="false",\
+        help="{true, false}\
+               Print all the valid operators of Paddle-Lite")
+    parser.add_argument("--print_model_ops", type=str, default="false",\
+        help="{true, false}\
+               Print operators in the input model")
+    parser.add_argument("--display_kernels", type=str, default="false",\
+        help="{true, false}\
+               Display kernel information")
+
+   # arguments of strip lib according to input model
+    parser.add_argument("--record_tailoring_info", type=str, default="false",\
+        help="{true, false}\
+               Record kernels and operators information of the optimized model \
+               for tailoring compiling, information are stored into optimized  \
+               model path as hidden files")
+    parser.add_argument("--model_set", type=str, required=False,\
+        help="path of the models set. This option will be used to specific \
+              tailoring")
+
+    args = parser.parse_args()
+    """ input opt params """
+    if args.model_dir is not None:
+         a.set_model_dir(args.model_dir)
+    if args.model_set is not None:
+         a.set_modelset_dir(args.model_set)
+    if args.model_file is not None:
+         a.set_model_file(args.model_file)
+    if args.param_file is not None:
+         a.set_param_file(args.param_file)
+    if args.optimize_out_type is not None:
+         a.set_model_type(args.optimize_out_type)
+    if args.optimize_out is not None:
+         a.set_optimize_out(args.optimize_out)
+    if args.valid_targets is not None:
+         a.set_valid_places(args.valid_targets)
+    if args.param_file is not None:
+         a.set_param_file(args.param_file)
+    if args.record_tailoring_info == "true":
+         a.record_model_info(True)
+    """ print ops info """
+    if args.print_all_ops == "true":
+         a.print_all_ops()
+         return 0
+    if args.print_supported_ops == "true":
+         a.print_supported_ops()
+         return 0
+    if args.display_kernels == "true":
+         a.display_kernels_info()
+         return 0
+    if args.print_model_ops == "true":
+         a.check_if_model_supported(True);
+         return 0
+    if ((args.model_dir is None) and (args.model_file is None or args.param_file is None) and (args.model_set is None)) or (args.optimize_out is None):
+         a.executablebin_help()
+         return 1
+    else:
+         a.run()
+         return 0
+if __name__ == "__main__":
+    main()
