@@ -87,7 +87,7 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
          "command argument 'valid_targets'";
 }
 
-void OptBase::SetLiteOut(const std::string& lite_out_name) {
+void OptBase::SetOptimizeOut(const std::string& lite_out_name) {
   lite_out_name_ = lite_out_name;
 }
 
@@ -123,7 +123,7 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
   SetParamFile(param_path);
   SetModelType(model_type);
   SetValidPlaces(valid_places);
-  SetLiteOut(optimized_out_path);
+  SetOptimizeOut(optimized_out_path);
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
   opt_config_.set_valid_places(valid_places_);
@@ -255,6 +255,33 @@ void OptBase::PrintHelpInfo() {
       "-----------------------------------------------------------\n";
   std::cout << "opt version:" << opt_version << std::endl << help_info;
 }
+
+void OptBase::PrintExecutableBinHelpInfo() {
+  const std::string opt_version = lite::version();
+  const char help_info[] =
+      "At least one argument should be inputed. Valid arguments are listed "
+      "below:\n"
+      "  Arguments of model optimization:\n"
+      "        `--model_dir=<model_param_dir>`\n"
+      "        `--model_file=<model_path>`\n"
+      "        `--param_file=<param_path>`\n"
+      "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
+      "        `--optimize_out=<output_optimize_model_dir>`\n"
+      "        `--valid_targets=(arm|opencl|x86|npu|xpu)`\n"
+      "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of model checking and ops information:\n"
+      "        `--print_all_ops=true`   Display all the valid operators of "
+      "Paddle-Lite\n"
+      "        `--print_supported_ops=true  "
+      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "  Display valid operators of input targets\n"
+      "        `--print_model_ops=true  --model_dir=<model_param_dir> "
+      "--valid_targets=(arm|opencl|x86|npu|xpu)`"
+      "  Display operators in the input model\n";
+  std::cout << "paddlelite opt version:" << opt_version << std::endl
+            << help_info << std::endl;
+}
+
 // 2. Print supported info of inputed ops
 void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
   std::vector<std::string> lite_supported_targets = {"kHost",
