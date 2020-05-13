@@ -1474,6 +1474,21 @@ struct CtcAlignParam : ParamBase {
   int padding_value{0};
 };
 
+struct PrintParam : ParamBase {
+  const lite::Tensor* in{};
+  lite::Tensor* out{};
+  std::string name;
+  int first_n{-1};
+  std::string message;
+  int summarize{20};
+  bool print_tensor_name{true};
+  bool print_tensor_type{true};
+  bool print_tensor_shape{true};
+  bool print_tensor_lod{true};
+  std::string print_phase;
+  bool is_forward{true};
+};
+
 struct XPUResNet50Param : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> filter;
