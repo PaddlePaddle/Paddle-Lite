@@ -17,5 +17,5 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # 4.add executable output
 add_executable(${TARGET} ${TARGET}.cc)
 target_link_libraries(${TARGET} -lpaddle_full_api_shared)
-target_link_libraries(${TARGET} -lmklml_intel)
+target_link_libraries(${TARGET} -liomp5)
 target_link_libraries(${TARGET} -ldl)
