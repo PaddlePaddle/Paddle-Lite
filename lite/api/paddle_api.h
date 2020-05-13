@@ -118,18 +118,27 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
+  // to save subgraph model for npu/xpu/...
+  std::string subgraph_model_cache_dir_{""};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
   // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
   const std::string& model_dir() const { return model_dir_; }
-  // set Power_mode
-  void set_power_mode(PowerMode mode);
-  PowerMode power_mode() const { return mode_; }
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const { return mode_; }
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  const std::string& subgraph_model_cache_dir() const {
+    return subgraph_model_cache_dir_;
+  }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
