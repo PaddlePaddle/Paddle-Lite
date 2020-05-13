@@ -59,6 +59,7 @@ class MLUTensor {
   ~MLUTensor();
 
   void ToFile(std::string file_name);
+  cnmlDataOrder_t dorder() { return data_order_; }
 
  private:
   cnmlTensor_t mlu_tensor_;
