@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/stack_compute.h"
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {

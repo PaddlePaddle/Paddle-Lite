@@ -39,7 +39,7 @@ class ActivationComputeImageDefault
   void PrepareForRun() override {
     act_param_ = param_.get_mutable<param_t>();
     int act_type = static_cast<int>(act_param_->active_type);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
             << ActivationTypeToStr(act_param_->active_type);
 #endif
@@ -72,7 +72,7 @@ class ActivationComputeImageDefault
         LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
         return;
     }
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 #endif
 
@@ -129,7 +129,7 @@ class ActivationComputeImageDefault
     status = kernel.setArg(3, scale_);
     CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     const auto& x_dims = act_param_->X->dims();
     const auto& y_dims = act_param_->Out->dims();  // useless: check dim only
     VLOG(4) << TargetToStr(act_param_->X->target());
@@ -147,16 +147,15 @@ class ActivationComputeImageDefault
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
   }
 
  private:
@@ -175,7 +174,6 @@ class ActivationComputeImageDefault
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
 };
 }  // namespace opencl
 }  // namespace kernels

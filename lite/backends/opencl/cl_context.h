@@ -28,6 +28,7 @@ namespace lite {
 class CLContext {
  public:
   ~CLContext() {
+    GetCommandQueue().finish();
     for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
       // Note(ysh329): Don't need `clReleaseKernel`
       kernels_[kidx].reset();
@@ -65,6 +66,10 @@ class CLContext {
   cl::NDRange LocalWorkSizeTurn(cl::NDRange global_work_size,
                                 size_t max_work_size,
                                 int divitor = 2);
+  cl::NDRange LocalWorkSizeTurnReverse(cl::NDRange global_work_size,
+                                       size_t max_work_size,
+                                       int divitor = 2);
+  bool IsArmMali();
   //  cl::NDRange LocalWorkSizeConv1x1(cl::NDRange global_work_size,
   //                                   size_t max_work_size);
 

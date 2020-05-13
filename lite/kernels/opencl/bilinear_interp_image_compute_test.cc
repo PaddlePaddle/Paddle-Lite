@@ -176,7 +176,6 @@ TEST(bilinear_interp_image2d, compute) {
                       input_v.data(), x_image_data.data(), in_dim);
                   auto* x_image = x.mutable_data<half_t, cl::Image2D>(
                       x_image_shape[0], x_image_shape[1], x_image_data.data());
-                  // LOG(INFO) << "x_image:" << x_image;
 
                   DDim out_image_shape =
                       default_converter->InitImageDimInfoWith(out_dim);
@@ -184,21 +183,9 @@ TEST(bilinear_interp_image2d, compute) {
                             << out_image_shape[1];
                   auto* out_image = out.mutable_data<half_t, cl::Image2D>(
                       out_image_shape[0], out_image_shape[1]);
-                  // LOG(INFO) << "out_image:" << out_image;
-                  kernel->Launch();
 
-                  auto* wait_list = context->As<OpenCLContext>().cl_wait_list();
-                  auto* out_ptr = param.Out->data<half_t, cl::Image2D>();
-                  auto it = wait_list->find(out_ptr);
-                  if (it != wait_list->end()) {
-                    VLOG(4) << "--- Find the sync event for the target cl "
-                               "tensor. ---";
-                    auto& event = *(it->second);
-                    event.wait();
-                  } else {
-                    LOG(FATAL) << "Could not find the sync event for the "
-                                  "target cl tensor.";
-                  }
+                  kernel->Launch();
+                  CLRuntime::Global()->command_queue().finish();
 
                   std::unique_ptr<float[]> out_ref(
                       new float[out_dim.production()]);

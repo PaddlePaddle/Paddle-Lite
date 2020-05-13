@@ -73,7 +73,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     int out_h = out_dims[2];
     int out_w = out_dims[3];
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
@@ -86,7 +86,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 
@@ -104,7 +104,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
                         DDim(std::vector<DDim::value_type>{
                             static_cast<int64_t>(out_image_shape["width"]),
                             static_cast<int64_t>(out_image_shape["height"])}));
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
 #endif
@@ -142,17 +142,15 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size[1]),
                     static_cast<cl::size_type>(default_work_size[2])};
 
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_img, event_);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
 #endif
@@ -163,7 +161,6 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
-  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

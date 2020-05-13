@@ -18,10 +18,11 @@
 namespace paddle {
 namespace lite {
 
+// A simplified implementation of boost::hash_combine.
 template <typename T>
-inline size_t hash_combine(size_t s, const T& v) {
+inline void CombineHash(const T& from, size_t* to) {
   std::hash<T> h;
-  return (s ^ h(v)) + 0x9e3779b9 + (s << 6) + (s >> 2);
+  *to ^= h(from) + 0x9e3779b9 + (*to << 6) + (*to >> 2);
 }
 
 }  // namespace lite

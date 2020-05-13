@@ -41,14 +41,15 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->box_normalized == true) {
       kernel_func_name_ = "decode_center_size";
     } else {
-      printf("This code_type %s doesn't support \n",
-             boxcoder_param_->code_type.c_str());
-      return;
+      LOG(FATAL) << "This code_type " << boxcoder_param_->code_type
+                 << " doesn't support";
     }
     CHECK(context.cl_context() != nullptr);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(
-        kernel_func_name_, "image/box_coder_kernel.cl", build_options_);
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/box_coder_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
   }
 
   void Run() override {
@@ -60,7 +61,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->proposals->mutable_data<half_t, cl::Image2D>(
             image_shape["width"], image_shape["height"]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "boxcoder input shape:  ";
 
 #endif
@@ -81,7 +82,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
       auto& context = ctx_->As<OpenCLContext>();
       CHECK(context.cl_context() != nullptr);
       STL::stringstream kernel_key;
-      kernel_key << kernel_func_name_ << build_options_;
+      kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
       auto default_work_size =
@@ -92,7 +93,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
 
       int out_C = new_dims[1];
       int out_H = new_dims[2];
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
       VLOG(4) << "output shape: " << out_dims[0] << ", " << out_dims[1] << ", "
               << out_dims[2] << ", " << out_dims[3];
@@ -120,18 +121,16 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
           cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                       static_cast<cl::size_type>(default_work_size[2])};
 
-      event_ = std::shared_ptr<cl::Event>(new cl::Event);
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
           kernel,
           cl::NullRange,
           global_work_size,
           cl::NullRange,
           nullptr,
-          event_.get());
+          nullptr);
       CL_CHECK_FATAL(status);
-      context.cl_wait_list()->emplace(out_buf, event_);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
               << global_work_size[1];
 #endif
@@ -142,7 +141,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
   param_t* boxcoder_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};
-  std::shared_ptr<cl::Event> event_{nullptr};
+  std::string time_stamp_{GetTimeStamp()};
 };
 
 }  // namespace opencl

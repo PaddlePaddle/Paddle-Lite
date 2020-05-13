@@ -50,11 +50,11 @@ class TopkComputeTester : public arena::TestCase {
     out_dims[out_dims.size() - 1] = k_;
     out_val->Resize(out_dims);
     out_ind->Resize(out_dims);
-    auto* out_val_data = out_val->mutable_data<T1>();
-    auto* out_ind_data = out_ind->mutable_data<T2>();
+    auto* out_val_data = out_val->template mutable_data<T1>();
+    auto* out_ind_data = out_ind->template mutable_data<T2>();
 
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<T1>();
+    const auto* x_data = x->template data<T1>();
     int m = out_dims.production() / k_;
     int n = x_dims_[x_dims_.size() - 1];
 

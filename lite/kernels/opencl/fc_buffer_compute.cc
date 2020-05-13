@@ -52,7 +52,7 @@ class FcCompute
       n_ = w_dims[1];
       CHECK_EQ(k_, static_cast<int>(w_dims[0]));
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
               << " " << x_dims[3];
       VLOG(4) << "w_dims:" << w_dims[0] << " " << w_dims[1] << " " << w_dims[2]
@@ -66,7 +66,7 @@ class FcCompute
       } else {  // gemm
         kernel_func_name_ = "fc_gemm_4x4";
       }
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 #endif
 
@@ -123,16 +123,15 @@ class FcCompute
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    event_ = std::shared_ptr<cl::Event>(new cl::Event);
+
     status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
         kernel,
         cl::NullRange,
         global_work_size_,
         cl::NullRange,
         nullptr,
-        event_.get());
+        nullptr);
     CL_CHECK_FATAL(status);
-    context.cl_wait_list()->emplace(out_buf, event_);
   }
 
  private:
@@ -145,7 +144,6 @@ class FcCompute
   DDim last_x_dims_;
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;
-  std::shared_ptr<cl::Event> event_{nullptr};
 };
 
 }  // namespace opencl

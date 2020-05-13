@@ -1,4 +1,4 @@
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
@@ -42,6 +42,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   )
 
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
+    if(WIN32)
+        target_link_libraries(paddle_light_api_shared shlwapi.lib)
+    endif()
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${rknpu_kernels} ${apu_kernels})
     if(NOT APPLE AND NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
@@ -246,8 +249,10 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
-    set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
-    set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    if(NOT WIN32)
+       set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+       set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -255,7 +260,9 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu SERIAL)
     add_dependencies(test_mobilenetv2 extern_lite_download_mobilenet_v2_relu_tar_gz)
-    set_target_properties(test_mobilenetv2 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    if(NOT WIN32)
+        set_target_properties(test_mobilenetv2 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
        DEPS ${lite_model_test_DEPS} paddle_api_light

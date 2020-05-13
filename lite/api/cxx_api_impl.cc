@@ -97,6 +97,10 @@ std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
   return raw_predictor_.GetInputNames();
 }
 
+std::vector<std::string> CxxPaddleApiImpl::GetParamNames() {
+  return raw_predictor_.GetParamNames();
+}
+
 std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_.GetOutputNames();
 }
@@ -121,6 +125,12 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
     const std::string &name) const {
   auto *x = raw_predictor_.GetTensor(name);
   return std::unique_ptr<const lite_api::Tensor>(new lite_api::Tensor(x));
+}
+
+std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
+    const std::string &name) {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_.GetMutableTensor(name)));
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(

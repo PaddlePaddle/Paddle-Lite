@@ -12,23 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/core/mir/fusion/scale_activation_fuse_pass.h"
+#include <memory>
+#include <vector>
+#include "lite/core/mir/fusion/scale_activation_fuser.h"
+#include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace mir {
 
-class ExpandCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
+void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  for (auto act_type : {"relu", "relu6", "leaky_relu"}) {
+    fusion::ScaleActivationFuser fuser(act_type);
+    fuser(graph.get());
+  }
+}
 
-  virtual ~ExpandCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(lite_scale_activation_fuse_pass,
+                  paddle::lite::mir::ScaleActivationFusePass)
+    .BindTargets({TARGET(kARM)})
+    .BindKernel("scale");

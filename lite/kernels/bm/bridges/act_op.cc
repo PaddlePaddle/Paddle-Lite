@@ -54,6 +54,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     active_type_id = ACTIVE_SQRT;
   } else if (op_type == "square") {
     active_type_id = ACTIVE_SQUARE;
+  } else if (op_type == "sigmoid") {
+    active_type_id = ACTIVE_SIGMOID;
   } else {
     LOG(FATAL) << "[BM] unsupport act type";
     return FAILED;
@@ -102,3 +104,6 @@ REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
                          paddle::lite::subgraph::bm::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(sqrt, kBM, paddle::lite::subgraph::bm::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(square, kBM, paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(sigmoid,
+                         kBM,
+                         paddle::lite::subgraph::bm::ActConverter);

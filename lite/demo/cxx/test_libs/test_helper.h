@@ -13,25 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/assign_op.h"
+#include <string>
+#include <vector>
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
+#include "opencv2/core.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/imgproc.hpp"
 
-class AssignCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::AssignParam;
+double GetCurrentUS();
 
-  void Run() override;
+int64_t ShapeProduction(const std::vector<int64_t>& shape);
 
-  virtual ~AssignCompute() = default;
-};
+std::vector<int64_t> GetIntNumsFromStr(const std::string& str);
+std::vector<double> GetDoubleNumsFromStr(const std::string& str);
 
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+void neon_mean_scale(
+    const float* din, float* dout, int size, float* mean, float* scale);
+
+void process_img(const cv::Mat& img,
+                 int width,
+                 int height,
+                 float* dst_data,
+                 float* means,
+                 float* scales);

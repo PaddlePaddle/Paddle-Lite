@@ -42,7 +42,7 @@ class IoCopyHostToOpenCLCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
     auto mem_size = param.x->memory_size();
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "param.x->memory_size():" << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
     VLOG(2) << "param.x->dims():" << param.x->dims();
@@ -87,7 +87,7 @@ class IoCopykOpenCLToHostCompute
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(2) << "copy size " << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
     VLOG(2) << "param.x->dims():" << param.x->dims();
@@ -105,20 +105,11 @@ class IoCopykOpenCLToHostCompute
     }
 
     auto& context = ctx_->As<OpenCLContext>();
-    auto* wait_list = context.cl_wait_list();
 
-    auto it = wait_list->find(x_ptr);
-    if (it != wait_list->end()) {
-#ifndef LITE_SHUTDOWN_LOG
-      VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
+#ifdef LITE_WITH_LOG
+    VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
 #endif
-      auto& event = *(it->second);
-      event.wait();
-      auto command_queue = CLRuntime::Global()->command_queue();
-      command_queue.finish();
-    } else {
-      LOG(FATAL) << "Could not find the sync event for the target cl tensor.";
-    }
+    CLRuntime::Global()->command_queue().finish();
 
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }

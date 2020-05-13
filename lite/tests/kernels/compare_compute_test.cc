@@ -78,12 +78,12 @@ class CompareComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(out_);
     CHECK(out);
     out->Resize(x_dims_);
-    auto* out_data = out->mutable_data<bool>();
+    auto* out_data = out->template mutable_data<bool>();
     auto axis = axis_;
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<T>();
+    const auto* x_data = x->template data<T>();
     auto* y = scope->FindTensor(y_);
-    auto* y_data_in = y->data<T>();
+    auto* y_data_in = y->template data<T>();
 
     using CompareFunc = Functor<T>;
     if (x_dims_.size() == y_dims_.size()) {
