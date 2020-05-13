@@ -24,8 +24,8 @@ namespace lite {
 namespace arm {
 namespace math {
 /*
-* The basic items help to sort.
-*/
+ * The basic items help to sort.
+ */
 struct Item {
   Item() {}
   Item(size_t offset, size_t id, float score)
@@ -234,7 +234,7 @@ void beam_search(const Tensor *pre_ids,
   selected_ids->Resize(dims);
   selected_scores->Resize(dims);
   if (parent_idx) {
-    parent_idx->Resize(dims);
+    parent_idx->Resize(std::vector<int64_t>({static_cast<int>(num_instances)}));
   }
   auto *selected_ids_data = selected_ids->mutable_data<int64_t>();
   auto *selected_scores_data = selected_scores->mutable_data<float>();
