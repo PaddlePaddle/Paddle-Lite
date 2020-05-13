@@ -40,6 +40,11 @@ void OptBase::SetModelType(std::string optimize_out_type) {
   }
 }
 
+void OptBase::SetPassesInternal(
+    const std::vector<std::string>& passes_internal) {
+  opt_config_.set_passes_internal(passes_internal);
+}
+
 void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");

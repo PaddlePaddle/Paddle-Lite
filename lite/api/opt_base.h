@@ -52,6 +52,9 @@ class LITE_API OptBase {
   void RecordModelInfo(bool record_strip_info = true);
   // set optimized_model type
   void SetModelType(std::string model_type);
+  // internal inference for developer, not recommanded.
+  // choose methods of model optimizing.
+  void SetPassesInternal(const std::vector<std::string> &passes_internal = {});
   // transform and save the optimized model
   void Run();
   void RunOptimize(const std::string &model_dir_path = "",
