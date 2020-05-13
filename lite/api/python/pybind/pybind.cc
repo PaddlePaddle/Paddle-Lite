@@ -120,6 +120,7 @@ void BindLiteCxxConfig(py::module *m) {
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
       .def("set_model_buffer", &CxxConfig::set_model_buffer)
+      .def("set_passes_internal", &CxxConfig::set_passes_internal)
       .def("model_from_memory", &CxxConfig::model_from_memory);
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
