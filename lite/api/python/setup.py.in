@@ -59,7 +59,7 @@ if '${WITH_MKL}' == 'ON':
         PACKAGE_DATA['paddlelite.libs'] += ['msvcr120.dll']
 # link lite.so to paddlelite.libs
 if os.name != 'nt':
-    COMMAND = "patchelf --set-rpath '$ORIGIN/../libs/' " + LITE_PATH + "/lite.so"
+    COMMAND = "patchelf --set-rpath '$ORIGIN/libs/' " + LITE_PATH + "/lite.so"
     if os.system(COMMAND) != 0:
         raise Exception("patch third_party libs failed, command: %s" % COMMAND)
 
