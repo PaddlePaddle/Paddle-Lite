@@ -97,8 +97,13 @@ function check_need_ci {
     git log -1 --oneline | grep "test=develop" || exit -1
 }
 
+function check_coverage() {
+    bash ../tools/coverage/paddle_lite_coverage.sh
+}
+
 function cmake_x86 {
     prepare_workspace
+    #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
 }
 
@@ -203,7 +208,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=${LITE_WITH_COVERAGE}
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON 
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -241,9 +246,7 @@ function build_single {
 
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-    if [ $LITE_WITH_COVERAGE = "ON" ];then
-        make coveralls_generate -j
-    fi    
+    make coveralls_generate -j
     # test publish inference lib
     # make publish_inference
 }
@@ -1129,6 +1132,11 @@ function main {
                 ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_check_coverage)
+                build_test_server
+                check_coverage
                 shift
                 ;;
             build_test_xpu)

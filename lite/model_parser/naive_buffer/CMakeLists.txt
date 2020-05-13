@@ -13,7 +13,7 @@ set(naive_wrapper
     nb_op_desc nb_var_desc nb_param_desc nb_combined_params_desc
     nb_block_desc nb_program_desc PARENT_SCOPE)
 
-lite_cc_test(test_naive_buffer SRCS naive_buffer_test.cc DEPS naive_buffer)
+#lite_cc_test(test_naive_buffer SRCS naive_buffer_test.cc DEPS naive_buffer)
 lite_cc_test(test_naive_buffer_wrapper SRCS naive_buffer_wrapper_test.cc 
              DEPS nb_op_desc nb_var_desc nb_param_desc nb_combined_params_desc 
              nb_block_desc nb_program_desc)
