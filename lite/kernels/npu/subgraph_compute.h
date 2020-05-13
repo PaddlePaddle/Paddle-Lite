@@ -88,6 +88,7 @@ class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kAny)> {
 
  private:
   std::unique_ptr<SubgraphEngine> engine_;
+  std::string subgraph_model_cache_dir{""};
 };
 
 }  // namespace npu

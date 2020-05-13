@@ -296,6 +296,7 @@ bool SubgraphEngine::InputShapeChanged() {
 }
 
 void SubgraphCompute::PrepareForRun() {
+  subgraph_model_cache_dir = NPUContext::SubgraphModelCacheDir();
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
                                    param.sub_block_idx,
@@ -303,7 +304,7 @@ void SubgraphCompute::PrepareForRun() {
                                    param.input_data_names,
                                    param.output_data_names,
                                    param.scope,
-                                   param.subgraph_model_cache_dir));
+                                   subgraph_model_cache_dir));
   CHECK(engine_);
   engine_->Build();
 }

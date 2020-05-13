@@ -79,16 +79,6 @@ class LITE_API LightPredictor {
   std::vector<std::string> GetOutputNames();
   void PrepareFeedFetch();
 
-  void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
-    for (auto& inst : program_->instructions()) {
-      auto kernel = const_cast<Instruction&>(inst).mutable_kernel();
-      if (kernel->op_type() == "subgraph") {
-        kernel->Param<operators::SubgraphParam>().subgraph_model_cache_dir =
-            subgraph_model_cache_dir;
-      }
-    }
-  }
-
  private:
   void Build(const std::string& lite_model_file,
              bool model_from_memory = false);

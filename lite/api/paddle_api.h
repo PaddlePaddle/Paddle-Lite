@@ -119,7 +119,7 @@ class LITE_API ConfigBase {
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
   // to save subgraph model for npu/xpu/...
-  std::string subgraph_model_cache_dir_;
+  std::string subgraph_model_cache_dir_{""};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -133,7 +133,9 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
   // set subgraph_model_dir
-  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir);
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
   const std::string& subgraph_model_cache_dir() const {
     return subgraph_model_cache_dir_;
   }
