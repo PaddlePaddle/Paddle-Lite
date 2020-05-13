@@ -38,7 +38,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
     .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kXPU)})
+    .ExcludeTargets({TARGET(kXPU), TARGET(kX86)})
     .ExcludeTargets({TARGET(kBM)})
     .ExcludeTargets({TARGET(kCUDA)})
     .BindKernel("fc");
