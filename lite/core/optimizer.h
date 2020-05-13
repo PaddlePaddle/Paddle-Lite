@@ -77,16 +77,16 @@ class Optimizer {
            "identity_scale_eliminate_pass",               //
            "elementwise_mul_constant_eliminate_pass",     //
            "lite_sequence_pool_concat_fuse_pass",         //
+           "lite_scale_activation_fuse_pass",             //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
-           "lite_elementwise_add_activation_fuse_pass",  //
+           "lite_elementwise_activation_fuse_pass",  //
 #endif
+           "identity_dropout_eliminate_pass",
            "__xpu__resnet_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
            "__xpu__embedding_with_eltwise_add_fuse_pass",
            "__xpu__fc_fuse_pass",
-           "identity_dropout_eliminate_pass",         // should be placed after
-                                                      // xpu fusion
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and

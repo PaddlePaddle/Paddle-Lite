@@ -44,8 +44,6 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.act_type = opdesc.GetAttr<std::string>("act_type");
-  // TODO(sangoly): support more activation types.
-  CHECK(param_.act_type == "relu") << "Only relu activation be supported now";
 
   return true;
 }

@@ -55,6 +55,7 @@ class Engine {
   virtual int BuildOriginProgram();
   virtual int LaunchOriginProgram();
 
+  virtual void InitDeviceTensor();
   virtual bool InputShapeChanged();
 
   KernelContext *ctx_{nullptr};

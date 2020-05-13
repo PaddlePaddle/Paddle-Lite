@@ -245,6 +245,9 @@ struct ScaleParam : ParamBase {
   float scale{1.};
   float bias{};
   bool bias_after_scale{true};
+  std::string activation_type{""};
+  bool fuse_relu{false};
+  float alpha{6.};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -341,7 +344,7 @@ struct ConcatParam : ParamBase {
 struct ActivationParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  lite_api::ActivationType active_type;
+  lite_api::ActivationType active_type{lite_api::ActivationType::kIndentity};
   bool has_active{false};
   float Leaky_relu_alpha{0};   // leaky_relu param
   float Relu_clipped_coef{6};  // relu_clipped param
@@ -1493,6 +1496,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int head_num{};
   int size_per_head{};
   std::string act_type{};
+  std::string precision{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {

@@ -261,6 +261,9 @@ class KernelRegistry final {
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny)> *,  //
               KernelRegistryForTarget<TARGET(kRKNPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kRKNPU),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kRKNPU),

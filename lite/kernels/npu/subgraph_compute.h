@@ -49,9 +49,13 @@ class SubgraphEngine : public subgraph::Engine {
     std::vector<hiai::TensorDimension> device_odims{};
   };
 
+  int Build() override;
+
  protected:
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
+
+  void InitDeviceTensor() override;
   bool InputShapeChanged() override;
 
   std::string model_name_{"model.om"};

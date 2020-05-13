@@ -162,6 +162,12 @@ struct PMNode {
         attr_name, [=](const T& src) { return src == attr; });
   }
 
+  PMNode* assert_node_satisfied(
+      const std::function<bool(const Node*)>& condition) {
+    asserts_.push_back(condition);
+    return this;
+  }
+
  private:
   PMNode(PMPattern* pattern,
          const std::string& name = "",

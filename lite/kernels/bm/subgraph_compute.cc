@@ -40,6 +40,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
+    LOG(INFO) << op_type;
     if (!bridges.Exists(op_type, TARGET(kBM))) {
       return subgraph::FAILED;
     }
@@ -59,6 +60,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   unsigned int data_size = 0;
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
   finish_bmcompiler_data(graph.GetCompilerHandle(), &bmodel_data, &data_size);
+  graph.UnlockCompilerMutex();
   bmrt_hd_ = bmrt_create(bm_hd_);
   if (false == bmrt_load_bmodel_data(bmrt_hd_, bmodel_data, data_size)) {
     return subgraph::FAILED;

@@ -195,18 +195,6 @@ int SubgraphEngine::LaunchDeviceProgram() {
   // Copy the data of origin input tensors to the buffer of input HiAI tensors
   // init device_itensors_, device_otensors_, origin_otensors_
   auto device_program = device_program_map_[inputs_shape_];
-  for (size_t i = 0; i < device_itensors_.size(); i++) {
-    device_itensors_[i]->Init(&(device_program->device_idims[i]));
-    std::memcpy(device_itensors_[i]->GetBuffer(),
-                origin_itensors_[i]->raw_data(),
-                origin_itensors_[i]->memory_size());
-  }
-  for (size_t i = 0; i < device_otensors_.size(); i++) {
-    device_otensors_[i]->Init(&(device_program->device_odims[i]));
-  }
-  for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    origin_otensors_[i]->Resize(device_program->origin_odims[i]);
-  }
 
   // Run the HiAI model by name
   std::string key = "model_name";  // Note: key seems must be model_name
@@ -224,13 +212,53 @@ int SubgraphEngine::LaunchDeviceProgram() {
            hiai::AI_SUCCESS);
   VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
-  // Copy the data of output HiAI tensor to the buffer of origin output tensors
-  for (size_t i = 0; i < device_otensors_.size(); i++) {
-    std::memcpy(const_cast<void*>(origin_otensors_[i]->raw_data()),
-                device_otensors_[i]->GetBuffer(),
-                device_otensors_[i]->GetSize());
-  }
   return 0;
+}
+
+int SubgraphEngine::Build() {
+  if (device_program_map_.count(inputs_shape_) > 0) {
+    return subgraph::SUCCESS;
+  }
+  // In order to attach all of the ops of the block desc, we need to build the
+  // original program firstly.
+  BuildOriginProgram();
+  // Run InferShape() of all of ops, and convert Paddle ops to NPU/XPU IR graph
+  build_device_program_status_ = BuildDeviceProgram();
+  return build_device_program_status_;
+}
+
+void SubgraphEngine::InitDeviceTensor() {
+  auto device_program = device_program_map_[inputs_shape_];
+  for (size_t i = 0; i < device_itensors_.size(); i++) {
+    if (device_itensors_[i]->GetBuffer() != origin_itensors_[i]->raw_data()) {
+      VLOG(3) << "init device_itensors and share input tensor buf between "
+                 "device and host";
+      device_itensors_[i]->Init(&(device_program->device_idims[i]));
+      std::memcpy(device_itensors_[i]->GetBuffer(),
+                  origin_itensors_[i]->raw_data(),
+                  origin_itensors_[i]->memory_size());
+      // share data buf between device_itensor and origin_itensor
+      std::shared_ptr<Buffer> buffer =
+          std::make_shared<Buffer>(device_itensors_[i]->GetBuffer(),
+                                   lite_api::TargetType::kHost,
+                                   device_itensors_[i]->GetSize());
+      origin_itensors_[i]->ResetBuffer(buffer, device_itensors_[i]->GetSize());
+    }
+  }
+  for (size_t i = 0; i < device_otensors_.size(); i++) {
+    if (device_otensors_[i]->GetBuffer() != origin_otensors_[i]->raw_data()) {
+      VLOG(3) << "init device_otensors and share output tensor buf between "
+                 "device and host";
+      device_otensors_[i]->Init(&(device_program->device_odims[i]));
+      // share data buf between device_itensor and origin_itensor
+      origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+      std::shared_ptr<Buffer> buffer =
+          std::make_shared<Buffer>(device_otensors_[i]->GetBuffer(),
+                                   lite_api::TargetType::kHost,
+                                   device_otensors_[i]->GetSize());
+      origin_otensors_[i]->ResetBuffer(buffer, device_otensors_[i]->GetSize());
+    }
+  }
 }
 
 bool SubgraphEngine::InputShapeChanged() {
@@ -238,10 +266,10 @@ bool SubgraphEngine::InputShapeChanged() {
   for (auto origin_itensor : origin_itensors_) {
     new_shape.push_back(origin_itensor->dims().Vectorize());
   }
-  inputs_shape_ = new_shape;
-  if (device_program_map_.count(inputs_shape_) > 0) {
+  if (inputs_shape_ == new_shape) {
     return false;
   }
+  inputs_shape_ = new_shape;
   return true;
 }
 

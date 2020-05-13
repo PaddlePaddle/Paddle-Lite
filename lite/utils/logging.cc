@@ -22,7 +22,7 @@
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
     defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -38,7 +38,11 @@ void gen_log(STL::ostream& log_stream_,
   std::string time_str;
   struct tm tm_time;  // Time of creation of LogMessage
   time_t timestamp = time(NULL);
+#if defined(_WIN32)
+  localtime_s(&tm_time, &timestamp);
+#else
   localtime_r(&timestamp, &tm_time);
+#endif
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
@@ -60,5 +64,5 @@ void gen_log(STL::ostream& log_stream_,
 }  // namespace lite
 }  // namespace paddle
 
-#endif  // LITE_SHUTDOWN_LOG
+#endif  // LITE_WITH_LOG
 #endif  // LITE_WITH_LIGHT_FRAMEWORK

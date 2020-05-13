@@ -71,15 +71,17 @@ inline double GetCurrentUS() {
 
 void RunModel(std::string model_dir,
               const shape_t& input_shape,
-              int repeats,
-              int warmup,
-              int print_output_elem) {
+              size_t repeats,
+              size_t warmup,
+              size_t print_output_elem,
+              size_t power_mode) {
   // 1. Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_dir);
   // NOTE: To load model transformed by model_optimize_tool before
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
   // config.set_model_dir(model_dir);
+  config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
@@ -187,8 +189,15 @@ int main(int argc, char** argv) {
     warmup = atoi(argv[7]);
     print_output_elem = atoi(argv[8]);
   }
+  // set arm power mode:
+  // 0 for big cluster, high performance
+  // 1 for little cluster
+  // 2 for all cores
+  // 3 for no bind
+  size_t power_mode = 0;
 
-  RunModel(model_dir, input_shape, repeats, warmup, print_output_elem);
+  RunModel(
+      model_dir, input_shape, repeats, warmup, print_output_elem, power_mode);
 
   return 0;
 }
