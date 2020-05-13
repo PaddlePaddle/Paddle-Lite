@@ -61,7 +61,10 @@ class LITE_API OptBase {
                    const std::string &optimized_out_path = "");
   // fuctions of printing info
   // 1. help info
+  // 1.1 Print help info for opt python api
   void PrintHelpInfo();
+  // 1.2 Print help info for executable opt bin
+  void PrintExecutableBinHelpInfo();
   // 2. PrintOpsInfo
   void PrintOpsInfo(const std::set<std::string> &valid_ops =
                         {});  // print supported ops on target_types

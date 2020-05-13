@@ -68,9 +68,11 @@ void BindLiteOpt(py::module *m) {
       .def("run", &OptBase::Run)
       .def("run_optimize", &OptBase::RunOptimize)
       .def("help", &OptBase::PrintHelpInfo)
+      .def("executablebin_help", &OptBase::PrintExecutableBinHelpInfo)
       .def("print_supported_ops", &OptBase::PrintSupportedOps)
       .def("display_kernels_info", &OptBase::DisplayKernelsInfo)
-      .def("print_all_ops", &OptBase::PrintAllOps);
+      .def("print_all_ops", &OptBase::PrintAllOps)
+      .def("check_if_model_supported", &OptBase::CheckIfModelSupported);
 }
 #endif
 static void BindLiteLightPredictor(py::module *m);
