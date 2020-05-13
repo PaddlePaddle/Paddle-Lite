@@ -82,7 +82,7 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
          "command argument 'valid_targets'";
 }
 
-void OptBase::SetLiteOut(const std::string& lite_out_name) {
+void OptBase::SetOptimizeOut(const std::string& lite_out_name) {
   lite_out_name_ = lite_out_name;
 }
 
@@ -116,7 +116,7 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
   SetModelFile(model_path);
   SetParamFile(param_path);
   SetValidPlaces(valid_places);
-  SetLiteOut(optimized_out_path);
+  SetOptimizeOut(optimized_out_path);
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
   opt_config_.set_valid_places(valid_places_);

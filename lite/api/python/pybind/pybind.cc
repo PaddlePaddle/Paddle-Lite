@@ -62,7 +62,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_model_file", &OptBase::SetModelFile)
       .def("set_param_file", &OptBase::SetParamFile)
       .def("set_valid_places", &OptBase::SetValidPlaces)
-      .def("set_lite_out", &OptBase::SetLiteOut)
+      .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
       .def("record_model_info", &OptBase::RecordModelInfo)
       .def("run", &OptBase::Run)

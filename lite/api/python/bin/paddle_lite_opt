@@ -61,7 +61,7 @@ def main():
     if args.optimize_out_type is not None:
          a.set_model_type(args.optimize_out_type)
     if args.optimize_out is not None:
-         a.set_lite_out(args.optimize_out)
+         a.set_optimize_out(args.optimize_out)
     if args.valid_targets is not None:
          a.set_valid_places(args.valid_targets)
     if args.param_file is not None:

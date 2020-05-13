@@ -48,7 +48,7 @@ class LITE_API OptBase {
   void SetModelFile(const std::string &model_path);
   void SetParamFile(const std::string &param_path);
   void SetValidPlaces(const std::string &valid_places);
-  void SetLiteOut(const std::string &lite_out_name);
+  void SetOptimizeOut(const std::string &lite_out_name);
   void RecordModelInfo(bool record_strip_info = true);
   // set optimized_model type
   void SetModelType(std::string model_type);
