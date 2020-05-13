@@ -70,12 +70,9 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Build(
 
   if (!subgraph_model_cache_full_dir.empty() &&
       IsFileExists(subgraph_model_cache_full_dir)) {
-    VLOG(3) << subgraph_model_cache_full_dir
-            << " exists. Will read om model from file";
+    VLOG(3) << "Will read om model from " << subgraph_model_cache_full_dir;
     ReadFromOMFile(&om_model_buf, subgraph_model_cache_full_dir);
   } else {
-    VLOG(3) << subgraph_model_cache_full_dir
-            << " does not exist. Will write om model to file";
     if (!ir_build.CreateModelBuff(om_model, om_model_buf)) {
       LOG(WARNING) << "[NPU] CreateModelBuff failed!";
       return nullptr;
@@ -85,7 +82,10 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Build(
       ir_build.ReleaseModelBuff(om_model_buf);
       return nullptr;
     }
-    WriteToOMFile(om_model_buf, subgraph_model_cache_full_dir);
+    if (!subgraph_model_cache_full_dir.empty()) {
+      VLOG(3) << "Will write om model to " << subgraph_model_cache_full_dir;
+      WriteToOMFile(om_model_buf, subgraph_model_cache_full_dir);
+    }
   }
 
   // Create a HiAI model manager client to load the HiAI om model
