@@ -21,5 +21,11 @@ namespace lite {
 thread_local xdnn::Context* Context<TargetType::kXPU>::_tls_raw_ctx{nullptr};
 #endif
 
+#ifdef LITE_WITH_MLU
+int Context<TargetType::kMLU>::next_queue_id_{0};
+std::map<int, int> Context<TargetType::kMLU>::queue_id_map_;
+std::mutex Context<TargetType::kMLU>::map_mutex_;
+#endif
+
 }  // namespace lite
 }  // namespace paddle

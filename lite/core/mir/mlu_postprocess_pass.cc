@@ -26,6 +26,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+static thread_local int g_stream_id = 0;
+
 Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
                                            const std::string& cast_arg_name,
                                            SSAGraph* graph,
@@ -97,8 +99,8 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      stmt.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
+      stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+          stmt.picked_kernel().target(), g_stream_id));
       break;
     }
   }
@@ -182,8 +184,8 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
       auto& stmt = cast_inst->AsStmt();
-      stmt.picked_kernel().SetContext(
-          ContextScheduler::Global().NewContext(stmt.picked_kernel().target()));
+      stmt.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+          stmt.picked_kernel().target(), g_stream_id));
       break;
     }
   }
@@ -620,6 +622,7 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 #endif
 
+  g_stream_id = static_cast<int>(reinterpret_cast<int64_t>(graph.get()));
   // insert io_copy, layout and precision cast of subgraph's inputs and outputs
   for (auto& node : graph->mutable_nodes()) {
     if (node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
