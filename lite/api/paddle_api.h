@@ -173,7 +173,7 @@ class LITE_API CxxConfig : public ConfigBase {
       const std::vector<std::string>& passes_internal = {}) {
     passes_internal_ = passes_internal;
   }
-  const std::vector<std::string>& get_passes_internal() {
+  const std::vector<std::string>& get_passes_internal() const {
     return passes_internal_;
   }
   const std::vector<Place>& valid_places() const { return valid_places_; }
