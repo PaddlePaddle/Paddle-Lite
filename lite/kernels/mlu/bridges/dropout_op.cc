@@ -33,15 +33,15 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Create act node and set params from op
   auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
-  auto mask_var_name = op_info->Output("Mask").front();
+  /* auto mask_var_name = op_info->Output("Mask").front(); */
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
-  auto mask = scope->FindVar(mask_var_name)->GetMutable<Tensor>();
-  auto mask_dims = mask->dims().Vectorize();
-  auto mask_tensor = graph->AddNode(
-      mask_var_name, mask_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
+  /* auto mask = scope->FindVar(mask_var_name)->GetMutable<Tensor>(); */
+  /* auto mask_dims = mask->dims().Vectorize(); */
+  /* auto mask_tensor = graph->AddNode( */
+  /*     mask_var_name, mask_dims, CNML_TENSOR, CNML_NCHW, graph->FPType()); */
 
   // is_test is true by default
   // if(op_info->HasAttr("is_test")){

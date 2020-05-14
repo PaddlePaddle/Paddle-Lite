@@ -61,6 +61,7 @@ int LayoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
     output_tensor = graph->AddNode(
         out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
+    VLOG(3) << "layout transpose nchw to nhwc" << std::endl;
   } else {
     switch (x_dims.size()) {
       case 2:
@@ -78,6 +79,7 @@ int LayoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       default:
         CHECK(0) << "Unsupport shpae";
     }
+    VLOG(3) << "layout transpose nhwc to nchw" << std::endl;
     output_tensor = graph->AddNode(out_var_name,
                                    output_dims,
                                    CNML_TENSOR,

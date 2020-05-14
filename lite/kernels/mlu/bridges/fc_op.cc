@@ -82,15 +82,15 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (HasInputArg(op_info, scope, "Bias")) {
     bias_var_name = op_info->Input("Bias").front();
     auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
-    auto bias_dims = bias->dims();
+    auto bias_dims = bias->dims().Vectorize();
     CHECK(!graph->HasNode(bias_var_name));
+    if (bias_dims.size() < 4u) {
+      bias_dims.insert(bias_dims.begin(), 4 - bias_dims.size(), 1);
+    }
     // CHECK_EQ(bias_dims.production(), n);
 
-    bias_tensor = graph->AddNode(bias_var_name,
-                                 bias_dims.Vectorize(),
-                                 CNML_CONST,
-                                 CNML_CNHW,
-                                 graph->FPType());
+    bias_tensor = graph->AddNode(
+        bias_var_name, bias_dims, CNML_CONST, CNML_NHWC, graph->FPType());
     graph->BindConstData(bias_var_name, bias);
   }
   cnmlBaseOp_t fc_op;

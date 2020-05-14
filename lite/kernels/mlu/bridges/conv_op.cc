@@ -87,6 +87,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     is_group_mode = false;
   }
 
+  auto input_tensor = graph->GetNode(input_var_name);
   const auto output_tensor = graph->AddNode(
       output_var_name, output_shape, CNML_TENSOR, CNML_NCHW, graph->FPType());
   std::vector<int64_t> cnml_filter_shape = {
@@ -142,7 +143,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     std::vector<int64_t> bias_shape;
     if (bias_data_size == oc) {
       // 0: {oc}
-      bias_shape = {oc};
+      bias_shape = {1, 1, 1, oc};
     } else if (bias_data_size == output_data_size / bs) {
       LOG(FATAL) << "Unsupported ... ...";
       // 1: {1, oc, oh, ow}
@@ -156,11 +157,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                  << " isn't supported in conv2d Op when output dimension is "
                  << output_dims;
     }
-    bias_tensor = graph->AddNode(bias_var_name,
-                                 bias_dims.Vectorize(),
-                                 CNML_CONST,
-                                 CNML_CNHW,
-                                 graph->FPType());
+    bias_tensor = graph->AddNode(
+        bias_var_name, bias_shape, CNML_CONST, CNML_NHWC, graph->FPType());
     graph->BindConstData(bias_var_name, bias);
   }
 
@@ -184,14 +182,14 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                             paddings[0],
                                             paddings[0]));
     const auto mean_tensor = graph->AddNode("first_conv_mean_tensor",
-                                            std::vector<int64_t>{3},
+                                            std::vector<int64_t>{1, 1, 1, 3},
                                             CNML_CONST,
-                                            CNML_CNHW,
+                                            CNML_NHWC,
                                             graph->FPType());
     const auto std_tensor = graph->AddNode("first_conv_std_tensor",
-                                           std::vector<int64_t>{3},
+                                           std::vector<int64_t>{1, 1, 1, 3},
                                            CNML_CONST,
-                                           CNML_CNHW,
+                                           CNML_NHWC,
                                            graph->FPType());
 
     graph->BindConstRawData("first_conv_mean_tensor",
@@ -203,11 +201,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                             3,
                             false);
 
-    graph->GetNode(input_var_name)->set_mlu_dtype(CNML_DATA_UINT8);
+    input_tensor->set_mlu_dtype(CNML_DATA_UINT8);
     CNML_CALL(cnmlCreateConvFirstOpForward(
         &conv_op,
         conv_param,
-        graph->GetNode(input_var_name)->mlu_tensor(),
+        input_tensor->mlu_tensor(),
         mean_tensor->mlu_tensor(),
         output_tensor->mlu_tensor(),
         filter_tensor->mlu_tensor(),
@@ -224,7 +222,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CNML_CALL(cnmlCreateConvDepthwiseOpForward(
         &conv_op,
         conv_depthwise_param,
-        graph->GetNode(input_var_name)->mlu_tensor(),
+        input_tensor->mlu_tensor(),
         output_tensor->mlu_tensor(),
         filter_tensor->mlu_tensor(),
         bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
@@ -241,7 +239,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CNML_CALL(cnmlCreateConvGroupOpForward(
         &conv_op,
         conv_param,
-        graph->GetNode(input_var_name)->mlu_tensor(),
+        input_tensor->mlu_tensor(),
         output_tensor->mlu_tensor(),
         filter_tensor->mlu_tensor(),
         bias_tensor ? bias_tensor->mlu_tensor() : nullptr,
@@ -263,7 +261,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     CNML_CALL(cnmlCreateConvOpForward(
         &conv_op,
         conv_param,
-        graph->GetNode(input_var_name)->mlu_tensor(),
+        input_tensor->mlu_tensor(),
         output_tensor->mlu_tensor(),
         filter_tensor->mlu_tensor(),
         bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
