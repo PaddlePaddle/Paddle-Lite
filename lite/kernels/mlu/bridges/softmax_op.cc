@@ -35,9 +35,16 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
+  auto x_shape =
+      scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims().Vectorize();
 
   // nchw axis to nhwc aixs
-  int nchw_to_nhwc_aixs_map[4] = {0, 3, 1, 2};
+  std::vector<int> nchw2nhwc_axis(x_shape.size());
+  nchw2nhwc_axis[0] = 0;
+  if (x_shape.size() > 1) nchw2nhwc_axis[1] = x_shape.size() - 1;
+  for (size_t i = 2; i < x_shape.size(); ++i) {
+    nchw2nhwc_axis[i] = i - 1;
+  }
   int axis = 1;
   if (op_info->HasAttr("axis")) {
     axis = op_info->GetAttr<int>("axis");
@@ -45,7 +52,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       axis = output_dims.size() + axis;
     }
   }
-  int nhwc_axis = nchw_to_nhwc_aixs_map[axis];
+  int nhwc_axis = nchw2nhwc_axis[axis];
 
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());

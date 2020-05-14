@@ -175,9 +175,9 @@ void test_fc(const std::vector<int64_t>& input_shape,
 
 TEST(MLUBridges, fc) {
   for (bool use_bias : {true, false}) {
-    // test_fc({1, 8, 8, 1}, {64, 4}, 1, use_bias);
-    // test_fc({1, 5, 5, 1}, {25, 7}, 1, use_bias);
-    // test_fc({1, 4, 1, 1}, {4, 8}, 1, use_bias);
+    test_fc({1, 8, 8, 1}, {64, 4}, 1, use_bias);
+    test_fc({1, 5, 5, 1}, {25, 7}, 1, use_bias);
+    test_fc({1, 4, 1, 1}, {4, 8}, 1, use_bias);
     test_fc({1, 1024, 1, 1}, {1024, 32}, 1, use_bias);
   }
 }
