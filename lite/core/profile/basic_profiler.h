@@ -39,15 +39,15 @@ namespace profile {
 struct TimerInfo {
   uint64_t total_{0};
   uint64_t count_{0};
-  uint64_t max_{std::numeric_limits<uint64_t>::min()};
-  uint64_t min_{std::numeric_limits<uint64_t>::max()};
+  uint64_t max_{(std::numeric_limits<uint64_t>::min)()};
+  uint64_t min_{(std::numeric_limits<uint64_t>::max)()};
   uint64_t timer_{0};
 
-  double ave() const { return total_ * 1. / count_; }
-  double max() const { return max_; }
-  double min() const { return min_; }
-  uint64_t total() const { return total_; }
-  uint64_t count() const { return count_; }
+  double Ave() const { return total_ * 1. / count_; }
+  double Max() const { return max_; }
+  double Min() const { return min_; }
+  uint64_t Total() const { return total_; }
+  uint64_t Count() const { return count_; }
 };
 
 /* Base class of all the profile records */

@@ -118,7 +118,7 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
-        -DLITE_SHUTDOWN_LOG=OFF \
+        -DLITE_WITH_LOG=ON \
         -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
@@ -396,7 +396,7 @@ function test_arm_android {
 
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s ${device} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
@@ -653,7 +653,7 @@ function build_ios {
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_JAVA=OFF \
-            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_WITH_LOG=OFF \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -1000,7 +1000,7 @@ function mobile_publish {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=OFF \
         -DLITE_WITH_JAVA=ON \
-        -DLITE_SHUTDOWN_LOG=ON \
+        -DLITE_WITH_LOG=OFF \
         -DLITE_ON_TINY_PUBLISH=ON \
         -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 

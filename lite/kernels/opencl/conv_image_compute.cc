@@ -36,7 +36,7 @@ void ConvImageCompute::PrepareForRun() {
   float* filter_cpu = param.filter->mutable_data<float>();
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-
+  const bool is_mali = context.cl_context()->IsArmMali();
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
@@ -63,6 +63,7 @@ void ConvImageCompute::PrepareForRun() {
   bool stride_equal = stride_h == stride_w;
   bool dilation_equal = dilations[0] == dilations[1];
 
+  VLOG(3) << "Is arm mali  / " << (is_mali ? "Yes" : "No");
   VLOG(3) << "Is relu fused? / " << (relu_fused ? "Yes" : "No");
   VLOG(3) << "groups:" << groups << " stride_h:" << stride_h
           << " stride_w:" << stride_w << " pad_h:" << pad_h
@@ -278,7 +279,6 @@ void ConvImageCompute::PrepareForRun() {
 
 #endif
 #undef CONV3x3OPT_FALL_BACK
-
   } else if (kernel_h == 5 && kernel_w == 5) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
@@ -393,7 +393,6 @@ void ConvImageCompute::PrepareForRun() {
     }
 #endif
 #undef CONV_7x7_OPT
-
   } else {
     LOG(FATAL) << "conv image compute not support this condition yet! ";
   }
@@ -477,6 +476,8 @@ void ConvImageCompute::PrepareForRun() {
     double min_turn_time = DBL_MAX;
     cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
         global_work_size_, max_work_group_size);
+    VLOG(3) << "origin  :local_work_size_ : " << best_local_work_size[0] << " "
+            << best_local_work_size[1] << " " << best_local_work_size[2];
     cl::NDRange last_local_work_size = cl::NDRange{
         static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
     if (use_turn_) {
@@ -495,7 +496,30 @@ void ConvImageCompute::PrepareForRun() {
           // skiped turned lws
           continue;
         }
-        auto turn_time = this->Turn(5);
+        auto turn_time = this->Turn(10);
+        if (min_turn_time > turn_time) {
+          min_turn_time = turn_time;
+          best_local_work_size = local_work_size_;
+        }
+        last_local_work_size = local_work_size_;
+      }
+      // reverse
+      for (size_t i = 1; i < 15; i++) {
+        if (kernel_h == 1 && kernel_w == 1) {
+          // todo use diff logics
+          local_work_size_ = context.cl_context()->LocalWorkSizeTurnReverse(
+              global_work_size_, max_work_group_size, i);
+        } else {
+          local_work_size_ = context.cl_context()->LocalWorkSizeTurnReverse(
+              global_work_size_, max_work_group_size, i);
+        }
+        if (last_local_work_size[0] == local_work_size_[0] &&
+            last_local_work_size[1] == local_work_size_[1] &&
+            last_local_work_size[2] == local_work_size_[2]) {
+          // skiped turned lws
+          continue;
+        }
+        auto turn_time = this->Turn(10);
         if (min_turn_time > turn_time) {
           min_turn_time = turn_time;
           best_local_work_size = local_work_size_;
@@ -504,6 +528,8 @@ void ConvImageCompute::PrepareForRun() {
       }
     }
     local_work_size_ = best_local_work_size;
+    VLOG(3) << "chossen :local_work_size_ : " << local_work_size_[0] << " "
+            << local_work_size_[1] << " " << local_work_size_[2];
     VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
             << local_work_size_[1] << "," << local_work_size_[2] << "}";
   }
@@ -541,12 +567,12 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d_1x1 params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -846,7 +872,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   const bool is_element_wise_bias =
       has_bias && param.output->dims() == param.bias->dims();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   // VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
   //         << input_image_shape["height"];
@@ -893,7 +919,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -922,7 +948,7 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -975,7 +1001,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -1025,7 +1051,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1052,7 +1078,7 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -1103,7 +1129,7 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
       has_bias && param.output->dims() == param.bias->dims();
 
 // default_work_size[2] = h_blk;
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   // VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
   //         << input_image_shape["height"];
@@ -1223,7 +1249,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -1273,7 +1299,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1300,7 +1326,7 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -1349,7 +1375,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   const bool is_element_wise_bias =
       has_bias && param.output->dims() == param.bias->dims();
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ conv2d 7x7 params ============";
   // VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
   //         << input_image_shape["height"];
@@ -1479,7 +1505,7 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
     bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1546,7 +1572,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
 
   auto kernel = kernel_;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "setArg";
   VLOG(4) << "strides = " << strides[0];
   VLOG(4) << "offset = " << offset;
@@ -1576,7 +1602,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   const cl::Image2D* bias_image = nullptr;
   if (has_bias) {
     bias_image = bias_gpu_image_->data<half_t, cl::Image2D>();
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1649,7 +1675,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   int input_c = input_dims[1];
   auto dilations = *param.dilations;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "============ depthwise conv2d params ============";
   VLOG(4) << "input_image_shape: " << input_image_shape["width"] << ","
           << input_image_shape["height"];
@@ -1700,7 +1726,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   status = kernel.setArg(++arg_idx, *filter_image);
   CL_CHECK_FATAL(status);
   if (has_bias) {
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "set bias_image: ";
 #endif
     status = kernel.setArg(++arg_idx, *bias_image);
@@ -1731,7 +1757,7 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
   status = kernel.setArg(++arg_idx, filter_height);
   CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif

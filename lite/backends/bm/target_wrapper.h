@@ -31,6 +31,7 @@ class TargetWrapper<TARGET(kBM)> {
   static size_t maximum_stream() { return 0; }
 
   static void SetDevice(int id);
+  static int GetDevice();
   static void CreateStream(stream_t* stream) {}
   static void DestroyStream(const stream_t& stream) {}
 

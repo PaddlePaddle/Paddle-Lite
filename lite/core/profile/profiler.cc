@@ -112,9 +112,10 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
         ch->second.min += unit.Timer(type)->LapTimes().Min(w);
         ch->second.max += unit.Timer(type)->LapTimes().Max(w);
       } else {
-        TimeInfo info({unit.Timer(type)->LapTimes().Avg(w),
-                       unit.Timer(type)->LapTimes().Min(w),
-                       unit.Timer(type)->LapTimes().Max(w)});
+        TimeInfo info;
+        info.avg = unit.Timer(type)->LapTimes().Avg(w);
+        info.min = unit.Timer(type)->LapTimes().Min(w);
+        info.max = unit.Timer(type)->LapTimes().Max(w);
         summary.insert({unit.Character(), info});
       }
     }

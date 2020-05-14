@@ -60,3 +60,5 @@ USE_SUBGRAPH_BRIDGE(split, kBM);
 USE_SUBGRAPH_BRIDGE(matmul, kBM);
 USE_SUBGRAPH_BRIDGE(max_pool2d_with_index, kBM);
 USE_SUBGRAPH_BRIDGE(sigmoid, kBM);
+USE_SUBGRAPH_BRIDGE(density_prior_box, kBM);
+USE_SUBGRAPH_BRIDGE(swish, kBM);

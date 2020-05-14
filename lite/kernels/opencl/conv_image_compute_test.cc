@@ -121,6 +121,7 @@ static void conv_basic(const Dtype1* din,
     }
   }
 }
+
 int ConvOutputSize(int input_size,
                    int filter_size,
                    int dilation,
@@ -267,7 +268,7 @@ TEST(conv2d, compute_image2d_1x1) {
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * ic * ksize * ksize);
@@ -344,11 +345,6 @@ TEST(conv2d, compute_image2d_1x1) {
               for (int i = 0; i < x_image_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
               }
-              //                auto* filter_image2d =
-              //                filter.mutable_data<half_t, cl::Image2D>(
-              //                    filter_image_width,
-              //                    filter_image_height,
-              //                    filter_image_v.data());
               SHADOW_LOG << "卷积核 : ----  ";
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_v[i];
@@ -377,15 +373,6 @@ TEST(conv2d, compute_image2d_1x1) {
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -554,9 +541,6 @@ const int stride = 2;
                                                   PRECISION(kFP16),
                                                   DATALAYOUT(kImageDefault));
               ASSERT_FALSE(kernels.empty());
-              //              CHECK(batch_size == 1) << "conv3x3 only supprt
-              //              batch_size == 1";
-
               auto kernel = std::move(kernels.front());
               SHADOW_LOG << "created conv2d kernel";
 
@@ -647,7 +631,7 @@ const int stride = 2;
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * filter_channel * ksize * ksize);
@@ -728,28 +712,12 @@ const int stride = 2;
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
-              // filter kernel
-              //              auto* filter_image2d = filter.mutable_data<float,
-              //              cl::Image2D>(
-              //                  filter_image_width,
-              //                  filter_image_height,
-              //                  filter_image_v.data());
-
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -1002,7 +970,7 @@ TEST(conv2d, compute_image2d_5x5) {
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * ic * ksize * ksize);
@@ -1079,28 +1047,12 @@ TEST(conv2d, compute_image2d_5x5) {
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
-              // filter kernel
-              //              auto* filter_image2d = filter.mutable_data<float,
-              //              cl::Image2D>(
-              //                  filter_image_width,
-              //                  filter_image_height,
-              //                  filter_image_v.data());
-
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";
@@ -1337,7 +1289,7 @@ TEST(conv2d, compute_image2d_7x7) {
               const size_t cl_image2d_slice_pitch{0};
 
               std::default_random_engine engine;
-              std::uniform_real_distribution<float> gen(-5, 5);
+              std::uniform_real_distribution<float> gen(-2, 2);
 
               std::vector<float> input_v(batch_size * ic * ih * iw);
               std::vector<float> filter_v(oc * ic * ksize * ksize);
@@ -1428,29 +1380,12 @@ TEST(conv2d, compute_image2d_7x7) {
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
-
-              //              auto* filter_image2d =
-              // filter.mutable_data < float,
-              //              cl::Image2D>(
-              //                  filter_image_width,
-              //                  filter_image_height,
-              //                  filter_image_v.data());
-
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
-                //                CLImageConverterFolder folder_convertor;
-                //                folder_convertor.NCHWToImage(
-                //                    bias_v.data(), bias_image_v.data(),
-                //                    bias_dim);
-                //
-                //                auto* bias_data = bias.mutable_data<float,
-                //                cl::Image2D>(
-                //                    bias_image_width, bias_image_height,
-                //                    bias_image_v.data());
               }
 
               SHADOW_LOG << "resize output  ...";

@@ -24,6 +24,48 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
+float* compute_elementwise_both_const(OpLite* op) {
+  auto op_info = op->op_info();
+  auto scope = op->scope();
+  auto op_type = op_info->Type();
+
+  // input
+  auto x_var_name = op_info->Input("X").front();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x_dims = x->dims();
+  auto y_var_name = op_info->Input("Y").front();
+  auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
+  auto y_dims = y->dims();
+  // output
+  auto output_var_name = op_info->Output("Out").front();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output_dims = output->dims();
+  float* cpu_data =
+      static_cast<float*>(malloc(sizeof(float) * output->data_size()));
+  CHECK(cpu_data != nullptr);
+  CHECK_EQ(x_dims.size(), y_dims.size());
+  const float* y_data = const_cast<const float*>(y->mutable_data<float>());
+  const float* x_data = const_cast<const float*>(x->mutable_data<float>());
+  if (op_type == "elementwise_mul") {
+    for (size_t i = 0; i < output->data_size(); i++) {
+      cpu_data[i] = x_data[i] * y_data[i];
+    }
+  } else if (op_type == "elementwise_add") {
+    for (size_t i = 0; i < output->data_size(); i++) {
+      cpu_data[i] = x_data[i] + y_data[i];
+    }
+  } else if (op_type == "elementwise_sub") {
+    for (size_t i = 0; i < output->data_size(); i++) {
+      cpu_data[i] = x_data[i] - y_data[i];
+    }
+  } else if (op_type == "elementwise_div") {
+    for (size_t i = 0; i < output->data_size(); i++) {
+      cpu_data[i] = x_data[i] / y_data[i];
+    }
+  }
+  return cpu_data;
+}
+
 int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
@@ -41,21 +83,20 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_dims = x->dims();
   name[0] = static_cast<const char*>(x_var_name.c_str());
   dim[0] = x_dims.size();
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
   for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
+    i_x_shape_data[i] = static_cast<int>(x_dims[i]);
   }
   shape[0] = &i_x_shape_data[0];
+  bool x_is_const = !graph->HasNode(x_var_name);
   auto y_var_name = op_info->Input("Y").front();
   auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
   auto y_dims = y->dims();
   name[1] = static_cast<const char*>(y_var_name.c_str());
   dim[1] = y_dims.size();
-  const int64_t* y_shape_data = const_cast<const int64_t*>(&y_dims.data()[0]);
   std::vector<int32_t> i_y_shape_data(y_dims.size());
   for (size_t i = 0; i < y_dims.size(); i++) {
-    i_y_shape_data[i] = static_cast<int>(y_shape_data[i]);
+    i_y_shape_data[i] = static_cast<int>(y_dims[i]);
   }
   shape[1] = &i_y_shape_data[0];
   bool y_is_const = !graph->HasNode(y_var_name);
@@ -86,46 +127,56 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const float* x_data = const_cast<const float*>(x->mutable_data<float>());
   auto unique_op_name = lite::subgraph::bm::UniqueName("expand_ndims");
   std::vector<int32_t> i_expand_shape_data(3);
-  if (y_is_const) {
-    if (dim[0] == dim[1] || 2 == dim[0]) {
-      bm_add_const_tensor(graph->GetCompilerHandle(),
-                          name[1],
-                          shape[1],
-                          dim[1],
-                          static_cast<bm_data_type_t>(DTYPE_FP32),
-                          static_cast<const void*>(y_data));
-    } else if (1 == dim[1] && 1 == axis) {
-      add_expand_ndims_layer(graph->GetCompilerHandle(),
-                             name[1],
-                             shape[1],
-                             dim[1],
-                             static_cast<const float*>(y_data),
-                             -1,
-                             2,
-                             static_cast<const char*>(unique_op_name.c_str()));
-      name[1] = static_cast<const char*>(unique_op_name.c_str());
-      dim[1] = 3;
-      i_expand_shape_data[0] = i_y_shape_data[0];
-      i_expand_shape_data[1] = 1;
-      i_expand_shape_data[2] = 1;
-      shape[1] = &i_expand_shape_data[0];
-      y_data = nullptr;
+  if (x_is_const && y_is_const) {
+    float* cpu_data = compute_elementwise_both_const(op);
+    bm_add_const_tensor(graph->GetCompilerHandle(),
+                        static_cast<const char*>(output_var_name.c_str()),
+                        const_cast<const int*>(&i_output_shape_data[0]),
+                        output_dims.size(),
+                        static_cast<bm_data_type_t>(DTYPE_FP32),
+                        static_cast<const void*>(cpu_data));
+  } else {
+    if (y_is_const) {
+      if (dim[0] == dim[1] || 2 == dim[0]) {
+        bm_add_const_tensor(graph->GetCompilerHandle(),
+                            name[1],
+                            shape[1],
+                            dim[1],
+                            static_cast<bm_data_type_t>(DTYPE_FP32),
+                            static_cast<const void*>(y_data));
+      } else if (1 == dim[1] && 1 == axis) {
+        add_expand_ndims_layer(
+            graph->GetCompilerHandle(),
+            name[1],
+            shape[1],
+            dim[1],
+            static_cast<const float*>(y_data),
+            -1,
+            2,
+            static_cast<const char*>(unique_op_name.c_str()));
+        name[1] = static_cast<const char*>(unique_op_name.c_str());
+        dim[1] = 3;
+        i_expand_shape_data[0] = i_y_shape_data[0];
+        i_expand_shape_data[1] = 1;
+        i_expand_shape_data[2] = 1;
+        shape[1] = &i_expand_shape_data[0];
+        y_data = nullptr;
+      }
     }
+    add_binary_layer_v2(graph->GetCompilerHandle(),
+                        name[0],
+                        shape[0],
+                        dim[0],
+                        0,
+                        static_cast<const float*>(x_data),
+                        name[1],
+                        shape[1],
+                        dim[1],
+                        0,
+                        static_cast<const float*>(y_data),
+                        static_cast<const char*>(output_var_name.c_str()),
+                        op_code);
   }
-  add_binary_layer_v2(graph->GetCompilerHandle(),
-                      name[0],
-                      shape[0],
-                      dim[0],
-                      0,
-                      static_cast<const float*>(x_data),
-                      name[1],
-                      shape[1],
-                      dim[1],
-                      0,
-                      static_cast<const float*>(y_data),
-                      static_cast<const char*>(output_var_name.c_str()),
-                      op_code);
-
   delete[] shape;
   delete[] name;
   delete[] dim;

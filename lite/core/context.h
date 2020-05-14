@@ -85,6 +85,16 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+
+  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir() {
+    return subgraph_model_cache_dir_;
+  }
+
+ private:
+  static std::string subgraph_model_cache_dir_;
 };
 #endif
 
@@ -110,9 +120,7 @@ class Context<TargetType::kBM> {
   Context() {}
   explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() { Init(0); }
-
-  void Init(int dev_id) { TargetWrapperBM::SetDevice(dev_id); }
+  void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
   void CopySharedTo(BMContext* ctx) {}
   void* GetHandle() { return TargetWrapperBM::GetHandle(); }
 
@@ -179,6 +187,9 @@ class Context<TargetType::kXPU> {
   }
 
   std::string name() const { return "XPUContext"; }
+
+ public:
+  static std::string _multi_encoder_precision;  // NOLINT
 
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;
