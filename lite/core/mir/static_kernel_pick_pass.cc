@@ -53,15 +53,11 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     for (auto* in_var : node.inlinks) {
       if (in_var->arg()->type != nullptr) {
         in_types[in_var->arg()->name] = in_var->arg()->type;
-      } else {
-        LOG(INFO) << "in var " << in_var->arg()->name << " type not found";
       }
     }
     for (auto* out_var : node.outlinks) {
       if (out_var->arg()->type != nullptr) {
         out_types[out_var->arg()->name] = out_var->arg()->type;
-      } else {
-        LOG(INFO) << "out var " << out_var->arg()->name << " type not found";
       }
     }
 
@@ -91,9 +87,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       // Just keep a single best kernel.
       // TODO(Superjomn) reconsider this.
       instruct.kernels().emplace_back(std::move(scored.front().second));
-      VLOG(2) << "pick " << instruct.kernels().front()->name() << "\n\n";
-      LOG(INFO) << "pick up " << instruct.kernels().front()->summary()
-                << "\n\n\n";
+      VLOG(2) << "pick " << instruct.kernels().front()->summary() << "\n\n";
 
     } else {
       bool out_type_int8 = true;

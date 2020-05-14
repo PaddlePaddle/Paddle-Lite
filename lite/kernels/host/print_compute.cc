@@ -60,7 +60,9 @@ struct Formater {
   }
 
  private:
-  void PrintMessage() { logs << std::time(nullptr) << "\t" << message << "\t"; }
+  void PrintMessage() {
+    logs << std::time(nullptr) << "\t" << message << std::endl;
+  }
   void PrintName() {
     if (!name.empty()) {
       logs << "Tensor[" << name << "]" << std::endl;
@@ -126,7 +128,17 @@ struct Formater {
         logs << d[i] << ",";
       }
     }
-    logs << std::endl;
+    double sum = 0.0;
+    for (size_t i = 0; i < size; i++) {
+      sum += static_cast<double>(d[i]);
+    }
+    double abs_sum = 0.0;
+    for (size_t i = 0; i < size; i++) {
+      abs_sum += std::abs(static_cast<double>(d[i]));
+    }
+    logs << std::endl
+         << "sum of data: " << sum << std::endl
+         << "abs sum of data: " << abs_sum << std::endl;
   }
 };
 

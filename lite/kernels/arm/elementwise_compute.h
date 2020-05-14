@@ -62,8 +62,8 @@ class ElementwiseMulCompute : public KernelLite<TARGET(kARM), PType> {
   virtual ~ElementwiseMulCompute() = default;
 };
 
-class ElementwiseMulActivationCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ElementwiseMulActivationCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
