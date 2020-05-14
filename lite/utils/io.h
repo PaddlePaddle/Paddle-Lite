@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/utils/cp_logging.h"
