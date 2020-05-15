@@ -70,6 +70,7 @@ inference_lite_lib.armlinux.armv8/
 --with_cv: (OFF|ON)             是否编译CV相关预处理库, 默认为 OFF
 --with_log: (OFF|ON)            是否输出日志信息, 默认为 ON
 ```
+**注意：with_python现在仅支持armlinux的本地编译，尚不支持docker环境和ubuntu环境**
 
 - 裁剪预测库方法（只编译模型中的kernel&OP，降低预测库体积）:
 
