@@ -377,7 +377,7 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
-            -DWITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
