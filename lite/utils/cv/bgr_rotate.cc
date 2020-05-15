@@ -33,7 +33,9 @@
 #include "lite/utils/cv/bgr_rotate.h"
 #include <arm_neon.h>
 #include <math.h>
+#include <string.h>
 #include <algorithm>
+
 namespace paddle {
 namespace lite {
 namespace utils {
