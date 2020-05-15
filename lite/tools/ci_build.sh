@@ -402,7 +402,7 @@ function test_arm_android {
 
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s ${device} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
@@ -599,7 +599,6 @@ function cmake_arm {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DWITH_COVERAGE=$LITE_WITH_COVERAGE \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
