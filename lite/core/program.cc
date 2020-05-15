@@ -38,29 +38,26 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* program_desc,
   for (auto& node : instructions_) {
     auto op_info = *node.op()->op_info();
     auto op_type = op_info.Type();
-    if (op_type == "subgraph") {
-      int sub_block_idx = op_info.GetAttr<int32_t>("sub_block");
-      // It's a new subgraph op when its sub_block_idx < 0, Now we add its
+    if (op_type == "subgraph" && !op_info.GetAttr<int32_t>("sub_block")) {
+      // It's a new subgraph op when its sub_block_idx = 0, Now we add its
       // subblock desc to the program desc, Then update its sub_block_idx to
       // the index of block desc of the program desc.
-      if (sub_block_idx < 0) {
-        auto subgraph_op = const_cast<operators::SubgraphOp*>(
-            static_cast<const operators::SubgraphOp*>(node.op()));
-        auto* sub_program_desc = subgraph_op->GetProgramDesc();
-        CHECK(sub_program_desc);
-        auto* sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
-        *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
-        delete sub_program_desc;
-        subgraph_op->SetProgramDesc(program_desc);
-        op_info.SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
-        auto* scope = subgraph_op->scope();
-        // Attach op and kernel again to update the new block_idx and
-        // program_desc
-        subgraph_op->Attach(op_info, scope);
-        subgraph_op->AttachKernel(node.mutable_kernel());
-        // Update main block desc after a new subblock desc is added
-        block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-      }
+      auto subgraph_op = const_cast<operators::SubgraphOp*>(
+          static_cast<const operators::SubgraphOp*>(node.op()));
+      auto* sub_program_desc = subgraph_op->GetProgramDesc();
+      CHECK(sub_program_desc);
+      auto* sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
+      *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
+      delete sub_program_desc;
+      subgraph_op->SetProgramDesc(program_desc);
+      op_info.SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
+      auto* scope = subgraph_op->scope();
+      // Attach op and kernel again to update the new block_idx and
+      // program_desc
+      subgraph_op->Attach(op_info, scope);
+      subgraph_op->AttachKernel(node.mutable_kernel());
+      // Update main block desc after a new subblock desc is added
+      block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
     }
     auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
     *op_desc = op_info;

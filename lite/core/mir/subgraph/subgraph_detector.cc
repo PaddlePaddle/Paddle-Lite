@@ -412,10 +412,10 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   cpp::OpDesc subgraph_op_desc;
   subgraph_op_desc.SetType("subgraph");
 
-  // Create a new sub block desc for storing all of Ops and Vars of the target
-  // subgraph and sub_block_idx is set as a attribute of subgraph op,
-  // sub_block_idx < 0 means it's a new subgraph op
-  int sub_block_idx = -(subgraph_idx + 1);
+  // Create a program desc and a block desc for storing all of Ops and Vars of
+  // the target subgraph and sub_block_idx is set as a attribute of subgraph op,
+  // sub_block_idx = 0 means it's a new subgraph op
+  int sub_block_idx = 0;
   auto *sub_program_desc = new cpp::ProgramDesc();
   auto *sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
   sub_block_desc->ClearOps();

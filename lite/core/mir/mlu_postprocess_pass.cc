@@ -265,9 +265,6 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
   CHECK(sub_program_desc);
   int sub_block_idx =
       inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
-  if (sub_block_idx < 0) {
-    sub_block_idx = 0;
-  }
   auto* sub_block_desc =
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
@@ -422,9 +419,6 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
   CHECK(sub_program_desc);
   int sub_block_idx =
       inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
-  if (sub_block_idx < 0) {
-    sub_block_idx = 0;
-  }
   auto* sub_block_desc =
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
@@ -469,9 +463,6 @@ bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node, Node* inst) {
   CHECK(sub_program_desc);
   int sub_block_idx =
       inst->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
-  if (sub_block_idx < 0) {
-    sub_block_idx = 0;
-  }
   auto* sub_block_desc =
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();

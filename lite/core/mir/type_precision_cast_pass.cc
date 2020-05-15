@@ -40,9 +40,6 @@ void UpdateInputsForSubgraph(OpLite* op,
       static_cast<operators::SubgraphOp*>(op)->GetProgramDesc();
   CHECK(sub_program_desc);
   int sub_block_idx = op_desc->GetAttr<int32_t>("sub_block");
-  if (sub_block_idx < 0) {
-    sub_block_idx = 0;
-  }
   auto* sub_block_desc =
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();

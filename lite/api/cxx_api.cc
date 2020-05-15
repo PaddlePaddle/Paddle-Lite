@@ -31,10 +31,6 @@ void Predictor::SaveModel(const std::string &dir,
   if (!programs_.size()) {
     GenRuntimeProgram();
   }
-  for (int block_idx = 0; block_idx < programs_.size(); block_idx++) {
-    programs_[block_idx]->SaveOpInfosToProgram(&program_desc_, block_idx);
-    programs_[block_idx]->UpdateVarsOfProgram(&program_desc_, block_idx);
-  }
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *programs_[0]->exec_scope(), program_desc_, true);
@@ -352,6 +348,8 @@ void Predictor::GenRuntimeProgram() {
   programs_ = optimizer_.GenRuntimeProgram();
   for (int block_idx = 0; block_idx < programs_.size(); block_idx++) {
     CHECK_EQ(exec_scope_, programs_[block_idx]->exec_scope());
+    programs_[block_idx]->SaveOpInfosToProgram(&program_desc_, block_idx);
+    programs_[block_idx]->UpdateVarsOfProgram(&program_desc_, block_idx);
   }
   program_generated_ = true;
 }
