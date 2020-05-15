@@ -264,14 +264,11 @@ TEST(squeeze, precision) {
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #else
-  return;
+  place = TARGET(kHost);
 #endif
 
   test_unsqueeze(place, abs_error);
-  test_unsqueeze(TARGET(kHost), abs_error);
 }
 
 TEST(squeeze2, precision) {
@@ -282,14 +279,11 @@ TEST(squeeze2, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;                  // Using fp16 in NPU
   ignored_outs.push_back("XShape");  // not supported out in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #else
-  return;
+  place = TARGET(kHost);
 #endif
 
   test_unsqueeze2(place, abs_error, ignored_outs);
-  test_unsqueeze2(TARGET(kHost), abs_error, ignored_outs);
 }
 
 }  // namespace lite
