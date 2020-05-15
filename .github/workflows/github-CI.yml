@@ -55,7 +55,7 @@ jobs:
       run: |
         cd ..
         rm -rf Paddle-Lite-models
-        git clone -b adapt_api git@github.com:Cambricon/Paddle-Lite-models.git
+        git clone -b develop git@github.com:Cambricon/Paddle-Lite-models.git
         cd Paddle-Lite-models
         sed -i 's/\/home\/dingminghui\/paddle/${PWD}\/../' prepare_paddle_env.sh
         sed -i 's/\/home\/dingminghui\/paddle\/data/\/opt\/share\/paddle_model\//' classification/classification_demo.cpp
