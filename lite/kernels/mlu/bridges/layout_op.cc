@@ -60,7 +60,7 @@ int LayoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         CHECK(0) << "Unsupport shape";
     }
     output_tensor = graph->AddNode(
-        out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
+        out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, x_tensor->dtype());
     VLOG(3) << "layout transpose nchw to nhwc" << std::endl;
   } else {
     switch (x_dims.size()) {
@@ -84,7 +84,7 @@ int LayoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                    output_dims,
                                    CNML_TENSOR,
                                    CNML_NCHW,
-                                   graph->FPType(),
+                                   x_tensor->dtype(),
                                    CNML_NCHW);
   }
   cnmlBaseOp_t layout_op;
