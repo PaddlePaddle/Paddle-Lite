@@ -36,6 +36,7 @@ class ScalePE : public PE {
   }
 
   inline int lcm(int a, int b) { return a * b / gcd(a, b); }
+
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);

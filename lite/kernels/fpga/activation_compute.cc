@@ -25,10 +25,10 @@ using float16 = zynqmp::float16;
 void ReluCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   auto output_data = param.Out->mutable_data<float16>();
-  zynqmp::InputParam& input_param = pe_.param();
+  zynqmp::InputParam& relu_param = pe_.param();
 
-  input_param.input = param.X->ZynqTensor();
-  input_param.output = param.Out->ZynqTensor();
+  relu_param.input = param.X->ZynqTensor();
+  relu_param.output = param.Out->ZynqTensor();
   pe_.init();
   pe_.apply();
 }

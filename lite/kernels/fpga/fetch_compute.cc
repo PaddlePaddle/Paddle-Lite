@@ -55,6 +55,7 @@ void FetchCompute::Run() {
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::OutputParam& fetch_param = pe_.param();
   Debugger::get_instance().registerOutput("fetch", fetch_param.output);
+  Debugger::get_instance().setEnable(true);
 #endif
 }
 

@@ -283,7 +283,6 @@ class Tensor {
         .address = data<void>(), .scale_address = scale(),
     };
     args.output = output;
-    src->syncToDevice();
     size_t aligned_remainder = src->shape().numel() % 16;
     if (aligned_remainder > 0) {
       size_t dtype_size =
@@ -293,7 +292,6 @@ class Tensor {
       fpga_flush(dst, aligned_remainder * dtype_size);
     }
     src->syncToDevice();
-    this->invalidate();
     perform_bypass(args);
     this->invalidate();
   }
@@ -303,8 +301,7 @@ class Tensor {
       return;
     }
 
-    size_t memorySize =
-        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+    size_t memorySize = placeHolder_->memorySize();
     fpga_flush(placeHolder_->data(), memorySize);
   }
 
@@ -384,7 +381,6 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    invalidate();
     std::ofstream ofs;
     ofs.open(path);
     ofs << scale()[0] << " / " << scale()[1] << std::endl;

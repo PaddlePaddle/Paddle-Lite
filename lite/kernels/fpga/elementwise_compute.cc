@@ -40,6 +40,7 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.apply();
 }
 void ElementwiseAddCompute::Run() {
+  usleep(50 * 100 * 1000);
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
@@ -62,6 +63,7 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.apply();
 }
 void ElementwiseAddActivationCompute::Run() {
+  usleep(500 * 100 * 1000);
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
@@ -80,21 +82,21 @@ void ElementwiseMulCompute::PrepareForRun() {
   scale_param.activeParam.type = zynqmp::TYPE_NONE;
 
   int channel = scale_param.input->shape().channel();
-  zynqmp::Tensor* scale = new zynqmp::Tensor();
-  zynqmp::Tensor* bias = new zynqmp::Tensor();
-  scale_param.scale = scale;
-  scale_param.bias = bias;
+  scale_param.scale = &scale_;
+  scale_param.bias = &bias_;
   zynqmp::Shape shape(zynqmp::N, {channel});
-  float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
-  float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
+  zynqmp::float16* scale_data =
+      scale_.mutableData<zynqmp::float16>(zynqmp::FP16, shape);
+  zynqmp::float16* bias_data =
+      bias_.mutableData<zynqmp::float16>(zynqmp::FP16, shape);
   float scale_value = param.Y->data<float>()[0];
 
-  for (int i = 0; i < channel; ++i) {
+  for (int i = 0; i < channel; i++) {
     if (param.Y->dims().production() != 1) {
       scale_value = param.Y->ZynqTensor()->data<float>()[i];
     }
-    scale_data[i] = scale_value;
-    bias_data[i] = 0;
+    scale_data[i] = zynqmp::float_to_half(scale_value);
+    bias_data[i] = zero_;
   }
 
   pe_.init();
@@ -102,6 +104,10 @@ void ElementwiseMulCompute::PrepareForRun() {
 }
 
 void ElementwiseMulCompute::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  param.Y->ZynqTensor()->flush();
+  scale_.copyFrom(param.Y->ZynqTensor());
+  scale_.invalidate();
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ScaleParam& scale_param = pe_.param();

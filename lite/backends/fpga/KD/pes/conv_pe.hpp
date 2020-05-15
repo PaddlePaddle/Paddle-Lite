@@ -195,22 +195,14 @@ class ConvPE : public PE {
       addPE_.init();
       addPE_.apply();
       addPE_.dispatch();
-
-      // param_.output->printScale();
-
-      // params[0]->input.saveToFile("conv_1.txt");
-      // params[1]->input.saveToFile("conv_2.txt");
-
-      // params[0]->output.saveToFile("ew_o1.txt");
-      // params[1]->output.saveToFile("ew_o2.txt");
-      // std::cout << "\n ================== EW ================== \n";
-      // }
     }
 
     return ret == 0;
   }
 
   ConvParam& param() { return param_; }
+
+  ~ConvPE() {}
 
  private:
   bool use_cpu_ = false;
