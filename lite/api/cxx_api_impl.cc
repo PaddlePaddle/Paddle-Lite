@@ -35,6 +35,7 @@ namespace lite {
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
   if (!status_is_cloned_) {
+    auto places = config.valid_places();
     std::vector<std::string> passes = config.get_passes_internal();
 #ifdef LITE_WITH_CUDA
     // if kCUDA is included in valid places, it should be initialized first,
@@ -69,6 +70,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
     raw_predictor_->Build(config, places, passes);
   } else {
+    raw_predictor_->PrepareFeedFetch();
     CHECK(raw_predictor_) << "The Predictor can not be nullptr in Clone mode.";
   }
   mode_ = config.power_mode();
