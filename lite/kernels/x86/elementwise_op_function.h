@@ -324,7 +324,7 @@ void ElementwiseComputeEx(const lite::Context<Target> &ctx,
   }
 
   axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  PADDLE_ENFORCE(axis >= 0 && axis < x_dims.size(),
+  PADDLE_ENFORCE(axis >= 0 && axis < static_cast<int>(x_dims.size()),
                  "Axis should be in range [0, x_dims)");
   auto y_dims = trim_trailing_singular_dims(y_dims_untrimed);
   axis = (y_dims.size() == 0) ? x_dims.size() : axis;
