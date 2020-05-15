@@ -40,25 +40,20 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(graph->HasNode(x_var_name));
   auto x_tensor = graph->GetNode(x_var_name);
 
-  cnmlDataType_t data_type;
-  if (out_dtype == 4) {
-    data_type = CNML_DATA_FLOAT16;
-  } else if (out_dtype == 5) {
-    data_type = CNML_DATA_FLOAT32;
-  } else {
-    CHECK(0) << "Unsupported data_type";
-  }
-
-  auto output_tensor = graph->AddNode(
-      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, data_type);
+  cnmlDataType_t out_type;
   cnmlCastType_t cast_type;
   if (in_dtype == 4 && out_dtype == 5) {
     cast_type = CNML_CAST_FLOAT16_TO_FLOAT32;
+    out_type = CNML_DATA_FLOAT32;
   } else if (in_dtype == 5 && out_dtype == 4) {
     cast_type = CNML_CAST_FLOAT32_TO_FLOAT16;
+    out_type = CNML_DATA_FLOAT16;
   } else {
     CHECK(0) << "Unsupported cast type";
   }
+
+  auto output_tensor = graph->AddNode(
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, out_type);
 
   cnmlBaseOp_t cast_op;
   CNML_CALL(cnmlCreateCastOp(&cast_op,

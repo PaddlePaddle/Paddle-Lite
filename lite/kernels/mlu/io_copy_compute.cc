@@ -41,6 +41,7 @@ class IoCopyHostToMluCompute
     auto mem_size = param.x->memory_size();
     // LOG(INFO) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kMLU), mem_size);
+    param.y->set_precision(param.x->precision());
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 

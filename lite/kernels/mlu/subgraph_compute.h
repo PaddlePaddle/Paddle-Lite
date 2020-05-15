@@ -147,7 +147,7 @@ class SubgraphEngine : public subgraph::Engine {
     origin_itensors_.clear();
     origin_otensors_.clear();
 
-    auto data_order = block_desc_->GetOp<cpp::OpDesc>(0)->Type() == "cast"
+    auto data_order = block_desc_->GetOp<cpp::OpDesc>(0)->Type() == "layout"
                           ? CNML_NCHW
                           : CNML_NHWC;
     // Convert all of input data vars and added into the MLU IR graph
@@ -166,6 +166,7 @@ class SubgraphEngine : public subgraph::Engine {
       }
 
       CHECK(input_tensor);
+      VLOG(4) << "subgraph input tensor " << input_name << std::endl;
       auto input_node = graph->AddNode(input_name,
                                        input_tensor->dims().Vectorize(),
                                        CNML_TENSOR,
@@ -217,6 +218,7 @@ class SubgraphEngine : public subgraph::Engine {
         graph->AddOutput(graph->GetNode(output_name));
         auto output_tensor = scope_->FindMutableTensor(output_name);
         origin_otensors_.push_back(output_tensor);
+        VLOG(4) << "subgraph output tensor " << output_name << std::endl;
 
         // auto node = graph->GetNode(output_name);
         // CHECK(p_data);
