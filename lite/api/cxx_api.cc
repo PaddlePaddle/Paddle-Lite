@@ -328,8 +328,10 @@ void Predictor::Build(const std::vector<Place> &valid_places,
     }
   }
   if (is_quantized_model) {
+#ifdef LITE_WITH_ARM
     inner_places.insert(inner_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
+#endif
   }
 
   Program program(&program_desc_, scope_, inner_places);

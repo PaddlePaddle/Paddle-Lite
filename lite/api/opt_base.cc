@@ -40,12 +40,24 @@ void OptBase::SetModelType(std::string optimize_out_type) {
   }
 }
 
+void OptBase::SetPassesInternal(
+    const std::vector<std::string>& passes_internal) {
+  opt_config_.set_passes_internal(passes_internal);
+}
+
 void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
-      valid_places_.emplace_back(TARGET(kARM));
+      valid_places_.emplace_back(
+          Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kARM), PRECISION(kAny), DATALAYOUT(kNCHW)});
     } else if (target_repr == "opencl") {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
@@ -110,11 +122,13 @@ void OptBase::Run() {
 void OptBase::RunOptimize(const std::string& model_dir_path,
                           const std::string& model_path,
                           const std::string& param_path,
+                          const std::string& model_type,
                           const std::string& valid_places,
                           const std::string& optimized_out_path) {
   SetModelDir(model_dir_path);
   SetModelFile(model_path);
   SetParamFile(param_path);
+  SetModelType(model_type);
   SetValidPlaces(valid_places);
   SetOptimizeOut(optimized_out_path);
   CheckIfModelSupported(false);

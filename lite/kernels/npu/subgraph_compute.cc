@@ -34,24 +34,16 @@ std::string SubgraphEngine::GenerateModelCacheName() const {
   auto inames = device_inames_;
   auto onames = device_onames_;
   std::sort(inames.begin(), inames.end());
-  std::sort(onames.begin(), onames.end());
 
-  std::string model_cache_name = "";
+  std::string model_cache_name = "subgraph_" + std::to_string(block_idx_);
   for (auto iname : inames) {
+    model_cache_name += "_";
     auto itensor = scope_->FindTensor(iname);
-    std::replace(iname.begin(), iname.end(), '/', '_');
-    model_cache_name += "_" + iname;
+    int tmp = 0;
     for (auto i : itensor->dims().Vectorize()) {
-      model_cache_name += "_" + std::to_string(i);
+      tmp += i * i;
     }
-  }
-  for (auto oname : onames) {
-    auto otensor = scope_->FindTensor(oname);
-    std::replace(oname.begin(), oname.end(), '/', '_');
-    model_cache_name += "_" + oname;
-    for (auto i : otensor->dims().Vectorize()) {
-      model_cache_name += "_" + std::to_string(i);
-    }
+    model_cache_name += std::to_string(tmp % 1999);
   }
   model_cache_name += "_.om";
 
