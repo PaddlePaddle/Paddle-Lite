@@ -271,6 +271,7 @@ TEST(squeeze, precision) {
 #endif
 
   test_unsqueeze(place, abs_error);
+  test_unsqueeze(TARGET(kHost), abs_error);
 }
 
 TEST(squeeze2, precision) {
@@ -288,6 +289,7 @@ TEST(squeeze2, precision) {
 #endif
 
   test_unsqueeze2(place, abs_error, ignored_outs);
+  test_unsqueeze2(TARGET(kHost), abs_error, ignored_outs);
 }
 
 }  // namespace lite
