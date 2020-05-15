@@ -14,16 +14,15 @@ limitations under the License. */
 
 #pragma once
 
-#include <glog/logging.h>
 #include <algorithm>
 #include <iterator>
 #include <vector>
-#include "lite/fluid/eigen.h"
-#include "lite/fluid/transform.h"
-#include "lite/utils/paddle_enforce.h"
-
 #include "lite/backends/x86/math/math_function.h"
+#include "lite/fluid/eigen.h"
 #include "lite/fluid/for_range.h"
+#include "lite/fluid/transform.h"
+#include "lite/utils/cp_logging.h"
+#include "lite/utils/paddle_enforce.h"
 #include "lite/utils/variant.h"
 
 namespace paddle {

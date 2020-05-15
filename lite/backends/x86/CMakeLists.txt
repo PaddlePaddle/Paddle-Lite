@@ -8,7 +8,7 @@ lite_cc_library(target_wrapper_x86 SRCS target_wrapper.cc)
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     return()
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
-lite_cc_library(dynamic_loader SRCS dynamic_loader.cc DEPS glog gflags)
+lite_cc_library(dynamic_loader SRCS dynamic_loader.cc)
 lite_cc_library(dynload_mklml SRCS mklml.cc DEPS dynamic_loader mklml)
 lite_cc_library(x86_cpu_info SRCS cpu_info.cc)
 

@@ -17,8 +17,8 @@
 #include <stdlib.h>  // for malloc and free
 #include <string>
 #include <vector>
-#include "glog/logging.h"
 #include "lite/backends/x86/jit/gen/jitcode.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
