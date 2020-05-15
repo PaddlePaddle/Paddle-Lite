@@ -72,7 +72,7 @@ include(simd)
 ################################ Exposed Configurations #######################################
 lite_option(WITH_DSO         "Compile PaddlePaddle with dynamic linked CUDA" ON)
 lite_option(WITH_AVX         "Compile PaddlePaddle with AVX intrinsics"      ON IF ${AVX_FOUND})
-lite_option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        OFF)
+lite_option(WITH_TESTING     "Compile PaddlePaddle with unit testing"        ON)
 lite_option(WITH_MKL         "Compile PaddlePaddle with MKL support."        ON IF ${AVX_FOUND})
 lite_option(WITH_ARM_DOTPROD "Compile PaddlePaddle with ARM dot production"  ON)
 lite_option(WITH_SYSTEM_BLAS   "Use system blas library"           OFF)
@@ -221,6 +221,7 @@ endif()
 if(LITE_WITH_MLU)
     include(mlu)
 endif()
+include(coveralls)
 
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
