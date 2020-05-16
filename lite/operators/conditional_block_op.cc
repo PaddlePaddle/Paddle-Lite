@@ -21,8 +21,8 @@ namespace lite {
 namespace operators {
 
 bool ConditionalBlockOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.program_desc);
   CHECK_OR_FALSE(param_.cond);
-  CHECK_OR_FALSE(param_.sub_block);
   CHECK_OR_FALSE(param_.scope);
   return true;
 }
@@ -46,10 +46,9 @@ bool ConditionalBlockOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 
   param_.is_scalar_condition = op_desc.GetAttr<bool>("is_scalar_condition");
   // obtain sub_block in core program.cc
-  param_.sub_block = sub_block_;
+  CHECK(param_.program_desc);
+  param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   param_.scope = scope;
-  param_.valid_places =
-      op_desc.GetAttr<std::vector<std::string>>("valid_places");
 
   return true;
 }

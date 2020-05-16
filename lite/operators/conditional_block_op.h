@@ -39,11 +39,13 @@ class ConditionalBlockOpLite : public OpLite {
 
   std::string DebugString() const override { return "conditional_block"; }
 
-  void SetSubBlock(cpp::BlockDesc *desc) { sub_block_ = desc; }
+  void SetProgramDesc(cpp::ProgramDesc *program_desc) {
+    param_.program_desc = program_desc;
+  }
+  cpp::ProgramDesc *GetProgramDesc() { return param_.program_desc; }
 
  private:
   mutable ConditionalBlockParam param_;
-  cpp::BlockDesc *sub_block_;
 };
 
 }  // namespace operators

@@ -92,8 +92,10 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
+  std::vector<std::string> cached_data_shapes{};
   int block_idx{-1};
   cpp::ProgramDesc* program_desc{nullptr};
+  int mode{0};
   Scope* scope{nullptr};
 };
 
@@ -943,9 +945,6 @@ struct WhileParam : ParamBase {
   Tensor* cond{};
   int block_idx{-1};
   cpp::ProgramDesc* program_desc{nullptr};
-  std::vector<Tensor*> x{};
-  std::vector<Tensor*> outs{};
-  std::vector<std::string> valid_places;
 };
 
 struct TopkParam : ParamBase {
@@ -1400,10 +1399,10 @@ struct ConditionalBlockParam : ParamBase {
   const lite::Tensor* cond{};
   std::vector<lite::Tensor*> x{};
   std::vector<lite::Tensor*> outs{};
-  cpp::BlockDesc* sub_block{};
+  int block_idx{-1};
+  cpp::ProgramDesc* program_desc{nullptr};
   Scope* scope{};
   bool is_scalar_condition{};
-  std::vector<std::string> valid_places;
 };
 
 struct CollectFpnProposalsParam : ParamBase {

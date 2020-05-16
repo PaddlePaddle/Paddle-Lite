@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -26,6 +27,11 @@ namespace paddle {
 namespace lite {
 namespace subgraph {
 
+typedef struct {
+  DDim dims;
+  LoD lod;
+} Shape;
+
 class Engine {
  public:
   Engine(KernelContext *ctx,
@@ -33,15 +39,9 @@ class Engine {
          cpp::ProgramDesc *program_desc,
          const std::vector<std::string> &input_names,
          const std::vector<std::string> &output_names,
+         const std::vector<std::string> &cached_shapes,
          lite::Scope *scope,
-         std::string model_cache_dir = "")
-      : ctx_(ctx),
-        block_idx_(block_idx),
-        program_desc_(program_desc),
-        input_names_(input_names),
-        output_names_(output_names),
-        scope_(scope),
-        model_cache_dir_(model_cache_dir) {}
+         std::string model_cache_dir = "");
   virtual ~Engine() = default;
 
   virtual int Build();
@@ -65,6 +65,7 @@ class Engine {
   cpp::ProgramDesc *program_desc_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
+  std::map<std::vector<Shape>, std::vector<Shape>> cached_shapes_;
   Scope *scope_{nullptr};
   // SUCCESS: device program build successed. FAILED: device program build
   // failed. REBUILD_WHEN_SHAPE_CHANGED: device program build successed but need

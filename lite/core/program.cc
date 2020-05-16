@@ -196,8 +196,8 @@ void Program::Build(const cpp::ProgramDesc* program_desc) {
         static_cast<operators::WhileOpLite*>(op.get())->SetProgramDesc(
             const_cast<cpp::ProgramDesc*>(program_desc));
       } else if (op_type == "conditional_block") {
-        /*static_cast<operators::ConditionalBlockOpLite*>(op.get())
-            ->SetProgramDesc(const_cast<cpp::ProgramDesc*>(program_desc));*/
+        static_cast<operators::ConditionalBlockOpLite*>(op.get())
+            ->SetProgramDesc(const_cast<cpp::ProgramDesc*>(program_desc));
       } else if (op_type == "subgraph") {
         static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
             const_cast<cpp::ProgramDesc*>(program_desc));

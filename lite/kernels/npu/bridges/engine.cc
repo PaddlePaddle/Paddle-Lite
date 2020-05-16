@@ -17,10 +17,50 @@
 #include <time.h>
 #include <utility>
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/operators/conditional_block_op.h"
+#include "lite/operators/subgraph_op.h"
+#include "lite/operators/while_op.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
+
+Engine::Engine(KernelContext *ctx,
+               int block_idx,
+               cpp::ProgramDesc *program_desc,
+               const std::vector<std::string> &input_names,
+               const std::vector<std::string> &output_names,
+               const std::vector<std::string> &cached_shapes,
+               lite::Scope *scope,
+               std::string model_cache_dir)
+    : ctx_(ctx),
+      block_idx_(block_idx),
+      program_desc_(program_desc),
+      input_names_(input_names),
+      output_names_(output_names),
+      scope_(scope),
+      model_cache_dir_(model_cache_dir) {
+  for (auto &cached_shape : cached_shapes) {
+    /*
+    auto cached_input_output_shape = Split<std::string>(cached_shape, " ");
+    CHECK(cached_input_output_shape.size() >= 1 &&
+          cached_input_output_shape.size() <= 2);
+    // parsing input data shape
+    std::vector<Shape> cached_input_shapes;
+    if (cached_input_output_shape.size() >= 1) {
+      auto cached_input_shapes =
+    Split<std::string>(cached_input_output_shape[0], ";"); for (auto& i :
+    cached_input_shapes) { auto cached_input_shape = Split<std::string>(i, "-");
+        auto cached_input_dims = cached_input_shape[0];
+        if (cached_input_shape.size() >= 1) {
+
+        }
+        auto cached_input_lod =
+      }
+      */
+    LOG(INFO) << cached_shape;
+  }
+}
 
 int Engine::BuildDeviceProgram() { return FAILED; }
 
@@ -31,13 +71,23 @@ int Engine::BuildOriginProgram() {
   // the exection time. But only see them as a subgraph now.
   origin_program_.clear();
   CHECK(block_idx_ >= 0 && block_idx_ < program_desc_->BlocksSize());
-  auto* block_desc = program_desc_->GetBlock<cpp::BlockDesc>(block_idx_);
+  auto *block_desc = program_desc_->GetBlock<cpp::BlockDesc>(block_idx_);
   for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
-    auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+    auto *op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
     auto op = LiteOpRegistry::Global().Create(op_desc->Type());
     CHECK(op) << "no Op found for " << op_type;
+    if (op_type == "while") {
+      static_cast<operators::WhileOpLite *>(op.get())->SetProgramDesc(
+          program_desc);
+    } else if (op_type == "conditional_block") {
+      static_cast<operators::ConditionalBlockOpLite *>(op.get())
+          ->SetProgramDesc(program_desc);
+    } else if (op_type == "subgraph") {
+      static_cast<operators::SubgraphOp *>(op.get())->SetProgramDesc(
+          program_desc);
+    }
     op->Attach(*op_desc, scope_);
     std::unique_ptr<KernelBase> picked_kernel;
     if (op_desc->HasAttr(kKernelTypeAttr)) {
@@ -51,7 +101,7 @@ int Engine::BuildOriginProgram() {
       auto kernels = op->CreateKernels({place});
       CHECK_GT(kernels.size(), 0u) << "No kernels found for " << op_type;
       auto it = std::find_if(
-          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
+          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase> &it) {
             return it->alias() == alias;
           });
       CHECK(it != kernels.end());
@@ -81,7 +131,7 @@ int Engine::BuildOriginProgram() {
 }
 
 int Engine::LaunchOriginProgram() {
-  for (auto& inst : origin_program_) {
+  for (auto &inst : origin_program_) {
     auto op_type = inst.op()->op_info()->Type();
     if (op_type == "feed" || op_type == "fetch") continue;
     inst.Run();

@@ -408,13 +408,18 @@ std::vector<std::vector<Node *>> SubgraphDetector::operator()() {
 void SubgraphFuser::InsertNewNode(SSAGraph *graph,
                                   int subgraph_idx,
                                   const std::vector<Node *> &subgraph_nodes) {
+  // A simplified model without the original weight/local/unused nodes on the
+  // subgraph ops will be saved only if 'SUBGRAPH_DISABLE_ONLINE_MODE' is set to
+  // true and Predictor->Run(...), Predictor->Save(...) is called.
+  bool disable_online_mode = GetBoolFromEnv(SUBGRAPH_DISABLE_ONLINE_MODE);
+
   // Create and attach a new subgraph op
   cpp::OpDesc subgraph_op_desc;
   subgraph_op_desc.SetType("subgraph");
 
   // Create a program desc and a block desc for storing all of Ops and Vars of
   // the target subgraph and sub_block_idx is set as a attribute of subgraph op,
-  // sub_block_idx = 0 means it's a new subgraph op
+  // sub_block_idx = 0 means it's a new subgraph op and use
   int sub_block_idx = 0;
   auto *sub_program_desc = new cpp::ProgramDesc();
   auto *sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
@@ -425,6 +430,14 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     *sub_op_desc = *op_node->AsStmt().op_info();
   }
   subgraph_op_desc.SetAttr<int32_t>("sub_block", sub_block_idx);
+  std::vector<std::string> output_data_shapes;
+  output_data_shapes.push_back(
+      "1,2,3,4:0,2-0,1,2;2,3,4:0,1-0,1 6,7,8,9:0,3-0,1,2,3;8,9:0,1-0,1");
+  output_data_shapes.push_back(
+      "11,12,13,14:0,1-0,1;12,13,14:0,2-0,1,2 "
+      "16,17,18,19:0,2-0,1,2;18,19:0,2-0,1,2");
+  subgraph_op_desc.SetAttr<std::vector<std::string>>("cached_data_shapes",
+                                                     output_data_shapes);
 
   // Extract input and output nodes from the target subgraph
   std::unordered_set<Node *> input_var_nodes;
@@ -487,14 +500,16 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
 
   // Set all of the inputs and outputs to the target subgraph op
   // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
-  for (auto &var_node : weight_var_nodes) {
-    input_var_names.push_back(var_node->AsArg().name);
-  }
-  for (auto &var_node : local_var_nodes) {
-    output_var_names.push_back(var_node->AsArg().name);
-  }
-  for (auto &var_node : unused_var_nodes) {
-    output_var_names.push_back(var_node->AsArg().name);
+  if (!disable_online_mode) {
+    for (auto &var_node : weight_var_nodes) {
+      input_var_names.push_back(var_node->AsArg().name);
+    }
+    for (auto &var_node : local_var_nodes) {
+      output_var_names.push_back(var_node->AsArg().name);
+    }
+    for (auto &var_node : unused_var_nodes) {
+      output_var_names.push_back(var_node->AsArg().name);
+    }
   }
   subgraph_op_desc.SetInput("Inputs", input_var_names);
   subgraph_op_desc.SetOutput("Outputs", output_var_names);
@@ -510,27 +525,37 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   for (auto &var_node : input_var_nodes) {
     IR_NODE_LINK_TO(var_node, subgraph_op_node);
   }
-  for (auto &var_node : weight_var_nodes) {
-    IR_NODE_LINK_TO(var_node, subgraph_op_node);
+  if (!disable_online_mode) {
+    for (auto &var_node : weight_var_nodes) {
+      IR_NODE_LINK_TO(var_node, subgraph_op_node);
+    }
   }
   for (auto &var_node : output_var_nodes) {
     IR_OP_VAR_LINK(subgraph_op_node, var_node);
   }
-  for (auto &var_node : local_var_nodes) {
-    IR_OP_VAR_LINK(subgraph_op_node, var_node);
-  }
-  for (auto &var_node : unused_var_nodes) {
-    IR_OP_VAR_LINK(subgraph_op_node, var_node);
+  if (!disable_online_mode) {
+    for (auto &var_node : local_var_nodes) {
+      IR_OP_VAR_LINK(subgraph_op_node, var_node);
+    }
+    for (auto &var_node : unused_var_nodes) {
+      IR_OP_VAR_LINK(subgraph_op_node, var_node);
+    }
   }
 
   // Remove subgraph nodes and unused var nodes
-  auto nodes2rm = GetNodes2RM(subgraph_nodes,
-                              {input_var_nodes,
-                               weight_var_nodes,
-                               output_var_nodes,
-                               local_var_nodes,
-                               unused_var_nodes});
-  GraphSafeRemoveNodes(graph, nodes2rm);
+  if (!disable_online_mode) {
+    auto nodes2rm = GetNodes2RM(subgraph_nodes,
+                                {input_var_nodes,
+                                 weight_var_nodes,
+                                 output_var_nodes,
+                                 local_var_nodes,
+                                 unused_var_nodes});
+    GraphSafeRemoveNodes(graph, nodes2rm);
+  } else {
+    auto nodes2rm =
+        GetNodes2RM(subgraph_nodes, {input_var_nodes, output_var_nodes});
+    GraphSafeRemoveNodes(graph, nodes2rm);
+  }
 }
 
 void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,

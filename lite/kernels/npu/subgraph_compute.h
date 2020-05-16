@@ -35,6 +35,7 @@ class SubgraphEngine : public subgraph::Engine {
                  cpp::ProgramDesc *program_desc,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
+                 const std::vector<std::string> &cached_shapes,
                  Scope *scope,
                  std::string model_cache_dir = "")
       : subgraph::Engine(ctx,
@@ -42,6 +43,7 @@ class SubgraphEngine : public subgraph::Engine {
                          program_desc,
                          input_names,
                          output_names,
+                         cached_shapes,
                          scope,
                          model_cache_dir) {}
 

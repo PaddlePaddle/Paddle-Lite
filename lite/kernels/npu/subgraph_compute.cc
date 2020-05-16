@@ -305,6 +305,7 @@ void SubgraphCompute::PrepareForRun() {
                                    param.program_desc,
                                    param.input_data_names,
                                    param.output_data_names,
+                                   param.cached_data_shapes,
                                    param.scope,
                                    NPUContext::SubgraphModelCacheDir()));
   CHECK(engine_);
