@@ -27,8 +27,8 @@
 namespace paddle {
 namespace lite {
 
-void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* program_desc,
-                                          int block_idx) {
+void RuntimeProgram::SaveOpInfosToProgram(int block_idx,
+                                          cpp::ProgramDesc* program_desc) {
   CHECK(program_desc);
   // NOTE: RuntimeProgram do not has all meta info, so save model just update
   // upon origin model
@@ -68,8 +68,8 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* program_desc,
 // `UpdateVarsOfProgram` will remove unused var_descs and add new created
 // vars' descs in the block 0. Now, the type of a new created var can only
 // be LOD_TENSOR.
-void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* program_desc,
-                                         int block_idx) {
+void RuntimeProgram::UpdateVarsOfProgram(int block_idx,
+                                         cpp::ProgramDesc* program_desc) {
   CHECK(program_desc);
   CHECK(program_desc->BlocksSize());
   std::unordered_map<std::string, cpp::VarDesc> origin_var_maps;
@@ -142,6 +142,80 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* program_desc,
       }
     }
   }
+}
+
+// Create runtime program from sub_block desc according to block_idx and
+// program_desc, which is used for while/conditional_block/subgraph op.
+RuntimeProgram::RuntimeProgram(int block_idx,
+                               cpp::ProgramDesc* program_desc,
+                               Scope* exec_scope)
+    : exec_scope_(exec_scope) {
+  CHECK(block_idx >= 0 && block_idx < program_desc->BlocksSize());
+  auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+  for (int op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+    auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+    CHECK(op_desc);
+    std::string op_type = op_desc->Type();
+    if (op_type == "feed" || op_type == "fetch") continue;
+    // Create op and pick up the best kernel
+    auto op = LiteOpRegistry::Global().Create(op_type);
+    CHECK(op) << "no Op found for " << op_type;
+    if (op_type == "while") {
+      static_cast<operators::WhileOpLite*>(op.get())->SetProgramDesc(
+          program_desc);
+    } else if (op_type == "conditional_block") {
+      static_cast<operators::ConditionalBlockOpLite*>(op.get())->SetProgramDesc(
+          program_desc);
+    } else if (op_type == "subgraph") {
+      static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
+          program_desc);
+    }
+    op->Attach(*op_desc, exec_scope_);
+    std::unique_ptr<KernelBase> picked_kernel;
+    if (op_desc->HasAttr(kKernelTypeAttr)) {
+      // Create op and pick up the best kernel according to the
+      // kKernelTypeAttr attribute
+      auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
+      std::string alias;
+      Place place;
+      KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
+      VLOG(3) << "Found the attr '" << kKernelTypeAttr << "': " << kernel_type
+              << " for " << op_type;
+      auto kernels = op->CreateKernels({place});
+      CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
+      auto it = std::find_if(
+          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
+            return it->alias() == alias;
+          });
+      CHECK(it != kernels.end());
+      picked_kernel = std::move(*it);
+    } else {
+      // TODO(hong19860320) add kernel picking according to the type of input
+      // and output tensors
+      VLOG(3) << "The attr '" << kKernelTypeAttr
+              << "' not found, pick the first kernel for " << op_type;
+      std::vector<std::unique_ptr<KernelBase>> kernels;
+#if defined(LITE_WITH_ARM)
+      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
+#elif defined(LITE_WITH_X86)
+      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
+#endif
+      if (kernels.size() > 0) {
+        picked_kernel = std::move(kernels.front());
+      } else {
+        LOG(WARNING) << "No kernels found for " << op_type;
+      }
+    }
+    picked_kernel->SetContext(
+        ContextScheduler::Global().NewContext(picked_kernel->target()));
+    instructions_.emplace_back(std::move(op), std::move(picked_kernel));
+  }
+  if (instructions_.empty()) {
+    LOG(FATAL) << "no instructions";
+  }
+#ifdef LITE_WITH_PROFILE
+  set_profiler();
+#endif
 }
 
 void RuntimeProgram::Run() {

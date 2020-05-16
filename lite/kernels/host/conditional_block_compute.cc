@@ -21,9 +21,8 @@ namespace host {
 
 void ConditionalBlockCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  executor_ = std::make_shared<StepExecutor>(
-      param.block_idx, param.program_desc, param.scope);
-  executor_->Build();
+  program_.reset(new RuntimeProgram(
+      param.block_idx, param.program_desc, param.exec_scope));
 }
 
 void ConditionalBlockCompute::Run() {
@@ -37,16 +36,16 @@ void ConditionalBlockCompute::Run() {
     auto* cond_data = cond->data<bool>();
     need_run = cond_data[0];
   } else {
-    auto x = param.x;
-    for (auto pt : x) {
-      if (pt == nullptr || !pt->IsInitialized() || pt->dims().empty()) {
+    for (auto input : param.inputs) {
+      if (input == nullptr || !input->IsInitialized() ||
+          input->dims().empty()) {
         need_run = false;
         break;
       }
     }
   }
   if (need_run) {
-    executor_->Run();
+    program_->Run();
   }
 }
 

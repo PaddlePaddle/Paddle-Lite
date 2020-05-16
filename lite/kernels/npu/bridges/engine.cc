@@ -28,17 +28,17 @@ namespace subgraph {
 Engine::Engine(KernelContext *ctx,
                int block_idx,
                cpp::ProgramDesc *program_desc,
+               Scope *exec_scope,
                const std::vector<std::string> &input_names,
                const std::vector<std::string> &output_names,
                const std::vector<std::string> &cached_shapes,
-               lite::Scope *scope,
                std::string model_cache_dir)
     : ctx_(ctx),
       block_idx_(block_idx),
       program_desc_(program_desc),
+      exec_scope_(exec_scope),
       input_names_(input_names),
       output_names_(output_names),
-      scope_(scope),
       model_cache_dir_(model_cache_dir) {
   for (auto &cached_shape : cached_shapes) {
     /*
@@ -69,73 +69,13 @@ int Engine::LaunchDeviceProgram() { return 0; }
 int Engine::BuildOriginProgram() {
   // TODO(hong19860320) The block_desc need to be divided into subgraphs during
   // the exection time. But only see them as a subgraph now.
-  origin_program_.clear();
-  CHECK(block_idx_ >= 0 && block_idx_ < program_desc_->BlocksSize());
-  auto *block_desc = program_desc_->GetBlock<cpp::BlockDesc>(block_idx_);
-  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
-    auto *op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
-    CHECK(op_desc);
-    std::string op_type = op_desc->Type();
-    auto op = LiteOpRegistry::Global().Create(op_desc->Type());
-    CHECK(op) << "no Op found for " << op_type;
-    if (op_type == "while") {
-      static_cast<operators::WhileOpLite *>(op.get())->SetProgramDesc(
-          program_desc);
-    } else if (op_type == "conditional_block") {
-      static_cast<operators::ConditionalBlockOpLite *>(op.get())
-          ->SetProgramDesc(program_desc);
-    } else if (op_type == "subgraph") {
-      static_cast<operators::SubgraphOp *>(op.get())->SetProgramDesc(
-          program_desc);
-    }
-    op->Attach(*op_desc, scope_);
-    std::unique_ptr<KernelBase> picked_kernel;
-    if (op_desc->HasAttr(kKernelTypeAttr)) {
-      // Create op and pick up kernel according to the kKernelTypeAttr attribute
-      auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
-      std::string alias;
-      Place place;
-      KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-      VLOG(3) << "Found the attr '" << kKernelTypeAttr << "': " << kernel_type
-              << " for " << op_type;
-      auto kernels = op->CreateKernels({place});
-      CHECK_GT(kernels.size(), 0u) << "No kernels found for " << op_type;
-      auto it = std::find_if(
-          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase> &it) {
-            return it->alias() == alias;
-          });
-      CHECK(it != kernels.end());
-      picked_kernel = std::move(*it);
-    } else {
-      VLOG(3) << "The attr '" << kKernelTypeAttr
-              << "' not found, pick the first kernel for " << op_type;
-      std::vector<std::unique_ptr<KernelBase>> kernels;
-#if defined(LITE_WITH_ARM)
-      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
-#elif defined(LITE_WITH_X86)
-      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
-#endif
-      if (kernels.size() > 0) {
-        picked_kernel = std::move(kernels.front());
-      } else {
-        LOG(WARNING) << "No kernels found for " << op_type;
-      }
-    }
-    if (picked_kernel != nullptr) {
-      picked_kernel->SetContext(
-          ContextScheduler::Global().NewContext(picked_kernel->target()));
-    }
-    origin_program_.emplace_back(std::move(op), std::move(picked_kernel));
-  }
+  origin_program_.reset(
+      new RuntimeProgram(block_idx_, program_desc_, exec_scope_));
   return 0;
 }
 
 int Engine::LaunchOriginProgram() {
-  for (auto &inst : origin_program_) {
-    auto op_type = inst.op()->op_info()->Type();
-    if (op_type == "feed" || op_type == "fetch") continue;
-    inst.Run();
-  }
+  origin_program_->Run();
   return 0;
 }
 

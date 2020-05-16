@@ -20,7 +20,6 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
-#include "lite/kernels/host/while_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -36,7 +35,7 @@ class ConditionalBlockCompute
   void Run() override;
 
  private:
-  std::shared_ptr<StepExecutor> executor_;
+  std::unique_ptr<RuntimeProgram> program_;
 };
 
 }  // namespace host

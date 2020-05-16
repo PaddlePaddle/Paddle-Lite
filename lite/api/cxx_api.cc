@@ -350,8 +350,8 @@ void Predictor::GenRuntimeProgram() {
   programs_ = optimizer_.GenRuntimeProgram();
   for (int block_idx = 0; block_idx < programs_.size(); block_idx++) {
     CHECK_EQ(exec_scope_, programs_[block_idx]->exec_scope());
-    programs_[block_idx]->SaveOpInfosToProgram(&program_desc_, block_idx);
-    programs_[block_idx]->UpdateVarsOfProgram(&program_desc_, block_idx);
+    programs_[block_idx]->SaveOpInfosToProgram(block_idx, &program_desc_);
+    programs_[block_idx]->UpdateVarsOfProgram(block_idx, &program_desc_);
   }
   program_generated_ = true;
 }

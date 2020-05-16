@@ -45,8 +45,9 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
-  param_.scope = scope;
-  CHECK(param_.scope);
+  CHECK_GE(param_.block_idx, 0);
+  param_.exec_scope = scope;
+  CHECK(param_.exec_scope);
   return true;
 }
 

@@ -33,7 +33,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   // IR graph
   subgraph::xpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program_) {
+  for (auto& inst : origin_program_.instructions()) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -100,7 +100,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     auto node = graph.Get(device_inames_[i]);
     auto precision = node->precision();
     auto layout = node->layout();
-    origin_itensors_[i] = scope_->FindMutableTensor(device_inames_[i]);
+    origin_itensors_[i] = exec_scope_->FindMutableTensor(device_inames_[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     VLOG(3) << "[XPU] Inputs[" << i << "] name: " << device_inames_[i]
@@ -124,7 +124,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     auto node = graph.Get(device_onames_[i]);
     auto precision = node->precision();
     auto layout = node->layout();
-    origin_otensors_[i] = scope_->FindMutableTensor(device_onames_[i]);
+    origin_otensors_[i] = exec_scope_->FindMutableTensor(device_onames_[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
     VLOG(3) << "[XPU] Outputs[" << i << "] name: " << device_onames_[i]
@@ -198,10 +198,10 @@ void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
                                    param.block_idx,
+                                   param.exec_scope,
                                    param.program_desc,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
   engine_->Build();
 }

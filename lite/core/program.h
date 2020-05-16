@@ -171,6 +171,9 @@ class LITE_API RuntimeProgram {
     set_profiler();
 #endif
   }
+  explicit RuntimeProgram(int block_idx,
+                          cpp::ProgramDesc* program_desc,
+                          Scope* exec_scope);
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
@@ -189,12 +192,12 @@ class LITE_API RuntimeProgram {
 
   // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
   // in ProgramDesc.
-  void SaveOpInfosToProgram(cpp::ProgramDesc* desc, int block_idx);
+  void SaveOpInfosToProgram(int block_idx, cpp::ProgramDesc* program_desc);
 
   // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
   // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
   // be added in vars_.
-  void UpdateVarsOfProgram(cpp::ProgramDesc* desc, int block_idx);
+  void UpdateVarsOfProgram(int block_idx, cpp::ProgramDesc* program_desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;

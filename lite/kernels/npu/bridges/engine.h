@@ -37,10 +37,10 @@ class Engine {
   Engine(KernelContext *ctx,
          int block_idx,
          cpp::ProgramDesc *program_desc,
+         Scope *exec_scope,
          const std::vector<std::string> &input_names,
          const std::vector<std::string> &output_names,
-         const std::vector<std::string> &cached_shapes,
-         lite::Scope *scope,
+         const std::vector<std::string> &cached_shapes = {},
          std::string model_cache_dir = "");
   virtual ~Engine() = default;
 
@@ -63,10 +63,10 @@ class Engine {
   KernelContext *ctx_{nullptr};
   int block_idx_{-1};
   cpp::ProgramDesc *program_desc_{nullptr};
+  Scope *exec_scope_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::map<std::vector<Shape>, std::vector<Shape>> cached_shapes_;
-  Scope *scope_{nullptr};
   // SUCCESS: device program build successed. FAILED: device program build
   // failed. REBUILD_WHEN_SHAPE_CHANGED: device program build successed but need
   // to rebuild when input shape changed.
@@ -75,7 +75,7 @@ class Engine {
   std::vector<DDim> origin_odims_;
   std::vector<Tensor *> origin_itensors_;
   std::vector<Tensor *> origin_otensors_;
-  std::vector<Instruction> origin_program_;
+  std::unique_ptr<RuntimeProgram> origin_program_;
   std::string model_cache_dir_{""};
 };
 

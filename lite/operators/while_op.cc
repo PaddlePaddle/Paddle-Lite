@@ -22,7 +22,7 @@ namespace operators {
 
 bool WhileOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.program_desc);
-  CHECK_OR_FALSE(param_.scope);
+  CHECK_OR_FALSE(param_.exec_scope);
   CHECK_OR_FALSE(param_.cond);
   return true;
 }
@@ -34,7 +34,9 @@ bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
-  param_.scope = scope;
+  CHECK_GE(param_.block_idx, 0);
+  param_.exec_scope = scope;
+  CHECK(param_.exec_scope);
   return true;
 }
 

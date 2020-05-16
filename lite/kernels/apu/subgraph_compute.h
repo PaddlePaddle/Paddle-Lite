@@ -32,11 +32,15 @@ class SubgraphEngine : public subgraph::Engine {
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
                  cpp::ProgramDesc *program_desc,
+                 Scope *exec_scope,
                  const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names,
-                 Scope *scope)
-      : subgraph::Engine(
-            ctx, block_idx, program_desc, input_names, output_names, scope) {}
+                 const std::vector<std::string> &output_names)
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         program_desc,
+                         exec_scope,
+                         input_names,
+                         output_names) {}
 
   ~SubgraphEngine();
 

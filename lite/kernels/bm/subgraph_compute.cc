@@ -34,7 +34,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
-  for (auto& inst : origin_program_) {
+  for (auto& inst : origin_program_.instructions()) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -73,7 +73,8 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_itensors_.resize(input_names_.size());
   device_inputs_.resize(input_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(net_info_->input_names[i]);
+    origin_itensors_[i] =
+        exec_scope_->FindMutableTensor(net_info_->input_names[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     bm_device_mem_t* p_mem =
@@ -97,7 +98,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   }
 
   for (int i = 0; i < net_info_->output_num; i++) {
-    Tensor* t_cur = scope_->FindMutableTensor(net_info_->output_names[i]);
+    Tensor* t_cur = exec_scope_->FindMutableTensor(net_info_->output_names[i]);
     CHECK(t_cur != nullptr);
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));

@@ -47,7 +47,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   // Convert all of ops and their input vars and weights and added into the APU
   // NIR graph
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program_) {
+  for (auto& inst : origin_program_.instructions()) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -72,7 +72,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_itensors_.resize(input_names_.size());
   origin_idims_.resize(input_names_.size());
   for (int i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(input_names_[i]);
+    origin_itensors_[i] = exec_scope_->FindMutableTensor(input_names_[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     VLOG(3) << "subgraph input name: " << i << ", " << input_names_[i] << ":"
@@ -93,7 +93,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   origin_otensors_.resize(output_names_.size());
   origin_odims_.resize(output_names_.size());
   for (int i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = scope_->FindMutableTensor(output_names_[i]);
+    origin_otensors_[i] = exec_scope_->FindMutableTensor(output_names_[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
     VLOG(3) << "subgraph output name: " << i << ", " << output_names_[i] << ":"
@@ -209,9 +209,9 @@ void SubgraphCompute::PrepareForRun() {
   engine_.reset(new SubgraphEngine(ctx_.get(),
                                    param.block_idx,
                                    param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
   engine_->Build();
 }

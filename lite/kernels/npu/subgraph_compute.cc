@@ -38,7 +38,7 @@ std::string SubgraphEngine::GenerateModelCacheName() const {
   std::string model_cache_name = "subgraph_" + std::to_string(block_idx_);
   for (auto iname : inames) {
     model_cache_name += "_";
-    auto itensor = scope_->FindTensor(iname);
+    auto itensor = exec_scope_->FindTensor(iname);
     int tmp = 0;
     for (auto i : itensor->dims().Vectorize()) {
       tmp += i * i;
@@ -56,7 +56,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   // HiAI IR graph
   subgraph::npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program_) {
+  for (auto& inst : origin_program_.instructions()) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -146,7 +146,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     auto node = graph.Get(device_inames_[i]);
     auto precision = node->precision();
     auto layout = node->layout();
-    origin_itensors_[i] = scope_->FindMutableTensor(device_inames_[i]);
+    origin_itensors_[i] = exec_scope_->FindMutableTensor(device_inames_[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     VLOG(3) << "[NPU] Inputs[" << i << "] name: " << device_inames_[i]
@@ -169,7 +169,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     auto node = graph.Get(device_onames_[i]);
     auto precision = node->precision();
     auto layout = node->layout();
-    origin_otensors_[i] = scope_->FindMutableTensor(device_onames_[i]);
+    origin_otensors_[i] = exec_scope_->FindMutableTensor(device_onames_[i]);
     CHECK(origin_otensors_[i]);
     origin_odims_[i] = origin_otensors_[i]->dims();
     VLOG(3) << "[NPU] Outputs[" << i << "] name: " << device_onames_[i]
@@ -303,10 +303,10 @@ void SubgraphCompute::PrepareForRun() {
   engine_.reset(new SubgraphEngine(ctx_.get(),
                                    param.block_idx,
                                    param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
                                    param.output_data_names,
                                    param.cached_data_shapes,
-                                   param.scope,
                                    NPUContext::SubgraphModelCacheDir()));
   CHECK(engine_);
   engine_->Build();

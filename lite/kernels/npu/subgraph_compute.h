@@ -33,18 +33,18 @@ class SubgraphEngine : public subgraph::Engine {
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
                  cpp::ProgramDesc *program_desc,
+                 Scope *exec_scope,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
                  const std::vector<std::string> &cached_shapes,
-                 Scope *scope,
                  std::string model_cache_dir = "")
       : subgraph::Engine(ctx,
                          block_idx,
                          program_desc,
+                         exec_scope,
                          input_names,
                          output_names,
                          cached_shapes,
-                         scope,
                          model_cache_dir) {}
 
   struct device_program_t {

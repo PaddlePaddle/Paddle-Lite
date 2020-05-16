@@ -22,8 +22,8 @@ namespace operators {
 
 bool ConditionalBlockOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.program_desc);
+  CHECK_OR_FALSE(param_.exec_scope);
   CHECK_OR_FALSE(param_.cond);
-  CHECK_OR_FALSE(param_.scope);
   return true;
 }
 
@@ -33,23 +33,20 @@ bool ConditionalBlockOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                         lite::Scope *scope) {
   auto condition = op_desc.Input("Cond").front();
   param_.cond = scope->FindVar(condition)->GetMutable<lite::Tensor>();
-
   auto inputs = op_desc.Input("Input");
   for (auto var : inputs) {
-    param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.inputs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-
   auto outs = op_desc.Output("Out");
   for (auto var : outs) {
     param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-
   param_.is_scalar_condition = op_desc.GetAttr<bool>("is_scalar_condition");
-  // obtain sub_block in core program.cc
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
-  param_.scope = scope;
-
+  CHECK_GE(param_.block_idx, 0);
+  param_.exec_scope = scope;
+  CHECK(param_.exec_scope);
   return true;
 }
 

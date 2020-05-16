@@ -95,8 +95,7 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> cached_data_shapes{};
   int block_idx{-1};
   cpp::ProgramDesc* program_desc{nullptr};
-  int mode{0};
-  Scope* scope{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -941,10 +940,10 @@ struct CompareParam : ParamBase {
 };
 
 struct WhileParam : ParamBase {
-  Scope* scope{};
   Tensor* cond{};
   int block_idx{-1};
   cpp::ProgramDesc* program_desc{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 struct TopkParam : ParamBase {
@@ -1397,11 +1396,11 @@ struct MergeLodTensorParam : ParamBase {
 
 struct ConditionalBlockParam : ParamBase {
   const lite::Tensor* cond{};
-  std::vector<lite::Tensor*> x{};
+  std::vector<lite::Tensor*> inputs{};
   std::vector<lite::Tensor*> outs{};
   int block_idx{-1};
   cpp::ProgramDesc* program_desc{nullptr};
-  Scope* scope{};
+  Scope* exec_scope{nullptr};
   bool is_scalar_condition{};
 };
 

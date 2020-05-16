@@ -26,21 +26,6 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class StepExecutor {
- public:
-  StepExecutor(int block_idx, cpp::ProgramDesc *program_desc, Scope *scope)
-      : block_idx_(block_idx), program_desc_(program_desc), scope_(scope) {}
-
-  void Build();
-  void Run();
-
- private:
-  int block_idx_{-1};
-  cpp::ProgramDesc *program_desc_{nullptr};
-  Scope *scope_{nullptr};
-  std::vector<Instruction> insts_;
-};
-
 class WhileCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
@@ -50,7 +35,7 @@ class WhileCompute
   void Run() override;
 
  private:
-  std::shared_ptr<StepExecutor> executor_;
+  std::unique_ptr<RuntimeProgram> program_;
 };
 
 }  // namespace host
