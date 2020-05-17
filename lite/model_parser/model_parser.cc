@@ -17,7 +17,6 @@
 #include <fstream>
 #include <limits>
 #include <set>
-#include <unordered_set>
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -529,16 +528,12 @@ void SaveCombinedParamsNaive(const std::string &path,
 
   auto prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-  // set unique_var_names to avoid saving shared params repeatedly
-  std::unordered_set<std::string> unique_var_names;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||
-        unique_var_names.count(var.Name()) > 0)
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
       continue;
     naive_buffer::ParamDesc param_desc(desc.AddParam());
     SetParamInfoNaive(&param_desc, exec_scope, var.Name());
-    unique_var_names.emplace(var.Name());
   }
 
   pt_desc.Save();
@@ -560,7 +555,7 @@ void SaveModelNaive(const std::string &model_dir,
   // Save meta_version(uint16) into file
   naive_buffer::BinaryTable meta_version_table;
   meta_version_table.Require(sizeof(uint16_t));
-  uint16_t meta_version = 0;
+  uint16_t meta_version = 1;
   memcpy(meta_version_table.cursor(), &meta_version, sizeof(uint16_t));
   meta_version_table.Consume(sizeof(uint16_t));
   meta_version_table.SaveToFile(prog_path);
@@ -828,7 +823,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
   naive_buffer::proto::ProgramDesc nb_proto_prog(&topo_table);
   nb_proto_prog.Load();
   naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
-  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
+  TransformProgramDescAnyToCpp(nb_prog, cpp_prog, meta_version);
 
   // (5)Load Params
   LoadCombinedParamsNaive(prog_path, offset, scope, *cpp_prog, false);
