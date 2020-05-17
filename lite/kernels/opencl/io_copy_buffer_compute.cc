@@ -16,19 +16,40 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
+#undef LITE_WITH_LOG
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
 
+inline double GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
+
 // Host to OpenCL memory.
 void CopyFromHostSync(void* target, const void* source, size_t size) {
+#ifdef LITE_WITH_PROFILE
+  auto h2d_copy_start = GetCurrentUS();
+#endif
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::HtoD);
+#ifdef LITE_WITH_PROFILE
+  auto h2d_duration = (GetCurrentUS() - h2d_copy_start) / 1000.0;
+#endif
 }
 
 // Device to Host memory.
 void CopyToHostSync(void* target, const void* source, size_t size) {
+#ifdef LITE_WITH_PROFILE
+  auto d2h_copy_start = GetCurrentUS();
+#endif
+  CLRuntime::Global()->command_queue().finish();
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoH);
+#ifdef LITE_WITH_PROFILE
+  auto d2h_duration = (GetCurrentUS() - d2h_copy_start) / 1000.0;
+#endif
 }
 
 /*
@@ -109,7 +130,6 @@ class IoCopykOpenCLToHostCompute
 #ifdef LITE_WITH_LOG
     VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
 #endif
-    CLRuntime::Global()->command_queue().finish();
 
     CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -161,3 +181,5 @@ REGISTER_LITE_KERNEL(io_copy_once,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
+
+#define LITE_WITH_LOG

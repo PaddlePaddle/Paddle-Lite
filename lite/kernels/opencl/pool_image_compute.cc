@@ -16,12 +16,15 @@
 
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
+
+#undef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -150,13 +153,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -186,3 +189,4 @@ REGISTER_LITE_KERNEL(pool2d,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+#define LITE_WITH_LOG

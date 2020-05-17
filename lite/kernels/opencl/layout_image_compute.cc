@@ -16,6 +16,7 @@
 #include <string>
 #include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_half.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
@@ -23,6 +24,8 @@
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/cp_logging.h"
+
+#undef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -128,13 +131,13 @@ class LayoutComputeBufferChwToImageDefault
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -237,13 +240,13 @@ class LayoutComputeImageDefaultToBufferChw
                     static_cast<cl::size_type>(new_dims[3]),
                     static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -333,13 +336,13 @@ class LayoutComputeBufferChwToImage2DNw
                     static_cast<cl::size_type>(out_W),            // w
                     static_cast<cl::size_type>(out_C * out_H)};   // ch
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -394,3 +397,4 @@ REGISTER_LITE_KERNEL(
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
+#define LITE_WITH_LOG

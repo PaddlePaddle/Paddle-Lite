@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/opencl/cl_half.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/kernel.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"

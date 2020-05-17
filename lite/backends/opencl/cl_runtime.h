@@ -95,6 +95,12 @@ class CLRuntime {
 
   GpuType& GetGpuType();
 
+  double GetCommandTime(const cl::Event& event);
+
+  double GetQueuedTime(const cl::Event& event);
+
+  double GetSubmitTime(const cl::Event& event);
+
  private:
   CLRuntime() { Init(); }
 

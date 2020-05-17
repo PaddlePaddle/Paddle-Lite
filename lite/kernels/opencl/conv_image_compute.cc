@@ -22,6 +22,8 @@
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 
+#undef LITE_WITH_LOG
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -651,13 +653,13 @@ void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, default_w_blk_);
   CL_CHECK_FATAL(status);
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      local_work_size_,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                local_work_size_,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
@@ -833,13 +835,13 @@ void ConvImageCompute::Conv2d3x3(bool is_turn) {
   // VLOG(4) << "global_work_size[3D]: {" << global_work_size[0] << ","
   //         << global_work_size[1] << "," << global_work_size[2] << "}";
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 }
 void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
@@ -954,13 +956,13 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      local_work_size_,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                local_work_size_,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
@@ -1084,13 +1086,13 @@ void ConvImageCompute::Conv2d5x5(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
@@ -1202,13 +1204,13 @@ void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
 
   //  VLOG(4) << "out_image: " << out_image;
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      local_work_size_,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                local_work_size_,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
   if (is_turn) {
     CLRuntime::Global()->command_queue().finish();
@@ -1332,13 +1334,13 @@ void ConvImageCompute::Conv2d7x7(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 
   if (is_turn) {
@@ -1447,13 +1449,13 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
   status = kernel.setArg(++arg_idx, output_height);
   CL_CHECK_FATAL(status);
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      local_work_size_,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                local_work_size_,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 
   if (is_turn) {
@@ -1530,13 +1532,13 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      local_work_size_,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                local_work_size_,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 
   if (is_turn) {
@@ -1627,13 +1629,13 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
   status = kernel.setArg(++arg_idx, static_cast<const int>(output_dims[2]));
   CL_CHECK_FATAL(status);
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 
   if (is_turn) {
@@ -1762,13 +1764,13 @@ void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 }
 
@@ -1828,3 +1830,4 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+#define LITE_WITH_LOG
