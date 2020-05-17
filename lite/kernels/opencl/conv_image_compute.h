@@ -47,8 +47,8 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    *ch.kernel_func_name = kernel_func_names_[0];
-    *ch.cl_event =
+    ch->kernel_func_name = kernel_func_names_[0];
+    ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }
 #endif

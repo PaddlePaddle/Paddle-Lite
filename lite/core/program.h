@@ -141,7 +141,7 @@ struct Instruction {
   }
 
   void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
-    auto* op_lite = static_cast<paddle::lite::OpLite*>(*ch.op_lite);
+    auto* op_lite = static_cast<paddle::lite::OpLite*>(ch->op_lite);
     op_lite->GetOpRuntimeInfo(ch);
   }
 #endif

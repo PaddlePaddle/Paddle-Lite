@@ -65,10 +65,10 @@ int Profiler::NewTimer(const OpCharacter& ch) {
   return units_.size() - 1;
 }
 
-OpCharacter& Profiler::GetOpCharacter(const size_t index) {
+OpCharacter* Profiler::GetOpCharacter(const size_t index) {
   CHECK_LT(index, units_.size())
       << "The timer index in the profiler is out of range.";
-  return units_[index].Character();
+  return &units_[index].Character();
 }
 
 void Profiler::StartTiming(Type type, const int index, KernelContext* ctx) {

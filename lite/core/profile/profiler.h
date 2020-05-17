@@ -99,7 +99,7 @@ class Profiler final {
   void StartTiming(Type type, const int index, KernelContext* ctx);
   void StopTiming(Type type, const int index, KernelContext* ctx);
   std::string Summary(Type type, bool concise = true, size_t warm_up = 10);
-  OpCharacter& GetOpCharacter(const size_t index);
+  OpCharacter* GetOpCharacter(const size_t index);
 
  private:
   std::string name_{std::string("N/A")};
