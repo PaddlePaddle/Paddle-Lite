@@ -69,13 +69,9 @@ void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
   cpp_desc->SetPersistable(any_desc.Persistable());
   if (any_desc.Name() != "feed" && any_desc.Name() != "fetch" &&
       meta_version > 0) {
-    LOG(INFO) << "oh my god!it's wrong!";
-    std::cout << "oh my god!it's wrong!" << std::endl;
     cpp_desc->SetDataType(any_desc.GetDataType());
     cpp_desc->SetShape(any_desc.GetShape());
   }
-  LOG(INFO) << "it works well!";
-  std::cout << "it works well!" << std::endl;
 }
 
 /// For OpDesc transform
