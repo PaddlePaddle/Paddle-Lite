@@ -53,6 +53,14 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         kernel_func_name_, "image/pool_kernel.cl", build_options_, time_stamp_);
   }
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.x->dims();

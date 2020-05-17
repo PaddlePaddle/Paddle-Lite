@@ -45,6 +45,14 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                                     time_stamp_);
   }
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const Tensor* const x = param.x;

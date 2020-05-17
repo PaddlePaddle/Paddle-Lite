@@ -59,6 +59,8 @@ struct OpCharacter {
   float macs{0};
   float macs_ps{0};
 
+  float io_duration{0};
+
 #ifdef LITE_WITH_OPENCL
   cl::Event cl_event{};
 #else

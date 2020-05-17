@@ -92,6 +92,25 @@ class PoolOpLite : public OpLite {
 
   std::string DebugString() const override { return "pool2d"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    if (param_.global_pooling) {
+      ch->remark = "global" + param_.pooling_type;
+    } else {
+      ch->remark = param_.pooling_type + std::to_string(param_.ksize[0]) + "x" +
+                   std::to_string(param_.ksize[1]) + "s" +
+                   std::to_string(param_.strides[0]) + "p" +
+                   std::to_string((*param_.paddings)[0]);
+    }
+    ch->remark += padding_algorithm_;
+    ch->macs = output_dims.production() * param_.ksize[0] * param_.ksize[1];
+  }
+#endif
+
  private:
   mutable PoolParam param_;
   std::string padding_algorithm_{""};

@@ -82,7 +82,9 @@ void Profiler::StopTiming(Type type, const int index, KernelContext* ctx) {
       << "The timer index in the profiler is out of range.";
   units_[index].Timer(type)->Stop(ctx);
 #ifdef LITE_WITH_OPENCL
-  units_[index].Timer(type)->CLStop(units_[index].character.cl_event);
+  units_[index].Timer(type)->CLStop(units_[index].character.op_type,
+                                    units_[index].character.io_duration,
+                                    units_[index].character.cl_event);
 #endif
 }
 

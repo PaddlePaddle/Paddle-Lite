@@ -15,6 +15,7 @@
 #pragma once
 #include <algorithm>
 #include <chrono>  // NOLINT
+#include <string>
 #include <vector>
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/cuda_utils.h"
@@ -89,9 +90,14 @@ class Timer {
   }
 
 #ifdef LITE_WITH_OPENCL
-  float CLStop(cl::Event event) {
-    float cl_kernel_elapse_ms =
-        CLRuntime::Global()->CLRuntime::GetCommandTime(event);
+  float CLStop(const std::string& op_type, float io_duration, cl::Event event) {
+    float cl_kernel_elapse_ms = 0.0;
+    if (op_type != "io_copy") {
+      cl_kernel_elapse_ms =
+          CLRuntime::Global()->CLRuntime::GetCommandTime(event);
+    } else {
+      cl_kernel_elapse_ms = io_duration;
+    }
     this->cl_laps_t_.Add(cl_kernel_elapse_ms);
     return cl_kernel_elapse_ms;
   }

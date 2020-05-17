@@ -43,6 +43,14 @@ class ElementwiseAddImageCompute
 
   void Run() override;
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
   std::string doc() const override {
     return "ElementwiseAdd using cl::Image2D, kFP16";
   }

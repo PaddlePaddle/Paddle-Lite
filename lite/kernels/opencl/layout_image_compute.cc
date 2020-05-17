@@ -53,6 +53,14 @@ class LayoutComputeBufferChwToImageDefault
                                     time_stamp_);
   }
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
   void Run() override {
     auto& param = Param<param_t>();
     const cl::Buffer* x_data;
@@ -171,6 +179,14 @@ class LayoutComputeImageDefaultToBufferChw
                                     time_stamp_);
   }
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
   void Run() override {
     auto& param = Param<param_t>();
     const cl::Buffer* y_data;
@@ -276,6 +292,14 @@ class LayoutComputeBufferChwToImage2DNw
                                     build_options_,
                                     time_stamp_);
   }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
   void Run() override {
     auto& param = Param<param_t>();
