@@ -63,10 +63,14 @@ void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
   cpp_desc->SetName(any_desc.Name());
   cpp_desc->SetType(any_desc.GetType());
   cpp_desc->SetPersistable(any_desc.Persistable());
-  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
-    cpp_desc->SetDataType(any_desc.GetDataType());
-    cpp_desc->SetShape(any_desc.GetShape());
-  }
+  // todo : SetDataType function is commented out temporarily
+  // because of Compatibility issues. The Compatibility issue
+  // should be fixed later and the code below should be applied
+  // later. @DannyIsFunny
+  /*  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
+      cpp_desc->SetDataType(any_desc.GetDataType());
+      cpp_desc->SetShape(any_desc.GetShape());
+    }*/
 }
 
 /// For OpDesc transform

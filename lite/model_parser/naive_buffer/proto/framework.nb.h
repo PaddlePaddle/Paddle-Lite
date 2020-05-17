@@ -159,7 +159,6 @@ class VarDesc : public StructBuilder {
     NewStr("name");
     New<VarType>("type");
     NewBool("persistable", false);
-    New<TensorDesc>("tensor_desc");
   }
 };
 
