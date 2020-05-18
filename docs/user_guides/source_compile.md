@@ -154,6 +154,8 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 ##### 本地编译（直接在RK3399或树莓派上编译）
 
+- **注意：RK3399由于gcc的内部问题，可能导致本地编译失败，不建议RK3399的本地编译**
+
 ###### 编译环境要求
 
 - gcc、g++、git、make、wget、python、patchelf
