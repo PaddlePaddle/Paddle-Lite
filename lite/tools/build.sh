@@ -383,6 +383,7 @@ function make_x86 {
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
+            -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
   make publish_inference -j$NUM_PROC
@@ -516,6 +517,10 @@ function main {
                 ;;
             --python_executable=*)
                 PYTHON_EXECUTABLE_OPTION="-DPYTHON_EXECUTABLE=${i#*=}"
+                shift
+                ;;
+            --python_version=*)
+                PY_VERSION="${i#*=}"
                 shift
                 ;;
             --build_apu=*)
