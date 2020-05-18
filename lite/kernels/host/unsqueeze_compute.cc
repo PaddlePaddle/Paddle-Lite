@@ -25,7 +25,9 @@ void UnsqueezeCompute::Run() {
   auto& param = Param<operators::UnsqueezeParam>();
   auto x = param.X;
   auto output = param.Out;
+  auto output_dims = output->dims();
   output->CopyDataFrom(*x);
+  output->Resize(output_dims);
 }
 
 void Unsqueeze2Compute::Run() {
@@ -33,8 +35,12 @@ void Unsqueeze2Compute::Run() {
   auto x = param.X;
   auto output = param.Out;
   auto xshape = param.XShape;
+  auto output_dims = output->dims();
+  auto xshape_dims = xshape->dims();
   output->CopyDataFrom(*x);
   xshape->CopyDataFrom(*x);
+  output->Resize(output_dims);
+  xshape->Resize(xshape_dims);
 }
 
 }  // namespace host
