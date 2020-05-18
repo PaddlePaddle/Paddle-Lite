@@ -62,6 +62,14 @@ class KernelBase {
     profiler_ = profiler;
     profile_id_ = id;
   }
+
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = std::string("NotImpl");
+#ifdef LITE_WITH_ARM
+    ch->cl_event = event_;
+#endif
+  }
 #endif
 
   void Launch() {
@@ -90,10 +98,13 @@ class KernelBase {
     profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
     profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     Run();
-#ifdef LITE_WITH_OPENCL
-    CLRuntime::Global()->command_queue().finish();
-#endif
+
+    if (is_first_epoch_for_profiler_) {
+      SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
+      is_first_epoch_for_profiler_ = false;
+    }
     profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+
 #else
     Run();
 #endif
@@ -185,6 +196,11 @@ class KernelBase {
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
+  bool is_first_epoch_for_profiler_{true};
+#endif
+
+#ifdef LITE_WITH_OPENCL
+  cl::Event event_;
 #endif
 };
 

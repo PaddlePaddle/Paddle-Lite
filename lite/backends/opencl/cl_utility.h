@@ -45,5 +45,18 @@ const char* opencl_error_to_str(cl_int error);
 #else
 #define CL_CHECK_FATAL(err_code__)
 #endif
+
+#ifdef LITE_WITH_PROFILE
+#define EnqueueNDRangeKernel(                                      \
+    context, kernel, gws_offset, gws, lws, event_wait_list, event) \
+  context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
+      kernel, gws_offset, gws, lws, event_wait_list, &event)
+#else
+#define EnqueueNDRangeKernel(                                      \
+    context, kernel, gws_offset, gws, lws, event_wait_list, event) \
+  context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
+      kernel, gws_offset, gws, lws, event_wait_list, nullptr)
+#endif
+
 }  // namespace lite
 }  // namespace paddle

@@ -15,6 +15,7 @@
 #pragma once
 #include <algorithm>
 #include <chrono>  // NOLINT
+#include <string>
 #include <vector>
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/cuda_utils.h"
@@ -87,6 +88,22 @@ class Timer {
     this->laps_t_.Add(elapse_ms);
     return elapse_ms;
   }
+
+#ifdef LITE_WITH_OPENCL
+  float CLStop(const std::string& op_type, float io_duration, cl::Event event) {
+    float cl_kernel_elapse_ms = 0.0;
+    if (op_type != "io_copy") {
+      cl_kernel_elapse_ms =
+          CLRuntime::Global()->CLRuntime::GetCommandTime(event);
+    } else {
+      cl_kernel_elapse_ms = io_duration;
+    }
+    this->cl_laps_t_.Add(cl_kernel_elapse_ms);
+    return cl_kernel_elapse_ms;
+  }
+  const TimeList<float>& CLLapTimes() const { return cl_laps_t_; }
+#endif
+
   virtual void Start(KernelContext* ctx) { return Start(); }
   virtual float Stop(KernelContext* ctx) { return Stop(); }
   float AvgLapTimeMs() const { return laps_t_.Avg(); }
@@ -94,6 +111,9 @@ class Timer {
 
  protected:
   TimeList<float> laps_t_;
+#ifdef LITE_WITH_OPENCL
+  TimeList<float> cl_laps_t_;
+#endif
 
  private:
   std::chrono::time_point<std::chrono::system_clock> t_start_, t_stop_;

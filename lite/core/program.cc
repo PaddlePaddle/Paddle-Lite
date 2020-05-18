@@ -169,7 +169,7 @@ void RuntimeProgram::Run() {
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
 #ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 0);
+  LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif
 #ifdef LITE_WITH_PRECISION_PROFILE
   LOG(INFO) << "\n" << precision_profiler_summary;
@@ -299,6 +299,13 @@ void Instruction::Run() {
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
+
+#ifdef LITE_WITH_PROFILE
+  if (first_epoch_for_profiler_) {
+    SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
+    first_epoch_for_profiler_ = false;
+  }
+#endif
 }
 
 STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {

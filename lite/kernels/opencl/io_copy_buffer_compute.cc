@@ -16,19 +16,46 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
+#undef LITE_WITH_LOG
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
 
+inline double GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
+
 // Host to OpenCL memory.
-void CopyFromHostSync(void* target, const void* source, size_t size) {
+float CopyFromHostSync(void* target, const void* source, size_t size) {
+#ifdef LITE_WITH_PROFILE
+  auto h2d_copy_start = GetCurrentUS();
+#endif
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::HtoD);
+#ifdef LITE_WITH_PROFILE
+  auto h2d_duration = (GetCurrentUS() - h2d_copy_start) / 1000.0;
+  return h2d_duration;
+#else
+  return 0.0;
+#endif
 }
 
 // Device to Host memory.
-void CopyToHostSync(void* target, const void* source, size_t size) {
+float CopyToHostSync(void* target, const void* source, size_t size) {
+#ifdef LITE_WITH_PROFILE
+  auto d2h_copy_start = GetCurrentUS();
+#endif
+  CLRuntime::Global()->command_queue().finish();
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoH);
+#ifdef LITE_WITH_PROFILE
+  auto d2h_duration = (GetCurrentUS() - d2h_copy_start) / 1000.0;
+  return d2h_duration;
+#else
+  return 0.0;
+#endif
 }
 
 /*
@@ -37,6 +64,13 @@ void CopyToHostSync(void* target, const void* source, size_t size) {
 class IoCopyHostToOpenCLCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = "HostToOpenCL";
+    ch->io_duration = h2d_duration_;
+  }
+#endif
+
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
@@ -50,7 +84,7 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
-    CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -74,6 +108,8 @@ class IoCopyHostToOpenCLCompute
   }
 
   std::string doc() const override { return "Copy IO from HOST to OpenCL"; }
+
+  float h2d_duration_{0};
 };
 
 /*
@@ -82,6 +118,13 @@ class IoCopyHostToOpenCLCompute
 class IoCopykOpenCLToHostCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = "OpenCLToHost";
+    ch->io_duration = d2h_duration_;
+  }
+#endif
+
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
@@ -109,12 +152,13 @@ class IoCopykOpenCLToHostCompute
 #ifdef LITE_WITH_LOG
     VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
 #endif
-    CLRuntime::Global()->command_queue().finish();
 
-    CopyToHostSync(data, param.x->raw_data(), mem_size);
+    d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
   }
 
   std::string doc() const override { return "Copy IO from OpenCL to HOST"; }
+
+  float d2h_duration_{0};
 };
 
 }  // namespace opencl
@@ -161,3 +205,5 @@ REGISTER_LITE_KERNEL(io_copy_once,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
+
+#define LITE_WITH_LOG
