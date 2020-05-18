@@ -130,8 +130,27 @@ std::vector<std::vector<int64_t>> VarDesc::GetShapes() const {
   return res;
 }
 
-void VarDesc::SetDataType(proto::VarType::Type data_type) {
-  mutable_tensor_desc()->set_data_type(data_type);
+void VarDesc::SetDataType(VarDescAPI::VarDataType data_type) {
+#define SET_DATA_TYPE_CASE_ITEM(type__)                                      \
+  case VarDescAPI::Type::type__:                                             \
+    mutable_tensor_desc()->set_data_type(framework::proto::VarType::type__); \
+    break;
+
+  switch (data_type) {
+    SET_DATA_TYPE_CASE_ITEM(BOOL);
+    SET_DATA_TYPE_CASE_ITEM(SIZE_T);
+    SET_DATA_TYPE_CASE_ITEM(UINT8);
+    SET_DATA_TYPE_CASE_ITEM(INT8);
+    SET_DATA_TYPE_CASE_ITEM(INT16);
+    SET_DATA_TYPE_CASE_ITEM(INT32);
+    SET_DATA_TYPE_CASE_ITEM(INT64);
+    SET_DATA_TYPE_CASE_ITEM(FP16);
+    SET_DATA_TYPE_CASE_ITEM(FP32);
+    SET_DATA_TYPE_CASE_ITEM(FP64);
+    default:
+      LOG(FATAL) << "Unknown var type: " << static_cast<int>(data_type);
+  }
+#undef SET_DATA_TYPE_CASE_ITEM
 }
 
 void VarDesc::SetDataTypes(
