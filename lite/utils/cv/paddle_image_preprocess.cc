@@ -14,6 +14,7 @@
 
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include <math.h>
+#include <string.h>
 #include <algorithm>
 #include <climits>
 #include "lite/utils/cv/image2tensor.h"
