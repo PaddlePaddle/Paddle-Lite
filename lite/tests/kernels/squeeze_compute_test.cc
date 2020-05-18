@@ -47,7 +47,7 @@ class SqueezeComputeTester : public arena::TestCase {
     bool should_squeeze[9] = {false};
 
     if (num_squeeze_dims == 0) {
-      for (int idx = 0; idx < in_dims.size(); ++idx) {
+      for (size_t idx = 0; idx < in_dims.size(); ++idx) {
         if (in_dims[idx] == 1) {
           should_squeeze[idx] = true;
           ++cnt_squeezed_dims;
@@ -71,7 +71,7 @@ class SqueezeComputeTester : public arena::TestCase {
     }
 
     std::vector<int64_t> output_shape(in_dims.size() - cnt_squeezed_dims, 0);
-    for (int in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
+    for (size_t in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
       if (!should_squeeze[in_idx]) {
         output_shape[out_idx++] = in_dims[in_idx];
       }
@@ -135,7 +135,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     bool should_squeeze[9] = {false};
 
     if (num_squeeze_dims == 0) {
-      for (int idx = 0; idx < in_dims.size(); ++idx) {
+      for (size_t idx = 0; idx < in_dims.size(); ++idx) {
         if (in_dims[idx] == 1) {
           should_squeeze[idx] = true;
           ++cnt_squeezed_dims;
@@ -159,7 +159,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     }
 
     std::vector<int64_t> output_shape(in_dims.size() - cnt_squeezed_dims, 0);
-    for (int in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
+    for (size_t in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
       if (!should_squeeze[in_idx]) {
         output_shape[out_idx++] = in_dims[in_idx];
       }
