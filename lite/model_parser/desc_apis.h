@@ -76,6 +76,10 @@ class VarDescAPI {
   virtual bool Persistable() const = 0;
   // Set var to be persistable or not
   virtual void SetPersistable(bool persistable) = 0;
+  // Get var's shape
+  virtual std::vector<int64_t> GetShape() const = 0;
+  // Set var's shape
+  virtual void SetShape(const std::vector<int64_t>& dims) = 0;
 };
 
 /*
