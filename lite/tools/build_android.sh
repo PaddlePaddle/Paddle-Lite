@@ -233,7 +233,7 @@ function print_usage {
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                          |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
-    echo -e "|     --android_stl: (c++_static|c++_shared|gnustl_static), default is c++_static                                                      |"
+    echo -e "|     --android_stl: (c++_static|c++_shared), default is c++_static                                                                    |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
