@@ -156,7 +156,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 ###### 编译环境要求
 
-- gcc、g++、git、make、wget、python
+- gcc、g++、git、make、wget、python、patchelf
 - cmake（建议使用3.10或以上版本）
 
 ###### 具体步骤
