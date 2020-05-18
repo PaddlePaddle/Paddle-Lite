@@ -172,9 +172,13 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
+  // todo: it's prefered to combine last_input_shapes and
+  // last_input_lods into a single hash value to decrease
+  // memory usage.
+  std::vector<DDimLite> last_input_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods{};
   std::vector<DDimLite> last_output_shapes{};
   std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
-  size_t io_shape_lod_hash_{};
   mutable operators::ParamBase *op_param_{nullptr};
 
  private:

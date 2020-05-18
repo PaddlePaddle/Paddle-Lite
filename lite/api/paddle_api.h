@@ -137,6 +137,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<Place> valid_places_;
   std::string model_file_;
   std::string param_file_;
+  std::vector<std::string> passes_internal_{};
   bool model_from_memory_{false};
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
@@ -165,7 +166,16 @@ class LITE_API CxxConfig : public ConfigBase {
     param_file_ = std::string(param_buffer, param_buffer + param_buffer_size);
     model_from_memory_ = true;
   }
-
+  // internal inference to choose passes for model optimizing,
+  // it's designed for internal developer and not recommanded
+  // for comman users.
+  void set_passes_internal(
+      const std::vector<std::string>& passes_internal = {}) {
+    passes_internal_ = passes_internal;
+  }
+  const std::vector<std::string>& get_passes_internal() const {
+    return passes_internal_;
+  }
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
