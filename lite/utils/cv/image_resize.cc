@@ -32,8 +32,12 @@
 
 #include "lite/utils/cv/image_resize.h"
 #include <arm_neon.h>
+#include <limits.h>
 #include <math.h>
+#include <stdint.h>
+#include <string.h>
 #include <algorithm>
+
 namespace paddle {
 namespace lite {
 namespace utils {
