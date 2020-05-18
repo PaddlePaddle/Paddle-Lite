@@ -21,7 +21,6 @@ else()
    add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
    set_target_properties(lite_pybind PROPERTIES LINK_FLAGS ${LINK_FLAGS})
    add_dependencies(lite_pybind custom_linker_map)
-endif(APPLE)
 endif(WIN32)
 
 if (LITE_ON_TINY_PUBLISH)
