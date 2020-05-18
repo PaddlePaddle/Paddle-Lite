@@ -40,7 +40,6 @@ void ElementwiseAddCompute::PrepareForRun() {
   pe_.apply();
 }
 void ElementwiseAddCompute::Run() {
-  usleep(50 * 100 * 1000);
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();
@@ -63,7 +62,6 @@ void ElementwiseAddActivationCompute::PrepareForRun() {
   pe_.apply();
 }
 void ElementwiseAddActivationCompute::Run() {
-  usleep(500 * 100 * 1000);
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ElementwiseAddParam& ew_param = pe_.param();

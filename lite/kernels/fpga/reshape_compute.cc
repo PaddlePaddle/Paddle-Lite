@@ -41,15 +41,12 @@ void ReshapeCompute::Run() {
     output_dims = lite::operators::ValidateShape(shape, x_dims);
     output->Resize(output_dims);
   }
-  if (inplace) {
-    output->ShareDataWith(*x);
-  } else {
-    output->CopyDataFrom(*x);
-  }
-
-  param.x->ZynqTensor()->saveToFile("reshape_in", true);
-  output->ZynqTensor()->saveToFile("reshape_out", true);
-
+  // if (inplace) {
+  //   output->ShareDataWith(*x);
+  // } else {
+  //   output->CopyDataFrom(*x);
+  // }
+  output->ZynqTensor()->copyFrom(x->ZynqTensor());
   output->Resize(output_dims);
 }
 
