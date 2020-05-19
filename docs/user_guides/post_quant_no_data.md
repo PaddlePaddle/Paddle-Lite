@@ -22,7 +22,7 @@
 
 ## 2 产出量化模型
 
-大家可以使用PaddlePaddle调用无校准数据训练后量化接口，得到量化模型。
+因为目前该方法还没有在PaddleSlim中集成，大家可以使用PaddlePaddle调用无校准数据训练后量化接口，得到量化模型。
 
 ### 2.1 安装PaddlePaddle
 
