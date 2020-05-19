@@ -84,39 +84,6 @@ void RKNPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-#ifdef LITE_WITH_MLU
-  // remove invalid places, since only support X86, host, MLU
-  auto v_places = graph->valid_places();
-  for (auto it = v_places.begin(); it != v_places.end();) {
-    if (it->target != TARGET(kMLU) && it->target != TARGET(kHost) &&
-        it->target != TARGET(kX86)) {
-      it = v_places.erase(it);
-    } else {
-      ++it;
-    }
-  }
-  // add x86 NHWC place
-  std::vector<paddle::lite_api::PrecisionType> precisions{PRECISION(kFloat),
-                                                          PRECISION(kFP16)};
-  if (lite::TargetWrapperMlu::UseFirstConv())
-    precisions.emplace_back(PRECISION(kInt8));
-  for (auto& prec : precisions) {
-    auto is_x86_nhwc = [prec](const Place& it) {
-      return it.layout == DATALAYOUT(kNHWC) && it.target == TARGET(kX86) &&
-             it.precision == prec;
-    };
-    if (std::find_if(v_places.cbegin(), v_places.cend(), is_x86_nhwc) ==
-        v_places.end()) {
-      v_places.emplace_back(Place{TARGET(kX86), prec, DATALAYOUT(kNHWC)});
-    }
-  }
-  graph->SetValidPlaces(v_places);
-  VLOG(4) << "valid places after modified:";
-  for (auto& p : v_places) {
-    VLOG(4) << p.DebugString();
-  }
-#endif
-
   std::unordered_set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/mlu/bridges/paddle_use_bridges.h"

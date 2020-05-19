@@ -41,6 +41,8 @@ class IoCopyHostToMluCompute
     auto mem_size = param.x->memory_size();
     // LOG(INFO) << "copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kMLU), mem_size);
+    VLOG(6) << "io_copy host to mlu] memory size: " << mem_size
+            << " precision type: " << PrecisionToStr(Precision);
     param.y->set_precision(param.x->precision());
     CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
@@ -80,6 +82,8 @@ class IoCopyMluToHostCompute
     CHECK(param.x->target() == TARGET(kMLU));
     auto mem_size = param.x->memory_size();
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+    VLOG(6) << "io_copy mlu to host] memory size: " << mem_size
+            << " precision type: " << PrecisionToStr(Precision);
 
     // sync queue to ensure process done
     auto& mlu_context = this->ctx_->template As<MLUContext>();
@@ -105,11 +109,11 @@ REGISTER_LITE_KERNEL(
     host_to_device_kFloat)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
+                                      PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kMLU),
-                                       PRECISION(kAny),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kAny))})
     .Finalize();
 
@@ -122,11 +126,11 @@ REGISTER_LITE_KERNEL(
     host_to_device_kFP16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kMLU),
-                                       PRECISION(kAny),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kAny))})
     .Finalize();
 
@@ -139,11 +143,11 @@ REGISTER_LITE_KERNEL(
     device_to_host_kFloat)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kMLU),
-                                      PRECISION(kAny),
+                                      PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kAny))})
     .Finalize();
 
@@ -156,10 +160,27 @@ REGISTER_LITE_KERNEL(
     device_to_host_kFP16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kMLU),
-                                      PRECISION(kAny),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    io_copy,
+    kMLU,
+    kInt8,
+    kNHWC,
+    paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kInt8)>,
+    device_to_host_kInt8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMLU),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt8),
                                        DATALAYOUT(kAny))})
     .Finalize();

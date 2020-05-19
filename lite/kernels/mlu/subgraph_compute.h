@@ -314,6 +314,18 @@ class SubgraphEngine : public subgraph::Engine {
     }
   }
 
+  inline void* GetOutputDataPtr(Tensor* tensor, bool use_mlu_cast) {
+    if (use_mlu_cast) {
+      // output is float, since cast fused in subgraph
+      return static_cast<void*>(tensor->mutable_data<float>(TARGET(kMLU)));
+    } else {
+      return static_cast<void*>(
+          tensor->template mutable_data<
+              typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
+              TARGET(kMLU)));
+    }
+  }
+
   int LaunchDeviceProgram() override {
     // prepare input and output memory
     auto& mlu_context = this->ctx_->template As<MLUContext>();
@@ -330,6 +342,8 @@ class SubgraphEngine : public subgraph::Engine {
     auto* graph_output = graph->MutableOutputs();
     CHECK_EQ(graph_input->size(), origin_itensors_.size());
     CHECK_EQ(graph_output->size(), origin_otensors_.size());
+
+    bool use_mlu_cast = GetBoolFromEnv("LITE_MLU_CAST");
 
     if (!disable_batch_size_changeable_) {
       std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
@@ -371,26 +385,17 @@ class SubgraphEngine : public subgraph::Engine {
         graph_out = shape_tensor_map_out_[all_inputs_shape_];
         for (size_t i = 0; i < origin_otensors_.size(); ++i) {
           // origin_otensors_[i]->Resize(new_output_size.at(i));
-          void* p_data = static_cast<void*>(
-              origin_otensors_[i]
-                  ->template mutable_data<
-                      typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
-                      TARGET(kMLU)));
-          graph_out[i]->set_mlu_ptr(p_data);
+          graph_out[i]->set_mlu_ptr(
+              GetOutputDataPtr(origin_otensors_[i], use_mlu_cast));
         }
       } else {
         graph_out.reserve(origin_otensors_.size());
         for (size_t i = 0; i < origin_otensors_.size(); ++i) {
           // origin_otensors_[i]->Resize(new_output_size.at(i));
-          void* p_data = static_cast<void*>(
-              origin_otensors_[i]
-                  ->template mutable_data<
-                      typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
-                      TARGET(kMLU)));
           paddle::lite::subgraph::mlu::MLUTensor tmp(
               origin_otensors_[i]->dims().Vectorize());
           tmp.set_mlu_dtype(graph_output->at(i)->dtype());
-          tmp.set_mlu_ptr(p_data);
+          tmp.set_mlu_ptr(GetOutputDataPtr(origin_otensors_[i], use_mlu_cast));
           graph_out.push_back(
               std::make_shared<paddle::lite::subgraph::mlu::MLUTensor>(tmp));
         }
@@ -404,12 +409,8 @@ class SubgraphEngine : public subgraph::Engine {
       }
       for (size_t i = 0; i < origin_otensors_.size(); ++i) {
         origin_otensors_[i]->Resize(graph_output->at(i)->get_origin_shape());
-        void* p_data = static_cast<void*>(
-            origin_otensors_[i]
-                ->template mutable_data<
-                    typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
-                    TARGET(kMLU)));
-        graph_output->at(i)->set_mlu_ptr(p_data);
+        graph_output->at(i)->set_mlu_ptr(
+            GetOutputDataPtr(origin_otensors_[i], use_mlu_cast));
       }
       graph->Compute(forward_param, exec_queue);
     }
