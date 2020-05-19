@@ -55,6 +55,11 @@ a.set_valid_places("x86")
 
 a.run()
 ```
+
+- MAC 环境
+
+Opt工具使用方式同Linux（MAC环境暂不支持python端预测，下个版本会修复该问题）
+
 ## 3. 编写预测程序
 
 准备好预测库和模型，我们便可以编写程序来执行预测。我们提供涵盖图像分类、目标检测等多种应用场景的C++示例demo可供参考，创建文件mobilenetV1_light_api.py，
