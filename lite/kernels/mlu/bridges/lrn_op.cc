@@ -51,7 +51,7 @@ int LrnConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto local_size = op_info->GetAttr<int>("n");
   CHECK(op_info->HasAttr("input_scale"));
   auto input_scale = op_info->GetAttr<float>("input_scale");
-  std::cout << "input scale: " << input_scale << std::endl;
+  VLOG(5) << "lrn input scale: " << input_scale;
 
   cnmlLrnOpParam_t param;
   cnmlBaseOp_t lrn_op;

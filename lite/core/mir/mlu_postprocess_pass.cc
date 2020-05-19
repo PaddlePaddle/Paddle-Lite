@@ -40,6 +40,10 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
   cast_arg->AsArg().type = cast_type;
   inst_node->AsStmt().op()->scope()->Var(cast_arg_name);
 
+  VLOG(4) << "insert cast before subgraph";
+  VLOG(4) << "curent node type: " << cur_node->AsArg().type->name()
+          << " cast to node type: " << cast_type->name();
+
   // create the stmt node
   auto* cast_inst = graph->NewInstructNode();
   // create op
@@ -89,13 +93,16 @@ Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
       if (TargetCompatibleTo(*in_arg_ty, *cur_node->AsArg().type) &&
-          TargetCompatibleTo(*out_arg_ty, *cast_type)) {
+          TargetCompatibleTo(*out_arg_ty, *cast_type) &&
+          PrecisionCompatible(*in_arg_ty, *cur_node->AsArg().type) &&
+          PrecisionCompatible(*out_arg_ty, *cast_type)) {
         is_found = true;
       }
     } else {
       CHECK(0) << "Unsupport cast type";
     }
     if (is_found) {
+      VLOG(4) << "insert kernel: " << kernel->name();
       selected_kernels.emplace_back(std::move(kernel));
       // we pick the kernel
       cast_inst->AsStmt(op_type, std::move(selected_kernels), cast_op);
@@ -125,6 +132,9 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
   auto* var = inst_node->AsStmt().op()->scope()->Var(cast_arg_name);
   // for CastAfter manully set the tensor's type
   var->GetMutable<paddle::lite::Tensor>();
+  VLOG(4) << "insert cast after subgraph";
+  VLOG(4) << "curent node type: " << cur_node->AsArg().type->name()
+          << " cast to node type: " << cast_type->name();
 
   // create the stmt node
   auto* cast_inst = graph->NewInstructNode();
@@ -174,7 +184,9 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
       if (TargetCompatibleTo(*in_arg_ty, *cast_type) &&
-          TargetCompatibleTo(*out_arg_ty, *cur_node->AsArg().type)) {
+          TargetCompatibleTo(*out_arg_ty, *cur_node->AsArg().type) &&
+          PrecisionCompatible(*in_arg_ty, *cur_node->AsArg().type) &&
+          PrecisionCompatible(*out_arg_ty, *cast_type)) {
         is_found = true;
       }
     } else {
@@ -323,10 +335,9 @@ void MLUPostprocessPass::GetSubgraphOpArgType(Node* inst_node,
       CHECK(subgraph_precision == PRECISION(kFloat) ||
             subgraph_precision == PRECISION(kFP16))
           << "Mlu node has unsupport precision";
-      VLOG(4) << "picked kernel precision: "
-              << PrecisionToStr(subgraph_precision);
       *arg_type = LiteType::GetTensorTy(
           subgraph_target, subgraph_precision, subgraph_layout);
+      VLOG(4) << "picked subgraph kernel type: " << (*arg_type)->name();
       break;
     }
   }
@@ -726,7 +737,7 @@ std::pair<bool, std::string> CheckOutputAndInsert(
   return std::make_pair(do_insert, cur_node);
 }
 
-// insert cast op on mlu, to avoid cast on cpu, invoke before first run
+// insert cast op on mlu, to avoid cast on cpu
 void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
                                         const Type* subgraph_type) {
   auto subgraph_op = subgraph_node->AsStmt().op();
@@ -820,6 +831,42 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
   op->SetSubBlock(new_block_desc);
 }
 
+void ModifyValidPlaces(SSAGraph* graph, bool use_mlu_cast) {
+  // remove invalid places, since only support X86, host, MLU
+  auto v_places = graph->valid_places();
+  for (auto it = v_places.begin(); it != v_places.end();) {
+    if (it->target != TARGET(kMLU) && it->target != TARGET(kHost) &&
+        it->target != TARGET(kX86)) {
+      it = v_places.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  if (use_mlu_cast) {
+    // insert mlu float place for float io copy, no effect to subgraph type
+    v_places.emplace_back(TARGET(kMLU), PRECISION(kFloat), DATALAYOUT(kNHWC));
+  } else {
+    // add x86 NHWC place for cpu cast
+    std::set<paddle::lite_api::PrecisionType> prec_set{};
+    for (auto& place : v_places) {
+      prec_set.insert(place.precision);
+    }
+    if (lite::TargetWrapperMlu::UseFirstConv()) {
+      prec_set.insert(PRECISION(kInt8));
+    }
+    for (auto& prec : prec_set) {
+      v_places.emplace_back(TARGET(kX86), prec, DATALAYOUT(kNHWC));
+    }
+  }
+
+  graph->SetValidPlaces(v_places);
+  VLOG(4) << "valid places after modified:";
+  for (auto& p : v_places) {
+    VLOG(4) << p.DebugString();
+  }
+}
+
 void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 // currently for non-persistent input and output args, mlu subgraph op
 // only support float16/float32 data type
@@ -842,6 +889,7 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   g_stream_id = static_cast<int>(reinterpret_cast<int64_t>(graph.get()));
   bool use_mlu_cast = GetBoolFromEnv("LITE_MLU_CAST");
+  ModifyValidPlaces(graph.get(), use_mlu_cast);
   // insert io_copy, layout and precision cast of subgraph's inputs and outputs
   for (auto& node : graph->mutable_nodes()) {
     if (node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
