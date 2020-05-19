@@ -59,6 +59,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                            config.mlu_first_conv_std(),
                                            config.mlu_input_layout());
 #endif  // LITE_WITH_MLU
+#ifdef LITE_WITH_NPU
+  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
+      config.subgraph_model_cache_dir());
+#endif
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");
   VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;

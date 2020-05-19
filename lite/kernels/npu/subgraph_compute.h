@@ -36,46 +36,36 @@ class SubgraphEngine : public subgraph::Engine {
                  Scope *exec_scope,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
-                 const std::vector<std::string> &cached_shapes,
-                 std::string model_cache_dir = "")
-      : subgraph::Engine(ctx,
-                         block_idx,
-                         program_desc,
-                         exec_scope,
-                         input_names,
-                         output_names,
-                         cached_shapes,
-                         model_cache_dir) {}
+                 const std::vector<std::string> &cached_dims);
 
   struct device_program_t {
-    explicit device_program_t(std::shared_ptr<hiai::AiModelMngerClient> _client)
-        : client(_client) {}
-    std::shared_ptr<hiai::AiModelMngerClient> client{nullptr};
-    std::vector<DDim> origin_idims{};
-    std::vector<DDim> origin_odims{};
-    std::vector<hiai::TensorDimension> device_idims{};
-    std::vector<hiai::TensorDimension> device_odims{};
+    device_program_t() {}
+    explicit device_program_t(
+        std::shared_ptr<hiai::AiModelMngerClient> model_client)
+        : model_client_(model_client) {}
+    device_program_t(const std::vector<std::vector<int64_t>> &origin_odims,
+                     const std::vector<PrecisionType> &origin_otypes)
+        : origin_odims_(origin_odims), origin_otypes_(origin_otypes) {}
+    std::string model_name_{""};
+    std::shared_ptr<hiai::AiModelMngerClient> model_client_{nullptr};
+    std::vector<std::vector<int64_t>> origin_odims_;
+    std::vector<PrecisionType> origin_otypes_;
+    std::vector<hiai::TensorDimension> device_idims_{};
+    std::vector<hiai::TensorDimension> device_odims_{};
   };
-
-  int Build() override;
 
  protected:
   int BuildDeviceProgram() override;
+  int PrepareForLaunchDeviceProgram() override;
   int LaunchDeviceProgram() override;
 
-  void InitDeviceTensor() override;
-  bool InputShapeChanged() override;
+  void ParseCachedDims(const std::vector<std::string> &cached_dims);
+  void UpdateCachedDims();
 
-  std::string GenerateModelCacheName() const;
-
-  std::string model_name_{"model.om"};
-  std::vector<std::vector<int64_t>> inputs_shape_{};
-  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<device_program_t>>
-      device_program_map_{};
-  std::vector<std::string> device_inames_{};
-  std::vector<std::string> device_onames_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_{};
+  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<device_program_t>>
+      device_programs_;
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kAny)> {

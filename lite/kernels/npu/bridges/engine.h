@@ -27,11 +27,6 @@ namespace paddle {
 namespace lite {
 namespace subgraph {
 
-typedef struct {
-  DDim dims;
-  LoD lod;
-} Shape;
-
 class Engine {
  public:
   Engine(KernelContext *ctx,
@@ -39,25 +34,23 @@ class Engine {
          cpp::ProgramDesc *program_desc,
          Scope *exec_scope,
          const std::vector<std::string> &input_names,
-         const std::vector<std::string> &output_names,
-         const std::vector<std::string> &cached_shapes = {},
-         std::string model_cache_dir = "");
+         const std::vector<std::string> &output_names);
   virtual ~Engine() = default;
 
-  virtual int Build();
-  virtual int Launch();
+  virtual int Run();
 
  private:
   Engine(const Engine &) = delete;
 
  protected:
-  virtual int BuildDeviceProgram();
-  virtual int LaunchDeviceProgram();
-
   virtual int BuildOriginProgram();
+  virtual int PrepareForLaunchOriginProgram();
   virtual int LaunchOriginProgram();
 
-  virtual void InitDeviceTensor();
+  virtual int BuildDeviceProgram();
+  virtual int PrepareForLaunchDeviceProgram();
+  virtual int LaunchDeviceProgram();
+
   virtual bool InputShapeChanged();
 
   KernelContext *ctx_{nullptr};
@@ -66,17 +59,11 @@ class Engine {
   Scope *exec_scope_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
-  std::map<std::vector<Shape>, std::vector<Shape>> cached_shapes_;
-  // SUCCESS: device program build successed. FAILED: device program build
-  // failed. REBUILD_WHEN_SHAPE_CHANGED: device program build successed but need
-  // to rebuild when input shape changed.
-  int build_device_program_status_{0};
-  std::vector<DDim> origin_idims_;
-  std::vector<DDim> origin_odims_;
+  bool is_first_epoch_{true};
+  std::vector<std::vector<int64_t>> origin_idims_;
   std::vector<Tensor *> origin_itensors_;
   std::vector<Tensor *> origin_otensors_;
-  std::unique_ptr<RuntimeProgram> origin_program_;
-  std::string model_cache_dir_{""};
+  std::unique_ptr<RuntimeProgram> origin_program_{nullptr};
 };
 
 }  // namespace subgraph

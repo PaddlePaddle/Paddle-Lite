@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/core/mir/control_flow_op_prune_inputs_and_outputs_pass.h"
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
@@ -45,7 +46,7 @@ class Optimizer {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
-    CHECK(!graph_.size()) << "duplicate optimize found";
+    CHECK(!graphs_.size()) << "duplicate optimize found";
 
     auto block_size = program.ops().size();
     for (int block_idx = 0; block_idx < block_size; block_idx++) {
@@ -53,15 +54,17 @@ class Optimizer {
       graph.reset(new mir::SSAGraph);
       graph->Build(program, valid_places, block_idx);
       graph->SetValidPlaces(valid_places);
-      graph_.emplace_back(std::move(graph));
+      graphs_.emplace_back(std::move(graph));
     }
 
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
+    InitControlFlowOpPruneInputsAndOutputsPass();
 
     if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
-          {"lite_quant_dequant_fuse_pass",         //
+          {"graph_visualize_pass",
+           "lite_quant_dequant_fuse_pass",         //
            "weight_quantization_preprocess_pass",  //
            "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",               //
@@ -93,11 +96,15 @@ class Optimizer {
                                                       // fix the attribute
                                                       // 'enable_int8' for all
                                                       // of the quantized ops.
+           "graph_visualize_pass",
            "npu_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
+           "graph_visualize_pass",
+           "control_flow_op_prune_inputs_and_outputs_pass",
+           "graph_visualize_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
@@ -169,8 +176,8 @@ class Optimizer {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
     std::vector<std::unique_ptr<RuntimeProgram>> programs;
-    for (int block_idx = 0; block_idx < graph_.size(); block_idx++) {
-      pass->Apply(graph_[block_idx]);
+    for (int block_idx = 0; block_idx < graphs_.size(); block_idx++) {
+      pass->Apply(graphs_[block_idx]);
       auto program = pass->GenProgram();
       CHECK(exec_scope_);
       program->set_exec_scope(exec_scope_);
@@ -188,17 +195,26 @@ class Optimizer {
     pass->SetValidPlaces(valid_places_);
   }
 
+  void InitControlFlowOpPruneInputsAndOutputsPass() {
+    auto* pass = mir::PassManager::Global()
+                     .LookUp<mir::ControlFlowOpPruneInputsAndOutputsPass>(
+                         "control_flow_op_prune_inputs_and_outputs_pass");
+    CHECK(pass);
+    CHECK(!graphs_.empty());
+    pass->SetAllGraphs(&graphs_);
+  }
+
   // Generate C++ code which combines the inference program, model and weights.
   void GenCode(const std::string& code_dir);
 
   const mir::SSAGraph& ssa_graph(int block_idx) const {
-    CHECK(graph_[block_idx]);
-    return *graph_[block_idx];
+    CHECK(graphs_[block_idx]);
+    return *graphs_[block_idx];
   }
 
   mir::SSAGraph* mutable_ssa_graph(int block_idx) {
-    CHECK(graph_[block_idx]);
-    return graph_[block_idx].get();
+    CHECK(graphs_[block_idx]);
+    return graphs_[block_idx].get();
   }
 
   lite::Scope* exec_scope() { return exec_scope_; }
@@ -225,8 +241,8 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        for (int block_idx = 0; block_idx < graph_.size(); block_idx++) {
-          pass->Apply(graph_[block_idx]);
+        for (int block_idx = 0; block_idx < graphs_.size(); block_idx++) {
+          pass->Apply(graphs_[block_idx]);
         }
         LOG(INFO) << "== Finished running: " << x;
       }
@@ -234,7 +250,7 @@ class Optimizer {
   }
 
  private:
-  std::vector<std::unique_ptr<mir::SSAGraph>> graph_;
+  std::vector<std::unique_ptr<mir::SSAGraph>> graphs_;
   std::vector<Place> valid_places_;
   lite::Scope* exec_scope_{};
   Program* program_{};

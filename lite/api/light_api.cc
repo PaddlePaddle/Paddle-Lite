@@ -135,50 +135,26 @@ void LightPredictor::PrepareFeedFetch() {
 }
 
 void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc* program_desc) {
-  std::vector<Instruction> insts;
-  // 1. Create op first
-  Program program(program_desc, scope_, {});
-
-// 2. Create Instructs
-#ifdef LITE_WITH_OPENCL
-  using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> local_ctx(new KernelContext());
-  local_ctx->As<OpenCLContext>().InitOnce();
-#endif
-
-  // Create the kernels of the target places, and filter out the specific
-  // kernel with the target alias.
-  for (auto& op : program.ops(0)) {
-    auto kernel_type = op->op_info()->GetAttr<std::string>(kKernelTypeAttr);
-    std::string op_type, alias;
-    Place place;
-    KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-    auto kernels = op->CreateKernels({place});
-    // filter out a kernel
-    auto it = std::find_if(
-        kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
-          return it->alias() == alias;
-        });
-    CHECK(it != kernels.end());
-
-#ifdef LITE_WITH_OPENCL
-    if ((*it)->target() == TARGET(kOpenCL)) {
-      std::unique_ptr<KernelContext> ctx(new KernelContext());
-      (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
-      (*it)->SetContext(std::move(ctx));
-    } else {
-      (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
+  auto* exe_scope = &scope_->NewScope();
+  // Prepare workspace
+  scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
+  scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
+  CHECK(program_desc->BlocksSize());
+  for (size_t block_idx = 0; block_idx < program_desc->BlocksSize();
+       block_idx++) {
+    auto& block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+    for (size_t op_idx = 0; op_idx < block_desc.VarsSize(); op_idx++) {
+      auto& var_desc = block_desc.GetVar<cpp::VarDesc>(op_idx);
+      if (!var_desc.Persistable()) {
+        exe_scope->Var(var_desc.Name());
+      } else {
+        if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
+        if (var_desc.Persistable()) scope_->Var(var_desc.Name());
+      }
     }
-#else
-    (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
-#endif
-
-    insts.emplace_back(op, std::move(*it));
   }
-  program_.reset(new RuntimeProgram(std::move(insts)));
-
-  CHECK(program.exec_scope());
-  program_->set_exec_scope(program.exec_scope());
+  program_.reset(new RuntimeProgram(
+      0, const_cast<cpp::ProgramDesc*>(program_desc), exe_scope));
 }
 
 void LightPredictor::DequantizeWeight() {

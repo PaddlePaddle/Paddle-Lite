@@ -315,19 +315,20 @@ void SaveCombinedParamsPb(const std::string &path,
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
 
   // Get vars
-  std::vector<std::string> paramlist;
+  std::set<std::string> paramlist;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
     if (!IsPersistable(var)) continue;
-    paramlist.push_back(var.Name());
+    if (!paramlist.count(var.Name())) {
+      paramlist.insert(var.Name());
+    }
   }
-  std::sort(paramlist.begin(), paramlist.end());
 
   // Load vars
   std::ofstream file(path);
   CHECK(file.is_open());
-  for (size_t i = 0; i < paramlist.size(); ++i) {
-    SerializeTensor(file, exec_scope, paramlist[i]);
+  for (auto &var_name : paramlist) {
+    SerializeTensor(file, exec_scope, var_name);
   }
   file.close();
 }

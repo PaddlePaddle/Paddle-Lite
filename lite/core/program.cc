@@ -48,6 +48,7 @@ void RuntimeProgram::SaveOpInfosToProgram(int block_idx,
       CHECK(sub_program_desc);
       auto* sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
       *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
+      sub_block_desc->SetParentIdx(block_idx);
       delete sub_program_desc;
       subgraph_op->SetProgramDesc(program_desc);
       op_info.SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
@@ -150,13 +151,18 @@ RuntimeProgram::RuntimeProgram(int block_idx,
                                cpp::ProgramDesc* program_desc,
                                Scope* exec_scope)
     : exec_scope_(exec_scope) {
+#ifdef LITE_WITH_OPENCL
+  using OpenCLContext = Context<TargetType::kOpenCL>;
+  std::unique_ptr<KernelContext> local_ctx(new KernelContext());
+  local_ctx->As<OpenCLContext>().InitOnce();
+#endif
   CHECK(block_idx >= 0 && block_idx < program_desc->BlocksSize());
   auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
   for (int op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
     auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
-    if (op_type == "feed" || op_type == "fetch") continue;
+    // if (op_type == "feed" || op_type == "fetch") continue;
     // Create op and pick up the best kernel
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
@@ -206,8 +212,19 @@ RuntimeProgram::RuntimeProgram(int block_idx,
         LOG(WARNING) << "No kernels found for " << op_type;
       }
     }
+#ifdef LITE_WITH_OPENCL
+    if (picked_kernel->target() == TARGET(kOpenCL)) {
+      std::unique_ptr<KernelContext> ctx(new KernelContext());
+      (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
+      picked_kernel->SetContext(std::move(ctx));
+    } else {
+      (*it)->SetContext(
+          ContextScheduler::Global().NewContext(picked_kernel->target()));
+    }
+#else
     picked_kernel->SetContext(
         ContextScheduler::Global().NewContext(picked_kernel->target()));
+#endif
     instructions_.emplace_back(std::move(op), std::move(picked_kernel));
   }
   if (instructions_.empty()) {
@@ -355,6 +372,7 @@ void Instruction::Run() {
 #endif
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
+  LOG(INFO) << op_->op_info()->Type();
 
   if (first_epoch_) {
     first_epoch_ = false;
