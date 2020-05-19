@@ -36,17 +36,13 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::ProgramDesc* program_desc,
-                 Scope* exec_scope,
+                 cpp::BlockDesc* block_desc,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
+                 Scope* scope,
                  ::paddle::lite_api::PrecisionType type)
-      : subgraph::Engine(ctx,
-                         block_idx,
-                         program_desc,
-                         exec_scope,
-                         input_names,
-                         output_names) {
+      : subgraph::Engine(
+            ctx, block_idx, block_desc, input_names, output_names, scope) {
     graph_.SetFPType(type);
   }
 
@@ -81,7 +77,7 @@ class SubgraphEngine : public subgraph::Engine {
     int status = 0;
     // Convert all of input data vars and added into the MLU IR graph
     for (auto& input_name : input_names_) {
-      auto input_tensor = exec_scope_->FindMutableTensor(input_name);
+      auto input_tensor = scope_->FindMutableTensor(input_name);
       CHECK(input_tensor);
       auto input_node =
           graph_.AddNode(input_name,
@@ -98,7 +94,7 @@ class SubgraphEngine : public subgraph::Engine {
     LOG(INFO) << "START TO CONVERT ";
     // Convert all of ops and its weights and added into the MLU IR graph
     const auto& bridges = subgraph::Registry::Instance();
-    for (auto& inst : origin_program_.instructions()) {
+    for (auto& inst : origin_program_) {
       auto op = inst.op();
       CHECK(op);
       std::string op_type = op->op_info()->Type();
@@ -123,7 +119,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (auto& output_name : output_names_) {
       if (graph_.HasNode(output_name)) {
         graph_.AddOutput(graph_.GetNode(output_name));
-        auto output_tensor = exec_scope_->FindMutableTensor(output_name);
+        auto output_tensor = scope_->FindMutableTensor(output_name);
         void* p_data = static_cast<void*>(
             output_tensor->mutable_data<typename ::paddle::lite::subgraph::mlu::
                                             FPTypeTraits<Precision>::T>(
@@ -169,12 +165,13 @@ class SubgraphCompute
 
   void PrepareForRun() override {
     auto& param = this->template Param<param_t>();
+    // LOG(INFO) << "SUBGRAP Prepare RUN index " << param.sub_block_idx;
     engine_.reset(new SubgraphEngine<Precision>(this->ctx_.get(),
-                                                param.block_idx,
-                                                param.program_desc,
-                                                param.exec_scope,
+                                                param.sub_block_idx,
+                                                param.sub_block_desc,
                                                 param.input_data_names,
                                                 param.output_data_names,
+                                                param.scope,
                                                 this->precision()));
     CHECK(engine_);
     engine_->Build();
