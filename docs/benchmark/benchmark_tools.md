@@ -54,22 +54,30 @@ sh run_benchmark.sh
 ###########################################
 # Build benchmark_bin for android-armv7   #
 ###########################################
-./lite/tools/ci_build.sh  \
-  --arm_os="android" \
-  --arm_abi="armv7" \
-  --arm_lang="gcc " \
-  build_arm
+
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv7 \
+  --arm_lang=gcc \
+  --android_stl=c++_static \
+  --build_extra=ON \
+  --with_log=OFF \
+  full_publish
 
 # `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv7.gcc/lite/api/benchmark_bin
 
 ###########################################
 # Build benchmark_bin for android-armv8   #
 ###########################################
-./lite/tools/ci_build.sh  \
-  --arm_os="android" \
-  --arm_abi="armv8" \
-  --arm_lang="gcc "  \
-  build_arm
+
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv8 \
+  --arm_lang=gcc \
+  --android_stl=c++_static \
+  --build_extra=ON \
+  --with_log=OFF \
+  full_publish
 
 # `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv8.gcc/lite/api/benchmark_bin
 ```
