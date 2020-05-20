@@ -92,7 +92,6 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
-  std::vector<std::string> cached_data_dims{};
   int block_idx{-1};
   cpp::ProgramDesc* program_desc{nullptr};
   Scope* exec_scope{nullptr};

@@ -35,9 +35,9 @@ Engine::Engine(KernelContext *ctx,
       input_names_(input_names),
       output_names_(output_names) {}
 
-int Engine::Run() {
+bool Engine::Run() {
   if (is_first_epoch_) {
-    PrepareForLaunchDeviceProgram();
+    PrepareWorkspaceForDeviceProgram();
     is_first_epoch_ = false;
   }
   if (InputShapeChanged()) {
@@ -46,17 +46,7 @@ int Engine::Run() {
   return LaunchDeviceProgram();
 }
 
-int Engine::BuildOriginProgram() {
-  // TODO(hong19860320) The block_desc need to be divided into subgraphs during
-  // the exection time. But only see them as a subgraph now.
-  if (!origin_program_) {
-    origin_program_.reset(
-        new RuntimeProgram(block_idx_, program_desc_, exec_scope_));
-  }
-  return SUCCESS;
-}
-
-int Engine::PrepareForLaunchOriginProgram() {
+bool Engine::PrepareWorkspaceForOriginProgram() {
   origin_idims_.resize(input_names_.size());
   origin_itensors_.resize(input_names_.size());
   for (int i = 0; i < input_names_.size(); i++) {
@@ -68,28 +58,38 @@ int Engine::PrepareForLaunchOriginProgram() {
     origin_otensors_[i] = exec_scope_->FindMutableTensor(output_names_[i]);
     CHECK(origin_otensors_[i]);
   }
-  return SUCCESS;
+  return true;
 }
 
-int Engine::LaunchOriginProgram() {
+bool Engine::BuildOriginProgram() {
+  // TODO(hong19860320) The block_desc need to be divided into subgraphs during
+  // the exection time. But only see them as a subgraph now.
+  if (!origin_program_) {
+    origin_program_.reset(
+        new RuntimeProgram(block_idx_, program_desc_, exec_scope_));
+  }
+  return true;
+}
+
+bool Engine::LaunchOriginProgram() {
   if (!origin_program_) {
     BuildOriginProgram();
   }
   if (origin_program_) {
     VLOG(3) << "Roll back to run the origin program on CPU.";
     origin_program_->Run();
-    return SUCCESS;
+    return true;
   }
-  return FAILED;
+  return false;
 }
 
-int Engine::BuildDeviceProgram() { return BuildOriginProgram(); }
-
-int Engine::PrepareForLaunchDeviceProgram() {
-  return PrepareForLaunchOriginProgram();
+bool Engine::PrepareWorkspaceForDeviceProgram() {
+  return PrepareWorkspaceForOriginProgram();
 }
 
-int Engine::LaunchDeviceProgram() { return LaunchOriginProgram(); }
+bool Engine::BuildDeviceProgram() { return BuildOriginProgram(); }
+
+bool Engine::LaunchDeviceProgram() { return LaunchOriginProgram(); }
 
 bool Engine::InputShapeChanged() {
   bool changed = false;

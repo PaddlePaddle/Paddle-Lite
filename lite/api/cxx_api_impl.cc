@@ -60,8 +60,19 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                            config.mlu_input_layout());
 #endif  // LITE_WITH_MLU
 #ifdef LITE_WITH_NPU
-  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
+  auto cache_dir = config.subgraph_model_cache_dir();
+  if (cache_dir.empty() && !config.model_from_memory()) {
+    cache_dir = config.model_dir();
+    const auto &model_file = config.model_file();
+    const auto &param_file = config.param_file();
+    if (!model_file.empty() && !param_file.empty()) {
+      size_t last_slash_idx = model_file.find_last_of("/");
+      if (last_slash_idx != std::string::npos) {
+        cache_dir = model_file.substr(0, last_slash_idx);
+      }
+    }
+  }
+  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(cache_dir);
 #endif
   auto use_layout_preprocess_pass =
       config.model_dir().find("OPENCL_PRE_PRECESS");

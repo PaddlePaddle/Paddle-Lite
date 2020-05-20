@@ -38,8 +38,16 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   threads_ = config.threads();
 
 #ifdef LITE_WITH_NPU
-  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
+  auto cache_dir = config.subgraph_model_cache_dir();
+  auto lite_model_path = config.lite_model_file();
+  if (cache_dir.empty() && !lite_model_path.empty() &&
+      !config.model_from_memory()) {
+    size_t last_slash_idx = lite_model_path.find_last_of("/");
+    if (last_slash_idx != std::string::npos) {
+      cache_dir = lite_model_path.substr(0, last_slash_idx);
+    }
+  }
+  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(cache_dir);
 #endif
 }
 

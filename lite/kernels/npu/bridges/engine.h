@@ -37,19 +37,19 @@ class Engine {
          const std::vector<std::string> &output_names);
   virtual ~Engine() = default;
 
-  virtual int Run();
+  virtual bool Run();
 
  private:
   Engine(const Engine &) = delete;
 
  protected:
-  virtual int BuildOriginProgram();
-  virtual int PrepareForLaunchOriginProgram();
-  virtual int LaunchOriginProgram();
+  virtual bool PrepareWorkspaceForOriginProgram();
+  virtual bool BuildOriginProgram();
+  virtual bool LaunchOriginProgram();
 
-  virtual int BuildDeviceProgram();
-  virtual int PrepareForLaunchDeviceProgram();
-  virtual int LaunchDeviceProgram();
+  virtual bool PrepareWorkspaceForDeviceProgram();
+  virtual bool BuildDeviceProgram();
+  virtual bool LaunchDeviceProgram();
 
   virtual bool InputShapeChanged();
 

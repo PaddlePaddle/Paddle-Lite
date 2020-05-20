@@ -372,7 +372,7 @@ void Instruction::Run() {
 #endif
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
-  LOG(INFO) << op_->op_info()->Type();
+  VLOG(5) << op_->op_info()->Type();
 
   if (first_epoch_) {
     first_epoch_ = false;

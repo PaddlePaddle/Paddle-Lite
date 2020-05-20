@@ -39,10 +39,6 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       op_desc.GetAttr<std::vector<std::string>>("input_data_names");
   param_.output_data_names =
       op_desc.GetAttr<std::vector<std::string>>("output_data_names");
-  if (op_desc.HasAttr("cached_data_dims")) {
-    param_.cached_data_dims =
-        op_desc.GetAttr<std::vector<std::string>>("cached_data_dims");
-  }
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   CHECK_GE(param_.block_idx, 0);

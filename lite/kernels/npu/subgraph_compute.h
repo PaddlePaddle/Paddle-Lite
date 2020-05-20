@@ -28,43 +28,64 @@ namespace lite {
 namespace kernels {
 namespace npu {
 
+class RuntimeProgram {
+ public:
+  RuntimeProgram() {}
+  ~RuntimeProgram() {}
+  bool LoadFromCacheFile(const std::vector<std::string>& input_names,
+                         const std::vector<std::string>& output_names,
+                         const std::vector<std::vector<int64_t>>& origin_idims,
+                         const std::string& model_cache_dir);
+  bool BuildGraphAndCacheToFile(
+      lite::RuntimeProgram* origin_program,
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims,
+      const std::vector<Tensor*>& origin_otensors,
+      const std::string& model_cache_dir);
+  bool ShareBufferWithOriginTensors(
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      std::vector<Tensor*>* origin_itensors,
+      std::vector<Tensor*>* origin_otensors,
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_itensors,
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_otensors);
+  bool ZeroCopyRun(
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_itensors,
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_otensors);
+
+ public:
+  std::string model_name_{""};
+  std::shared_ptr<hiai::AiModelMngerClient> model_client_{nullptr};
+  std::vector<std::vector<int64_t>> origin_odims_;
+  std::vector<PrecisionType> origin_otypes_;
+  std::vector<hiai::TensorDimension> device_idims_{};
+  std::vector<hiai::TensorDimension> device_odims_{};
+};
+
 class SubgraphEngine : public subgraph::Engine {
  public:
-  SubgraphEngine(KernelContext *ctx,
+  SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::ProgramDesc *program_desc,
-                 Scope *exec_scope,
-                 const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names,
-                 const std::vector<std::string> &cached_dims);
-
-  struct device_program_t {
-    device_program_t() {}
-    explicit device_program_t(
-        std::shared_ptr<hiai::AiModelMngerClient> model_client)
-        : model_client_(model_client) {}
-    device_program_t(const std::vector<std::vector<int64_t>> &origin_odims,
-                     const std::vector<PrecisionType> &origin_otypes)
-        : origin_odims_(origin_odims), origin_otypes_(origin_otypes) {}
-    std::string model_name_{""};
-    std::shared_ptr<hiai::AiModelMngerClient> model_client_{nullptr};
-    std::vector<std::vector<int64_t>> origin_odims_;
-    std::vector<PrecisionType> origin_otypes_;
-    std::vector<hiai::TensorDimension> device_idims_{};
-    std::vector<hiai::TensorDimension> device_odims_{};
-  };
+                 cpp::ProgramDesc* program_desc,
+                 Scope* exec_scope,
+                 const std::vector<std::string>& input_names,
+                 const std::vector<std::string>& output_names)
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         program_desc,
+                         exec_scope,
+                         input_names,
+                         output_names) {}
 
  protected:
-  int BuildDeviceProgram() override;
-  int PrepareForLaunchDeviceProgram() override;
-  int LaunchDeviceProgram() override;
-
-  void ParseCachedDims(const std::vector<std::string> &cached_dims);
-  void UpdateCachedDims();
+  bool PrepareWorkspaceForDeviceProgram() override;
+  bool BuildDeviceProgram() override;
+  bool LaunchDeviceProgram() override;
 
   std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_{};
-  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<device_program_t>>
+  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<RuntimeProgram>>
       device_programs_;
 };
 
