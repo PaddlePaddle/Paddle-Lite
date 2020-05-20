@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <cl_common.h>
+#include "io.hpp"
 
-__kernel void sigmoid(__global const CL_DTYPE* x_data, const int count, __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0); 
-  if (index < count) {
-    out_data[index] = 1 / (1 + exp(-x_data[index]));
-  }
-}
+namespace paddle {
+namespace zynqmp {
+
+
+}  // namespace zynqmp
+}  // namespace paddle

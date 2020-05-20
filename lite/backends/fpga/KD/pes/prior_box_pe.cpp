@@ -241,10 +241,13 @@ void PriorBoxPE::compute_prior_box() {
   }
 
   boxes.flush();
-  boxes.syncToCPU();
+  // boxes.syncToCPU();
   variances.flush();
   output_boxes->copyFrom(&boxes);
   output_variances->copyFrom(&variances);
+
+  output_boxes->invalidate();
+  output_variances->invalidate();
 }
 
 void PriorBoxPE::apply() {}
@@ -253,8 +256,9 @@ bool PriorBoxPE::dispatch() {
   if (cachedBoxes_ == nullptr) {
     cachedBoxes_ = new Tensor();
     cachedVariances_ = new Tensor();
-    cachedBoxes_->mutableData<float>(FP32, param_.outputBoxes->shape());
-    cachedVariances_->mutableData<float>(FP32, param_.outputVariances->shape());
+    cachedBoxes_->mutableData<float16>(FP16, param_.outputBoxes->shape());
+    cachedVariances_->mutableData<float16>(FP16,
+                                           param_.outputVariances->shape());
     cachedBoxes_->setDataLocation(CPU);
     cachedVariances_->setDataLocation(CPU);
     compute_prior_box();

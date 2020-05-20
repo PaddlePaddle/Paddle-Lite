@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <fstream>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -22,7 +24,7 @@
 namespace paddle {
 namespace lite {
 
-#define FPGA_PRINT_TENSOR
+// #define FPGA_PRINT_TENSOR
 
 class Debugger {
  public:
@@ -37,25 +39,42 @@ class Debugger {
     }
   }
 
+  void tick(std::string key) {
+    float value = 0;
+    if (tick_tock_map.count(key) > 0) {
+      value += tick_tock_map[key] = value;
+    }
+  }
+
+  void tock(std::string key) {}
+
+  void setEnable(bool en) { enabled_ = en; }
+
  private:
+  bool enabled_ = false;
+
   std::unordered_map<std::string, bool> op_config;
+  std::unordered_map<std::string, float> tick_tock_map;
   Debugger() {
     op_config["concat"] = true;
     op_config["pooling"] = true;
     op_config["conv"] = true;
+    op_config["dropout"] = true;
     op_config["dwconv"] = true;
     op_config["ew_add"] = true;
+    op_config["ew_mul"] = true;
     op_config["crop"] = true;
     op_config["feed"] = true;
-    op_config["mul"] = true;
     op_config["fetch"] = true;
+    op_config["fc"] = true;
+    op_config["mul"] = true;
     op_config["boxes"] = true;
     op_config["scores"] = true;
     op_config["nms"] = true;
     op_config["pb_boxes"] = true;
     op_config["pb_variances"] = true;
-    // op_config["fc"] = true;
     op_config["softmax"] = true;
+    op_config["split"] = true;
   }
 };
 

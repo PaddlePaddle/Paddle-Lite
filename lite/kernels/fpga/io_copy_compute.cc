@@ -45,21 +45,32 @@ class IoCopyHostToFpgaCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-    param.y->mutable_data<float16>();
-    if (param.x->ZynqTensor()->aligned() &&
-        param.x->ZynqTensor()->shape().shouldAlign()) {
-      zynqmp::Tensor tempTensor;
-      tempTensor.mutableData<float16>(zynqmp::FP16,
-                                      param.x->ZynqTensor()->shape());
-      tempTensor.copyFrom(param.x->ZynqTensor());
-      tempTensor.setAligned(true);
-      tempTensor.unalignImage();
-      param.y->ZynqTensor()->copyFrom(&tempTensor);
-    } else {
+    param.x->ZynqTensor()->flush();
+
+    if (param.x->ZynqTensor()->dataType() == zynqmp::INT32) {
+      param.y->mutable_data<int>();
       param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+      return;
     }
-    param.y->ZynqTensor()->invalidate();
-    param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+
+    if (param.x->ZynqTensor()->dataType() == zynqmp::FP32) {
+      param.y->mutable_data<float16>();
+      if (param.x->ZynqTensor()->aligned() &&
+          param.x->ZynqTensor()->shape().shouldAlign()) {
+        zynqmp::Tensor tempTensor;
+        tempTensor.mutableData<float16>(zynqmp::FP16,
+                                        param.x->ZynqTensor()->shape());
+        tempTensor.copyFrom(param.x->ZynqTensor());
+        tempTensor.setAligned(true);
+        tempTensor.unalignImage();
+        param.y->ZynqTensor()->copyFrom(&tempTensor);
+      } else {
+        param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+      }
+      param.y->ZynqTensor()->invalidate();
+      param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+    }
+
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();
   }

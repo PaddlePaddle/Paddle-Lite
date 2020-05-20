@@ -103,12 +103,14 @@ class Tensor {
     return reinterpret_cast<Dtype*>(ptr);
   }
 
+  void releaseData() {
+    released = true;
+    placeHolder_.reset();
+  }
+
   template <typename Dtype>
   Dtype* mutableData(DataType dataType, const Shape& shape) {
-    if (this->shape_ != nullptr) {
-      delete shape_;
-    }
-    this->shape_ = new Shape(shape);
+    this->shape_.reset(new Shape(shape));
     this->dataType_ = dataType;
     return mutableData<Dtype>();
   }
@@ -138,7 +140,7 @@ class Tensor {
 
   DataType dataType() { return this->dataType_; }
 
-  Shape& shape() { return *shape_; }
+  Shape& shape() { return *(shape_.get()); }
 
   bool aligned() { return this->aligned_; }
 
@@ -247,15 +249,12 @@ class Tensor {
   void shareDataWith(Tensor* src) { shareDataWith(src, src->shape()); }
 
   void shareDataWith(Tensor* src, const Shape& shape, int offset = 0) {
-    if (shape_ != nullptr) {
-      delete shape_;
-    }
     this->placeHolder_ = src->placeHolder_;
     this->dataType_ = src->dataType_;
     this->aligned_ = src->aligned_;
     this->dateLocation_ = src->dateLocation_;
     this->offset = offset;
-    shape_ = new Shape(const_cast<Shape&>(shape));
+    shape_.reset(new Shape(shape));
   }
 
   void copyFrom(Tensor* src) {
@@ -284,7 +283,6 @@ class Tensor {
         .address = data<void>(), .scale_address = scale(),
     };
     args.output = output;
-    src->syncToDevice();
     size_t aligned_remainder = src->shape().numel() % 16;
     if (aligned_remainder > 0) {
       size_t dtype_size =
@@ -294,12 +292,14 @@ class Tensor {
       fpga_flush(dst, aligned_remainder * dtype_size);
     }
     src->syncToDevice();
-    this->invalidate();
     perform_bypass(args);
     this->invalidate();
   }
 
   void flush() {
+    if (released) {
+      return;
+    }
     size_t memorySize = placeHolder_->memorySize();
     fpga_flush(placeHolder_->data(), memorySize);
   }
@@ -380,7 +380,6 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
-    invalidate();
     std::ofstream ofs;
     ofs.open(path);
     ofs << scale()[0] << " / " << scale()[1] << std::endl;
@@ -389,10 +388,16 @@ class Tensor {
       float value = 0;
       if (dataType_ == FP32) {
         value = data<float>()[i];
-      } else if (dataType_ == FP16) {
+      }
+      if (dataType_ == FP16) {
         value = half_to_float(data<float16>()[i]);
-      } else {
+      }
+
+      if (dataType_ == INT8) {
         value = data<int8_t>()[i];
+      }
+      if (dataType_ == INT32) {
+        value = data<int32_t>()[i];
       }
       ofs << value << std::endl;
     }
@@ -451,18 +456,12 @@ class Tensor {
     return os;
   }
 
-  ~Tensor() {
-    if (shape_ != nullptr) {
-      delete shape_;
-      shape_ = nullptr;
-    }
-  }
-
  private:
+  bool released = false;
   int offset = 0;
   float mem_scale_factor_ = 1.0f;
   std::shared_ptr<PlaceHolder> placeHolder_;
-  Shape* shape_ = nullptr;
+  std::shared_ptr<Shape> shape_;
   DataType dataType_ = FP32;
   bool aligned_ = false;
   DataSyncStatus synchedStatus_ = Synched;

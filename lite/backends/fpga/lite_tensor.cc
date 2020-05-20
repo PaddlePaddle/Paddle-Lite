@@ -69,7 +69,7 @@ std::string DDimLite::repr() const {
 }
 
 void TensorLite::ShareDataWith(const TensorLite &other) {
-  buffer_ = other.buffer_;
+  buffer_ = other.buffer_;  // TODO(chonwhite) delete buffer;
   dims_ = other.dims_;
   zynq_tensor_ = other.zynq_tensor_;
   target_ = other.target_;
@@ -79,10 +79,8 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
 }
 
 void *TensorLite::mutable_data(size_t memory_size) {
-  memory_size_ = memory_size;
+  memory_size_ = memory_size;  // TODO(chonwhite) delete buffer;
   buffer_->ResetLazy(target_, memory_size_);
-  // throw -1;
-  std::cout << memory_size << std::endl;
   return buffer_->data();
 }
 
@@ -95,13 +93,20 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   dims_ = other.dims_;
   target_ = other.target_;
   lod_ = other.lod_;
+
+  if (zynq_tensor_.get() == nullptr) {
+    zynq_tensor_.reset(new zynqmp::Tensor());
+  }
+
   auto dt = zynq_tensor_->dataType();
-
-  auto shape = other.zynq_tensor_->shape();
-
   Resize(other.dims());
+  auto shape = other.zynq_tensor_->shape();
   zynq_tensor_->mutableData<void>(zynq_tensor_->dataType(), shape);
-  this->ZynqTensor()->copyFrom(other.ZynqTensor());
+
+  // this->ZynqTensor()->copyFrom(other.ZynqTensor());
+  memcpy(this->ZynqTensor()->data<void>(),
+         other.ZynqTensor()->data<void>(),
+         other.ZynqTensor()->shape().numel() * sizeof(float));
 }
 
 }  // namespace lite

@@ -14,56 +14,27 @@
 
 #pragma once
 #include <algorithm>
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/split_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  void Run() override;
-  void PrepareForRun() override;
-
-  virtual ~ElementwiseAddCompute() = default;
-
- private:
-  zynqmp::ElementwiseAddPE pe_;
-};
-
-class ElementwiseAddActivationCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  void Run() override;
-  void PrepareForRun() override;
-
-  virtual ~ElementwiseAddActivationCompute() = default;
-
- private:
-  zynqmp::ElementwiseAddPE pe_;
-};
-
-class ElementwiseMulCompute
+class SplitCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   void PrepareForRun() override;
   void Run() override;
 
-  virtual ~ElementwiseMulCompute() = default;
+  virtual ~SplitCompute() = default;
 
  private:
-  zynqmp::ScalePE pe_;
-  zynqmp::Tensor scale_;
-  zynqmp::Tensor bias_;
-  zynqmp::float16 zero_ = zynqmp::float_to_half(0.0f);
+  zynqmp::SplitPE pe_;
 };
 
 }  // namespace fpga

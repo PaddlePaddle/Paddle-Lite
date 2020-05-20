@@ -139,7 +139,14 @@ void RuntimeProgram::Run() {
   for (auto& inst : instructions_) {
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
+#endif
     std::string op_type = inst.op()->op_info()->Type();
+
+    VLOG(4) << ">> Running kernel: " << inst.op()->op_info()->Repr()
+            << " on Target " << TargetToStr(inst.kernel()->target());
+
+#ifndef LITE_WITH_FPGA
+    if (op_type == "feed" || op_type == "fetch") continue;
 #endif
     inst.Run();
 #ifdef LITE_WITH_PROFILE

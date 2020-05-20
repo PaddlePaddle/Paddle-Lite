@@ -131,3 +131,27 @@ REGISTER_LITE_KERNEL(prior_box,
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+// REGISTER_LITE_KERNEL(prior_box,
+//                      kFPGA,
+//                      kFP16,
+//                      kNHWC,
+//                      paddle::lite::kernels::fpga::PriorBoxCompute,
+//                      def)
+//     .BindInput("Input",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindInput("Image",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindOutput("Boxes",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindOutput("Variances",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .Finalize();

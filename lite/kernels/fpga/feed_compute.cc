@@ -40,8 +40,8 @@ void FeedCompute::PrepareForRun() {
 void FeedCompute::Run() {
   auto& param = this->Param<param_t>();
   Tensor& x = param.feed_list->at(param.col);
+  pe_.param().input = x.ZynqTensor();
   pe_.dispatch();
-
   auto out_lod = param.out->mutable_lod();
   *out_lod = x.lod();
 

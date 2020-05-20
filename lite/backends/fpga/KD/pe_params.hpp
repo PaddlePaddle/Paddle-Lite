@@ -83,26 +83,34 @@ struct ConvParam : PEParam {
   std::vector<int> kernelSize;
   std::vector<int> dilations;
 
-  Tensor* scale() { return scale_; }
+  Tensor* scale() { return &scale_; }
 
-  Tensor* bias() { return bias_; }
+  Tensor* bias() { return &bias_; }
 
   std::vector<BasicConvParam*>& splitParams() { return splitParams_; }
 
+  ~ConvParam() {
+    for (int i = 0; i < splitParams_.size(); i++) {
+      BasicConvParam* basic_param = splitParams_[i];
+      delete basic_param;
+    }
+    splitParams_.clear();
+  }
+
  protected:
   std::vector<BasicConvParam*> splitParams_;
-  Tensor* scale_ = new Tensor();
-  Tensor* bias_ = new Tensor();
+  Tensor scale_;
+  Tensor bias_;
 };
 
 struct DepthwiseConvParam : ConvParam {
  public:
-  Tensor* quantizedFilter() { return quantizedFilter_; }
+  Tensor* quantizedFilter() { return &quantizedFilter_; }
 
   DWconvArgs args;
 
  protected:
-  Tensor* quantizedFilter_ = new Tensor();
+  Tensor quantizedFilter_;
 };
 
 enum PoolingType : int {
@@ -142,7 +150,7 @@ struct ElementwiseAddParam : PEParam {
 
 struct ElementwiseMulParam : PEParam {
  public:
-  Tensor* input_x;
+  Tensor* input_x = nullptr;
   Tensor* input_y = nullptr;
   Tensor* output = nullptr;
 };
@@ -154,13 +162,13 @@ struct FullyConnectedParam : PEParam {
   Tensor* bias = nullptr;
   Tensor* output = nullptr;
 
-  Tensor* quantizedFilter() { return quantizedFilter_; }
+  Tensor* quantizedFilter() { return &quantizedFilter_; }
 
-  Tensor* biasScale() { return biasScale_; }
+  Tensor* biasScale() { return &biasScale_; }
 
  protected:
-  Tensor* quantizedFilter_ = new Tensor();
-  Tensor* biasScale_ = new Tensor();
+  Tensor quantizedFilter_;
+  Tensor biasScale_;
 };
 
 struct SoftmaxParam : PEParam {
@@ -193,10 +201,10 @@ struct NormParam : PEParam {
 };
 
 struct PriorBoxParam : PEParam {
-  Tensor* input;
-  Tensor* image;
-  Tensor* outputBoxes;
-  Tensor* outputVariances;
+  Tensor* input = nullptr;
+  Tensor* image = nullptr;
+  Tensor* outputBoxes = nullptr;
+  Tensor* outputVariances = nullptr;
 
   std::vector<float> minSizes;
   std::vector<float> maxSizes;
@@ -212,10 +220,10 @@ struct PriorBoxParam : PEParam {
 };
 
 struct YoloBoxParam : PEParam {
-  Tensor* input;
-  Tensor* imgSize;
-  Tensor* outputBoxes;
-  Tensor* outputScores;
+  Tensor* input = nullptr;
+  Tensor* imgSize = nullptr;
+  Tensor* outputBoxes = nullptr;
+  Tensor* outputScores = nullptr;
   int downsampleRatio;
   std::vector<int> anchors;
   int classNum;
@@ -229,15 +237,15 @@ struct ScaleParam : PEParam {
   Tensor* scale = nullptr;
   Tensor* bias = nullptr;
 
-  Tensor* alignedScale() { return alignedScale_; }
+  Tensor* alignedScale() { return &alignedScale_; }
 
-  Tensor* alignedBias() { return alignedBias_; }
+  Tensor* alignedBias() { return &alignedBias_; }
 
   ScaleArgs args = {0};
 
  protected:
-  Tensor* alignedScale_ = new Tensor();
-  Tensor* alignedBias_ = new Tensor();
+  Tensor alignedScale_;
+  Tensor alignedBias_;
 };
 
 struct ResizeParam : PEParam {

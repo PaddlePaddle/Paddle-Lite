@@ -103,6 +103,12 @@ void DeleteDynamicQuantOpFuser::InsertNewNode(SSAGraph* graph,
 
   // obtain values, save values and relink node
   int bit_length = quant_node->stmt()->op_info()->GetAttr<int>("bit_length");
+  int range = ((1 << (bit_length - 1)) - 1);
+  auto* scope = quant_node->stmt()->op()->scope();
+  auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
+                           ->GetMutable<lite::Tensor>();
+  float scale_value = scale_tensor->data<float>()[0] / range;
+
   auto outlinks = output_act_node->outlinks;
   for (auto* quantized_node : outlinks) {
     auto* op_desc = quantized_node->stmt()->mutable_op_info();
@@ -208,9 +214,11 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
+
 #ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
 #endif
+
   if (quantized_op->stmt()->op_info()->HasAttr("input_scale")) {
     op_desc.SetAttr("input_scale", input_scale);
   }
@@ -689,13 +697,16 @@ void DynamicQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     float* temp_data = temp_tensor.mutable_data<float>();
     size_t weight_num = quantized_weight_t->data_size();
     quantized_weight_t->set_persistable(true);
+
     std::cout << "DynamicQuantDequantOpFuser::InsertNewNode===================="
                  "========================================"
               << std::endl;
+
 #ifdef LITE_WITH_FPGA
     float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
     for (size_t i = 0; i < weight_num; i++) {
       quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
+
       std::cout << whole_weight_scale << "," << temp_data[i] << ","
                 << quantized_weight_data[i] << std::endl;
     }

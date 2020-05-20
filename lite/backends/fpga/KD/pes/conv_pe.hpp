@@ -212,6 +212,8 @@ class ConvPE : public PE {
 
   ConvParam& param() { return param_; }
 
+  ~ConvPE() {}
+
  private:
   bool use_cpu_ = false;
   bool split_channel = false;

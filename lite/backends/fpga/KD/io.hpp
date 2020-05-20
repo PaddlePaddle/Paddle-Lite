@@ -16,28 +16,24 @@ limitations under the License. */
 
 #include <stdio.h>
 
-#include "lite/backends/fpga/KD/llapi/filter.h"
-#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
-
 namespace paddle {
 namespace zynqmp {
 
-class DLEngine {
+class FpgaIO {
  public:
-  static DLEngine& get_instance() {
-    static DLEngine s_instance;
+  static FpgaIO& get_instance() {
+    static FpgaIO s_instance;
     return s_instance;
   }
 
-  DeviceInfo& deviceInfo();
+  void allocData(size_t s) { data_ = new float[s]; }
 
-  bool isZU3() { return info_.device_type / 100 == 3; }
-
-  float* out_data = nullptr;
+  float* getData() { return data_; }
 
  private:
-  DLEngine();
-  DeviceInfo info_;
+  float* data_ = nullptr;
+
+  FpgaIO();
 };
 }  // namespace zynqmp
 }  // namespace paddle

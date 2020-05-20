@@ -72,12 +72,6 @@ void ConvCompute::PrepareForRun() {
       conv_param.activeParam.type = zynqmp::TYPE_RELU;
     }
 
-    // conv_param.filter->saveToFile("conv_filter_", true);
-    // if (param.bias != nullptr) {
-    //   std::cout << "param.bias != nullptr" << std::endl;
-    //   conv_param.bias()->saveToFile("conv_bias_", true);
-    // }
-
     conv_pe_.init();
     conv_pe_.apply();
   }

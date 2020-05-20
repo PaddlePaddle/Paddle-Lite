@@ -12,28 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/activation_compute.h"
-#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/kernels/fpga/split_compute.h"
+#include <vector>
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
+void SplitCompute::PrepareForRun() {
+  auto& param = Param<operators::SplitParam>();
+  zynqmp::SplitParam& split_param = pe_.param();
+  split_param.input = param.x->ZynqTensor();
+  auto& dout = param.output;
+  for (int i = 0; i < dout.size(); i++) {
+    dout[i]->mutable_data<zynqmp::float16>();
+    split_param.outputs.push_back(dout[i]->ZynqTensor());
+  }
 
-void ReluCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  auto output_data = param.Out->mutable_data<float16>();
-  zynqmp::InputParam& relu_param = pe_.param();
-
-  relu_param.input = param.X->ZynqTensor();
-  relu_param.output = param.Out->ZynqTensor();
   pe_.init();
   pe_.apply();
 }
 
-void ReluCompute::Run() { pe_.dispatch(); }
+void SplitCompute::Run() {
+  zynqmp::SplitParam& split_param = pe_.param();
+  pe_.dispatch();
+
+#ifdef FPGA_PRINT_TENSOR
+  auto& dout = param.output;
+  for (int i = 0; i < dout.size(); i++) {
+    Debugger::get_instance().registerOutput("split", split_param.outputs[0]);
+  }
+
+#endif
+}
 
 }  // namespace fpga
 }  // namespace kernels
@@ -41,11 +54,15 @@ void ReluCompute::Run() { pe_.dispatch(); }
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    relu, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ReluCompute, def)
+    split, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::SplitCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SectionsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
