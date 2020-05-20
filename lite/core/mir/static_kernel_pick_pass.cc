@@ -48,6 +48,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
     std::unordered_map<std::string, PrecisionType> in_types;
     std::unordered_map<std::string, PrecisionType> out_types;
+    // threse precision info store in __model__ file, if selected fp16 kernel,
+    // the output precision should be changed
     for (std::list<Node*>::iterator i = node.inlinks.begin();
          i != node.inlinks.end();
          ++i) {
@@ -86,7 +88,18 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       // TODO(Superjomn) reconsider this.
       instruct.kernels().emplace_back(std::move(scored.front().second));
       VLOG(2) << "pick " << instruct.kernels().front()->name() << "\n\n";
-
+      // Reset the kernel output's precision type, according to the selected
+      // kernel.
+      for (std::list<Node*>::iterator i = node.outlinks.begin();
+           i != node.outlinks.end();
+           ++i) {
+        if ((*i)->arg()->type) {
+          (*i)->AsArg().type =
+              LiteType::GetTensorTy((*i)->arg()->type->target(),
+                                    instruct.kernels().front()->precision(),
+                                    (*i)->arg()->type->layout());
+        }
+      }
     } else {
       bool out_type_int8 = true;
       // Only if all ops linked to this op output has enable_int8 attr,

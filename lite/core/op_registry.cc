@@ -142,11 +142,15 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kCUDA, kFloat, kNCHW);
   INIT_FOR(kCUDA, kFloat, kNHWC);
   INIT_FOR(kCUDA, kInt8, kNCHW);
+  INIT_FOR(kCUDA, kFP16, kNCHW);
+  INIT_FOR(kCUDA, kFP16, kNHWC);
   INIT_FOR(kCUDA, kAny, kNCHW);
   INIT_FOR(kCUDA, kAny, kAny);
   INIT_FOR(kCUDA, kInt8, kNHWC);
   INIT_FOR(kCUDA, kInt64, kNCHW);
   INIT_FOR(kCUDA, kInt64, kNHWC);
+  INIT_FOR(kCUDA, kInt32, kNCHW);
+  INIT_FOR(kCUDA, kInt32, kNHWC);
 
   INIT_FOR(kMLU, kFloat, kNHWC);
   INIT_FOR(kMLU, kFloat, kNCHW);

@@ -43,6 +43,24 @@ __global__ void Int8ToFp32Kernel(const int num,
   }
 }
 
+__global__ void Fp32ToFp16Kernel(const int num,
+                                 const float* input,
+                                 half* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+    output[index] = __float2half(input[index]);
+  }
+}
+
+__global__ void Fp16ToFp32Kernel(const int num,
+                                 const half* input,
+                                 float* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+    output[index] = lite::cuda::math::from_float<half>(input[index]);
+  }
+}
+
 void CalibComputeFp32ToInt8::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<CUDAContext>();
@@ -71,6 +89,38 @@ void CalibComputeInt8ToFp32::Run() {
   int threads = 1024;
   int blocks = (num + threads - 1) / threads;
   Int8ToFp32Kernel<<<blocks, threads, 0, stream>>>(num, scale, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
+void CalibComputeFp32ToFp16::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<CUDAContext>();
+  auto stream = ctx.exec_stream();
+
+  const auto* din = param.input->data<float>();
+  auto* dout = param.output->mutable_data<__half>(TARGET(kCUDA));
+  int num = static_cast<int>(param.input->numel());
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  param.output->set_lod(param.input->lod());
+  Fp32ToFp16Kernel<<<blocks, threads, 0, stream>>>(num, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
+void CalibComputeFp16ToFp32::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<CUDAContext>();
+  auto stream = ctx.exec_stream();
+
+  const auto* din = param.input->data<__half>();
+  auto* dout = param.output->mutable_data<float>(TARGET(kCUDA));
+  int num = static_cast<int>(param.input->numel());
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  param.output->set_lod(param.input->lod());
+  Fp16ToFp32Kernel<<<blocks, threads, 0, stream>>>(num, din, dout);
   cudaError_t error = cudaGetLastError();
   CHECK(error == cudaSuccess) << cudaGetErrorString(error);
 }
@@ -112,6 +162,37 @@ REGISTER_LITE_KERNEL(calib,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(calib,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::CalibComputeFp16ToFp32,
+                     fp16_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+REGISTER_LITE_KERNEL(calib,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::CalibComputeFp32ToFp16,
+                     fp32_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
                      kFloat,
@@ -140,5 +221,36 @@ REGISTER_LITE_KERNEL(calib_once,
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib_once,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::CalibComputeFp16ToFp32,
+                     fp16_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+REGISTER_LITE_KERNEL(calib_once,
+                     kCUDA,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::cuda::CalibComputeFp32ToFp16,
+                     fp32_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kAny))})
     .Finalize();
