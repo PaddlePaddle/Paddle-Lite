@@ -173,14 +173,14 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kInt8,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kInt8)>,
-    device_to_host_kInt8)
+    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kInt8)>,
+    host_to_device_to_kInt8)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kMLU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
+                {LiteType::GetTensorTy(TARGET(kMLU),
                                        PRECISION(kInt8),
                                        DATALAYOUT(kAny))})
     .Finalize();

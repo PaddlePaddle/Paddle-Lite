@@ -44,9 +44,14 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto dims = output_dims.size();
   int axis = (param_axis < 0) ? (param_axis + dims) : param_axis;
-  CHECK_LE(axis, 4) << "Unsupport dims in mlu concat";
-  int nchw_to_nhwc_axis_map[4] = {0, 3, 1, 2};
-  int nhwc_axis = nchw_to_nhwc_axis_map[axis];
+  CHECK_LT(axis, dims) << "Unsupport dims in mlu concat";
+  std::vector<int> nchw2nhwc_axis(dims);
+  nchw2nhwc_axis[0] = 0;
+  if (dims > 1) nchw2nhwc_axis[1] = dims - 1;
+  for (size_t i = 2; i < dims; ++i) {
+    nchw2nhwc_axis[i] = i - 1;
+  }
+  int nhwc_axis = nchw2nhwc_axis[axis];
 
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
