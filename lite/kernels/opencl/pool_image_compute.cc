@@ -16,13 +16,16 @@
 
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
-#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 #undef LITE_WITH_LOG
 
