@@ -343,7 +343,7 @@ class SubgraphEngine : public subgraph::Engine {
     CHECK_EQ(graph_input->size(), origin_itensors_.size());
     CHECK_EQ(graph_output->size(), origin_otensors_.size());
 
-    bool use_mlu_cast = GetBoolFromEnv("LITE_MLU_CAST");
+    bool disable_mlu_cast = GetBoolFromEnv("LITE_DISABLE_MLU_CAST");
 
     if (!disable_batch_size_changeable_) {
       std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
@@ -386,7 +386,7 @@ class SubgraphEngine : public subgraph::Engine {
         for (size_t i = 0; i < origin_otensors_.size(); ++i) {
           // origin_otensors_[i]->Resize(new_output_size.at(i));
           graph_out[i]->set_mlu_ptr(
-              GetOutputDataPtr(origin_otensors_[i], use_mlu_cast));
+              GetOutputDataPtr(origin_otensors_[i], !disable_mlu_cast));
         }
       } else {
         graph_out.reserve(origin_otensors_.size());
@@ -395,7 +395,8 @@ class SubgraphEngine : public subgraph::Engine {
           paddle::lite::subgraph::mlu::MLUTensor tmp(
               origin_otensors_[i]->dims().Vectorize());
           tmp.set_mlu_dtype(graph_output->at(i)->dtype());
-          tmp.set_mlu_ptr(GetOutputDataPtr(origin_otensors_[i], use_mlu_cast));
+          tmp.set_mlu_ptr(
+              GetOutputDataPtr(origin_otensors_[i], !disable_mlu_cast));
           graph_out.push_back(
               std::make_shared<paddle::lite::subgraph::mlu::MLUTensor>(tmp));
         }
@@ -410,7 +411,7 @@ class SubgraphEngine : public subgraph::Engine {
       for (size_t i = 0; i < origin_otensors_.size(); ++i) {
         origin_otensors_[i]->Resize(graph_output->at(i)->get_origin_shape());
         graph_output->at(i)->set_mlu_ptr(
-            GetOutputDataPtr(origin_otensors_[i], use_mlu_cast));
+            GetOutputDataPtr(origin_otensors_[i], !disable_mlu_cast));
       }
       graph->Compute(forward_param, exec_queue);
     }
