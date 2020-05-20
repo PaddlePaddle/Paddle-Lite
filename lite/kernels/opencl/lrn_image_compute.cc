@@ -23,6 +23,10 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/logging.h"
 #include "lite/utils/replace_stl/stream.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -128,19 +132,27 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size[1]),
                     static_cast<cl::size_type>(default_work_size[2])};
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
 #ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
             << global_work_size[1] << " " << global_work_size[2];
 #endif
   }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
  protected:
   param_t* lrn_param_{nullptr};
