@@ -81,7 +81,17 @@ void transposeCompute(operators::TransposeParam param) {
 }
 
 // Transpose
-void TransposeCompute::Run() { auto& param = this->Param<param_t>(); }
+void TransposeCompute::Run() {
+  auto& param = this->Param<param_t>();
+  param.output->mutable_data<zynqmp::float16>();
+  param.x->ZynqTensor()->invalidate();
+  param.x->ZynqTensor()->unalignImage();
+  if (param.x->dims().size() != 4) {
+    transposeCompute(param);
+  } else {
+    param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+  }
+}
 
 // Transpose2
 void Transpose2Compute::Run() {

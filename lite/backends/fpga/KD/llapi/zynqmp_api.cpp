@@ -61,7 +61,6 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-
 #ifdef PADDLE_MOBILE_OS_LINUX
 
   void *ptr = reinterpret_cast<void *>(
@@ -205,7 +204,7 @@ int get_device_info(const struct DeviceInfo &args) {
 int perform_bypass(const struct BypassArgs &args) {
   int ret = -1;
   int size = args.image.channels * args.image.width * args.image.height;
-  int max_size = 1 << 22;
+  int max_size = 1 << 20;
 
   float times = 1.0 * size / max_size;
   int count = static_cast<int>(times);

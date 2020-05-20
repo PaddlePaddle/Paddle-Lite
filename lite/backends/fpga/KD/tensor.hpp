@@ -389,10 +389,16 @@ class Tensor {
       float value = 0;
       if (dataType_ == FP32) {
         value = data<float>()[i];
-      } else if (dataType_ == FP16) {
+      }
+      if (dataType_ == FP16) {
         value = half_to_float(data<float16>()[i]);
-      } else {
+      }
+
+      if (dataType_ == INT8) {
         value = data<int8_t>()[i];
+      }
+      if (dataType_ == INT32) {
+        value = data<int32_t>()[i];
       }
       ofs << value << std::endl;
     }

@@ -25,7 +25,7 @@ namespace mir {
 void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> act_types{"relu"};
   for (auto& place : graph->valid_places()) {
-    if (place.target == TARGET(kCUDA)) {
+    if (place.target == TARGET(kCUDA) || place.target == TARGET(kFPGA)) {
       act_types.push_back("leaky_relu");
       break;
     }

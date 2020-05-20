@@ -81,8 +81,7 @@ class DDimLite {
     return !(a == b);
   }
 
-  ~DDimLite() {
-  }
+  ~DDimLite() {}
 
  private:
   std::vector<value_type> data_;
@@ -112,9 +111,7 @@ class TensorLite {
     return zynq_tensor_->data<R>() + offset_;
   }
 
-  void Resize(const DDimLite &ddim) {
-    dims_ = ddim;
-  }
+  void Resize(const DDimLite &ddim) { dims_ = ddim; }
   void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
 
   const DDimLite &dims() const { return dims_; }
@@ -212,6 +209,28 @@ class TensorLite {
   void mutable_data_internal();
 };
 
+template <typename T>
+zynqmp::DataType get_date_type() {
+  zynqmp::DataType data_type = zynqmp::FP32;
+  if (typeid(T) == typeid(float)) {
+    data_type = zynqmp::FP32;
+  }
+  if (typeid(T) == typeid(zynqmp::float16)) {
+    data_type = zynqmp::FP16;
+  }
+  if (typeid(T) == typeid(int)) {
+    data_type = zynqmp::INT32;
+  }
+  if (typeid(T) == typeid(int32_t)) {
+    data_type = zynqmp::INT32;
+  }
+  if (typeid(T) == typeid(int8_t)) {
+    data_type = zynqmp::INT8;
+  }
+
+  return data_type;
+}
+
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
   std::vector<int> v;
@@ -237,13 +256,8 @@ R *TensorLite::mutable_data() {
       break;
   }
   zynqmp::Shape input_shape(layout_type, v);
-  zynqmp::DataType data_type = zynqmp::FP32;
-  if (typeid(T) == typeid(float)) {
-    data_type = zynqmp::FP32;
-  }
-  if (typeid(T) == typeid(zynqmp::float16)) {
-    data_type = zynqmp::FP16;
-  }
+  zynqmp::DataType data_type = get_date_type<T>();
+
   if (zynq_tensor_.get() == nullptr) {
     zynq_tensor_.reset(new zynqmp::Tensor());
   }

@@ -8,7 +8,7 @@ set(fpga_deps fpga_target_wrapper kernel_fpga)
 add_kernel(activation_compute_fpga FPGA basic SRCS activation_compute.cc DEPS ${fpga_deps})
 # add_kernel(box_coder_compute_fpga FPGA basic SRCS box_coder_compute.cc DEPS ${fpga_deps})
 
-# add_kernel(concat_compute_fpga FPGA basic SRCS concat_compute.cc DEPS ${fpga_deps})
+add_kernel(concat_compute_fpga FPGA basic SRCS concat_compute.cc DEPS ${fpga_deps})
 
 add_kernel(conv_compute_fpga FPGA basic SRCS conv_compute.cc DEPS ${fpga_deps})
 # add_kernel(density_prior_box_compute_fpga FPGA basic SRCS density_prior_box_compute.cc DEPS ${fpga_deps})
@@ -28,8 +28,9 @@ add_kernel(prior_box_compute_fpga FPGA basic SRCS prior_box_compute.cc DEPS ${fp
 add_kernel(reshape_compute_fpga FPGA basic SRCS reshape_compute.cc DEPS ${fpga_deps} reshape_op)
 # add_kernel(sequence_pool_compute_fpga FPGA basic SRCS sequence_pool_compute.cc DEPS ${fpga_deps})
 add_kernel(scale_compute_fpga FPGA basic SRCS scale_compute.cc DEPS ${fpga_deps})
-# add_kernel(softmax_compute_fpga FPGA basic SRCS softmax_compute.cc DEPS ${fpga_deps})
-# add_kernel(transpose_compute_fpga FPGA basic SRCS transpose_compute.cc DEPS ${fpga_deps})
+add_kernel(softmax_compute_fpga FPGA basic SRCS softmax_compute.cc DEPS ${fpga_deps})
+add_kernel(split_compute_fpga FPGA basic SRCS split_compute.cc DEPS ${fpga_deps})
+add_kernel(transpose_compute_fpga FPGA basic SRCS transpose_compute.cc DEPS ${fpga_deps})
 
 add_kernel(io_copy_compute_fpga FPGA basic SRCS io_copy_compute.cc DEPS ${fpga_deps})
 add_kernel(calib_compute_fpga FPGA basic SRCS calib_compute.cc DEPS ${fpga_deps})
