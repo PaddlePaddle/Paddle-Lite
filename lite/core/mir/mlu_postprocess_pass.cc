@@ -888,14 +888,14 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #endif
 
   g_stream_id = static_cast<int>(reinterpret_cast<int64_t>(graph.get()));
-  bool use_mlu_cast = GetBoolFromEnv("LITE_MLU_CAST");
-  ModifyValidPlaces(graph.get(), use_mlu_cast);
+  bool disable_mlu_cast = GetBoolFromEnv("LITE_DISABLE_MLU_CAST");
+  ModifyValidPlaces(graph.get(), !disable_mlu_cast);
   // insert io_copy, layout and precision cast of subgraph's inputs and outputs
   for (auto& node : graph->mutable_nodes()) {
     if (node.IsStmt() && node.AsStmt().op_type() == "subgraph") {
       const Type* subgraph_arg_type = nullptr;
       GetSubgraphOpArgType(&node, &subgraph_arg_type, graph.get());
-      if (use_mlu_cast) {
+      if (!disable_mlu_cast) {
         AdjustSubgraph(&node, subgraph_arg_type);
       }
 
@@ -903,14 +903,14 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       for (auto p_in : links_tmp) {
         if (NeedInsert(p_in, subgraph_arg_type)) {
           InsertBefore(
-              graph.get(), p_in, &node, subgraph_arg_type, use_mlu_cast);
+              graph.get(), p_in, &node, subgraph_arg_type, !disable_mlu_cast);
         }
       }
       links_tmp.assign(node.outlinks.begin(), node.outlinks.end());
       for (auto p_out : links_tmp) {
         if (NeedInsert(p_out, subgraph_arg_type)) {
           InsertAfter(
-              graph.get(), p_out, &node, subgraph_arg_type, use_mlu_cast);
+              graph.get(), p_out, &node, subgraph_arg_type, !disable_mlu_cast);
         }
       }
     }
