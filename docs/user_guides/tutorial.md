@@ -13,11 +13,9 @@ Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量�
 
 opt的详细介绍，请您参考 [模型优化方法](model_optimize_tool) 。
 
-使用opt，您只需编译后在开发机上执行以下代码：
+下载opt工具后执行以下代码：
 
 ``` shell
-$ cd <PaddleLite_base_path>
-$ cd build.opt/lite/api/
 $ ./opt \
     --model_dir=<model_param_dir> \
     --model_file=<model_path> \
