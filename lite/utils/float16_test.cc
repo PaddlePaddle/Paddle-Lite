@@ -11,11 +11,11 @@ limitations under the License. */
 
 #include "lite/utils/float16.h"
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

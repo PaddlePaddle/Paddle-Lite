@@ -11,11 +11,11 @@ limitations under the License. */
 
 #include "lite/utils/float16.h"
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <bitset>
 #include <iostream>
 #include <typeindex>
+#include "lite/utils/cp_logging.h"
 
 #define ARITHMETIC_KERNEL(op_type, sign)                                 \
   __global__ void op_type(const half* in1, const half* in2, half* out) { \
