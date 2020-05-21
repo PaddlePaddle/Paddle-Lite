@@ -86,6 +86,10 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
     auto* scope = op->scope();
     auto in_names = op->op_info()->input_names();
     auto out_names = op->op_info()->output_names();
+    in_names.insert(in_names.end(), out_names.begin(), out_names.end());
+    std::sort(in_names.begin(), in_names.end());
+    in_names.erase(std::unique(in_names.begin(), in_names.end()),
+                   in_names.end());
     for (auto& in_name : in_names) {
       auto it = origin_var_maps.find(in_name);
       if (it != origin_var_maps.end()) {
@@ -103,13 +107,17 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
         v->SetName(in_name);
         v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
         std::string in_arg_name;
-        op->op_info()->GetInputArgname(in_name, &in_arg_name);
-        auto type = kernel->GetInputDeclType(in_arg_name);
+        const Type* type;
+        if (op->op_info()->GetInputArgname(in_name, &in_arg_name)) {
+          type = kernel->GetInputDeclType(in_arg_name);
+        } else {
+          op->op_info()->GetOutputArgname(in_name, &in_arg_name);
+          type = kernel->GetOutputDeclType(in_arg_name);
+        }
         if (type->IsTensor()) {
           auto tensor = scope->FindVar(in_name)->GetMutable<Tensor>();
           v->SetPersistable(tensor->persistable());
           if (in_name != "feed" && in_name != "fetch") {
-            LOG(INFO) << "update var" << in_name;
             v->SetShape(tensor->dims().data());
             switch (tensor->precision()) {
 #define SET_DATATYPE(precision__, data_type)                    \
@@ -126,56 +134,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
               SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
 #undef SET_DATATYPE
               default:
-                LOG(WARNING) << "unknown precision type";
-            }
-          }
-        } else {
-          CHECK(false) << "unsupported var type";
-        }
-      }
-    }
-
-    for (auto& out_name : out_names) {
-      auto it = origin_var_maps.find(out_name);
-      if (it != origin_var_maps.end()) {
-        auto* v = main_block.AddVar<cpp::VarDesc>();
-        v->SetName((it->second).Name());
-        v->SetType((it->second).GetType());
-        v->SetPersistable((it->second).Persistable());
-        if ((it->second).Name() != "feed" && (it->second).Name() != "fetch") {
-          v->SetShape((it->second).GetShape());
-          v->SetDataType((it->second).GetDataType());
-        }
-      } else {
-        // New created vars must be LOD_TENSOR
-        auto* v = main_block.AddVar<cpp::VarDesc>();
-        v->SetName(out_name);
-        v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
-        std::string out_arg_name;
-        op->op_info()->GetOutputArgname(out_name, &out_arg_name);
-        auto type = kernel->GetOutputDeclType(out_arg_name);
-        if (type->IsTensor()) {
-          auto tensor = scope->FindVar(out_name)->GetMutable<Tensor>();
-          v->SetPersistable(tensor->persistable());
-          if (out_name != "feed" && out_name != "fetch") {
-            LOG(INFO) << "update var" << out_name;
-            v->SetShape(tensor->dims().data());
-            switch (tensor->precision()) {
-#define SET_DATATYPE(precision__, data_type)                    \
-  case PrecisionType::precision__:                              \
-    v->SetDataType(data_type);                                  \
-    LOG(INFO) << "update var" << (it->second).Name() << "done"; \
-    break
-              SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
-              SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
-              SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
-              SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
-              SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
-              SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
-              SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
-#undef SET_DATATYPE
-              default:
-                LOG(WARNING) << "unknown precision type";
+                VLOG(4) << "warning! unknown precision type";
             }
           }
         } else {
