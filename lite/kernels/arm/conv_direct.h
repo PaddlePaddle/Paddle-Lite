@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/context.h"
@@ -179,6 +180,15 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
   }
 
   virtual void Run();
+
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+
+  std::string kernel_func_name_{"NotImplForConvDirect"};
+#endif
 
   /// todo, support inplace weights transform
  protected:
