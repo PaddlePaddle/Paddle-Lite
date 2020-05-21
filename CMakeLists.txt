@@ -221,6 +221,7 @@ endif()
 if(LITE_WITH_MLU)
     include(mlu)
 endif()
+include(coveralls)
 
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
