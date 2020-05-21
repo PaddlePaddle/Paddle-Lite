@@ -108,30 +108,47 @@ static void test_case(std::vector<int64_t> x_shape,
   std::vector<float> out_ref(out->data_size(), 0);
   slice_ref(x_data, x_shape, axes, starts, ends, out_ref.data());
 
+  std::vector<int> nhwc2nchw_axis(x_shape.size());
+  nhwc2nchw_axis[0] = 0;
+  if (x_shape.size() > 1) nhwc2nchw_axis[1] = x_shape.size() - 1;
+  for (size_t i = 2; i < x_shape.size(); ++i) {
+    nhwc2nchw_axis[i] = i - 1;
+  }
+
+  std::vector<int> nchw2nhwc_axis(x_shape.size());
+  nchw2nhwc_axis[0] = 0;
+  for (size_t i = 1; i < x_shape.size() - 1; ++i) {
+    nchw2nhwc_axis[i] = i + 1;
+  }
+  if (x_shape.size() > 1) nchw2nhwc_axis[x_shape.size() - 1] = 1;
+
+  auto type_cast = [](int64_t in) { return static_cast<int>(in); };
+  std::vector<int> i_dims;
+  std::transform(
+      x_shape.cbegin(), x_shape.cend(), std::back_inserter(i_dims), type_cast);
+
   Tensor input_x;
   input_x.Resize(x->dims());
-  transpose(x->mutable_data<float>(),
-            input_x.mutable_data<float>(),
-            {static_cast<int>(x_shape[0]),
-             static_cast<int>(x_shape[1]),
-             static_cast<int>(x_shape[2]),
-             static_cast<int>(x_shape[3])},
-            {0, 2, 3, 1});
+  transpose<float*>(x->mutable_data<float>(),
+                    input_x.mutable_data<float>(),
+                    i_dims,
+                    nchw2nhwc_axis);
   x->CopyDataFrom(input_x);
 
   auto op = CreateOp<operators::SliceOp>(opdesc, &scope);
   LaunchOp(op, {x_var_name}, {out_var_name});
 
   Tensor output_trans;
-  auto os = out->dims();
+  auto os = out->dims().Vectorize();
   output_trans.Resize(os);
-  transpose(out->mutable_data<float>(),
-            output_trans.mutable_data<float>(),
-            {static_cast<int>(os[0]),
-             static_cast<int>(os[2]),
-             static_cast<int>(os[3]),
-             static_cast<int>(os[1])},
-            {0, 3, 1, 2});
+  std::vector<int> o_dims(os.size());
+  for (size_t i = 0; i < os.size(); ++i) {
+    o_dims[i] = os[nchw2nhwc_axis[i]];
+  }
+  transpose<float*>(out->mutable_data<float>(),
+                    output_trans.mutable_data<float>(),
+                    o_dims,
+                    nhwc2nchw_axis);
 
   auto out_data = output_trans.mutable_data<float>();
   for (int i = 0; i < out->dims().production(); i++) {
@@ -141,8 +158,8 @@ static void test_case(std::vector<int64_t> x_shape,
 
 TEST(MLUBridges, slice) {
   /* test_case({3}, {3}, {-3}, {3}, {0}); */
-  /* test_case({3, 4}, {3, 4}, {-3, 0}, {3, 100}, {0, 1}); */
-  /* test_case({3, 4, 5}, {3, 4, 2}, {-3, 0, 2}, {3, 100, -1}, {0, 1, 2}); */
+  test_case({3, 4}, {3, 4}, {-3, 0}, {3, 100}, {0, 1});
+  test_case({3, 4, 5}, {3, 4, 2}, {-3, 0, 2}, {3, 100, -1}, {0, 1, 2});
   test_case({3, 4, 5, 6}, {3, 4, 2, 6}, {-3, 0, 2}, {3, 100, -1}, {0, 1, 2});
   /* test_case({3, 4, 5, 6, 3}, {3, 4, 2, 6, 3}, {-3, 0, 2}, {3, 100, -1}, {0,
    * 1, 2}); */
