@@ -15,6 +15,7 @@
 #include "lite/utils/cv/image_rotate.h"
 #include <math.h>
 #include <string.h>
+#include "lite/utils/cv/bgr_rotate.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -31,7 +32,8 @@ void ImageRotate::choose(const uint8_t* src,
   if (srcFormat == GRAY) {
     rotate_hwc1(src, dst, srcw, srch, degree);
   } else if (srcFormat == BGR || srcFormat == RGB) {
-    rotate_hwc3(src, dst, srcw, srch, degree);
+    // rotate_hwc3(src, dst, srcw, srch, degree);
+    bgr_rotate_hwc(src, dst, srcw, srch, static_cast<int>(degree));
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     rotate_hwc4(src, dst, srcw, srch, degree);
   } else {
@@ -679,14 +681,14 @@ void rotate_hwc1_90(const uint8_t* src,
     const uint8_t* inptr7 = inptr6 + w_in;
     for (; j < w_in; j++) {
       uint8_t* outptr = dst + j * w_out + ww - i;
-      *outptr++ = *inptr0++;
-      *outptr++ = *inptr1++;
-      *outptr++ = *inptr2++;
-      *outptr++ = *inptr3++;
-      *outptr++ = *inptr4++;
-      *outptr++ = *inptr5++;
-      *outptr++ = *inptr6++;
       *outptr++ = *inptr7++;
+      *outptr++ = *inptr6++;
+      *outptr++ = *inptr5++;
+      *outptr++ = *inptr4++;
+      *outptr++ = *inptr3++;
+      *outptr++ = *inptr2++;
+      *outptr++ = *inptr1++;
+      *outptr++ = *inptr0++;
     }
   }
   ww = w_out - 1;

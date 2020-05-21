@@ -489,7 +489,7 @@ void image_resize_basic(const uint8_t* in_data,
   int size = srcw * srch;
   if (srcw == dstw && srch == dsth) {
     if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
-      size = srcw * (ceil(1.5 * srch));
+      size = srcw * (static_cast<int>(1.5 * srch));
     } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
       size = 3 * srcw * srch;
     } else if (srcFormat == ImageFormat::BGRA ||
@@ -499,23 +499,23 @@ void image_resize_basic(const uint8_t* in_data,
     memcpy(out_data, in_data, sizeof(uint8_t) * size);
     return;
   }
-  double scale_x = static_cast<double>(srcw / dstw);
-  double scale_y = static_cast<double>(srch / dsth);
+  double scale_x = static_cast<double>(srcw) / dstw;
+  double scale_y = static_cast<double>(srch) / dsth;
 
   int* buf = new int[dstw + dsth];
 
   int* xofs = buf;
   int* yofs = buf + dstw;
   float* ialpha = new float[dstw * 2];
-  float* ibeta = new float[dsth * 2];
+  float* ibeta = new float[dsth * 3];
 
   int w_in = srcw;
   int w_out = dstw;
   int num = 1;
   int orih = dsth;
+
   compute_xy(
       srcw, srch, dstw, dsth, scale_x, scale_y, xofs, yofs, ialpha, ibeta);
-
   if (srcFormat == ImageFormat::GRAY) {
     num = 1;
   } else if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
@@ -538,10 +538,10 @@ void image_resize_basic(const uint8_t* in_data,
   int* yofs1 = nullptr;
   if (orih < dsth) {
     int tmp = dsth - orih;
-    float* ialpha1 = new float[dstw];
-    int* xofs1 = new int[srcw];
-    int* yofs1 = new int[tmp];
-    compute_xy(srcw / 2,
+    ialpha1 = new float[dstw];
+    xofs1 = new int[dstw];
+    yofs1 = new int[tmp];
+    compute_xy(srcw,
                srch / 2,
                dstw / 2,
                tmp,
@@ -550,18 +550,14 @@ void image_resize_basic(const uint8_t* in_data,
                xofs1,
                yofs1,
                ialpha1,
-               ibeta + dsth);
+               ibeta + orih * 2);
   }
 #pragma omp parallel for
   for (int dy = 0; dy < dsth; dy++) {
     uint8_t* out_ptr = out_data + dy * w_out;
     int y_in_start = yofs[dy];
-    int y_in_end = y_in_start + 1;
-    int y_flag = 0;  // only one line
-    if (y_in_start < 0) {
-      y_flag = 1;
-      y_in_end = 0;
-    }
+    int y_flag = 0;
+
     float b0 = ibeta[dy * 2];
     float b1 = ibeta[dy * 2 + 1];
     if (dy >= orih) {
@@ -569,6 +565,12 @@ void image_resize_basic(const uint8_t* in_data,
       ialpha = ialpha1;
       xofs = xofs1;
       yofs = yofs1;
+      y_in_start = yofs[dy - orih] + srch;
+    }
+    int y_in_end = y_in_start + 1;
+    if (y_in_start < 0) {
+      y_flag = 1;
+      y_in_end = 0;
     }
     for (int dx = 0; dx < w_out; dx += num) {
       int tmp = dx / num;
@@ -579,7 +581,6 @@ void image_resize_basic(const uint8_t* in_data,
         x_flag = 1;
         x_in_end = 0;
       }
-      // printf("x_in: %d, y_in: %d \n", x_in_start, y_in_start);
       float a0 = ialpha[tmp * 2];
       float a1 = ialpha[tmp * 2 + 1];
       int tl_index = y_in_start * w_in + x_in_start;  // 0
@@ -605,9 +606,6 @@ void image_resize_basic(const uint8_t* in_data,
         bl_index++;
         br_index++;
         float outval = (tl * a0 + tr * a1) * b0 + (bl * a0 + br * a1) * b1;
-        // printf("tl: %d, tr: %d, bl: %d, br: %d \n", tl, tr, bl, br);
-        // printf("br_index: %d, a0: %f, b1: %f, out: %f \n", br_index, a0, b1,
-        // outval);
         out_ptr[ind++] = ceil(outval);
       }
     }

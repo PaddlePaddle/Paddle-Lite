@@ -33,25 +33,16 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, output and op attributes
   auto input_name = op_info->Input("Input").front();
-  auto input_type = kernel->GetInputDeclType("Input");
-  CHECK(input_type->precision() == PRECISION(kFloat));
-  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   CHECK_EQ(input_dims.size(), 4);
 
   auto filter_name = op_info->Input("Filter").front();
-  auto filter_type = kernel->GetInputDeclType("Filter");
-  CHECK(filter_type->precision() == PRECISION(kFloat));
-  CHECK(filter_type->layout() == DATALAYOUT(kNCHW));
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
   CHECK_EQ(filter_dims.size(), 4);
 
   auto output_name = op_info->Output("Output").front();
-  auto output_type = kernel->GetOutputDeclType("Output");
-  CHECK(output_type->precision() == PRECISION(kFloat));
-  CHECK(output_type->layout() == DATALAYOUT(kNCHW));
 
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   CHECK_EQ(strides.size(), 2L);
@@ -157,9 +148,6 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (graph->Has(bias_name)) {
       bias_node = graph->Get(bias_name);
     } else {
-      auto bias_type = kernel->GetInputDeclType("Bias");
-      CHECK(bias_type->precision() == PRECISION(kFloat));
-      CHECK(bias_type->layout() == DATALAYOUT(kNCHW));
       auto bias = scope->FindMutableTensor(bias_name);
       auto channel_size = bias->dims().production();
       CHECK_EQ(channel_size, filter_dims[1] * groups);

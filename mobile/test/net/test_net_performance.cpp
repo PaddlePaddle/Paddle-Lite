@@ -12,12 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <unistd.h>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include "../test_helper.h"
 #include "../test_include.h"
-
 void test(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
@@ -175,6 +175,7 @@ void test(int argc, char *argv[]) {
         auto time7 = time();
         paddle_mobile.Predict();
         auto time8 = time();
+        usleep(1000 * quantification_fold);
         const double diff_time_single = time_diff(time7, time8);
         max_time = fmax(diff_time_single, max_time);
         min_time = fmin(diff_time_single, min_time);

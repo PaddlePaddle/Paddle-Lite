@@ -54,8 +54,8 @@ void LookupTableCompute::Run() {
   auto &param = this->Param<param_t>();
   auto &ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
-  Tensor *w_t = param.W;
-  Tensor *ids_t = param.Ids;
+  const Tensor *w_t = param.W;
+  const Tensor *ids_t = param.Ids;
   Tensor *out_t = param.Out;
   int64_t padding_idx = param.padding_idx;
 

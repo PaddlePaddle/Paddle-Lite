@@ -32,15 +32,9 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, output and op attributes
   auto input_name = op_info->Input("Input").front();
-  auto input_type = kernel->GetInputDeclType("Input");
-  CHECK(input_type->precision() == PRECISION(kFloat));
-  CHECK(input_type->layout() == DATALAYOUT(kNCHW));
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto axes = op_info->GetAttr<std::vector<int>>("axes");
   auto starts = op_info->GetAttr<std::vector<int>>("starts");
   auto ends = op_info->GetAttr<std::vector<int>>("ends");

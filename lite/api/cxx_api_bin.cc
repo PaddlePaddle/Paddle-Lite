@@ -67,7 +67,7 @@ void Run(const char* model_dir, int repeat) {
 
 int main(int argc, char** argv) {
   CHECK_EQ(argc, 3) << "usage: ./cmd <model_dir> <repeat>";
-  paddle::lite::Run(argv[1], std::stoi(argv[2]));
+  paddle::lite::Run(argv[1], atoi(argv[2]));
 
   return 0;
 }

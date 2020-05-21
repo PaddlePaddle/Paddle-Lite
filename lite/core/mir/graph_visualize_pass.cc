@@ -18,6 +18,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 #include "lite/core/mir/pass_registry.h"
 #include "lite/utils/string.h"
 
@@ -25,59 +26,130 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-using inference::analysis::Dot;
-
 void GraphVisualizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  Visualize(graph.get());
+  VLOG(5) << "\n" << Visualize(graph.get());
 }
 
 std::string Visualize(mir::SSAGraph* graph) {
-  inference::analysis::Dot dot;
-
-  int id = 0;
-  std::set<std::string> exists_args;
-  for (auto& node : graph->mutable_nodes()) {
-    std::string key;
-    if (node.IsArg()) {
-      key = node.AsArg().name;
-    } else {
-      key = string_format("%s%d", node.AsStmt().op_type().c_str(), id++);
+  std::ostringstream os;
+  Dot dot;
+  auto string_trunc = [](const std::string& str) -> std::string {
+    const int max_disp_size = 100;
+    if (str.length() > max_disp_size)
+      return str.substr(0, max_disp_size) + "...";
+    return str;
+  };
+  auto attr_repr = [&](const OpInfo* op_info,
+                       const std::string& attr_name) -> std::string {
+    std::ostringstream os;
+    using AttrType = cpp::OpDesc::AttrType;
+    auto attr_type = op_info->GetAttrType(attr_name);
+    switch (attr_type) {
+      case AttrType::INT:
+        os << ":int:"
+           << paddle::lite::to_string(op_info->GetAttr<int>(attr_name));
+        break;
+      case AttrType::FLOAT:
+        os << ":float:"
+           << paddle::lite::to_string(op_info->GetAttr<float>(attr_name));
+        break;
+      case AttrType::BOOLEAN:
+        os << ":int:"
+           << paddle::lite::to_string(op_info->GetAttr<bool>(attr_name));
+        break;
+      case AttrType::STRING:
+        os << ":string: \""
+           << string_trunc(op_info->GetAttr<std::string>(attr_name)) << "\"";
+        break;
+      case AttrType::FLOATS: {
+        auto vals = op_info->GetAttr<std::vector<float>>(attr_name);
+        os << ":floats: {" + Join(vals, ",") << "}";
+      } break;
+      case AttrType::INTS: {
+        auto vals = op_info->GetAttr<std::vector<int>>(attr_name);
+        os << ":ints: {" + Join(vals, ",") + "}";
+      } break;
+      case AttrType::STRINGS: {
+        auto vals = op_info->GetAttr<std::vector<std::string>>(attr_name);
+        os << ":strings: {" + string_trunc(Join(vals, ",")) << "}";
+      } break;
+      default:
+        os << ":Unknow type(" << static_cast<int>(attr_type) << ")";
+        break;
     }
-    if (node.IsStmt()) {
-      dot.AddNode(key,
-                  {Dot::Attr("shape", "box"),
-                   Dot::Attr("style", "filled"),
-                   Dot::Attr("color", "black"),
-                   Dot::Attr("fillcolor", "yellow")});
-      for (auto& x : node.inlinks) {
-        auto name = x->AsArg().name;
-        if (!exists_args.count(name)) {
-          dot.AddNode(name, {});
+    return os.str();
+  };
+  int op_idx = 0;
+  std::set<std::string> exists_var_names;
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    if (!node->IsStmt()) continue;
+    auto op_info = node->AsStmt().op_info();
+    auto op_type = op_info->Type();
+    std::string op_name;
+    if (node->AsStmt().need_sync_) {
+      std::ostringstream oss;
+      for (size_t i = 0; i < node->AsStmt().sync_streams_.size(); ++i) {
+        oss << std::to_string(node->AsStmt().sync_streams_[i]);
+        if (i != node->AsStmt().sync_streams_.size() - 1) {
+          oss << ",";
         }
-        dot.AddEdge(name, key, {});
-        exists_args.insert(name);
       }
-      for (auto& x : node.outlinks) {
-        auto name = x->AsArg().name;
-        if (!exists_args.count(name)) {
-          dot.AddNode(name, {});
-        }
-        dot.AddEdge(key, name, {});
-        exists_args.insert(name);
+      op_name = string_format("%s%d, stream=%d, sync_streams={%s}",
+                              op_type.c_str(),
+                              op_idx++,
+                              node->AsStmt().stream_id_,
+                              oss.str().c_str());
+    } else {
+      op_name = string_format("%s%d", op_type.c_str(), op_idx++);
+    }
+    // Add its input&output variables as the Dot nodes
+    dot.AddNode(op_name,
+                {Dot::Attr("shape", "box"),
+                 Dot::Attr("style", "filled"),
+                 Dot::Attr("color", "black"),
+                 Dot::Attr("fillcolor", "yellow")});
+    for (auto& x : node->inlinks) {
+      std::string var_name;
+      if (x->AsArg().lane != -1) {
+        var_name = string_format(
+            "%s, lane=%d", x->AsArg().name.c_str(), x->AsArg().lane);
+      } else {
+        var_name = x->AsArg().name;
       }
+      if (!exists_var_names.count(var_name)) {
+        dot.AddNode(var_name, {});
+        exists_var_names.insert(var_name);
+      }
+      dot.AddEdge(var_name, op_name, {});
+    }
+    for (auto& x : node->outlinks) {
+      std::string var_name;
+      if (x->AsArg().lane != -1) {
+        var_name = string_format(
+            "%s, lane=%d", x->AsArg().name.c_str(), x->AsArg().lane);
+      } else {
+        var_name = x->AsArg().name;
+      }
+      if (!exists_var_names.count(var_name)) {
+        dot.AddNode(var_name, {});
+        exists_var_names.insert(var_name);
+      }
+      dot.AddEdge(op_name, var_name, {});
+    }
+    // Output its all of attributes(name and values)
+    os << "* " << op_name << "\n";
+    const auto& attr_names = op_info->AttrNames();
+    for (auto& attr_name : attr_names) {
+      os << " - " << attr_name << attr_repr(op_info, attr_name) << "\n";
     }
   }
-
-  auto res = dot.Build();
-  // If we use VLOG here, we can not type all graph out.
-  // So we change VLOG to std::cout.
-  std::cout << "dot:\n" << res << std::endl;
-  return res;
+  os << dot.Build();
+  return os.str();
 }
 
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(graph_visualze, paddle::lite::mir::GraphVisualizePass)
+REGISTER_MIR_PASS(graph_visualize_pass, paddle::lite::mir::GraphVisualizePass)
     .BindTargets({TARGET(kAny)});

@@ -49,12 +49,15 @@ enum class TargetType : int {
   kCUDA = 3,
   kARM = 4,
   kOpenCL = 5,
+  kAny = 6,  // any target
   kFPGA = 7,
   kNPU = 8,
   kXPU = 9,
   kBM = 10,
-  kAny = 6,  // any target
-  NUM = 11,  // number of fields.
+  kMLU = 11,
+  kRKNPU = 12,
+  kAPU = 13,
+  NUM = 14,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -88,6 +91,8 @@ typedef enum {
   LITE_POWER_RAND_LOW = 5
 } PowerMode;
 
+typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
+
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,
@@ -96,7 +101,12 @@ enum class ActivationType : int {
   kLeakyRelu = 4,
   kSigmoid = 5,
   kTanh = 6,
-  kSwish = 7
+  kSwish = 7,
+  kExp = 8,
+  kAbs = 9,
+  kHardSwish = 10,
+  kReciprocal = 11,
+  NUM = 12,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -147,6 +157,8 @@ _ForEachPrecisionType(DefinePrecisionTypeTrait);
 #define TARGET(item__) paddle::lite_api::TargetType::item__
 #define PRECISION(item__) paddle::lite_api::PrecisionType::item__
 #define DATALAYOUT(item__) paddle::lite_api::DataLayoutType::item__
+
+const std::string& ActivationTypeToStr(ActivationType act);
 
 const std::string& TargetToStr(TargetType target);
 

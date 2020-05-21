@@ -26,7 +26,7 @@ class ActivationOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
@@ -37,26 +37,6 @@ class ActivationOp : public OpLite {
  private:
   mutable operators::ActivationParam param_;
 };
-
-#ifdef LITE_WITH_TRAIN
-class ActivationGradOp : public OpLite {
- public:
-  explicit ActivationGradOp(const std::string& type) : OpLite(type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
-
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "activation_grad_op"; }
-
- private:
-  mutable operators::ActivationGradParam param_;
-};
-#endif
 
 }  // namespace operators
 }  // namespace lite

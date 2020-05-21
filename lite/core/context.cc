@@ -14,10 +14,18 @@
 
 #include "lite/core/context.h"
 
-#ifdef LITE_WITH_OPENCL
-DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
+namespace paddle {
+namespace lite {
+
+#ifdef LITE_WITH_NPU
+std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
 #endif
 
-namespace paddle {
-namespace lite {}  // namespace lite
+#ifdef LITE_WITH_XPU
+std::string Context<TargetType::kXPU>::_multi_encoder_precision;  // NOLINT
+thread_local xdnn::Context* Context<TargetType::kXPU>::_tls_raw_ctx{nullptr};
+int Context<TargetType::kXPU>::_workspace_l3_size_per_thread{0};
+#endif
+
+}  // namespace lite
 }  // namespace paddle

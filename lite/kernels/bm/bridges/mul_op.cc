@@ -29,7 +29,6 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
-  // only support y is const
   // input
   auto x_var_name = op_info->Input("X").front();
   auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
@@ -61,6 +60,12 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto y_var_name = op_info->Input("Y").front();
   auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
   auto y_dims = y->dims();
+  bool y_is_const = !graph->HasNode(y_var_name);
+  CHECK_EQ(y_dims.size(), 2);
+  int i_y_shape_data[2];
+  for (size_t i = 0; i < 2; i++) {
+    i_y_shape_data[i] = y_dims[i];
+  }
   // output
   auto output_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
@@ -71,20 +76,39 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  add_fc_layer(graph->GetCompilerHandle(),
-               const_cast<const int*>(&i_x_reshape_shape_data[0]),
-               2,
-               static_cast<const char*>(unique_op_reshape_name.c_str()),
-               const_cast<const int*>(&i_output_shape_data[0]),
-               output_dims.size(),
-               static_cast<const char*>(output_var_name.c_str()),
-               static_cast<const char*>(unique_op_name.c_str()),
-               i_x_reshape_shape_data[1],
-               i_output_shape_data[1],
-               static_cast<const float*>(y->mutable_data<float>()),
-               nullptr,
-               0,
-               0);
+  if (y_is_const) {
+    add_fc_layer(graph->GetCompilerHandle(),
+                 const_cast<const int*>(&i_x_reshape_shape_data[0]),
+                 2,
+                 static_cast<const char*>(unique_op_reshape_name.c_str()),
+                 const_cast<const int*>(&i_output_shape_data[0]),
+                 output_dims.size(),
+                 static_cast<const char*>(output_var_name.c_str()),
+                 static_cast<const char*>(unique_op_name.c_str()),
+                 i_x_reshape_shape_data[1],
+                 i_output_shape_data[1],
+                 static_cast<const float*>(y->mutable_data<float>()),
+                 nullptr,
+                 0,
+                 0);
+  } else {
+    add_fc_weight_layer(
+        graph->GetCompilerHandle(),
+        const_cast<const int*>(&i_x_reshape_shape_data[0]),
+        2,
+        static_cast<const char*>(unique_op_reshape_name.c_str()),
+        const_cast<const int*>(&i_output_shape_data[0]),
+        output_dims.size(),
+        static_cast<const char*>(output_var_name.c_str()),
+        static_cast<const char*>(unique_op_name.c_str()),
+        const_cast<const int*>(&i_y_shape_data[0]),
+        2,
+        static_cast<const char*>(y_var_name.c_str()),
+        i_x_reshape_shape_data[1],
+        nullptr,
+        0,
+        0);
+  }
   graph->AddNode(output_var_name);
   return SUCCESS;
 }

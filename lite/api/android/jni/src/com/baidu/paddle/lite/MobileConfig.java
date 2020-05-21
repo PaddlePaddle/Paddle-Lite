@@ -78,7 +78,7 @@ public class MobileConfig extends ConfigBase {
      *  
      * @return liteModelFile
      */
-    public String getModelFile() {
+    public String getModelFromFile() {
         return liteModelFile;
     }
 
@@ -96,7 +96,7 @@ public class MobileConfig extends ConfigBase {
      *  
      * @return liteModelBuffer
      */
-    public String getModelBuffer() {
+    public String getModelFromBuffer() {
         return liteModelBuffer;
     }
 

@@ -23,6 +23,9 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/model_parser/cpp/program_desc.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -108,17 +111,38 @@ struct Instruction {
 
   bool is_feed_fetch_op() const { return is_feed_fetch_op_; }
 
+#ifdef LITE_WITH_CUDA
+  bool need_sync() const {
+    if (kernel_->target() == TargetType::kCUDA) {
+      return kernel_->mutable_context()->As<CUDAContext>().need_sync();
+    } else {
+      // the io_copy kernel has synced, so cpu kernels don't need sync..
+      return false;
+    }
+  }
+  void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
+#endif
+
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
     profiler_ = profiler;
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
       profile::OpCharacter ch;
+      ch.op_lite = static_cast<void*>(const_cast<paddle::lite::OpLite*>(op()));
       ch.target = kernel()->target();
       ch.op_type = op_->Type();
       ch.kernel_name = kernel()->name();
+      ch.kernel_attr = kernel()->name().substr(ch.op_type.size() + 1,
+                                               kernel()->name().size());
+      // append `ch.kernel_func_name` in StopTiming
       profile_id_ = profiler->NewTimer(ch);
       kernel_->SetProfiler(profiler_, profile_id_);
     }
+  }
+
+  void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
+    auto* op_lite = static_cast<paddle::lite::OpLite*>(ch->op_lite);
+    op_lite->GetOpRuntimeInfo(ch);
   }
 #endif
 
@@ -132,6 +156,7 @@ struct Instruction {
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_;
   int profile_id_{-1};
+  bool first_epoch_for_profiler_{true};
 #endif  // LITE_WITH_PROFILE
 };
 

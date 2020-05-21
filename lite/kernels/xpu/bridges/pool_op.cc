@@ -32,15 +32,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, and attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");

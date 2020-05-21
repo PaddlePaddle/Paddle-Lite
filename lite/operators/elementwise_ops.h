@@ -27,7 +27,7 @@ class ElementwiseOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
@@ -39,27 +39,29 @@ class ElementwiseOp : public OpLite {
   mutable operators::ElementwiseParam param_;
 };
 
-#ifdef LITE_WITH_TRAIN
-class ElementwiseGradExplicitOp : public OpLite {
- public:
-  explicit ElementwiseGradExplicitOp(const std::string& type) : OpLite(type) {}
+// #ifdef LITE_WITH_TRAIN
+// class ElementwiseGradExplicitOp : public OpLite {
+//  public:
+//   explicit ElementwiseGradExplicitOp(const std::string& type) : OpLite(type)
+//   {}
 
-  bool CheckShape() const override;
+//   bool CheckShape() const override;
 
-  bool InferShape() const override;
+//   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
+//   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
+//   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_);
+//   }
 
-  std::string DebugString() const override {
-    return "elementwise_grad_explicit_op";
-  }
+//   std::string DebugString() const override {
+//     return "elementwise_grad_explicit_op";
+//   }
 
- private:
-  mutable operators::ElementwiseGradParam param_;
-};
-#endif
+//  private:
+//   mutable operators::ElementwiseGradParam param_;
+// };
+// #endif
 
 }  // namespace operators
 }  // namespace lite

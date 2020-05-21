@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -457,7 +457,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                     const std::vector<int>& power_mode) {}
 #endif  // LITE_WITH_ARM
 
-#if 0   /// 3x3dw
+#if 1  /// 3x3dw
 TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
@@ -502,7 +502,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});
               for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 3, 15, 33}) {
+                for (auto& h : {1, 3, 15, 33, 112, 224}) {
                   dims.push_back(DDim({batch, c, h, h}));
                 }
               }
@@ -514,7 +514,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
                              {1, 1},
                              flag_bias,
                              flag_relu,
-                             {4},
+                             {1, 4},
                              {FLAGS_power_mode});
             }
           }
@@ -525,7 +525,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
 }
 #endif  /// 5x5dw
 
-#if 0   /// conv1x1s1
+#if 1  /// conv1x1s1
 TEST(TestConv1x1s1Int8, test_conv1x1s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 32}) {
@@ -562,7 +562,7 @@ TEST(TestConv1x1s1Int8, test_conv1x1s1) {
 }
 #endif  /// conv1x1s1
 
-#if 0   /// conv3x3s1
+#if 1  /// conv3x3s1
 TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 33}) {
@@ -602,7 +602,7 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
 }
 #endif  /// conv3x3s1
 
-#if 0   /// conv3x3s2
+#if 1  /// conv3x3s2
 TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 31}) {

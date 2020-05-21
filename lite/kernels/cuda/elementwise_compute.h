@@ -38,6 +38,24 @@ class ElementwiseAddComputeNHWC
   virtual ~ElementwiseAddComputeNHWC() = default;
 };
 
+class ElementwiseSubCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseSubCompute() = default;
+};
+
+class ElementwiseSubComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  void Run() override;
+  virtual ~ElementwiseSubComputeNHWC() = default;
+};
+
 class ElementwiseMulCompute
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
@@ -56,40 +74,58 @@ class ElementwiseMulComputeNHWC
   virtual ~ElementwiseMulComputeNHWC() = default;
 };
 
-class ElementwiseAddReluCompute
+class ElementwiseAddActivationCompute
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
   using param_t = operators::FusionElementwiseActivationParam;
 
   void Run() override;
-  virtual ~ElementwiseAddReluCompute() = default;
+  virtual ~ElementwiseAddActivationCompute() = default;
 };
 
-class ElementwiseAddReluComputeNHWC
+class ElementwiseAddActivationComputeNHWC
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::FusionElementwiseActivationParam;
 
   void Run() override;
-  virtual ~ElementwiseAddReluComputeNHWC() = default;
+  virtual ~ElementwiseAddActivationComputeNHWC() = default;
 };
 
-class ElementwiseMulReluCompute
+class ElementwiseSubActivationCompute
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
   using param_t = operators::FusionElementwiseActivationParam;
 
   void Run() override;
-  virtual ~ElementwiseMulReluCompute() = default;
+  virtual ~ElementwiseSubActivationCompute() = default;
 };
 
-class ElementwiseMulReluComputeNHWC
+class ElementwiseSubActivationComputeNHWC
     : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::FusionElementwiseActivationParam;
 
   void Run() override;
-  virtual ~ElementwiseMulReluComputeNHWC() = default;
+  virtual ~ElementwiseSubActivationComputeNHWC() = default;
+};
+
+class ElementwiseMulActivationCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::FusionElementwiseActivationParam;
+
+  void Run() override;
+  virtual ~ElementwiseMulActivationCompute() = default;
+};
+
+class ElementwiseMulActivationComputeNHWC
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::FusionElementwiseActivationParam;
+
+  void Run() override;
+  virtual ~ElementwiseMulActivationComputeNHWC() = default;
 };
 
 }  // namespace cuda

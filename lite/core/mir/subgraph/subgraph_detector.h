@@ -63,6 +63,7 @@ class SubgraphDetector {
     node_dat_t* UnionFindAncestor();
     void UnionFindCombine(node_dat_t* candidate);
   };
+
   SubgraphDetector(SSAGraph* graph, const SubgraphTeller& teller)
       : graph_(graph), teller_(teller) {}
   std::vector<std::vector<Node*>> operator()();
@@ -71,7 +72,11 @@ class SubgraphDetector {
                    bool reverse,
                    const std::function<bool(const node_dat_t*)>& enter,
                    const std::function<bool(const node_dat_t*)>& leave);
+
+  std::unordered_set<Node*> GetExcludedNodesFromConfigFile();
+
   void InitNodes(node_map_t* nodes);
+
   std::vector<std::vector<Node*>> ExtractSubgraphs(node_map_t* nodes);
 
  protected:

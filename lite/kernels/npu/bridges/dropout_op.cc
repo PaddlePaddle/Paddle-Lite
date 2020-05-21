@@ -32,16 +32,12 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto x_rank = x_dims.size();
   CHECK_GE(x_rank, 2);
 
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
 
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");

@@ -53,7 +53,7 @@ class Optimizer {
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
 
-    if (passes.empty()) {
+    if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
           {"lite_quant_dequant_fuse_pass",         //
            "weight_quantization_preprocess_pass",  //
@@ -71,10 +71,27 @@ class Optimizer {
            "identity_scale_eliminate_pass",               //
            "elementwise_mul_constant_eliminate_pass",     //
            "lite_sequence_pool_concat_fuse_pass",         //
+           "lite_scale_activation_fuse_pass",             //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
-           "lite_elementwise_add_activation_fuse_pass",  //
+           "lite_elementwise_activation_fuse_pass",  //
 #endif
+           "identity_dropout_eliminate_pass",
+           "__xpu__resnet_fuse_pass",
+           "__xpu__multi_encoder_fuse_pass",
+           "__xpu__embedding_with_eltwise_add_fuse_pass",
+           "__xpu__fc_fuse_pass",
+           "quantized_op_attributes_inference_pass",  // Only for fully
+                                                      // quantized model, infer
+                                                      // the output scale and
+                                                      // fix the attribute
+                                                      // 'enable_int8' for all
+                                                      // of the quantized ops.
+           "npu_subgraph_pass",
+           "xpu_subgraph_pass",
+           "bm_subgraph_pass",
+           "apu_subgraph_pass",
+           "rknpu_subgraph_pass",
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
            "kernel_place_correct_pass",
@@ -107,13 +124,33 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
+           "mlu_subgraph_pass",
+
            "runtime_context_assign_pass",
            "argument_type_display_pass",
 #ifndef LITE_WITH_FPGA
            "memory_optimize_pass",
 #endif
-           "npu_subgraph_pass",
-           "xpu_subgraph_pass"}};
+
+           "mlu_postprocess_pass"}};
+
+      if (passes.size() == 1) {
+        // multi_stream_analysis_pass must be in the front of
+        // runtime_context_assign_pass
+        const std::string msa_pass{"multi_stream_analysis_pass"};
+        const std::string depend_pass{"runtime_context_assign_pass"};
+        if (passes[0] == msa_pass) {
+          auto iter =
+              std::find(passes_local.begin(), passes_local.end(), depend_pass);
+          if (iter != passes_local.end()) {
+            passes_local.insert(iter, msa_pass);
+          } else {
+            CHECK(false) << "Not find " << depend_pass;
+          }
+        } else {
+          passes_local.push_back(passes[0]);
+        }
+      }
       RunPasses(passes_local);
     } else {
       RunPasses(passes);

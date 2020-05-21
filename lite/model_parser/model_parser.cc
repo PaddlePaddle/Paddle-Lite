@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <set>
+#include <unordered_set>
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -253,7 +254,7 @@ void LoadModelPb(const std::string &model_dir,
       std::string file_path = model_dir + "/" + var.name();
       VLOG(4) << "reading weight " << var.name();
 
-      std::ifstream file(file_path);
+      std::ifstream file(file_path, std::ios::binary);
       switch (var.type().type()) {
         case framework::proto::VarType_Type_LOD_TENSOR:
           LoadLoDTensor(file, scope->Var(var.name()));
@@ -382,7 +383,7 @@ void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
     pb_dims->Resize(static_cast<int>(dims.size()), 0);
     auto dims_vec = dims.Vectorize();
     std::copy(dims_vec.begin(), dims_vec.end(), pb_dims->begin());
-    int32_t size = desc.ByteSize();
+    int32_t size = desc.ByteSizeLong();
     os.write(reinterpret_cast<const char *>(&size), sizeof(size));
     auto out = desc.SerializeAsString();
     os.write(out.data(), size);
@@ -528,12 +529,16 @@ void SaveCombinedParamsNaive(const std::string &path,
 
   auto prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  // set unique_var_names to avoid saving shared params repeatedly
+  std::unordered_set<std::string> unique_var_names;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||
+        unique_var_names.count(var.Name()) > 0)
       continue;
     naive_buffer::ParamDesc param_desc(desc.AddParam());
     SetParamInfoNaive(&param_desc, exec_scope, var.Name());
+    unique_var_names.emplace(var.Name());
   }
 
   pt_desc.Save();
@@ -796,7 +801,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
   const uint64_t opt_version_length = 16 * sizeof(char);
   ReadModelDataFromFile<char>(
       opt_version, prog_path, &offset, opt_version_length);
-  VLOG(4) << "Opt_version:" << opt_version;
+  VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // check version, opt's version should be consistent with current Paddle-Lite
   // version.
@@ -806,7 +811,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
     LOG(WARNING) << "warning: the version of opt that transformed this model "
                     "is not consistent with current Paddle-Lite version."
                     "\n      version of opt:"
-                 << opt_version
+                 << static_cast<const char *>(opt_version)
                  << "\n      version of current Paddle-Lite:" << paddle_version;
   }
 
@@ -893,7 +898,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   const uint64_t paddle_version_length = 16 * sizeof(char);
   ReadModelDataFromBuffer<char>(
       opt_version, model_buffer, &offset, paddle_version_length);
-  VLOG(4) << "Opt_version:" << opt_version;
+  VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // (3)get topo_size and topo_data
   uint64_t topo_size;

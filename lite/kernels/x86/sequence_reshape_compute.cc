@@ -24,3 +24,14 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(
+    sequence_reshape,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::SequenceReshapeFloatCompute<float>,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();

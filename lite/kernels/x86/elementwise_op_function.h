@@ -14,16 +14,15 @@ limitations under the License. */
 
 #pragma once
 
-#include <glog/logging.h>
 #include <algorithm>
 #include <iterator>
 #include <vector>
-#include "lite/fluid/eigen.h"
-#include "lite/fluid/transform.h"
-#include "lite/utils/paddle_enforce.h"
-
 #include "lite/backends/x86/math/math_function.h"
+#include "lite/fluid/eigen.h"
 #include "lite/fluid/for_range.h"
+#include "lite/fluid/transform.h"
+#include "lite/utils/cp_logging.h"
+#include "lite/utils/paddle_enforce.h"
 #include "lite/utils/variant.h"
 
 namespace paddle {
@@ -64,14 +63,14 @@ inline void get_mid_dims(const lite::DDim &x_dims,
     for (int i = 0; i < axis; ++i) {
       (*pre) *= x_dims[i];
     }
-    for (int i = 0; i < y_dims.size(); ++i) {
+    for (size_t i = 0; i < y_dims.size(); ++i) {
       if (x_dims[i + axis] != y_dims[i]) {
         // only support single y_dims[i] = 1 now.
         PADDLE_ENFORCE_EQ(
             *mid_flag, 0, "Broadcast support y_dims with single 1.");
         PADDLE_ENFORCE_EQ(y_dims[i], 1, "Broadcast dimension mismatch.");
         // m*n*k m*1*k
-        for (int j = 0; j < i; ++j) {
+        for (size_t j = 0; j < i; ++j) {
           (*pre) *= y_dims[j];
         }
         *n = std::max(x_dims[i + axis], y_dims[i]);
@@ -82,11 +81,11 @@ inline void get_mid_dims(const lite::DDim &x_dims,
       (*n) *= y_dims[i];
     }
     if (*mid_flag) {
-      for (int i = mid + 1; i < x_dims.size(); ++i) {
+      for (size_t i = mid + 1; i < x_dims.size(); ++i) {
         (*post) *= x_dims[i];
       }
     } else {
-      for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
+      for (size_t i = axis + y_dims.size(); i < x_dims.size(); ++i) {
         (*post) *= x_dims[i];
       }
     }
@@ -95,13 +94,13 @@ inline void get_mid_dims(const lite::DDim &x_dims,
       (*pre) *= x_dims[i];
     }
 
-    for (int i = 0; i < y_dims.size(); ++i) {
+    for (size_t i = 0; i < y_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(
           x_dims[i + axis], y_dims[i], "Broadcast dimension mismatch.");
       (*n) *= y_dims[i];
     }
 
-    for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
+    for (size_t i = axis + y_dims.size(); i < x_dims.size(); ++i) {
       (*post) *= x_dims[i];
     }
   }
@@ -116,7 +115,7 @@ inline lite::DDim trim_trailing_singular_dims(const lite::DDim &dims) {
 
   std::vector<int64_t> trim_dims;
   trim_dims.resize(actual_dims_size);
-  for (int i = 0; i < actual_dims_size; ++i) {
+  for (size_t i = 0; i < actual_dims_size; ++i) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {
@@ -248,8 +247,8 @@ class TransformFunctor {
                    lite::Tensor *z,
                    const lite::Context<Target> &ctx,
                    Functor func)
-      : x_(x->data<T>()),
-        y_(y->data<T>()),
+      : x_(x->template data<T>()),
+        y_(y->template data<T>()),
         z_(z->mutable_data<OutType>()),
         nx_(x->numel()),
         ctx_(ctx),
@@ -324,7 +323,7 @@ void ElementwiseComputeEx(const lite::Context<Target> &ctx,
   }
 
   axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  PADDLE_ENFORCE(axis >= 0 && axis < x_dims.size(),
+  PADDLE_ENFORCE(axis >= 0 && axis < static_cast<int>(x_dims.size()),
                  "Axis should be in range [0, x_dims)");
   auto y_dims = trim_trailing_singular_dims(y_dims_untrimed);
   axis = (y_dims.size() == 0) ? x_dims.size() : axis;
@@ -483,9 +482,10 @@ void FusedElemwiseAndActComputeNoBroadcast(const lite::Context<Target> &ctx,
           x.data<T>(),
           y.data<T>(),
           compound_functor,
-          out->mutable_data<T>(),
-          intermediate_out == nullptr ? nullptr
-                                      : intermediate_out->mutable_data<T>()});
+          out->template mutable_data<T>(),
+          intermediate_out == nullptr
+              ? nullptr
+              : intermediate_out->template mutable_data<T>()});
 }
 
 template <lite::TargetType Target,
@@ -523,9 +523,10 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
         compound_functor,
         h,
         w,
-        out->mutable_data<T>(),
-        intermediate_out == nullptr ? nullptr
-                                    : intermediate_out->mutable_data<T>());
+        out->template mutable_data<T>(),
+        intermediate_out == nullptr
+            ? nullptr
+            : intermediate_out->template mutable_data<T>());
 
   } else {
     FusedElemwiseAndActBroadcast2CPU<T,
@@ -539,9 +540,10 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
         n,
         post,
         compound_functor,
-        out->mutable_data<T>(),
-        intermediate_out == nullptr ? nullptr
-                                    : intermediate_out->mutable_data<T>());
+        out->template mutable_data<T>(),
+        intermediate_out == nullptr
+            ? nullptr
+            : intermediate_out->template mutable_data<T>());
   }
 }
 

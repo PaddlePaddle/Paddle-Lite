@@ -41,16 +41,16 @@ bool SearchFcOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Out);
 
   auto x_dims = param_.X->dims();
-  CHECK_EQ(x_dims.size(), 2) << "The rank of X(Input) should be 2.";
+  CHECK_EQ(x_dims.size(), 2u) << "The rank of X(Input) should be 2.";
   auto w_dims = param_.W->dims();
-  CHECK_EQ(w_dims.size(), 2) << "W should be 2-D tensor.";
+  CHECK_EQ(w_dims.size(), 2u) << "W should be 2-D tensor.";
   auto b_dims = param_.b->dims();
-  CHECK_EQ(b_dims.size(), 1) << "b should be 1-D tensor.";
+  CHECK_EQ(b_dims.size(), 1u) << "b should be 1-D tensor.";
   CHECK_EQ(w_dims[1], x_dims[1]) << "wrong shape: w_dims[1] != x_dims[1]";
   return true;
 }
 
-bool SearchFcOpLite::InferShape() const {
+bool SearchFcOpLite::InferShapeImpl() const {
   auto out_size = param_.out_size;
   lite::DDim dims(std::vector<int64_t>({-1, out_size}));
   param_.Out->Resize(dims);

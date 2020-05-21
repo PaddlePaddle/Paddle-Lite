@@ -30,7 +30,7 @@ int Engine::BuildOriginProgram() {
   // TODO(hong19860320) The block_desc need to be divided into subgraphs during
   // the exection time. But only see them as a subgraph now.
   origin_program_.clear();
-  for (int op_idx = 0; op_idx < block_desc_->OpsSize(); op_idx++) {
+  for (size_t op_idx = 0; op_idx < block_desc_->OpsSize(); op_idx++) {
     auto op_desc = block_desc_->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
@@ -46,7 +46,7 @@ int Engine::BuildOriginProgram() {
       VLOG(3) << "Found the attr '" << kKernelTypeAttr << "': " << kernel_type
               << " for " << op_type;
       auto kernels = op->CreateKernels({place});
-      CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
+      CHECK_GT(kernels.size(), 0u) << "No kernels found for " << op_type;
       auto it = std::find_if(
           kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
             return it->alias() == alias;
@@ -56,18 +56,22 @@ int Engine::BuildOriginProgram() {
     } else {
       VLOG(3) << "The attr '" << kKernelTypeAttr
               << "' not found, pick the first kernel for " << op_type;
+      std::vector<std::unique_ptr<KernelBase>> kernels;
 #if defined(LITE_WITH_ARM)
-      auto kernels =
-          op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
+      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
 #elif defined(LITE_WITH_X86)
-      auto kernels =
-          op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
+      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
 #endif
-      CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
-      picked_kernel = std::move(kernels.front());
+      if (kernels.size() > 0) {
+        picked_kernel = std::move(kernels.front());
+      } else {
+        LOG(WARNING) << "No kernels found for " << op_type;
+      }
     }
-    picked_kernel->SetContext(
-        ContextScheduler::Global().NewContext(picked_kernel->target()));
+    if (picked_kernel != nullptr) {
+      picked_kernel->SetContext(
+          ContextScheduler::Global().NewContext(picked_kernel->target()));
+    }
     origin_program_.emplace_back(std::move(op), std::move(picked_kernel));
   }
   return 0;
@@ -91,8 +95,10 @@ int Engine::Build() {
   return build_device_program_status_;
 }
 
+void Engine::InitDeviceTensor() { return; }
+
 bool Engine::InputShapeChanged() {
-  for (int i = 0; i < origin_itensors_.size(); i++) {
+  for (size_t i = 0; i < origin_itensors_.size(); i++) {
     if (origin_itensors_[i]->dims() != origin_idims_[i]) {
       return true;
     }
@@ -106,6 +112,7 @@ int Engine::Launch() {
       CHECK_REBUILD_WHEN_SHAPE_CHANGED(build_device_program_status_) &&
       InputShapeChanged()) {
     Build();
+    InitDeviceTensor();
   }
   if (CHECK_FAILED(build_device_program_status_)) {
     LaunchOriginProgram();

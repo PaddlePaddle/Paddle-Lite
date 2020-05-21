@@ -161,7 +161,6 @@ void SequencePoolCompute::Run() {
   float* out_data = param.Out->mutable_data<float>(TARGET(kCUDA));
   const float* in_data = param.X->data<float>();
 
-  lite::Tensor seq_offset_D;
   seq_offset_D.Resize({static_cast<int64_t>(seq_offset.size())});
   TargetWrapperCuda::MemcpyAsync(
       seq_offset_D.mutable_data<uint64_t>(TARGET(kCUDA)),

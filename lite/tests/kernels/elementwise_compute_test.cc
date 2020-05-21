@@ -234,7 +234,7 @@ TEST(Elementwise, precision) {
   return;
 #endif
 
-  // TestEltDims(place, abs_error);
+  TestEltDims(place, abs_error);
   TestEltTypes(place, abs_error);
   TestEltFuseAct(place, abs_error);
 }

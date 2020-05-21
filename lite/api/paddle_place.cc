@@ -24,9 +24,9 @@ namespace lite_api {
 size_t Place::hash() const {
   std::hash<int> h;
   size_t hash = h(static_cast<int>(target));
-  hash = lite::hash_combine(hash, static_cast<int>(precision));
-  hash = lite::hash_combine(hash, static_cast<int>(layout));
-  hash = lite::hash_combine(hash, static_cast<int>(device));
+  lite::CombineHash(static_cast<int64_t>(precision), &hash);
+  lite::CombineHash(static_cast<int64_t>(layout), &hash);
+  lite::CombineHash(static_cast<int64_t>(device), &hash);
   return hash;
 }
 
@@ -45,6 +45,21 @@ std::string Place::DebugString() const {
   return os.str();
 }
 
+const std::string& ActivationTypeToStr(ActivationType act) {
+  static const std::string act2string[] = {"unk",
+                                           "Relu",
+                                           "Relu6",
+                                           "PRelu",
+                                           "LeakyRelu",
+                                           "Sigmoid",
+                                           "Tanh",
+                                           "Swish",
+                                           "Exp"};
+  auto x = static_cast<int>(act);
+  CHECK_LT(x, static_cast<int>(ActivationType::NUM));
+  return act2string[x];
+}
+
 const std::string& TargetToStr(TargetType target) {
   static const std::string target2string[] = {"unk",
                                               "host",
@@ -56,7 +71,10 @@ const std::string& TargetToStr(TargetType target) {
                                               "fpga",
                                               "npu",
                                               "xpu",
-                                              "bm"};
+                                              "bm",
+                                              "mlu",
+                                              "rknpu",
+                                              "apu"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -96,7 +114,10 @@ const std::string& TargetRepr(TargetType target) {
                                               "kFPGA",
                                               "kNPU",
                                               "kXPU",
-                                              "kBM"};
+                                              "kBM",
+                                              "kMLU",
+                                              "kRKNPU",
+                                              "kAPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -138,6 +159,9 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kNPU),
                                                TARGET(kXPU),
                                                TARGET(kBM),
+                                               TARGET(kMLU),
+                                               TARGET(kAPU),
+                                               TARGET(kRKNPU),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;

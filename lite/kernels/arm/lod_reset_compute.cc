@@ -24,9 +24,7 @@ void LodResetCompute::PrepareForRun() {}
 void LodResetCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::LodResetParam>();
-  const auto* x_data = param.X->data<float>();
-  auto* o_data = param.Out->mutable_data<float>();
-  memcpy(o_data, x_data, sizeof(float) * param.X->numel());
+  param.Out->CopyDataFrom(*param.X);
   auto lod = param.Out->mutable_lod();
   if (param.Y) {
     if (param.Y->lod().size()) {
@@ -54,11 +52,11 @@ void LodResetCompute::Run() {
 
 REGISTER_LITE_KERNEL(lod_reset,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::LodResetCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -30,12 +30,21 @@ class ReshapeOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "reshape"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+  }
+#endif
 
  protected:
   mutable ReshapeParam param_;
@@ -48,7 +57,7 @@ class Reshape2Op : public ReshapeOp {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 

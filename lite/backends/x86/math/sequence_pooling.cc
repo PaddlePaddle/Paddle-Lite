@@ -46,16 +46,16 @@ class MaxSeqPoolFunctor {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
     auto idx_dims = index->dims();
-    PADDLE_ENFORCE_GT(in_dims.size(), 1);
-    PADDLE_ENFORCE_GT(out_dims.size(), 1);
-    for (int64_t i = 1; i < in_dims.size(); ++i) {
+    PADDLE_ENFORCE_GT(in_dims.size(), 1u);
+    PADDLE_ENFORCE_GT(out_dims.size(), 1u);
+    for (size_t i = 1; i < in_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(in_dims[i], out_dims[i]);
     }
     PADDLE_ENFORCE_EQ(idx_dims, out_dims);
 
     auto starts = input.lod()[0];
     const T* in_data = input.data<T>();
-    T* out_data = output->mutable_data<T>();
+    T* out_data = output->template mutable_data<T>();
     int* max_index = index->mutable_data<int>();
 
     int64_t num_seq = out_dims[0];
@@ -95,15 +95,15 @@ class MaxSeqPoolFunctor<T, true> {
                   lite::Tensor* index) {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
-    PADDLE_ENFORCE_GT(in_dims.size(), 1);
-    PADDLE_ENFORCE_GT(out_dims.size(), 1);
-    for (int64_t i = 1; i < in_dims.size(); ++i) {
+    PADDLE_ENFORCE_GT(in_dims.size(), 1u);
+    PADDLE_ENFORCE_GT(out_dims.size(), 1u);
+    for (size_t i = 1; i < in_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(in_dims[i], out_dims[i]);
     }
 
     auto starts = input.lod()[0];
     const T* in_data = input.data<T>();
-    T* out_data = output->mutable_data<T>();
+    T* out_data = output->template mutable_data<T>();
 
     int64_t num_seq = out_dims[0];
     int64_t dim = output->numel() / num_seq;
@@ -138,14 +138,14 @@ class MaxSeqPoolGradFunctor {
     auto idx_dims = index.dims();
     PADDLE_ENFORCE_GT(og_dims.size(), 1);
     PADDLE_ENFORCE_GT(ig_dims.size(), 1);
-    for (int64_t i = 1; i < og_dims.size(); ++i) {
+    for (size_t i = 1; i < og_dims.size(); ++i) {
       PADDLE_ENFORCE_EQ(og_dims[i], ig_dims[i]);
     }
     PADDLE_ENFORCE_EQ(idx_dims, og_dims);
 
     const T* og_data = out_grad.data<T>();
     const int* max_index = index.data<int>();
-    T* ig_data = in_grad->mutable_data<T>();
+    T* ig_data = in_grad->template mutable_data<T>();
 
     SetConstant<TARGET(kX86), T> set_zero;
     set_zero(context, in_grad, static_cast<T>(0.0));
@@ -170,7 +170,7 @@ class LastSeqPoolFunctor {
                   lite::Tensor* output) {
     // Create pointers to input and output data
     auto* in_data = input.data<T>();
-    auto* out_data = output->mutable_data<T>();
+    auto* out_data = output->template mutable_data<T>();
 
     // Calculate the size of each item in sequence
     int64_t item_size = input.numel() / input.dims()[0];
@@ -203,7 +203,7 @@ class FirstSeqPoolFunctor {
                   lite::Tensor* output) {
     // Create pointers to input and output data
     auto* in_data = input.data<T>();
-    auto* out_data = output->mutable_data<T>();
+    auto* out_data = output->template mutable_data<T>();
 
     // Calculate the size of each item in sequence
     int64_t item_size = input.numel() / input.dims()[0];
@@ -238,7 +238,7 @@ class SumSeqPoolGradFunctor {
     int64_t in_w = in_grad->numel() / in_grad->dims()[0];
     PADDLE_ENFORCE(in_w == out_w);
     const T* out_g_data = out_grad.data<T>();
-    T* in_g_data = in_grad->mutable_data<T>(TARGET(kX86));
+    T* in_g_data = in_grad->template mutable_data<T>(TARGET(kX86));
     auto blas = math::GetBlas<TARGET(kX86), T>(context);
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
       int64_t h = static_cast<int64_t>(lod[i + 1] - lod[i]);
@@ -288,7 +288,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
     auto lod = input.lod()[0];
     if (pooltype == "SUM") {
       const T* src = input.data<T>();
-      T* dst = output->mutable_data<T>(TARGET(kX86));
+      T* dst = output->template mutable_data<T>(TARGET(kX86));
       jit::seq_pool_attr_t attr(
           static_cast<int>(input.numel() / input.dims()[0]),
           jit::SeqPoolType::kSum);

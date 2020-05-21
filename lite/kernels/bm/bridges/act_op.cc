@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include <bmcompiler_if_lite.h>
+#include <bmcompiler_op_code.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
@@ -34,34 +36,59 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
   auto output_dims = output->dims();
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
-  const int64_t* output_shape_data =
-      const_cast<const int64_t*>(&output_dims.data()[0]);
+  bool x_is_const = !graph->HasNode(x_var_name);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
   std::vector<int32_t> i_output_shape_data(output_dims.size());
   for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
+    i_x_shape_data[i] = x_dims[i];
   }
   for (size_t i = 0; i < output_dims.size(); i++) {
-    i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
+    i_output_shape_data[i] = output_dims[i];
   }
   float alpha = 0.f;
+  int active_type_id = 0;
   if (op_type == "relu") {
   } else if (op_type == "leaky_relu") {
     alpha = op_info->GetAttr<float>("alpha");
+  } else if (op_type == "sqrt") {
+    active_type_id = ACTIVE_SQRT;
+  } else if (op_type == "square") {
+    active_type_id = ACTIVE_SQUARE;
+  } else if (op_type == "sigmoid") {
+    active_type_id = ACTIVE_SIGMOID;
   } else {
     LOG(FATAL) << "[BM] unsupport act type";
     return FAILED;
   }
-  add_relu_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_x_shape_data[0]),
-                 x_dims.size(),
-                 static_cast<const char*>(x_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 alpha,
-                 -1.f);
+  const float* x_data = const_cast<const float*>(x->mutable_data<float>());
+  if (x_is_const) {
+    bm_add_const_tensor(graph->GetCompilerHandle(),
+                        static_cast<const char*>(x_var_name.c_str()),
+                        const_cast<const int*>(&i_x_shape_data[0]),
+                        x_dims.size(),
+                        static_cast<bm_data_type_t>(DTYPE_FP32),
+                        static_cast<const void*>(x_data));
+  }
+  if (op_type == "relu" || op_type == "leaky_relu") {
+    add_relu_layer(graph->GetCompilerHandle(),
+                   const_cast<const int*>(&i_x_shape_data[0]),
+                   x_dims.size(),
+                   static_cast<const char*>(x_var_name.c_str()),
+                   const_cast<const int*>(&i_output_shape_data[0]),
+                   output_dims.size(),
+                   static_cast<const char*>(output_var_name.c_str()),
+                   alpha,
+                   -1.f);
+  } else {
+    add_active_layer(graph->GetCompilerHandle(),
+                     const_cast<const int*>(&i_x_shape_data[0]),
+                     x_dims.size(),
+                     static_cast<const char*>(x_var_name.c_str()),
+                     const_cast<const int*>(&i_output_shape_data[0]),
+                     output_dims.size(),
+                     static_cast<const char*>(output_var_name.c_str()),
+                     active_type_id);
+  }
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -73,5 +100,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+                         kBM,
+                         paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(sqrt, kBM, paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(square, kBM, paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kBM,
                          paddle::lite::subgraph::bm::ActConverter);

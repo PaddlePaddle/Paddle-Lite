@@ -30,7 +30,7 @@ static void CopyImageData(CLContext* context,
   int width = cl_image.image_dims()[0];
   int height = cl_image.image_dims()[1];
 
-  float* image_data = new float[height * width * 4];
+  uint16_t* image_data = new uint16_t[height * width * 4];
   cl::Image* image = cl_image.cl_image();
   cl::array<size_t, 3> origin = {0, 0, 0};
   cl::array<size_t, 3> region = {
@@ -46,9 +46,8 @@ static void CopyImageData(CLContext* context,
   delete[] image_data;
 }
 
-bool InitOpenCLRuntime(std::string cl_path) {
+bool InitOpenCLRuntime() {
   auto* runtime = CLRuntime::Global();
-  runtime->set_cl_path(cl_path);
   return runtime->IsInitSuccess();
 }
 

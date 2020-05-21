@@ -92,6 +92,7 @@ T PolyIoU(const T* box1,
           const size_t box_size,
           const bool normalized) {
   LOG(FATAL) << "PolyIoU not implement.";
+  return *box1;
 }
 
 template <class T>
@@ -369,6 +370,7 @@ void MulticlassNmsCompute::Run() {
     }
   } else {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
+    outs->mutable_data<float>();
     int offset = 0;
     int* oindices = nullptr;
     for (int i = 0; i < n; ++i) {
@@ -434,6 +436,17 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(multiclass_nms2,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

@@ -19,15 +19,20 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool IsEmptyOp::CheckShape() const { return true; }
+bool IsEmptyOp::CheckShape() const {
+  CHECK(param_.X);
+  CHECK(param_.Out);
+  return true;
+}
 
-bool IsEmptyOp::InferShape() const { return true; }
+bool IsEmptyOp::InferShapeImpl() const {
+  param_.Out->Resize({1});
+  return true;
+}
 
 bool IsEmptyOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+  param_.X = scope->FindTensor(opdesc.Input("X").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   CHECK(param_.X);
   CHECK(param_.Out);
   return true;

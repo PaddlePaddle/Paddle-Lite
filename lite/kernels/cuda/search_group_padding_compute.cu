@@ -89,7 +89,6 @@ void SearchGroupPaddingCompute::Run() {
   out_new_lod.push_back(in_seq_offset);
   out_new->set_lod(out_new_lod);
   out_new->Resize({x_dims[0], 1});
-  float* out_new_data = out_new->mutable_data<float>(TARGET(kCUDA));
 
   LoD out_padding_lod;
   out_padding_lod.push_back(new_offset);
@@ -111,12 +110,11 @@ void SearchGroupPaddingCompute::Run() {
                                  IoDirection::HtoD,
                                  cuda_stream);
 
-  TargetWrapperCuda::MemsetSync(
-      out_new_data, 0, out_new->dims()[0] * out_new->dims()[1] * sizeof(float));
-  TargetWrapperCuda::MemsetSync(
+  TargetWrapperCuda::MemsetAsync(
       out_padding_data,
       0,
-      out_padding->dims()[0] * out_padding->dims()[1] * sizeof(float));
+      out_padding->dims()[0] * out_padding->dims()[1] * sizeof(float),
+      cuda_stream);
 
   ker_search_group_padding<
       float><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, cuda_stream>>>(

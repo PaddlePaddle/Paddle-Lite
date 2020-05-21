@@ -48,7 +48,7 @@ bool FcOpLite::CheckShape() const {
   return true;
 }
 
-bool FcOpLite::InferShape() const {
+bool FcOpLite::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;
@@ -64,10 +64,13 @@ bool FcOpLite::InferShape() const {
 
   // share LoD
   param_.output->set_lod(param_.input->lod());
+
   return true;
 }
 
 bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+  AttachParam(&param_);
+
   auto input = op_desc.Input("Input").front();
   auto W = op_desc.Input("W").front();
   auto out = op_desc.Output("Out").front();

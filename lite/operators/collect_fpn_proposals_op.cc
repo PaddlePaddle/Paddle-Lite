@@ -43,7 +43,7 @@ bool CollectFpnProposalsOpLite::CheckShape() const {
   return true;
 }
 
-bool CollectFpnProposalsOpLite::InferShape() const {
+bool CollectFpnProposalsOpLite::InferShapeImpl() const {
   param_.fpn_rois->Resize({param_.post_nms_topN, 4});
 
   return true;

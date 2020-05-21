@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
@@ -24,6 +25,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/scope.h"
 #include "lite/model_parser/cpp/op_desc.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -64,15 +66,24 @@ class OpLite : public Registry {
   // Check the shape.
   virtual bool CheckShape() const { return true; }
   // Inference the outputs' shape.
-  virtual bool InferShape() const { return true; }
+  virtual bool InferShapeImpl() const { return true; }
+  virtual bool InferShape();
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not
   virtual bool run_once() const { return false; }
   std::string Type() { return op_type_; }
+#ifdef LITE_WITH_PROFILE
+  virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
+#endif
 
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
+
+  template <typename T>
+  inline void AttachParam(T *param) {
+    op_param_ = static_cast<T *>(param);
+  }
 
   const OpInfo *op_info() const { return op_info_.get(); }
   OpInfo *mutable_op_info() { return op_info_.get(); }
@@ -101,6 +112,20 @@ class OpLite : public Registry {
   KernelBase *GetKernel() {  // NOLINT
     return kernel_.get();
   }
+
+  // Attach input variable from scope by op_desc and input name
+  void AttachInput(const cpp::OpDesc &op_desc,
+                   lite::Scope *scope,
+                   const std::string &input_name,
+                   bool is_dispensable,
+                   lite::Tensor **input_var);
+
+  // Attach output variable from scope by op_desc and output name
+  void AttachOutput(const cpp::OpDesc &op_desc,
+                    lite::Scope *scope,
+                    const std::string &output_name,
+                    bool is_dispensable,
+                    lite::Tensor **output_var);
 
   virtual ~OpLite() = default;
 
@@ -150,6 +175,19 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
+  // todo: it's prefered to combine last_input_shapes and
+  // last_input_lods into a single hash value to decrease
+  // memory usage.
+  std::vector<DDimLite> last_input_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods{};
+  std::vector<DDimLite> last_output_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
+  mutable operators::ParamBase *op_param_{nullptr};
+
+ private:
+  // Infer Shape according to memory, if current input shapes are consistent
+  // with that of previous inputs, output shapes of last time will be reused.
+  bool InferShapeWithCache();
 };
 
 /*
@@ -206,6 +244,32 @@ class OpInfo : public cpp::OpDesc {
       auto it = std::find(item.second.begin(), item.second.end(), value_name);
       if (it != item.second.end()) {
         *out = item.first;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // For the input variable name, find the index of the corresponding
+  // input argname
+  bool GetInputIndex(const std::string &value_name, int *out) const {
+    for (auto &item : inputs_) {
+      auto it = std::find(item.second.begin(), item.second.end(), value_name);
+      if (it != item.second.end()) {
+        *out = it - item.second.begin();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // For the output variable name, find the index of the corresponding
+  // output argname
+  bool GetOutputIndex(const std::string &value_name, int *out) const {
+    for (auto &item : outputs_) {
+      auto it = std::find(item.second.begin(), item.second.end(), value_name);
+      if (it != item.second.end()) {
+        *out = it - item.second.begin();
         return true;
       }
     }

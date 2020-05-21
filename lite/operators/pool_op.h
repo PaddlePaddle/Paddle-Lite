@@ -37,10 +37,11 @@ class PoolOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+    AttachParam(&param_);
     auto x = op_desc.Input("X").front();
     auto out = op_desc.Output("Out").front();
 
@@ -91,6 +92,25 @@ class PoolOpLite : public OpLite {
 
   std::string DebugString() const override { return "pool2d"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    if (param_.global_pooling) {
+      ch->remark = "global" + param_.pooling_type;
+    } else {
+      ch->remark = param_.pooling_type + std::to_string(param_.ksize[0]) + "x" +
+                   std::to_string(param_.ksize[1]) + "s" +
+                   std::to_string(param_.strides[0]) + "p" +
+                   std::to_string((*param_.paddings)[0]);
+    }
+    ch->remark += padding_algorithm_;
+    ch->macs = output_dims.production() * param_.ksize[0] * param_.ksize[1];
+  }
+#endif
+
  private:
   mutable PoolParam param_;
   std::string padding_algorithm_{""};
@@ -105,7 +125,7 @@ inline void UpdatePadding(std::vector<int> *paddings,
                           const std::vector<int> &ksize) {
   // when padding_algorithm is "VALID" or "SAME"
   if (padding_algorithm == "SAME") {
-    for (int i = 0; i < strides.size(); ++i) {
+    for (size_t i = 0; i < strides.size(); ++i) {
       int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
       int pad_sum =
           std::max((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],

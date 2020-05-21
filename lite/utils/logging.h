@@ -22,30 +22,57 @@
 #define _LOGGING_H_
 
 #include <assert.h>
+#include <time.h>
+#if !defined(_WIN32)
 #include <sys/time.h>
 #include <sys/types.h>
-#include <time.h>
+#else
+#define NOMINMAX  // msvc max/min macro conflict with std::min/max
+#include <windows.h>
+extern struct timeval;
+static int gettimeofday(struct timeval* tp, void* tzp) {
+  time_t clock;
+  struct tm tm;
+  SYSTEMTIME wtm;
+
+  GetLocalTime(&wtm);
+  tm.tm_year = wtm.wYear - 1900;
+  tm.tm_mon = wtm.wMonth - 1;
+  tm.tm_mday = wtm.wDay;
+  tm.tm_hour = wtm.wHour;
+  tm.tm_min = wtm.wMinute;
+  tm.tm_sec = wtm.wSecond;
+  tm.tm_isdst = -1;
+  clock = mktime(&tm);
+  tp->tv_sec = clock;
+  tp->tv_usec = wtm.wMilliseconds * 1000;
+
+  return (0);
+}
+#endif
+
 #include <cstdlib>
 #include <cstring>
 #include <string>
 #include "lite/utils/replace_stl/stream.h"
+#include "lite/utils/string.h"
 
 #ifdef LITE_WITH_ANDROID
 #include <android/log.h>
 // Android log macors
 #define ANDROID_LOG_TAG "Paddle-Lite"
 #define ANDROID_LOG_I(msg) \
-  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_W(msg) \
-  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_WARN, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_F(msg) \
-  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, msg)
+  __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, "%s", msg)
 #endif
 
 // NOLINTFILE()
 
 // LOG()
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define LOG(status) LOG_##status
 #define LOG_INFO paddle::lite::Voidify()
 #define LOG_ERROR LOG_INFO
@@ -61,7 +88,7 @@
   paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
 #endif
 
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define VLOG(level) paddle::lite::Voidify()
 #else
 // VLOG()
@@ -71,7 +98,7 @@
 
 // CHECK()
 // clang-format off
-#ifdef LITE_SHUTDOWN_LOG
+#ifndef LITE_WITH_LOG
 #define CHECK(x) if (!(x)) paddle::lite::VoidifyFatal()
 #define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y)
 #else
@@ -90,7 +117,7 @@
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
 void gen_log(STL::ostream& log_stream_,
              const char* file,
              const char* func,
@@ -171,7 +198,7 @@ class VLogMessage {
     if (GLOG_v_int < level_int) {
       return;
     }
-    const char* level = std::to_string(level_int).c_str();
+    const char* level = paddle::lite::to_string(level_int).c_str();
     paddle::lite::gen_log(log_stream_, file, func, lineno, level);
   }
 

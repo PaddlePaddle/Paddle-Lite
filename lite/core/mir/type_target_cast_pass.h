@@ -25,18 +25,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static void UpdateInputTo(cpp::OpDesc* desc,
-                          const std::string& from,
-                          const std::string& to) {
-  for (auto& item : *desc->mutable_inputs()) {
-    for (auto& input : item.second) {
-      if (input == from) {
-        input = to;
-      }
-    }
-  }
-}
-
 /*
  * IoComplementPass complement the necessary instruction to make data
  * transferring or transformation between different places.

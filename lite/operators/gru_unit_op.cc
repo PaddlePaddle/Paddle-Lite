@@ -51,7 +51,7 @@ bool GRUUnitOpLite::CheckShape() const {
   return true;
 }
 
-bool GRUUnitOpLite::InferShape() const {
+bool GRUUnitOpLite::InferShapeImpl() const {
   auto input_dims = param_.input->dims();
   auto hidden_prev_dims = param_.hidden_prev->dims();
   auto weight_dims = param_.weight->dims();

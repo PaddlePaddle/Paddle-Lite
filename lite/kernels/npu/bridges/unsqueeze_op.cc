@@ -31,14 +31,10 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[NPU] Converting " << op_type << "... ";
 
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto out_shape = scope->FindTensor(out_name)->dims().Vectorize();
   CHECK(op_info->HasAttr("axes"))
       << "[NPU] unsqueeze not support axes from tensor now";

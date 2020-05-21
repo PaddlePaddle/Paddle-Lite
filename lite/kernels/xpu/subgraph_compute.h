@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <xtcl/xtcl.h>
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -49,7 +49,7 @@ class SubgraphEngine : public subgraph::Engine {
   std::unique_ptr<xtcl::network::xRuntimeInstance> device_program_{nullptr};
 };
 
-class SubgraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class SubgraphCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
   using param_t = operators::SubgraphParam;
 

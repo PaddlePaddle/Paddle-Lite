@@ -102,9 +102,10 @@ using LoD = std::vector<std::vector<uint64_t>>;
 class TensorLite {
  public:
   TensorLite() : buffer_(std::make_shared<Buffer>()) {}
+  explicit TensorLite(std::shared_ptr<Buffer> buffer) : buffer_(buffer) {}
 
   template <typename DType, typename DimT, TargetType Target>
-  void Assign(DType *data, const DimT &dim) {
+  void Assign(const DType *data, const DimT &dim) {
     Resize(dim);
     auto *dst = mutable_data<DType, void>(Target);
     CopySync<Target>(
@@ -178,6 +179,11 @@ class TensorLite {
         (static_cast<char *>(buffer_->data()) + offset_));
   }
 
+  void *raw_data() {
+    return static_cast<char *>(
+        (static_cast<char *>(buffer_->data()) + offset_));
+  }
+
   void clear() {
     buffer_->Free();
     offset_ = 0;
@@ -194,6 +200,8 @@ class TensorLite {
   void ShareDataWith(const TensorLite &other);
 
   void CopyDataFrom(const TensorLite &other);
+
+  void ResetBuffer(std::shared_ptr<Buffer> buffer, size_t memory_size);
 
   TargetType target() const { return target_; }
 
@@ -260,8 +268,8 @@ bool TensorCompareWith(const TensorT &a, const TensorT &b) {
 template <>
 const cl::Image2D *TensorLite::data<float, cl::Image2D>() const;
 
-template <>  // use int16_t represent half float
-const cl::Image2D *TensorLite::data<int16_t, cl::Image2D>() const;
+template <>  // use uint16_t represent half float
+const cl::Image2D *TensorLite::data<uint16_t, cl::Image2D>() const;
 #endif
 
 }  // namespace lite

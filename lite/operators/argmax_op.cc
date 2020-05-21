@@ -24,15 +24,18 @@ namespace operators {
 bool ArgmaxOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_OR_FALSE(param_.Axis < (param_.X)->dims().size());
+  CHECK_OR_FALSE(param_.Axis < static_cast<int>((param_.X)->dims().size()));
+  CHECK_OR_FALSE(param_.Axis >= static_cast<int>(-(param_.X)->dims().size()));
   return true;
 }
 
-bool ArgmaxOpLite::InferShape() const {
+bool ArgmaxOpLite::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
   int axis = param_.Axis;
-  if (axis < 0) axis += x_rank;
+  if (axis < 0) {
+    axis += x_rank;
+  }
 
   std::vector<int64_t> out_dims;
   for (int64_t i = 0; i < axis; i++) out_dims.push_back(x_dims[i]);

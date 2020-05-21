@@ -119,35 +119,6 @@ class CastComputeTester : public arena::TestCase {
         LOG(FATAL) << "unsupported data type: " << in_dtype_;
         break;
     }
-
-    PrecisionType out_ptype;
-    switch (out_dtype_) {
-      case 0:
-        out_ptype = PRECISION(kBool);
-        break;
-      case 21:
-        out_ptype = PRECISION(kInt8);
-        break;
-      case 1:
-        out_ptype = PRECISION(kInt16);
-        break;
-      case 2:
-        out_ptype = PRECISION(kInt32);
-        break;
-      case 3:
-        out_ptype = PRECISION(kInt64);
-        break;
-      case 4:
-        out_ptype = PRECISION(kFP16);
-        break;
-      case 5:
-        out_ptype = PRECISION(kFloat);
-        break;
-      default:
-        LOG(FATAL) << "unsupported data type: " << out_dtype_;
-        break;
-    }
-    SetPrecisionType(out_, out_ptype);
   }
 };
 

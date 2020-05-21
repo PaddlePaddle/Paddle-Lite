@@ -32,7 +32,7 @@ const char* opencl_error_to_str(cl_int error);
         __FILE__,                                                    \
         __LINE__);                                                   \
   }
-
+#ifdef LITE_WITH_LOG
 #define CL_CHECK_FATAL(err_code__)                                   \
   if (err_code__ != CL_SUCCESS) {                                    \
     LOG(FATAL) << string_format(                                     \
@@ -42,5 +42,21 @@ const char* opencl_error_to_str(cl_int error);
         __FILE__,                                                    \
         __LINE__);                                                   \
   }
+#else
+#define CL_CHECK_FATAL(err_code__)
+#endif
+
+#ifdef LITE_WITH_PROFILE
+#define EnqueueNDRangeKernel(                                      \
+    context, kernel, gws_offset, gws, lws, event_wait_list, event) \
+  context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
+      kernel, gws_offset, gws, lws, event_wait_list, &event)
+#else
+#define EnqueueNDRangeKernel(                                      \
+    context, kernel, gws_offset, gws, lws, event_wait_list, event) \
+  context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
+      kernel, gws_offset, gws, lws, event_wait_list, nullptr)
+#endif
+
 }  // namespace lite
 }  // namespace paddle

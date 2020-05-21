@@ -58,11 +58,11 @@ REGISTER_LITE_KERNEL(calib,
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
-                                       DATALAYOUT(kNCHW))})
+                                       DATALAYOUT(kNHWC))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(calib,

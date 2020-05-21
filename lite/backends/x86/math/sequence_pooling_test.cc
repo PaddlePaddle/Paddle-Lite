@@ -101,13 +101,13 @@ void TestSequencePoolingSum(const paddle::framework::LoD& lod) {
 
 TEST(SequencePoolingGrad, CPU_SUM) {
   paddle::framework::LoD lod1;
-  lod1.push_back(std::vector<size_t>{0, 10});
+  lod1.push_back(std::vector<uint64_t>{0, 10});
   TestSequencePoolingSum<paddle::platform::CPUDeviceContext,
                          paddle::platform::CPUPlace,
                          float>(lod1);
 
   paddle::framework::LoD lod2;
-  lod2.push_back(std::vector<size_t>{0, 2, 7, 10});
+  lod2.push_back(std::vector<uint64_t>{0, 2, 7, 10});
   TestSequencePoolingSum<paddle::platform::CPUDeviceContext,
                          paddle::platform::CPUPlace,
                          float>(lod2);
@@ -116,13 +116,13 @@ TEST(SequencePoolingGrad, CPU_SUM) {
 #ifdef PADDLE_WITH_CUDA
 TEST(SequencePoolingGrad, CUDA_SUM) {
   paddle::framework::LoD lod1;
-  lod1.push_back(std::vector<size_t>{0, 10});
+  lod1.push_back(std::vector<uint64_t>{0, 10});
   TestSequencePoolingSum<paddle::platform::CUDADeviceContext,
                          paddle::platform::CUDAPlace,
                          float>(lod1);
 
   paddle::framework::LoD lod2;
-  lod2.push_back(std::vector<size_t>{0, 2, 7, 10});
+  lod2.push_back(std::vector<uint64_t>{0, 2, 7, 10});
   TestSequencePoolingSum<paddle::platform::CUDADeviceContext,
                          paddle::platform::CUDAPlace,
                          float>(lod2);

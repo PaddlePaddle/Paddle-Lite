@@ -47,11 +47,11 @@ static void slice_ref(const float* input,
     }
   }
   const int LEN = in_dims.size();
-  int dst_step[LEN];
+  std::vector<int> dst_step(LEN);
   for (int i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
   }
-  int src_step[LEN];
+  std::vector<int> src_step(LEN);
   for (int i = 0; i < in_dims.size(); ++i) {
     src_step[i] = 1;
   }
@@ -168,8 +168,9 @@ class SliceComputeTester : public arena::TestCase {
       std::vector<std::string> ends_tensor_list_;
       for (int i = 0; i < starts_.size(); ++i) {
         starts_tensor_list_.push_back("starts_tensor_list_" +
-                                      std::to_string(i));
-        ends_tensor_list_.push_back("ends_tensor_list_" + std::to_string(i));
+                                      paddle::lite::to_string(i));
+        ends_tensor_list_.push_back("ends_tensor_list_" +
+                                    paddle::lite::to_string(i));
       }
       op_desc->SetInput("StartsTensorList", {starts_tensor_list_});
       op_desc->SetInput("EndsTensorList", {ends_tensor_list_});
@@ -203,15 +204,15 @@ class SliceComputeTester : public arena::TestCase {
     } else if (use_tensor_list_) {
       Scope& scope_ = this->scope();
       for (int i = 0; i < starts_.size(); ++i) {
-        auto* tensor =
-            scope_.NewTensor("starts_tensor_list_" + std::to_string(i));
+        auto* tensor = scope_.NewTensor("starts_tensor_list_" +
+                                        paddle::lite::to_string(i));
         tensor->Resize(DDim({1}));
         auto* d = tensor->mutable_data<int>();
         d[0] = starts_[i];
       }
       for (int i = 0; i < ends_.size(); ++i) {
         auto* tensor =
-            scope_.NewTensor("ends_tensor_list_" + std::to_string(i));
+            scope_.NewTensor("ends_tensor_list_" + paddle::lite::to_string(i));
         tensor->Resize(DDim({1}));
         auto* d = tensor->mutable_data<int>();
         d[0] = ends_[i];

@@ -21,7 +21,7 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-bool InitOpenCLRuntime(std::string cl_path);
+bool InitOpenCLRuntime();
 
 }  // namespace lite
 }  // namespace paddle

@@ -25,7 +25,7 @@ bool OneHotOp::CheckShape() const {
   return true;
 }
 
-bool OneHotOp::InferShape() const {
+bool OneHotOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();

@@ -15,11 +15,9 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/string.h"
 
 DEFINE_string(model_file, "", "model file path of combined protobuf model");
 DEFINE_string(params_file, "", "params file path of combined protobuf model");
@@ -27,6 +25,7 @@ DEFINE_string(optimized_model_dir, "", "path of optimized naive buffer model");
 DEFINE_string(input_tensor_shape, "1,3,224,224", "shape of input tensors");
 DEFINE_string(input_tensor_type, "float32", "data type of input tensors");
 DEFINE_string(output_tensor_type, "float32", "data type of output tensors");
+DEFINE_string(subgraph_model_cache_dir, "", "dir of subgraph model cache");
 
 namespace paddle {
 namespace lite {
@@ -34,43 +33,17 @@ namespace lite {
 // The helper functions for loading and running model from command line and
 // verifying output data
 std::vector<std::string> TypeParsing(std::string text) {
-  std::vector<std::string> types;
-  while (!text.empty()) {
-    size_t index = text.find_first_of(":");
-    std::string type = text.substr(0, index);
-    VLOG(3) << type;
-    types.push_back(type);
-    if (index == std::string::npos) {
-      break;
-    } else {
-      text = text.substr(index + 1);
-    }
-  }
-  return types;
+  return Split(text, ":");
 }
 
 std::vector<std::vector<int64_t>> ShapeParsing(std::string text) {
   std::vector<std::vector<int64_t>> shapes;
-  while (!text.empty()) {
-    size_t index = text.find_first_of(":");
-    std::string slice = text.substr(0, index);
-    std::vector<int64_t> shape;
-    while (!slice.empty()) {
-      size_t index = slice.find_first_of(",");
-      int d = atoi(slice.substr(0, index).c_str());
-      VLOG(3) << d;
-      shape.push_back(d);
-      if (index == std::string::npos) {
-        break;
-      } else {
-        slice = slice.substr(index + 1);
-      }
-    }
-    shapes.push_back(shape);
-    if (index == std::string::npos) {
-      break;
-    } else {
-      text = text.substr(index + 1);
+  std::vector<std::string> shape_strings = Split(text, ":");
+  shapes.resize(shape_strings.size());
+  for (size_t i = 0; i < shape_strings.size(); i++) {
+    std::vector<std::string> shape_nums = Split(shape_strings[i], ",");
+    for (auto shape_num : shape_nums) {
+      shapes[i].push_back(atoi(shape_num.c_str()));
     }
   }
   return shapes;
@@ -94,7 +67,7 @@ void FillInputTensors(
   for (int j = 0; j < input_tensor_size; j++) {                \
     input_tensor_data[j] = static_cast<type>(value);           \
   }
-  for (int i = 0; i < input_tensor_shape.size(); i++) {
+  for (size_t i = 0; i < input_tensor_shape.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
     input_tensor->Resize(input_tensor_shape[i]);
     auto input_tensor_size = ShapeProduction(input_tensor->shape());
@@ -123,7 +96,7 @@ void CheckOutputTensors(
             << " abs_diff: " << abs_diff << " rel_diff: " << rel_diff;        \
     EXPECT_LT(rel_diff, 0.1);                                                 \
   }
-  for (int i = 0; i < output_tensor_type.size(); i++) {
+  for (size_t i = 0; i < output_tensor_type.size(); i++) {
     auto tar_output_tensor = tar_predictor->GetOutput(i);
     auto ref_output_tensor = ref_predictor->GetOutput(i);
     auto tar_output_tensor_size = ShapeProduction(tar_output_tensor->shape());
@@ -160,6 +133,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   mobile_config.set_model_from_file(optimized_model_dir + ".nb");
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
+  mobile_config.set_subgraph_model_cache_dir(FLAGS_subgraph_model_cache_dir);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
   FillInputTensors(predictor, input_tensor_shape, input_tensor_type, 1);
   // Run optimized model
@@ -167,6 +141,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     predictor->Run();
   }
   for (int i = 0; i < FLAGS_repeats; i++) {
+    FillInputTensors(predictor, input_tensor_shape, input_tensor_type, i);
     auto start = GetCurrentUS();
     predictor->Run();
     LOG(INFO) << i << ", " << GetCurrentUS() - start << "us";
@@ -208,7 +183,7 @@ TEST(Subgraph, generate_model_and_check_precision) {
 #ifdef LITE_WITH_NPU
   valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
 #endif
-#ifdef LITE_WITH_XPU
+#ifdef LITE_WITH_XTCL
   valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});
 #endif
   auto tar_predictor = TestModel(FLAGS_model_dir,

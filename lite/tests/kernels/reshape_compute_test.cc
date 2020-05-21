@@ -45,7 +45,8 @@ class ReshapeComputeTester : public arena::TestCase {
       : TestCase(place, alias), dims_(dims) {
     if (is_shape_tensor_vct) {
       for (size_t i = 0; i < shape.size(); i++) {
-        shape_tensor_vct_.emplace_back(op_type_ + "/shape" + std::to_string(i));
+        shape_tensor_vct_.emplace_back(op_type_ + "/shape" +
+                                       paddle::lite::to_string(i));
       }
     } else if (is_shape_tensor) {
       shape_tensor_ = op_type_ + "/shape";
@@ -155,19 +156,7 @@ class ReshapeComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Reshape, precision) {
-  LOG(INFO) << "test Reshape op";
-  float abs_error = 2e-5;
-  Place place;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_XPU)
-  place = TARGET(kXPU);
-#else
-  return;
-#endif
-
+void TestReshape4D(Place place, float abs_error) {
   DDim dims{{2, 3, 4, 5}};
   std::vector<std::vector<int>> shapes{{5, 4, 3, 2},
                                        {2, 3, 20},
@@ -177,14 +166,55 @@ TEST(Reshape, precision) {
                                        {0, 0, 20},
                                        {0, 0, -1}};
   for (auto shape : shapes) {
-#ifdef LITE_WITH_NPU
-    if (dims.size() > 4 || shape.size() > 4) continue;
-#endif
     std::unique_ptr<arena::TestCase> tester(
         new ReshapeComputeTester(place, "def", dims, shape));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision({"xshape"});
   }
+}
+
+void TestReshape3D(Place place, float abs_error) {
+  DDim dims{{2, 3, 20}};
+  std::vector<std::vector<int>> shapes{
+      {5, 4, 3, 2}, {2, 3, 20}, {2, 60}, {120}, {2, 3, -1}, {0, 60}, {0, -1}};
+  for (auto shape : shapes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ReshapeComputeTester(place, "def", dims, shape));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestReshape2D(Place place, float abs_error) {
+  DDim dims{{6, 20}};
+  std::vector<std::vector<int>> shapes{
+      {5, 4, 3, 2}, {2, 3, 20}, {2, 60}, {120}, {-1}};
+  for (auto shape : shapes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ReshapeComputeTester(place, "def", dims, shape));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+TEST(Reshape, precision) {
+  LOG(INFO) << "test Reshape op";
+  float abs_error = 2e-5;
+  Place place;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
+
+  TestReshape4D(place, abs_error);
+  TestReshape3D(place, abs_error);
+  TestReshape2D(place, abs_error);
 }
 
 }  // namespace lite

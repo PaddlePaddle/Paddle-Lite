@@ -22,15 +22,16 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
 #include "lite/operators/subgraph_op.h"
+#include "lite/utils/env.h"
+#include "lite/utils/io.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-using inference::analysis::Dot;
-
 std::string SubgraphVisualizer::operator()() {
-  inference::analysis::Dot dot;
+  Dot dot;
   const std::vector<std::string> subgraph_colors{
       "red",          "green",          "cyan",           "bisque3",
       "coral",        "darkseagreen1",  "goldenrod1",     "darkorchid",
@@ -46,8 +47,8 @@ std::string SubgraphVisualizer::operator()() {
       "turquoise4",   "snow3",          "sienna4",        "salmon2",
   };
   std::unordered_map<Node *, int> subgraph_indices;
-  for (int i = 0; i < subgraphs_.size(); i++) {
-    for (int j = 0; j < subgraphs_[i].size(); j++) {
+  for (size_t i = 0; i < subgraphs_.size(); i++) {
+    for (size_t j = 0; j < subgraphs_[i].size(); j++) {
       subgraph_indices[subgraphs_[i][j]] = i;
     }
   }
@@ -63,11 +64,11 @@ std::string SubgraphVisualizer::operator()() {
     } else {
       exists_ops[op_type]++;
     }
-    auto op_name = op_type + std::to_string(exists_ops[op_type]);
+    auto op_name = op_type + paddle::lite::to_string(exists_ops[op_type]);
     std::string op_color = "white";
     if (subgraph_indices.count(node)) {
       auto subgraph_idx = subgraph_indices[node];
-      op_name += "_subgraph_" + std::to_string(subgraph_idx);
+      op_name += "_subgraph_" + paddle::lite::to_string(subgraph_idx);
       op_color = subgraph_colors[subgraph_idx % subgraph_colors.size()];
     }
     dot.AddNode(op_name,
@@ -209,8 +210,82 @@ void SubgraphDetector::FlexibleDFS(
   }
 }
 
+std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
+  // get exclude nodes from config file
+  std::unordered_set<Node *> excluded_nodes;
+  std::string config_file_path =
+      GetStringFromEnv(SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE);
+  if (!IsFileExists(config_file_path)) {
+    return excluded_nodes;
+  }
+  std::vector<std::string> lines = ReadLines(config_file_path);
+
+  for (std::string line : lines) {
+    if (line.empty()) continue;
+    std::vector<std::string> node_info = Split(line, ":");
+    std::string op_type = node_info.at(0);
+    std::vector<std::string> in_vars_name;
+    if (node_info.size() > 1) {
+      in_vars_name = Split(node_info.at(1), ",");
+    }
+    std::vector<std::string> out_vars_name;
+    if (node_info.size() > 2) {
+      out_vars_name = Split(node_info.at(2), ",");
+    }
+
+    for (auto &node : graph_->mutable_nodes()) {
+      if (node.IsArg()) continue;
+      auto stmt = node.stmt();
+      if (op_type != stmt->op_type()) continue;
+      auto in_nodes = node.inlinks;
+      auto out_nodes = node.outlinks;
+      if (in_vars_name.size() > in_nodes.size() ||
+          out_vars_name.size() > out_nodes.size()) {
+        continue;
+      }
+
+      bool matched = true;
+
+      for (auto in_var_name : in_vars_name) {
+        bool find_var = false;
+        for (auto *in_node : in_nodes) {
+          if (in_node->arg()->name == in_var_name) {
+            find_var = true;
+            break;
+          }
+        }
+        if (!find_var) {
+          matched = false;
+          break;
+        }
+      }
+
+      for (auto out_var_name : out_vars_name) {
+        bool find_var = false;
+        for (auto *out_node : out_nodes) {
+          if (out_node->arg()->name == out_var_name) {
+            find_var = true;
+            break;
+          }
+        }
+        if (!find_var) {
+          matched = false;
+          break;
+        }
+      }
+
+      if (matched) {
+        excluded_nodes.insert(&node);
+      }
+    }
+  }
+
+  return excluded_nodes;
+}
+
 void SubgraphDetector::InitNodes(node_map_t *nodes) {
   // Initialize and mark the subgraph detector nodes based on teller.
+  std::unordered_set<Node *> excluded_nodes = GetExcludedNodesFromConfigFile();
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
       it.second->inlinks.push_back((*nodes)[in_node]);
@@ -218,7 +293,7 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
     for (auto &out_node : it.first->outlinks) {
       it.second->outlinks.push_back((*nodes)[out_node]);
     }
-    if (teller_(it.first)) {
+    if (teller_(it.first) && excluded_nodes.count(it.first) == 0) {
       it.second->marked = true;
       if (it.first->IsStmt()) {
         // If a function is inside the subgraph, mark all the output variables
@@ -237,8 +312,14 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
 
 std::vector<std::vector<Node *>> SubgraphDetector::ExtractSubgraphs(
     node_map_t *nodes) {
-  for (auto &it : *nodes) {
-    node_dat_t *node = it.second;
+  for (auto &ordered_node : graph_->NodeTopologicalOrder()) {
+    // different orders when traversing nodes in graph may lead to
+    // different subgraph division, which may generate different result
+    // with device such as MLU. These different results are all "right"
+    // but a little confusing. Thus the topological order is used instead
+    // of the address of the node in graph.
+    CHECK(nodes->find(ordered_node) != nodes->end());
+    node_dat_t *node = (*nodes)[ordered_node];
     if (!node->marked) {
       continue;
     }
@@ -331,7 +412,7 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   cpp::OpDesc subgraph_op_desc;
   subgraph_op_desc.SetType("subgraph");
 
-  // Create a new sub block desc for storing all of Ops an Vars of the target
+  // Create a new sub block desc for storing all of Ops and Vars of the target
   // subgraph and sub_block_idx is set as a attribute of subgraph op,
   // sub_block_idx < 0 means it's a new subgraph op
   int sub_block_idx = -(subgraph_idx + 1);
@@ -341,9 +422,6 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   for (auto &op_node : subgraph_nodes) {
     auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
     *sub_block_op_desc = *op_node->AsStmt().op_info();
-    sub_block_op_desc->SetAttr(
-        kKernelTypeAttr,
-        op_node->AsStmt().picked_kernel().SerializedKernelType());
   }
   subgraph_op_desc.SetAttr<int32_t>("sub_block", sub_block_idx);
 
@@ -374,6 +452,37 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
                                                      input_var_names);
   subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
                                                      output_var_names);
+
+  // Set input/output scale values of input/output var nodes for
+  // type_precision_cast_pass.
+  std::vector<float> input_data_scales;
+  std::vector<float> output_data_scales;
+  for (auto &var_node : input_var_nodes) {
+    auto any_op_node = var_node->outlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasAttr("input_scale")) {
+      input_data_scales.push_back(
+          any_inst.op_info()->GetAttr<float>("input_scale"));
+    }
+  }
+  for (auto &var_node : output_var_nodes) {
+    auto any_op_node = var_node->inlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasAttr("output_scale")) {
+      output_data_scales.push_back(
+          any_inst.op_info()->GetAttr<float>("output_scale"));
+    }
+  }
+  if (input_data_scales.size() > 0) {
+    subgraph_op_desc.SetAttr<std::vector<float>>("input_data_scales",
+                                                 input_data_scales);
+  }
+  if (output_data_scales.size() > 0) {
+    subgraph_op_desc.SetAttr<std::vector<float>>("output_data_scales",
+                                                 output_data_scales);
+  }
 
   // Set all of the inputs and outputs to the target subgraph op
   // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
@@ -413,12 +522,6 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     IR_OP_VAR_LINK(subgraph_op_node, var_node);
   }
 
-  // Create and assign the context to the picked kernel of the new subgraph
-  // node
-  auto &inst = subgraph_op_node->AsStmt();
-  inst.picked_kernel().SetContext(
-      ContextScheduler::Global().NewContext(inst.picked_kernel().target()));
-
   // Remove subgraph nodes and unused var nodes
   auto nodes2rm = GetNodes2RM(subgraph_nodes,
                               {input_var_nodes,
@@ -435,7 +538,8 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph, teller)();
   SubgraphVisualizer(graph, subgraphs)();
-  for (int subgraph_idx = 0; subgraph_idx < subgraphs.size(); subgraph_idx++) {
+  for (size_t subgraph_idx = 0; subgraph_idx < subgraphs.size();
+       subgraph_idx++) {
     if (subgraphs[subgraph_idx].size() >= min_subgraph_size) {
       InsertNewNode(graph, subgraph_idx, subgraphs[subgraph_idx]);
     }
@@ -474,13 +578,14 @@ void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,
         unused_var_nodes->insert(var_node);
         continue;
       }
-      // Var can have more than one next op node, So, if any one in the
-      // op_nodes then continue
-      bool next_op_in_nodes = false;
+      // Var can have more than one next op node, So, if all next nodes are in
+      // op_nodes then it should be put into local_var_nodes
+      bool next_op_in_nodes = true;
       for (auto &next_op_node : var_node->outlinks) {
-        if (std::find(op_nodes.begin(), op_nodes.end(), next_op_node) !=
+        if (std::find(op_nodes.begin(), op_nodes.end(), next_op_node) ==
             op_nodes.end()) {
-          next_op_in_nodes = true;
+          next_op_in_nodes = false;
+          break;
         }
       }
       if (next_op_in_nodes) {

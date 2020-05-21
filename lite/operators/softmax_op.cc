@@ -29,14 +29,17 @@ bool SoftmaxOp::CheckShape() const {
   return true;
 }
 
-bool SoftmaxOp::InferShape() const {
+bool SoftmaxOp::InferShapeImpl() const {
   param_.output->Resize(param_.x->dims());
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
+
   return true;
 }
 
 bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
+
   param_.x = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   param_.output =

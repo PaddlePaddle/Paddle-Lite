@@ -32,18 +32,10 @@ void TestModel(const std::vector<Place>& valid_places, bool use_npu = false) {
 
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
-  auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 1, 48, 512})));
-  auto* data = input_tensor->mutable_data<float>();
-  auto item_size = input_tensor->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    data[i] = 1;
-  }
-
   auto* init_scores = predictor.GetInput(2);
   init_scores->Resize(DDim(std::vector<DDim::value_type>({1, 1})));
   auto* data_scores = init_scores->mutable_data<float>();
-  auto scores_size = input_tensor->dims().production();
+  auto scores_size = init_scores->dims().production();
   for (int i = 0; i < scores_size; i++) {
     data_scores[i] = 0;
   }
@@ -53,7 +45,7 @@ void TestModel(const std::vector<Place>& valid_places, bool use_npu = false) {
 
   auto* init_ids = predictor.GetInput(1);
   init_ids->Resize(DDim(std::vector<DDim::value_type>({1, 1})));
-  auto* data_ids = init_ids->mutable_data<float>();
+  auto* data_ids = init_ids->mutable_data<int64_t>();
   auto ids_size = init_ids->dims().production();
   for (int i = 0; i < ids_size; i++) {
     data_ids[i] = 0;
@@ -62,6 +54,13 @@ void TestModel(const std::vector<Place>& valid_places, bool use_npu = false) {
   std::vector<std::vector<uint64_t>> lod_i{{0, 1}, {0, 1}};
   *lod_ids = lod_i;
 
+  auto* input_tensor = predictor.GetInput(0);
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 1, 48, 512})));
+  auto* data = input_tensor->mutable_data<float>();
+  auto item_size = input_tensor->dims().production();
+  for (int i = 0; i < item_size; i++) {
+    data[i] = 1;
+  }
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
@@ -102,6 +101,7 @@ void TestModel(const std::vector<Place>& valid_places, bool use_npu = false) {
 
 TEST(OcrAttention, test_arm) {
   std::vector<Place> valid_places({
+      Place{TARGET(kARM), PRECISION(kInt64)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 

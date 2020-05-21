@@ -61,19 +61,19 @@ REGISTER_LITE_KERNEL(
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNHWC))})
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(feed,
-                     kFPGA,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::fpga::FeedCompute,
-                     def_host)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(feed,
+//                      kFPGA,
+//                      kFP16,
+//                      kNHWC,
+//                      paddle::lite::kernels::fpga::FeedCompute,
+//                      def_host)
+//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+//     .Finalize();

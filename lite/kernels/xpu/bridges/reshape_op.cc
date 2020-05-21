@@ -48,9 +48,6 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int> shape;
   if (HasInputArg(op_info, scope, "ShapeTensor")) {
     auto shape_tensor_names = op_info->Input("ShapeTensor");
-    // auto shape_tensor_type = kernel->GetInputDeclType("ShapeTensor");
-    // CHECK(shape_tensor_type->precision() == PRECISION(kInt32));
-    // CHECK(shape_tensor_type->layout() == DATALAYOUT(kNCHW));
     for (auto shape_tensor_name : shape_tensor_names) {
       auto shape_tensor = scope->FindMutableTensor(shape_tensor_name);
       CHECK(shape_tensor->persistable());
@@ -64,9 +61,6 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         << shape.size();
   } else if (HasInputArg(op_info, scope, "Shape")) {
     auto actual_shape_name = op_info->Input("Shape").front();
-    // auto actual_shape_type = kernel->GetInputDeclType("Shape");
-    // CHECK(actual_shape_type->precision() == PRECISION(kInt32));
-    // CHECK(actual_shape_type->layout() == DATALAYOUT(kNCHW));
     auto actual_shape = scope->FindMutableTensor(actual_shape_name);
     CHECK(actual_shape->persistable());
     auto actual_shape_dims = actual_shape->dims();

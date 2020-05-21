@@ -11,7 +11,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
 #pragma once
 
 /////////////////////////////////
@@ -29,11 +28,15 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#define CL_COMPUTE_DTYPE half
+#define CL_COMPUTE_DTYPE_CHAR h
 #endif
 
 #ifdef CL_DTYPE_half
 #define CL_DTYPE half
 #define CL_DTYPE_CHAR h
+#define CL_COMPUTE_DTYPE half
+#define CL_COMPUTE_DTYPE_CHAR h
 #endif
 
 /////////////////////////////////
@@ -43,6 +46,7 @@ limitations under the License. */
 #define GET_VEC_TYPE(type__, size__) type__##size__
 #define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
 #define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+#define CL_COMPUTE_DTYPE4 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 4)
 
 /////////////////////////////////
 // CONVERT_TYPE_TO
@@ -103,7 +107,8 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #endif
 
 #ifdef RELU6
-  output = clamp(in, (CL_DTYPE4)0, (CL_DTYPE4)6);
+  in = fmax((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
+  output = fmin((CL_DTYPE4)(6.0f, 6.0f, 6.0f, 6.0f), in);
 #endif
   return output;
 }

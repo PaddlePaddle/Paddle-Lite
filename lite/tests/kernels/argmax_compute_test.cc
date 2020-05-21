@@ -48,7 +48,7 @@ class ArgmaxComputeTester : public arena::TestCase {
     output_shape.erase(output_shape.begin() + axis_);
     DDim output_dims(output_shape);
     out->Resize(output_dims);
-    auto* output_data = out->mutable_data<float>();
+    auto* output_data = out->mutable_data<int64_t>();
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
@@ -75,7 +75,7 @@ class ArgmaxComputeTester : public arena::TestCase {
                           std::greater<std::pair<float, int>>());
 
         // out
-        float* out_ptr = output_data + n * out_channel + k;
+        auto* out_ptr = output_data + n * out_channel + k;
         *out_ptr = vec[0].second;
       }
     }

@@ -111,7 +111,7 @@ void pre_process(const cv::Mat& img, int width, int height, Tensor dstTensor) {
 #endif
 }
 
-void RunModel(std::string model_dir,
+void RunModel(std::string model_file,
               std::string img_path,
               std::vector<int> input_shape,
               PowerMode power_mode,
@@ -120,7 +120,7 @@ void RunModel(std::string model_dir,
               int warmup = 0) {
   // 1. Set MobileConfig
   MobileConfig config;
-  config.set_model_dir(model_dir);
+  config.set_model_from_file(model_file);
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
@@ -161,7 +161,7 @@ void RunModel(std::string model_dir,
   }
   std::cout << "================== Speed Report ==================="
             << std::endl;
-  std::cout << "Model: " << model_dir
+  std::cout << "Model: " << model_file
             << ", power_mode: " << static_cast<int>(power_mode)
             << ", threads num " << thread_num << ", warmup: " << warmup
             << ", repeats: " << test_iter << ", avg time: " << lps / test_iter
@@ -187,10 +187,10 @@ void RunModel(std::string model_dir,
 int main(int argc, char** argv) {
   if (argc < 7) {
     std::cerr << "[ERROR] usage: " << argv[0]
-              << " model_dir image_path input_shape\n";
+              << " model_file image_path input_shape\n";
     exit(1);
   }
-  std::string model_dir = argv[1];
+  std::string model_file = argv[1];
   std::string img_path = argv[2];
   std::vector<int> input_shape;
   input_shape.push_back(atoi(argv[3]));
@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
   if (argc > 10) {
     warmup = atoi(argv[10]);
   }
-  RunModel(model_dir,
+  RunModel(model_file,
            img_path,
            input_shape,
            (PowerMode)power_mode,

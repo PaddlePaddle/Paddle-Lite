@@ -20,40 +20,50 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-#define NCHWTONHWC(type)                                                  \
-  auto& param = this->template Param<param_t>();                          \
-  auto input = param.x->template data<type>();                            \
-  auto input_dim = param.x->dims();                                       \
-  CHECK(input_dim.size() == 4)                                            \
-      << "NCHW to NHWC should guarantee that the input dims should be 4"; \
-  int n = input_dim[0];                                                   \
-  int c = input_dim[1];                                                   \
-  int h = input_dim[2];                                                   \
-  int w = input_dim[3];                                                   \
-  param.y->Resize({n, h, w, c});                                          \
-  auto output = param.y->template mutable_data<type>(TARGET(kARM));       \
-  if (c == 1) {                                                           \
-    memcpy(output, input, sizeof(type) * n * h * w);                      \
-    return;                                                               \
-  }                                                                       \
+#define NCHWTONHWC(type)                                                 \
+  auto& param = this->template Param<param_t>();                         \
+  auto input = param.x->template data<type>();                           \
+  auto input_dim = param.x->dims();                                      \
+  if (input_dim.size() != 4) {                                           \
+    LOG(WARNING) << "NCHW to NHWC should guarantee that the input dims " \
+                    "should be 4, but received "                         \
+                 << input_dim.size();                                    \
+    param.y->ShareDataWith(*param.x);                                    \
+    return;                                                              \
+  }                                                                      \
+  int n = input_dim[0];                                                  \
+  int c = input_dim[1];                                                  \
+  int h = input_dim[2];                                                  \
+  int w = input_dim[3];                                                  \
+  param.y->Resize({n, h, w, c});                                         \
+  auto output = param.y->template mutable_data<type>(TARGET(kARM));      \
+  if (c == 1) {                                                          \
+    memcpy(output, input, sizeof(type) * n * h * w);                     \
+    return;                                                              \
+  }                                                                      \
   lite::arm::math::NCHW2NHWC<type>(n, c, h * w, input, output);
 
-#define NHWCTONCHW(type)                                                  \
-  auto& param = this->template Param<param_t>();                          \
-  auto input = param.x->template data<type>();                            \
-  auto input_dim = param.x->dims();                                       \
-  CHECK(input_dim.size() == 4)                                            \
-      << "NHWC to NCHW should guarantee that the input dims should be 4"; \
-  int n = input_dim[0];                                                   \
-  int h = input_dim[1];                                                   \
-  int w = input_dim[2];                                                   \
-  int c = input_dim[3];                                                   \
-  param.y->Resize({n, c, h, w});                                          \
-  auto output = param.y->template mutable_data<type>(TARGET(kARM));       \
-  if (c == 1) {                                                           \
-    memcpy(output, input, sizeof(type) * n * h * w);                      \
-    return;                                                               \
-  }                                                                       \
+#define NHWCTONCHW(type)                                                 \
+  auto& param = this->template Param<param_t>();                         \
+  auto input = param.x->template data<type>();                           \
+  auto input_dim = param.x->dims();                                      \
+  if (input_dim.size() != 4) {                                           \
+    LOG(WARNING) << "NHWC to NCHW should guarantee that the input dims " \
+                    "should be 4, but received "                         \
+                 << input_dim.size();                                    \
+    param.y->ShareDataWith(*param.x);                                    \
+    return;                                                              \
+  }                                                                      \
+  int n = input_dim[0];                                                  \
+  int h = input_dim[1];                                                  \
+  int w = input_dim[2];                                                  \
+  int c = input_dim[3];                                                  \
+  param.y->Resize({n, c, h, w});                                         \
+  auto output = param.y->template mutable_data<type>(TARGET(kARM));      \
+  if (c == 1) {                                                          \
+    memcpy(output, input, sizeof(type) * n * h * w);                     \
+    return;                                                              \
+  }                                                                      \
   lite::arm::math::NHWC2NCHW<type>(n, c, h * w, input, output);
 
 template <>

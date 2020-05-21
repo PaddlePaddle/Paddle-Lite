@@ -112,6 +112,25 @@ __kernel void channel_mul_d2(__global image2d_t input, __global image2d_t bias,
   write_imageh(outputImage, coords, output);
 }
 
+// c 1 1
+__kernel void channel_mul_d3(__global image2d_t input, __global image2d_t bias,
+                          __write_only image2d_t outputImage, int w) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
+  int2 coords_bias;
+  coords_bias.x = x / w;
+  coords_bias.y = 0;
+  half4 in = read_imageh(input, sampler, coords);
+  half4 biase = read_imageh(bias, sampler, coords_bias);
+  half4 output = in * biase;
+  write_imageh(outputImage, coords, output);
+}
+
 __kernel void channel_mul_d4(__global image2d_t input, __global image2d_t bias,
                           __write_only image2d_t outputImage, int w) {
   int x = get_global_id(0);

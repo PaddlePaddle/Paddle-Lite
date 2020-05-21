@@ -276,9 +276,24 @@ void TestPoolHelper(Place place,
                     std::string pooling_type,
                     std::vector<int> strides,
                     std::vector<int> paddings,
-                    std::vector<int> ksize) {
-  std::unique_ptr<arena::TestCase> tester(new PoolComputeTest(
-      place, "def", DDim(dims), pooling_type, false, strides, paddings, ksize));
+                    std::vector<int> ksize,
+                    bool exclusive = true,
+                    bool ceil_mode = false,
+                    bool adaptive = false,
+                    std::string padding_algorithm = "") {
+  std::unique_ptr<arena::TestCase> tester(
+      new PoolComputeTest(place,
+                          "def",
+                          DDim(dims),
+                          pooling_type,
+                          false,
+                          strides,
+                          paddings,
+                          ksize,
+                          exclusive,
+                          ceil_mode,
+                          adaptive,
+                          padding_algorithm));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
@@ -345,6 +360,20 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
   }
 }
 
+void TestPoolCeilMode(Place place, float abs_error = 2e-5) {
+  for (auto pooling_type : {"max", "avg"}) {
+    TestPoolHelper(place,
+                   abs_error,
+                   {2, 3, 6, 6},
+                   pooling_type,
+                   {2, 2},
+                   {0, 0, 0, 0},
+                   {3, 3},
+                   true,
+                   true);
+  }
+}
+
 TEST(Pool, precision) {
   LOG(INFO) << "test pool op";
   float abs_error = 2e-5;
@@ -352,6 +381,8 @@ TEST(Pool, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #else
   return;
 #endif
@@ -361,6 +392,7 @@ TEST(Pool, precision) {
   TestPoolStrides(place, abs_error);
   TestPoolPaddings(place, abs_error);
   TestPoolKsize(place, abs_error);
+  TestPoolCeilMode(place, abs_error);
 }
 
 }  // namespace lite

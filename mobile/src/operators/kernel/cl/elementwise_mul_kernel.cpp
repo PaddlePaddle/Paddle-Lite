@@ -40,6 +40,9 @@ bool ElementwiseMulKernel<GPU_CL, float>::Init(
       // filter 1 72
       DLOG << "init channel_mul_d2";
       this->cl_helper_.AddKernel("channel_mul_d2", "elementwise_mul_kernel.cl");
+    } else if (bias_dim_size == 3) {
+      DLOG << "init channel_mul_d3";
+      this->cl_helper_.AddKernel("channel_mul_d3", "elementwise_mul_kernel.cl");
     } else if (bias_dim_size == 4) {
       DLOG << "init channel_mul_d4";
       this->cl_helper_.AddKernel("channel_mul_d4", "elementwise_mul_kernel.cl");
@@ -140,6 +143,38 @@ void ElementwiseMulKernel<GPU_CL, float>::Compute(
       CL_CHECK_ERRORS(status);
 
       //    bias->PrintTensor(*bias);
+    } else if (bias_dim_size == 3) {
+      DLOG << "channel_mul_d3";
+      // etc. input  1 72 28 28
+      // filter 1 72   -->  1 1 1 72
+      DLOG << "input->ImageDims():  " << input->ImageDims();
+      DLOG << "bias->ImageDims():  " << bias->ImageDims();
+      DLOG << "out->ImageDims():  " << output->ImageDims();
+
+      DLOG << "channel mul d3";
+      cl_mem input_image = input->GetCLImage();
+      cl_mem bias_image = bias->GetCLImage();
+      cl_mem output_image = output->GetCLImage();
+      int tensor_w = input->dims()[input->dims().size() - 1];
+      status = clSetKernelArg(kernel, 0, sizeof(cl_mem),
+                              reinterpret_cast<void *>(&input_image));
+      CL_CHECK_ERRORS(status);
+      status = clSetKernelArg(kernel, 1, sizeof(cl_mem),
+                              reinterpret_cast<void *>(&bias_image));
+      CL_CHECK_ERRORS(status);
+      status = clSetKernelArg(kernel, 2, sizeof(cl_mem),
+                              reinterpret_cast<void *>(&output_image));
+      CL_CHECK_ERRORS(status);
+      status = clSetKernelArg(kernel, 3, sizeof(cl_int),
+                              reinterpret_cast<void *>(&tensor_w));
+      CL_CHECK_ERRORS(status);
+      auto width = input->ImageWidth();
+      auto height = input->ImageHeight();
+      size_t global_work_size[2] = {width, height};
+      status =
+          clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                                 NULL, global_work_size, NULL, 0, NULL, NULL);
+      CL_CHECK_ERRORS(status);
     } else if (bias_dim_size == 4) {
       DLOG << "channel_mul_d4";
       // etc. input  1 72 28 28
@@ -148,7 +183,7 @@ void ElementwiseMulKernel<GPU_CL, float>::Compute(
       DLOG << "bias->ImageDims():  " << bias->ImageDims();
       DLOG << "out->ImageDims():  " << output->ImageDims();
 
-      DLOG << "channel mul d2";
+      DLOG << "channel mul d4";
       cl_mem input_image = input->GetCLImage();
       cl_mem bias_image = bias->GetCLImage();
       cl_mem output_image = output->GetCLImage();

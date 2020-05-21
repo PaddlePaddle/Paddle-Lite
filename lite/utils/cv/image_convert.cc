@@ -829,12 +829,9 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8x8_t vb = vdup_n_u8(b);
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
-#ifdef __aarch64__
-#else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
   uint8_t vr_array[8] = {r, r, r, r, r, r, r, r};
-#endif
   int cnt_pro = srcw >> 3;
   int remain_pro = srcw % 8;
   int win = srcw * 3;
@@ -863,6 +860,9 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "prfm   pldl1keep, [%[inptr2], #128]   \n"
           "prfm   pldl1keep, [%[inptr3]]                \n"
           "prfm   pldl1keep, [%[inptr3], #128]   \n"
+          "ld1 {v21.8b}, [%[vb]]                 \n"
+          "ld1 {v22.8b}, [%[vg]]                 \n"
+          "ld1 {v23.8b}, [%[vr]]                 \n"
           "1: \n"
           "ld3 {v0.8b - v2.8b}, [%[inptr0]], #24 \n"   // d8 = y0y3y6y9.. d9 =
                                                        // y1y4y7...
@@ -873,20 +873,20 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "ld3 {v9.8b - v11.8b}, [%[inptr3]], #24 \n"  // d8 = y0y3y6y9.. d9 =
                                                        // y1y4y7...
           // mul b
-          "umull v12.8h, v0.8b, %w[vb].8b \n"  // v0 * vb
-          "umull v13.8h, v3.8b, %w[vb].8b \n"  // v0 * vb
-          "umull v14.8h, v6.8b, %w[vb].8b \n"  // v0 * vb
-          "umull v15.8h, v9.8b, %w[vb].8b \n"  // v0 * vb
+          "umull v12.8h, v0.8b, v21.8b \n"  // v0 * vb
+          "umull v13.8h, v3.8b, v21.8b \n"  // v0 * vb
+          "umull v14.8h, v6.8b, v21.8b \n"  // v0 * vb
+          "umull v15.8h, v9.8b, v21.8b \n"  // v0 * vb
           // mul g
-          "umull v16.8h, v1.8b, %w[vg].8b \n"   // v0 * vb
-          "umull v17.8h, v4.8b, %w[vg].8b \n"   // v0 * vb
-          "umull v18.8h, v7.8b, %w[vg].8b \n"   // v0 * vb
-          "umull v19.8h, v10.8b, %w[vg].8b \n"  // v0 * vb
+          "umull v16.8h, v1.8b, v22.8b \n"   // v0 * vb
+          "umull v17.8h, v4.8b, v22.8b \n"   // v0 * vb
+          "umull v18.8h, v7.8b, v22.8b \n"   // v0 * vb
+          "umull v19.8h, v10.8b, v22.8b \n"  // v0 * vb
           // mul r
-          "umlal v12.8h, v2.8b, %w[vr].8b \n"   // v0 * vb
-          "umlal v13.8h, v5.8b, %w[vr].8b \n"   // v0 * vb
-          "umlal v14.8h, v8.8b, %w[vr].8b \n"   // v0 * vb
-          "umlal v15.8h, v11.8b, %w[vr].8b \n"  // v0 * vb
+          "umlal v12.8h, v2.8b, v23.8b \n"   // v0 * vb
+          "umlal v13.8h, v5.8b, v23.8b \n"   // v0 * vb
+          "umlal v14.8h, v8.8b, v23.8b \n"   // v0 * vb
+          "umlal v15.8h, v11.8b, v23.8b \n"  // v0 * vb
           // 16->32
           "uaddl v0.4s, v16.4h, v12.4h \n"
           "uaddl2 v1.4s, v16.8h, v12.8h \n"
@@ -925,7 +925,7 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             [outr2] "+r"(outr2),
             [outr3] "+r"(outr3),
             [cnt] "+r"(cnt)
-          : [vb] "w"(vb), [vg] "w"(vg), [vr] "w"(vr)
+          : [vb] "r"(vb_array), [vg] "r"(vg_array), [vr] "r"(vr_array)
           : "cc",
             "memory",
             "v0",
@@ -948,7 +948,10 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             "v17",
             "v18",
             "v19",
-            "v20");
+            "v20",
+            "v21",
+            "v22",
+            "v23");
 #else
       asm volatile(
           "pld [%[inptr0]]                         @ preload a, 64byte\n"
@@ -1103,12 +1106,9 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8x8_t vb = vdup_n_u8(b);
   uint8x8_t vg = vdup_n_u8(g);
   uint8x8_t vr = vdup_n_u8(r);
-#ifdef __aarch64__
-#else
   uint8_t vb_array[8] = {b, b, b, b, b, b, b, b};
   uint8_t vg_array[8] = {g, g, g, g, g, g, g, g};
   uint8_t vr_array[8] = {r, r, r, r, r, r, r, r};
-#endif
   int cnt_pro = srcw >> 3;
   int remain_pro = srcw % 8;
   int win = srcw * 4;
@@ -1137,6 +1137,9 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "prfm   pldl1keep, [%[inptr2], #128]   \n"
           "prfm   pldl1keep, [%[inptr3]]                \n"
           "prfm   pldl1keep, [%[inptr3], #128]   \n"
+          "ld1 {v21.8b}, [%[vb]]                 \n"
+          "ld1 {v22.8b}, [%[vg]]                 \n"
+          "ld1 {v23.8b}, [%[vr]]                 \n"
           "1: \n"
           "ld4 {v0.8b - v3.8b}, [%[inptr0]], #32 \n"    // d8 = y0y3y6y9.. d9 =
                                                         // y1y4y7...
@@ -1147,20 +1150,20 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "ld4 {v12.8b - v15.8b}, [%[inptr3]], #32 \n"  // d8 = y0y3y6y9.. d9 =
                                                         // y1y4y7...
           // mul b
-          "umull v13.8h, v0.8b, %w[vb].8b \n"   // v0 * vb
-          "umull v14.8h, v4.8b, %w[vb].8b \n"   // v0 * vb
-          "umull v15.8h, v8.8b, %w[vb].8b \n"   // v0 * vb
-          "umull v16.8h, v12.8b, %w[vb].8b \n"  // v0 * vb
+          "umull v13.8h, v0.8b, v21.8b \n"   // v0 * vb
+          "umull v14.8h, v4.8b, v21.8b \n"   // v0 * vb
+          "umull v15.8h, v8.8b, v21.8b \n"   // v0 * vb
+          "umull v16.8h, v12.8b, v21.8b \n"  // v0 * vb
           // mul g
-          "umull v17.8h, v1.8b, %w[vg].8b \n"   // v0 * vb
-          "umull v18.8h, v5.8b, %w[vg].8b \n"   // v0 * vb
-          "umull v19.8h, v9.8b, %w[vg].8b \n"   // v0 * vb
-          "umull v20.8h, v13.8b, %w[vg].8b \n"  // v0 * vb
+          "umull v17.8h, v1.8b, v22.8b \n"   // v0 * vb
+          "umull v18.8h, v5.8b, v22.8b \n"   // v0 * vb
+          "umull v19.8h, v9.8b, v22.8b \n"   // v0 * vb
+          "umull v20.8h, v13.8b, v22.8b \n"  // v0 * vb
           // mul r
-          "umlal v13.8h, v2.8b, %w[vr].8b \n"   // v0 * vb
-          "umlal v14.8h, v6.8b, %w[vr].8b \n"   // v0 * vb
-          "umlal v15.8h, v10.8b, %w[vr].8b \n"  // v0 * vb
-          "umlal v16.8h, v14.8b, %w[vr].8b \n"  // v0 * vb
+          "umlal v13.8h, v2.8b, v23.8b \n"   // v0 * vb
+          "umlal v14.8h, v6.8b, v23.8b \n"   // v0 * vb
+          "umlal v15.8h, v10.8b, v23.8b \n"  // v0 * vb
+          "umlal v16.8h, v14.8b, v23.8b \n"  // v0 * vb
           // 16->32
           "uaddl v0.4s, v17.4h, v13.4h \n"
           "uaddl2 v1.4s, v17.8h, v13.8h \n"
@@ -1199,7 +1202,7 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             [outr2] "+r"(outr2),
             [outr3] "+r"(outr3),
             [cnt] "+r"(cnt)
-          : [vb] "w"(vb), [vg] "w"(vg), [vr] "w"(vr)
+          : [vb] "r"(vb_array), [vg] "r"(vg_array), [vr] "r"(vr_array)
           : "cc",
             "memory",
             "v0",
@@ -1222,7 +1225,10 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             "v17",
             "v18",
             "v19",
-            "v20");
+            "v20",
+            "v21",
+            "v22",
+            "v23");
 #else
       asm volatile(
           "pld [%[inptr0]]                         @ preload a, 64byte\n"

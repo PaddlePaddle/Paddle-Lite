@@ -83,127 +83,106 @@ float* compute_priorbox_kernel(OpLite* op, st_priorbox_param* param) {
   for (size_t i = 0; i < expand_aspect_ratios.size(); i++) {
     param->aspect_ratios.push_back(expand_aspect_ratios[i]);
   }
-  param->prior_num = param->aspect_ratios.size() * param->min_sizes.size();
-  if (param->max_sizes.size() > 0) {
-    param->prior_num += param->max_sizes.size();
+
+  auto img_width = img_dims[3];
+  auto img_height = img_dims[2];
+  auto feature_width = in_dims[3];
+  auto feature_height = in_dims[2];
+  float step_width, step_height;
+  if (param->step_w == 0.f || param->step_h == 0.f) {
+    step_width = static_cast<float>(img_width) / feature_width;
+    step_height = static_cast<float>(img_height) / feature_height;
+  } else {
+    step_width = param->step_w;
+    step_height = param->step_h;
   }
-  int32_t win1 = in_dims[3];
-  int32_t hin1 = in_dims[2];
-  DDim shape_out({hin1, win1, param->prior_num, 4});
+  int num_priors = param->aspect_ratios.size() * param->min_sizes.size();
+  if (param->max_sizes.size() > 0) {
+    num_priors += param->max_sizes.size();
+  }
+  param->prior_num = num_priors;
+  DDim shape_out({feature_height, feature_width, num_priors, 4});
+  int32_t channel_size = feature_height * feature_width * num_priors * 4;
   boxes->Resize(shape_out);
   var->Resize(shape_out);
-  // boxes->mutable_data<float>();
-  // var->mutable_data<float>();
   float* cpu_data =
       static_cast<float*>(malloc(sizeof(float) * boxes->data_size() * 2));
   CHECK(cpu_data != nullptr);
-  const int32_t width = in_dims[3];
-  const int32_t height = in_dims[2];
-  int32_t img_width = param->img_w;
-  int32_t img_height = param->img_h;
-  if (img_width == 0 || img_height == 0) {
-    img_width = img_dims[3];
-    img_height = img_dims[2];
-  }
-  float step_w = param->step_w;
-  float step_h = param->step_h;
-  if (step_w == 0.f || step_h == 0.f) {
-    step_w = static_cast<float>(img_width) / width;
-    step_h = static_cast<float>(img_height) / height;
-  }
-  float offset = param->offset;
-  int32_t channel_size = height * width * param->prior_num * 4;
-  int32_t idx = 0;
-  ///////////////////////////////////////////////////////////////////////
-  for (int32_t h = 0; h < height; ++h) {
-    for (int32_t w = 0; w < width; ++w) {
-      float center_x = (w + offset) * step_w;
-      float center_y = (h + offset) * step_h;
-      float box_width = 0.f;
-      float box_height = 0.f;
-      float* min_buf = reinterpret_cast<float*>(malloc(sizeof(float) * 4));
-      float* max_buf = reinterpret_cast<float*>(malloc(sizeof(float) * 4));
-      float* com_buf = reinterpret_cast<float*>(
-          malloc(sizeof(float) * expand_aspect_ratios.size() * 4));
-      CHECK(min_buf != nullptr);
-      CHECK(max_buf != nullptr);
-      CHECK(com_buf != nullptr);
-      // LOG(INFO) << "the number of min_size is " << min_sizes_.size();
+  float* b_t = cpu_data;
+  for (int h = 0; h < feature_height; ++h) {
+    for (int w = 0; w < feature_width; ++w) {
+      float center_x = (w + param->offset) * step_width;
+      float center_y = (h + param->offset) * step_height;
+      float box_width, box_height;
       for (size_t s = 0; s < param->min_sizes.size(); ++s) {
-        int32_t min_idx = 0;
-        int32_t max_idx = 0;
-        int32_t com_idx = 0;
-        int32_t min_size = param->min_sizes[s];
-        //! first prior: aspect_ratio = 1, size = min_size
-        box_width = box_height = min_size;
-        //! xmin
-        min_buf[min_idx++] = (center_x - box_width / 2.f) / img_width;
-        //! ymin
-        min_buf[min_idx++] = (center_y - box_height / 2.f) / img_height;
-        //! xmax
-        min_buf[min_idx++] = (center_x + box_width / 2.f) / img_width;
-        //! ymax
-        min_buf[min_idx++] = (center_y + box_height / 2.f) / img_height;
-        if (param->max_sizes.size() > 0) {
-          int max_size = param->max_sizes[s];
-          //! second prior: aspect_ratio = 1, size = sqrt(min_size * max_size)
-          box_width = box_height = sqrtf(min_size * max_size);
-          //! xmin
-          max_buf[max_idx++] = (center_x - box_width / 2.f) / img_width;
-          //! ymin
-          max_buf[max_idx++] = (center_y - box_height / 2.f) / img_height;
-          //! xmax
-          max_buf[max_idx++] = (center_x + box_width / 2.f) / img_width;
-          //! ymax
-          max_buf[max_idx++] = (center_y + box_height / 2.f) / img_height;
-        }
-        //! rest of priors
-        for (size_t r = 0; r < expand_aspect_ratios.size(); ++r) {
-          float ar = expand_aspect_ratios[r];
-          if (fabs(ar - 1.) < 1e-6) {
-            continue;
-          }
-          box_width = min_size * sqrt(ar);
-          box_height = min_size / sqrt(ar);
-          //! xmin
-          com_buf[com_idx++] = (center_x - box_width / 2.f) / img_width;
-          //! ymin
-          com_buf[com_idx++] = (center_y - box_height / 2.f) / img_height;
-          //! xmax
-          com_buf[com_idx++] = (center_x + box_width / 2.f) / img_width;
-          //! ymax
-          com_buf[com_idx++] = (center_y + box_height / 2.f) / img_height;
-        }
+        auto min_size = param->min_sizes[s];
         if (param->min_max_aspect_ratios_order) {
-          memcpy(cpu_data + idx, min_buf, sizeof(float) * min_idx);
-          idx += min_idx;
-          memcpy(cpu_data + idx, max_buf, sizeof(float) * max_idx);
-          idx += max_idx;
-          memcpy(cpu_data + idx, com_buf, sizeof(float) * com_idx);
-          idx += com_idx;
+          box_width = box_height = min_size / 2.;
+          b_t[0] = (center_x - box_width) / img_width;
+          b_t[1] = (center_y - box_height) / img_height;
+          b_t[2] = (center_x + box_width) / img_width;
+          b_t[3] = (center_y + box_height) / img_height;
+          b_t += 4;
+          if (param->max_sizes.size() > 0) {
+            auto max_size = param->max_sizes[s];
+            // square prior with size sqrt(minSize * maxSize)
+            box_width = box_height = sqrt(min_size * max_size) / 2.;
+            b_t[0] = (center_x - box_width) / img_width;
+            b_t[1] = (center_y - box_height) / img_height;
+            b_t[2] = (center_x + box_width) / img_width;
+            b_t[3] = (center_y + box_height) / img_height;
+            b_t += 4;
+          }
+          // priors with different aspect ratios
+          for (size_t r = 0; r < param->aspect_ratios.size(); ++r) {
+            float ar = param->aspect_ratios[r];
+            if (fabs(ar - 1.) < 1e-6) {
+              continue;
+            }
+            box_width = min_size * sqrt(ar) / 2.;
+            box_height = min_size / sqrt(ar) / 2.;
+            b_t[0] = (center_x - box_width) / img_width;
+            b_t[1] = (center_y - box_height) / img_height;
+            b_t[2] = (center_x + box_width) / img_width;
+            b_t[3] = (center_y + box_height) / img_height;
+            b_t += 4;
+          }
         } else {
-          memcpy(cpu_data + idx, com_buf, sizeof(float) * com_idx);
-          idx += com_idx;
-          memcpy(cpu_data + idx, max_buf, sizeof(float) * max_idx);
-          idx += max_idx;
+          // priors with different aspect ratios
+          for (size_t r = 0; r < param->aspect_ratios.size(); ++r) {
+            float ar = param->aspect_ratios[r];
+            box_width = min_size * sqrt(ar) / 2.;
+            box_height = min_size / sqrt(ar) / 2.;
+            b_t[0] = (center_x - box_width) / img_width;
+            b_t[1] = (center_y - box_height) / img_height;
+            b_t[2] = (center_x + box_width) / img_width;
+            b_t[3] = (center_y + box_height) / img_height;
+            b_t += 4;
+          }
+          if (param->max_sizes.size() > 0) {
+            auto max_size = param->max_sizes[s];
+            // square prior with size sqrt(minSize * maxSize)
+            box_width = box_height = sqrt(min_size * max_size) / 2.;
+            b_t[0] = (center_x - box_width) / img_width;
+            b_t[1] = (center_y - box_height) / img_height;
+            b_t[2] = (center_x + box_width) / img_width;
+            b_t[3] = (center_y + box_height) / img_height;
+            b_t += 4;
+          }
         }
       }
-      free(min_buf);
-      free(max_buf);
-      free(com_buf);
     }
   }
-  //! clip the prior's coordidate such that it is within [0, 1]
+
   if (param->clip) {
     for (int32_t d = 0; d < channel_size; ++d) {
       cpu_data[d] = std::min(std::max(cpu_data[d], 0.f), 1.f);
     }
   }
-  //! set the variance.
   float* ptr = cpu_data + channel_size;
   int count = 0;
-  for (int32_t h = 0; h < height; ++h) {
-    for (int32_t w = 0; w < width; ++w) {
+  for (int32_t h = 0; h < feature_height; ++h) {
+    for (int32_t w = 0; w < feature_width; ++w) {
       for (int32_t i = 0; i < param->prior_num; ++i) {
         for (int j = 0; j < 4; ++j) {
           ptr[count] = param->variances[j];
@@ -237,7 +216,6 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto boxes_var_name = op_info->Output("Boxes").front();
   auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
   auto var_var_name = op_info->Output("Variances").front();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
   // param
   st_priorbox_param param;
   param.clip = op_info->GetAttr<bool>("clip");
@@ -269,20 +247,19 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         op_info->GetAttr<bool>("min_max_aspect_ratios_order");
   }
   float* cpu_data = compute_priorbox_kernel(op, &param);
-  compute_priorbox_kernel(op, param);
   auto boxes_dims = boxes->dims();
-  std::vector<int32_t> i_pri_out_shape_data(boxes_dims.size());
-  for (size_t i = 0; i < boxes_dims.size(); i++) {
-    i_pri_out_shape_data[i] = static_cast<int32_t>(boxes_dims[i]);
-  }
-  i_pri_out_shape_data[0] *= 2;
+  std::vector<int32_t> i_pri_out_shape_data(3);
+  i_pri_out_shape_data[0] = 1;
+  i_pri_out_shape_data[1] = 2;
+  i_pri_out_shape_data[2] = boxes->data_size();
+  auto bm_priorbox_name = lite::subgraph::bm::UniqueName("bm_priorbox");
   add_priorbox_layer(graph->GetCompilerHandle(),
                      const_cast<const int*>(&i_input_shape_data[0]),
                      in_dims.size(),
                      static_cast<const char*>(in_var_name.c_str()),
                      const_cast<const int*>(&i_pri_out_shape_data[0]),
-                     boxes_dims.size(),
-                     static_cast<const char*>(unique_op_name.c_str()),
+                     3,
+                     static_cast<const char*>(bm_priorbox_name.c_str()),
                      static_cast<const float*>(cpu_data),
                      param.min_sizes.size(),
                      const_cast<const float*>(&param.min_sizes[0]),
@@ -299,32 +276,57 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                      param.step_h,
                      param.step_w,
                      param.offset);
-  std::vector<int32_t> i_output_shape_data(boxes_dims.size());
-  for (size_t i = 0; i < boxes_dims.size(); i++) {
-    i_output_shape_data[i] = static_cast<int32_t>(boxes_dims[i]);
-  }
   int32_t* shape[2];
-  int dim[2];
+  int32_t dim[2];
   const char* name[2];
-  dim[0] = boxes_dims.size();
-  dim[1] = boxes_dims.size();
-  name[0] = static_cast<const char*>(boxes_var_name.c_str());
-  name[1] = static_cast<const char*>(var_var_name.c_str());
-  shape[0] = &i_output_shape_data[0];
-  shape[1] = &i_output_shape_data[0];
-  int split_size = 2;
+  int32_t dim_size = 3;
+  dim[0] = dim_size;
+  dim[1] = dim_size;
+  std::vector<int32_t> i_split_shape_data(dim_size);
+  for (size_t i = 0; i < dim_size; i++) {
+    i_split_shape_data[i] = i_pri_out_shape_data[i];
+  }
+  i_split_shape_data[1] /= 2;
+  shape[0] = &i_split_shape_data[0];
+  shape[1] = &i_split_shape_data[0];
+  name[0] = static_cast<const char*>(
+      lite::subgraph::bm::UniqueName("bm_boxes").c_str());
+  name[1] = static_cast<const char*>(
+      lite::subgraph::bm::UniqueName("bm_boxes_var").c_str());
+  int split_size[2];
+  split_size[0] = shape[0][1];
+  split_size[1] = shape[1][1];
   add_tf_split_layer(graph->GetCompilerHandle(),
                      const_cast<const int*>(&i_pri_out_shape_data[0]),
-                     boxes_dims.size(),
-                     static_cast<const char*>(unique_op_name.c_str()),
+                     3,
+                     static_cast<const char*>(bm_priorbox_name.c_str()),
                      2,
                      shape,
                      dim,
                      name,
-                     boxes_dims.size(),
-                     0,
-                     &split_size,
-                     0);
+                     3,
+                     1,
+                     split_size,
+                     2);
+  // final output
+  std::vector<int32_t> i_output_shape_data(boxes_dims.size());
+  for (size_t i = 0; i < boxes_dims.size(); i++) {
+    i_output_shape_data[i] = static_cast<int32_t>(boxes_dims[i]);
+  }
+  add_reshape_layer_v2(graph->GetCompilerHandle(),
+                       name[0],
+                       shape[0],
+                       3,
+                       static_cast<const char*>(boxes_var_name.c_str()),
+                       const_cast<const int*>(&i_output_shape_data[0]),
+                       boxes_dims.size());
+  add_reshape_layer_v2(graph->GetCompilerHandle(),
+                       name[1],
+                       shape[1],
+                       3,
+                       static_cast<const char*>(var_var_name.c_str()),
+                       const_cast<const int*>(&i_output_shape_data[0]),
+                       boxes_dims.size());
   graph->AddNode(boxes_var_name);
   graph->AddNode(var_var_name);
   return SUCCESS;

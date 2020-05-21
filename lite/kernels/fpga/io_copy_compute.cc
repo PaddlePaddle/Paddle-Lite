@@ -25,16 +25,6 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void CopyFromHostSync(void* target, const void* source, size_t size) {
-  TargetWrapper<TARGET(kFPGA)>::MemcpySync(
-      target, source, size, IoDirection::HtoD);
-}
-
-void CopyToHostSync(void* target, const void* source, size_t size) {
-  TargetWrapper<TARGET(kFPGA)>::MemcpySync(
-      target, source, size, IoDirection::DtoH);
-}
-
 /*
  * This kernel copies a tensor from host to FPGA space.
  */
@@ -211,21 +201,21 @@ class IoCopyFpgaToHostCHWCompute
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kFPGA,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
-                     host_to_device)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(io_copy,
+//                      kFPGA,
+//                      kAny,
+//                      kAny,
+//                      paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
+//                      host_to_device)
+//     .BindInput("Input",
+//                {LiteType::GetTensorTy(TARGET(kHost),
+//                                       PRECISION(kAny),
+//                                       DATALAYOUT(kAny))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                        PRECISION(kAny),
+//                                        DATALAYOUT(kAny))})
+//     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
@@ -242,21 +232,21 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kFPGA,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
-                     device_to_host)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNHWC))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(io_copy,
+//                      kFPGA,
+//                      kAny,
+//                      kAny,
+//                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
+//                      device_to_host)
+//     .BindInput("Input",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kHost),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kNHWC))})
+//     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
@@ -266,7 +256,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      device_to_host_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kARM),
@@ -274,34 +264,50 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(io_copy_once,
+REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
-                     host_to_device_once)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(io_copy_once,
-                     kFPGA,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
-                     device_to_host_once)
+                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     device_to_host_hwc_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
+
+// REGISTER_LITE_KERNEL(io_copy_once,
+//                      kFPGA,
+//                      kAny,
+//                      kAny,
+//                      paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
+//                      host_to_device_once)
+//     .BindInput("Input",
+//                {LiteType::GetTensorTy(TARGET(kHost),
+//                                       PRECISION(kAny),
+//                                       DATALAYOUT(kAny))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                        PRECISION(kAny),
+//                                        DATALAYOUT(kAny))})
+//     .Finalize();
+
+// REGISTER_LITE_KERNEL(io_copy_once,
+//                      kFPGA,
+//                      kAny,
+//                      kAny,
+//                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
+//                      device_to_host_once)
+//     .BindInput("Input",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kAny),
+//                                       DATALAYOUT(kAny))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kHost),
+//                                        PRECISION(kAny),
+//                                        DATALAYOUT(kAny))})
+//     .Finalize();

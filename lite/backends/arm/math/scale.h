@@ -13,14 +13,41 @@
 // limitations under the License.
 
 #pragma once
-
+#include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
+template <typename dtype>
+void scale_compute_basic(const operators::ScaleParam& param) {
+  const dtype* x_data = param.x->data<dtype>();
+  dtype* output_data = param.output->mutable_data<dtype>();
+  DDim x_dims = param.x->dims();
+  DDim output_dims = param.output->dims();
+  bool bias_after_scale = param.bias_after_scale;
+  float scale = param.scale;
+  float bias = param.bias;
+  if (!bias_after_scale) {
+    bias *= scale;
+  }
+  for (int i = 0; i < output_dims.production(); i++) {
+    output_data[i] = static_cast<dtype>(x_data[i] * scale + bias);
+  }
+}
+
 template <typename T>
-void scale(const T* din, T* dout, int num, float scale, float bias);
+void scale(const T* din, T* dout, int num, T scale, T bias);
+
+template <typename T>
+void scale_relu(const T* din, T* dout, int num, T scale, T bias);
+
+template <typename T>
+void scale_relu6(const T* din, T* dout, int num, T scale, T bias, T alpha);
+
+template <typename T>
+void scale_leaky_relu(const T* din, T* dout, int num, T scale, T bias, T alpha);
 
 template <typename T>
 void scale(const T* din,

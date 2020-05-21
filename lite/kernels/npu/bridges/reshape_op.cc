@@ -33,12 +33,10 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
@@ -88,6 +86,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
     auto out_shape = lite::operators::ValidateShape(shape, x_dims);
+    out_shape = CvtShape(out_shape);
     if (out_shape.size() > 4) {
       LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
                       "but shape has "

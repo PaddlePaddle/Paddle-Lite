@@ -58,6 +58,13 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
   bool flag_dw_3x3 = (kw == 3) && (kh == 3) && (stride == 1 || stride == 2);
   bool flag_dw_5x5 = (kw == 5) && (kh == 5) && (stride == 1 || stride == 2);
+
+#ifdef __aarch64__
+#else
+  bool flag =
+      (stride == 1 && (paddings[0] > 1 || paddings[2] > 1)) ? false : true;
+  flag_dw_3x3 = flag_dw_3x3 && flag;
+#endif
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   /// select conv impl
@@ -65,7 +72,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking dw conv";
   } else if (param.groups == 1 && kw == 3 && stride == 1 && ks_equal &&
-             no_dilation && pads_all_equal) {
+             no_dilation) {
     // TODO(MyPandaShaoxiang): winograd conv support any pad
     impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking winograd conv";
@@ -102,6 +109,8 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   int pw = paddings[2];
   int sh = param.strides[1];
   int sw = param.strides[0];
+  int hin = param.x->dims()[2];
+  int win = param.x->dims()[3];
   bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
 
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
@@ -109,13 +118,12 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
   bool flag_dw_5x5 = pads_all_equal && (kw == 5 && (sw == 1 || sw == 2));
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
-
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
-             kps_equal && no_dilation) {
+             ic * oc < 4 * hin * win && kps_equal && no_dilation) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else {
@@ -147,6 +155,8 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   int pw = paddings[2];
   int sh = param.strides[1];
   int sw = param.strides[0];
+  int hin = param.x->dims()[2];
+  int win = param.x->dims()[3];
   bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
 
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
@@ -160,7 +170,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && (sw == 1 || sw == 2) &&
-             kps_equal && no_dilation) {
+             ic * oc < 4 * hin * win && kps_equal && no_dilation) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else {

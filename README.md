@@ -3,14 +3,14 @@
 # Paddle Lite
 
 <!--[![Build Status](https://travis-ci.org/PaddlePaddle/Paddle-Lite.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/Paddle-Lite)-->
-[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddlepaddle.github.io/Paddle-Lite/)
+[![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddle-lite.readthedocs.io/zh/latest/)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 <!-- [![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Mobile.svg)](https://github.com/PaddlePaddle/Paddle-Mobile/releases) -->
 
 
 Paddle Lite is an updated version of Paddle-Mobile, an open-open source deep learning framework designed to make it easy to perform inference on mobile, embeded, and IoT devices. It is compatible with PaddlePaddle and pre-trained models from other sources.
 
-For tutorials, please see [PaddleLite Document](https://paddlepaddle.github.io/Paddle-Lite/).
+For tutorials, please see [PaddleLite Document](https://paddle-lite.readthedocs.io/zh/latest/).
 
 ## Key Features
 
@@ -61,7 +61,8 @@ For demands of Apple's GPU Metal and web front end inference, please see `./meta
 Paddle Lite has referenced the following open-source projects:
 
 - [ARM compute library](http://agroup.baidu.com/paddle-infer/md/article/%28https://github.com/ARM-software/ComputeLibrary%29)
-- [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite. 
+- [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite.  
+
 
 
 ## Feedback and Community Support

@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,24 +35,48 @@ class SubgraphEngine : public subgraph::Engine {
                  cpp::BlockDesc *block_desc,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
-                 Scope *scope)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {}
+                 Scope *scope,
+                 std::string model_cache_dir = "")
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         block_desc,
+                         input_names,
+                         output_names,
+                         scope,
+                         model_cache_dir) {}
+
+  struct device_program_t {
+    explicit device_program_t(std::shared_ptr<hiai::AiModelMngerClient> _client)
+        : client(_client) {}
+    std::shared_ptr<hiai::AiModelMngerClient> client{nullptr};
+    std::vector<DDim> origin_idims{};
+    std::vector<DDim> origin_odims{};
+    std::vector<hiai::TensorDimension> device_idims{};
+    std::vector<hiai::TensorDimension> device_odims{};
+  };
+
+  int Build() override;
 
  protected:
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
 
-  std::string model_name_;
-  hiai::AiContext model_context_;
-  std::vector<std::string> device_inames_;
-  std::vector<std::string> device_onames_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_;
-  std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_;
-  std::unique_ptr<hiai::AiModelMngerClient> device_program_{nullptr};
+  void InitDeviceTensor() override;
+  bool InputShapeChanged() override;
+
+  std::string GenerateModelCacheName() const;
+
+  std::string model_name_{"model.om"};
+  std::vector<std::vector<int64_t>> inputs_shape_{};
+  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<device_program_t>>
+      device_program_map_{};
+  std::vector<std::string> device_inames_{};
+  std::vector<std::string> device_onames_{};
+  std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_{};
+  std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_{};
 };
 
-class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kFloat)> {
+class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kAny)> {
  public:
   using param_t = operators::SubgraphParam;
 

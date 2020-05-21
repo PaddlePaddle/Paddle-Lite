@@ -110,7 +110,8 @@ rotate:
 */
 void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int h = h_in - 1;
-  uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t* zerobuff = new uint8_t[w_in];
+  memset(zerobuff, 0.0, sizeof(uint8_t) * w_in);
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -233,7 +234,8 @@ flip:
 */
 void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 8;
-  uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t* zerobuff = new uint8_t[w_in];
+  memset(zerobuff, 0.0, sizeof(uint8_t) * w_in);
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -386,7 +388,8 @@ flip:
 */
 void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 8;
-  uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t* zerobuff = new uint8_t[w_in];
+  memset(zerobuff, 0.0, sizeof(uint8_t) * w_in);
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -398,17 +401,17 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     uint8_t* outptr1 = outptr0 - w_in;
     uint8_t* outptr2 = outptr1 - w_in;
     uint8_t* outptr3 = outptr2 - w_in;
-    if (i + 3 >= h_in) {
-      switch ((i + 3) - h_in) {
+    if (i + 4 > h_in) {
+      switch ((i + 4) - h_in) {
         case 3:
-          inptr0 = zerobuff;
-          outptr0 = zerobuff;
-        case 2:
           inptr1 = zerobuff;
           outptr1 = zerobuff;
-        case 1:
+        case 2:
           inptr2 = zerobuff;
           outptr2 = zerobuff;
+        case 1:
+          inptr3 = zerobuff;
+          outptr3 = zerobuff;
         case 0:
           inptr3 = zerobuff;
           outptr3 = zerobuff;
@@ -504,16 +507,16 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     outptr1 += stride_w - 1;
     outptr0 += stride_w - 1;
     for (; j < w_in; j++) {
-      if (i + 3 >= h_in) {
-        switch ((i + 3) - h_in) {
-          case 0:
+      if (i + 4 > h_in) {
+        switch ((i + 4) - h_in) {
+          case 3:
             *outptr2-- = *inptr2++;
-          case 1:
+          case 2:
             *outptr1-- = *inptr1++;
           // inptr1 = zerobuff;
-          case 2:
+          case 1:
             *outptr0-- = *inptr0++;
-          case 3:
+          case 0:
           // inptr3 = zerobuff;
           default:
             break;

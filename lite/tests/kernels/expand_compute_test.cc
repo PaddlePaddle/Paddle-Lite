@@ -84,7 +84,7 @@ class ExpandComputeTester : public arena::TestCase {
   }
 };
 
-void test_expand_3dim(Place place) {
+void test_expand_3dim(Place place, float abs_error) {
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1}),
                                         std::vector<int>({2, 2, 2}),
                                         std::vector<int>({3, 1, 2})}) {
@@ -93,7 +93,7 @@ void test_expand_3dim(Place place) {
         for (int W : {4}) {
           std::unique_ptr<arena::TestCase> tester(new ExpandComputeTester(
               place, "def", expand_times, DDim({C, H, W})));
-          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
         }
       }
@@ -101,7 +101,7 @@ void test_expand_3dim(Place place) {
   }
 }
 
-void test_expand_4dim(Place place) {
+void test_expand_4dim(Place place, float abs_error) {
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1, 4}),
                                         std::vector<int>({2, 2, 2, 2}),
                                         std::vector<int>({3, 1, 2, 1})}) {
@@ -111,7 +111,7 @@ void test_expand_4dim(Place place) {
           for (int W : {4}) {
             std::unique_ptr<arena::TestCase> tester(new ExpandComputeTester(
                 place, "def", expand_times, DDim({N, C, H, W})));
-            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena::Arena arena(std::move(tester), place, abs_error);
             arena.TestPrecision();
           }
         }
@@ -121,14 +121,19 @@ void test_expand_4dim(Place place) {
 }
 
 TEST(Expand, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  float abs_error = 1e-5;
+  Place place;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_expand_3dim(place);
-  test_expand_4dim(place);
-#endif
+
+  test_expand_3dim(place, abs_error);
+  test_expand_4dim(place, abs_error);
 }
 
 }  // namespace lite

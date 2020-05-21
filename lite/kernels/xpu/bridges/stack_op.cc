@@ -32,13 +32,7 @@ int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_names = op_info->Input("X");
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto y_name = op_info->Output("Y").front();
-  auto y_type = kernel->GetOutputDeclType("Y");
-  CHECK(y_type->precision() == PRECISION(kFloat));
-  CHECK(y_type->layout() == DATALAYOUT(kNCHW));
   int axis = op_info->GetAttr<int>("axis");
 
   // X nodes

@@ -17,6 +17,7 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 # global variables
 #whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
 USE_ADB_EMULATOR=ON
+LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
 os_nmae=`uname -s`
@@ -35,6 +36,19 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+}
+
+function prepare_opencl_source_code {
+    local root_dir=$1
+    local build_dir=$2
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
 }
 
 # prepare adb devices
@@ -83,9 +97,14 @@ function check_need_ci {
     git log -1 --oneline | grep "test=develop" || exit -1
 }
 
+function check_coverage() {
+    bash ../tools/coverage/paddle_lite_coverage.sh
+}
+
 function cmake_x86 {
     prepare_workspace
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
 }
 
 function cmake_opencl {
@@ -105,6 +124,8 @@ function cmake_opencl {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_LOG=ON \
+        -DLITE_WITH_CV=OFF \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -169,23 +190,25 @@ function build_opencl {
         return 0
     fi
 
-    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}.opencl
+    build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
     mkdir -p $build_dir
     cd $build_dir
 
-    cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp
-    build $TESTS_FILE
+    prepare_opencl_source_code $cur_dir $build_dir
 
-    # test publish inference lib
-    make publish_inference
+    cmake_opencl ${os} ${abi} ${lang}
+    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
+    build $TESTS_FILE
 }
+
+
 
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON 
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -197,8 +220,7 @@ function cmake_x86_for_CI {
 
 function cmake_cuda_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=OFF \
-        -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
+    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT} -DWITH_LITE=OFF
 }
 
 function cmake_gpu {
@@ -224,7 +246,9 @@ function build_single {
 
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-
+    if [ $LITE_WITH_COVERAGE = "ON" ];then
+        make coveralls_generate -j	
+    fi 
     # test publish inference lib
     # make publish_inference
 }
@@ -272,7 +296,9 @@ function build_test_cuda_server {
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     cmake_cuda_for_CI
-    build
+    make -j$NUM_CORES_FOR_COMPILE
+    # temporary remove cuda unittest because the ci PR_CI_Paddle-Lite-server-cuda10.1(ubt16-gcc5.4) is in cpu machine and only build.
+    # ctest -R "/*_cuda_test" -V
 }
 
 function build_test_train {
@@ -369,7 +395,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -378,7 +404,7 @@ function test_arm_android {
 
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s ${device} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
@@ -578,6 +604,7 @@ function cmake_arm {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
         -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 }
 
@@ -634,7 +661,7 @@ function build_ios {
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_JAVA=OFF \
-            -DLITE_SHUTDOWN_LOG=ON \
+            -DLITE_WITH_LOG=OFF \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -644,7 +671,7 @@ function build_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make -j4 publish_inference
+    make publish_inference -j$NUM_PROC
     cd -
 }
 
@@ -736,16 +763,58 @@ function arm_push_necessary_file {
     adb -s ${device} push ${testpath} ${adb_work_dir}
 }
 
+
+function test_opencl {
+    os=$1
+    abi=$2
+    lang=$3
+    device=$4
+
+    if [[ ${os} == "armlinux" ]]; then
+        # TODO(hongming): enable test armlinux on armv8, armv7 and armv7hf
+        echo "Skip test arm linux yet. armlinux must in another docker"
+        return 0
+    fi
+
+    if [[ ${os} == "android" && ${abi} == "armv7hf" ]]; then
+        echo "android do not need armv7hf"
+        return 0
+    fi
+
+    # prepare for CXXApi test
+    local adb="adb -s ${device}"
+    $adb shell mkdir -p /data/local/tmp/lite_naive_model_opt
+
+    # opencl test should be marked with `opencl`
+    opencl_test_mark="opencl"
+
+    for _test in $(cat $TESTS_FILE); do
+        # tell if this test is marked with `opencl`
+        if [[ $_test == *$opencl_test_mark* ]]; then
+            test_arm_android $_test $device
+        fi
+    done
+
+}
+
 function build_test_arm_opencl {
     ########################################################################
     cur=$PWD
+    # job 1-4 must be in one runner
+    prepare_adb_devices
 
     # job 1
     build_opencl "android" "armv8" "gcc"
+    adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv8}
+    test_opencl "android" "armv8" "gcc" ${device_armv8}
     cd $cur
 
     # job 2
     build_opencl "android" "armv7" "gcc"
+    adb -s $device_armv7 shell 'rm -rf /data/local/tmp/*'
+    run_gen_code_test ${device_armv7}
+    test_opencl "android" "armv7" "gcc" ${device_armv7}
     cd $cur
 
     echo "Done"
@@ -939,7 +1008,7 @@ function mobile_publish {
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=OFF \
         -DLITE_WITH_JAVA=ON \
-        -DLITE_SHUTDOWN_LOG=ON \
+        -DLITE_WITH_LOG=OFF \
         -DLITE_ON_TINY_PUBLISH=ON \
         -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -995,6 +1064,10 @@ function main {
                 ;;
             --use_adb_emulator=*)
                 USE_ADB_EMULATOR="${i#*=}"
+                shift
+                ;;
+            --lite_with_coverage=*)
+                LITE_WITH_COVERAGE="${i#*=}"
                 shift
                 ;;
             build)
@@ -1062,6 +1135,11 @@ function main {
                 build_test_server
                 shift
                 ;;
+            build_check_coverage)
+                build_test_server
+                check_coverage
+                shift
+                ;;
             build_test_xpu)
                 build_test_xpu
                 shift
@@ -1080,6 +1158,8 @@ function main {
                 ;;
             build_test_arm_opencl)
                 build_test_arm_opencl
+                build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
+                build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 shift
                 ;;
             build_test_arm_subtask_android)

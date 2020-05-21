@@ -17,8 +17,6 @@ limitations under the License. */
 #include <mutex>  // NOLINT
 #include <string>
 
-#include "gflags/gflags.h"
-#include "glog/logging.h"
 #include "lite/backends/x86/cupti_lib_path.h"
 #include "lite/backends/x86/port.h"
 #include "lite/backends/x86/warpctc_lib_path.h"
@@ -262,7 +260,7 @@ void* GetTensorRtDsoHandle() {
 
 void* GetMKLMLDsoHandle() {
 #if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(mklml_dir, "libmklml_intel.dylib");
+  return GetDsoHandleFromSearchPath(mklml_dir, "libmklml.dylib");
 #elif defined(_WIN32)
   return GetDsoHandleFromSearchPath(mklml_dir, "mklml.dll");
 #else

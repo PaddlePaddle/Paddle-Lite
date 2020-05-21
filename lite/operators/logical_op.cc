@@ -26,7 +26,7 @@ bool BinaryLogicalOp::CheckShape() const {
   return true;
 }
 
-bool BinaryLogicalOp::InferShape() const {
+bool BinaryLogicalOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();
@@ -53,7 +53,7 @@ bool UnaryLogicalOp::CheckShape() const {
   return true;
 }
 
-bool UnaryLogicalOp::InferShape() const {
+bool UnaryLogicalOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();

@@ -99,7 +99,7 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
 
     int channels_col = im_channels * filter_height * filter_width;
 
-    T* im_data = im->mutable_data<T>();
+    T* im_data = im->template mutable_data<T>();
     const T* col_data = col.data<T>();
 
     for (int c = 0; c < channels_col; ++c) {
@@ -161,7 +161,7 @@ class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
     int col_width = col->dims()[1];
 
     const T* im_data = im.data<T>();
-    T* col_data = col->mutable_data<T>();
+    T* col_data = col->template mutable_data<T>();
 
     for (int col_row_idx = 0; col_row_idx < col_height; ++col_row_idx) {
       for (int col_col_idx = 0; col_col_idx < col_width; ++col_col_idx) {
@@ -235,7 +235,7 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
         "col_width and padding(padding_left, padding_right) are "
         "inconsistent.");
 
-    T* im_data = im->mutable_data<T>();
+    T* im_data = im->template mutable_data<T>();
     const T* col_data = col.data<T>();
 
     for (int col_row_idx = 0; col_row_idx < col_height; ++col_row_idx) {

@@ -32,18 +32,12 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto x_h = x_dims[2];
   auto x_w = x_dims[3];
   CHECK_EQ(x_dims.size(), 4);
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
   auto scale = op_info->GetAttr<float>("scale");
   auto out_w = op_info->GetAttr<int>("out_w");
   auto out_h = op_info->GetAttr<int>("out_h");
@@ -78,9 +72,6 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> out_size_node = nullptr;
   if (HasInputArg(op_info, scope, "OutSize")) {
     auto out_size_name = op_info->Input("OutSize").front();
-    auto out_size_type = kernel->GetInputDeclType("OutSize");
-    CHECK(out_size_type->precision() == PRECISION(kInt32));
-    CHECK(out_size_type->layout() == DATALAYOUT(kNCHW));
     if (graph->Has(out_size_name)) {
       out_size_node = graph->Get(out_size_name);
     } else {
