@@ -46,7 +46,7 @@ class AssignValueOpLite : public OpLite {
     // ch->input_shape = ch->DimToStr(input_dims);
     ch->output_shape = ch->DimToStr(output_dims);
     ch->remark = "dtype" + std::to_string(param_.dtype);
-    ch->macs = param_.X->numel() * 1.0;
+    ch->macs = param_.Out->numel() * 1.0;
   }
 #endif
 

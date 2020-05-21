@@ -43,7 +43,7 @@ class ConcatOpLite : public OpLite {
     std::string inputs_shape = "";
     for (size_t i = 0; i < param_.x.size(); ++i) {
       inputs_shape += ch->DimToStr(param_.x[i]->dims());
-      if (i != param_.x.size() - 1) inputs_shape += "/"
+      if (i != param_.x.size() - 1) inputs_shape += "/";
     }
     ch->input_shape = inputs_shape;
     ch->output_shape = ch->DimToStr(output_dims);

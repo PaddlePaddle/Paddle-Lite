@@ -79,8 +79,8 @@ class ActivationOp : public OpLite {
         ch->macs = param_.X->numel();
         break;
       default:
-        LOG(FATAL) << "This Type of Activation:" << static_cast<int>(act_type)
-                   << "doesn't support";
+        LOG(FATAL) << "This Type of Activation:"
+                   << static_cast<int>(param_.active_type) << "doesn't support";
     }
   }
 #endif
