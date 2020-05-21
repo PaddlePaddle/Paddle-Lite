@@ -15,6 +15,9 @@
 #pragma once
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -35,6 +38,13 @@ class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
     CHECK(impl_);
     impl_->Run();
   }
+
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    impl_->SetProfileRuntimeKernelInfo(ch);
+  }
+#endif
 
   ~ConvCompute() {
     if (impl_ != nullptr) {

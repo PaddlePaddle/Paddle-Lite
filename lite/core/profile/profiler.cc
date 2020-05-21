@@ -112,7 +112,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
   if (!concise) {
     ss << " " << setw(24) << left << "KernelName";
   }
-  ss << " " << setw(16) << left << "Remark";
+  ss << " " << setw(26) << left << "Remark";
   if (!concise) {
     ss << " " << setw(15) << left << "InDim"
        << " " << setw(15) << left << "FilterDim"
@@ -185,7 +185,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
       // clang-format off
       ss << setw(20) << left << fixed << item.first.op_type
          << " " << setw(30) << left << fixed << item.first.kernel_attr
-         << " " << setw(16) << left << fixed << item.first.remark
+         << " " << setw(26) << left << fixed << item.first.remark
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.avg
          << " " << setw(7) << left << fixed << setprecision(3)
@@ -244,7 +244,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(30) << left << fixed << unit.Character().kernel_attr
          << " " << setw(24) << left << fixed
          << unit.Character().kernel_func_name
-         << " " << setw(16) << left << fixed << unit.Character().remark
+         << " " << setw(26) << left << fixed << unit.Character().remark
          << " " << setw(15) << left << fixed << unit.Character().input_shape
          << " " << setw(15) << left << fixed << unit.Character().filter_shape
          << " " << setw(15) << left << fixed << unit.Character().output_shape
