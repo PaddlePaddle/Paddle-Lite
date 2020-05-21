@@ -53,17 +53,21 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int32_t> begin_index(input_shape.size(), 0);
   std::vector<int32_t> end_index(input_shape.size());
   std::vector<int32_t> strides(input_shape.size(), 1);
-  CHECK(input_shape.size() == 4) << "only support 4 dimention";
-  std::vector<int> nchw2nhwc_index = {0, 3, 1, 2};
+  std::vector<int> nhwc2nchw_axis(input_shape.size());
+  nhwc2nchw_axis[0] = 0;
+  if (input_shape.size() > 1) nhwc2nchw_axis[1] = input_shape.size() - 1;
+  for (size_t i = 2; i < input_shape.size(); ++i) {
+    nhwc2nchw_axis[i] = i - 1;
+  }
   for (size_t i = 0; i < input_shape.size(); ++i) {
-    end_index[nchw2nhwc_index[i]] = input_shape[i];
+    end_index[nhwc2nchw_axis[i]] = input_shape[i];
   }
   for (size_t i = 0; i < axes.size(); i++) {
     int dim_value = input_shape[axes[i]];
     int end = ends[i] < 0 ? std::max(ends[i] + dim_value, 0) : ends[i];
-    begin_index[nchw2nhwc_index[axes[i]]] =
+    begin_index[nhwc2nchw_axis[axes[i]]] =
         starts[i] < 0 ? std::max(starts[i] + dim_value, 0) : starts[i];
-    end_index[nchw2nhwc_index[axes[i]]] = std::min(end, dim_value);
+    end_index[nhwc2nchw_axis[axes[i]]] = std::min(end, dim_value);
   }
 
   cnmlNdStridedSliceOpParam_t param;
