@@ -91,6 +91,8 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   }
   std::vector<Place> vaild_places = {
       Place{TARGET(kARM), PRECISION(kFloat)},
+      Place{TARGET(kARM), PRECISION(kInt32)},
+      Place{TARGET(kARM), PRECISION(kInt64)},
   };
   config.set_valid_places(vaild_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);
