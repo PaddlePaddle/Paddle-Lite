@@ -321,6 +321,12 @@ class KernelRegistry final {
                                       DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kMLU),
                                       PRECISION(kInt16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt32),
                                       DATALAYOUT(kNCHW)> *  //
               >;
 

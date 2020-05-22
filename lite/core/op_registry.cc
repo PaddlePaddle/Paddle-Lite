@@ -153,6 +153,8 @@ KernelRegistry::KernelRegistry()
   INIT_FOR(kMLU, kInt8, kNCHW);
   INIT_FOR(kMLU, kInt16, kNHWC);
   INIT_FOR(kMLU, kInt16, kNCHW);
+  INIT_FOR(kMLU, kInt32, kNHWC);
+  INIT_FOR(kMLU, kInt32, kNCHW);
 
   INIT_FOR(kHost, kAny, kNCHW);
   INIT_FOR(kHost, kAny, kNHWC);
