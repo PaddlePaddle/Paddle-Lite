@@ -88,11 +88,7 @@ void test_reshape(std::vector<int64_t> input_shape,
   }
 }
 
-TEST(MLUBridges, reshape) {
-  std::vector<int64_t> input_shape = {1, 2, 4, 4};
-  std::vector<int64_t> out_shape = {1, 4, 2, 4};
-  test_reshape(input_shape, out_shape);
-}
+TEST(MLUBridges, reshape) { test_reshape({1, 2, 4, 4}, {1, 4, 2, 4}); }
 }  // namespace mlu
 }  // namespace subgraph
 }  // namespace lite
