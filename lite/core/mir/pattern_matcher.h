@@ -127,6 +127,7 @@ struct PMNode {
   PMNode* assert_is_var();
   PMNode* assert_var_not_persistable();
   PMNode* assert_is_persistable_var();
+  PMNode* assert_only_one_output();
   PMNode* assert_is_op_output(const std::string& op_type);
   PMNode* assert_is_op_input(const std::string& op_type);
   PMNode* assert_is_op_input(const std::string& op_type,
