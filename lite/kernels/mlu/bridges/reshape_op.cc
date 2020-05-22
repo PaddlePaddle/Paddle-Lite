@@ -38,16 +38,34 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // ================== Trans1: NHWC => NCHW ===========================
   auto input_tensor = graph->GetNode(x_var_name);
-  std::vector<int> nhwc_to_nchw_axis = {0, 3, 1, 2};
+  //   std::vector<int> nhwc_to_nchw_axis = {0, 3, 1, 2};
+  std::vector<int> trans_1_axis;
+  switch (x->dims().size()) {
+    case 4:
+      trans_1_axis = {0, 3, 1, 2};
+      break;
+    case 3:
+      trans_1_axis = {0, 2, 1};
+      break;
+    case 2:
+      trans_1_axis = {0, 1};
+      break;
+    case 1:
+      trans_1_axis = {0};
+      break;
+    default:
+      break;
+  }
   auto trans1_out = graph->AddNode(x_var_name + ".trans.i",
                                    x->dims().Vectorize(),
                                    CNML_TENSOR,
-                                   CNML_NHWC,
-                                   graph->FPType());
+                                   CNML_NCHW,
+                                   graph->FPType(),
+                                   CNML_NCHW);
   cnmlBaseOp_t trans1_op{nullptr};
   cnmlNdTransposeOpParam_t trans1_param{nullptr};
   CNML_CALL(cnmlCreateNdTransposeOpParam(
-      &trans1_param, nhwc_to_nchw_axis.data(), nhwc_to_nchw_axis.size()));
+      &trans1_param, trans_1_axis.data(), trans_1_axis.size()));
   CNML_CALL(cnmlCreateNdTransposeProOp(&trans1_op,
                                        input_tensor->mlu_tensor(),
                                        trans1_out->mlu_tensor(),
@@ -59,8 +77,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto trans2_input = graph->AddNode(out_var_name + ".trans.o",
                                      output_dims,
                                      CNML_TENSOR,
-                                     CNML_NHWC,
-                                     graph->FPType());
+                                     CNML_NCHW,
+                                     graph->FPType(),
+                                     CNML_NCHW);
   cnmlReshapeOpParam_t reshape_param{nullptr};
   int cnml_trans2_input_shape[4];
   CNML_CALL(
@@ -76,13 +95,30 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // ======================= Reshape op End ===================================
 
   // ================== Trans2: NCHW => NHWC ===============================
-  std::vector<int> nchw_to_nhwc_axis = {0, 2, 3, 1};
+  //   std::vector<int> nchw_to_nhwc_axis = {0, 2, 3, 1};
+  std::vector<int> trans_2_axis;
+  switch (output->dims().size()) {
+    case 4:
+      trans_2_axis = {0, 2, 3, 1};
+      break;
+    case 3:
+      trans_2_axis = {0, 2, 1};
+      break;
+    case 2:
+      trans_2_axis = {0, 1};
+      break;
+    case 1:
+      trans_2_axis = {0};
+      break;
+    default:
+      break;
+  }
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
   cnmlBaseOp_t trans2_op{nullptr};
   cnmlNdTransposeOpParam_t trans2_param{nullptr};
   CNML_CALL(cnmlCreateNdTransposeOpParam(
-      &trans2_param, nchw_to_nhwc_axis.data(), nchw_to_nhwc_axis.size()));
+      &trans2_param, trans_2_axis.data(), trans_2_axis.size()));
   CNML_CALL(cnmlCreateNdTransposeProOp(&trans2_op,
                                        trans2_input->mlu_tensor(),
                                        output_tensor->mlu_tensor(),
@@ -100,21 +136,12 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < 4; i++) {
     VLOG(6) << cnml_input_shape[i];
   }
-  int tmp_shape[4];
-  cnmlGetTensorShape(trans1_out->mlu_tensor(), tmp_shape);
-  VLOG(6) << "trans1_out shape"
-          << ": " << tmp_shape[0] << " " << tmp_shape[1] << " " << tmp_shape[2]
-          << " " << tmp_shape[3];
-  cnmlGetTensorShape(trans2_input->mlu_tensor(), tmp_shape);
-  VLOG(6) << "trans2_input shape"
-          << ": " << tmp_shape[0] << " " << tmp_shape[1] << " " << tmp_shape[2]
-          << " " << tmp_shape[3];
+  //   cnmlPrintTensor(input_tensor->mlu_tensor(), CNML_TENSOR);
+  //   cnmlPrintTensor(trans1_out->mlu_tensor(), CNML_TENSOR);
+  //   cnmlPrintTensor(trans2_input->mlu_tensor(), CNML_TENSOR);
+  //   cnmlPrintTensor(output_tensor->mlu_tensor(), CNML_TENSOR);
   // =============== DEBUG END =================
 
-  // CNML_CALL(cnmlCreateReshapeOp_V2(
-  //     &reshape_op,
-  //     input_tensor->mlu_tensor(),
-  //     output_tensor->mlu_tensor()));
   graph->FuseOp(trans1_op);
   graph->FuseOp(reshape_op);
   graph->FuseOp(trans2_op);

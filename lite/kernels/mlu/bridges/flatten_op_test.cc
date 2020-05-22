@@ -68,11 +68,7 @@ void test_flatten(std::vector<int64_t> input_shape, int axis) {
   }
 }
 
-TEST(MLUBridges, flatten) {
-  std::vector<int64_t> input_shape = {1, 2, 4, 4};
-  int axis = 2;
-  test_flatten(input_shape, axis);
-}
+TEST(MLUBridges, flatten) { test_flatten({1, 2, 4, 4}, 2); }
 }  // namespace mlu
 }  // namespace subgraph
 }  // namespace lite
