@@ -16,6 +16,11 @@
 #include <vector>
 #include "paddle_api.h"  // NOLINT
 
+#ifdef _WIN32
+#include "paddle_use_kernels.h"  // NOLINT
+#include "paddle_use_ops.h"      // NOLINT
+#endif
+
 using namespace paddle::lite_api;  // NOLINT
 
 int64_t ShapeProduction(const shape_t& shape) {
