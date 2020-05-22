@@ -56,11 +56,11 @@
 
 ## 安装Paddle-Lite python 库方法
 
+- 支持平台： windows10、Ubuntu、Mac
+- python version: 2.7、3.5、3.6、 3.7
 ```
 pip install paddlelite
 ```
-- 支持平台： windows10、Ubuntu、Mac
-- python version: 2.7、3.5、3.6、 3.7
 
 ## 对应源码编译方法
 
