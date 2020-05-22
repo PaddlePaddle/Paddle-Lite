@@ -206,6 +206,20 @@ void pooling_basic(const float* din,
   "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/ \
   "ld2  {v2.4s, v3.4s}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-7*/
 
+#define P2x2S2P1_MAX                                               \
+  "ext v6.16b, %[vzero].16b, v1.16b, #12\n" /* 1357-0135 */        \
+  "ext v8.16b, %[vzero].16b, v3.16b, #12\n" /* 1357-0135 */        \
+  "sub %[dr0], %[dr0], #4\n"             /* sub */                 \
+  "sub %[dr1], %[dr1], #4\n"             /* sub */                 \
+  "fmax  v4.4s, v0.4s, v6.4s\n"          /*  max */                \
+  "fmax  v5.4s, v2.4s, v8.4s\n"          /*  max */                \
+  "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/ \
+  "ld2  {v2.4s, v3.4s}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-7*/ \
+  "fmax  v6.4s, v4.4s, v5.4s\n"          /* max reduce */          \
+  "subs %w[cnt_num], %w[cnt_num], #1\n"  /* subs cnt_num, #1*/     \
+  "st1  {v6.4s}, [%[dr_out]], #16\n"     /* store 4 out, dr_out */ \
+  "ble       2f\n"                       /* bne s3_max_loop_mid */
+
 #define P2x2S2P0_MAX                                               \
   "1: \n"                                                          \
   "fmax  v4.4s, v0.4s, v1.4s\n"          /*  max */                \
@@ -216,6 +230,21 @@ void pooling_basic(const float* din,
   "subs %w[cnt_num], %w[cnt_num], #1\n"  /* subs cnt_num, #1*/     \
   "st1  {v6.4s}, [%[dr_out]], #16\n"     /* store 4 out, dr_out */ \
   "bne       1b\n"                       /* bne s3_max_loop_mid */
+
+#define P2x2S2P1_AVG                                                         \
+  "ext v6.16b, %[vzero].16b, v1.16b, #12\n" /* 1357-0135 */        \
+  "ext v8.16b, %[vzero].16b, v3.16b, #12\n" /* 1357-0135 */        \
+  "sub %[dr0], %[dr0], #4\n"             /* sub */                 \
+  "sub %[dr1], %[dr1], #4\n"             /* sub */                 \
+  "fadd v4.4s, v0.4s, v6.4s\n"           /* add 0, 2, 4, 6 and 1, 3, 5, 7 */ \
+  "fadd v5.4s, v2.4s, v8.4s\n"           /* add 0, 2, 4, 6 and 1, 3, 5, 7 */ \
+  "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/           \
+  "ld2  {v2.4s, v3.4s}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-7*/           \
+  "fadd v6.4s, v4.4s, v5.4s\n"           /* add reduce */                    \
+  "subs %w[cnt_num], %w[cnt_num], #1\n"  /* subs cnt_num, #1*/               \
+  "fmul v4.4s, v6.4s, %[vcoef].4s\n"     /* mul coef */                      \
+  "st1  {v4.4s}, [%[dr_out]], #16\n"     /* store 4 out, dr_out */           \
+  "ble       2f\n"                       /* bne s3_max_loop_mid */
 
 #define P2x2S2P0_AVG                                                         \
   "1: \n"                                /* load bias to q2, q3*/            \
@@ -228,6 +257,7 @@ void pooling_basic(const float* din,
   "fmul v4.4s, v6.4s, %[vcoef].4s\n"     /* mul coef */                      \
   "st1  {v4.4s}, [%[dr_out]], #16\n"     /* store 4 out, dr_out */           \
   "bne       1b\n"                       /* bne s3_max_loop_mid */
+
 #define P3x3S1_INIT                                 \
   "ldr  q0, [%[dr0]], #16\n" /* load q0, dr0, 0-3*/ \
   "ldr  q1, [%[dr1]], #16\n" /* load q1, dr1, 0-3*/ \
@@ -518,16 +548,45 @@ void pooling_basic(const float* din,
   "vld2.f32  {d0-d3}, [%[dr0]]!                   @ load \n" \
   "vld2.f32  {d4-d7}, [%[dr1]]!                   @ load \n"
 
+#define P2x2S2P1_MAX                                                  \
+  "vext.32 q4, %q[vzero], q1, #3                 @ 1357-0135\n"      \
+  "vext.32 q5, %q[vzero], q3, #3                 @ 1357-0135\n"      \
+  "sub %[dr0], #4                                 @sub \n"            \
+  "sub %[dr1], #4                                 @sub \n"            \
+  "vmax.f32  q8, q0, q4                           @ max \n"           \
+  "vmax.f32  q9, q2, q5                           @ max \n"           \
+  "vld2.f32  {d0-d3}, [%[dr0]]!                   @ load \n"          \
+  "vld2.f32  {d4-d7}, [%[dr1]]!                   @ load \n"          \
+  "vmax.f32  q5, q9, q8                           @ max reduce\n"     \
+  "subs      %[cnt_num], #1                       @ subs cnt_num \n"  \
+  "vst1.f32  {d10-d11}, [%[dr_out]]!              @ store 4 out \n"   \
+  "ble       2f                                   @ bne \n"
+
 #define P2x2S2P0_MAX                                                  \
   "1:                                             @ main loop\n"      \
   "vmax.f32  q4, q0, q1                           @ max \n"           \
   "vmax.f32  q5, q2, q3                           @ max \n"           \
   "vld2.f32  {d0-d3}, [%[dr0]]!                   @ load \n"          \
   "vld2.f32  {d4-d7}, [%[dr1]]!                   @ load \n"          \
-  "vmax.f32  q6, q4, q5                           @ max reduce\n"     \
+  "vmax.f32  q8, q4, q5                           @ max reduce\n"     \
   "subs      %[cnt_num], #1                       @ subs cnt_num \n"  \
-  "vst1.f32  {d12-d13}, [%[dr_out]]!                @ store 4 out \n" \
+  "vst1.f32  {d16-d17}, [%[dr_out]]!                @ store 4 out \n" \
   "bne       1b                                   @ bne "
+
+#define P2x2S2P1_AVG                                                  \
+  "vext.32 q4, %q[vzero], q1, #3                 @ 1357-0135\n"      \
+  "vext.32 q5, %q[vzero], q3, #3                 @ 1357-0135\n"      \
+  "sub %[dr0], #4                                 @sub \n"            \
+  "sub %[dr1], #4                                 @sub \n"            \
+  "vadd.f32  q9, q0, q4                           @ max \n"           \
+  "vadd.f32  q8, q2, q5                           @ max \n"           \
+  "vld2.f32  {d0-d3}, [%[dr0]]!                   @ load \n"          \
+  "vld2.f32  {d4-d7}, [%[dr1]]!                   @ load \n"          \
+  "vadd.f32  q5, q9, q8                           @ max reduce\n"     \
+  "subs   %[cnt_num],  %[cnt_num], #1                       @ subs cnt_num \n"  \
+  "vmul.f32  q4, q5, %q[vcoef]                    @ mul coef \n"       \
+  "vst1.f32  {d8-d9}, [%[dr_out]]!              @ store 4 out \n"   \
+  "ble       2f                                   @ bne\n"
 
 #define P2x2S2P0_AVG                                                   \
   "1:                                             @ main loop\n"       \
@@ -535,9 +594,9 @@ void pooling_basic(const float* din,
   "vadd.f32  q5, q2, q3                           @ add 0, 2, 4, 6 \n" \
   "vld2.f32  {d0-d3}, [%[dr0]]!                   @ load d0-d3 \n"     \
   "vld2.f32  {d4-d7}, [%[dr1]]!                  @ load d4-d7 \n"      \
-  "vadd.f32  q6, q4, q5                           @ add reduce \n"     \
+  "vadd.f32  q8, q4, q5                           @ add reduce \n"     \
   "subs      %[cnt_num], #1                       @ subs \n"           \
-  "vmul.f32  q4, q6, %q[vcoef]                    @ mul coef \n"       \
+  "vmul.f32  q4, q8, %q[vcoef]                    @ mul coef \n"       \
   "vst1.f32  {d8-d9}, [%[dr_out]]!                @ store 4 out \n"    \
   "bne       1b                                   @ bne \n"
 
@@ -1037,7 +1096,7 @@ void pooling1x1s2p0_max(const float* din,
   TargetFree(TARGET(kARM), write_ptr);
 }
 
-void pooling2x2s2_max(const float* din,
+void pooling2x2s2p0_max(const float* din,
                       float* dout,
                       int num,
                       int chout,
@@ -1095,7 +1154,7 @@ void pooling2x2s2_max(const float* din,
                 [dr_out] "+r"(dr_out),
                 [cnt_num] "+r"(cnt_num)
               :
-              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
+              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8");
 #endif
           dr0 -= 8;
           dr1 -= 8;
@@ -1121,7 +1180,7 @@ void pooling2x2s2_max(const float* din,
   }
 }
 
-void pooling2x2s2_avg(const float* din,
+void pooling2x2s2p0_avg(const float* din,
                       float* dout,
                       int num,
                       int chout,
@@ -1184,7 +1243,196 @@ void pooling2x2s2_avg(const float* din,
                 [dr_out] "+r"(dr_out),
                 [cnt_num] "+r"(cnt_num)
               : [vcoef] "w"(vcoef)
-              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
+              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8");
+#endif
+          dr0 -= 8;
+          dr1 -= 8;
+        }
+        // deal with right pad
+        int rem = win - (w_unroll_size * 4) * S;
+        int wstart = 0;
+        for (int j = 0; j < w_unroll_remian; ++j) {
+          int wend = std::min(wstart + K, rem);
+          float coef = 0.5f / (wend - wstart);
+          float tmp = 0.f;
+          if (h * S + K - P > hin) {
+             coef = 1.f;
+          }
+          for (int i = wstart; i < wend; i++) {
+            tmp += dr0[i] + dr1[i];
+          }
+          *(dr_out++) = tmp * coef;
+          wstart += S;
+        }
+
+        r0 = r1 + win;
+        r1 = r0 + win;
+        data_out_channel += wout;
+      }
+    }
+  }
+  TargetFree(TARGET(kARM), zero_ptr);
+}
+
+void pooling2x2s2p1_max(const float* din,
+                      float* dout,
+                      int num,
+                      int chout,
+                      int hout,
+                      int wout,
+                      int chin,
+                      int hin,
+                      int win,
+                      int pad_bottom,
+                      int pad_right) {
+  int size_channel_out = wout * hout;
+  int size_channel_in = win * hin;
+  auto data_out = static_cast<float*>(dout);
+  auto data_in = static_cast<const float*>(din);
+
+  const int K = 2;
+  const int P = 1;
+  const int S = 2;
+
+  int w_unroll_size = wout / 4;
+  int w_unroll_remian = wout - w_unroll_size * 4;
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  if (w_unroll_remian == 0) {
+    w_unroll_size -= 1;
+    w_unroll_remian = wout - w_unroll_size * 4;
+  }
+
+  for (int n = 0; n < num; ++n) {
+    float* data_out_batch = data_out + n * chout * size_channel_out;
+    const float* data_in_batch = data_in + n * chin * size_channel_in;
+#pragma omp parallel for
+    for (int c = 0; c < chout; c++) {
+      float* data_out_channel = data_out_batch + c * size_channel_out;
+      const float* data_in_channel = data_in_batch + c * size_channel_in;
+      const float* r0 = data_in_channel;
+      const float* r1 = r0 + win;
+      for (int h = 0; h < hout; h++) {
+        float* dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        if (h * S + K - P > hin) {
+          dr1 = r0;
+        }
+        int cnt_num = w_unroll_size;
+        if (w_unroll_size > 0) {
+#ifdef __aarch64__
+          asm volatile(
+              P2x2S2_INIT P2x2S2P1_MAX P2x2S2P0_MAX "2: \n" /* end */
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              : [vzero] "w" (vzero)
+              : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v8");
+#else
+          asm volatile(
+              P2x2S2_INIT P2x2S2P1_MAX P2x2S2P0_MAX "2: \n" /* end */
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              : [vzero] "w" (vzero)
+              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8", "q9");
+#endif
+          dr0 -= 8;
+          dr1 -= 8;
+        }
+        // deal with right pad
+        int rem = win - (w_unroll_size * 4) * S;
+        int wstart = 0;
+        for (int j = 0; j < w_unroll_remian; ++j) {
+          int wend = std::min(wstart + K, rem);
+          float tmp = dr0[wstart];
+          for (int i = wstart; i < wend; i++) {
+            tmp = std::max(tmp, dr0[i]);
+            tmp = std::max(tmp, dr1[i]);
+          }
+          *(dr_out++) = tmp;
+          wstart += S;
+        }
+        r0 = r1 + win;
+        r1 = r0 + win;
+        data_out_channel += wout;
+      }
+    }
+  }
+}
+
+void pooling2x2s2p1_avg(const float* din,
+                      float* dout,
+                      int num,
+                      int chout,
+                      int hout,
+                      int wout,
+                      int chin,
+                      int hin,
+                      int win,
+                      bool exclusive,
+                      int pad_bottom,
+                      int pad_right) {
+  int size_channel_out = wout * hout;
+  int size_channel_in = win * hin;
+  auto data_out = static_cast<float*>(dout);
+  auto data_in = static_cast<const float*>(din);
+
+  const int K = 2;
+  const int P = 1;
+  const int S = 2;
+
+  int w_unroll_size = wout / 4;
+  int w_unroll_remian = wout - w_unroll_size * 4;
+  float32x4_t vcoef = vdupq_n_f32(0.25f);  // divided by 4
+  auto zero_ptr =
+      static_cast<float*>(TargetMalloc(TARGET(kARM), win * sizeof(float)));
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  memset(zero_ptr, 0, win * sizeof(float));
+
+  if (w_unroll_remian == 0) {
+    w_unroll_size -= 1;
+    w_unroll_remian = wout - w_unroll_size * 4;
+  }
+
+  for (int n = 0; n < num; ++n) {
+    float* data_out_batch = data_out + n * chout * size_channel_out;
+    const float* data_in_batch = data_in + n * chin * size_channel_in;
+#pragma omp parallel for
+    for (int c = 0; c < chout; c++) {
+      float* data_out_channel = data_out_batch + c * size_channel_out;
+      const float* data_in_channel = data_in_batch + c * size_channel_in;
+      const float* r0 = data_in_channel;
+      const float* r1 = r0 + win;
+      for (int h = 0; h < hout; h++) {
+        float* dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        if (h * S + K - P > hin) {
+          dr1 = zero_ptr;
+        }
+        int cnt_num = w_unroll_size;
+        if (w_unroll_size > 0) {
+#ifdef __aarch64__
+          asm volatile(
+              P2x2S2_INIT P2x2S2P1_AVG P2x2S2P0_AVG "2: \n"
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              : [vcoef] "w"(vcoef), [vzero] "w"(vzero)
+              : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v8");
+#else
+          asm volatile(
+              P2x2S2_INIT  P2x2S2P1_AVG P2x2S2P0_AVG "2: \n"
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              : [vcoef] "w"(vcoef), [vzero] "w"(vzero)
+              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8", "q9");
 #endif
           dr0 -= 8;
           dr1 -= 8;
@@ -2240,6 +2488,9 @@ void pooling3x3s2p0_max(const float* din,
     w_unroll_remian = wout - w_unroll_size * 4;
   }
 
+  int remain = w_unroll_remian - 1;
+  int right = wout * 2 + 1 - win; // if need right pad
+
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
     const float* data_in_batch = data_in + n * chin * size_channel_in;
@@ -2266,13 +2517,38 @@ void pooling3x3s2p0_max(const float* din,
           }
         }
         int cnt_num = w_unroll_size;
+        int cnt_remain = remain;
         if (w_unroll_size > 0) {
 #ifdef __aarch64__
           asm volatile(P3x3S2P0_INIT P3x3S2P0_MAX
+                      "cmp       %[remain], #0                           @cmp cnt_num, 0\n"
+                       "sub      %[dr0], %[dr0], #32                            @sub - 8\n"
+                       "sub      %[dr1],%[dr1], #32                            @sub - 8\n"
+                       "sub      %[dr2],%[dr2], #32                            @sub - 8\n"
+                       "ble      4f                                 @ble exit1\n"
+                       "2:                              @mid loop\n"
+                          "ld1 {v0.4s}, [%[dr0], #16] \n"
+                          "ld1 {v1.4s}, [%[dr1], #16] \n"
+                          "ld1 {v2.4s}, [%[dr2], #16] \n"
+                          "fmov s3, s2 \n"
+                          "fmov s7, s6 \n"
+                          "fmov s11, s10 \n"
+                          "fmax v0.4s, v0.4s, v1.4s\n"
+                          "sub  %[dr0], %[dr0], #8\n"
+                          "sub  %[dr1], %[dr1], #8\n"
+                          "sub  %[dr2], %[dr2], #8\n"
+                          "fmax v0.4s, v0.4s, v2.4s\n"
+                          "fpmax d0, d0, d1 \n"
+                          "fpmax d0, d0, d0 \n"
+                          "subs  %w[remain], %w[remain], #1\n"
+                          "st1 s0, [%[dr_out], #4]\n"
+                          "bne       2b                     @bne s3_max_loop_mid_1\n"
+                        "4:                                           @exit\n"
                        : [dr0] "+r"(dr0),
                          [dr1] "+r"(dr1),
                          [dr2] "+r"(dr2),
                          [dr_out] "+r"(dr_out),
+                         [remain] "+r" (cnt_remain),
                          [cnt_num] "+r"(cnt_num)
                        :
                        : "cc",
@@ -2291,10 +2567,34 @@ void pooling3x3s2p0_max(const float* din,
                          "v11");
 #else
           asm volatile(P3x3S2P0_INIT P3x3S2P0_MAX
+                       "cmp       %[remain], #0                           @cmp cnt_num, 0\n"
+                       "sub       %[dr0], #32                            @sub - 8\n"
+                       "sub       %[dr1], #32                            @sub - 8\n"
+                       "sub       %[dr2], #32                            @sub - 8\n"
+                       "ble       4f                                 @ble exit1\n"
+                       "2:                              @mid loop\n"
+                          "vld1.f32  {d0-d1}, [%[dr0]]!                     @load d0-d1, dr0\n"
+                          "vld1.f32  {d2-d3}, [%[dr1]]!                    @load d2-d3, dr1\n"
+                          "vld1.f32  {d4-d5}, [%[dr2]]!                     @load d2-d3, dr1\n"
+                          "vmov.f32  s3,s2                                 @movs3, s2\n"
+                          "vmov.f32  s7,s6                                 @movs7, s6\n"
+                          "vmov.f32  s11,s10                               @movs11, s10\n"
+                          "vmax.f32  q0, q0, q1                            @max q0, q0, q1\n"
+                          "sub       %[dr0], #8                            @add w, 6\n"
+                          "sub       %[dr1], #8                            @add w, 6\n"
+                          "sub       %[dr2], #8                            @add w, 6\n"
+                          "vmax.f32  q0, q0, q2                            @max q0, q0, q2\n"
+                          "vpmax.f32 d0, d0, d1                            @pmax d0, d0,d1\n"
+                          "vpmax.f32 d0, d0, d0                            @pmax d0, d0, d0\n"
+                          "subs      %[remain], #1                       @subs cnt_num, #1\n"
+                          "vst1.f32  d0[0], [%[dr_out]]!                   @vst  d0[0], dr_out\n"
+                          "bne       2b                     @bne s3_max_loop_mid_1\n"
+                          "4:                                           @exit\n"
                        : [dr0] "+r"(dr0),
                          [dr1] "+r"(dr1),
                          [dr2] "+r"(dr2),
                          [dr_out] "+r"(dr_out),
+                         [remain] "+r" (cnt_remain),
                          [cnt_num] "+r"(cnt_num)
                        :
                        : "cc",
@@ -2312,24 +2612,34 @@ void pooling3x3s2p0_max(const float* din,
                          "q10",
                          "q11");
 #endif
-          dr0 -= 8;
-          dr1 -= 8;
-          dr2 -= 8;
+          // dr0 -= 8;
+          // dr1 -= 8;
+          // dr2 -= 8;
         }
         // deal with right pad
-        int rem = win - (w_unroll_size * 4) * S;
-        int wstart = 0;
-        for (int j = 0; j < w_unroll_remian; ++j) {
-          int wend = std::min(wstart + K, rem);
-          float tmp = dr0[wstart];  // std::numeric_limits<float>::min();
-          for (int i = wstart; i < wend; i++) {
-            tmp = std::max(tmp, dr0[i]);
-            tmp = std::max(tmp, dr1[i]);
-            tmp = std::max(tmp, dr2[i]);
+        if (right){
+          int wstart = (w_unroll_size * 4 + remain) * S;
+          int wend = std::min(wstart + K, win);
+          float tmp = dr0[wstart];//std::numeric_limits<float>::min();
+          for(int i = wstart; i < wend; i++){
+            tmp = std::max(tmp,std::max(dr0[i],dr1[i]));
+            tmp = std::max(tmp,dr2[i]);
           }
           *(dr_out++) = tmp;
-          wstart += S;
         }
+        // int rem = win - (w_unroll_size * 4) * S;
+        // int wstart = 0;
+        // for (int j = 0; j < w_unroll_remian; ++j) {
+        //   int wend = std::min(wstart + K, rem);
+        //   float tmp = dr0[wstart];  // std::numeric_limits<float>::min();
+        //   for (int i = wstart; i < wend; i++) {
+        //     tmp = std::max(tmp, dr0[i]);
+        //     tmp = std::max(tmp, dr1[i]);
+        //     tmp = std::max(tmp, dr2[i]);
+        //   }
+        //   *(dr_out++) = tmp;
+        //   wstart += S;
+        // }
 
         r0 = r2;
         r1 = r0 + win;
