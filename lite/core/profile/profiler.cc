@@ -102,7 +102,7 @@ int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,
         (units_[i].character.kernel_func_name != "NotImpl")) {
       ++count;
     } else if ((units_[i].character.kernel_func_name == "NotImpl") &&
-               (units_[i].character.op_type != op_type)) {
+               (units_[i].character.op_type == op_type)) {
       ++count;
     }
   }
@@ -213,8 +213,8 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.min
          << " " << setw(7) << left << fixed << setprecision(3)
-          << item.second.max
-         << " " <<  setprecision(2) << percent << "%   "
+         << item.second.max
+         << " " << setprecision(2) << percent << "%   "
          << " " << setw(11) << left << fixed
          << GetKernelFuncCalledTimes(item.first.op_type,
                                      item.first.kernel_func_name);
