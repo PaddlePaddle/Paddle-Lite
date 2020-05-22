@@ -109,6 +109,21 @@ int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,
   return count;
 }
 
+float Profiler::GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                         const std::string& kernel_func_name) {
+  float GOPs = 0;
+  for (size_t i = 0; i < units_.size(); ++i) {
+    if ((units_[i].character.kernel_func_name == kernel_func_name) &&
+        (units_[i].character.kernel_func_name != "NotImpl")) {
+      GOPs += units_[i].character.macs;
+    } else if ((units_[i].character.kernel_func_name == "NotImpl") &&
+               (units_[i].character.op_type == op_type)) {
+      GOPs += units_[i].character.macs;
+    }
+  }
+  return GOPs * 1e-9f;
+}
+
 std::string Profiler::Summary(Type type, bool concise, size_t w) {
   using std::setw;
   using std::left;
@@ -143,10 +158,10 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
   if (!concise) {
     ss << " " << setw(7) << left << "Last(ms)";
   }
-  ss << " " << setw(7) << left << "Avg(%)";
+  ss << " " << setw(7) << left << "Avg(%)"
+     << " " << setw(7) << left << "GOPs";
   if (!concise) {
-    ss << " " << setw(7) << left << "GOPs"
-       << " " << setw(7) << left << "GOPS";
+    ss << " " << setw(7) << left << "GOPS";
   }
   if (concise) {
     ss << " " << setw(11) << left << "CalledTimes";
@@ -215,6 +230,9 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.max
          << " " << setprecision(2) << percent << "%   "
+         << " " << setw(7) << left << fixed << setprecision(3)
+         << GetKernelFuncSummaryGOPs(item.first.op_type,
+                                     item.first.kernel_func_name)
          << " " << setw(11) << left << fixed
          << GetKernelFuncCalledTimes(item.first.op_type,
                                      item.first.kernel_func_name);

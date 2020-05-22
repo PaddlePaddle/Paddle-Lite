@@ -103,6 +103,8 @@ class Profiler final {
   std::string Summary(Type type, bool concise = true, size_t warm_up = 10);
   int GetKernelFuncCalledTimes(const std::string& op_type,
                                const std::string& kernel_func_name);
+  float GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                 const std::string& kernel_func_name);
   OpCharacter* GetOpCharacter(const size_t index);
 
  private:
