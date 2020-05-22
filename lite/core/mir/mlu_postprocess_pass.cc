@@ -21,6 +21,7 @@
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
+#include "lite/core/mir/subgraph/subgraph_detector.h"
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
@@ -674,7 +675,8 @@ std::pair<bool, std::string> CheckInputAndInsert(Scope* scope,
   }
 
   if (!PrecisionCompatible(*tensor_type, *subgraph_type) &&
-      tensor_type->precision() != PRECISION(kInt8)) {
+      tensor_type->precision() != PRECISION(kInt8) &&
+      tensor_type->precision() != PRECISION(kInt32)) {
     auto cast_op = block_desc->AddOp<cpp::OpDesc>();
     auto cast_arg_name = string_format("%s/cast", cur_node.c_str());
     scope->Var(cast_arg_name);
@@ -915,6 +917,8 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       }
     }
   }
+  // std::vector<std::vector<Node*>> subgraphs({graph->NodeTopologicalOrder()});
+  // SubgraphVisualizer(graph.get(), subgraphs)();
 }
 
 }  // namespace mir
