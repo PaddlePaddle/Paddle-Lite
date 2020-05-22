@@ -48,9 +48,6 @@ class FullyConnectedPE : public PE {
 
     int num = param_.filter->shape().channel();
     int chw = param_.filter->shape().num();
-    // if (num == 2) {
-    //   return;
-    // }
 
     int height = param_.input->shape().height();
     int width = param_.input->shape().width();

@@ -23,13 +23,23 @@ namespace lite {
 namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-#ifdef LITE_WITH_X86 || LITE_WITH_FPGA
-  fusion::FcFuser fuser(true);
-  fuser(graph.get());
+  std::vector<std::string> act_types{};
+
+#ifdef LITE_WITH_X86
+  act_types.push_back("relu");
 #endif
 
-  fusion::FcFuser fuser2(false);
-  fuser2(graph.get());
+#ifdef LITE_WITH_FPGA
+  act_types.push_back("relu");
+  act_types.push_back("sigmoid");
+#endif
+
+  act_types.push_back("");
+  for (int i = 0; i < act_types.size(); i++) {
+    std::string act_type = act_types[i];
+    fusion::FcFuser fuser(act_type);
+    fuser(graph.get());
+  }
 }
 
 }  // namespace mir

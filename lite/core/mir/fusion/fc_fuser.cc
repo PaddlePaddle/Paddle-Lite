@@ -41,15 +41,17 @@ void FcFuser::BuildPattern() {
   mul->AsIntermediate();
   add->AsIntermediate();
 
-  if (with_relu_) {
+  if (act_type_ != "") {
+    std::cout << "act_type_:" << act_type_ << std::endl;
     auto* add_out = VarNode("add_out");
-    auto* relu = OpNode("relu", "relu");
-    std::vector<PMNode*> relu_inputs{add_out};
+    auto* activation = OpNode(act_type_, act_type_);
+    std::vector<PMNode*> act_inputs{add_out};
     add_inputs >> *add >> *add_out;
-    relu_inputs >> *relu >> *Out;
+    act_inputs >> *activation >> *Out;
     add_out->AsIntermediate();
-    relu->AsIntermediate();
+    activation->AsIntermediate();
   } else {
+    std::cout << "act_type_: empty" << std::endl;
     add_inputs >> *add >> *Out;
   }
 }
@@ -82,8 +84,8 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetAttr(
       "in_num_col_dims",
       matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
-  if (with_relu_) {
-    op_desc.SetAttr("activation_type", std::string{"relu"});
+  if (act_type_ != "") {
+    op_desc.SetAttr("activation_type", act_type_);
   }
   return op_desc;
 }
