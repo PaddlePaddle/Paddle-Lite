@@ -53,6 +53,27 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto left = x_mat_dims[0];
   auto right = x_mat_dims[1];
 
+  if (x_name == "tmp_3" || x_name == "tmp_5" || x_name == "tmp_6" ||
+      x_name == "tmp_8" || x_name == "tmp_9") {
+    std::shared_ptr<Node> x_node = nullptr;
+    if (graph->Has(x_name)) {
+      x_node = graph->Get(x_name);
+    } else {
+      x_node = graph->Add(x_name, *x, CvtShape(x_dims));
+    }
+
+    float scale = 0.01f;
+    if (x_name == "tmp_8" || x_name == "tmp_9") {
+      scale = 0.001f;
+    }
+    // Scale node
+    x_name += "/scale";
+    auto scale_node = graph->Add<ge::op::Scale>(x_name);
+    auto scale_op = scale_node->data<ge::op::Scale>();
+    scale_op->set_input_x(*x_node->data());
+    scale_op->set_attr_filler_value(scale);
+  }
+
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
