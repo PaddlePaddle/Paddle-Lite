@@ -82,9 +82,13 @@ class ReluOp : public OpLite {
       case lite_api::ActivationType::kReciprocal:
         ch->macs = param_.X->numel();
         break;
+      case lite_api::ActivationType::kIndentity:
+        break;
       default:
         LOG(FATAL) << "This Type of Activation:"
-                   << static_cast<int>(param_.active_type) << "doesn't support";
+                   << static_cast<int>(param_.active_type)
+                   << ActivationTypeToStr(param_.active_type)
+                   << " doesn't support";
     }
   }
 #endif
