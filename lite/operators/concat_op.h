@@ -48,7 +48,7 @@ class ConcatOpLite : public OpLite {
     ch->input_shape = inputs_shape;
     ch->output_shape = ch->DimToStr(output_dims);
     ch->remark = "axis" + std::to_string(param_.axis);
-    ch->macs = 1.0f * param_.output->numel();
+    ch->macs = 0.f;  // no calc. only io operation
   }
 #endif
 
