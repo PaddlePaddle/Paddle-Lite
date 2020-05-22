@@ -7,6 +7,7 @@ if(WIN32)
    lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS})
    get_property (os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
    target_link_libraries(lite_pybind ${os_dependency_modules})
+else()
    lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS})
 endif(WIN32)
 
