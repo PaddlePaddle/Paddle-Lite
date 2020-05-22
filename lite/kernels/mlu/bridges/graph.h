@@ -130,7 +130,7 @@ class Graph {
   }
   void GenOfflineModel(const std::string& name) {
     cnmlModel_t model;
-    const auto& symbol = "subnet0";
+    const std::string& symbol = "subnet0";
     const auto& filename = name + ".offline.cambricon";
     CNML_CALL(cnmlCreateModel(&model, filename.c_str()));
     CNML_CALL(cnmlAddFusionOpToModel(model, fusion_op_, symbol.c_str()));
