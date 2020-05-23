@@ -324,7 +324,7 @@ void SaveCombinedParamsPb(const std::string &path,
   std::sort(paramlist.begin(), paramlist.end());
 
   // Load vars
-  std::ofstream file(path);
+  std::ofstream file(path, std::ios::binary);
   CHECK(file.is_open());
   for (size_t i = 0; i < paramlist.size(); ++i) {
     SerializeTensor(file, exec_scope, paramlist[i]);
