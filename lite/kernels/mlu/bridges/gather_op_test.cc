@@ -93,13 +93,13 @@ void test_gather() {
 
   Tensor input;
   input.Resize({5, 4, 3, 2});
-  transpose<float*>(x->mutable_data<float>(),
-                    input.mutable_data<float>(),
-                    {static_cast<int>(5),
-                     static_cast<int>(4),
-                     static_cast<int>(3),
-                     static_cast<int>(2)},
-                    {0, 2, 3, 1});
+  transpose<float>(x->mutable_data<float>(),
+                   input.mutable_data<float>(),
+                   {static_cast<int>(5),
+                    static_cast<int>(4),
+                    static_cast<int>(3),
+                    static_cast<int>(2)},
+                   {0, 2, 3, 1});
   x->CopyDataFrom(input);
   LaunchOp(op, {x_var_name, index_var_name}, {out_var_name});
 
@@ -109,13 +109,13 @@ void test_gather() {
 
   Tensor output;
   output.Resize(out->dims());
-  transpose<float*>(out_data,
-                    output.mutable_data<float>(),
-                    {static_cast<int>(out->dims()[0]),
-                     static_cast<int>(out->dims()[2]),
-                     static_cast<int>(out->dims()[3]),
-                     static_cast<int>(out->dims()[1])},
-                    {0, 3, 1, 2});
+  transpose<float>(out_data,
+                   output.mutable_data<float>(),
+                   {static_cast<int>(out->dims()[0]),
+                    static_cast<int>(out->dims()[2]),
+                    static_cast<int>(out->dims()[3]),
+                    static_cast<int>(out->dims()[1])},
+                   {0, 3, 1, 2});
   out_data = output.mutable_data<float>();
   for (int i = 0; i < out->dims().production(); i++) {
     VLOG(5) << i;

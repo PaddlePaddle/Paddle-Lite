@@ -135,13 +135,13 @@ void test_split(int bs,
 
   Tensor input;
   input.Resize({bs, ic, ih, iw});
-  transpose<float*>(x->mutable_data<float>(),
-                    input.mutable_data<float>(),
-                    {static_cast<int>(bs),
-                     static_cast<int>(ic),
-                     static_cast<int>(ih),
-                     static_cast<int>(iw)},
-                    {0, 2, 3, 1});
+  transpose<float>(x->mutable_data<float>(),
+                   input.mutable_data<float>(),
+                   {static_cast<int>(bs),
+                    static_cast<int>(ic),
+                    static_cast<int>(ih),
+                    static_cast<int>(iw)},
+                   {0, 2, 3, 1});
   x->CopyDataFrom(input);
   LaunchOp(op, {x_var_name}, {out_var_name_1, out_var_name_2});
 
@@ -154,20 +154,20 @@ void test_split(int bs,
   Tensor output1, output2;
   output1.Resize(out_1->dims());
   output2.Resize(out_2->dims());
-  transpose<float*>(out_data_1,
-                    output1.mutable_data<float>(),
-                    {static_cast<int>(out_1->dims()[0]),
-                     static_cast<int>(out_1->dims()[2]),
-                     static_cast<int>(out_1->dims()[3]),
-                     static_cast<int>(out_1->dims()[1])},
-                    {0, 3, 1, 2});
-  transpose<float*>(out_data_2,
-                    output2.mutable_data<float>(),
-                    {static_cast<int>(out_2->dims()[0]),
-                     static_cast<int>(out_2->dims()[2]),
-                     static_cast<int>(out_2->dims()[3]),
-                     static_cast<int>(out_2->dims()[1])},
-                    {0, 3, 1, 2});
+  transpose<float>(out_data_1,
+                   output1.mutable_data<float>(),
+                   {static_cast<int>(out_1->dims()[0]),
+                    static_cast<int>(out_1->dims()[2]),
+                    static_cast<int>(out_1->dims()[3]),
+                    static_cast<int>(out_1->dims()[1])},
+                   {0, 3, 1, 2});
+  transpose<float>(out_data_2,
+                   output2.mutable_data<float>(),
+                   {static_cast<int>(out_2->dims()[0]),
+                    static_cast<int>(out_2->dims()[2]),
+                    static_cast<int>(out_2->dims()[3]),
+                    static_cast<int>(out_2->dims()[1])},
+                   {0, 3, 1, 2});
   out_data_1 = output1.mutable_data<float>();
   out_data_2 = output2.mutable_data<float>();
   for (int i = 0; i < out_1->dims().production(); i++) {

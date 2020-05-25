@@ -100,13 +100,13 @@ void test_argmax(const std::vector<int64_t>& input_shape, int axis) {
   Tensor input_x;
   input_x.Resize(DDim(input_shape));
   // change input layout from NCHW to NHWC
-  transpose<float*>(x->mutable_data<float>(),
-                    input_x.mutable_data<float>(),
-                    {static_cast<int>(input_shape[0]),
-                     static_cast<int>(input_shape[1]),
-                     static_cast<int>(input_shape[2]),
-                     static_cast<int>(input_shape[3])},
-                    {0, 2, 3, 1});
+  transpose<float>(x->mutable_data<float>(),
+                   input_x.mutable_data<float>(),
+                   {static_cast<int>(input_shape[0]),
+                    static_cast<int>(input_shape[1]),
+                    static_cast<int>(input_shape[2]),
+                    static_cast<int>(input_shape[3])},
+                   {0, 2, 3, 1});
   x->CopyDataFrom(input_x);
 
   LaunchOp(op, {x_var_name}, {out_var_name});
@@ -117,13 +117,13 @@ void test_argmax(const std::vector<int64_t>& input_shape, int axis) {
   Tensor output_trans;
   output_trans.Resize(out_shape);
   // Change output layout from NHWC to NCHW
-  transpose<int*>(out_data,
-                  output_trans.mutable_data<int>(),
-                  {static_cast<int>(out_shape[0]),
-                   static_cast<int>(out_shape[2]),
-                   static_cast<int>(out_shape[3]),
-                   static_cast<int>(out_shape[1])},
-                  {0, 3, 1, 2});
+  transpose<int>(out_data,
+                 output_trans.mutable_data<int>(),
+                 {static_cast<int>(out_shape[0]),
+                  static_cast<int>(out_shape[2]),
+                  static_cast<int>(out_shape[3]),
+                  static_cast<int>(out_shape[1])},
+                 {0, 3, 1, 2});
   out_data = output_trans.mutable_data<int>();
 
   for (int i = 0; i < out->dims().production(); i++) {
