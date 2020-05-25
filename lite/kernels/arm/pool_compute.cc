@@ -109,60 +109,60 @@ void PoolCompute::Run() {
                kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2p0_max(din,
-                                          dout,
-                                          out_dims[0],
-                                          out_dims[1],
-                                          out_dims[2],
-                                          out_dims[3],
-                                          in_dims[1],
-                                          in_dims[2],
-                                          in_dims[3],
-                                          paddings[1],
-                                          paddings[3]);
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3],
+                                            paddings[1],
+                                            paddings[3]);
         return;
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling2x2s2p0_avg(din,
-                                          dout,
-                                          out_dims[0],
-                                          out_dims[1],
-                                          out_dims[2],
-                                          out_dims[3],
-                                          in_dims[1],
-                                          in_dims[2],
-                                          in_dims[3],
-                                          exclusive,
-                                          paddings[1],
-                                          paddings[3]);
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3],
+                                            exclusive,
+                                            paddings[1],
+                                            paddings[3]);
         return;
       }
     } else if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 1 &&
                kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2p1_max(din,
-                                          dout,
-                                          out_dims[0],
-                                          out_dims[1],
-                                          out_dims[2],
-                                          out_dims[3],
-                                          in_dims[1],
-                                          in_dims[2],
-                                          in_dims[3],
-                                          paddings[1],
-                                          paddings[3]);
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3],
+                                            paddings[1],
+                                            paddings[3]);
         return;
       } else if (pooling_type == "avg") {
         lite::arm::math::pooling2x2s2p1_avg(din,
-                                          dout,
-                                          out_dims[0],
-                                          out_dims[1],
-                                          out_dims[2],
-                                          out_dims[3],
-                                          in_dims[1],
-                                          in_dims[2],
-                                          in_dims[3],
-                                          exclusive,
-                                          paddings[1],
-                                          paddings[3]);
+                                            dout,
+                                            out_dims[0],
+                                            out_dims[1],
+                                            out_dims[2],
+                                            out_dims[3],
+                                            in_dims[1],
+                                            in_dims[2],
+                                            in_dims[3],
+                                            exclusive,
+                                            paddings[1],
+                                            paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
