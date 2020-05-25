@@ -24,10 +24,16 @@ namespace profile {
 
 namespace {
 auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
-  return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
-         (c1.kernel_name < c2.kernel_name) || (c1.remark < c2.remark);
+  if (c1.kernel_func_name == "NotImpl" && c2.kernel_func_name == "NotImpl") {
+    return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
+           (c1.kernel_name < c2.kernel_name) || (c1.remark < c2.remark);
+  } else {  // compare with ch.kernel_func_name
+    return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
+           (c1.kernel_name < c2.kernel_name) ||
+           (c1.kernel_func_name < c2.kernel_func_name);
+  }
 };
-}
+}  // namespace
 
 std::map<Type, std::string> TypeStr{
     {Type::kUnk, "Unknown"},
@@ -88,6 +94,36 @@ void Profiler::StopTiming(Type type, const int index, KernelContext* ctx) {
 #endif
 }
 
+int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,
+                                       const std::string& kernel_func_name) {
+  int count = 0;
+  for (size_t i = 0; i < units_.size(); ++i) {
+    if ((units_[i].character.kernel_func_name == kernel_func_name) &&
+        (units_[i].character.kernel_func_name != "NotImpl")) {
+      ++count;
+    } else if ((units_[i].character.kernel_func_name == "NotImpl") &&
+               (units_[i].character.op_type == op_type)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+float Profiler::GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                         const std::string& kernel_func_name) {
+  float GOPs = 0;
+  for (size_t i = 0; i < units_.size(); ++i) {
+    if ((units_[i].character.kernel_func_name == kernel_func_name) &&
+        (units_[i].character.kernel_func_name != "NotImpl")) {
+      GOPs += units_[i].character.macs;
+    } else if ((units_[i].character.kernel_func_name == "NotImpl") &&
+               (units_[i].character.op_type == op_type)) {
+      GOPs += units_[i].character.macs;
+    }
+  }
+  return GOPs * 1e-9f;
+}
+
 std::string Profiler::Summary(Type type, bool concise, size_t w) {
   using std::setw;
   using std::left;
@@ -108,13 +144,11 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
        << " warm-ups =====" << std::endl;
   }
   ss << setw(20) << left << "OperatorType"
-     << " " << setw(30) << left << "KerneAttr";
+     << " " << setw(30) << left << "KerneAttr(Place)"
+     << " " << setw(24) << left << "KernelFuncName";
   if (!concise) {
-    ss << " " << setw(24) << left << "KernelName";
-  }
-  ss << " " << setw(26) << left << "Remark";
-  if (!concise) {
-    ss << " " << setw(15) << left << "InDim"
+    ss << " " << setw(26) << left << "Remark"
+       << " " << setw(15) << left << "InDim"
        << " " << setw(15) << left << "FilterDim"
        << " " << setw(15) << left << "OutDim";
   }
@@ -124,10 +158,13 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
   if (!concise) {
     ss << " " << setw(7) << left << "Last(ms)";
   }
-  ss << " " << setw(7) << left << "Avg(%)";
+  ss << " " << setw(7) << left << "Avg(%)"
+     << " " << setw(7) << left << "GOPs";
   if (!concise) {
-    ss << " " << setw(7) << left << "GOPs"
-       << " " << setw(7) << left << "GOPS";
+    ss << " " << setw(7) << left << "GOPS";
+  }
+  if (concise) {
+    ss << " " << setw(11) << left << "CalledTimes";
   }
 #ifdef LITE_WITH_OPENCL
   ss << " " << setw(9) << left << "clAvg(ms)"
@@ -185,14 +222,20 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
       // clang-format off
       ss << setw(20) << left << fixed << item.first.op_type
          << " " << setw(30) << left << fixed << item.first.kernel_attr
-         << " " << setw(26) << left << fixed << item.first.remark
+         << " " << setw(24) << left << fixed << item.first.kernel_func_name
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.avg
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.min
          << " " << setw(7) << left << fixed << setprecision(3)
-          << item.second.max
-         << " " <<  setprecision(2) << percent << "%   ";
+         << item.second.max
+         << " " << setprecision(2) << percent << "%   "
+         << " " << setw(7) << left << fixed << setprecision(3)
+         << GetKernelFuncSummaryGOPs(item.first.op_type,
+                                     item.first.kernel_func_name)
+         << " " << setw(11) << left << fixed
+         << GetKernelFuncCalledTimes(item.first.op_type,
+                                     item.first.kernel_func_name);
 #ifdef LITE_WITH_OPENCL
       float cl_percent = 0;
       if (cl_total > 0) {
@@ -204,7 +247,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << item.second.cl_min
          << " " << setw(9) << left << fixed << setprecision(3)
          << item.second.cl_max
-         << " " << left << fixed <<setprecision(2) << cl_percent << "%   ";
+         << " " << left << fixed << setprecision(2) << cl_percent << "%   ";
 #endif
       ss << std::endl;
       // clang-format on
@@ -253,7 +296,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(7) << left << fixed << setprecision(3) << times.Max(w)
          << " " << setw(7) << left << fixed << setprecision(3) << times.Last(w)
          << " " << left << setprecision(2) << percent << "%   "
-         << " " << setw(7) << left << fixed << setprecision(2)
+         << " " << setw(7) << left << fixed << setprecision(3)
                 << 1e-9f * unit.Character().macs
          << " " << setw(7) << left << fixed << setprecision(2)
                 << 1e-6f * unit.Character().macs / times.Avg(w);
