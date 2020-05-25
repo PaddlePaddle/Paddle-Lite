@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 et -xe
 
 PADDLE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
