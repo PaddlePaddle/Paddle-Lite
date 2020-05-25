@@ -27,8 +27,6 @@ namespace cuda {
 using Tensor = lite::Tensor;
 using DDim = lite::DDim;
 
-<<<<<<< HEAD
-=======
 #define IN(n, c, h, w)                                 \
   input_data[w + h * input_w + c * input_h * input_w + \
              n * input_c * input_h * input_w]
@@ -94,7 +92,6 @@ void nhwc2nchw_ref(lite::Tensor* input, lite::Tensor* output) {
   }
 }
 
->>>>>>> PaddlePaddle-develop1
 static int PoolOutputSize(int input_size,
                           int filter_size,
                           int pad_left,

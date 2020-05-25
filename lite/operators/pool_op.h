@@ -14,10 +14,7 @@
 
 #pragma once
 
-<<<<<<< HEAD
-=======
 #include <algorithm>
->>>>>>> PaddlePaddle-develop1
 #include <memory>
 #include <string>
 #include <vector>

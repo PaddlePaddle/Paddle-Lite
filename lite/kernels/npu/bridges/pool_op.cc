@@ -64,7 +64,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
-<<<<<<< HEAD
   auto padding = op_info->GetAttr<std::vector<int>>("paddings");
   bool pads_equal = (padding[0] == padding[1]) && (padding[2] == padding[3]);
   if (!pads_equal) {
@@ -78,7 +77,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int npu_ceil_mode = 0;
   if (op_info->HasAttr("ceil_mode")) {
     npu_ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
-=======
+
   // pad mode
   int pad_mode = 0;
   std::string padding_algorithm("");
@@ -89,7 +88,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     pad_mode = 6;
   } else if (padding_algorithm == "VALID") {
     pad_mode = 5;
->>>>>>> PaddlePaddle-develop1
   }
 
   // paddings and strides
