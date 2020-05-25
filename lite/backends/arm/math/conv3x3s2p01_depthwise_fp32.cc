@@ -15,7 +15,6 @@
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
-#inlcude "lite/backends/arm/math/conv3x3s2p01_depthwise_fp32_relu.cc"
 
 namespace paddle {
 namespace lite {
