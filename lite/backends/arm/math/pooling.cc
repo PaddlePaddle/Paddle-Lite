@@ -1347,7 +1347,7 @@ void pooling2x2s2p1_max(const float* din,
                 [cnt_num] "+r"(cnt_num)
               : [vzero] "w"(vzero)
               : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v8");
-#else 
+#else
           asm volatile(
               P2x2S2_INIT P2x2S2P1_MAX P2x2S2P0_MAX "2: \n" /* end */
               : [dr0] "+r"(dr0),
