@@ -99,5 +99,5 @@ DECLARE_HOP_CREATOR(HSum);
 
 namespace gen = paddle::lite::jit::gen;
 
-REGISTER_JITKERNEL_GEN(kHMax, gen::HMaxCreator);
-REGISTER_JITKERNEL_GEN(kHSum, gen::HSumCreator);
+REGISTER_JITKERNEL_GEN_LITE(kHMax, gen::HMaxCreator);
+REGISTER_JITKERNEL_GEN_LITE(kHSum, gen::HSumCreator);

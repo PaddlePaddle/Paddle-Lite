@@ -14,6 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#ifndef PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H
+#define PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H
+
 #include <stdint.h>
 #include <cstddef>
 #include <iostream>
@@ -25,7 +28,6 @@ namespace zynqmp {
 typedef int16_t half;
 
 #define IMAGE_ALIGNMENT 16           // Aligned to 16
-#define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
@@ -40,21 +42,30 @@ enum DLayoutType {
   LAYOUT_HWC = 0,
 };
 
-struct VersionArgs {
-  void* buffer;
+enum ActiveType {
+  TYPE_NONE = 0,
+  TYPE_RELU = 1,
+  TYPE_RELU6 = 2,
+  TYPE_LEAKY_RELU = 3,
+  TYPE_SIGMOID = 4,
 };
 
 struct DeviceInfo {
   uint32_t filter_cap;
   uint32_t version;
   uint16_t device_type;
-  uint32_t reserved0;
+  uint32_t colunm;
   uint32_t reserved1;
   uint32_t reserved2;
   uint32_t reserved3;
   uint32_t reserved4;
   uint32_t reserved5;
   uint32_t reserved6;
+};
+
+struct VersionArgs {
+  void* buffer;
+  size_t size;
 };
 
 struct MemoryCopyArgs {
@@ -68,7 +79,9 @@ struct MemoryCacheArgs {
   size_t size;
 };
 
-struct MemoryBarrierArgs {};
+struct MemoryBarrierArgs {
+  uint16_t dummy;
+};
 
 struct BNArgs {
   bool enabled;
@@ -108,6 +121,7 @@ struct ConvArgs {
   void* filter_scale_address;
   uint32_t filter_num;
   uint32_t group_num;
+  uint32_t dilation;
 
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
@@ -199,9 +213,16 @@ struct NormalizeParameterArgs {
   uint32_t hight_width;
 };
 
+struct ActiveParamterArgs {
+  ActiveType type;
+  uint16_t leaky_relu_factor;
+};
+
 struct InplaceArgs {
   bool leaky_relu_enable;
   bool relu_enable;
+  bool sigmoid_enable;
+  bool relu6_enable;
   bool power_enable;
   bool normalize_enable;
 };
@@ -216,7 +237,9 @@ struct FpgaRegReadArgs {
   uint64_t value;
 };
 
-struct FpgaResetArgs {};
+struct FpgaResetArgs {
+  uint32_t val;
+};
 
 #define IOCTL_FPGA_MAGIC (('F' + 'P' + 'G' + 'A') / 4)
 
@@ -248,6 +271,8 @@ struct FpgaResetArgs {};
   _IOW(IOCTL_FPGA_MAGIC, 41, struct PowerParameterArgs)
 #define IOCTL_CONFIG_NORMALIZE_PARAMETER \
   _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
+#define IOCTL_CONFIG_ACTIVATION_PARAMETER \
+  _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)
 #define IOCTL_FPGA_RESET _IOW(IOCTL_FPGA_MAGIC, 52, struct FpgaResetArgs)
@@ -331,6 +356,7 @@ int compute_fpga_scale(const struct ScaleArgs& args);
 int compute_fpga_concat(const struct ConcatArgs& args);
 int compute_fpga_resize(const struct ResizeArgs& args);
 
+int config_activation(const struct ActiveParamterArgs& args);
 int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
 int config_norm_param(const struct NormalizeParameterArgs& args);
@@ -341,7 +367,11 @@ int config_inplace(const struct InplaceArgs& args);
 int flush_cache(void* addr, int size);
 int invalidate_cache(void* addr, int size);
 
+int fpga_reset();
+
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
 }  // namespace zynqmp
 }  // namespace paddle
+
+#endif  // PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H

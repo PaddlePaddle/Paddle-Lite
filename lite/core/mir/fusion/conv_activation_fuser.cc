@@ -79,6 +79,9 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetAttr("act_type", act_type_);
   if (act_type_ == "relu") {
     op_desc.SetAttr("fuse_relu", true);
+  } else if (act_type_ == "relu6") {
+    float alpha = act_op_desc.GetAttr<float>("threshold");
+    op_desc.SetAttr("fuse_brelu_threshold", alpha);
   } else if (act_type_ == "leaky_relu") {
     float alpha = act_op_desc.GetAttr<float>("alpha");
     op_desc.SetAttr("leaky_relu_alpha", alpha);

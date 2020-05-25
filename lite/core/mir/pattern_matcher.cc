@@ -322,7 +322,6 @@ void PatternMatcher::RemoveOverlappedMatch(std::vector<subgraph_t> *subgraphs) {
 }
 
 std::string PMPattern::DotString() const {
-  using inference::analysis::Dot;
   Dot dot;
   int id = 0;
   // Create Nodes
@@ -365,6 +364,11 @@ PMNode *PMNode::assert_is_op() {
   return this;
 }
 
+PMNode *PMNode::assert_only_one_output() {
+  asserts_.emplace_back([](const Node *x) { return x->outlinks.size() == 1; });
+  return this;
+}
+
 PMNode *PMNode::assert_is_op(const std::string &op_type) {
   asserts_.emplace_back([op_type](const Node *x) {
     if (x && x->IsStmt()) {
@@ -373,6 +377,19 @@ PMNode *PMNode::assert_is_op(const std::string &op_type) {
     } else {
       return false;
     }
+  });
+  return this;
+}
+
+PMNode *PMNode::assert_is_not_op_type(const std::string &op_type) {
+  asserts_.emplace_back([op_type](const Node *x) {
+    if (x && x->IsStmt()) {
+      auto *op_info = x->stmt()->op_info();
+      if (op_info->Type() == op_type) {
+        return false;
+      }
+    }
+    return true;
   });
   return this;
 }

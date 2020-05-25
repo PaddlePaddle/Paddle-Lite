@@ -137,13 +137,13 @@ std::string BasicTimer::basic_repr() const {
   // clang-format off
   ss << GetCustomInfo("op_type")                    << "\t"
      << key()                                       << "\t"
-     << kernel_timer_info.ave() / time_unit_factor  << "\t"
-     << kernel_timer_info.min() / time_unit_factor  << "\t"
-     << kernel_timer_info.max() / time_unit_factor  << "\t"
-     << inst_timer_info.ave()   / time_unit_factor  << "\t"
-     << inst_timer_info.min()   / time_unit_factor  << "\t"
-     << inst_timer_info.max()   / time_unit_factor  << "\t"
-     << inst_timer_info.count()                     << "\t"
+     << kernel_timer_info.Ave() / time_unit_factor  << "\t"
+     << kernel_timer_info.Min() / time_unit_factor  << "\t"
+     << kernel_timer_info.Max() / time_unit_factor  << "\t"
+     << inst_timer_info.Ave()   / time_unit_factor  << "\t"
+     << inst_timer_info.Min()   / time_unit_factor  << "\t"
+     << inst_timer_info.Max()   / time_unit_factor  << "\t"
+     << inst_timer_info.Count()                     << "\t"
      << GetCustomInfo("op_info");
   // clang-format on
   return ss.str();
@@ -195,13 +195,13 @@ std::string BasicProfiler<TimerT>::summary_repr() const {
     auto& op_timer = iter.second;
     // clang-format off
     ss << iter.first                             << "\t"
-       << op_timer.ave()   / time_unit_factor    << "\t"
-       << op_timer.min()   / time_unit_factor    << "\t"
-       << op_timer.max()   / time_unit_factor    << "\t"
-       << op_timer.total() / time_unit_factor    << "\t"
+       << op_timer.Ave()   / time_unit_factor    << "\t"
+       << op_timer.Min()   / time_unit_factor    << "\t"
+       << op_timer.Max()   / time_unit_factor    << "\t"
+       << op_timer.Total() / time_unit_factor    << "\t"
        << total            / time_unit_factor    << "\t"
-       << (op_timer.total() * 1. / total * 100)  << "%\t"
-       << op_timer.count()                       << "\t"
+       << (op_timer.Total() * 1. / total * 100)  << "%\t"
+       << op_timer.Count()                       << "\t"
        << "\n";
     // clang-format on
   }

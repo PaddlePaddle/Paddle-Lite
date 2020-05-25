@@ -20,18 +20,29 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ScaleCompute::Run() {
-  auto& param = Param<operators::ScaleParam>();
-  const float* x_data = param.x->data<float>();
-  float* output_data = param.output->mutable_data<float>();
-  DDim x_dims = param.x->dims();
-  bool bias_after_scale = param.bias_after_scale;
-  float scale = param.scale;
-  float bias = param.bias;
-  if (!bias_after_scale) {
+template <typename T, PrecisionType PType>
+void ScaleCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ScaleParam>();
+  int num = param.x->numel();
+  const T* x_data = param.x->template data<T>();
+  T* output_data = param.output->template mutable_data<T>();
+  T scale = static_cast<T>(param.scale);
+  T bias = static_cast<T>(param.bias);
+  if (!param.bias_after_scale) {
     bias *= scale;
   }
-  lite::arm::math::scale(x_data, output_data, x_dims.production(), scale, bias);
+  T alpha = param.alpha;
+  if (param.activation_type == "") {  // no act
+    lite::arm::math::scale<T>(x_data, output_data, num, scale, bias);
+  } else if (param.activation_type == "relu") {  // do relu
+    lite::arm::math::scale_relu<T>(x_data, output_data, num, scale, bias);
+  } else if (param.activation_type == "relu6") {  // do relu6
+    lite::arm::math::scale_relu6<T>(
+        x_data, output_data, num, scale, bias, alpha);
+  } else if (param.activation_type == "leaky_relu") {  // do leaky_relu
+    lite::arm::math::scale_leaky_relu<T>(
+        x_data, output_data, num, scale, bias, alpha);
+  }
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }
@@ -42,8 +53,16 @@ void ScaleCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    scale, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ScaleCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+using scale_float =
+    paddle::lite::kernels::arm::ScaleCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kARM, kFloat, kNCHW, scale_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+using scale_int32 =
+    paddle::lite::kernels::arm::ScaleCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(scale, kARM, kInt32, kNCHW, scale_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

@@ -29,7 +29,7 @@ bool SplitOp::CheckShape() const {
   return true;
 }
 
-bool SplitOp::InferShape() const {
+bool SplitOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
   int axis = param_.axis;
@@ -39,8 +39,16 @@ bool SplitOp::InferShape() const {
   const int outs_number = outs.size();
   std::vector<lite::DDim> outs_dims;
   outs_dims.reserve(outs_number);
-
-  if (num > 0) {
+  std::vector<lite::Tensor *> sections_tensor_list_ =
+      param_.sections_tensor_list;
+  if (sections.size() > 0 && sections_tensor_list_.size() > 0) {
+    std::vector<int> vec_sections;
+    for (size_t i = 0; i < sections_tensor_list_.size(); ++i) {
+      auto dim = in_dims;
+      dim[axis] = sections_tensor_list_[i]->data<int>()[0];
+      outs_dims.push_back(dim);
+    }
+  } else if (num > 0) {
     int out_axis_dim = in_dims[axis] / num;
     for (int i = 0; i < outs_number; ++i) {
       auto dim = in_dims;
@@ -55,7 +63,11 @@ bool SplitOp::InferShape() const {
     }
   }
 
-  for (int j = 0; j < outs_dims.size(); ++j) {
+  if (param_.axis_tensor != nullptr) {
+    axis = param_.axis_tensor->data<int>()[0];
+  }
+
+  for (size_t j = 0; j < outs_dims.size(); ++j) {
     outs[j]->Resize(outs_dims[j]);
   }
 
@@ -63,6 +75,7 @@ bool SplitOp::InferShape() const {
 }
 
 bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.num = opdesc.GetAttr<int>("num");
   param_.sections = opdesc.GetAttr<std::vector<int>>("sections");
@@ -72,6 +85,25 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.output.clear();
   for (auto var : outs) {
     param_.output.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  }
+  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "AxisTensor") !=
+      input_arg_names.end()) {
+    auto args = opdesc.Input("AxisTensor");
+    if (!args.empty()) {
+      auto *var = scope->FindVar(args.front());
+      param_.axis_tensor = var->GetMutable<lite::Tensor>();
+    }
+  }
+  if (std::find(input_arg_names.begin(),
+                input_arg_names.end(),
+                "SectionsTensorList") != input_arg_names.end()) {
+    auto args = opdesc.Input("SectionsTensorList");
+    if (!args.empty()) {
+      auto *var = scope->FindVar(args.front());
+      param_.sections_tensor_list =
+          *(var->GetMutable<std::vector<lite::Tensor *>>());
+    }
   }
   return true;
 }

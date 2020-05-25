@@ -23,7 +23,7 @@ endif()
 
 get_filename_component(AR_PATH ${CMAKE_CXX_COMPILER} PATH)
 
-find_file(AR_TOOL NAMES llvm-ar PATHS ${AR_PATH})
+find_file(AR_TOOL NAMES llvm-ar PATHS ${AR_PATH} NO_DEFAULT_PATH)
 
 if(NOT AR_TOOL)
     message(ERROR "Failed to find AR_TOOL in ${AR_PATH}")

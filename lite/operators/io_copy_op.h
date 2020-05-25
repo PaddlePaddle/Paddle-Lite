@@ -24,11 +24,21 @@ class IoCopyOp : public OpLite {
  public:
   explicit IoCopyOp(const std::string &type) : OpLite(type) {}
   bool CheckShape() const override;
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
   bool Run() override;
   std::string DebugString() const override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.y->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "type" + std::to_string(param_.process_type);
+  }
+#endif
 
  protected:
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;

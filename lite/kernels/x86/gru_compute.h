@@ -26,7 +26,8 @@
 #include "lite/core/types.h"
 #include "lite/fluid/eigen.h"
 
-DECLARE_int32(paddle_num_threads);
+// DECLARE_int32(paddle_num_threads);
+extern int32_t paddle_num_threads;
 
 namespace paddle {
 namespace lite {
@@ -43,8 +44,12 @@ inline void ReorderInitState(const lite::Context<TARGET(kX86)>& context,
                              bool indexed_src) {
   lite::x86::math::CopyMatrixRowsFunctor<TARGET(kX86), T> row_shuffle;
   dst->Resize(src.dims());
-  dst->mutable_data<T>();
+  dst->template mutable_data<T>();
   row_shuffle(context, src, index_lod, dst, indexed_src);
+}
+
+static inline int64_t CalculateSeqWidth(const DDim& dims) {
+  return dims.count(1, dims.size());
 }
 
 template <typename T>
@@ -60,19 +65,21 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* input = param.input;
     auto* h0 = param.h0;
     auto* weight = param.weight;
-    const T* weight_data = weight->data<T>();
+    const T* weight_data = weight->template data<T>();
     auto* bias = param.bias;
 
     auto* batch_gate = param.batch_gate;
-    batch_gate->mutable_data<T>();
     auto* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
-    batch_reset_hidden_prev->mutable_data<T>();
     auto* batch_hidden = param.batch_hidden;
-    batch_hidden->mutable_data<T>();
-    auto* hidden = param.hidden;
-    hidden->mutable_data<T>();
+    T* batch_gate_ptr = batch_gate->template mutable_data<T>();
+    T* batch_reset_hidden_prev_ptr =
+        batch_reset_hidden_prev->template mutable_data<T>();
+    T* batch_hidden_ptr = batch_hidden->template mutable_data<T>();
 
-    auto hidden_dims = hidden->dims();
+    auto* hidden = param.hidden;
+    hidden->template mutable_data<T>();
+
+    const auto& hidden_dims = hidden->dims();
 
     lite::x86::math::LoDTensor2BatchFunctor<TARGET(kX86), T> to_batch;
     to_batch(context, *input, batch_gate, true, is_reverse);
@@ -89,19 +96,23 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         const_cast<T*>(weight_data + 2 * frame_size * frame_size);
     Tensor ordered_h0;
 
-    std::vector<size_t> order(batch_gate->lod()[2]);
-
     if (h0) {
       // Since the batch computing for GRU reorders the input sequences
       // according to their length. The initialized cell state also needs
       // to reorder.
+      const std::vector<uint64_t>& order(batch_gate->lod()[2]);
       ReorderInitState<T>(context, *h0, order, &ordered_h0, true);
       gru_value.prev_out_value = ordered_h0.mutable_data<T>();
     } else {
       gru_value.prev_out_value = nullptr;
     }
-    auto batch_starts = batch_gate->lod()[0];
+
+    const auto& batch_starts = batch_gate->lod()[0];
     size_t seq_len = batch_starts.size() - 1;
+    int64_t batch_gate_width = CalculateSeqWidth(batch_gate->dims());
+    int64_t batch_reset_hidden_prev_width =
+        CalculateSeqWidth(batch_reset_hidden_prev->dims());
+    int64_t batch_hidden_width = CalculateSeqWidth(batch_hidden->dims());
     auto active_node =
         lite::x86::math::detail::GetActivationType(param.activation);
     auto active_gate =
@@ -109,7 +120,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
 #ifdef PADDLE_WITH_MKLML
     // use MKL packed to speedup GEMM
-    if (FLAGS_paddle_num_threads >= 4) {
+    if (paddle_num_threads >= 4) {
       auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
       T* packed_gate = blas.GEMM_ALLOC(CblasBMatrix,
                                        1 /*height of C*/,
@@ -144,13 +155,10 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         int64_t bend = static_cast<int64_t>(batch_starts[n + 1]);
         int64_t cur_batch_size = bend - bstart;
 
-        Tensor gate_t = batch_gate->Slice<T>(bstart, bend);
-        Tensor reset_hidden_prev_t =
-            batch_reset_hidden_prev->Slice<T>(bstart, bend);
-        Tensor hidden_t = batch_hidden->Slice<T>(bstart, bend);
-        gru_value.output_value = hidden_t.mutable_data<T>();
-        gru_value.gate_value = gate_t.mutable_data<T>();
-        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
+        gru_value.output_value = batch_hidden_ptr + bstart * batch_hidden_width;
+        gru_value.gate_value = batch_gate_ptr + bstart * batch_gate_width;
+        gru_value.reset_output_value = batch_reset_hidden_prev_ptr +
+                                       bstart * batch_reset_hidden_prev_width;
 
         if (gru_value.prev_out_value) {
           blas.GEMM_COMPUTE(CblasNoTrans,
@@ -187,13 +195,10 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         int64_t bend = static_cast<int64_t>(batch_starts[n + 1]);
         int64_t cur_batch_size = bend - bstart;
 
-        Tensor gate_t = batch_gate->Slice<T>(bstart, bend);
-        Tensor reset_hidden_prev_t =
-            batch_reset_hidden_prev->Slice<T>(bstart, bend);
-        Tensor hidden_t = batch_hidden->Slice<T>(bstart, bend);
-        gru_value.output_value = hidden_t.mutable_data<T>();
-        gru_value.gate_value = gate_t.mutable_data<T>();
-        gru_value.reset_output_value = reset_hidden_prev_t.mutable_data<T>();
+        gru_value.output_value = batch_hidden_ptr + bstart * batch_hidden_width;
+        gru_value.gate_value = batch_gate_ptr + bstart * batch_gate_width;
+        gru_value.reset_output_value = batch_reset_hidden_prev_ptr +
+                                       bstart * batch_reset_hidden_prev_width;
 
         lite::x86::math::GRUUnitFunctor<TARGET(kX86), T>::compute(
             context,

@@ -13,12 +13,101 @@
 // limitations under the License.
 
 #include "lite/backends/cuda/math/elementwise.h"
-#include "lite/backends/cuda/math/utils.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
+
+template <typename Dtype>
+__global__ void elementwise_kernel(const size_t total,
+                                   const Dtype* x_data,
+                                   const Dtype* y_data,
+                                   Dtype* out_data,
+                                   int pre,
+                                   int n,
+                                   int post,
+                                   BinaryOperation type) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < total) {
+    int idx = tid / post % n;
+#if __CUDA_ARCH__ >= 350
+    out_data[tid] = binary_calc(__ldg(x_data + tid), __ldg(y_data + idx), type);
+#else
+    out_data[tid] = binary_calc(x_data[tid], y_data[idx], type);
+#endif
+  }
+}
+
+template <typename Dtype>
+__global__ void elementwise_relu_kernel(const size_t total,
+                                        const Dtype* x_data,
+                                        const Dtype* y_data,
+                                        Dtype* out_data,
+                                        int pre,
+                                        int n,
+                                        int post,
+                                        BinaryOperation type) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < total) {
+    int idx = tid / post % n;
+    Dtype temp;
+#if __CUDA_ARCH__ >= 350
+    temp = binary_calc(__ldg(x_data + tid), __ldg(y_data + idx), type);
+
+#else
+    temp = binary_calc(x_data[tid], y_data[idx], type);
+#endif
+    out_data[tid] = temp > 0 ? temp : 0;
+  }
+}
+
+template <typename Dtype>
+__global__ void elementwise_abs_kernel(const size_t total,
+                                       const Dtype* x_data,
+                                       const Dtype* y_data,
+                                       Dtype* out_data,
+                                       int pre,
+                                       int n,
+                                       int post,
+                                       BinaryOperation type) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < total) {
+    int idx = tid / post % n;
+    Dtype temp;
+#if __CUDA_ARCH__ >= 350
+    temp = binary_calc(__ldg(x_data + tid), __ldg(y_data + idx), type);
+
+#else
+    temp = binary_calc(x_data[tid], y_data[idx], type);
+#endif
+    out_data[tid] = temp > 0 ? temp : -temp;
+  }
+}
+
+template <typename Dtype>
+__global__ void elementwise_tanh_kernel(const size_t total,
+                                        const Dtype* x_data,
+                                        const Dtype* y_data,
+                                        Dtype* out_data,
+                                        int pre,
+                                        int n,
+                                        int post,
+                                        BinaryOperation type) {
+  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (tid < total) {
+    int idx = tid / post % n;
+    Dtype temp;
+#if __CUDA_ARCH__ >= 350
+    temp = binary_calc(__ldg(x_data + tid), __ldg(y_data + idx), type);
+
+#else
+    temp = binary_calc(x_data[tid], y_data[idx], type);
+#endif
+    out_data[tid] = tanh(temp);
+  }
+}
 
 template <typename Dtype>
 __global__ void elementwise_add_kernel(const size_t total,
@@ -75,6 +164,68 @@ __global__ void elementwise_add_nhwc4_int8_kernel(const size_t total,
     out_data[tid] = result_val;
   }
 }
+
+template <typename Dtype>
+void elementwise(const Dtype* x_data,
+                 const Dtype* y_data,
+                 Dtype* out_data,
+                 int pre,
+                 int n,
+                 int post,
+                 BinaryOperation type,
+                 cudaStream_t stream) {
+  int num = pre * n * post;
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  elementwise_kernel<<<block, thread, 0, stream>>>(
+      num, x_data, y_data, out_data, pre, n, post, type);
+}
+
+template <typename Dtype>
+void elementwise_act(const Dtype* x_data,
+                     const Dtype* y_data,
+                     Dtype* out_data,
+                     int pre,
+                     int n,
+                     int post,
+                     std::string act,
+                     BinaryOperation type,
+                     cudaStream_t stream) {
+  int num = pre * n * post;
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  if (act == "relu") {
+    elementwise_relu_kernel<<<block, thread, 0, stream>>>(
+        num, x_data, y_data, out_data, pre, n, post, type);
+  } else if (act == "tanh") {
+    elementwise_tanh_kernel<<<block, thread, 0, stream>>>(
+        num, x_data, y_data, out_data, pre, n, post, type);
+  } else if (act == "abs") {
+    elementwise_abs_kernel<<<block, thread, 0, stream>>>(
+        num, x_data, y_data, out_data, pre, n, post, type);
+  } else {
+    LOG(FATAL) << "not supported activate type: " << act;
+  }
+}
+
+template void elementwise(const float*,
+                          const float*,
+                          float*,
+                          int,
+                          int,
+                          int,
+                          BinaryOperation,
+                          cudaStream_t);
+
+template void elementwise_act(const float* x_data,
+                              const float* y_data,
+                              float* out_data,
+                              int pre,
+                              int n,
+                              int post,
+                              std::string act,
+                              BinaryOperation type,
+                              cudaStream_t stream);
 
 template <typename Dtype>
 void elementwise_add(int num,

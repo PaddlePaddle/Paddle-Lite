@@ -30,12 +30,23 @@ class ScaleOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "scale"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.x->dims());
+    ch->output_shape = ch->DimToStr(param_.output->dims());
+    ch->remark =
+        param_.activation_type + "alpha" + std::to_string(param_.alpha);
+    ch->macs = param_.x->numel() * 1.f;
+  }
+#endif
 
  private:
   mutable ScaleParam param_;

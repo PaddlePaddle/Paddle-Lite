@@ -22,7 +22,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::AssignValueParam;
 

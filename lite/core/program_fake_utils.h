@@ -30,9 +30,9 @@ Program FakeProgram() {
 
   auto add_fc = [&](int id, std::string x) {
     // create variables
-    std::string w1 = "w" + std::to_string(id);
-    std::string b1 = "b" + std::to_string(id);
-    std::string out1 = "out" + std::to_string(id);
+    std::string w1 = "w" + paddle::lite::to_string(id);
+    std::string b1 = "b" + paddle::lite::to_string(id);
+    std::string out1 = "out" + paddle::lite::to_string(id);
     auto w1v = program.scope()->Var(w1)->GetMutable<lite::Tensor>();
     auto b1v = program.scope()->Var(b1)->GetMutable<lite::Tensor>();
     auto out1v = program.scope()->Var(out1)->GetMutable<lite::Tensor>();

@@ -44,11 +44,9 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     fuser(graph.get());
   }
 
-  // delete quant_dequant_node
-  for (auto op_type : {"pool2d", "elementwise_add"}) {
-    fusion::DeleteQuantDequantOpFuser fuser(op_type);
-    fuser(graph.get());
-  }
+  // process quant_dequant_node
+  fusion::DeleteQuantDequantOpFuser dqd_fuser;
+  dqd_fuser(graph.get());
 }
 
 }  // namespace mir

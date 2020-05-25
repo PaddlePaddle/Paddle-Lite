@@ -34,7 +34,7 @@ void sgemm(bool is_transA,
            int ldc,
            const float* bias,
            bool is_bias,
-           bool is_relu,
+           const operators::ActivationParam act_param,
            ARMContext* ctx) {
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
@@ -56,7 +56,7 @@ void sgemm(bool is_transA,
                 ldc,
                 bias,
                 is_bias,
-                is_relu,
+                act_param,
                 ctx);
   TargetFree(TargetType::kARM, packed_A);
 }

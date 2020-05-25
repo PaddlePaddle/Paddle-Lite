@@ -36,11 +36,10 @@ class SequenceReshapeCompute
     auto* out = param.output;
     int out_width = param.new_dim;
 
-    auto in_dims = in->dims();
+    const auto& in_dims = in->dims();
     int64_t in_width = in_dims[1];
-    // LOG(INFO)<<"sequence_reshape in tensor:"<<*in;
-    auto& in_lod = in->lod();
 
+    auto& in_lod = in->lod();
     CHECK_EQ(in_lod.size(), 1UL);
     CHECK_EQ((uint64_t)in_dims[0], in_lod[0].back());
 
@@ -63,16 +62,59 @@ class SequenceReshapeCompute
       }
     }
 
-    out->Resize(in_dims);
-    auto* dst_ptr = out->mutable_data<T>();
+    out->Resize(std::vector<int64_t>{in->numel() / out_width, out_width});
+    auto* dst_ptr = out->template mutable_data<T>();
     auto size = in->numel() * sizeof(T);
-    std::memcpy(dst_ptr, in->data<T>(), size);
-    std::vector<int64_t> out_shape{static_cast<int64_t>(out->lod()[0].back()),
-                                   out_width};
-    out->Resize(lite::DDim(out_shape));
+    std::memcpy(dst_ptr, in->template data<T>(), size);
   }
 
   virtual ~SequenceReshapeCompute() = default;
+};
+
+template <typename T>
+class SequenceReshapeFloatCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::SequenceReshapeParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::SequenceReshapeParam>();
+    auto* in = param.x;
+    auto* out = param.output;
+    auto out_data = out->template mutable_data<T>();
+    for (int i = 0; i < out->dims().production(); i++) {
+      out_data[i] = 0;
+    }
+    int out_width = param.new_dim;
+    const auto& in_dims = in->dims();
+    int64_t in_width = in_dims[1];
+    auto& in_lod = in->lod();
+    CHECK_EQ(in_lod.size(), 1UL);
+    CHECK_EQ((uint64_t)in_dims[0], in_lod[0].back());
+    auto in_lod_l0 = in_lod[0];
+    int seq_num = in_lod_l0.size() - 1;
+    if (in_width == out_width) {
+      out->set_lod(in->lod());
+    } else {
+      auto& out_lod = *out->mutable_lod();
+      out_lod.resize(1);
+      out_lod[0].resize(seq_num + 1);
+      out_lod[0][0] = 0;
+      for (int i = 0; i < seq_num; ++i) {
+        size_t seq_len = in_lod_l0[i + 1] - in_lod_l0[i];
+        size_t offset = 0;
+        offset = (seq_len * in_width) / out_width;
+        CHECK_EQ(offset * out_width, seq_len * in_width);
+        out_lod[0][i + 1] = out_lod[0][i] + offset;
+      }
+    }
+    out->Resize(std::vector<int64_t>{in->numel() / out_width, out_width});
+    auto* dst_ptr = out->template mutable_data<T>();
+    auto size = in->numel() * sizeof(T);
+    std::memcpy(dst_ptr, in->template data<T>(), size);
+  }
+
+  virtual ~SequenceReshapeFloatCompute() = default;
 };
 
 }  // namespace x86

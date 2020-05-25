@@ -41,15 +41,9 @@ bool MulticlassNmsOpLite::CheckShape() const {
   return true;
 }
 
-bool MulticlassNmsOpLite::InferShape() const {
-  auto box_dims = param_.bboxes->dims();
-  auto score_dims = param_.scores->dims();
-  auto score_size = score_dims.size();
-  if (score_size == 3) {
-    param_.out->Resize({box_dims[1], box_dims[2], 3});
-  } else {
-    param_.out->Resize({-1, box_dims[2] + 2});
-  }
+bool MulticlassNmsOpLite::InferShapeImpl() const {
+  // InferShape is useless for multiclass_nms
+  // out's dim is not sure before the end of calculation
   return true;
 }
 
@@ -58,6 +52,12 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   auto bboxes_name = opdesc.Input("BBoxes").front();
   auto scores_name = opdesc.Input("Scores").front();
   auto out_name = opdesc.Output("Out").front();
+  std::vector<std::string> output_arg_names = opdesc.OutputArgumentNames();
+  if (std::find(output_arg_names.begin(), output_arg_names.end(), "Index") !=
+      output_arg_names.end()) {
+    auto index_name = opdesc.Output("Index").front();
+    param_.index = GetMutableVar<lite::Tensor>(scope, index_name);
+  }
   param_.bboxes = GetVar<lite::Tensor>(scope, bboxes_name);
   param_.scores = GetVar<lite::Tensor>(scope, scores_name);
   param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
@@ -78,3 +78,4 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(multiclass_nms, paddle::lite::operators::MulticlassNmsOpLite);
+REGISTER_LITE_OP(multiclass_nms2, paddle::lite::operators::MulticlassNmsOpLite);

@@ -13,9 +13,19 @@
 // limitations under the License.
 
 #pragma once
+
+// Use internal log or glog, the priority is as follows:
+// 1. tiny_publish should use internally implemented logging.
+// 2. if LITE_WITH_LOG is turned off, internal logging is used.
+// 3. use glog in other cases.
+
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
     defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
 #include "lite/utils/logging.h"
-#else  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#else
+#ifndef LITE_WITH_LOG
+#include "lite/utils/logging.h"
+#else
 #include <glog/logging.h>
-#endif  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#endif
+#endif

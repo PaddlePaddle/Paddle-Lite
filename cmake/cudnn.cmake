@@ -26,14 +26,15 @@ list(APPEND CUDNN_CHECK_LIBRARY_DIRS
     ${CUDNN_ROOT}/lib64
     ${CUDNN_ROOT}/lib
     ${CUDNN_ROOT}/lib/${TARGET_ARCH}-linux-gnu
-    ${CUDNN_ROOT}/local/cuda-${CUDA_VERSION}/targets/${TARGET_ARCH}-linux/lib/
+    /usr/local/cuda-${CUDA_VERSION}/targets/${TARGET_ARCH}-linux/lib/
+    /usr/lib/${TARGET_ARCH}-linux-gnu/
     $ENV{CUDNN_ROOT}
     $ENV{CUDNN_ROOT}/lib64
     $ENV{CUDNN_ROOT}/lib
     /usr/lib
-	${CUDA_TOOLKIT_ROOT_DIR}
-	${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
-	)
+    ${CUDA_TOOLKIT_ROOT_DIR}
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 
 if((${CUDA_VERSION} GREATER 10.0) OR (${CUDA_VERSION} EQUAL 10.0))
     find_library(CUBLAS_LIBRARY  NAMES libcublas.so PATHS ${CUDNN_CHECK_LIBRARY_DIRS} NO_DEFAULT_PATH)
@@ -68,9 +69,15 @@ if(CUDNN_FOUND)
     file(READ ${CUDNN_INCLUDE_DIR}/cudnn.h CUDNN_VERSION_FILE_CONTENTS)
 
     get_filename_component(CUDNN_LIB_PATH ${CUDNN_LIBRARY} DIRECTORY)
-    add_library(cudnn_static STATIC IMPORTED GLOBAL)
-    set_property(TARGET cudnn_static PROPERTY IMPORTED_LOCATION
+    if(LITE_WITH_STATIC_CUDA)
+        add_library(cudnn_static STATIC IMPORTED GLOBAL)
+        set_property(TARGET cudnn_static PROPERTY IMPORTED_LOCATION
                "${CUDNN_LIB_PATH}/libcudnn_static.a")
+    else()
+        add_library(cudnn SHARED IMPORTED GLOBAL)
+        set_property(TARGET cudnn PROPERTY IMPORTED_LOCATION
+               "${CUDNN_LIB_PATH}/libcudnn.so")   
+    endif(LITE_WITH_STATIC_CUDA)
 
     string(REGEX MATCH "define CUDNN_VERSION +([0-9]+)"
         CUDNN_VERSION "${CUDNN_VERSION_FILE_CONTENTS}")

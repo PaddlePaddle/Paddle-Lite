@@ -20,17 +20,27 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void IncrementCompute::PrepareForRun() {}
-
 void IncrementCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::IncrementParam>();
 
   int total_num = param.X->dims().production();
-
-  const auto* x_data = param.X->data<float>();
-  auto* o_data = param.Out->mutable_data<float>();
-  lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  if (param.X->precision() == PRECISION(kFloat)) {
+    const auto* x_data = param.X->data<float>();
+    auto* o_data = param.Out->mutable_data<float>();
+    lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  } else if (param.X->precision() == PRECISION(kInt64)) {
+    const auto* x_data = param.X->data<int64_t>();
+    auto* o_data = param.Out->mutable_data<int64_t>();
+    lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  } else if (param.X->precision() == PRECISION(kInt32)) {
+    const auto* x_data = param.X->data<int32_t>();
+    auto* o_data = param.Out->mutable_data<int32_t>();
+    lite::arm::math::increment(x_data, total_num, param.step, o_data, &ctx);
+  } else {
+    LOG(FATAL) << "unsupport input type "
+               << PrecisionToStr(param.X->precision());
+  }
 }
 
 }  // namespace arm
@@ -40,10 +50,10 @@ void IncrementCompute::Run() {
 
 REGISTER_LITE_KERNEL(increment,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::IncrementCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

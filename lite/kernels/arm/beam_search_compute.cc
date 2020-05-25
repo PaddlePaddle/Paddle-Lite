@@ -20,8 +20,6 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void BeamSearchCompute::PrepareForRun() {}
-
 void BeamSearchCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::BeamSearchParam>();
@@ -50,11 +48,17 @@ REGISTER_LITE_KERNEL(beam_search,
                      kNCHW,
                      paddle::lite::kernels::arm::BeamSearchCompute,
                      def)
-    .BindInput("pre_ids", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("pre_scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ids", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("selected_ids", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("selected_scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("parent_idx", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("pre_ids",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("pre_scores",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("scores",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("selected_ids",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("selected_scores",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("parent_idx",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

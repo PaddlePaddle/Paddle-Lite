@@ -23,15 +23,24 @@ namespace lite {
 
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
-  raw_predictor_.reset(
-      new LightPredictor(config.model_dir(),
-                         config.model_buffer(),
-                         config.param_buffer(),
-                         config.model_from_memory(),
-                         lite_api::LiteModelType::kNaiveBuffer));
-
+  if (config.lite_model_file().empty()) {
+    raw_predictor_.reset(
+        new LightPredictor(config.model_dir(),
+                           config.model_buffer(),
+                           config.param_buffer(),
+                           config.model_from_memory(),
+                           lite_api::LiteModelType::kNaiveBuffer));
+  } else {
+    raw_predictor_.reset(new LightPredictor(config.lite_model_file(),
+                                            config.model_from_memory()));
+  }
   mode_ = config.power_mode();
   threads_ = config.threads();
+
+#ifdef LITE_WITH_NPU
+  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
+      config.subgraph_model_cache_dir());
+#endif
 }
 
 std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInput(int i) {
@@ -54,6 +63,7 @@ void LightPredictorImpl::Run() {
 
 std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone() {
   LOG(FATAL) << "The Clone API is not supported in LigthPredictor";
+  return nullptr;
 }
 
 std::string LightPredictorImpl::GetVersion() const { return lite::version(); }

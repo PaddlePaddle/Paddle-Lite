@@ -29,12 +29,25 @@ class BoxCoderOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "box_coder"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    // auto input_dims = param_.Input->dims();
+    // auto output_dims = param_.Output->dims();
+    // ch->input_shape = ch->DimToStr(input_dims);
+    // ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "proposals" + std::to_string(param_.proposals->dims()[0]) +
+                 "x" + std::to_string(param_.proposals->dims()[1]);
+    ch->macs = param_.proposals->dims()[0] * param_.proposals->dims()[1] * 30.f;
+  }
+#endif
 
  private:
   mutable BoxCoderParam param_;

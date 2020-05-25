@@ -26,13 +26,40 @@ namespace operators {
 class ReduceMeanOp : public OpLite {
  public:
   ReduceMeanOp() {}
+
   explicit ReduceMeanOp(const std::string &op_type) : OpLite(op_type) {}
+
   bool CheckShape() const override;
-  bool InferShape() const override;
+
+  bool InferShapeImpl() const override;
+
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "reduce_mean"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    ch->remark = "keep_dim" + std::to_string(param_.keep_dim);
+
+    auto dims = param_.dim;
+    auto in_sum = param_.X->numel();
+    if (dims.size() == 0) {
+      ch->macs = 1.f * in_sum;
+    } else if (dims.size() == 1) {
+      ch->macs = 2.f * in_sum;
+    } else if (dims.size() == 2) {
+      ch->macs = 4.f * in_sum;
+    } else {
+      LOG(FATAL) << "This dims size of ReduceMean: " << dims.size()
+                 << " doesn't support";
+      ch->macs = 0.f;
+    }
+  }
+#endif
 
  private:
   mutable ReduceMeanParam param_;

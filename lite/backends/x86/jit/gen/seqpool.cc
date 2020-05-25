@@ -82,4 +82,4 @@ class SeqPoolCreator : public JitCodeCreator<seq_pool_attr_t> {
 
 namespace gen = paddle::lite::jit::gen;
 
-REGISTER_JITKERNEL_GEN(kSeqPool, gen::SeqPoolCreator);
+REGISTER_JITKERNEL_GEN_LITE(kSeqPool, gen::SeqPoolCreator);

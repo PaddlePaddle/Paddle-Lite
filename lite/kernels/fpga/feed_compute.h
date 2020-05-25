@@ -32,8 +32,6 @@ class FeedCompute
 
  private:
   zynqmp::InputPE pe_;
-  zynqmp::Tensor input_;
-  zynqmp::Tensor output_;
 };
 
 }  // namespace fpga

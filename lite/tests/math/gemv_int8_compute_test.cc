@@ -20,12 +20,12 @@
 #include "lite/backends/arm/math/funcs.h"
 #endif  // LITE_WITH_ARM
 #include "lite/core/context.h"
+#include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/tests/utils/timer.h"
 
 typedef paddle::lite::Tensor Tensor;
-using paddle::lite::Timer;
+using paddle::lite::profile::Timer;
 
 DEFINE_int32(power_mode,
              3,
@@ -37,7 +37,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "gemv: M");
@@ -165,7 +165,7 @@ bool test_gemv_int8(
     dbias_int8[l] = dbias[l] / scale_c[0];
   }
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    t0.start();
+    t0.Start();
     paddle::lite::arm::math::gemv_int8(da,
                                        db,
                                        dc_fp32,
@@ -177,21 +177,21 @@ bool test_gemv_int8(
                                        dbias,
                                        has_relu,
                                        &ctx);
-    t0.end();
+    t0.Stop();
   }
   LOG(INFO) << "gemv_int8_int8 output: M: " << m << ", N: " << n
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.get_average_ms()
-            << " ms, min time: " << t0.get_min_time()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.get_average_ms()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.get_min_time()
+            << " GOPS, avg time: " << t0.LapTimes().Avg()
+            << " ms, min time: " << t0.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
             << " GOPs";
 
   /// fp32 output compute
-  t0.clear();
+  t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    t0.start();
+    t0.Start();
     paddle::lite::arm::math::gemv_int8(da,
                                        db,
                                        dc_int8,
@@ -203,15 +203,15 @@ bool test_gemv_int8(
                                        dbias_int8,
                                        has_relu,
                                        &ctx);
-    t0.end();
+    t0.Stop();
   }
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.get_average_ms()
-            << " ms, min time: " << t0.get_min_time()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.get_average_ms()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.get_min_time()
+            << " GOPS, avg time: " << t0.LapTimes().Avg()
+            << " ms, min time: " << t0.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
             << " GOPs";
 
   if (FLAGS_check_result) {
@@ -285,7 +285,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
     paddle::lite::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
-    for (auto& m : {1, 3, 8, 32, 397}) {
+    for (auto& m : {1, 3, 8, 32}) {  // ,397
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& tra : {false}) {
           for (auto& has_bias : {false, true}) {

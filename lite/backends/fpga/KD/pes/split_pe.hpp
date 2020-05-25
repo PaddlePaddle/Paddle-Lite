@@ -53,20 +53,37 @@ class SplitPE : public PE {
     int64_t src_after = src_stride_numel[axis];
     int64_t dst_after = dst_stride_numel[axis];
 
+    // PADDLE_MOBILE_ENFORCE(src_stride_numel.size() == dst_stride_numel.size(),
+    //                       "src and dst tensor should have the same dims
+    //                       size.");
+
     for (int64_t i = 0; i < axis; ++i) {
       if (i < axis) {
+        // PADDLE_MOBILE_ENFORCE(src_stride_numel[i] / src_stride_numel[axis] ==
+        //                           dst_stride_numel[i] /
+        //                           dst_stride_numel[axis],
+        //                       "src and dst should have the same elements "
+        //                       "except the specified axis.");
       } else if (i == axis) {
         continue;
       } else {
+        // PADDLE_MOBILE_ENFORCE(src_stride_numel[i] == dst_stride_numel[i],
+        //                       "src and dst should have the same elements "
+        //                       "except the specified axis.");
       }
     }
 
     for (int64_t i = 0; i < before; ++i) {
-      memory::Copy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
+      memcpy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
     }
   }
 
-  void split3D() { int axis = param_.axis; }
+  void split3D() {
+    int axis = param_.axis;
+    // float16* dst = param_.output->data<float16>();
+    // std::vector<int>& dst_dims = ;
+    // StridedNumelCopyWithAxis();
+  }
 
   bool dispatch() {
     Tensor* input = param_.input;
@@ -88,6 +105,7 @@ class SplitPE : public PE {
                                           in_stride,
                                           out_stride[axis]);
         input_offset += out_stride[axis];
+        // out->flush();
       }
       return true;
     }
@@ -95,21 +113,26 @@ class SplitPE : public PE {
     std::vector<Tensor*> outputs = param_.outputs;
 
     int in_channel = input->shape().channel();
-    int split_channel = input->shape().channel() / param_.num;
+    // int split_channel = input->shape().channel() / param_.num;
     int hw = input->shape().height() * input->shape().width();
 
     float16* in_data = input->data<float16>();
+
     for (int i = 0; i < hw; i++) {
+      int channel_stride = 0;
       for (int n = 0; n < outputs.size(); n++) {
         Tensor* out = outputs[n];
         float16* out_data = out->data<float16>();
-        memcpy(out_data + i * split_channel,
-               in_data + i * in_channel + n * split_channel,
-               split_channel * sizeof(float16));
+        memcpy(out_data + i * out->shape().channel(),
+               in_data + i * in_channel + channel_stride,
+               out->shape().channel() * sizeof(float16));
+        channel_stride += out->shape().channel();
       }
     }
+
     for (int n = 0; n < outputs.size(); n++) {
       Tensor* out = outputs[n];
+      out->flush();
       out->copyScaleFrom(input);
     }
     return true;
@@ -120,5 +143,6 @@ class SplitPE : public PE {
  private:
   SplitParam param_;
 };
+
 }  // namespace zynqmp
 }  // namespace paddle

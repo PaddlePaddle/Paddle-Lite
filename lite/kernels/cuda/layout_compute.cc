@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/layout_compute.h"
+#include <vector>
 #include "lite/backends/cuda/math/transpose.h"
 #include "lite/core/op_registry.h"
 
@@ -21,11 +22,33 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
+inline DDim trim_singular_dims(const DDim& dims) {
+  auto actual_dims_size = dims.size();
+  for (; actual_dims_size != 0; --actual_dims_size) {
+    if (dims[actual_dims_size - 1] != 1) break;
+  }
+  std::vector<int64_t> trim_dims;
+  trim_dims.resize(actual_dims_size);
+  for (size_t i = 0; i < actual_dims_size; ++i) {
+    trim_dims[i] = dims[i];
+  }
+  if (trim_dims.size() == 0) {
+    return DDim();
+  }
+  return DDim(trim_dims);
+}
+
 #define NCHWTONHWC(type)                                                  \
   auto& param = this->template Param<param_t>();                          \
   auto& ctx = this->ctx_->template As<CUDAContext>();                     \
+  auto stream = ctx.exec_stream();                                        \
   auto input = param.x->template data<type>();                            \
   auto input_dim = param.x->dims();                                       \
+  DDim input_trim_dim = trim_singular_dims(input_dim);                    \
+  if (input_trim_dim.size() == 1) {                                       \
+    param.y->CopyDataFrom(*param.x);                                      \
+    return;                                                               \
+  }                                                                       \
   CHECK(input_dim.size() == 4)                                            \
       << "NCHW to NHWC should guarantee that the input dims should be 4"; \
   int n = input_dim[0];                                                   \
@@ -34,13 +57,19 @@ namespace cuda {
   int w = input_dim[3];                                                   \
   param.y->Resize({n, h, w, c});                                          \
   auto output = param.y->template mutable_data<type>(TARGET(kCUDA));      \
-  lite::cuda::math::NCHW2NHWC<type>(n, c, h * w, input, output, &ctx);
+  trans.NCHW2NHWC(n, c, h* w, input, output, &stream);
 
 #define NHWCTONCHW(type)                                                  \
   auto& param = this->template Param<param_t>();                          \
   auto& ctx = this->ctx_->template As<CUDAContext>();                     \
+  auto stream = ctx.exec_stream();                                        \
   auto input = param.x->template data<type>();                            \
   auto input_dim = param.x->dims();                                       \
+  DDim input_trim_dim = trim_singular_dims(input_dim);                    \
+  if (input_trim_dim.size() == 1) {                                       \
+    param.y->CopyDataFrom(*param.x);                                      \
+    return;                                                               \
+  }                                                                       \
   CHECK(input_dim.size() == 4)                                            \
       << "NHWC to NCHW should guarantee that the input dims should be 4"; \
   int n = input_dim[0];                                                   \
@@ -49,7 +78,7 @@ namespace cuda {
   int c = input_dim[3];                                                   \
   param.y->Resize({n, c, h, w});                                          \
   auto output = param.y->template mutable_data<type>(TARGET(kCUDA));      \
-  lite::cuda::math::NHWC2NCHW<type>(n, c, h * w, input, output, &ctx);
+  trans.NHWC2NCHW(n, c, h* w, input, output, &stream);
 
 void NCHWToNHWCCompute::Run() { NCHWTONHWC(float) }
 

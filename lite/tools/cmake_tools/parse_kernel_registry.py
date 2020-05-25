@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import sys
 import logging
 from ast import RegisterLiteKernelParser
 
+if len(sys.argv) != 5:
+    print("Error: parse_kernel_registry.py requires four inputs!")
+    exit(1)
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
 minkernels_list_path = sys.argv[3]

@@ -41,6 +41,7 @@ bool PoolOpLite::CheckShape() const {
   return true;
 }
 
+<<<<<<< HEAD
 inline void UpdatePadding(std::vector<int>* paddings,
                           const bool global_pooling,
                           const bool adaptive,
@@ -74,6 +75,8 @@ inline void UpdatePadding(std::vector<int>* paddings,
   }
 }
 
+=======
+>>>>>>> PaddlePaddle-develop1
 int PoolOutputSize(int input_size,
                    int filter_size,
                    int pad_left,
@@ -93,7 +96,7 @@ int PoolOutputSize(int input_size,
   return output_size;
 }
 
-bool PoolOpLite::InferShape() const {
+bool PoolOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
   // dynamic update 4-pad

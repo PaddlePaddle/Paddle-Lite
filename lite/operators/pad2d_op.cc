@@ -30,7 +30,7 @@ bool Pad2dOpLite::CheckShape() const {
   return true;
 }
 
-bool Pad2dOpLite::InferShape() const {
+bool Pad2dOpLite::InferShapeImpl() const {
   // nchw
   auto x_dims = param_.X->dims();
   int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
@@ -46,7 +46,20 @@ bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
   param_.mode = op_desc.GetAttr<std::string>("mode");
   param_.pad_value = op_desc.GetAttr<float>("pad_value");
-  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  if (op_desc.HasAttr("variable_padding") &&
+      op_desc.GetAttr<bool>("variable_paddings")) {
+    auto Paddings =
+        scope->FindVar(op_desc.Input("Paddings").front())->GetMutable<Tensor>();
+    auto ptr = Paddings->data<int>();
+    if (Paddings->dims().size() < 4) {
+      printf("Paddings size must be four: %d \n",
+             static_cast<int>(Paddings->dims().size()));
+      return false;
+    }
+    param_.paddings = {ptr[0], ptr[1], ptr[2], ptr[3]};
+  } else {
+    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  }
   param_.data_format = op_desc.GetAttr<std::string>("data_format");
   return true;
 }

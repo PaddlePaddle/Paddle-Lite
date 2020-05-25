@@ -15,9 +15,6 @@
 #include "lite/api/paddle_api.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
 DEFINE_string(model_dir, "", "");
@@ -39,11 +36,11 @@ TEST(CxxApi, run) {
 
   auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
+  for (size_t i = 0; i < inputs.size(); i++) {
     LOG(INFO) << "inputnames: " << inputs[i];
   }
   auto outputs = predictor->GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
+  for (size_t i = 0; i < outputs.size(); i++) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
   auto input_tensor = predictor->GetInputByName(inputs[0]);
@@ -72,7 +69,7 @@ TEST(CxxApi, run) {
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(LightApi, run) {
   lite_api::MobileConfig config;
-  config.set_model_dir(FLAGS_model_dir + ".opt2.naive");
+  config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -109,16 +106,11 @@ TEST(LightApi, run) {
 // Demo2 for Loading model from memory
 TEST(MobileConfig, LoadfromMemory) {
   // Get naive buffer
-  auto model_path = std::string(FLAGS_model_dir) + ".opt2.naive/__model__.nb";
-  auto params_path = std::string(FLAGS_model_dir) + ".opt2.naive/param.nb";
-  std::string model_buffer = lite::ReadFile(model_path);
-  size_t size_model = model_buffer.length();
-  std::string params_buffer = lite::ReadFile(params_path);
-  size_t size_params = params_buffer.length();
+  auto model_file = std::string(FLAGS_model_dir) + ".opt2.naive.nb";
+  std::string model_buffer = lite::ReadFile(model_file);
   // set model buffer and run model
   lite_api::MobileConfig config;
-  config.set_model_buffer(
-      model_buffer.c_str(), size_model, params_buffer.c_str(), size_params);
+  config.set_model_from_buffer(model_buffer);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
   auto input_tensor = predictor->GetInput(0);

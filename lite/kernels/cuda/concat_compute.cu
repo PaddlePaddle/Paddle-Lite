@@ -51,6 +51,11 @@ void ConcatCompute<Dtype>::Run() {
   Tensor* output = param.output;
   auto* output_data = output->mutable_data<Dtype>(TARGET(kCUDA));
   int axis = param.axis;
+  Tensor* axis_tensor = param.axis_tensor;
+  if (axis_tensor != nullptr) {
+    const int* axis_tensor_data = axis_tensor->data<int>();
+    axis = axis_tensor_data[0];
+  }
   int inner_size = 1;
   int outer_size = 1;
   auto input_dims = input[0]->dims();
@@ -97,5 +102,7 @@ REGISTER_LITE_KERNEL(concat,
                      paddle::lite::kernels::cuda::ConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

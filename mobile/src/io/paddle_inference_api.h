@@ -191,6 +191,10 @@ class PaddlePredictor {
   virtual void FetchPaddleTensors(PaddleTensor* outputs, int id) = 0;
   virtual void GetPaddleTensor(const std::string& name,
                                PaddleTensor* output) = 0;
+#else
+  virtual void Feed(const std::string& var_name, const PaddleTensor& input) = 0;
+  virtual void Fetch(const std::string& var_name, PaddleTensor* output) = 0;
+  virtual bool Run() = 0;
 #endif
 
  protected:

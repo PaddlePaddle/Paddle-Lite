@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/loader.h"
+#include <memory>
 
 #include "framework/lod_tensor.h"
 #include "framework/program/program-optimize/program_optimize.h"
@@ -74,7 +75,17 @@ void Loader<GPU_CL, float>::InitMemoryFromProgram(
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
           PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
-          dim[0] = 1;
+          if (dim.size() == 0) {
+            auto tensor = var->GetMutable<LoDTensor>();
+            framework::DDim dDim = {0};
+            tensor->Resize(dDim);
+          } else {
+            for (auto &d : dim) {
+              if (d < 0) {
+                d *= -1;
+              }
+            }
+          }
           auto cl_image = var->GetMutable<framework::CLImage>();
           cl_image->Resize(make_ddim(dim));
         }
@@ -173,7 +184,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   rewind(fp);
 
   DLOG << "model size: " << size;
-
+  PADDLE_MOBILE_ENFORCE(size > 0, "model size should > 0")
   *out = reinterpret_cast<uint8_t *>(malloc(size));
 
   size_t cur_len = 0;

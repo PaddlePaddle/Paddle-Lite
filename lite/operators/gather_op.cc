@@ -26,7 +26,7 @@ bool GatherOp::CheckShape() const {
   return true;
 }
 
-bool GatherOp::InferShape() const {
+bool GatherOp::InferShapeImpl() const {
   auto index_dims = param_.Index->dims();
   CHECK(index_dims.size() == 1 ||
         (index_dims.size() == 2 && index_dims[1] == 1))
@@ -39,15 +39,12 @@ bool GatherOp::InferShape() const {
 }
 
 bool GatherOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  param_.Index =
-      scope->FindVar(opdesc.Input("Index").front())->GetMutable<lite::Tensor>();
+  param_.X = scope->FindTensor(opdesc.Input("X").front());
+  param_.Index = scope->FindTensor(opdesc.Input("Index").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   CHECK(param_.X) << "X is null";
-  CHECK(param_.Out) << "out is null";
   CHECK(param_.Index) << "index is null";
+  CHECK(param_.Out) << "out is null";
   return true;
 }
 

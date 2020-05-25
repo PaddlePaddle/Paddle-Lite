@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/backends/cuda/math/transpose.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -25,6 +26,9 @@ class NCHWToNHWCCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NCHWToNHWCCompute() = default;
+
+ private:
+  lite::cuda::math::Transpose<float> trans;
 };
 
 class NCHWToNHWCComputeInt8
@@ -33,6 +37,9 @@ class NCHWToNHWCComputeInt8
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NCHWToNHWCComputeInt8() = default;
+
+ private:
+  lite::cuda::math::Transpose<int8_t> trans;
 };
 
 class NHWCToNCHWCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
@@ -40,6 +47,9 @@ class NHWCToNCHWCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NHWCToNCHWCompute() = default;
+
+ private:
+  lite::cuda::math::Transpose<float> trans;
 };
 
 class NHWCToNCHWComputeInt8
@@ -48,6 +58,9 @@ class NHWCToNCHWComputeInt8
   using param_t = operators::LayoutParam;
   void Run() override;
   virtual ~NHWCToNCHWComputeInt8() = default;
+
+ private:
+  lite::cuda::math::Transpose<int8_t> trans;
 };
 
 }  // namespace cuda

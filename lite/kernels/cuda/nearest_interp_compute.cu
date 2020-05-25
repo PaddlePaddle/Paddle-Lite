@@ -11,6 +11,7 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
+#include "lite/backends/cuda/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/cuda/nearest_interp_compute.h"
 
@@ -19,6 +20,43 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 using Tensor = lite::Tensor;
+
+inline std::vector<int> get_new_shape(
+    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+  // get tensor from
+  std::vector<int> vec_new_shape;
+  for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
+    auto tensor = list_new_shape_tensor[i];
+    lite::Tensor temp;
+    auto temp_data = temp.mutable_data<float>();
+    auto tensor_data = tensor->data<float>();
+    cudaMemcpy(temp_data,
+               tensor_data,
+               tensor->dims().production() * sizeof(float),
+               cudaMemcpyDeviceToHost);
+
+    vec_new_shape.push_back(static_cast<int32_t>(*temp_data));
+  }
+
+  return vec_new_shape;
+}
+
+template <typename T>
+inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
+  std::vector<T> vec_new_data;
+  auto* new_data = new_data_tensor->data<T>();
+  lite::Tensor cpu_starts_tensor;
+  auto cpu_starts_tensor_data = cpu_starts_tensor.mutable_data<T>();
+  cudaMemcpy(cpu_starts_tensor_data,
+             new_data,
+             new_data_tensor->dims().production() * sizeof(T),
+             cudaMemcpyDeviceToHost);
+
+  auto new_data_ = cpu_starts_tensor.data<T>();
+  vec_new_data = std::vector<T>(
+      new_data_, new_data_ + new_data_tensor->dims().production());
+  return vec_new_data;
+}
 
 __global__ void KeNearestNeighborInterp(const float* in,
                                         const size_t in_img_h,
@@ -79,19 +117,34 @@ void NearestInterpCompute::Run() {
   int out_w = param.out_w;
   float scale = param.scale;
   bool align_corners = param.align_corners;
-  if (scale > 0) {
-    out_h = static_cast<int>(in_h * scale);
-    out_w = static_cast<int>(in_w * scale);
-  }
+  auto align_mode = param.align_mode;
 
-  if (out_size != nullptr) {
-    Tensor sizes;
-    float* size_data = sizes.mutable_data<float>();
-    float* outsize_data = out_size->mutable_data<float>(TARGET(kCUDA));
-    cudaMemcpy(
-        size_data, outsize_data, sizeof(float) * 2, cudaMemcpyDeviceToHost);
-    out_h = static_cast<int>(size_data[0]);
-    out_w = static_cast<int>(size_data[1]);
+  auto list_new_shape_tensor = param.SizeTensor;
+  if (list_new_shape_tensor.size() > 0) {
+    // have size tensor
+    auto new_size = get_new_shape(list_new_shape_tensor);
+    out_h = new_size[0];
+    out_w = new_size[1];
+  } else {
+    auto scale_tensor = param.Scale;
+    if (scale_tensor != nullptr) {
+      auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+      scale = scale_data[0];
+    }
+    if (scale > 0) {
+      out_h = static_cast<int>(in_h * scale);
+      out_w = static_cast<int>(in_w * scale);
+    }
+
+    if (out_size != nullptr) {
+      lite::Tensor sizes;
+      float* size_data = sizes.mutable_data<float>();
+      float* outsize_data = out_size->mutable_data<float>(TARGET(kCUDA));
+      cudaMemcpy(
+          size_data, outsize_data, sizeof(float) * 2, cudaMemcpyDeviceToHost);
+      out_h = static_cast<int>(size_data[0]);
+      out_w = static_cast<int>(size_data[1]);
+    }
   }
 
   auto output_data = output->mutable_data<float>(TARGET(kCUDA));
@@ -159,6 +212,14 @@ REGISTER_LITE_KERNEL(nearest_interp,
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW))})
     .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Scale",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW))})

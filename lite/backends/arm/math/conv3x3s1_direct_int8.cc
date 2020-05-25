@@ -41,10 +41,11 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                             const operators::ConvParam& param,
                             Context<TARGET(kARM)>* ctx,
                             const float* scale) {
+  auto paddings = *param.paddings;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias;
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
+  int pad_h = paddings[0];
+  int pad_w = paddings[2];
 
   const int threads = ctx->threads();
   int llc_size = ctx->llc_size() / 4;

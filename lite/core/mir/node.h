@@ -53,6 +53,7 @@ class Node {
                  const std::vector<Place>& valid_places,
                  lite::Scope* scope = nullptr);
 
+    void ResetKernels(const std::vector<Place>& valid_places);
     std::string op_type() const { return op_info()->Type(); }
     const OpInfo* op_info() const;
     OpInfo* mutable_op_info();
@@ -64,9 +65,6 @@ class Node {
       return valid_kernels_;
     }
 
-    void ClearSubgraphID() { subgraph_id_ = -1 /* note: not 0 */; }
-    void SetSubgraphID(int id) { subgraph_id_ = id; }
-    int subgraph_id() const { return subgraph_id_; }
     void SetOp(const std::shared_ptr<OpLite>& op) { op_ = op; }
     const std::shared_ptr<OpLite> op() const { return op_; }
 
@@ -83,16 +81,17 @@ class Node {
     // Description.
     std::string desc;
 
-   protected:
-    // -1 means not in subgraph, 0 means supported but not one id, id started
-    // from 1
-    int subgraph_id_{-1};
+    // for cuda multi stream
+    bool need_sync_{false};
+    int stream_id_{0};
+    // streams which need to be sync. exclude stream_id_
+    std::vector<int> sync_streams_{};
   };
 
   struct Arg {
     std::string name;
     int id{0};
-    const Type* type{};
+    const Type* type{nullptr};
     // Weight is a special kind of argument, it is marked as weight explicitly
     // so that some weight related optimization can take place.
     bool is_weight{false};
@@ -100,6 +99,7 @@ class Node {
     // if the need more than one tool operator(eg. io_copy layout calib), the
     // argument between them should be persist to make sure it's only run once
     bool is_persist{false};
+    int lane{-1};
   };
 
   Arg& AsArg(const std::string& name, int id);

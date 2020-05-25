@@ -27,10 +27,10 @@ bool LayerNormOp::CheckShape() const {
   return true;
 }
 
-bool LayerNormOp::InferShape() const {
+bool LayerNormOp::InferShapeImpl() const {
   auto out_dims = param_.X->dims();
   param_.Y->Resize(out_dims);
-  auto inner_size = out_dims.Flatten2D(param_.begin_norm_axis)[1];
+  auto inner_size = out_dims.Flatten2D(param_.begin_norm_axis)[0];
   param_.Mean->Resize(std::vector<int64_t>({inner_size}));
   param_.Variance->Resize(std::vector<int64_t>({inner_size}));
 

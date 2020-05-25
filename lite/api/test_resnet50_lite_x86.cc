@@ -38,7 +38,7 @@ TEST(Resnet50, test_resnet50_lite_x86) {
   input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
   int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
+  for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
   for (int i = 0; i < input_num; i++) {
@@ -63,19 +63,19 @@ TEST(Resnet50, test_resnet50_lite_x86) {
   std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
-      {0.00024139918, 0.00020566184, 0.00022418296, 0.00041731037,
-       0.0005366107,  0.00016948722, 0.00028638865, 0.0009257241,
-       0.00072681636, 8.531815e-05,  0.0002129998,  0.0021168243,
-       0.006387163,   0.0037145028,  0.0012812682,  0.00045948103,
-       0.00013535398, 0.0002483765,  0.00076759676, 0.0002773295}));
+      {0.00024139918f, 0.00020566184f, 0.00022418296f, 0.00041731037f,
+       0.0005366107f,  0.00016948722f, 0.00028638865f, 0.0009257241f,
+       0.00072681636f, 8.531815e-05f,  0.0002129998f,  0.0021168243f,
+       0.006387163f,   0.0037145028f,  0.0012812682f,  0.00045948103f,
+       0.00013535398f, 0.0002483765f,  0.00076759676f, 0.0002773295f}));
   auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape().size(), 2u);
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 
   int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
                   results[i][j],
                   1e-6);

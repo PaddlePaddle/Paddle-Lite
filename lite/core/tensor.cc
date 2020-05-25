@@ -25,21 +25,17 @@ using value_type = int64_t;
 
 value_type DDimLite::production() const {
   value_type res = 1;
-  for (size_t i = 0; i < this->size(); i++) {
-    res *= (*this)[i];
+  for (size_t i = 0; i < data_.size(); i++) {
+    res *= data_[i];
   }
   return res;
 }
 
 value_type DDimLite::count(int start, int end) const {
-  if (start < 0) {
-    start = 0;
-  }
-  if (end > size()) {
-    end = size();
-  }
+  start = (std::max)(start, 0);
+  end = (std::min)(end, static_cast<int>(data_.size()));
   if (end < start) {
-    end = start;
+    return 0;
   }
   value_type sum = 1;
   for (auto i = start; i < end; ++i) {
@@ -49,11 +45,13 @@ value_type DDimLite::count(int start, int end) const {
 }
 
 DDimLite DDimLite::Slice(int start, int end) const {
-  std::vector<value_type> vec;
+  start = (std::max)(start, 0);
+  end = (std::min)(end, static_cast<int>(data_.size()));
+  std::vector<value_type> new_dim(end - start);
   for (int i = start; i < end; i++) {
-    vec.push_back((*this)[i]);
+    new_dim[i - start] = data_[i];
   }
-  return DDimLite(vec);
+  return DDim(new_dim);
 }
 
 std::string DDimLite::repr() const {
@@ -77,6 +75,7 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  precision_ = other.precision_;
 }
 
 void TensorLite::CopyDataFrom(const TensorLite &other) {
@@ -84,6 +83,7 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   target_ = other.target_;
   lod_ = other.lod_;
   memory_size_ = other.memory_size_;
+  precision_ = other.precision_;
   buffer_->CopyDataFrom(*other.buffer_, memory_size_);
 }
 
@@ -98,9 +98,30 @@ void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
   return mutable_data(memory_size);
 }
 
+void TensorLite::ResetBuffer(std::shared_ptr<Buffer> buffer,
+                             size_t memory_size) {
+  CHECK_EQ(offset_, 0u)
+      << "Only the offset is supported to zero when the Buffer is reset.";
+  if (buffer_) {
+    CHECK_LE(memory_size_, buffer->space())
+        << "The space of buffer is not enough to store the tensor.";
+    CHECK_LE(memory_size, buffer->space())
+        << "The buffer is smaller than the specified minimum size.";
+  }
+  buffer_ = buffer;
+  memory_size_ = memory_size;
+  target_ = buffer->target();
+}
+
 #ifdef LITE_WITH_OPENCL
 template <>
 const cl::Image2D *TensorLite::data<float, cl::Image2D>() const {
+  if (nullptr == buffer_->data()) return nullptr;
+  return static_cast<const cl::Image2D *>(buffer_->data());
+}
+
+template <>  // use uint16_t represent half float
+const cl::Image2D *TensorLite::data<uint16_t, cl::Image2D>() const {
   if (nullptr == buffer_->data()) return nullptr;
   return static_cast<const cl::Image2D *>(buffer_->data());
 }

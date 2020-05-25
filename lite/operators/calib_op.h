@@ -42,13 +42,24 @@ class CalibOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "calib"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.input->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "scale" + std::to_string(param_.scale);
+    ch->macs = param_.output->numel() * 1.0f;
+  }
+#endif
 
  private:
   mutable CalibParam param_;

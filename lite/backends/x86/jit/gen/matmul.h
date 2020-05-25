@@ -17,8 +17,8 @@
 #include <stdlib.h>  // for malloc and free
 #include <string>
 #include <vector>
-#include "glog/logging.h"
 #include "lite/backends/x86/jit/gen/jitcode.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
@@ -38,8 +38,8 @@ class MatMulJitCode : public JitCode {
 
   std::string name() const override {
     std::string base = "MatMulJitCode";
-    base = base + "_M" + std::to_string(m_) + "_N" + std::to_string(n_) + "_K" +
-           std::to_string(k_);
+    base = base + "_M" + paddle::lite::to_string(m_) + "_N" +
+           paddle::lite::to_string(n_) + "_K" + paddle::lite::to_string(k_);
     return base;
   }
   void genCode() override;

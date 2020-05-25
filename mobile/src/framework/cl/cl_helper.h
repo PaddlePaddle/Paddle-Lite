@@ -36,9 +36,9 @@ class CLHelper {
 
   void AddKernel(const std::string &kernel_name, const std::string &file_name,
                  const std::string &options = "") {
-    DLOG << " begin add kernel ";
+    LOG(kLOG_DEBUG1) << " begin add kernel ";
     auto kernel = scope_->GetKernel(kernel_name, file_name, options);
-    DLOG << " add kernel ing ";
+    LOG(kLOG_DEBUG1) << " begin add kernel ";
     kernels.emplace_back(std::move(kernel));
   }
 

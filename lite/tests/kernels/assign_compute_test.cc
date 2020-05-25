@@ -67,13 +67,14 @@ void TestAssign(const Place& place) {
 }
 
 TEST(Assign, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
+  Place place;
 #ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  TestAssign(place);
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  TestAssign(place);
 }
 
 }  // namespace lite

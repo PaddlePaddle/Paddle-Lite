@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/activation.h"
+#include <algorithm>
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
 
@@ -699,6 +700,76 @@ void act_rsqrt<float>(const float* din, float* dout, int size, int threads) {
     ptr_out++;
   }
 }
+
+template <>
+void act_square<float>(const float* din, float* dout, int size, int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = ptr_in[0] * ptr_in[0];
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+template <>
+void act_hard_swish<float>(const float* din,
+                           float* dout,
+                           int size,
+                           float threshold,
+                           float scale,
+                           float offset,
+                           int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = std::min(std::max(0.f, ptr_in[0] + offset), threshold) *
+                 ptr_in[0] / scale;
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+template <>
+void act_reciprocal<float>(const float* din,
+                           float* dout,
+                           int size,
+                           int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = 1.0 / ptr_in[0];
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+template <>
+void act_abs<float>(const float* din, float* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (din[0] > 0 ? din[0] : -din[0]);
+    din++;
+    dout++;
+  }
+}
+
+#ifdef LITE_WITH_TRAIN
+template <>
+void act_square_grad(const float* din,
+                     const float* dout_grad,
+                     float* din_grad,
+                     int size,
+                     int threads) {
+  const float* ptr_out_grad = dout_grad;
+  float* ptr_in_grad = din_grad;
+  for (int i = 0; i < size; ++i) {
+    ptr_in_grad[0] = ptr_out_grad[0] * 2.0 * din[0];
+    ptr_out_grad++;
+    ptr_in_grad++;
+    din++;
+  }
+}
+#endif
 
 }  // namespace math
 }  // namespace arm

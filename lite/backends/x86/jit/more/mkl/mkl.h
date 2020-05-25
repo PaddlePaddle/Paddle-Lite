@@ -142,14 +142,13 @@ void StrideScal(const T* a, const T* x, T* y, int n, int stride);
 // remain is the product of dimension shapes after the axis dimension
 template <typename T>
 void Softmax(const T* x, T* y, int n, int bs, int remain = 1) {
-  std::vector<T> entities(bs);
   for (int i = 0; i < bs; ++i) {
-    entities[i] = x[i * n];
+    T entity = x[i * n];
     for (int c = 1; c < n; ++c) {
-      entities[i] = x[i * n + c] > entities[i] ? x[i * n + c] : entities[i];
+      entity = x[i * n + c] > entity ? x[i * n + c] : entity;
     }
     for (int c = 0; c < n; ++c) {
-      y[i * n + c] = x[i * n + c] - entities[i];
+      y[i * n + c] = x[i * n + c] - entity;
     }
   }
   VExp(y, y, n * bs);

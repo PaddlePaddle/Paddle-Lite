@@ -127,4 +127,4 @@ class SgdCreator : public JitCodeCreator<sgd_attr_t> {
 
 namespace gen = paddle::lite::jit::gen;
 
-REGISTER_JITKERNEL_GEN(kSgd, gen::SgdCreator);
+REGISTER_JITKERNEL_GEN_LITE(kSgd, gen::SgdCreator);

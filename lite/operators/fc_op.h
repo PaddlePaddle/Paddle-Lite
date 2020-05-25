@@ -35,22 +35,24 @@ class FcOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
-  /*
-  bool Run() override {
-    CHECK(kernel_);
-    kernel_->Run();
-    return true;
-  }
-   */
-
-  // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "fc"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto m = param_.input->dims().count(0, param_.in_num_col_dims);
+    ch->input_shape = ch->DimToStr(param_.input->dims());
+    ch->filter_shape = ch->DimToStr(param_.w->dims());
+    ch->output_shape = ch->DimToStr(param_.output->dims());
+    ch->remark = (param_.bias ? "Bias" : "") + param_.activation_type;
+    ch->macs = m * param_.w->dims()[0] * param_.w->dims()[1] * 3.0f;
+  }
+#endif
 
  private:
   mutable FcParam param_;

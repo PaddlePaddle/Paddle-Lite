@@ -25,11 +25,13 @@ namespace fusion {
 
 class FcFuser : public FuseBase {
  public:
+  explicit FcFuser(bool with_relu) : with_relu_(with_relu) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  bool with_relu_;
 };
 
 }  // namespace fusion

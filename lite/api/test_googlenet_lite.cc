@@ -38,7 +38,7 @@ TEST(CXXApi, test_lite_googlenet) {
   input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
   int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
+  for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
   for (int i = 0; i < input_num; i++) {
@@ -61,15 +61,15 @@ TEST(CXXApi, test_lite_googlenet) {
             << " ms in average.";
   auto out = predictor->GetOutput(0);
   std::vector<float> results(
-      {0.00034298553, 0.0008200012, 0.0005046297, 0.000839279,
-       0.00052616704, 0.0003447803, 0.0010877076, 0.00081762316,
-       0.0003941339,  0.0011430943, 0.0008892841, 0.00080191303,
-       0.0004442384,  0.000658702,  0.0026721435, 0.0013686896,
-       0.0005618166,  0.0006556497, 0.0006984528, 0.0014619455});
+      {0.00034298553f, 0.0008200012f, 0.0005046297f, 0.000839279f,
+       0.00052616704f, 0.0003447803f, 0.0010877076f, 0.00081762316f,
+       0.0003941339f,  0.0011430943f, 0.0008892841f, 0.00080191303f,
+       0.0004442384f,  0.000658702f,  0.0026721435f, 0.0013686896f,
+       0.0005618166f,  0.0006556497f, 0.0006984528f, 0.0014619455f});
   for (size_t i = 0; i < results.size(); ++i) {
     EXPECT_NEAR(out->data<float>()[i * 51], results[i], 1e-5);
   }
-  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape().size(), 2u);
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 }

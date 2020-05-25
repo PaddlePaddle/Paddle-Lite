@@ -54,7 +54,7 @@ void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
   int stride_h = strides[0];
   int dila_w = dilations[1];
   int dila_h = dilations[0];
-  int pad_w = paddings[1];
+  int pad_w = paddings[2];
   int pad_h = paddings[0];
   int batch_size = input_dims[0];
   int in_ch_size = input_dims[1];
@@ -175,7 +175,8 @@ void test_conv(int bs,
   opdesc.SetOutput("Output", {output_var_name});
   opdesc.SetAttr("dilations", std::vector<int32_t>({dilation, dilation}));
   opdesc.SetAttr("strides", std::vector<int32_t>({stride, stride}));
-  opdesc.SetAttr("paddings", std::vector<int32_t>({padding, padding}));
+  opdesc.SetAttr("paddings",
+                 std::vector<int32_t>({padding, padding, padding, padding}));
   opdesc.SetAttr("groups", groups);
   opdesc.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
   if (has_bias) {

@@ -383,6 +383,8 @@ struct GRUUnitFunctor {
                       const lite_api::ActivationType active_gate,
                       bool origin_mode,
                       ARMContext* ctx) {
+    operators::ActivationParam act_param;
+    act_param.has_active = false;
     if (value.prev_out_value) {
       sgemm(false,
             false,
@@ -399,7 +401,7 @@ struct GRUUnitFunctor {
             frame_size * 3,
             nullptr,
             false,
-            false,
+            act_param,
             ctx);
     }
     gru_unit_reset_act(active_gate, value, frame_size, batch_size);
@@ -420,7 +422,7 @@ struct GRUUnitFunctor {
             frame_size * 3,
             nullptr,
             false,
-            false,
+            act_param,
             ctx);
     }
 

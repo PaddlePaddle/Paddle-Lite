@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/op_registry.h"
@@ -24,17 +25,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static void UpdateInputTo(cpp::OpDesc* desc,
-                          const std::string& from,
-                          const std::string& to) {
-  for (auto& item : *desc->mutable_inputs()) {
-    for (auto& input : item.second) {
-      if (input == from) {
-        input = to;
-      }
-    }
-  }
-}
+void UpdateInputs(OpLite* op, const std::string& from, const std::string& to);
 
 /*
  * The pass complement the necessary instruction to make data
@@ -44,13 +35,17 @@ class PrecisionCastPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
-  void ComplementInputs(SSAGraph* graph, Node* inst_node, Node* in);
+  void ComplementInputs(SSAGraph* graph,
+                        Node* inst_node,
+                        Node* in,
+                        std::unordered_map<std::string, Node*>* cast_nodes);
 
   void AddCastInst(const Type& from,
                    const Type& to,
                    Node* in,
                    SSAGraph* graph,
                    Node* inst_node,
+                   std::unordered_map<std::string, Node*>* cast_nodes,
                    const std::vector<Place>& valid_places);
 
   void SetValidPlaces(const std::vector<Place>& valid_places);

@@ -83,7 +83,7 @@ class ColwiseSum<lite::TargetType::kX86, T> {
     auto size = in_dims[1];
     PADDLE_ENFORCE_EQ(out->numel(), size);
 
-    T* out_buf = out->mutable_data<T>(out->target());
+    T* out_buf = out->template mutable_data<T>(out->target());
     const T* in_buf = input.data<T>();
 
     for (size_t i = 0; i < static_cast<size_t>(height); ++i) {
@@ -129,7 +129,7 @@ class RowwiseMean<lite::TargetType::kX86, T> {
     auto size = in_dims[1];
     PADDLE_ENFORCE_EQ(out->numel(), height);
     auto inv_size = 1.0 / size;
-    T* out_buf = out->mutable_data<T>(out->target());
+    T* out_buf = out->template mutable_data<T>(out->target());
     const T* in_buf = input.data<T>();
 
     for (size_t i = 0; i < static_cast<size_t>(height); ++i) {
@@ -173,7 +173,7 @@ class RowwiseSum<lite::TargetType::kX86, T> {
     auto size = in_dims[1];
     PADDLE_ENFORCE_EQ(out->numel(), height);
 
-    T* out_buf = out->mutable_data<T>(out->target());
+    T* out_buf = out->template mutable_data<T>(out->target());
     const T* in_buf = input.data<T>();
 
     for (size_t i = 0; i < static_cast<size_t>(height); ++i) {

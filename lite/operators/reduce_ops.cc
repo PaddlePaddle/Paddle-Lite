@@ -28,40 +28,42 @@ bool ReduceOp::CheckShape() const {
   return true;
 }
 
-bool ReduceOp::InferShape() const {
-  auto x_dims = param_.x->dims();
+bool ReduceOp::InferShapeImpl() const {
+  const auto &x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
   auto dims = param_.dim;
   for (size_t i = 0; i < dims.size(); ++i) {
-    if (dims[i] < 0) dims[i] = x_rank + dims[i];
+    if (dims[i] < 0) {
+      dims[i] = x_rank + dims[i];
+    }
     CHECK_LT(dims[i], x_rank)
         << "The dim should be in the range [-rank(input), rank(input).";
   }
-  sort(dims.begin(), dims.end());
   bool reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
 
   if (reduce_all) {
     if (keep_dim)
-      param_.output->Resize(lite::DDim(std::vector<int64_t>(x_rank, 1)));
+      param_.output->Resize(std::vector<int64_t>(x_rank, 1));
     else
-      param_.output->Resize(lite::DDim(std::vector<int64_t>{1}));
+      param_.output->Resize(std::vector<int64_t>{1});
   } else {
-    auto dims_vector = x_dims.Vectorize();
-    if (keep_dim) {
-      for (size_t i = 0; i < dims.size(); ++i) {
-        dims_vector[dims[i]] = 1;
+    size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
+    std::vector<DDim::value_type> out_dims(out_rank);
+    sort(dims.begin(), dims.end());
+    int dim_index = 0;
+    int out_index = 0;
+    for (size_t i = 0; i < x_rank; ++i) {
+      if (dim_index < dims.size() &&
+          dims[dim_index] == static_cast<DDim::value_type>(i)) {
+        if (keep_dim) {
+          out_dims[out_index++] = 1;
+        }
+        dim_index++;
+      } else {
+        out_dims[out_index++] = x_dims[i];
       }
-    } else {
-      const int kDelFlag = -2;
-      for (size_t i = 0; i < dims.size(); ++i) {
-        dims_vector[dims[i]] = kDelFlag;
-      }
-      dims_vector.erase(
-          remove(dims_vector.begin(), dims_vector.end(), kDelFlag),
-          dims_vector.end());
     }
-    auto out_dims = lite::DDim(dims_vector);
     param_.output->Resize(out_dims);
     if (dims[0] != 0) {
       param_.output->set_lod(param_.x->lod());

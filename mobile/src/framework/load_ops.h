@@ -246,7 +246,7 @@ LOAD_OP2(fusion_conv_bn, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_bn);
 #endif
 #ifdef ELEMENTWISESUB_OP
-LOAD_OP1(elementwise_sub, CPU)
+LOAD_OP2(elementwise_sub, CPU, GPU_CL)
 #endif
 #ifdef TOP_K_OP
 LOAD_OP1(top_k, CPU)
@@ -379,4 +379,10 @@ LOAD_OP1(reduce_prod, CPU);
 #endif
 #ifdef PIXEL_SHUFFLE_OP
 LOAD_OP1(pixel_shuffle, GPU_CL);
+#endif
+#ifdef EXPAND_OP
+LOAD_OP1(expand, GPU_CL);
+#endif
+#ifdef GRID_SAMPLER_OP
+LOAD_OP1(grid_sampler, GPU_CL);
 #endif

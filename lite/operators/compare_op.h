@@ -30,13 +30,25 @@ class CompareOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "binary logical"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto output_dims = param_.Out->dims();
+    ch->input_shape = "X:" + ch->DimToStr(param_.X->dims()) + "Y:" +
+                      ch->DimToStr(param_.Y->dims());
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "axis" + std::to_string(param_.axis) + "force_cpu" +
+                 std::to_string(param_.force_cpu);
+    ch->macs = param_.Out->numel() * 1.0f;
+  }
+#endif
 
  private:
   mutable CompareParam param_;

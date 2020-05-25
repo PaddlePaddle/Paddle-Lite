@@ -42,7 +42,7 @@ static std::string version() {
 
   std::string tag = paddlelite_tag();
   if (tag.empty()) {
-    ss << paddlelite_branch() << "(" << paddlelite_commit() << ")";
+    ss << paddlelite_commit();
   } else {
     ss << tag;
   }
@@ -53,9 +53,9 @@ static std::string version() {
 static int64_t int_version(const std::string& version) {
   const std::vector<std::string> vec = Split(version, ".");
   if (vec.size() == 3) {
-    return std::stoi(vec[0]) * MAJOR_COEFF +
-           std::stoi(vec[1]) * MINOR_COEFF +
-           std::stoi(vec[2]) * PATCH_COEFF;
+    return atoi(vec[0].c_str()) * MAJOR_COEFF +
+           atoi(vec[1].c_str()) * MINOR_COEFF +
+           atoi(vec[2].c_str()) * PATCH_COEFF;
   }
   return -1;
 }

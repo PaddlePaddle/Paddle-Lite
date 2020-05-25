@@ -16,12 +16,14 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
+
 #define COMPARE_FUNCTOR(name, op)                                           \
   template <typename T>                                                     \
-  struct _##name##Functor {                                                 \
+  struct name##Functor {                                                    \
     inline bool operator()(const T& a, const T& b) const { return a op b; } \
   };
 
@@ -33,7 +35,7 @@ COMPARE_FUNCTOR(GreaterThan, >);
 COMPARE_FUNCTOR(GreaterEqual, >=);
 
 template <>
-struct _EqualFunctor<float> {
+struct EqualFunctor<float> {
   inline bool operator()(const float& a, const float& b) const {
     // It is safe to cast a and b to double.
     return fabs(static_cast<double>(a - b)) < 1e-8;
@@ -41,59 +43,56 @@ struct _EqualFunctor<float> {
 };
 
 template <>
-struct _NotEqualFunctor<float> {
+struct NotEqualFunctor<float> {
   inline bool operator()(const float& a, const float& b) const {
-    return !_EqualFunctor<float>()(a, b);
+    return !EqualFunctor<float>()(a, b);
   }
 };
 
-template <template <typename T> class Functor>
-class LessThanTester : public arena::TestCase {
+template <typename T, template <typename U> class Functor>
+class CompareComputeTester : public arena::TestCase {
  protected:
-  std::string input_x_ = "x";
-  std::string input_y_ = "y";
-  std::string output_ = "out";
-  int axis_ = 1;
-  bool force_cpu_ = 0;
+  std::string x_ = "x";
+  std::string y_ = "y";
+  std::string out_ = "out";
+  std::string op_ = "less_than";
   DDim x_dims_{{3, 5, 4, 4}};
   DDim y_dims_{{4}};
-  std::string opname_ = "less_than";
+  int axis_ = -1;
+  bool force_cpu_ = false;
 
  public:
-  LessThanTester(const Place& place,
-                 const std::string& alias,
-                 bool force_cpu,
-                 int axis,
-                 DDim x_dims,
-                 DDim y_dims,
-                 const std::string& opname)
+  CompareComputeTester(const Place& place,
+                       const std::string& alias,
+                       const std::string op,
+                       DDim x_dims,
+                       DDim y_dims,
+                       int axis = -1)
       : TestCase(place, alias),
-        axis_(axis),
-        force_cpu_(force_cpu),
+        op_(op),
         x_dims_(x_dims),
         y_dims_(y_dims),
-        opname_(opname) {}
+        axis_(axis) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output_);
+    auto* out = scope->NewTensor(out_);
     CHECK(out);
     out->Resize(x_dims_);
-    auto* out_data = out->mutable_data<bool>();
+    auto* out_data = out->template mutable_data<bool>();
     auto axis = axis_;
-    auto* x = scope->FindTensor(input_x_);
-    const auto* x_data = x->data<float>();
-    auto* y = scope->FindTensor(input_y_);
-    auto* y_data_in = y->data<float>();
+    auto* x = scope->FindTensor(x_);
+    const auto* x_data = x->template data<T>();
+    auto* y = scope->FindTensor(y_);
+    auto* y_data_in = y->template data<T>();
 
-    using CompareFunc = Functor<float>;
+    using CompareFunc = Functor<T>;
     if (x_dims_.size() == y_dims_.size()) {
       for (int i = 0; i < x_dims_.production(); i++) {
-        // out_data[i] = x_data[i] < y_data[i];
         out_data[i] = CompareFunc()(x_data[i], y_data_in[i]);
       }
     } else {
-      auto* y_data = reinterpret_cast<float*>(
-          malloc(x_dims_.production() * sizeof(float)));
+      auto* y_data =
+          reinterpret_cast<T*>(malloc(x_dims_.production() * sizeof(T)));
 
       if (axis < 0) {
         axis = x_dims_.size() - y_dims_.size();
@@ -111,12 +110,12 @@ class LessThanTester : public arena::TestCase {
         num *= x_dims_[i];
       }
       int ysize = channels * num;
-      float* y_data_t = reinterpret_cast<float*>(y_data);
+      T* y_data_t = reinterpret_cast<T*>(y_data);
       if (num == 1) {
         for (int i = 0; i < batch; ++i) {
           memcpy(reinterpret_cast<void*>(y_data_t),
                  reinterpret_cast<const void*>(&y_data_in[0]),
-                 ysize * sizeof(float));
+                 ysize * sizeof(T));
           y_data_t += ysize;
         }
 
@@ -126,118 +125,118 @@ class LessThanTester : public arena::TestCase {
             y_data_t[i * num + j] = y_data_in[i];
           }
         }
-        float* tempptr = y_data_t;
+        T* tempptr = y_data_t;
         for (int i = 0; i < batch; ++i) {
-          memcpy(y_data_t, tempptr, ysize * sizeof(float));
+          memcpy(y_data_t, tempptr, ysize * sizeof(T));
           y_data_t += ysize;
         }
       }
       for (int i = 0; i < x_dims_.production(); i++) {
-        // out_data[i] = x_data[i] < y_data[i];
         out_data[i] = CompareFunc()(x_data[i], y_data[i]);
       }
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType(opname_);
-    op_desc->SetInput("X", {input_x_});
-    op_desc->SetInput("Y", {input_y_});
-    op_desc->SetOutput("Out", {output_});
+    op_desc->SetType(op_);
+    op_desc->SetInput("X", {x_});
+    op_desc->SetInput("Y", {y_});
+    op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("axis", axis_);
     op_desc->SetAttr("force_cpu", force_cpu_);
   }
 
   void PrepareData() override {
-    std::vector<float> data(x_dims_.production());
-    std::vector<float> datay(
-        y_dims_.production());  // datay(dims_.production());
-    for (int i = 0; i < x_dims_.production(); i++) {
-      data[i] = 1.1;
-    }
-    for (int i = 0; i < y_dims_.production(); i++) {
-      datay[i] = i;
-    }
-    SetCommonTensor(input_x_, x_dims_, data.data());
-    SetCommonTensor(input_y_, y_dims_, datay.data());
+    std::vector<T> dx(x_dims_.production());
+    std::vector<T> dy(y_dims_.production());
+    fill_data_rand<T>(dx.data(), -5, 5, x_dims_.production());
+    fill_data_rand<T>(dy.data(), -5, 5, y_dims_.production());
+    SetCommonTensor(x_, x_dims_, dx.data());
+    SetCommonTensor(y_, y_dims_, dy.data());
   }
 };
-void test_compare(Place place) {
-  for (bool force_cpu : {0}) {
-    for (auto n : {1, 3, 4}) {
-      for (auto c : {1, 3, 4}) {
-        for (auto h : {1, 3, 4}) {
-          for (auto w : {1, 3, 4}) {
-            for (auto axis : {-1, 0, 1, 3}) {
-              for (auto yd : {std::vector<int64_t>({n}),
-                              std::vector<int64_t>({c}),
-                              std::vector<int64_t>({h}),
-                              std::vector<int64_t>({w}),
-                              std::vector<int64_t>({n, c}),
-                              std::vector<int64_t>({h, w}),
-                              std::vector<int64_t>({n, c, h}),
-                              std::vector<int64_t>({n, c, h, w})}) {
-                DDimLite x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
-                DDimLite y_dims = DDim(yd);
-                int axis_t = axis < 0 ? x_dims.size() - y_dims.size() : axis;
 
-                if (axis_t + y_dims.size() > 4) continue;
-                bool flag = false;
-                for (int i = 0; i < y_dims.size(); i++) {
-                  if (x_dims[i + axis_t] != y_dims[i]) flag = true;
-                }
-                if (flag) continue;
-                std::unique_ptr<arena::TestCase> less_than_tester(
-                    new LessThanTester<paddle::lite::_LessThanFunctor>(
-                        place,
-                        "def",
-                        force_cpu,
-                        axis,
-                        x_dims,
-                        y_dims,
-                        "less_than"));
-                arena::Arena less_than_arena(
-                    std::move(less_than_tester), place, 0.001);
-                less_than_arena.TestPrecision();
-                std::unique_ptr<arena::TestCase> equal_tester(
-                    new LessThanTester<paddle::lite::_EqualFunctor>(place,
-                                                                    "def",
-                                                                    force_cpu,
-                                                                    axis,
-                                                                    x_dims,
-                                                                    y_dims,
-                                                                    "equal"));
-                arena::Arena equal_arena(std::move(equal_tester), place, 0.001);
-                equal_arena.TestPrecision();
-                std::unique_ptr<arena::TestCase> greater_than_tester(
-                    new LessThanTester<paddle::lite::_GreaterThanFunctor>(
-                        place,
-                        "def",
-                        force_cpu,
-                        axis,
-                        x_dims,
-                        y_dims,
-                        "greater_than"));
-                arena::Arena greater_than_arena(
-                    std::move(greater_than_tester), place, 0.001);
-                greater_than_arena.TestPrecision();
-              }
-            }
-          }
-        }
-      }
-    }
+template <typename T>
+void TestCompare(Place place,
+                 float abs_error,
+                 std::string op,
+                 std::vector<int64_t> x_dims,
+                 std::vector<int64_t> y_dims,
+                 int axis) {
+  if (typeid(T) == typeid(float)) {
+    place.precision = PRECISION(kFloat);
+  } else if (typeid(T) == typeid(int32_t)) {
+    place.precision = PRECISION(kInt32);
+  } else if (typeid(T) == typeid(int64_t)) {
+    place.precision = PRECISION(kInt64);
+  } else {
+    LOG(FATAL) << "unsupported dtype";
   }
+
+  std::unique_ptr<arena::TestCase> tester = nullptr;
+  if (op == "equal") {
+    tester = static_cast<std::unique_ptr<arena::TestCase>>(
+        new CompareComputeTester<T, EqualFunctor>(
+            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+  } else if (op == "not_equal") {
+    tester = static_cast<std::unique_ptr<arena::TestCase>>(
+        new CompareComputeTester<T, NotEqualFunctor>(
+            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+  } else if (op == "less_than") {
+    tester = static_cast<std::unique_ptr<arena::TestCase>>(
+        new CompareComputeTester<T, LessThanFunctor>(
+            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+  } else if (op == "less_equal") {
+    tester = static_cast<std::unique_ptr<arena::TestCase>>(
+        new CompareComputeTester<T, LessEqualFunctor>(
+            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+  } else if (op == "greater_than") {
+    tester = static_cast<std::unique_ptr<arena::TestCase>>(
+        new CompareComputeTester<T, GreaterThanFunctor>(
+            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+  } else if (op == "greater_equal") {
+    tester = static_cast<std::unique_ptr<arena::TestCase>>(
+        new CompareComputeTester<T, GreaterEqualFunctor>(
+            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+  } else {
+    LOG(FATAL) << "unsupported type";
+  }
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
 }
-TEST(Compare_OP, precision) {
-// #ifdef LITE_WITH_X86
-// //   Place place(TARGET(kX86));
-// // #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_compare(place);
+
+#if defined(LITE_WITH_NPU)
+TEST(Compare_OP_NPU, precision) {
+  Place place{TARGET(kNPU)};
+  float abs_error = 1e-2;
+
+  TestCompare<float>(
+      place, abs_error, "less_than", {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
+  TestCompare<float>(place, abs_error, "less_than", {2, 3, 4}, {2, 3, 4}, 0);
+}
+#elif defined(LITE_WITH_ARM)
+TEST(Compare_OP_ARM, precision) {
+  Place place{TARGET(kHost)};
+  float abs_error = 1e-5;
+  for (auto op : std::vector<std::string>{"equal",
+                                          "not_equal",
+                                          "less_than",
+                                          "less_equal",
+                                          "greater_than",
+                                          "greater_equal"}) {
+    TestCompare<float>(place, abs_error, op, {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
+    TestCompare<float>(place, abs_error, op, {2, 3, 4}, {2, 3, 4}, 0);
+  }
+
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {3, 4}, 1);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {3, 4}, 1);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {4}, 2);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {5}, 3);
+
+  TestCompare<int32_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
+  TestCompare<int64_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
+}
 #endif
-}
 
 }  // namespace lite
 }  // namespace paddle

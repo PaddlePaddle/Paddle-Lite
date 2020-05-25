@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_image.h"
+#include <iostream>
+#include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
 #include "lite/utils/cp_logging.h"
@@ -24,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
   int width = cl_image.image_dims_[0];
   int height = cl_image.image_dims_[1];
 
-  float* image_data = new float[height * width * 4];
+  uint16_t* image_data = new uint16_t[height * width * 4];
   cl::Image* image = cl_image.cl_image();
 
   cl::array<size_t, 3> origin = {0, 0, 0};
@@ -41,7 +43,7 @@ std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
   int stride = cl_image.numel() / 20;
   stride = stride > 0 ? stride : 1;
 
-  os << " dims: " << cl_image.tensor_dims_ << "\n";
+  os << " dims: ";  // << cl_image.tensor_dims_ << "\n";
   for (int i = 0; i < cl_image.numel(); i += stride) {
     os << tensor_data[i] << " ";
   }
@@ -123,7 +125,7 @@ void CLImage::InitCLImage(const cl::Context& context,
   VLOG(3) << " begin init cl image ";
   image_dims_ = converter->InitImageDimInfoWith(tensor_dims_);
 
-  float* image_data = new float[image_dims_.production() * 4];
+  uint16_t* image_data = new uint16_t[image_dims_.production() * 4];
 
   VLOG(3) << " convert to image ";
   converter->NCHWToImage(tensor_data_.get(), image_data, tensor_dims_);

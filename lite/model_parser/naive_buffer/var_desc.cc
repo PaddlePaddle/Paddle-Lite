@@ -99,10 +99,87 @@ const proto::VarType& VarDesc::GetVarType() const {
   return desc_->GetField<proto::VarType>("type");
 }
 
+VarDescAPI::VarDataType VarDesc::GetDataType() const {
+  using data_type_builder_t = EnumBuilder<proto::VarDataType>;
+
+  auto data_type = desc_->GetField<proto::TensorDesc>("tensor_desc")
+                       .GetField<data_type_builder_t>("data_type")
+                       .data();
+#define GET_DATA_TYPE_CASE_ITEM(type__) \
+  case proto::VarDataType::type__:      \
+    return VarDescAPI::VarDataType::type__
+
+  switch (data_type) {
+    // Only support primary data type now.
+    GET_DATA_TYPE_CASE_ITEM(UINT8);
+    GET_DATA_TYPE_CASE_ITEM(INT8);
+    GET_DATA_TYPE_CASE_ITEM(INT16);
+    GET_DATA_TYPE_CASE_ITEM(INT32);
+    GET_DATA_TYPE_CASE_ITEM(INT64);
+    GET_DATA_TYPE_CASE_ITEM(FP32);
+    GET_DATA_TYPE_CASE_ITEM(FP64);
+    default:
+      LOG(FATAL) << "Unknown var data type";
+  }
+  return VarDescAPI::VarDataType();
+#undef GET_DATA_TYPE_CASE_ITEM
+}
+
 proto::VarType* VarDesc::GetMutableVarType() {
   auto* builder = desc_->GetMutableField<proto::VarType>("type");
   CHECK(builder);
   return builder;
+}
+
+// todo : SetDataType function is commented out temporarily
+// because of Compatibility issues. The Compatibility issue
+// should be fixed later and the code below should be applied
+// later. @DannyIsFunny
+void VarDesc::SetDataType(VarDescAPI::VarDataType data_type) {
+  /*  using data_type_builder_t = EnumBuilder<proto::VarDataType>;
+    auto data_type_builder =
+        desc_->GetMutableField<proto::TensorDesc>("tensor_desc")
+            ->GetMutableField<data_type_builder_t>("data_type");
+  #define SET_DATA_TYPE_CASE_ITEM(type__)                 \
+    case VarDescAPI::VarDataType::type__:                 \
+      data_type_builder->set(proto::VarDataType::type__); \
+      break
+
+    switch (data_type) {
+      // Only support primary data type now.
+      SET_DATA_TYPE_CASE_ITEM(UINT8);
+      SET_DATA_TYPE_CASE_ITEM(INT8);
+      SET_DATA_TYPE_CASE_ITEM(INT16);
+      SET_DATA_TYPE_CASE_ITEM(INT32);
+      SET_DATA_TYPE_CASE_ITEM(INT64);
+      SET_DATA_TYPE_CASE_ITEM(FP32);
+      SET_DATA_TYPE_CASE_ITEM(FP64);
+      default:
+        LOG(FATAL) << "Unknown var data type";
+    }
+  #undef SET_DATA_TYPE_CASE_ITEM
+  */
+}
+
+// Get var's shape
+std::vector<int64_t> VarDesc::GetShape() const {
+  using data_type_builder_t = ListBuilder<Int64Builder>;
+  auto out_builder = desc_->GetField<proto::TensorDesc>("tensor_desc")
+                         .GetField<data_type_builder_t>("dims");
+  return RepeatedToVector<int64_t, Int64Builder>(out_builder);
+}
+
+// Set var's shape
+// todo : SetDataType function is commented out temporarily
+// because of Compatibility issues. The Compatibility issue
+// should be fixed later and the code below should be applied
+// later. @DannyIsFunny
+void VarDesc::SetShape(const std::vector<int64_t>& dims) {
+  /*  using out_builder_type = ListBuilder<Int64Builder>;
+    auto out_builder = desc_->GetMutableField<proto::TensorDesc>("tensor_desc")
+                           ->GetMutableField<out_builder_type>("dims");
+    CHECK(out_builder);
+    VectorToRepeated<int64_t, Int64Builder>(dims, out_builder);*/
 }
 
 }  // namespace naive_buffer

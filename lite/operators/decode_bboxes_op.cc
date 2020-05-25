@@ -29,7 +29,7 @@ bool DecodeBboxesOpLite::CheckShape() const {
   return true;
 }
 
-bool DecodeBboxesOpLite::InferShape() const {
+bool DecodeBboxesOpLite::InferShapeImpl() const {
   param_.bbox_data->Resize(param_.loc_data->dims());
   return true;
 }

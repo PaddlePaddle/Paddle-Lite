@@ -48,7 +48,8 @@ class TargetWrapper<TARGET(kOpenCL), cl::CommandQueue, cl::Event> {
 
   template <typename R>
   static void* MallocImage(const size_t cl_image2d_width,
-                           const size_t cl_image2d_height);
+                           const size_t cl_image2d_height,
+                           void* host_ptr = nullptr);
   static void FreeImage(void* image);
 
   static void* Map(void* buffer, size_t offset, size_t size);

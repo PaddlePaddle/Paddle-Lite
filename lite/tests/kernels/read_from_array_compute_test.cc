@@ -13,11 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -25,80 +24,76 @@ namespace lite {
 class ReadFromArrayComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string input_0 = "in_0";
-  std::string input_1 = "in_1";
-  std::string input_2 = "in_2";
-  std::string input_i = "i";
-  std::string output = "out";
-  DDim dims_{{3, 5, 4, 4}};
-  int i_;
+  std::string x_ = "x";
+  std::string idn_ = "i";
+  std::string out_ = "out";
+  DDim tar_dims_{{3, 5, 4, 4}};
+  int x_size_ = 1;
+  int id_ = 0;
 
  public:
   ReadFromArrayComputeTester(const Place& place,
                              const std::string& alias,
-                             const int i,
-                             DDim dims)
-      : TestCase(place, alias), i_(i), dims_(dims) {}
+                             DDim tar_dims,
+                             int x_size = 1,
+                             int id = 0)
+      : TestCase(place, alias), tar_dims_(tar_dims), x_size_(x_size), id_(id) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* out = scope->NewTensor(output);
-    CHECK(out);
-    auto* in_0 = scope->FindTensor(input_0);
-    auto* in_1 = scope->FindTensor(input_1);
-    auto* in_2 = scope->FindTensor(input_2);
-    auto* id_tensor = scope->FindTensor(input_i);
-    std::vector<const TensorLite*> in_vec = {in_0, in_1, in_2};
-    int cur_in_num = in_vec.size();
+    auto x = scope->FindVar(x_)->GetMutable<std::vector<Tensor>>();
+    auto idn = scope->FindTensor(idn_);
+    auto out = scope->NewTensor(out_);
 
-    int id = id_tensor->data<int>()[0];
-    out->Resize(dims_);
-    const auto* in_data = in_vec[id]->data<float>();
-    auto* o_data = out->mutable_data<float>();
-    int n = in_vec[id]->numel();
-    memcpy(o_data, in_data, sizeof(float) * n);
+    int id = idn->data<int64_t>()[0];
+    out->CopyDataFrom(x->at(id));
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("read_from_array");
-    op_desc->SetInput("X", {input_0, input_1, input_2});
-    op_desc->SetInput("I", {input_i});
-    op_desc->SetOutput("Out", {output});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetInput("I", {idn_});
+    op_desc->SetOutput("Out", {out_});
   }
 
   void PrepareData() override {
-    std::vector<std::string> in_vec = {input_0, input_1, input_2};
-    for (auto in : in_vec) {
-      std::vector<float> data(dims_.production());
-      for (int i = 0; i < dims_.production(); i++) {
-        data[i] = std::rand() * 1.0f / RAND_MAX;
-      }
-      SetCommonTensor(in, dims_, data.data());
+    std::vector<DDim> x_dims(x_size_);
+    std::vector<std::vector<float>> x_data(x_size_);
+    for (int i = 0; i < x_size_; i++) {
+      x_dims[i] = tar_dims_;
+      x_data[i].resize(x_dims[i].production());
+      fill_data_rand(x_data[i].data(), -1.f, 1.f, x_dims[i].production());
     }
+    SetCommonTensorList(x_, x_dims, x_data);
 
-    DDimLite dims_i{{1}};
-    int a = 1;
-    SetCommonTensor(input_i, dims_i, &a);
+    std::vector<int64_t> didn(1);
+    didn[0] = id_;
+    SetCommonTensor(idn_, DDim{{1}}, didn.data());
   }
 };
 
-void test_read_from_array(Place place) {
+void TestReadFromArray(Place place, float abs_error) {
   DDimLite dims{{3, 5, 4, 4}};
-  for (int i : {1, 2}) {
-    std::unique_ptr<arena::TestCase> tester(
-        new ReadFromArrayComputeTester(place, "def", i, dims));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    arena.TestPrecision();
+  for (int x_size : {1, 3}) {
+    for (int id : {0, 2}) {
+      if (x_size < id + 1) continue;
+      std::unique_ptr<arena::TestCase> tester(
+          new ReadFromArrayComputeTester(place, "def", dims, x_size, id));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
   }
 }
 
 TEST(ReadFromArray, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
+  Place place;
+  float abs_error = 1e-5;
 #ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_read_from_array(place);
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  TestReadFromArray(place, abs_error);
 }
 
 }  // namespace lite

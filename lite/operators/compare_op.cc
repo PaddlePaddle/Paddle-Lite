@@ -26,7 +26,7 @@ bool CompareOp::CheckShape() const {
   return true;
 }
 
-bool CompareOp::InferShape() const {
+bool CompareOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();
@@ -54,7 +54,7 @@ bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(equal, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(notequal, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(not_equal, paddle::lite::operators::CompareOp);
 REGISTER_LITE_OP(less_than, paddle::lite::operators::CompareOp);
 REGISTER_LITE_OP(less_equal, paddle::lite::operators::CompareOp);
 REGISTER_LITE_OP(greater_than, paddle::lite::operators::CompareOp);

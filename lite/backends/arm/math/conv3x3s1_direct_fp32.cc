@@ -35,9 +35,10 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   auto dim_in = param.x->dims();
   auto dim_out = param.output->dims();
   const int threads = ctx->threads();
+  auto paddings = *param.paddings;
   int llc_size = ctx->llc_size() / sizeof(float);
-  const int pad_w = param.paddings[1];
-  const int pad_h = param.paddings[0];
+  const int pad_w = paddings[2];
+  const int pad_h = paddings[0];
   int ow = dim_out[3];
   int oh = dim_out[2];
   int ic = dim_in[1];
@@ -74,9 +75,11 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                             ARMContext* ctx) {
   const int threads = ctx->threads();
   int l2_size = ctx->llc_size() / sizeof(float);
+  auto paddings = *param.paddings;
+  auto act_param = param.activation_param;
 
-  const int pad_h = param.paddings[0];
-  const int pad_w = param.paddings[1];
+  const int pad_h = paddings[0];
+  const int pad_w = paddings[2];
   const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
   const int win_round = wout_round + 2;
   bool flag_relu = param.fuse_relu;
@@ -467,7 +470,8 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                                 oh,
                                 ow,
                                 flag_relu,
-                                ptr_write);
+                                ptr_write,
+                                &act_param);
       }
       const float* weight_remain_ptr = weights + c_round_down * w_stride;
 #pragma omp parallel for num_threads(threads)
@@ -778,7 +782,8 @@ void conv_3x3s1_direct_fp32(const float* i_data,
                                 oh,
                                 ow,
                                 flag_relu,
-                                ptr_write);
+                                ptr_write,
+                                &act_param);
       }
     }
   }

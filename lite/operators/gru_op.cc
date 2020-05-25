@@ -28,8 +28,8 @@ bool GRUOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.batch_hidden)
   CHECK_OR_FALSE(param_.hidden)
 
-  auto input_dims = param_.input->dims();
-  auto weight_dims = param_.weight->dims();
+  const auto& input_dims = param_.input->dims();
+  const auto& weight_dims = param_.weight->dims();
   int input_size = input_dims[1];
   int frame_size = weight_dims[0];
   CHECK_EQ_OR_FALSE(input_size, frame_size * 3)
@@ -51,22 +51,24 @@ bool GRUOpLite::CheckShape() const {
   return true;
 }
 
-bool GRUOpLite::InferShape() const {
-  auto input_dims = param_.input->dims();
-  auto weight_dims = param_.weight->dims();
+bool GRUOpLite::InferShapeImpl() const {
+  const auto& input_dims = param_.input->dims();
+  const auto& weight_dims = param_.weight->dims();
   int frame_size = weight_dims[0];
   auto batch_size = input_dims[0];
 
   param_.batch_gate->Resize(input_dims);
-  param_.batch_reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
-  param_.batch_hidden->Resize(lite::DDim({batch_size, frame_size}));
-  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
+
+  DDim out_dims({batch_size, frame_size});
+  param_.batch_reset_hidden_prev->Resize(out_dims);
+  param_.batch_hidden->Resize(out_dims);
+  param_.hidden->Resize(out_dims);
 
   *(param_.hidden->mutable_lod()) = param_.input->lod();
   return true;
 }
 
-bool GRUOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto weight = op_desc.Input("Weight").front();
   auto batch_gate = op_desc.Output("BatchGate").front();

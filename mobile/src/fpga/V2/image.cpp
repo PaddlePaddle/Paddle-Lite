@@ -83,11 +83,6 @@ void concat_images(int8_t **images_in, float **scales_in, void *image_out,
                     height *
                         align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT) *
                         sizeof(int8_t));
-    for (j = 0;
-         j < height * align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
-         j++) {
-      images_in_tmp[i][j] = (int8_t)(images_in[i][j] * Ck + 0.5);
-    }
   }
   align_each_out_area_cw =
       align_to_x(each_out_line_channel * width, IMAGE_ALIGNMENT);
@@ -99,17 +94,20 @@ void concat_images(int8_t **images_in, float **scales_in, void *image_out,
       for (i = 0; i < image_num; i++) {
         align_each_in_area_cw =
             align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
-        memcpy(
-            (int8_t *)image_out + tmp_channel +  // NOLINT
-                k * align_each_out_area_cw_differ,
-            images_in_tmp[i] + j * channel_num[i] + k * align_each_in_area_cw,
-            channel_num[i] * sizeof(int8_t));
+        memcpy((int8_t *)image_out + tmp_channel +  // NOLINT
+                   k * align_each_out_area_cw_differ,
+               images_in[i] + j * channel_num[i] + k * align_each_in_area_cw,
+               channel_num[i] * sizeof(int8_t));
 
         tmp_channel += channel_num[i];
       }
     }
   }
   fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int8_t));
+  for (i = 0; i < image_num; i++) {
+    fpga_free(images_in_tmp[i]);
+  }
+  fpga_free(images_in_tmp);
 }
 
 void split_image(int8_t *image_in, void **images_out, int image_num,

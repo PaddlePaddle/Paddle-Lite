@@ -33,11 +33,13 @@ class MulOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+    AttachParam(&param_);
+
     CHECK(!op_desc.Input("X").empty());
     CHECK(!op_desc.Input("Y").empty());
     CHECK(!op_desc.Output("Out").empty());
@@ -56,37 +58,28 @@ class MulOpLite : public OpLite {
     param_.output = var->GetMutable<Tensor>();
     param_.x_num_col_dims = op_desc.GetAttr<int>("x_num_col_dims");
     param_.y_num_col_dims = op_desc.GetAttr<int>("y_num_col_dims");
-
     return true;
   }
 
   std::string DebugString() const override { return "mul"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.x->dims());
+    ch->filter_shape = ch->DimToStr(param_.y->dims());
+    ch->output_shape = ch->DimToStr(param_.output->dims());
+    // ch->remark = "";
+    auto x_dims = param_.x->dims();
+    auto y_dims = param_.y->dims();
+    auto x_mat_dims = x_dims.Flatten2D(param_.x_num_col_dims);
+    auto y_mat_dims = y_dims.Flatten2D(param_.y_num_col_dims);
+    ch->macs = 1.f * x_mat_dims[0] * x_mat_dims[1] * y_mat_dims[1];
+  }
+#endif
+
  private:
   mutable MulParam param_;
 };
-
-#ifdef LITE_WITH_TRAIN
-class MulGradOpLite : public OpLite {
- public:
-  MulGradOpLite() {}
-
-  explicit MulGradOpLite(const std::string &type) : OpLite(type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShape() const override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
-
-  std::string DebugString() const override { return "mul_grad"; }
-
- private:
-  mutable MulGradParam param_;
-};
-#endif
 
 }  // namespace operators
 }  // namespace lite

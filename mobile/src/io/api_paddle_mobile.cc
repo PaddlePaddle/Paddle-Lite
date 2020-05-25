@@ -262,6 +262,37 @@ void PaddleMobilePredictor<Device, T>::Predict_From_To(int start, int end) {
   paddle_mobile_->Predict_From_To(start, end);
 }
 
+#else
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::Feed(const std::string &var_name,
+                                            const PaddleTensor &input) {
+  framework::DDim ddim = framework::make_ddim(input.shape);
+  framework::Tensor input_tensor(static_cast<T *>(input.data.data()), ddim);
+  paddle_mobile_->Feed(var_name, input_tensor);
+}
+
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::Fetch(const std::string &var_name,
+                                             PaddleTensor *output) {
+  auto output_tensor = paddle_mobile_->Fetch(var_name);
+  auto ddim = output_tensor->dims();
+
+  output->shape.clear();
+  for (int i = 0; i < ddim.size(); i++) {
+    output->shape.push_back(static_cast<int>(ddim[i]));
+  }
+
+  int length = output_tensor->numel() * sizeof(T);
+  if (output->data.length() < length) {
+    output->data.Resize(length);
+  }
+  memcpy(output->data.data(), output_tensor->template data<T>(), length);
+}
+
+template <typename Device, typename T>
+bool PaddleMobilePredictor<Device, T>::Run() {
+  paddle_mobile_->Predict();
+}
 #endif
 template <typename Device, typename T>
 PaddleMobilePredictor<Device, T>::~PaddleMobilePredictor() {

@@ -29,9 +29,10 @@ using Tensor = lite::Tensor;
 
 template <typename T>
 struct SequenceExpandFunctor {
-  void operator()(const Tensor &x,
-                  const std::vector<size_t> &ref_lod, /*expand referenced lod*/
-                  Tensor *out) {
+  void operator()(
+      const Tensor &x,
+      const std::vector<uint64_t> &ref_lod, /*expand referenced lod*/
+      Tensor *out) {
     int64_t hight = x.dims()[0];
     int64_t width = x.data_size() / hight;
 
@@ -39,13 +40,13 @@ struct SequenceExpandFunctor {
     T *out_data = out->mutable_data<T, T>();
 
     for (int h_id = 0; h_id < hight; ++h_id) {
-      size_t span = ref_lod[h_id + 1] - ref_lod[h_id];
+      uint64_t span = ref_lod[h_id + 1] - ref_lod[h_id];
       if (span == 0) continue;
       const T *src = in_data + h_id * width;
-      for (int64_t w_id = 0; w_id < width; ++w_id) {
+      for (uint64_t w_id = 0; w_id < width; ++w_id) {
         T ele = src[w_id];
         size_t offset = ref_lod[h_id] * width;
-        for (size_t k = 0; k < span; ++k) {
+        for (uint64_t k = 0; k < span; ++k) {
           out_data[offset + k * width + w_id] = ele;
         }
       }
@@ -65,10 +66,10 @@ class SequenceExpandAsCompute
     auto *out = param.out;
 
     auto &y_lod = y->lod();
-    CHECK_EQ(y_lod.size(), 1);
-    CHECK_GT(y_lod[0].size(), 1);
+    CHECK_EQ(y_lod.size(), 1u);
+    CHECK_GT(y_lod[0].size(), 1u);
 
-    out->mutable_data<T, T>();
+    out->template mutable_data<T, T>();
 
     SequenceExpandFunctor<T> seq_espand_functor;
     seq_espand_functor(*x, y_lod[0], out);

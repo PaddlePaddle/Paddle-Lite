@@ -15,7 +15,9 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
+
 #include <cmath>
+
 #include "framework/cl/cl_image.h"
 #include "framework/cl/cl_tool.h"
 #include "operators/kernel/cl/cl-kernel-func/conv_func.h"
@@ -174,6 +176,16 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
                                  build_options);
     }
 
+  } else if (param->Filter()->dims()[1] == 1 &&
+             param->Input()->dims()[1] == param->Output()->dims()[1] &&
+             param->Filter()->dims()[2] != 3) {
+    param->Filter()->InitDWImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+    // other depthwise not with filter 3x3
+    DLOG << "depth_conv basic ";
+    param->ExecMode() = ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT;
+    this->cl_helper_.AddKernel("depth_conv", conv_kernel_file, build_options);
+
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     //    if (param->Strides()[0] == param->Strides()[1] &&
@@ -190,11 +202,30 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
     //      winograd_transform_weight<4, 3>(&this->cl_helper_, param->Filter());
     //
     //    } else {
-    param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
+    // std::cout << " input dim " << param->Input()->dims()[0] << "  "
+    //           << param->Input()->dims()[1] << "  " <<
+    //           param->Input()->dims()[2]
+    //           << "  " << param->Input()->dims()[3] << "  " << std::endl;
+    // std::cout << " output dim " << param->Output()->dims()[0] << " "
+    //           << param->Output()->dims()[1] << " " <<
+    //           param->Output()->dims()[2]
+    //           << " " << param->Output()->dims()[3] << " " << std::endl;
+    // std::cout << " filter dim " << param->Filter()->dims()[0] << " "
+    //           << param->Filter()->dims()[1] << " " <<
+    //           param->Filter()->dims()[2]
+    //           << " " << param->Filter()->dims()[3] << " " << std::endl;
 
-    this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    if (param->groups > 1) {
+      param->ExecMode() =
+          ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_WITH_GROUP_FLOAT;
+      this->cl_helper_.AddKernel("conv_3x3", conv_kernel_file, build_options);
+    } else {
+      param->ExecMode() = ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT;
+      this->cl_helper_.AddKernel("conv_3x3spl", conv_kernel_file,
+                                 build_options);
+    }
     //    }
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
@@ -212,13 +243,18 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
                             param.NewScale(), param.NewBias());
       break;
     case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW1x1_FLOAT:
-    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_WITH_GROUP_FLOAT:
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3_FLOAT:
+    case ConvParam<GPU_CL>::EXEC_DEPTHWISEBASIC_FLOAT:
       ConvAddBnRelu(&this->cl_helper_, param, true, param.Bias(),
                     param.NewScale(), param.NewBias());
       break;
     case ConvParam<GPU_CL>::EXEC_DEPTHWISE3x3S1_FLOAT:
       DWConvAddBnRelu(&this->cl_helper_, param, true, param.Bias(),
+                      param.NewScale(), param.NewBias());
+      break;
+    case ConvParam<GPU_CL>::EXEC_SLIDINGWINDOW3x3_FLOAT:
+      SWConvAddBnRelu(&this->cl_helper_, param, true, param.Bias(),
                       param.NewScale(), param.NewBias());
       break;
     default:

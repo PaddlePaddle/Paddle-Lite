@@ -46,4 +46,5 @@ void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_conv_elementwise_fuse_pass,
                   paddle::lite::mir::ConvElementwiseFusePass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU), TARGET(kBM)});

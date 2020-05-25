@@ -58,11 +58,11 @@ class SampleWithProb {
     const int64_t* label_data = L->data<int64_t>();
     // int64_t* samples_data =
     //    S->mutable_data<int64_t>(ret_dim, Target);
-    // T* probabilities_data = P->mutable_data<T>(ret_dim, Target);
+    // T* probabilities_data = P->template mutable_data<T>(ret_dim, Target);
     S->Resize({batch_size, num_sampled_classes});
     auto* samples_data = S->mutable_data<int64_t>(Target);
     P->Resize({batch_size, num_sampled_classes});
-    auto* probabilities_data = P->mutable_data<T>(Target);
+    auto* probabilities_data = P->template mutable_data<T>(Target);
 
     // temp sets for unique sampling
     std::unordered_set<int64_t> tmp_samples;

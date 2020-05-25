@@ -22,12 +22,12 @@ namespace operators {
 bool SliceOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_LT(param_.X->dims().size(), 7)
+  CHECK_LT(param_.X->dims().size(), 7u)
       << "The rank of input X should be less than 7";
   return true;
 }
 
-bool SliceOp::InferShape() const {
+bool SliceOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto in_dims = param_.X->dims();
@@ -43,7 +43,7 @@ bool SliceOp::InferShape() const {
     CHECK_LT(param_.axes[i], in_dims.size()) << "The index of dimension in "
                                                 "axes must be less than the "
                                                 "size of input shape.";
-    if (param_.infer_flags[i] == -1) {
+    if (param_.infer_flags.size() > i && param_.infer_flags[i] == -1) {
       out_dims[axes[i]] = -1;
     } else {
       // infer out_dim shape
@@ -67,7 +67,7 @@ bool SliceOp::InferShape() const {
       }
       out_dims[decrease_axis[i]] = 0;
     }
-    for (int i = 0; i < out_dims.size(); ++i) {
+    for (size_t i = 0; i < out_dims.size(); ++i) {
       if (out_dims[i] != 0) {
         new_out_shape.push_back(out_dims[i]);
       }
@@ -83,11 +83,11 @@ bool SliceOp::InferShape() const {
   if (axes[0] != 0) {
     param_.Out->set_lod(param_.X->lod());
   }
-  LOG(INFO) << "infer shape done";
   return true;
 }
 
 bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.X =
       scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
   param_.Out =
@@ -109,7 +109,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 
   // The priority: StartsTensor > StartsTensorList > attr(starts).
   // The priority: EndsTensor > EndsTensorList > attr(ends).
-  int starts_size, ends_size;
+  size_t starts_size, ends_size;
   if (opdesc.HasAttr("starts")) {
     param_.starts = opdesc.GetAttr<std::vector<int>>("starts");
   }
@@ -130,7 +130,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       param_.StartsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
-    CHECK_GT(param_.StartsTensorList.size(), 0)
+    CHECK_GT(param_.StartsTensorList.size(), 0u)
         << "StartsTensorList size can't be zero";
     starts_size = param_.StartsTensorList.size();
   }
@@ -142,7 +142,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       param_.EndsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
-    CHECK_GT(param_.EndsTensorList.size(), 0)
+    CHECK_GT(param_.EndsTensorList.size(), 0u)
         << "EndsTensorList size can't be zero";
     ends_size = param_.EndsTensorList.size();
   }
@@ -162,7 +162,6 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     CHECK_EQ(ends_size, param_.axes.size())
         << "The size of ends must be equal to the size of axes.";
   }
-  LOG(INFO) << "attach impl done";
   return true;
 }
 

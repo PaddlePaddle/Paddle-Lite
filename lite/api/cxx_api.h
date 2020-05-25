@@ -29,6 +29,13 @@
 namespace paddle {
 namespace lite {
 
+static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
+    ".tailored_ops_source_list";
+static const char TAILORD_OPS_LIST_NAME[] = ".tailored_ops_list";
+static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
+    ".tailored_kernels_source_list";
+static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
+
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */
@@ -36,6 +43,7 @@ class LITE_API Predictor {
  public:
   // Create an empty predictor.
   Predictor() { scope_ = std::make_shared<Scope>(); }
+
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}
@@ -77,6 +85,9 @@ class LITE_API Predictor {
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
+  // get param names
+  std::vector<std::string> GetParamNames();
+
   void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
@@ -84,6 +95,9 @@ class LITE_API Predictor {
   std::vector<const lite::Tensor*> GetOutputs() const;
 
   const cpp::ProgramDesc& program_desc() const;
+  // get a mutable tensor according to its name
+  lite::Tensor* GetMutableTensor(const std::string& name);
+  // get a const tensor according to its name
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
 
@@ -94,14 +108,14 @@ class LITE_API Predictor {
       bool record_info = false);
   void SaveOpKernelInfo(const std::string& model_dir);
 
-#ifdef LITE_WITH_TRAIN
-  void Run(const std::vector<framework::Tensor>& tensors) {
-    FeedVars(tensors);
-    program_->Run();
-  }
+  // #ifdef LITE_WITH_TRAIN
+  //   void Run(const std::vector<framework::Tensor>& tensors) {
+  //     FeedVars(tensors);
+  //     program_->Run();
+  //   }
 
-  void FeedVars(const std::vector<framework::Tensor>& tensors);
-#endif
+  //   void FeedVars(const std::vector<framework::Tensor>& tensors);
+  // #endif
 
  private:
   Optimizer optimizer_;
@@ -134,9 +148,15 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   // get inputs names and get outputs names
   std::vector<std::string> GetInputNames() override;
   std::vector<std::string> GetOutputNames() override;
+  // get param names
+  std::vector<std::string> GetParamNames() override;
 
+  // get tensor according to tensor's name
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string& name) const override;
+  // get a mutable tensor according to tensor's name
+  std::unique_ptr<lite_api::Tensor> GetMutableTensor(
+      const std::string& name) override;
 
   // Get InputTebsor by name
   std::unique_ptr<lite_api::Tensor> GetInputByName(

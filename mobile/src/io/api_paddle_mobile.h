@@ -39,7 +39,10 @@ class PaddleMobilePredictor : public PaddlePredictor {
   void FetchPaddleTensors(std::vector<PaddleTensor>* outputs) override;
   void FetchPaddleTensors(PaddleTensor* outputs, int id) override;
   void GetPaddleTensor(const std::string& name, PaddleTensor* output) override;
-
+#else
+  void Feed(const std::string& var_name, const PaddleTensor& input);
+  void Fetch(const std::string& var_name, PaddleTensor* output);
+  bool Run();
 #endif
 
   ~PaddleMobilePredictor() override;

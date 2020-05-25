@@ -18,6 +18,9 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/scope.h"
 #include "lite/utils/all.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/api/paddle_place.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -30,12 +33,65 @@ class ReluOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "relu"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.X->dims();
+    auto output_dims = param_.Out->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = ActivationTypeToStr(param_.active_type);
+    switch (param_.active_type) {
+      case lite_api::ActivationType::kRelu:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kRelu6:
+        ch->macs = param_.X->numel() * 2.0;
+        break;
+      case lite_api::ActivationType::kLeakyRelu:
+        ch->macs = param_.X->numel() * 2.0;
+        break;
+      case lite_api::ActivationType::kPRelu:
+        ch->macs = param_.X->numel() * 2.0;
+        break;
+      case lite_api::ActivationType::kSwish:
+        ch->macs = param_.X->numel() * 4.0;
+        break;
+      case lite_api::ActivationType::kSigmoid:
+        ch->macs = param_.X->numel() * 3.0;
+        break;
+      case lite_api::ActivationType::kTanh:
+        ch->macs = param_.X->numel() * 5.0;
+        break;
+      case lite_api::ActivationType::kExp:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kAbs:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kHardSwish:
+        ch->macs = param_.X->numel() * 5.0;
+        break;
+      case lite_api::ActivationType::kReciprocal:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kIndentity:
+        break;
+      default:
+        LOG(FATAL) << "This Type of Activation:"
+                   << static_cast<int>(param_.active_type)
+                   << ActivationTypeToStr(param_.active_type)
+                   << " doesn't support";
+    }
+  }
+#endif
 
  private:
   mutable ActivationParam param_;

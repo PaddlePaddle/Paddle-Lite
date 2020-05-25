@@ -21,9 +21,6 @@
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/light_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/pass_registry.h"
 
 DEFINE_string(model_dir, "", "");
@@ -62,7 +59,7 @@ TEST(CXXApi_LightApi, optim_model) {
 
 TEST(CXXApi_LightApi, save_and_load_model) {
   lite::Predictor cxx_api;
-  lite::LightPredictor light_api(FLAGS_optimized_model);
+  lite::LightPredictor light_api(FLAGS_optimized_model + ".nb", false);
 
   // CXXAPi
   {

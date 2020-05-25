@@ -21,7 +21,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 void InstanceNorm(framework::CLHelper *cl_helper,
-                  const InstanceNormParam<GPU_CL> &param);
+                  const framework::CLImage *input, framework::CLImage *output,
+                  float epsilon);
 }
 }  // namespace paddle_mobile
 #endif

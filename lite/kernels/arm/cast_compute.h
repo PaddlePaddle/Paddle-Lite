@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::CastParam;
 

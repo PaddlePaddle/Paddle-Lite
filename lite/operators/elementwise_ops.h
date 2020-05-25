@@ -27,7 +27,7 @@ class ElementwiseOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
@@ -35,31 +35,44 @@ class ElementwiseOp : public OpLite {
 
   std::string DebugString() const override { return "elementwise_op"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+    auto output_dims = param_.Out->dims();
+    ch->input_shape = "X" + ch->DimToStr(param_.X->dims()) + "Y" +
+                      ch->DimToStr(param_.Y->dims());
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "axis" + std::to_string(param_.axis);
+    ch->macs = 1.0f * param_.Out->numel();
+  }
+#endif
+
  private:
   mutable operators::ElementwiseParam param_;
 };
 
-#ifdef LITE_WITH_TRAIN
-class ElementwiseGradExplicitOp : public OpLite {
- public:
-  explicit ElementwiseGradExplicitOp(const std::string& type) : OpLite(type) {}
+// #ifdef LITE_WITH_TRAIN
+// class ElementwiseGradExplicitOp : public OpLite {
+//  public:
+//   explicit ElementwiseGradExplicitOp(const std::string& type) : OpLite(type)
+//   {}
 
-  bool CheckShape() const override;
+//   bool CheckShape() const override;
 
-  bool InferShape() const override;
+//   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
+//   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
-  void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
+//   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_);
+//   }
 
-  std::string DebugString() const override {
-    return "elementwise_grad_explicit_op";
-  }
+//   std::string DebugString() const override {
+//     return "elementwise_grad_explicit_op";
+//   }
 
- private:
-  mutable operators::ElementwiseGradParam param_;
-};
-#endif
+//  private:
+//   mutable operators::ElementwiseGradParam param_;
+// };
+// #endif
 
 }  // namespace operators
 }  // namespace lite

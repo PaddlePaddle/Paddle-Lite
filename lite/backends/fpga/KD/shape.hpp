@@ -23,6 +23,7 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
+static struct None none_;
 static struct NCHW nchw_;
 static struct NHWC nhwc_;
 static struct NC nc_;
@@ -82,6 +83,9 @@ class Shape {
   void setLayoutType(LayoutType layout) {
     this->layoutType_ = layout;
     switch (layout) {
+      case None:
+        layout_ = &none_;
+        break;
       case NCHW:
         layout_ = &nchw_;
         break;

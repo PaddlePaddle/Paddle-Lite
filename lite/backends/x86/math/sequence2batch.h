@@ -19,18 +19,12 @@ limitations under the License. */
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/fluid/eigen.h"
-// #include "lite/fluid/lod.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
-
-template <typename T,
-          int MajorType = Eigen::RowMajor,
-          typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <lite::TargetType Target, typename T>
 class CopyMatrixRowsFunctor {
@@ -42,7 +36,7 @@ class CopyMatrixRowsFunctor {
   // The indexed rows are based on the input index.
   void operator()(const lite::Context<Target>& context,
                   const lite::Tensor& src,
-                  std::vector<size_t> index_lod,
+                  const std::vector<uint64_t>& index_lod,
                   lite::Tensor* dst,
                   bool is_src_index);
 };
@@ -56,6 +50,7 @@ class LoDTensor2BatchFunctor {
   //           seq_info[3] = {(4, 5, 1), (0, 4, 0), (9, 3, 2)}
   //
   struct SeqInfo {
+    SeqInfo() = default;
     SeqInfo(int start, int length, int seq_idx)
         : start(start), length(length), seq_idx(seq_idx) {}
     int start;
@@ -89,10 +84,12 @@ class LoDTensor2BatchFunctor {
 
     const auto& lod = lods[0];
 
-    std::vector<SeqInfo> seq_info;
+    std::vector<SeqInfo> seq_info(lod.size() - 1);
     for (size_t seq_id = 0; seq_id < lod.size() - 1; ++seq_id) {
       int length = lod[seq_id + 1] - lod[seq_id];
-      seq_info.emplace_back(lod[seq_id], length, seq_id);
+      seq_info[seq_id].start = lod[seq_id];
+      seq_info[seq_id].length = length;
+      seq_info[seq_id].seq_idx = seq_id;
     }
 
     std::sort(seq_info.begin(), seq_info.end(), [](SeqInfo a, SeqInfo b) {
@@ -122,21 +119,19 @@ class LoDTensor2BatchFunctor {
     // The max_seqlen represents batch size after rearranging the
     // input LodTensor. It is also the maximum length of input sequence.
 
-    lite::LoD batch_lods;
-    batch_lods.emplace_back(std::vector<size_t>{0});
-    batch_lods.emplace_back(std::vector<size_t>{0});
-    batch_lods.emplace_back(std::vector<size_t>{0});
+    LoD* batch_lods = batch->mutable_lod();
+    batch_lods->resize(3);
 
     // batch_lods[0] is the start positions for batch LoDTensor
     int max_seqlen = seq_info[0].length;
-    batch_lods[0].resize(static_cast<size_t>(max_seqlen + 1));
+    batch_lods->at(0).resize(static_cast<size_t>(max_seqlen + 1));
     // batch_lods[1] is the raw index in the input LoDTensor
-    batch_lods[1].resize(static_cast<size_t>(lod_tensor.dims()[0]));
+    batch_lods->at(1).resize(static_cast<size_t>(lod_tensor.dims()[0]));
     // batch_lods[2] is the sort order for the input LoDTensor.
-    batch_lods[2].resize(seq_info.size());
+    batch_lods->at(2).resize(seq_info.size());
 
-    size_t* batch_starts = batch_lods[0].data();
-    size_t* seq2batch_idx = batch_lods[1].data();
+    auto* batch_starts = batch_lods->at(0).data();
+    auto* seq2batch_idx = batch_lods->at(1).data();
     batch_starts[0] = 0;
     for (int n = 0; n < max_seqlen; n++) {
       auto batch_id = static_cast<int>(batch_starts[n]);
@@ -153,14 +148,13 @@ class LoDTensor2BatchFunctor {
       }
       batch_starts[n + 1] = static_cast<size_t>(batch_id);
     }
-    size_t* seq_order = batch_lods[2].data();
+    auto* seq_order = batch_lods->at(2).data();
     for (size_t i = 0; i < seq_info.size(); ++i) {
       seq_order[i] = seq_info[i].seq_idx;
     }
-    batch->set_lod(batch_lods);
 
     CopyMatrixRowsFunctor<Target, T> to_batch;
-    to_batch(context, lod_tensor, batch_lods[1], batch, true);
+    to_batch(context, lod_tensor, batch_lods->at(1), batch, true);
   }
 };
 

@@ -38,7 +38,7 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
   int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
+  for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
   for (int i = 0; i < input_num; i++) {
@@ -62,19 +62,19 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
-      {0.00019130898, 9.467885e-05,  0.00015971427, 0.0003650665,
-       0.00026431272, 0.00060884043, 0.0002107942,  0.0015819625,
-       0.0010323516,  0.00010079765, 0.00011006987, 0.0017364529,
-       0.0048292773,  0.0013995157,  0.0018453331,  0.0002428986,
-       0.00020211363, 0.00013668182, 0.0005855956,  0.00025901722}));
+      {0.00019130898f, 9.467885e-05f,  0.00015971427f, 0.0003650665f,
+       0.00026431272f, 0.00060884043f, 0.0002107942f,  0.0015819625f,
+       0.0010323516f,  0.00010079765f, 0.00011006987f, 0.0017364529f,
+       0.0048292773f,  0.0013995157f,  0.0018453331f,  0.0002428986f,
+       0.00020211363f, 0.00013668182f, 0.0005855956f,  0.00025901722f}));
   auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape().size(), 2u);
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 
   int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
                   results[i][j],
                   1e-6);

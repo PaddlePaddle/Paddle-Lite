@@ -24,7 +24,7 @@ namespace operators {
 template <typename Dtype, typename T>
 void InstanceNormOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
+  this->param_.OutputY()->Resize(x_dims);
 }
 
 }  // namespace operators

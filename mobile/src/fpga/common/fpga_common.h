@@ -211,6 +211,7 @@ struct ConcatArgs {
   uint32_t out_channel;
   uint32_t height;
   uint32_t width;
+  std::vector<std::shared_ptr<char>> vector_concat_space;
 };
 
 struct SplitConvArgs {

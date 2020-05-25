@@ -69,43 +69,15 @@ void BatchTranspose2DCUDAImpl(const int N,
                               const int W,
                               const T* input,
                               T* out,
-                              CUDAContext* ctx) {
+                              cudaStream_t* stream) {
   const int dh = (H + kTileDim - 1) / kTileDim;
   const int dw = (W + kTileDim - 1) / kTileDim;
   BatchTranspose2DCUDAKernel<
-      T><<<N * dh * dw, dim3(kTileDim, kBlockRows), 0, ctx->exec_stream()>>>(
+      T><<<N * dh * dw, dim3(kTileDim, kBlockRows), 0, *stream>>>(
       N, H, W, dh, dw, input, out);
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
-
-#define TYPE_SPECIALIZED_CUDA_NCHW2NHWC(T)             \
-  template <>                                          \
-  void NCHW2NHWC<T>(const int N,                       \
-                    const int C,                       \
-                    const int HxW,                     \
-                    const T* X,                        \
-                    T* Y,                              \
-                    CUDAContext* ctx) {                \
-    BatchTranspose2DCUDAImpl<T>(N, C, HxW, X, Y, ctx); \
-  }
-TYPE_SPECIALIZED_CUDA_NCHW2NHWC(float)
-TYPE_SPECIALIZED_CUDA_NCHW2NHWC(int8_t)
-#undef TYPE_SPECIALIZED_CUDA_NCHW2NHWC
-
-#define TYPE_SPECIALIZED_CUDA_NHWC2NCHW(T)             \
-  template <>                                          \
-  void NHWC2NCHW<T>(const int N,                       \
-                    const int C,                       \
-                    const int HxW,                     \
-                    const T* X,                        \
-                    T* Y,                              \
-                    CUDAContext* ctx) {                \
-    BatchTranspose2DCUDAImpl<T>(N, HxW, C, X, Y, ctx); \
-  }
-TYPE_SPECIALIZED_CUDA_NHWC2NCHW(float)
-TYPE_SPECIALIZED_CUDA_NHWC2NCHW(int8_t)
-#undef TYPE_SPECIALIZED_CUDA_NHWC2NCHW
 
 template <typename T>
 __global__ void TransposeCUDAKernel(const int size,
@@ -136,7 +108,9 @@ void TransposeCUDAImpl(const std::vector<int64_t>& X_dims,
                        const std::vector<int>& axes,
                        const T* X,
                        T* Y,
-                       CUDAContext* ctx) {
+                       lite::Tensor* Y_dims_,
+                       lite::Tensor* strides_,
+                       cudaStream_t* stream) {
   CHECK_EQ(X_dims.size(), axes.size()) << "dimension size should be equal";
   int ndim = X_dims.size();
   std::vector<int> strides(ndim, 0);
@@ -156,37 +130,68 @@ void TransposeCUDAImpl(const std::vector<int64_t>& X_dims,
     size *= X_dims[i];
   }
 
-  lite::Tensor Y_dims_, strides_;
-  Y_dims_.Resize(std::vector<int64_t>({ndim}));
-  int* d_y_dims = Y_dims_.mutable_data<int>(TARGET(kCUDA));
-  CopySync<TARGET(kCUDA)>(
-      d_y_dims, Y_dims.data(), sizeof(int) * Y_dims.size(), IoDirection::HtoD);
+  Y_dims_->Resize(std::vector<int64_t>({ndim}));
+  int* d_y_dims = Y_dims_->mutable_data<int>(TARGET(kCUDA));
+  TargetWrapperCuda::MemcpyAsync(d_y_dims,
+                                 Y_dims.data(),
+                                 sizeof(int) * Y_dims.size(),
+                                 IoDirection::HtoD,
+                                 *stream);
 
-  strides_.Resize(std::vector<int64_t>({ndim}));
-  int* d_strides = strides_.mutable_data<int>(TARGET(kCUDA));
-  CopySync<TARGET(kCUDA)>(d_strides,
-                          strides.data(),
-                          sizeof(int) * strides.size(),
-                          IoDirection::HtoD);
+  strides_->Resize(std::vector<int64_t>({ndim}));
+  int* d_strides = strides_->mutable_data<int>(TARGET(kCUDA));
+  TargetWrapperCuda::MemcpyAsync(d_strides,
+                                 strides.data(),
+                                 sizeof(int) * strides.size(),
+                                 IoDirection::HtoD,
+                                 *stream);
 
   const int M = (size + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
-  TransposeCUDAKernel<<<M, CUDA_NUM_THREADS, 0, ctx->exec_stream()>>>(
+  TransposeCUDAKernel<<<M, CUDA_NUM_THREADS, 0, *stream>>>(
       size, ndim, d_strides, d_y_dims, X, Y);
   auto e = cudaGetLastError();
   CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
 }
 
-#define TYPE_SPECIALIZED_CUDA_TRANSPOSE(T)              \
-  template <>                                           \
-  void Transpose<T>(const std::vector<int64_t>& X_dims, \
-                    const std::vector<int>& axes,       \
-                    const T* X,                         \
-                    T* Y,                               \
-                    CUDAContext* ctx) {                 \
-    TransposeCUDAImpl<T>(X_dims, axes, X, Y, ctx);      \
-  }
-TYPE_SPECIALIZED_CUDA_TRANSPOSE(float)
-#undef TYPE_SPECIALIZED_CUDA_TRANSPOSEF
+template <typename T>
+void Transpose<T>::NCHW2NHWC(
+    int N, int C, int HxW, const T* X, T* Y, cudaStream_t* stream) {
+  BatchTranspose2DCUDAImpl<T>(N, C, HxW, X, Y, stream);
+}
+
+template <typename T>
+void Transpose<T>::NHWC2NCHW(
+    int N, int C, int HxW, const T* X, T* Y, cudaStream_t* stream) {
+  BatchTranspose2DCUDAImpl<T>(N, HxW, C, X, Y, stream);
+}
+
+template <typename T>
+void Transpose<T>::transpose(T* dst,
+                             const T* src,
+                             const std::vector<int64_t>& src_dims,
+                             const std::vector<int>& axes,
+                             cudaStream_t* stream) {
+  TransposeCUDAImpl<T>(src_dims, axes, src, dst, &Y_dims_, &strides_, stream);
+}
+
+// template <typename T>
+// void Transpose<T>::transpose(T* dst,
+//                             const T* src,
+//                             const std::vector<int>& src_dims,
+//                             const std::vector<int>& axes,
+//                             cudaStream_t* stream) {
+//  std::vector<int64_t> _src_dims(src_dims.size(), 0);
+//  std::transform(
+//      src_dims.begin(),
+//      src_dims.end(),
+//      _src_dims.begin(),
+//      [](int data) -> int64_t { return static_cast<int64_t>(data); });
+//  TransposeCUDAImpl<T>(_src_dims, axes, src, dst, &Y_dims_, &strides_,
+//  stream);
+//}
+
+template class Transpose<int8_t>;
+template class Transpose<float>;
 
 }  // namespace math
 }  // namespace cuda

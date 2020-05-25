@@ -32,6 +32,8 @@ void YoloBoxCompute::Run() {
   int class_num = param.class_num;
   float conf_thresh = param.conf_thresh;
   int downsample_ratio = param.downsample_ratio;
+  Boxes->clear();
+  Scores->clear();
   lite::arm::math::yolobox(X,
                            ImgSize,
                            Boxes,
@@ -54,7 +56,8 @@ REGISTER_LITE_KERNEL(yolo_box,
                      paddle::lite::kernels::arm::YoloBoxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ImgSize", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

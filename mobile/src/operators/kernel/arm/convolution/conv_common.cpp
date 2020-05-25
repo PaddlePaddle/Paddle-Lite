@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
 #include "operators/kernel/arm/convolution/conv_common.h"
 #include "framework/context.h"
 #include "operators/math/gemm/gemm1x1s1.h"
@@ -111,3 +113,4 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+#endif

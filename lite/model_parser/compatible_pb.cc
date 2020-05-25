@@ -30,22 +30,48 @@ namespace paddle {
 namespace lite {
 
 /// For VarDesc transfrom
-#define TRANS_VAR_ANY_WITH_CPP_IMPL(T)                           \
-  template <>                                                    \
-  void TransformVarDescAnyToCpp<T>(const T &any_desc,            \
-                                   cpp::VarDesc *cpp_desc) {     \
-    cpp_desc->SetName(any_desc.Name());                          \
-    cpp_desc->SetType(any_desc.GetType());                       \
-    cpp_desc->SetPersistable(any_desc.Persistable());            \
-  }                                                              \
-                                                                 \
-  template <>                                                    \
-  void TransformVarDescCppToAny<T>(const cpp::VarDesc &cpp_desc, \
-                                   T *any_desc) {                \
-    any_desc->SetName(cpp_desc.Name());                          \
-    any_desc->SetType(cpp_desc.GetType());                       \
-    any_desc->SetPersistable(cpp_desc.Persistable());            \
+#define TRANS_VAR_ANY_WITH_CPP_IMPL(T)                             \
+  template <>                                                      \
+  void TransformVarDescCppToAny<T>(const cpp::VarDesc &cpp_desc,   \
+                                   T *any_desc) {                  \
+    any_desc->SetName(cpp_desc.Name());                            \
+    any_desc->SetType(cpp_desc.GetType());                         \
+    any_desc->SetPersistable(cpp_desc.Persistable());              \
+    if (cpp_desc.Name() != "feed" && cpp_desc.Name() != "fetch") { \
+      any_desc->SetShape(cpp_desc.GetShape());                     \
+      any_desc->SetDataType(cpp_desc.GetDataType());               \
+    }                                                              \
   }
+
+#ifndef LITE_ON_TINY_PUBLISH
+template <>
+void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
+                                           cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
+    cpp_desc->SetDataType(any_desc.GetDataType());
+    cpp_desc->SetShape(any_desc.GetShape());
+  }
+}
+#endif
+
+template <>
+void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
+    const naive_buffer::VarDesc &any_desc, cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+  // todo : SetDataType function is commented out temporarily
+  // because of Compatibility issues. The Compatibility issue
+  // should be fixed later and the code below should be applied
+  // later. @DannyIsFunny
+  /*  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
+      cpp_desc->SetDataType(any_desc.GetDataType());
+      cpp_desc->SetShape(any_desc.GetShape());
+    }*/
+}
 
 /// For OpDesc transform
 template <typename OpDescType>

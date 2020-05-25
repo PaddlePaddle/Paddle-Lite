@@ -46,7 +46,7 @@ bool BatchNormOp::CheckShape() const {
   return true;
 }
 
-bool BatchNormOp::InferShape() const {
+bool BatchNormOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   int64_t channel_size = 0;
   switch (param_.data_layout) {
@@ -68,10 +68,12 @@ bool BatchNormOp::InferShape() const {
     param_.saved_variance->Resize({channel_size});
   }
   param_.y->Resize(x_dims);
+  param_.y->set_lod(param_.x->lod());
   return true;
 }
 
 bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  AttachParam(&param_);
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.bias =
       scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
@@ -82,7 +84,20 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.variance =
       scope->FindVar(op_desc.Input("Variance").front())->GetMutable<Tensor>();
   param_.y = scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
-  param_.is_test = op_desc.GetAttr<int>("is_test");
+
+  auto is_test_type = op_desc.GetAttrType("is_test");
+  switch (is_test_type) {
+    case OpDescAPI::AttrType::INT:
+      param_.is_test = op_desc.GetAttr<int>("is_test");
+      break;
+    case OpDescAPI::AttrType::BOOLEAN:
+      param_.is_test = op_desc.GetAttr<bool>("is_test");
+      break;
+    default:
+      LOG(FATAL) << "Unsupported attribute type: the type of attribute "
+                    "`is_test` in BatchNormOP should be int or bool.";
+  }
+
   if (op_desc.HasAttr("use_global_stats")) {
     param_.use_global_stats = op_desc.GetAttr<bool>("use_global_stats");
   }

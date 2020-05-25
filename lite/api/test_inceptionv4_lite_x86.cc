@@ -38,7 +38,7 @@ TEST(InceptionV4, test_inceptionv4_lite_x86) {
   input_tensor->Resize(input_shape);
   auto* data = input_tensor->mutable_data<float>();
   int input_num = 1;
-  for (int i = 0; i < input_shape.size(); ++i) {
+  for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
   for (int i = 0; i < input_num; i++) {
@@ -62,20 +62,20 @@ TEST(InceptionV4, test_inceptionv4_lite_x86) {
   std::vector<std::vector<float>> results;
   // i = 1
   results.emplace_back(std::vector<float>(
-      {0.0011684548,  0.0010390386,  0.0011301535,  0.0010133048,
-       0.0010259597,  0.0010982729,  0.00093195855, 0.0009141837,
-       0.00096620916, 0.00089982944, 0.0010064574,  0.0010474789,
-       0.0009782845,  0.0009230255,  0.0010548076,  0.0010974824,
-       0.0010612885,  0.00089107914, 0.0010112736,  0.00097655767}));
+      {0.0011684548f,  0.0010390386f,  0.0011301535f,  0.0010133048f,
+       0.0010259597f,  0.0010982729f,  0.00093195855f, 0.0009141837f,
+       0.00096620916f, 0.00089982944f, 0.0010064574f,  0.0010474789f,
+       0.0009782845f,  0.0009230255f,  0.0010548076f,  0.0010974824f,
+       0.0010612885f,  0.00089107914f, 0.0010112736f,  0.00097655767f}));
 
   auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
+  ASSERT_EQ(out->shape().size(), 2u);
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 
   int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
+  for (size_t i = 0; i < results.size(); ++i) {
+    for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
                   results[i][j],
                   1e-6);

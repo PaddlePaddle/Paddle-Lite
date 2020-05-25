@@ -23,3 +23,13 @@ REGISTER_LITE_KERNEL(softmax,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+REGISTER_LITE_KERNEL(search_seq_softmax,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::SoftmaxCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out_log", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();

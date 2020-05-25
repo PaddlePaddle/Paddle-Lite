@@ -61,8 +61,12 @@ struct BinaryTable {
 
   /// Serialize the table to a binary buffer.
   void SaveToFile(const std::string& filename) const;
+  void AppendToFile(const std::string& filename) const;
 
-  void LoadFromFile(const std::string& filename);
+  //  void LoadFromFile(const std::string& filename);
+  void LoadFromFile(const std::string& filename,
+                    const size_t& offset = 0,
+                    const size_t& size = 0);
   void LoadFromMemory(const char* buffer, size_t buffer_size);
 };
 
@@ -128,19 +132,23 @@ using Float64Builder = PrimaryBuilder<double>;
 
 template <typename Primary>
 class PrimaryListBuilder : public FieldBuilder {
-  std::vector<Primary> data_;
+  const Primary* data_{nullptr};
+  int size_{0};
 
  public:
   using value_type = Primary;
 
   explicit PrimaryListBuilder(BinaryTable* table) : FieldBuilder(table) {}
-  PrimaryListBuilder(BinaryTable* table, const std::vector<Primary>& val)
-      : FieldBuilder(table), data_(val) {}
+  PrimaryListBuilder(BinaryTable* table, const Primary* val, int size)
+      : FieldBuilder(table), data_(val), size_(size) {}
 
   /// Set data.
-  void set(const std::vector<Primary>& x) { data_ = x; }
+  void set(const Primary* x, int size) {
+    data_ = x;
+    size_ = size;
+  }
 
-  const std::vector<Primary>& data() const { return data_; }
+  const Primary* data() const { return data_; }
 
   /// Save information to the corresponding BinaryTable.
   void Save() override;
@@ -149,14 +157,12 @@ class PrimaryListBuilder : public FieldBuilder {
   void Load() override;
 
   /// Number of elements.
-  size_t size() const { return data_.size(); }
+  size_t size() const { return size_; }
 
-  Type type() const override {
-    return core::StdTypeToRepr<std::vector<Primary>>();
-  }
+  Type type() const override { return core::StdTypeToRepr<const Primary*>(); }
 
   /// clear builder
-  void Clear() { data_.clear(); }
+  void Clear() { size_ = 0; }
 
   ~PrimaryListBuilder() = default;
 };
@@ -186,7 +192,7 @@ class EnumBuilder : public FieldBuilder {
 
   ~EnumBuilder() = default;
 
-  Type type() const override { return Type::_enum; }
+  Type type() const override { return Type::ENUM; }
 };
 
 class StringBuilder : public FieldBuilder {
@@ -205,7 +211,7 @@ class StringBuilder : public FieldBuilder {
 
   void Load() override;
 
-  Type type() const override { return Type::_string; }
+  Type type() const override { return Type::STRING; }
 };
 
 /*
@@ -260,7 +266,7 @@ class StructBuilder : public FieldBuilder {
 
   /// Type of this struct.
   // TODO(Superjomn) The customized type is not supported yet.
-  Type type() const override { return Type::_unk; }
+  Type type() const override { return Type::UNK; }
 
   /// Get a field by `name`.
   template <typename T>
@@ -321,7 +327,7 @@ class ListBuilder : public FieldBuilder {
   }
 
   // Get element type.
-  Type type() const override { return Type::_list; }
+  Type type() const override { return Type::LIST; }
 
   /// Persist information to the corresponding BinaryTable.
   void Save() override;
@@ -381,17 +387,14 @@ void PrimaryBuilder<Primary>::Load() {
 
 template <typename Primary>
 void PrimaryListBuilder<Primary>::Load() {
-  CHECK(data_.empty()) << "Duplicate load";
+  CHECK(data_ == nullptr) << "Duplicate load";
   // Load number of elements first.
   uint64_t num_elems{};
   memcpy(&num_elems, table()->cursor(), sizeof(uint64_t));
   table()->Consume(sizeof(uint64_t));
 
-  data_.resize(num_elems);
-  for (uint64_t i = 0; i < num_elems; i++) {
-    memcpy(&data_[i], table()->cursor(), sizeof(value_type));
-    table()->Consume(sizeof(value_type));
-  }
+  set(reinterpret_cast<Primary*>(table()->cursor()), num_elems);
+  table()->Consume(num_elems * sizeof(value_type));
 }
 
 template <typename Primary>
@@ -404,7 +407,7 @@ void PrimaryListBuilder<Primary>::Save() {
 
   table()->Require(num_elems * sizeof(value_type));
   memcpy(table()->cursor(),
-         reinterpret_cast<byte_t*>(&data_[0]),
+         reinterpret_cast<const byte_t*>(data_),
          num_elems * sizeof(value_type));
   table()->Consume(num_elems * sizeof(value_type));
 }

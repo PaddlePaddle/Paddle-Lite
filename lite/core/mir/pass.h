@@ -17,9 +17,11 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "lite/core/mir/node.h"
 #include "lite/core/mir/ssa_graph.h"
+#include "lite/utils/varient.h"
 
 namespace paddle {
 namespace lite {
@@ -52,34 +54,44 @@ class Pass {
 
   // Bind targets. At runtime, there must be one device in the bound targets.
   void BindTargets(const std::set<TargetType>& targets) {
-    std::set<TargetType> res;
     for (const auto& target : targets) {
       const std::set<TargetType>& universe = ExpandValidTargets(target);
       std::set_union(bound_targets_.begin(),
                      bound_targets_.end(),
                      universe.begin(),
                      universe.end(),
-                     std::inserter(res, res.begin()));
+                     std::inserter(bound_targets_, bound_targets_.begin()));
     }
-    bound_targets_ = res;
   }
 
   // Exclude targets. At runtime, there must be one device in the bound targets.
+  // Disable the pass if one of the valid devices is in the excluded targets.
   void ExcludeTargets(const std::set<TargetType>& targets) {
-    std::set<TargetType> res;
     for (const auto& target : targets) {
       const std::set<TargetType>& universe = ExpandValidTargets(target);
-      std::set_difference(bound_targets_.begin(),
-                          bound_targets_.end(),
-                          universe.begin(),
-                          universe.end(),
-                          std::inserter(res, res.begin()));
+      std::set<TargetType> updated_bound_targets;
+      std::set_difference(
+          bound_targets_.begin(),
+          bound_targets_.end(),
+          universe.begin(),
+          universe.end(),
+          std::inserter(updated_bound_targets, updated_bound_targets.begin()));
+      bound_targets_ = updated_bound_targets;
+      std::set_union(
+          excluded_targets_.begin(),
+          excluded_targets_.end(),
+          universe.begin(),
+          universe.end(),
+          std::inserter(excluded_targets_, excluded_targets_.begin()));
     }
-    bound_targets_ = res;
   }
 
   // Get all bound targets.
-  const std::set<TargetType>& Targets() const { return bound_targets_; }
+  const std::set<TargetType>& BoundTargets() const { return bound_targets_; }
+  // Get all excluded targets.
+  const std::set<TargetType>& ExcludedTargets() const {
+    return excluded_targets_;
+  }
 
   // Some passes are only available on qualified kernels and need to be
   // explicitly declared.
@@ -111,12 +123,36 @@ class Pass {
 
   virtual ~Pass() = default;
 
+  bool HasAttr(const std::string& attr_name) const {
+    return pass_attrs_.count(attr_name) > 0;
+  }
+
+  // Set a pointer to the attribute. Specific pass itself takes ownership of the
+  // attribute.
+  template <typename AttrType>
+  void SetAttr(const std::string& attr_name, const AttrType* attr) {
+    VLOG(4) << "Setting the attribute " << attr_name << " for the pass "
+            << name_;
+    pass_attrs_[attr_name].set<const AttrType>(*attr);
+  }
+
+  // Get a reference to the attribute previously set.
+  template <typename AttrType>
+  const AttrType& GetAttr(const std::string& attr_name) const {
+    CHECK(pass_attrs_.count(attr_name))
+        << attr_name << " attr not register for pass " << name_;
+    return pass_attrs_.at(attr_name).get<const AttrType>();
+  }
+
  private:
   const Kind kind_;
   std::string name_;
   std::string doc_;
   std::set<TargetType> bound_targets_;
+  std::set<TargetType> excluded_targets_;
   std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_;
+  std::unordered_map<std::string, variant<Node, std::vector<Node*>>>
+      pass_attrs_;
 };
 
 // Different kinds.

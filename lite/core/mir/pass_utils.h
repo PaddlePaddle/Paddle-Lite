@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <set>
 #include <string>
 #include "lite/core/mir/pass.h"
 
@@ -24,7 +25,8 @@ namespace lite {
 bool KernelRegistered(const std::string name, const Place& place);
 
 // Check if the pass hits the hardware target.
-bool PassMatchesTarget(const mir::Pass& pass, TargetType target);
+bool PassMatchesTarget(const mir::Pass& pass,
+                       const std::set<TargetType>& targets);
 
 // Check if the pass hits all necessary operators.
 bool PassMatchesKernels(const mir::Pass& pass);

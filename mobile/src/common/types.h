@@ -265,6 +265,8 @@ extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DECONV_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_INSTANCENORM_RELU;
 extern const char *G_OP_TYPE_PIXEL_SHUFFLE;
+extern const char *G_OP_TYPE_EXPAND;
+extern const char *G_OP_TYPE_GRID_SAMPLER;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

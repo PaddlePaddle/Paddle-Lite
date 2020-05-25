@@ -11,23 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
+#ifdef INSTANCENORM_OP
 #include "operators/kernel/cl/cl-kernel-func/instancenorm_func.h"
 #include <algorithm>
 namespace paddle_mobile {
 namespace operators {
 void InstanceNorm(framework::CLHelper *cl_helper,
-                  const InstanceNormParam<GPU_CL> &param) {
+                  const framework::CLImage *input, framework::CLImage *output,
+                  float epsilon) {
   auto kernel = cl_helper->KernelAt(0);
 
-  auto &dims = param.Out()->dims();
+  auto &dims = output->dims();
   const int n = dims[0];
   const int c_group = (dims[1] + 3) / 4;
   const int h = dims[2];
   const int w = dims[3];
-  auto epsilon = param.Epsilon();
-  auto input = param.InputX()->GetCLImage();
-  auto out = param.Out()->GetCLImage();
+  auto input_image = input->GetCLImage();
+  auto out_image = output->GetCLImage();
 
   //      DLOG << "Epsilon: " << epsilon;
 
@@ -66,12 +66,13 @@ void InstanceNorm(framework::CLHelper *cl_helper,
   CL_CHECK_ERRORS(status);
   clSetKernelArg(kernel, 5, sizeof(cl_float), &epsilon);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 6, sizeof(cl_mem), &input);
+  clSetKernelArg(kernel, 6, sizeof(cl_mem), &input_image);
   CL_CHECK_ERRORS(status);
-  clSetKernelArg(kernel, 7, sizeof(cl_mem), &out);
+  clSetKernelArg(kernel, 7, sizeof(cl_mem), &out_image);
   CL_CHECK_ERRORS(status);
   clEnqueueNDRangeKernel(cl_helper->CLCommandQueue(), kernel, 3, NULL,
                          work_size, local_work_size, 0, NULL, NULL);
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+#endif

@@ -31,12 +31,22 @@ class PowerOp : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "power"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    // ch->remark = "";
+    ch->macs = param_.Out->numel() * 3.0f;
+  }
+#endif
 
  private:
   mutable PowerParam param_;

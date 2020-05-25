@@ -24,13 +24,29 @@ namespace mir {
 
 void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> act_types{"relu"};
+  bool has_int8 = false;
+  bool has_arm_float = false;
+  bool has_cuda = false;
   for (auto& place : graph->valid_places()) {
+    if (place.precision == PRECISION(kInt8)) {
+      has_int8 = true;
+    }
+    if (place.target == TARGET(kARM) && place.precision == PRECISION(kFloat)) {
+      has_arm_float = true;
+    }
     if (place.target == TARGET(kCUDA)) {
-      act_types.push_back("leaky_relu");
-      break;
+      has_cuda = true;
     }
   }
-  for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
+
+  if (!has_int8 && has_arm_float) {
+    act_types.push_back("relu6");
+    act_types.push_back("leaky_relu");
+  }
+  if (!has_int8 && has_cuda) {
+    act_types.push_back("leaky_relu");
+  }
+  for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
     for (auto act_type : act_types) {
       for (auto has_bias : {true, false}) {
         fusion::ConvActivationFuser fuser(conv_type, act_type, has_bias);
@@ -47,4 +63,5 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
                   paddle::lite::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)})
     .BindKernel("conv2d");

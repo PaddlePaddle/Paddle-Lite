@@ -1,0 +1,60 @@
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
+#include <cl_common.h>
+
+__kernel void concat2(__global const CL_DTYPE* x_data0, __global const CL_DTYPE* x_data1, __global CL_DTYPE* out_data, 
+    int size, int axis_size, int pre_size, int post_size, int total, int total0, int total1) {
+  const int index = get_global_id(0); 
+  if (index < size){
+    for (int i = 0; i < pre_size; i++){
+        int offset_out = index * post_size + i * total;
+        int offset_in = index * post_size + i * total0;
+        // memcpy(out_data + offset_out, x_data0 + offset_in, post_size);
+        CL_DTYPE* dst = out_data + offset_out;
+        CL_DTYPE* src = x_data0 + offset_in;
+        for (int k = 0; k < post_size; k++){
+           *dst++ = *src++;
+	}
+    }
+  }else if (index < axis_size){
+    for (int i = 0; i < pre_size; i++){
+        int offset_out = index * post_size + i * total;
+        int offset_in = index * post_size + i * total1;
+        // memcpy(out_data + offset_out, x_data1 + offset_in, post_size);
+        CL_DTYPE* dst = out_data + offset_out;
+        CL_DTYPE* src = x_data1 + offset_in;
+        for (int k = 0; k < post_size; k++){
+           *dst++ = *src++;
+        }
+    }
+  }
+}
+
+__kernel void concat_mul(__global const CL_DTYPE* x_data, __global CL_DTYPE* out_data, 
+    int axis_size, int pre_size, int post_size, int start, int total, int total0) {
+  const int index = get_global_id(0); 
+  if (index < axis_size){
+    for (int i = 0; i < pre_size; i++){
+        int offset_out = (start + index) * post_size + i * total;
+        int offset_in = index * post_size + i * total0;
+        // memcpy(out_data + offset_out, x_data + offset_in, post_size);
+        CL_DTYPE* dst = out_data + offset_out;
+        CL_DTYPE* src = x_data + offset_in;
+        for (int k = 0; k < post_size; k++){
+           *dst++ = *src++;
+        }
+    }
+  }
+}

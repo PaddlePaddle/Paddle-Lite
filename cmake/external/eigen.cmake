@@ -1,5 +1,6 @@
 INCLUDE(ExternalProject)
 
+SET(EIGEN_SOURCECODE_DIR ${CMAKE_SOURCE_DIR}/third-party/eigen3)
 SET(EIGEN_SOURCE_DIR ${THIRD_PARTY_PATH}/eigen3)
 SET(EIGEN_INCLUDE_DIR ${EIGEN_SOURCE_DIR}/src/extern_eigen3)
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
@@ -16,9 +17,12 @@ if(WITH_AMD_GPU)
     ExternalProject_Add(
         extern_eigen3
         ${EXTERNAL_PROJECT_LOG_ARGS}
-        GIT_REPOSITORY  "https://github.com/sabreshao/hipeigen.git"
-        GIT_TAG         7cb2b6e5a4b4a1efe658abb215cd866c6fb2275e
+        GIT_TAG
+        URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fhipeigen-upstream-702834151eaebcf955fd09ed0ad83c06.zip
+        DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
+        DOWNLOAD_NO_PROGRESS  1
         PREFIX          ${EIGEN_SOURCE_DIR}
+        DOWNLOAD_NAME   "hipeigen-upstream-702834151eaebcf955fd09ed0ad83c06.zip"
         UPDATE_COMMAND  ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND     ""
@@ -29,12 +33,23 @@ else()
     ExternalProject_Add(
         extern_eigen3
         ${EXTERNAL_PROJECT_LOG_ARGS}
-        GIT_REPOSITORY  "https://github.com/eigenteam/eigen-git-mirror"
         # eigen on cuda9.1 missing header of math_funtions.hpp
         # https://stackoverflow.com/questions/43113508/math-functions-hpp-not-found-when-using-cuda-with-eigen
-        GIT_TAG         917060c364181f33a735dc023818d5a54f60e54c
+        GIT_TAG
+        ######################################################################################################
+        # url address of eigen before v2.3.0
+        # URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Feigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
+        ######################################################################################################
+        # url address of eigen since  v2.6.0
+        #         github address: https://github.com/eigenteam/eigen-git-mirror
+        # we changed the source code to adapt for windows compiling
+        #         git diffs : (1) unsupported/Eigen/CXX11/src/Tensor/TensorBlockV2.h
+        ######################################################################################################
+        URL             http://paddlelite-data.bj.bcebos.com/third_party_libs/eigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
+        DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
+        DOWNLOAD_NO_PROGRESS  1
         PREFIX          ${EIGEN_SOURCE_DIR}
-        DOWNLOAD_NAME   "eigen"
+        DOWNLOAD_NAME   "eigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip"
         UPDATE_COMMAND  ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND     ""

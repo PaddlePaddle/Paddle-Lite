@@ -93,7 +93,6 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
             .Slice(param.y_num_col_dims, param.y->dims().size())
             .production());
     CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
-    LOG(INFO) << x_h << " " << x_w << " " << y_h << " " << y_w;
 
     mul_compute<float>(blas, x_data, x_h, x_w, y_data, y_h, y_w, out_data);
   }

@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ScaleCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ScaleCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 

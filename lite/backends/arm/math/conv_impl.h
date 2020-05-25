@@ -314,6 +314,68 @@ void fill_bias_int8(int* tensor,
                     const int* bias,
                     int channel,
                     int channel_size);
+// new winograd
+
+void weight_trans_c4_8x8(
+    float* dest, const float* src, int ic, int oc, void* workspace);
+void weight_trans_c4_4x4(
+    float* dest, const float* src, int ic, int oc, void* workspace);
+void conv_compute_6x6_3x3(const float* input,
+                          float* output,
+                          int num,
+                          int chout,
+                          int hout,
+                          int wout,
+                          int chin,
+                          int hin,
+                          int win,
+                          const float* weight,
+                          const float* bias,
+                          const operators::ConvParam& param,
+                          ARMContext* ctx);
+void conv_compute_2x2_3x3(const float* input,
+                          float* output,
+                          int num,
+                          int chout,
+                          int hout,
+                          int wout,
+                          int chin,
+                          int hin,
+                          int win,
+                          const float* weight,
+                          const float* bias,
+                          const operators::ConvParam& param,
+                          ARMContext* ctx);
+void conv_compute_2x2_3x3_small(const float* input,
+                                float* output,
+                                int num,
+                                int chout,
+                                int hout,
+                                int wout,
+                                int chin,
+                                int hin,
+                                int win,
+                                const float* weight,
+                                const float* bias,
+                                const operators::ConvParam& param,
+                                ARMContext* ctx);
+
+template <typename Dtype>
+void im2col(const Dtype* data_im,
+            int channels,
+            int height,
+            int width,
+            int kernel_h,
+            int kernel_w,
+            int pad_top,
+            int pad_bottom,
+            int pad_left,
+            int pad_right,
+            int stride_h,
+            int stride_w,
+            int dilation_h,
+            int dilation_w,
+            Dtype* data_col);
 
 }  // namespace math
 }  // namespace arm

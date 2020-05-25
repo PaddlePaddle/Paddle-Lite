@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -39,12 +40,22 @@ namespace lite {
  */
 class LITE_API LightPredictor {
  public:
-  LightPredictor(
-      const std::string& model_dir,
-      const std::string& model_buffer = "",
-      const std::string& param_buffer = "",
-      bool model_from_memory = false,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf) {
+  // constructor function of LightPredictor, `lite_model_file` refers to data in
+  // model file or buffer,`model_from_memory` refers to whther to load model
+  // from memory.
+  LightPredictor(const std::string& lite_model_file,
+                 bool model_from_memory = false) {
+    scope_ = std::make_shared<Scope>();
+    Build(lite_model_file, model_from_memory);
+  }
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
+  LightPredictor(const std::string& model_dir,
+                 const std::string& model_buffer = "",
+                 const std::string& param_buffer = "",
+                 bool model_from_memory = false,
+                 lite_api::LiteModelType model_type =
+                     lite_api::LiteModelType::kNaiveBuffer) {
     scope_ = std::make_shared<Scope>();
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
   }
@@ -69,6 +80,10 @@ class LITE_API LightPredictor {
   void PrepareFeedFetch();
 
  private:
+  void Build(const std::string& lite_model_file,
+             bool model_from_memory = false);
+
+  // NOTE: This is a deprecated API and will be removed in latter release.
   void Build(
       const std::string& model_dir,
       const std::string& model_buffer,
@@ -77,6 +92,8 @@ class LITE_API LightPredictor {
       bool model_from_memory = false);
 
   void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
+
+  void DequantizeWeight();
 
  private:
   std::shared_ptr<Scope> scope_;

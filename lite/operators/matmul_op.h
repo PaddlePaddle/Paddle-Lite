@@ -33,13 +33,38 @@ class MatMulOpLite : public OpLite {
 
   bool CheckShape() const override;
 
-  bool InferShape() const override;
+  bool InferShapeImpl() const override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
   std::string DebugString() const override { return "matmul"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->filter_shape = ch->DimToStr(param_.Y->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    ch->remark = "alpha" + std::to_string(param_.alpha) + "trans_x" +
+                 std::to_string(param_.transpose_X) + "trans_y" +
+                 std::to_string(param_.transpose_Y);
+
+    auto x_dims = param_.X->dims();
+    auto y_dims = param_.Y->dims();
+    auto m = x_dims[x_dims.size() - 2];
+    auto k = x_dims[x_dims.size() - 1];
+    auto n = y_dims[y_dims.size() - 1];
+    if (param_.transpose_X) {
+      m = x_dims[x_dims.size() - 1];
+      k = x_dims[x_dims.size() - 2];
+    }
+    if (param_.transpose_Y) {
+      n = y_dims[y_dims.size() - 2];
+    }
+    ch->macs = 3.f * m * n * k;
+  }
+#endif
 
  private:
   mutable MatMulParam param_;

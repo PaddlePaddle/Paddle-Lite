@@ -26,14 +26,14 @@ bool DropoutOp::CheckShape() const {
   return true;
 }
 
-bool DropoutOp::InferShape() const {
+bool DropoutOp::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   param_.output->Resize(x_dims);
   if (param_.is_test == false) {
     param_.mask->Resize(x_dims);
   }
   // share LoD
-  // param_.output->set_lod(param_.input->lod());
+  param_.output->set_lod(param_.x->lod());
   return true;
 }
 

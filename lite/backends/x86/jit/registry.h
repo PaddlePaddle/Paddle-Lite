@@ -77,16 +77,16 @@ class JitKernelRegistrar {
   void Touch() {}
 };
 
-#define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(uniq_name, msg)              \
+#define STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(uniq_name, msg)         \
   struct __test_global_namespace_##uniq_name##__ {};                          \
   static_assert(std::is_same<::__test_global_namespace_##uniq_name##__,       \
                              __test_global_namespace_##uniq_name##__>::value, \
                 msg)
 
 // Refer always on CPUPlace
-#define REGISTER_JITKERNEL_REFER(kernel_type, ...)                  \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                         \
-      __reg_jitkernel_##kernel_type##_refer_CPUPlace,               \
+#define REGISTER_JITKERNEL_REFER_LITE(kernel_type, ...)             \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                    \
+      __reg_litejitkernel_##kernel_type##_refer_CPUPlace,           \
       "REGISTER_KERNEL_REFER must be called in global namespace");  \
   static ::paddle::lite::jit::JitKernelRegistrar<                   \
       ::paddle::lite::jit::ReferKernelPool,                         \
@@ -94,84 +94,84 @@ class JitKernelRegistrar {
       __VA_ARGS__>                                                  \
       __jit_kernel_registrar_##kernel_type##_refer_CPUPlace_(       \
           ::paddle::lite::jit::KernelType::kernel_type);            \
-  int TouchJitKernelReg_##kernel_type##_refer_CPUPlace_() {         \
+  int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_() {     \
     __jit_kernel_registrar_##kernel_type##_refer_CPUPlace_.Touch(); \
     return 0;                                                       \
   }
 
 // kernel_type: should be in paddle::lite::jit::KernelType
 // place_type: should be one of CPUPlace and GPUPlace in paddle::platform
-#define REGISTER_KERNEL_MORE(kernel_type, impl_type, place_type, ...)         \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                                   \
-      __reg_jitkernel_##kernel_type##_##impl_type##_##place_type,             \
-      "REGISTER_KERNEL_MORE must be called in global namespace");             \
-  extern int TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();             \
+#define REGISTER_KERNEL_MORE_LITE(kernel_type, impl_type, place_type, ...)    \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                              \
+      __reg_litejitkernel_##kernel_type##_##impl_type##_##place_type,         \
+      "REGISTER_KERNEL_MORE_LITE must be called in global namespace");        \
+  extern int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();         \
   static int __assert_##kernel_type##_##impl_type##_##place_type##_has_refer_ \
-      UNUSED = TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();           \
+      UNUSED = LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();       \
   static ::paddle::lite::jit::JitKernelRegistrar<                             \
       ::paddle::lite::jit::KernelPool,                                        \
       ::paddle::lite::fluid::place_type,                                      \
       __VA_ARGS__>                                                            \
       __jit_kernel_registrar_##kernel_type##_##impl_type##_##place_type##_(   \
           ::paddle::lite::jit::KernelType::kernel_type);                      \
-  int TouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_() {     \
+  int LiteTouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_() { \
     __jit_kernel_registrar_##kernel_type##_##impl_type##_##place_type##_      \
         .Touch();                                                             \
     return 0;                                                                 \
   }
 
 #define REGISTER_JITKERNEL_MORE(kernel_type, impl_type, ...) \
-  REGISTER_KERNEL_MORE(kernel_type, impl_type, CPUPlace, __VA_ARGS__)
+  REGISTER_KERNEL_MORE_LITE(kernel_type, impl_type, CPUPlace, __VA_ARGS__)
 
-#define REGISTER_GPUKERNEL_MORE(kernel_type, impl_type, ...) \
-  REGISTER_KERNEL_MORE(kernel_type, impl_type, GPUPlace, __VA_ARGS__)
+#define REGISTER_GPUKERNEL_MORE_LITE(kernel_type, impl_type, ...) \
+  REGISTER_KERNEL_MORE_LITE(kernel_type, impl_type, GPUPlace, __VA_ARGS__)
 
-#define REGISTER_JITKERNEL_GEN(kernel_type, ...)                    \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                         \
-      __reg_jitkernel_gen_##kernel_type##_CPUPlace_,                \
-      "REGISTER_JITKERNEL_GEN must be called in global namespace"); \
-  extern int TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();   \
-  static int __assert_gen_##kernel_type##_has_refer_ UNUSED =       \
-      TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();          \
-  static ::paddle::lite::jit::JitKernelRegistrar<                   \
-      ::paddle::lite::jit::JitCodeCreatorPool,                      \
-      ::paddle::lite::fluid::CPUPlace,                              \
-      __VA_ARGS__>                                                  \
-      __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_(         \
-          ::paddle::lite::jit::KernelType::kernel_type);            \
-  int TouchJitKernelReg_gen_##kernel_type##_CPUPlace_() {           \
-    __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_.Touch();   \
-    return 0;                                                       \
+#define REGISTER_JITKERNEL_GEN_LITE(kernel_type, ...)                    \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                         \
+      __reg_litejitkernel_gen_##kernel_type##_CPUPlace_,                 \
+      "REGISTER_JITKERNEL_GEN_LITE must be called in global namespace"); \
+  extern int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();    \
+  static int __assert_gen_##kernel_type##_has_refer_ UNUSED =            \
+      LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();           \
+  static ::paddle::lite::jit::JitKernelRegistrar<                        \
+      ::paddle::lite::jit::JitCodeCreatorPool,                           \
+      ::paddle::lite::fluid::CPUPlace,                                   \
+      __VA_ARGS__>                                                       \
+      __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_(              \
+          ::paddle::lite::jit::KernelType::kernel_type);                 \
+  int LiteTouchJitKernelReg_gen_##kernel_type##_CPUPlace_() {            \
+    __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_.Touch();        \
+    return 0;                                                            \
   }
 
-#define USE_JITKERNEL_GEN(kernel_type)                            \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                       \
-      __reg_jitkernel_gen_##kernel_type##_CPUPlace_,              \
-      "USE_JITKERNEL_GEN must be called in global namespace");    \
-  extern int TouchJitKernelReg_gen_##kernel_type##_CPUPlace_();   \
-  static int use_jitkernel_gen_##kernel_type##_CPUPlace_ UNUSED = \
-      TouchJitKernelReg_gen_##kernel_type##_CPUPlace_()
+#define USE_JITKERNEL_GEN_LITE(kernel_type)                           \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                      \
+      __reg_litejitkernel_gen_##kernel_type##_CPUPlace_,              \
+      "USE_JITKERNEL_GEN_LITE must be called in global namespace");   \
+  extern int LiteTouchJitKernelReg_gen_##kernel_type##_CPUPlace_();   \
+  static int use_litejitkernel_gen_##kernel_type##_CPUPlace_ UNUSED = \
+      LiteTouchJitKernelReg_gen_##kernel_type##_CPUPlace_()
 
-#define USE_JITKERNEL_REFER(kernel_type)                            \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                         \
-      __reg_jitkernel_##kernel_type##_refer_CPUPlace_,              \
-      "USE_JITKERNEL_REFER must be called in global namespace");    \
-  extern int TouchJitKernelReg_##kernel_type##_refer_CPUPlace_();   \
-  static int use_jitkernel_##kernel_type##_refer_CPUPlace_ UNUSED = \
-      TouchJitKernelReg_##kernel_type##_refer_CPUPlace_()
+#define USE_JITKERNEL_REFER_LITE(kernel_type)                           \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                        \
+      __reg_litejitkernel_##kernel_type##_refer_CPUPlace_,              \
+      "USE_JITKERNEL_REFER_LITE must be called in global namespace");   \
+  extern int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();   \
+  static int use_litejitkernel_##kernel_type##_refer_CPUPlace_ UNUSED = \
+      LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_()
 
-#define USE_KERNEL_MORE(kernel_type, impl_type, place_type)              \
-  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE(                              \
-      __reg_jitkernel_##kernel_type##_##impl_type##_##place_type##_,     \
-      "USE_JITKERNEL_MORE must be called in global namespace");          \
-  extern int                                                             \
-      TouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_(); \
-  static int use_jitkernel_##kernel_type##_##impl_type##_##place_type##_ \
-      UNUSED =                                                           \
-          TouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_()
+#define USE_KERNEL_MORE_LITE(kernel_type, impl_type, place_type)             \
+  STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                             \
+      __reg_litejitkernel_##kernel_type##_##impl_type##_##place_type##_,     \
+      "USE_JITKERNEL_MORE_LITE must be called in global namespace");         \
+  extern int                                                                 \
+      LiteTouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_(); \
+  static int use_litejitkernel_##kernel_type##_##impl_type##_##place_type##_ \
+      UNUSED =                                                               \
+          LiteTouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_()
 
-#define USE_JITKERNEL_MORE(kernel_type, impl_type) \
-  USE_KERNEL_MORE(kernel_type, impl_type, CPUPlace)
+#define USE_JITKERNEL_MORE_LITE(kernel_type, impl_type) \
+  USE_KERNEL_MORE_LITE(kernel_type, impl_type, CPUPlace)
 
 }  // namespace jit
 }  // namespace lite

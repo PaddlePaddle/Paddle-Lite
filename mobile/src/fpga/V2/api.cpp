@@ -623,7 +623,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
     arg->concat_arg.images_in[i] =
         (int8_t *)arg->conv_arg[i].output.address;  // NOLINT
-    arg->concat_arg.scales_in[i] = arg->conv_arg[i].output.scale_address;
+    arg->concat_arg.scales_in[i] = out->scale;
     arg->concat_arg.channel_num[i] = arg->conv_arg[i].filter_num;
 
     expand_conv_arg(&arg->conv_arg[i]);

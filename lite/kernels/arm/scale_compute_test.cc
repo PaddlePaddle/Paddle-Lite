@@ -41,13 +41,13 @@ void scale_compute_ref(const operators::ScaleParam& param) {
 }
 
 TEST(scale_arm, init) {
-  ScaleCompute scale;
+  ScaleCompute<float, PRECISION(kFloat)> scale;
   ASSERT_EQ(scale.precision(), PRECISION(kFloat));
   ASSERT_EQ(scale.target(), TARGET(kARM));
 }
 
 TEST(scale_arm, compute) {
-  ScaleCompute scale;
+  ScaleCompute<float, PRECISION(kFloat)> scale;
   operators::ScaleParam param;
 
   lite::Tensor x;

@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <glog/logging.h>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -22,6 +21,7 @@
 #include "lite/backends/x86/jit/helper.h"
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/macro.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {

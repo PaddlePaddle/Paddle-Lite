@@ -38,10 +38,10 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   using param_t = operators::DropoutParam;
   void Run() override {
     auto& param = *param_.get_mutable<operators::DropoutParam>();
-    const auto* x_data = param.x->data<T>();
-    auto* out_data = param.output->mutable_data<T>();
+    const auto* x_data = param.x->template data<T>();
+    auto* out_data = param.output->template mutable_data<T>();
     if (!param.is_test) {
-      auto* mask_data = param.mask->mutable_data<T>();
+      auto* mask_data = param.mask->template mutable_data<T>();
       std::random_device rnd;
       std::minstd_rand engine;
       int seed = param.fix_seed ? param.seed : rnd();

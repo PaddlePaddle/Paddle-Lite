@@ -24,9 +24,9 @@ namespace lite_api {
 size_t Place::hash() const {
   std::hash<int> h;
   size_t hash = h(static_cast<int>(target));
-  hash = lite::hash_combine(hash, static_cast<int>(precision));
-  hash = lite::hash_combine(hash, static_cast<int>(layout));
-  hash = lite::hash_combine(hash, static_cast<int>(device));
+  lite::CombineHash(static_cast<int64_t>(precision), &hash);
+  lite::CombineHash(static_cast<int64_t>(layout), &hash);
+  lite::CombineHash(static_cast<int64_t>(device), &hash);
   return hash;
 }
 
@@ -45,6 +45,21 @@ std::string Place::DebugString() const {
   return os.str();
 }
 
+const std::string& ActivationTypeToStr(ActivationType act) {
+  static const std::string act2string[] = {"unk",
+                                           "Relu",
+                                           "Relu6",
+                                           "PRelu",
+                                           "LeakyRelu",
+                                           "Sigmoid",
+                                           "Tanh",
+                                           "Swish",
+                                           "Exp"};
+  auto x = static_cast<int>(act);
+  CHECK_LT(x, static_cast<int>(ActivationType::NUM));
+  return act2string[x];
+}
+
 const std::string& TargetToStr(TargetType target) {
   static const std::string target2string[] = {"unk",
                                               "host",
@@ -55,7 +70,11 @@ const std::string& TargetToStr(TargetType target) {
                                               "any",
                                               "fpga",
                                               "npu",
-                                              "xpu"};
+                                              "xpu",
+                                              "bm",
+                                              "mlu",
+                                              "rknpu",
+                                              "apu"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -77,7 +96,8 @@ const std::string& PrecisionToStr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutToStr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {"unk", "NCHW", "any", "NHWC"};
+  static const std::string datalayout2string[] = {
+      "unk", "NCHW", "any", "NHWC", "ImageDefault", "ImageFolder", "ImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -93,7 +113,11 @@ const std::string& TargetRepr(TargetType target) {
                                               "kAny",
                                               "kFPGA",
                                               "kNPU",
-                                              "kXPU"};
+                                              "kXPU",
+                                              "kBM",
+                                              "kMLU",
+                                              "kRKNPU",
+                                              "kAPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -115,8 +139,13 @@ const std::string& PrecisionRepr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutRepr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {
-      "kUnk", "kNCHW", "kAny", "kNHWC"};
+  static const std::string datalayout2string[] = {"kUnk",
+                                                  "kNCHW",
+                                                  "kAny",
+                                                  "kNHWC",
+                                                  "kImageDefault",
+                                                  "kImageFolder",
+                                                  "kImageNW"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -129,6 +158,10 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kOpenCL),
                                                TARGET(kNPU),
                                                TARGET(kXPU),
+                                               TARGET(kBM),
+                                               TARGET(kMLU),
+                                               TARGET(kAPU),
+                                               TARGET(kRKNPU),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;
@@ -146,8 +179,12 @@ std::set<PrecisionType> ExpandValidPrecisions(PrecisionType precision) {
 }
 
 std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
-  static const std::set<DataLayoutType> valid_set(
-      {DATALAYOUT(kNCHW), DATALAYOUT(kAny), DATALAYOUT(kNHWC)});
+  static const std::set<DataLayoutType> valid_set({DATALAYOUT(kNCHW),
+                                                   DATALAYOUT(kAny),
+                                                   DATALAYOUT(kNHWC),
+                                                   DATALAYOUT(kImageDefault),
+                                                   DATALAYOUT(kImageFolder),
+                                                   DATALAYOUT(kImageNW)});
   if (layout == DATALAYOUT(kAny)) {
     return valid_set;
   }

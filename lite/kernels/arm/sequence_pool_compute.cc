@@ -59,7 +59,8 @@ void SequencePoolCompute::Run() {
   for (int i = 0; i <= batch_size; i++) {
     offset_new[i] = i;
   }
-  (output->mutable_lod())->push_back(offset_new);
+  output->mutable_lod()->clear();
+  output->mutable_lod()->push_back(offset_new);
 }
 
 }  // namespace arm

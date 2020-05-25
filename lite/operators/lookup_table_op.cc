@@ -25,8 +25,8 @@ bool LookupTableOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Ids)
   CHECK_OR_FALSE(param_.Out)
 
-  auto table_dims = param_.W->dims();
-  auto ids_dims = param_.Ids->dims();
+  const auto& table_dims = param_.W->dims();
+  const auto& ids_dims = param_.Ids->dims();
 
   int ids_rank = ids_dims.size();
 
@@ -36,33 +36,28 @@ bool LookupTableOpLite::CheckShape() const {
   return true;
 }
 
-bool LookupTableOpLite::InferShape() const {
-  auto table_dims = param_.W->dims();
-  auto ids_dims = param_.Ids->dims();
+bool LookupTableOpLite::InferShapeImpl() const {
+  const auto& table_dims = param_.W->dims();
+  const auto& ids_dims = param_.Ids->dims();
 
+  auto out_dims = ids_dims;
   int ids_rank = ids_dims.size();
+  out_dims[ids_rank - 1] = table_dims[1];
 
-  auto output_dims = ids_dims.Slice(0, ids_rank - 1);
-
-  std::vector<int64_t> out_dims;
-  for (int i = 0; i < ids_rank - 1; ++i) {
-    out_dims.push_back(ids_dims[i]);
-  }
-  out_dims.push_back(table_dims[1]);
-  param_.Out->Resize(lite::DDim{out_dims});
+  param_.Out->Resize(out_dims);
   param_.Out->set_lod(param_.Ids->lod());
   return true;
 }
 
-bool LookupTableOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                   lite::Scope *scope) {
+bool LookupTableOpLite::AttachImpl(const cpp::OpDesc& op_desc,
+                                   lite::Scope* scope) {
   auto input = op_desc.Input("W").front();
   auto ids = op_desc.Input("Ids").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.W = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.Ids = scope->FindVar(ids)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.W = scope->FindTensor(input);
+  param_.Ids = scope->FindTensor(ids);
+  param_.Out = scope->FindMutableTensor(out);
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
 

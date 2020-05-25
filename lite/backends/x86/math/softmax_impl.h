@@ -99,7 +99,7 @@ class SoftmaxFunctor<Target, T, is_test, enable_if_CPU<Target>> {
                   const int axis_dim,
                   const lite::Tensor* X,
                   lite::Tensor* Y) {
-    auto in_dims = X->dims();
+    const auto& in_dims = X->dims();
     constexpr int kBatchDim = 0;
     constexpr int kClassDim = 1;
 
@@ -108,8 +108,8 @@ class SoftmaxFunctor<Target, T, is_test, enable_if_CPU<Target>> {
     const int num_remain = num_classes / axis_dim;
 
     if (num_remain == 1 && lite::x86::MayIUse(lite::x86::avx)) {
-      const T* in_data = X->data<T>();
-      auto* out_data = Y->mutable_data<T>();
+      const T* in_data = X->template data<T>();
+      auto* out_data = Y->template mutable_data<T>();
       for (int bs = 0; bs < batch_size; ++bs) {
         T max_val = *std::max_element(in_data, in_data + num_classes);
         max_val *= static_cast<T>(-1);
@@ -140,7 +140,7 @@ class SoftmaxFunctor<Target, float, true, enable_if_CPU<Target>> {
                   const int axis_dim,
                   const lite::Tensor* X,
                   lite::Tensor* Y) {
-    auto in_dims = X->dims();
+    const auto& in_dims = X->dims();
     const float* in_data = X->data<float>();
     float* out_data = Y->mutable_data<float>();
     const int kBatchDim = 0;
@@ -219,9 +219,9 @@ class SoftmaxGradFunctor<Target, T, enable_if_CPU<Target>> {
     const int num_remain = num_classes / axis_dim;
 
     if (num_remain == 1 && lite::x86::MayIUse(lite::x86::avx)) {
-      const T* out_data = y->data<T>();
-      const T* out_grad = y_grad->data<T>();
-      T* in_grad = x_grad->mutable_data<T>();
+      const T* out_data = y->template data<T>();
+      const T* out_grad = y_grad->template data<T>();
+      T* in_grad = x_grad->template mutable_data<T>();
       for (int bs = 0; bs < batch_size; ++bs) {
         T scalar;
         vec_mul_reduce<T, lite::x86::avx>(

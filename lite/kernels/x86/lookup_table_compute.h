@@ -24,35 +24,34 @@ namespace kernels {
 namespace x86 {
 
 template <typename T>
-class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kInt64)> {
+class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::LookupTableParam;
 
   void Run() override {
     auto &param = *param_.get_mutable<operators::LookupTableParam>();
-    // auto& context = context_->As<X86Context>();
     auto *ids_t = param.Ids;
     auto *output_t = param.Out;
     int64_t padding_idx = param.padding_idx;
-    auto *ids = ids_t->data<int64_t>();
+    const int64_t *ids = ids_t->template data<int64_t>();
     int64_t ids_numel = ids_t->dims().production();
 
     auto *table_t = param.W;
     int64_t row_number = table_t->dims()[0];
     int64_t row_width = table_t->dims()[1];
 
-    auto *table = table_t->data<float>();
-    auto *output = output_t->mutable_data<float>();
-    memset(output, 0, output_t->dims().production() * sizeof(float));
+    const T *table = table_t->template data<T>();
+    T *output = output_t->template mutable_data<T>();
+    memset(output, 0, output_t->dims().production() * sizeof(T));
     for (int64_t i = 0; i < ids_numel; ++i) {
       if (padding_idx != -1 && ids[i] == padding_idx) {
-        memset(output + i * row_width, 0, row_width * sizeof(float));
+        memset(output + i * row_width, 0, row_width * sizeof(T));
       } else {
         CHECK_LT(ids[i], row_number);
         CHECK_GE(ids[i], 0);
         memcpy(output + i * row_width,
                table + ids[i] * row_width,
-               row_width * sizeof(float));
+               row_width * sizeof(T));
       }
     }
   }
