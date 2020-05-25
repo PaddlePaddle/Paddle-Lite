@@ -34,15 +34,10 @@ namespace mlu {
 void transpose2d(float* input_data,
                  float* output_data,
                  std::vector<int> input_shape);
-template <typename dtype>
-void transpose(dtype input_data,
-               dtype output_data,
-               std::vector<int> input_shape,
-               std::vector<int> axis);
 
 template <typename dtype>
-void transpose(dtype input_data,
-               dtype output_data,
+void transpose(dtype* input_data,
+               dtype* output_data,
                std::vector<int> input_shape,
                std::vector<int> axis) {
   int old_index = -1;
@@ -88,11 +83,6 @@ void transpose(dtype input_data,
     }
   }
 }
-
-void transpose(float* input_data,
-               float* output_data,
-               std::vector<int> input_shape,
-               std::vector<int> axis);
 
 inline int scale2position(float scale) { return std::floor(-std::log2(scale)); }
 
