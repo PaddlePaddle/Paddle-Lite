@@ -29,8 +29,8 @@
 #include <unistd.h>
 #endif  // _WIN32
 
-#include <gflags/gflags.h>
 #include <algorithm>
+#include "lite/utils/cp_logging.h"
 
 #include "lite/utils/env.h"
 

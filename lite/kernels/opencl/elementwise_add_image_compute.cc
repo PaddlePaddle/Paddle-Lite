@@ -18,6 +18,8 @@
 #include "lite/core/op_registry.h"
 #include "lite/utils/replace_stl/stream.h"
 
+#undef LITE_WITH_LOG
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -154,13 +156,13 @@ void ElementwiseAddImageCompute::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 }
 
@@ -196,3 +198,5 @@ REGISTER_LITE_KERNEL(elementwise_add,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+
+#define LITE_WITH_LOG

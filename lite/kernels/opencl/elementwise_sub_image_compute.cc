@@ -138,8 +138,13 @@ void ElementwiseSubImageCompute::Run() {
   VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 #endif
 
-  auto status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel, cl::NullRange, global_work_size, cl::NullRange, nullptr, nullptr);
+  auto status = EnqueueNDRangeKernel(context,
+                                     kernel,
+                                     cl::NullRange,
+                                     global_work_size,
+                                     cl::NullRange,
+                                     nullptr,
+                                     event_);
   CL_CHECK_FATAL(status);
 }
 

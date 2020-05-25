@@ -66,18 +66,18 @@ TEST(tanh_x86, run_test) {
   tanh.Run();
 
   LOG(INFO) << "output: ";
-  std::vector<float> ref_data{0.,
-                              -0.079829,
-                              0.158648,
-                              -0.235495,
-                              0.309506,
-                              -0.379949,
-                              0.446243,
-                              -0.507977,
-                              0.564899,
-                              -0.616909,
-                              0.664036,
-                              -0.706419};
+  std::vector<float> ref_data{0.f,
+                              -0.079829f,
+                              0.158648f,
+                              -0.235495f,
+                              0.309506f,
+                              -0.379949f,
+                              0.446243f,
+                              -0.507977f,
+                              0.564899f,
+                              -0.616909f,
+                              0.664036f,
+                              -0.706419f};
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
     EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);

@@ -12,6 +12,7 @@ TOOLCHAIN=gcc
 WITH_EXTRA=OFF
 # controls whether to compile python lib, default is OFF.
 WITH_PYTHON=OFF
+PY_VERSION=""
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
@@ -56,6 +57,7 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_LANG=$TOOLCHAIN \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
+                        -DPY_VERSION=$PY_VERSION \
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
@@ -205,6 +207,7 @@ function print_usage {
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
+    echo -e "|     --python_version: (2.7|3.5|3.7); controls python version to compile whl, default is None                                                             |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|                                                                                                                                                      |"
@@ -259,6 +262,11 @@ function main {
             # ON or OFF, default OFF
             --with_python=*)
                 WITH_PYTHON="${i#*=}"
+                shift
+                ;;
+            # 2.7 or 3.5 or 3.7, default is None
+            --python_version=*)
+                PY_VERSION="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,14 +22,16 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class UnsqueezeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class UnsqueezeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
   virtual ~UnsqueezeCompute() = default;
 };
 
-class Unsqueeze2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class Unsqueeze2Compute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

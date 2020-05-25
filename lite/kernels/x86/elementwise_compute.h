@@ -34,6 +34,11 @@ struct AddFunctor {
 };
 
 template <typename T>
+struct MulFunctor {
+  inline HOSTDEVICE T operator()(T a, T b) const { return a * b; }
+};
+
+template <typename T>
 class ElementwiseSubCompute
     : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -69,6 +74,24 @@ class ElementwiseAddCompute
   }
 
   virtual ~ElementwiseAddCompute() = default;
+};
+
+template <typename T>
+class ElementwiseMulCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    paddle::lite::kernels::x86::ElementwiseComputeEx<MulFunctor<T>,
+                                                     lite::TargetType::kX86,
+                                                     T>(
+        context, param.X, param.Y, param.axis, MulFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseMulCompute() = default;
 };
 
 }  // namespace x86

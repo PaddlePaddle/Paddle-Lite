@@ -20,6 +20,12 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/logging.h"
 #include "lite/utils/replace_stl/stream.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
+
+#undef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -41,6 +47,14 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                                     build_options_,
                                     time_stamp_);
   }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
@@ -154,13 +168,13 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
                     static_cast<size_t>(default_work_size.data()[1]),
                     static_cast<size_t>(default_work_size.data()[2])};
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -246,3 +260,4 @@ REGISTER_LITE_KERNEL(flatten2,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+#define LITE_WITH_LOG

@@ -35,6 +35,15 @@ class MeanOp : public OpLite {
 
   std::string DebugString() const override { return "mean"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    // ch->remark = "";
+    ch->macs = param_.X->numel() * 1.f;
+  }
+#endif
+
  private:
   mutable operators::MeanParam param_;
 };
