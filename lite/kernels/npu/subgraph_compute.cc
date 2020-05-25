@@ -120,7 +120,9 @@ int SubgraphEngine::BuildDeviceProgram() {
     return subgraph::FAILED;
   }
   auto device_program = std::make_shared<device_program_t>(device_client);
-  device_program_map_[inputs_shape_] = device_program;
+  if (!inputs_shape_.empty()) {
+    device_program_map_[inputs_shape_] = device_program;
+  }
 
   // Query and check the dimensions of valid input and output tensors
   std::vector<hiai::TensorDimension> device_idims, device_odims;
