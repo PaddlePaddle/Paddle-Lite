@@ -364,6 +364,11 @@ PMNode *PMNode::assert_is_op() {
   return this;
 }
 
+PMNode *PMNode::assert_only_one_output() {
+  asserts_.emplace_back([](const Node *x) { return x->outlinks.size() == 1; });
+  return this;
+}
+
 PMNode *PMNode::assert_is_op(const std::string &op_type) {
   asserts_.emplace_back([op_type](const Node *x) {
     if (x && x->IsStmt()) {

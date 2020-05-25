@@ -84,8 +84,7 @@ class UnsqueezeComputeTester : public arena::TestCase {
         output_shape[out_idx] = in_dims[in_idx++];
       }
     }
-    for (size_t i = 0; i < output_shape.size(); ++i)
-      out->Resize(DDim(output_shape));
+    out->Resize(DDim(output_shape));
     auto* input_data = input->data<float>();
     auto* out_data = out->mutable_data<float>();
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
@@ -258,22 +257,19 @@ void test_unsqueeze2(Place place,
   }
 }
 
-TEST(squeeze, precision) {
+TEST(unsqueeze, precision) {
   Place place;
   float abs_error = 2e-5;
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #else
-  return;
+  place = TARGET(kHost);
 #endif
-
   test_unsqueeze(place, abs_error);
 }
 
-TEST(squeeze2, precision) {
+TEST(unsqueeze2, precision) {
   Place place;
   float abs_error = 2e-5;
   std::vector<std::string> ignored_outs = {};
@@ -281,10 +277,8 @@ TEST(squeeze2, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;                  // Using fp16 in NPU
   ignored_outs.push_back("XShape");  // not supported out in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #else
-  return;
+  place = TARGET(kHost);
 #endif
 
   test_unsqueeze2(place, abs_error, ignored_outs);

@@ -33,6 +33,9 @@ bool BatchedGemm<float, float>::init(const bool trans_a,
   }
   cu_trans_a_ = trans_a ? CUBLAS_OP_T : CUBLAS_OP_N;
   cu_trans_b_ = trans_b ? CUBLAS_OP_T : CUBLAS_OP_N;
+  if (A_ != nullptr) {
+    cudaFree(A_);
+  }
   cudaMalloc(reinterpret_cast<void **>(&A_),
              3 * max_batch_size * sizeof(float *));
   return true;

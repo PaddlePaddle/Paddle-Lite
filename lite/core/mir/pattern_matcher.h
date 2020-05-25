@@ -127,6 +127,7 @@ struct PMNode {
   PMNode* assert_is_var();
   PMNode* assert_var_not_persistable();
   PMNode* assert_is_persistable_var();
+  PMNode* assert_only_one_output();
   PMNode* assert_is_op_output(const std::string& op_type);
   PMNode* assert_is_op_input(const std::string& op_type);
   PMNode* assert_is_op_input(const std::string& op_type,
@@ -160,6 +161,12 @@ struct PMNode {
   PMNode* assert_op_attr(const std::string& attr_name, const T& attr) {
     return assert_op_attr_satisfied<T>(
         attr_name, [=](const T& src) { return src == attr; });
+  }
+
+  PMNode* assert_node_satisfied(
+      const std::function<bool(const Node*)>& condition) {
+    asserts_.push_back(condition);
+    return this;
   }
 
  private:

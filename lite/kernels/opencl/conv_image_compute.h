@@ -24,6 +24,10 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -40,6 +44,14 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override;
   double Turn(int times = 5);
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_names_[0];
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
  private:
   void Conv2d1x1opt(bool is_turn = false);

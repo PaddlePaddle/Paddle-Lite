@@ -191,6 +191,9 @@ bool CLRuntime::InitializeDevice() {
     }
     return t_str;
   };
+  const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "device_version:" << device_version;
+
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
 
@@ -317,6 +320,8 @@ std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
   return device_info_;
 }
 
+GpuType& CLRuntime::GetGpuType() { return gpu_type_; }
+
 void CLRuntime::GetAdrenoContextProperties(
     std::vector<cl_context_properties>* properties,
     GPUPerfMode gpu_perf_mode,
@@ -363,6 +368,27 @@ void CLRuntime::GetAdrenoContextProperties(
   }
   // The properties list should be terminated with 0
   properties->push_back(0);
+}
+
+double CLRuntime::GetCommandTime(const cl::Event& event) {
+  command_queue().finish();
+  auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+  auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+  return (stop_nanos - start_nanos) / 1000000.0;
+}
+
+double CLRuntime::GetQueuedTime(const cl::Event& event) {
+  command_queue().finish();
+  return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
+          event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
+         1000000.0;
+}
+
+double CLRuntime::GetSubmitTime(const cl::Event& event) {
+  command_queue().finish();
+  return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
+          event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
+         1000000.0;
 }
 
 }  // namespace lite
