@@ -10,8 +10,7 @@ import sys
 
 from github import Github
 
-token = os.getenv('GITHUB_API_TOKEN', 'e51cb020919a6eef689257966e8fb6477981788a')
-
+token = os.getenv('GITHUB_API_TOKEN')
 
 def get_pull(pull_id):
     """
