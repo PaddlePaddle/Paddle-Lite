@@ -120,6 +120,13 @@ TEST(RoiAlign, precision) {
   // The unit test for roi_align needs the params,
   // which is obtained by runing model by paddle.
   LOG(INFO) << "test roi align op";
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+  std::unique_ptr<arena::TestCase> tester(
+      new RoiAlignComputeTester(place, "def"));
+  arena::Arena arena(std::move(tester), place, 2e-4);
+  arena.TestPrecision();
+#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   std::unique_ptr<arena::TestCase> tester(

@@ -854,9 +854,11 @@ void ModifyValidPlaces(SSAGraph* graph, bool use_mlu_cast) {
     for (auto& place : v_places) {
       prec_set.insert(place.precision);
     }
+#ifdef LITE_WITH_MLU
     if (lite::TargetWrapperMlu::UseFirstConv()) {
       prec_set.insert(PRECISION(kInt8));
     }
+#endif
     for (auto& prec : prec_set) {
       v_places.emplace_back(TARGET(kX86), prec, DATALAYOUT(kNHWC));
     }

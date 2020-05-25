@@ -27,7 +27,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #ifdef LITE_WITH_MLU
   fusion::FcFuser fuser(false);
   fuser(graph.get());
-#elif
+#else
   fusion::FcFuser fuser(true);
   fuser(graph.get());
 #endif
