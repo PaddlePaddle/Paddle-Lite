@@ -332,7 +332,7 @@ class KernelRegistry final {
           &&creator) {
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
-    auto &varient = registries_[GetKernelOffset<Target, Precision, Layout>()];
+    auto &varient = registries_[std::make_tuple(Target, Precision, Layout)];
     auto *reg = varient.template get<kernel_registor_t *>();
     CHECK(reg) << "Can not be empty of " << name;
     reg->Register(name, std::move(creator));
@@ -349,10 +349,12 @@ class KernelRegistry final {
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
     std::list<std::unique_ptr<KernelBase>> kernel_list;
-    if (registries_[GetKernelOffset<Target, Precision, Layout>()].valid()) {
-      kernel_list = registries_[GetKernelOffset<Target, Precision, Layout>()]
-                        .template get<kernel_registor_t *>()
-                        ->Creates(op_type);
+    std::tuple<TargetType, PrecisionType, DataLayoutType> temp_tuple(
+        Target, Precision, Layout);
+    if (registries_[temp_tuple].valid()) {
+      kernel_list =
+          registries_[temp_tuple].template get<kernel_registor_t *>()->Creates(
+              op_type);
     }
     return kernel_list;
   }
@@ -404,7 +406,9 @@ class KernelRegistry final {
   }
 
  private:
-  mutable std::vector<any_kernel_registor_t> registries_;
+  mutable std::map<std::tuple<TargetType, PrecisionType, DataLayoutType>,
+                   any_kernel_registor_t>
+      registries_;
 #ifndef LITE_ON_TINY_PUBLISH
   mutable std::map<
       std::string,
