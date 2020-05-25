@@ -260,7 +260,8 @@ bool RuntimeProgram::ShareBufferWithOriginTensors(
   CHECK_EQ(device_odims_.size(), output_names.size());
   for (int i = 0; i < input_names.size(); i++) {
     VLOG(3) << "[NPU] Inputs[" << i << "] name: " << input_names[i]
-            << " dims: {" << device_idims_[i].GetNumber() << ","
+            << " origin dims:" << (*origin_itensors)[i]->dims().repr()
+            << " device dims: {" << device_idims_[i].GetNumber() << ","
             << device_idims_[i].GetChannel() << ","
             << device_idims_[i].GetHeight() << ","
             << device_idims_[i].GetWidth() << "}";
@@ -282,13 +283,14 @@ bool RuntimeProgram::ShareBufferWithOriginTensors(
                                        (*device_itensors)[i]->GetSize());
   }
   for (int i = 0; i < output_names.size(); i++) {
+    (*origin_otensors)[i]->set_precision(origin_otypes_[i]);
+    (*origin_otensors)[i]->Resize(origin_odims_[i]);
     VLOG(3) << "[NPU] Outputs[" << i << "] name: " << output_names[i]
-            << " dims: {" << device_odims_[i].GetNumber() << ","
+            << " origin dims:" << (*origin_otensors)[i]->dims().repr()
+            << " device dims: {" << device_odims_[i].GetNumber() << ","
             << device_odims_[i].GetChannel() << ","
             << device_odims_[i].GetHeight() << ","
             << device_odims_[i].GetWidth() << "}";
-    (*origin_otensors)[i]->set_precision(origin_otypes_[i]);
-    (*origin_otensors)[i]->Resize(origin_odims_[i]);
     CHECK_EQ((*origin_otensors)[i]->dims().production(),
              device_odims_[i].GetNumber() * device_odims_[i].GetChannel() *
                  device_odims_[i].GetHeight() * device_odims_[i].GetWidth());
