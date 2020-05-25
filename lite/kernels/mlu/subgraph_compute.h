@@ -117,7 +117,7 @@ class SubgraphEngine : public subgraph::Engine {
       case paddle::lite_api::PrecisionType::kInt32:
         return CNML_DATA_INT32;
       case paddle::lite_api::PrecisionType::kInt8:
-        return CNML_DATA_INT8;
+        return CNML_DATA_UINT8;
       default:
         return PrecisionToDatatype(fp_type_);
     }
