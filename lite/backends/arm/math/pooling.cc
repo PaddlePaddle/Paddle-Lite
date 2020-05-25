@@ -561,7 +561,7 @@ void pooling_basic(const float* din,
   "subs   %[cnt_num], #1                          @ subs cnt_num \n" \
   "vst1.f32  {d10-d11}, [%[dr_out]]!              @ store 4 out \n"  \
   "ble       2f                                   @ bne \n"
-  
+
 #define P2x2S2P0_MAX                                                  \
   "1:                                             @ main loop\n"      \
   "vmax.f32  q4, q0, q1                           @ max \n"           \
