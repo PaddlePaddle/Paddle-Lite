@@ -138,7 +138,7 @@ function run_gen_code_test {
     # 1. build test_cxx_api
     make test_cxx_api -j$NUM_CORES_FOR_COMPILE
 
-    # 2. run test_cxx_api_lite in emulator to get opt model
+    # 2. run test_cxx_api_lite in emulator to get opt model 
     local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api)
     adb -s ${device} push "./third_party/install/lite_naive_model" ${adb_work_dir}
     adb -s ${device} push ${test_cxx_api_lite_path} ${adb_work_dir}
@@ -208,7 +208,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON 
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -247,8 +247,8 @@ function build_single {
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
     if [ $LITE_WITH_COVERAGE = "ON" ];then
-        make coveralls_generate -j
-    fi
+        make coveralls_generate -j    
+    fi 
     # test publish inference lib
     # make publish_inference
 }
@@ -404,7 +404,7 @@ function test_arm_android {
 
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell "cd ${adb_work_dir} && ./${test_name}"
-    adb -s ${device} shell "rm ${adb_work_dir}/${test_name}"
+    adb -s ${device} shell "rm -f ${adb_work_dir}/${test_name}"
 }
 
 # test_npu <some_test_name> <adb_port_number>
@@ -601,7 +601,6 @@ function cmake_arm {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DWITH_COVERAGE=$LITE_WITH_COVERAGE \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -957,7 +956,7 @@ function build_test_npu {
     local abi=armv8
     local lang=gcc
 
-    local test_model_name=test_mobilenetv1
+    local test_model_name=test_mobilenetv1 
     local model_name=mobilenet_v1
     cur_dir=$(pwd)
 
