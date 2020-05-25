@@ -2022,14 +2022,15 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vcgt.f32  q15, q5, #0\n"  /* get pos mask */        \
   "vbif.f32  q12, q7, q14\n" /* get right offset */    \
   "vbif.f32  q13, q7, q15\n" /* get right offset */    \
+  "add %[alpha], #16 \n"                               \
   "vadd.f32 q2, q10, q2\n"   /* r20, add offset */     \
   "vadd.f32 q3, q11, q3\n"   /* r21, add offset */     \
   "vadd.f32 q4, q12, q4\n"   /* r30, add offset */     \
   "vadd.f32 q5, q13, q5\n"   /* r31, add offset */     \
-  /*"vld1.32 {d12-d13}, [%[vmax]]\n"*/ /* set q4 = -127 \n"*/   \
-  "vmov.f32 q6, #-127.0\n" \
-  "vcge.f32 q7, q8, q6\n"   /* @ q8 >= -127 \n */     \
-   "vcge.f32 q10, q9, q6\n"   /* @ q8 >= -127 \n */     \
+  "vld1.f32 {d12-d13}, [%[alpha]] \n"                  \
+  "sub %[alpha], #16 \n"                               \
+  "vcge.f32 q7, q8, q6\n"   /* @ q8 >= -127 \n */      \
+  "vcge.f32 q10, q9, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q11, q0, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q12, q1, q6\n"   /* @ q8 >= -127 \n */     \
   "vcge.f32 q13, q2, q6\n"   /* @ q8 >= -127 \n */     \
@@ -2131,7 +2132,8 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int is_relu,
                              int k,
                              int rem) {
-  //float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
+  float new_ptr[8] = {alpha[0], alpha[1], alpha[2], alpha[3],
+                      -127.0, -127.0, -127.0, -127.0}; 
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -2141,10 +2143,9 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  [c_ptr3] "+r"(c_ptr3),
                  [k] "+r"(k)
                : [is_relu] "r"(is_relu),
-                 [alpha] "r"(alpha),
+                 [alpha] "r"(new_ptr),
                  [bias] "r"(bias),
                  [rem] "r"(rem),
-    //             [vmax] "r"(vmax),
                  [scale] "r"(scale)
                : "q0",
                  "q1",
