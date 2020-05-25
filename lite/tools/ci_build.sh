@@ -247,7 +247,7 @@ function build_single {
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
     if [ $LITE_WITH_COVERAGE = "ON" ];then
-        make coveralls_generate -j
+        make coveralls_generate -j    
     fi 
     # test publish inference lib
     # make publish_inference
