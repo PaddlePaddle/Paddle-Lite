@@ -36,7 +36,21 @@ class InstanceNormOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "instance_norm"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.x->dims());
+    ch->output_shape = ch->DimToStr(param_.out->dims());
+    // ch->remark = "";
+    auto x_dims = param_.x->dims();
+    auto nc = x_dims[0] * x_dims[1];
+    auto hw = x_dims[2] * x_dims[3];
+    auto nchw = x_dims.production();
+    ch->macs = 5.f * nchw + 3.f * (nc + hw);
+  }
+#endif
 
  private:
   mutable InstanceNormParam param_;
