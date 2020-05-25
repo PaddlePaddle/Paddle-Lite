@@ -77,7 +77,7 @@ python demo 完整代码位于 [demo/python](https://github.com/PaddlePaddle/Pad
 from paddlelite.lite import *
 
 config = MobileConfig()
-config.set_model_dir(/YOU_MODEL_PATH/mobilenet_v1_opt.nb)
+config.set_model_from_file(/YOU_MODEL_PATH/mobilenet_v1_opt.nb)
 ```
 
 (2) 创建predictor
