@@ -24,13 +24,30 @@ namespace {
 
 class Eliminator : public FuseBase {
  public:
+  static bool DropoutIsTest(const Node* x) {
+    if (x && x->IsStmt()) {
+      auto* op_info = x->stmt()->op_info();
+      if (op_info->HasAttr("is_test")) {
+        auto attr_type = op_info->GetAttrType("is_test");
+        if (attr_type == paddle::lite::OpDescAPI::AttrType::INT &&
+            op_info->GetAttr<int>("is_test") == 1) {
+          return true;
+        } else if (attr_type == paddle::lite::OpDescAPI::AttrType::BOOLEAN &&
+                   op_info->GetAttr<bool>("is_test")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   void BuildPattern() override {
     // the previous op's output need updat
     auto* pre_op = OpNode("preop")->assert_is_not_op_type("conditional_block");
     // TODO(Superjomn) check has only one output
     auto* x = VarNode("x")->assert_is_op_input("dropout", "X");
     auto* dropout_op = OpNode("dropout", "dropout")
-                           ->assert_op_attr<int>("is_test", 1)
+                           ->assert_node_satisfied(Eliminator::DropoutIsTest)
                            ->assert_op_attr<std::string>(
                                "dropout_implementation", "upscale_in_train");
     auto* out = VarNode("out")->assert_is_op_output("dropout", "Out");

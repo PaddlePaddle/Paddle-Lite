@@ -42,8 +42,18 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   )
 
     add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
+    if(WIN32)
+        target_link_libraries(paddle_light_api_shared shlwapi.lib)
+    endif()
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${rknpu_kernels} ${apu_kernels})
-    if(NOT APPLE AND NOT WIN32)
+   if(APPLE)
+        set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/exported_symbols.lds")
+        set(LINK_FLAGS "-Wl,-exported_symbols_list, ${LINK_MAP_FILE}")
+        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+        add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
+        set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+        add_dependencies(paddle_full_api_shared custom_linker_map)
+   elseif(NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
         add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
@@ -164,25 +174,27 @@ set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
         "A path setting inference demo download directories.")
 
 if(WITH_TESTING)
-    lite_cc_test(test_cxx_api SRCS cxx_api_test.cc
-       DEPS cxx_api mir_passes lite_api_test_helper
-       ${ops} ${host_kernels}
-       X86_DEPS ${x86_kernels}
-       CUDA_DEPS ${cuda_kernels}
-       ARM_DEPS ${arm_kernels}
-       CV_DEPS paddle_cv_arm
-       NPU_DEPS ${npu_kernels}
-       APU_DEPS ${apu_kernels}
-       XPU_DEPS ${xpu_kernels}
-       RKNPU_DEPS ${rknpu_kernels}
-       CL_DEPS ${opencl_kernels}
-       FPGA_DEPS ${fpga_kernels}
-       BM_DEPS ${bm_kernels}
-       MLU_DEPS ${mlu_kernels}
-       EXCLUDE_COMPILE_DEPS "ON"
-       ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
-            --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
-    add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
+    if(NOT WITH_COVERAGE)
+        lite_cc_test(test_cxx_api SRCS cxx_api_test.cc
+           DEPS cxx_api mir_passes lite_api_test_helper
+           ${ops} ${host_kernels}
+           X86_DEPS ${x86_kernels}
+           CUDA_DEPS ${cuda_kernels}
+           ARM_DEPS ${arm_kernels}
+           CV_DEPS paddle_cv_arm
+           NPU_DEPS ${npu_kernels}
+           APU_DEPS ${apu_kernels}
+           XPU_DEPS ${xpu_kernels}
+           RKNPU_DEPS ${rknpu_kernels}
+           CL_DEPS ${opencl_kernels}
+           FPGA_DEPS ${fpga_kernels}
+           BM_DEPS ${bm_kernels}
+           MLU_DEPS ${mlu_kernels}
+           EXCLUDE_COMPILE_DEPS "ON"
+           ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
+                --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
+        add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
+    endif()
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         if(LITE_WITH_X86)
             lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
@@ -246,8 +258,10 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
-    set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
-    set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    if(NOT WIN32)
+       set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+       set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -255,7 +269,9 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu SERIAL)
     add_dependencies(test_mobilenetv2 extern_lite_download_mobilenet_v2_relu_tar_gz)
-    set_target_properties(test_mobilenetv2 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    if(NOT WIN32)
+        set_target_properties(test_mobilenetv2 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
        DEPS ${lite_model_test_DEPS} paddle_api_light
@@ -317,7 +333,8 @@ bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api
 
 # These tests needs CLI arguments, and is not supported in ARM CI.
 # TODO(Superjomn) support latter.
-lite_cc_test(test_light_api SRCS light_api_test.cc
+if(NOT WITH_COVERAGE)
+    lite_cc_test(test_light_api SRCS light_api_test.cc
         DEPS light_api program mir_passes paddle_api_light
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -325,7 +342,7 @@ lite_cc_test(test_light_api SRCS light_api_test.cc
         BM_DEPS ${bm_kernels}
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
-lite_cc_test(test_apis SRCS apis_test.cc
+    lite_cc_test(test_apis SRCS apis_test.cc
         DEPS cxx_api light_api ${ops} paddle_api_light
         CL_DEPS ${opencl_kernels}
         X86_DEPS ${x86_kernels}
@@ -336,6 +353,7 @@ lite_cc_test(test_apis SRCS apis_test.cc
         MLU_DEPS ${mlu_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
         --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
+endif()
 
 if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
@@ -361,22 +379,24 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
-lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
-  ${ops}
-  ARM_DEPS ${arm_kernels}
-  CV_DEPS paddle_cv_arm
-  NPU_DEPS ${npu_kernels}
-  XPU_DEPS ${xpu_kernels}
-  APU_DEPS ${apu_kernels}
-  RKNPU_DEPS ${rknpu_kernels}
-  CL_DEPS ${opencl_kernels}
-  X86_DEPS ${x86_kernels}
-  FPGA_DEPS ${fpga_kernels}
-  BM_DEPS ${bm_kernels}
-  MLU_DEPS ${mlu_kernels}
-  ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
-if (WITH_TESTING)
-    add_dependencies(test_paddle_api extern_lite_download_lite_naive_model_tar_gz)
+if(NOT WITH_COVERAGE)
+    lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
+      ${ops}
+      ARM_DEPS ${arm_kernels}
+      CV_DEPS paddle_cv_arm
+      NPU_DEPS ${npu_kernels}
+      XPU_DEPS ${xpu_kernels}
+      APU_DEPS ${apu_kernels}
+      RKNPU_DEPS ${rknpu_kernels}
+      CL_DEPS ${opencl_kernels}
+      X86_DEPS ${x86_kernels}
+      FPGA_DEPS ${fpga_kernels}
+      BM_DEPS ${bm_kernels}
+      MLU_DEPS ${mlu_kernels}
+      ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
+    if (WITH_TESTING)
+        add_dependencies(test_paddle_api extern_lite_download_lite_naive_model_tar_gz)
+    endif()
 endif()
 
 # Some bins

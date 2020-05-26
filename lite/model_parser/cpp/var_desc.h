@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include "lite/model_parser/desc_apis.h"
 
 namespace paddle {
@@ -46,11 +47,16 @@ class VarDesc : public VarDescAPI {
 
   void SetDataType(Type data_type) { data_type_ = data_type; }
 
+  void SetShape(const std::vector<int64_t> &dims) { shape_ = dims; }
+
+  std::vector<int64_t> GetShape() const { return shape_; }
+
  private:
   std::string name_;
   Type type_;
   Type data_type_;
   bool persistable_;
+  std::vector<int64_t> shape_;
 };
 
 }  // namespace cpp

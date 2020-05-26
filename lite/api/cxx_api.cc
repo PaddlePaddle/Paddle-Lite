@@ -327,8 +327,10 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
     }
   }
   if (is_quantized_model) {
+#ifdef LITE_WITH_ARM
     inner_places.insert(inner_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
+#endif
   }
 
   Program program(desc, scope_, inner_places);

@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/expand_compute.h"
+#include "lite/kernels/host/expand_compute.h"
 #include <vector>
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-void ExpandCompute::Run() {
-  auto& param = Param<operators::ExpandParam>();
+template <typename T, PrecisionType PType>
+void ExpandCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ExpandParam>();
   const auto* x = param.X;
   auto* out = param.Out;
   std::vector<int> expand_times = param.expand_times;
 
-  const float* src = x->data<float>();
-  float* dst = out->mutable_data<float>();
+  const T* src = x->template data<T>();
+  T* dst = out->template mutable_data<T>();
 
   int dims = expand_times.size();
   DDim in_shape = x->dims();
@@ -42,7 +41,7 @@ void ExpandCompute::Run() {
     for (int k = 0; k < expand_times[i]; ++k) {
       memcpy(dst + (j * expand_times[i] + k) * inner_num,
              src + j * inner_num,
-             sizeof(float) * inner_num);
+             sizeof(T) * inner_num);
     }
   }
   inner_num *= expand_times[i];
@@ -53,20 +52,27 @@ void ExpandCompute::Run() {
       for (int k = expand_times[i] - 1; k >= 0; --k) {
         memcpy(dst + (j * expand_times[i] + k) * inner_num,
                dst + j * inner_num,
-               sizeof(float) * inner_num);
+               sizeof(T) * inner_num);
       }
     }
     inner_num *= expand_times[i];
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    expand, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ExpandCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+using expand_float =
+    paddle::lite::kernels::host::ExpandCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();

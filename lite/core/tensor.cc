@@ -32,8 +32,8 @@ value_type DDimLite::production() const {
 }
 
 value_type DDimLite::count(int start, int end) const {
-  start = std::max(start, 0);
-  end = std::min(end, static_cast<int>(data_.size()));
+  start = (std::max)(start, 0);
+  end = (std::min)(end, static_cast<int>(data_.size()));
   if (end < start) {
     return 0;
   }
@@ -45,8 +45,8 @@ value_type DDimLite::count(int start, int end) const {
 }
 
 DDimLite DDimLite::Slice(int start, int end) const {
-  start = std::max(start, 0);
-  end = std::min(end, static_cast<int>(data_.size()));
+  start = (std::max)(start, 0);
+  end = (std::min)(end, static_cast<int>(data_.size()));
   std::vector<value_type> new_dim(end - start);
   for (int i = start; i < end; i++) {
     new_dim[i - start] = data_[i];

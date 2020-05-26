@@ -47,6 +47,7 @@ Welcome to Paddle-Lite's documentation!
 
   demo_guides/cpp_demo
   demo_guides/java_demo
+  demo_guides/python_demo
   demo_guides/android_app_demo
   demo_guides/ios_app_demo
   demo_guides/x86

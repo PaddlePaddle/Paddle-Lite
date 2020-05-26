@@ -30,7 +30,8 @@ void ConvElementwiseFuser::BuildPattern() {
   auto* bias = VarNode("bias")
                    ->assert_is_op_input("elementwise_add", "Y")
                    ->AsInput()
-                   ->assert_is_persistable_var();
+                   ->assert_is_persistable_var()
+                   ->assert_only_one_output();
 
   // create op nodes
   auto* conv2d = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);

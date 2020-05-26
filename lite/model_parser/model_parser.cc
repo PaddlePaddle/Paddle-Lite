@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <set>
+#include <unordered_set>
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -323,7 +324,7 @@ void SaveCombinedParamsPb(const std::string &path,
   std::sort(paramlist.begin(), paramlist.end());
 
   // Load vars
-  std::ofstream file(path);
+  std::ofstream file(path, std::ios::binary);
   CHECK(file.is_open());
   for (size_t i = 0; i < paramlist.size(); ++i) {
     SerializeTensor(file, exec_scope, paramlist[i]);
@@ -528,12 +529,16 @@ void SaveCombinedParamsNaive(const std::string &path,
 
   auto prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  // set unique_var_names to avoid saving shared params repeatedly
+  std::unordered_set<std::string> unique_var_names;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||
+        unique_var_names.count(var.Name()) > 0)
       continue;
     naive_buffer::ParamDesc param_desc(desc.AddParam());
     SetParamInfoNaive(&param_desc, exec_scope, var.Name());
+    unique_var_names.emplace(var.Name());
   }
 
   pt_desc.Save();

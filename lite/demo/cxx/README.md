@@ -12,38 +12,25 @@
 
 **下载Demo并执行**
 
-下载压缩包[mask_detection_files](https://paddle-inference-dist.cdn.bcebos.com/PaddleLiteDemo/mask_detection_files.tgz)，解压到本地，其中包括编译好的可执行文件、模型文件、测试图片、PaddleLite 2.3版本动态库。
+下载压缩包[mask_demo](https://paddle-inference-dist.cdn.bcebos.com/PaddleLiteDemo/mask_demo_v2.6.tgz)，解压到本地，其中包括编译好的可执行文件、模型文件、测试图片、PaddleLite 2.6版本动态库。
 
-电脑连接安卓手机，在电脑shell端执行如下命令，将mask_detection_files文件夹push到安卓手机上。
-```
-adb push mask_detection_files /data/local/tmp/
-```
+电脑连接安卓手机，在电脑shell端进入 `mask_demo` 目录。
 
-在电脑shell端执行如下命令，进入安卓手机，执行demo。
-```
-adb shell
-cd /data/local/tmp/mask_detection_files
-export LD_LIBRARY_PATH=/data/local/tmp/mask_detection_files:$LD_LIBRARY_PATH 
-./mask_detection face_detection mask_classification test.jpg
-```
+执行 `sh run.sh`，会将文件push到手机端、执行口罩检测、pull结果图片。
 
-回到电脑端，将结果图片（test_mask_detection_result.jpg）取出，查看检测结果。
-```
-exit
-adb pull /data/local/tmp/mask_detection_files/test_mask_detection_result.jpg ./
-```
+在电脑端查看 `test_img_result.jpg`，即是口罩检测结果。
 
 
 **编译Demo并执行**
 
-参考[源码编译](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/source_compile/)准备编译环境。
+参考[预测库编译](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html)准备编译环境。
 
-执行下面命令，下载PaddleLite代码，切换到2.3版本分支。
+执行下面命令，下载PaddleLite代码，切换到2.6版本分支。
 ```shell
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite
-git fetch origin release/v2.3:release/v2.3 
-git checkout release/v2.3
+git fetch origin release/v2.6:release/v2.6 
+git checkout release/v2.6
 ```
 
 进入PaddleLite根目录，编译预测库。
@@ -58,47 +45,31 @@ git checkout release/v2.3
     full_publish
 ```
 
-进入编译目录，下载模型和图片的压缩包，编译可执行文件。
+编译完成后，进入Demo编译目录，执行脚本，会编译可执行文件，同时将可执行文件、预测库、模型、图片保存到 `mask_demo` 文件中。
 ```shell
 cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mask_detection
-wget https://paddle-inference-dist.bj.bcebos.com/mask_detection.tar.gz
-tar zxvf mask_detection.tar.gz
-make
+sh prepare.sh
 ```
 
-当然，大家也可以通过PaddleHub下载人脸检测模型和口罩佩戴判断模型。
+当然，大家也可以通过PaddleHub下载人脸检测模型和口罩佩戴判断模型，然后使用 `opt`工具转换，最后替换 `mask_demo` 文件中的模型文件。
 ```
-# 下载paddlehub以后，通过python执行以下代码
+# 参考[文档](https://github.com/PaddlePaddle/PaddleHub)安装PaddleHub
+
+# 参考[文档](https://www.paddlepaddle.org.cn/hubdetail?name=pyramidbox_lite_mobile_mask&en_category=ObjectDetection)安装模型，执行 hub install pyramidbox_lite_mobile_mask==1.3.0
+
+#通过python执行以下代码，将模型保存在test_program文件夹之中，人脸检测和口罩佩戴判断模型分别存储在pyramidbox_lite和mask_detector之中。文件夹中的__model__是模型结构文件，__param__文件是权重文件
 import paddlehub as hub
 pyramidbox_lite_mobile_mask = hub.Module(name="pyramidbox_lite_mobile_mask")
-# 将模型保存在test_program文件夹之中
-pyramidbox_lite_mobile_mask.processor.save_inference_model(dirname="test_program") 
-# 通过以上命令，可以获得人脸检测和口罩佩戴判断模型，分别存储在pyramidbox_lite和mask_detector之中。文件夹中的__model__是模型结构文件，__param__文件是权重文件。
-# 从PaddleHub下载的是预测模型，需要使用PaddleLite提供的model_optimize_tools对预测模型进行转换，请参考[模型转换文档](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/model_optimize_tool/)。
+pyramidbox_lite_mobile_mask.processor.save_inference_model(dirname="test_program")
+
+# 从PaddleHub下载的是预测模型，需要使用PaddleLite提供的 opt 对预测模型进行转换，请参考[模型转换文档](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/model_optimize_tool/)。
 ```
 
-电脑连接安卓手机，将可执行文件、测试图片、模型文件、预测库push到安卓手机上。
-```
-adb push mask_detection /data/local/tmp/
-adb push test.jpg /data/local/tmp/
-adb push face_detection /data/local/tmp
-adb push mask_classification /data/local/tmp
-adb push ../../../cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/
-adb shell chmod +x /data/local/tmp/mask_detection
-```
+电脑连接安卓手机，在电脑shell端进入 `mask_demo` 目录。
 
-进入安卓手机，执行demo。
-```
-adb shell
-cd /data/local/tmp
-export LD_LIBRARY_PATH=/data/local/tmp/:$LD_LIBRARY_PATH 
-./mask_detection face_detection mask_classification test.jpg
-```
+执行 `sh run.sh`，会将文件push到手机端、执行口罩检测、pull结果图片。
 
-回到电脑端，将结果取出，查看如下效果图。
-```
-adb pull /data/local/tmp/test_mask_detection_result.jpg ./
-```
+在电脑端查看 `test_img_result.jpg`，即是口罩检测结果，如下图。
 
 ![test_mask_detection_result](https://user-images.githubusercontent.com/7383104/75131866-bae64300-570f-11ea-9cad-17acfaea1cfc.jpg)
 

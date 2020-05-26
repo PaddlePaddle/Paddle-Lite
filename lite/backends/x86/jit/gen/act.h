@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <glog/logging.h>
 #include <string>
 #include "lite/backends/x86/jit/gen/jitcode.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

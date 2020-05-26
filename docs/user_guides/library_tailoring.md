@@ -24,22 +24,29 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 ### 1、转化模型时记录优化后模型信息
 
-说明：使用model_optimize_tool转化模型时，选择 `--record_tailoring_info =true`  会将优化后模型的OP和kernel信息保存到输出文件夹，这些信息将用于编译裁剪后的动态库。
-注意：需要使用Paddle-Lite 最新版本（release/v2.0.0之后）代码编译出的model_optimize_tool
+说明：使用`opt`转化模型时，选择 `--record_tailoring_info =true`  会将优化后模型的OP和kernel信息保存到输出文件夹，这些信息将用于编译裁剪后的动态库。
 例如：
 
 ```bash
-./model_optimize_tool     --model_dir=./mobilenet_v1     --optimize_out_type=naive_buffer     --optimize_out=mobilenet_v1NB     --record_tailoring_info =true     --valid_targets=arm
+./opt     --model_dir=./mobilenet_v1     --optimize_out_type=naive_buffer     --optimize_out=mobilenet_v1NB     --record_tailoring_info =true     --valid_targets=arm
 ```
-效果：优化后模型使用的OP和kernel信息被保存在 `mobilenet_v1NB`文件夹中的隐藏文件里了
+效果：优化后模型使用的`OP`和`kernel`信息被保存在 `mobilenet_v1NB`文件夹中的隐藏文件里了
 
 ### 2、根据模型信息编译裁剪后的预测库
 
 说明：编译Paddle-Lite时选择`--build_tailor=ON` ，并且用   `–-opt_model_dir=`   指定优化后的模型的地址
 例如：
 
+**release/v2.6.0以后版本或develop分支使用以下命令**：
+
 ```bash
-./lite/tools/build.sh   --arm_os=android   --arm_abi=armv7   --arm_lang=gcc   --android_stl=c++_static   --build_extra=ON --build_tailor=ON --opt_model_dir=../mobilenet_v1NB tiny_publish
+./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=../mobilenet_v1NB
+```
+
+**release/v2.3之前版本使用以下命令**：
+
+```bash
+./lite/tools/build.sh   --arm_os=android   --arm_abi=armv8   --arm_lang=gcc   --android_stl=c++_static   --build_extra=ON --build_tailor=ON --opt_model_dir=../mobilenet_v1NB tiny_publish
 ```
 **注意**：上面命令中的`../mobilenet_v1NB`是第1步得到的转化模型的输出路径
 
@@ -148,13 +155,13 @@ int main(int argc, char** argv) {
 
 ## 按模型集合裁剪预测库
 
-为了方便用户使用，我们同时提供了按模型集合进行预测库裁剪的功能。用户可以提供一个模型集合，Model Optimize Tool会根据用户所指定的模型集合分析其**优化后的**模型所需要的算子信息对预测库进行裁剪。使用此功能用户根据自己的需要使用模型集合来对预测库中的算子进行任意裁剪。
+为了方便用户使用，我们同时提供了按模型集合进行预测库裁剪的功能。用户可以提供一个模型集合，opt 会根据用户所指定的模型集合分析其**优化后的**模型所需要的算子信息对预测库进行裁剪。使用此功能用户根据自己的需要使用模型集合来对预测库中的算子进行任意裁剪。
 
 使用方法如下所示：
 
 ```shell
 # 非combined模型集合
-./model_optimize_tool                     \
+./opt                                     \
     --model_set_dir=<your_model_set_dir>  \
     --optimize_out_type=naive_buffer      \
     --optimize_out=<output_model_set_dir> \
@@ -162,7 +169,7 @@ int main(int argc, char** argv) {
     --valid_targets=arm
    
 # combined模型集合
-./model_optimize_tool                       \
+./opt                                       \
     --model_set_dir=<your_model_set_dir>    \
     --optimize_out_type=naive_buffer        \
     --model_filename=<model_topo_filename>  \
@@ -172,7 +179,7 @@ int main(int argc, char** argv) {
     --valid_targets=arm
 ```
 
-经过以上步骤后会在`<output_model_set_dir>`中生成模型集合中各模型对应的NaiveBuffer格式的优化模型。此步会对模型集合中所需算子信息进行搜集并存储到`<output_model_set_dir>`中。下一步编译预测库的流程与使用单模型进行预测库裁剪步骤相同。
+经过以上步骤后会在`<output_model_set_dir>`中生成模型集合中各模型对应的`NaiveBuffer`格式的优化模型。此步会对模型集合中所需算子信息进行搜集并存储到`<output_model_set_dir>`中。下一步编译预测库的流程与使用单模型进行预测库裁剪步骤相同。
 
 **注意：**
 

@@ -62,15 +62,18 @@ void BindLiteOpt(py::module *m) {
       .def("set_model_file", &OptBase::SetModelFile)
       .def("set_param_file", &OptBase::SetParamFile)
       .def("set_valid_places", &OptBase::SetValidPlaces)
-      .def("set_lite_out", &OptBase::SetLiteOut)
+      .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
       .def("record_model_info", &OptBase::RecordModelInfo)
+      .def("set_passes_internal", &OptBase::SetPassesInternal)
       .def("run", &OptBase::Run)
       .def("run_optimize", &OptBase::RunOptimize)
       .def("help", &OptBase::PrintHelpInfo)
+      .def("executablebin_help", &OptBase::PrintExecutableBinHelpInfo)
       .def("print_supported_ops", &OptBase::PrintSupportedOps)
       .def("display_kernels_info", &OptBase::DisplayKernelsInfo)
-      .def("print_all_ops", &OptBase::PrintAllOps);
+      .def("print_all_ops", &OptBase::PrintAllOps)
+      .def("check_if_model_supported", &OptBase::CheckIfModelSupported);
 }
 #endif
 static void BindLiteLightPredictor(py::module *m);
@@ -122,6 +125,7 @@ void BindLiteCxxConfig(py::module *m) {
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
       .def("set_model_buffer", &CxxConfig::set_model_buffer)
+      .def("set_passes_internal", &CxxConfig::set_passes_internal)
       .def("model_from_memory", &CxxConfig::model_from_memory);
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)

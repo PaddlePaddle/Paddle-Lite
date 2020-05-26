@@ -35,6 +35,17 @@ class ElementwiseOp : public OpLite {
 
   std::string DebugString() const override { return "elementwise_op"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+    auto output_dims = param_.Out->dims();
+    ch->input_shape = "X" + ch->DimToStr(param_.X->dims()) + "Y" +
+                      ch->DimToStr(param_.Y->dims());
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "axis" + std::to_string(param_.axis);
+    ch->macs = 1.0f * param_.Out->numel();
+  }
+#endif
+
  private:
   mutable operators::ElementwiseParam param_;
 };
