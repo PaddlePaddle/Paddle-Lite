@@ -289,6 +289,17 @@ function build_test_server {
     test_model_optimize_tool_compile
 }
 
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_coverage {
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cmake_x86_for_CI
+    build
+
+    test_server
+}
+
 # The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
 # The cuDNN version is cudnn-10.1-linux-x64-v7.5.0.56.
 function build_test_cuda_server {
@@ -1136,7 +1147,7 @@ function main {
                 shift
                 ;;
             build_check_coverage)
-                build_test_server
+                build_test_coverage
                 check_coverage
                 shift
                 ;;
