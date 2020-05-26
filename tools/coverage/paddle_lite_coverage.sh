@@ -1,4 +1,6 @@
-et -xe
+#!/bin/bash
+# The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
+set -xe
 
 PADDLE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 
@@ -26,7 +28,6 @@ function gen_full_html_report() {
         '/Paddle-Lite/lite/kernels/*' \
         '/Paddle-Lite/lite/model_parser/*' \
         '/Paddle-Lite/lite/opreators/*' \
-        '/Paddle-Lite/lite/tests/*' \
         '/Paddle-Lite/lite/tools/*' \
         '/Paddle-Lite/lite/utils/*' \
         -o coverage-full.tmp \
@@ -35,7 +36,21 @@ function gen_full_html_report() {
     mv -f coverage-full.tmp coverage-full.info
 
     lcov --remove coverage-full.info \
-        '/Paddle-Lite/lite/demo*' \
+        '/Paddle-Lite/lite/tests/*' \
+        '/Paddle-Lite/lite/demo/*' \
+        '/Paddle-Lite/lite/fluid/*_test*' \
+        '/Paddle-Lite/lite/model_parser/*_test*' \
+        '/Paddle-Lite/lite/kernels/*/*test*' \
+        '/Paddle-Lite/lite/kernels/*/bridges/*test*' \
+        '/Paddle-Lite/lite/utils/*_test*' \
+        '/Paddle-Lite/lite/api/*test*' \
+        '/Paddle-Lite/lite/core/*_test*' \
+        '/Paddle-Lite/lite/core/*/*test*' \
+        '/Paddle-Lite/lite/core/mir/*/*_test*' \
+        '/Paddle-Lite/lite/core/mir/*_test*' \
+        '/Paddle-Lite/lite/backends/x86/*/*test*' \
+        '/Paddle-Lite/lite/backends/opencl/*test*' \
+        '/Paddle-Lite/lite/operators/*test*' \
         -o coverage-full.tmp \
         --rc lcov_branch_coverage=0
 
@@ -48,7 +63,7 @@ gen_full_html_report || true
 function gen_diff_html_report() {
     if [ "${GIT_PR_ID}" != "" ]; then
         COVERAGE_DIFF_PATTERN="`python ${PADDLE_ROOT}/tools/coverage/pull_request.py files ${GIT_PR_ID}`"
-
+        sleep 5
         python ${PADDLE_ROOT}/tools/coverage/pull_request.py diff ${GIT_PR_ID} > git-diff.out
     fi
 
@@ -57,6 +72,7 @@ function gen_diff_html_report() {
         -o coverage-diff.info \
         --rc lcov_branch_coverage=0
     
+    sleep 5 
     python ${PADDLE_ROOT}/tools/coverage/coverage_diff.py coverage-diff.info git-diff.out > coverage-diff.tmp
 
     mv -f coverage-diff.tmp coverage-diff.info
