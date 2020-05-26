@@ -39,6 +39,17 @@ class BoxClipOpLite : public OpLite {
 
   std::string DebugString() const override { return "box clip"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.Input->dims();
+    auto output_dims = param_.Output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    // ch->remark = "";
+    ch->macs = param_.Output->numel() * 2.0;
+  }
+#endif
+
  private:
   mutable BoxClipParam param_;
 };

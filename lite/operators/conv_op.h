@@ -22,6 +22,9 @@
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/api/paddle_place.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -44,12 +47,13 @@ class ConvOpLite : public OpLite {
     ch->input_shape = ch->DimToStr(input_dims);
     ch->output_shape = ch->DimToStr(output_dims);
     ch->filter_shape = ch->DimToStr(filter_dims);
-    ch->remark = std::to_string(filter_dims[2]) + "x" +
-                 std::to_string(filter_dims[3]) + "p" +
-                 std::to_string((*param_.paddings)[0]) + "s" +
-                 std::to_string(param_.strides[0]) + "g" +
-                 std::to_string(param_.groups) + "d" +
-                 std::to_string((*param_.dilations)[0]);
+    ch->remark =
+        std::to_string(filter_dims[2]) + "x" + std::to_string(filter_dims[3]) +
+        "p" + std::to_string((*param_.paddings)[0]) + "s" +
+        std::to_string(param_.strides[0]) + "g" +
+        std::to_string(param_.groups) + "d" +
+        std::to_string((*param_.dilations)[0]) + (param_.bias ? "Bias" : "") +
+        ActivationTypeToStr(param_.activation_param.active_type);
     // MACs = 2.f * kw * kh * batchsize * out_c * out_h * out_w * in_c / group
     // GMACs = 1e-9f * MACs
     // GMACPS = 1e-6f * MACs / predict_ms

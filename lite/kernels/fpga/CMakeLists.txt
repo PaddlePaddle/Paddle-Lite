@@ -1,6 +1,6 @@
-# if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_WITH_FPGA))
-#     return()
-# endif()
+if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_WITH_FPGA))
+    return()
+endif()
 
 set(fpga_deps fpga_target_wrapper kernel_fpga)
 

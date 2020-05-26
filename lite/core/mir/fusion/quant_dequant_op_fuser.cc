@@ -225,8 +225,8 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
 
 #ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
-
 #endif
+
   op_desc.SetAttr("weight_scale", weight_scale);
 
   // change the weight from the float type to int8 type.

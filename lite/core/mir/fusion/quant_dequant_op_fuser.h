@@ -105,6 +105,7 @@ class ChannelWiseDequantOpFuser : public FuseBase {
 */
 class DeleteQuantDequantOpFuser : public FuseBase {
  public:
+
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -118,6 +119,7 @@ class DynamicQuantDequantOpFuser : public FuseBase {
                                       const std::string& op_type,
                                       int i)
       : op_type_(op_type), quant_type_(quantized_op_type), times_(i) {}
+
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 

@@ -101,6 +101,10 @@ class Profiler final {
   void StartTiming(Type type, const int index, KernelContext* ctx);
   void StopTiming(Type type, const int index, KernelContext* ctx);
   std::string Summary(Type type, bool concise = true, size_t warm_up = 10);
+  int GetKernelFuncCalledTimes(const std::string& op_type,
+                               const std::string& kernel_func_name);
+  float GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                 const std::string& kernel_func_name);
   OpCharacter* GetOpCharacter(const size_t index);
 
  private:

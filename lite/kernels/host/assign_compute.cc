@@ -13,10 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/assign_compute.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/target_wrapper.h"
-#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {

@@ -47,7 +47,7 @@ if '${WITH_MKL}' == 'ON':
     PACKAGE_DATA['paddlelite.libs'] += ['libmklml.dylib', 'libiomp5.dylib']
 
 # link lite.so to paddlelite.libs
-COMMAND = "install_name_tool -id \"@loader_path/libs/\" ${PADDLE_BINARY_DIR}\
+COMMAND = "install_name_tool -add_rpath \"@loader_path/libs/\" ${PADDLE_BINARY_DIR}\
 /inference_lite_lib/python/install/lite/lite.so"
 if os.system(COMMAND) != 0:
     raise Exception("patch third_party libs failed, command: %s" % COMMAND)

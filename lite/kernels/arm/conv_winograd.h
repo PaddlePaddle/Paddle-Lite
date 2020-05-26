@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <string>
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
@@ -34,6 +35,13 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   virtual void PrepareForRun();
   virtual void ReInitWhenNeeded();
   virtual void Run();
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForConvWino"};
+#endif
 
  protected:
   using param_t = operators::ConvParam;
