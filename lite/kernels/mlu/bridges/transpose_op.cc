@@ -24,19 +24,8 @@ namespace mlu {
 std::vector<int> axis_to_nhwc(const std::vector<int>& axis) {
   std::vector<int> new_axis(axis.size());
 
-  std::vector<int> nhwc2nchw_axis(axis.size());
-  nhwc2nchw_axis[0] = 0;
-  if (axis.size() > 1) nhwc2nchw_axis[1] = axis.size() - 1;
-  for (size_t i = 2; i < axis.size(); ++i) {
-    nhwc2nchw_axis[i] = i - 1;
-  }
-
-  std::vector<int> nchw2nhwc_axis(axis.size());
-  nchw2nhwc_axis[0] = 0;
-  for (size_t i = 1; i < axis.size() - 1; ++i) {
-    nchw2nhwc_axis[i] = i + 1;
-  }
-  if (axis.size() > 1) nchw2nhwc_axis[axis.size() - 1] = 1;
+  auto nhwc2nchw_axis = std::move(GetAxisNHWC2NCHW<int>(axis.size()));
+  auto nchw2nhwc_axis = std::move(GetAxisNCHW2NHWC<int>(axis.size()));
 
   for (size_t i = 0; i < new_axis.size(); ++i) {
     new_axis[i] = nhwc2nchw_axis[axis[nchw2nhwc_axis[i]]];
