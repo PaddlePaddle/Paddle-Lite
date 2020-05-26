@@ -164,11 +164,6 @@ class StaticKernelPickPass : public mir::StmtPass {
     // might have different data layout.
     // TODO(Superjomn) reconsider the idea of taking the data layout as a kernel
     // specification.
-
-    if (kernel.place().target == TARGET(kFPGA)) {
-      final_score = 1000;
-    }
-
     return final_score;
   }
 

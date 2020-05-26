@@ -29,6 +29,7 @@ namespace zynqmp {
 class ConvPE : public PE {
  public:
   bool init() {
+    std::cout << "Conv init" << std::endl;
     return true;
   }
 

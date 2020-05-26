@@ -46,21 +46,17 @@ REGISTER_LITE_KERNEL(reshape,
                      paddle::lite::kernels::host::ReshapeCompute,
                      def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reshape2,
