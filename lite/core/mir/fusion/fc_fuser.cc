@@ -42,7 +42,6 @@ void FcFuser::BuildPattern() {
   add->AsIntermediate();
 
   if (act_type_ != "") {
-    std::cout << "act_type_:" << act_type_ << std::endl;
     auto* add_out = VarNode("add_out");
     auto* activation = OpNode(act_type_, act_type_);
     std::vector<PMNode*> act_inputs{add_out};
@@ -51,7 +50,6 @@ void FcFuser::BuildPattern() {
     add_out->AsIntermediate();
     activation->AsIntermediate();
   } else {
-    std::cout << "act_type_: empty" << std::endl;
     add_inputs >> *add >> *Out;
   }
 }
