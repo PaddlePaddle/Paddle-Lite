@@ -153,12 +153,6 @@ bool test_gemv_int8(bool tra,
                                           1,
                                           1,
                                           tc_basic_fp32.numel());
-    if (flag_act == 2) {  // relu6
-      for (int i = 0; i < tc_basic_int8.numel(); i++) {
-        dc_basic_fp32[i] = dc_basic_fp32[i] > six ? six : dc_basic_fp32[i];
-        dc_basic_int8[i] = dc_basic_int8[i] > six ? six : dc_basic_int8[i];
-      }
-    }
   }
   Timer t0;
   //! compute
@@ -324,7 +318,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& tra : {false}) {
           for (auto& has_bias : {false, true}) {
-            for (auto& flag_act : {0, 1, 2, 4}) {
+            for (auto& flag_act : {0, 1, 4}) {
               for (auto& th : {1, 2, 4}) {
                 float six = 6.f;
                 float alpha = 8.88f;

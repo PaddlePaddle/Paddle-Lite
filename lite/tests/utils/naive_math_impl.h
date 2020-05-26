@@ -202,7 +202,7 @@ static void basic_gemv(int m,
         c[i] = tmp > (type2)0 ? tmp : (type2)0;
       } else if (flag_act == 2) {  // relu 6
         c[i] = tmp > (type2)0 ? tmp : (type2)0;
-        // c[i] = c[i] < six ? c[i] : six; // ut compute
+        c[i] = c[i] < six ? c[i] : six; // ut compute
       } else if (flag_act == 4) {  // leakey relu
         c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
       }
@@ -301,9 +301,9 @@ static void conv_basic(const Dtype1* din,
                 dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
                                             ? dst_data_ref[out_idx]
                                             : (Dtype2)0;
-                // dst_data_ref[out_idx] = dst_data_ref[out_idx] < (Dtype2)six
-                //                            ? dst_data_ref[out_idx]
-                //                            : (Dtype2)six;
+                 dst_data_ref[out_idx] = dst_data_ref[out_idx] < (Dtype2)six
+                                            ? dst_data_ref[out_idx]
+                                            : (Dtype2)six;
               } else if (act_type == 4) {
                 dst_data_ref[out_idx] =
                     dst_data_ref[out_idx] > (Dtype2)0
