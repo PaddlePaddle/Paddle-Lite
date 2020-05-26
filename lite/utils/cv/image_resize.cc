@@ -678,15 +678,9 @@ void resize(const uint8_t* src,
   } else if (srcFormat == NV12 || srcFormat == NV21) {
     nv21_resize(src, dst, srcw, srch, dstw, dsth);
     return;
-    num = 1;
-    int hout = static_cast<int>(0.5 * dsth);
-    dsth += hout;
   } else if (srcFormat == BGR || srcFormat == RGB) {
     bgr_resize(src, dst, srcw, srch, dstw, dsth);
     return;
-    w_in = srcw * 3;
-    w_out = dstw * 3;
-    num = 3;
   } else if (srcFormat == BGRA || srcFormat == RGBA) {
     w_in = srcw * 4;
     w_out = dstw * 4;
