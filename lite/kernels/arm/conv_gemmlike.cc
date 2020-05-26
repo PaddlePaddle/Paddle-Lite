@@ -81,7 +81,8 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
   //! update relu6 parameter
   if (param.activation_param.active_type == lite_api::ActivationType::kRelu6){
-    param.activation_param.Relu_clipped_coef = param.activation_param.Relu_clipped_coef / param.output_scale;
+    param.activation_param.Relu_clipped_coef =
+        param.activation_param.Relu_clipped_coef / param.output_scale;
   }
 }
 
