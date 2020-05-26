@@ -330,12 +330,6 @@ class SubgraphEngine : public subgraph::Engine {
     // prepare input and output memory
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto exec_queue = mlu_context.exec_queue();
-    u32_t affinity = mlu_context.affinity();
-    cnrtInvokeFuncParam_t forward_param = mlu_context.forward_param();
-    int data_param = 1;
-    forward_param.data_parallelism = &data_param;
-    forward_param.affinity = &affinity;
-    forward_param.end = CNRT_PARAM_END;
 
     auto graph = shape_graph_map_[inputs_shape_];
     auto* graph_input = graph->MutableInputs();
@@ -402,7 +396,7 @@ class SubgraphEngine : public subgraph::Engine {
         }
         shape_tensor_map_out_[all_inputs_shape_] = graph_out;
       }
-      graph->Compute(forward_param, exec_queue, graph_in, graph_out);
+      graph->Compute(exec_queue, graph_in, graph_out);
     } else {
       for (size_t i = 0; i < origin_itensors_.size(); ++i) {
         graph_input->at(i)->set_mlu_ptr(
@@ -413,36 +407,49 @@ class SubgraphEngine : public subgraph::Engine {
         graph_output->at(i)->set_mlu_ptr(
             GetOutputDataPtr(origin_otensors_[i], !disable_mlu_cast));
       }
+      // only cnmlComputeFusionOpForward_V3 need cnrtInvokeFuncParam_t
+      cnrtInvokeFuncParam_t forward_param = mlu_context.forward_param();
+      int data_param = 1;
+      forward_param.data_parallelism = &data_param;
+      u32_t affinity = mlu_context.affinity();
+      forward_param.affinity = &affinity;
+      forward_param.end = CNRT_PARAM_END;
       graph->Compute(forward_param, exec_queue);
+
+#ifdef MLU_DUMP_SUBGRAPH_IO
+      // Graph node store compile-time tensor while batchsize mutable is set.
+      // Only batchsize mutable is disabled, data exists in graph node at
+      // runtime
+      // =========== DUMP ===================
+      for (auto input_name : input_names_) {
+        auto input_tensor =
+            shape_graph_map_[inputs_shape_]->GetNode(input_name);
+        auto dump_name = input_name;
+        while (dump_name.find("/") != std::string::npos) {
+          dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
+        }
+        VLOG(6) << "dump_name: " << dump_name;
+        input_tensor->ToFile(dump_name);
+      }
+      for (auto output_name : output_names_) {
+        if (shape_graph_map_[inputs_shape_]->HasNode(output_name)) {
+          auto output_tensor =
+              shape_graph_map_[inputs_shape_]->GetNode(output_name);
+          auto dump_name = output_name;
+          while (dump_name.find("/") != std::string::npos) {
+            dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
+          }
+          VLOG(6) << "dump_name: " << dump_name;
+          output_tensor->ToFile(dump_name);
+        } else {
+          VLOG(6) << "graph does not have " << output_name << " as output"
+                  << std::endl;
+        }
+      }
+#endif
+      // =========== DUMP END ================
     }
 
-    // // =========== DUMP ===================
-    // for (auto input_name : input_names_) {
-    //   auto input_tensor =
-    //   shape_graph_map_[inputs_shape_]->GetNode(input_name);
-    //   auto dump_name = input_name;
-    //   while (dump_name.find("/") != std::string::npos) {
-    //     dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
-    //   }
-    //   VLOG(6) << "dump_name: " << dump_name;
-    //   input_tensor->ToFile(dump_name);
-    // }
-    // for (auto output_name : output_names_) {
-    //   if (shape_graph_map_[inputs_shape_]->HasNode(output_name)) {
-    //     auto output_tensor =
-    //     shape_graph_map_[inputs_shape_]->GetNode(output_name);
-    //     auto dump_name = output_name;
-    //     while (dump_name.find("/") != std::string::npos) {
-    //       dump_name = dump_name.replace(dump_name.find("/"), 1, "_");
-    //     }
-    //     VLOG(6) << "dump_name: " << dump_name;
-    //     output_tensor->ToFile(dump_name);
-    //   } else {
-    //     VLOG(6) << "graph does not have " << output_name << " as output"
-    //             << std::endl;
-    //   }
-    // }
-    // // =========== DUMP END ================
     return 0;
   }
 

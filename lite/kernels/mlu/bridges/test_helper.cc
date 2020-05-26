@@ -56,12 +56,6 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   CNRT_CALL(cnrtInit(0));
   lite::SetMluDevice(0);
   cnrtQueue_t queue_;
-  cnrtInvokeFuncParam_t forward_param;
-  u32_t affinity = 1;
-  int data_param = 1;
-  forward_param.data_parallelism = &data_param;
-  forward_param.affinity = &affinity;
-  forward_param.end = CNRT_PARAM_END;
   CNRT_CALL(cnrtCreateQueue(&queue_));
   cnrtDev_t dev_handle;
   CNRT_CALL(cnrtGetDeviceHandle(&dev_handle, 0));
@@ -113,10 +107,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   }
 
   graph.Compile(CNML_MLU270, 1);
-  graph.Compute(forward_param,
-                queue_,
-                *(graph.MutableInputs()),
-                *(graph.MutableOutputs()));
+  graph.Compute(queue_, *(graph.MutableInputs()), *(graph.MutableOutputs()));
   CNRT_CALL(cnrtSyncQueue(queue_));
 
   for (auto& output_name : output_var_names) {
