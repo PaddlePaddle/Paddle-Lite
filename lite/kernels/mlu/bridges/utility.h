@@ -44,12 +44,12 @@ void transpose(dtype* input_data,
   int new_index = -1;
   std::vector<int> shape;
   std::vector<int> expand_axis;
-  if (input_shape.size() < 5) {
-    for (int i = 0; i < 5 - input_shape.size(); i++) {
+  if (input_shape.size() < 5u) {
+    for (size_t i = 0; i < 5 - input_shape.size(); i++) {
       shape.push_back(1);
       expand_axis.push_back(i);
     }
-    for (int i = 0; i < input_shape.size(); i++) {
+    for (size_t i = 0; i < input_shape.size(); i++) {
       shape.push_back(input_shape[i]);
       expand_axis.push_back(axis[i] + 5 - input_shape.size());
     }
@@ -152,6 +152,28 @@ inline const std::vector<data_type> DimNCHW2NHWC(
     default:
       CHECK(0) << "unsupport dimension";
   }
+}
+
+template <typename data_type>
+inline std::vector<data_type> GetAxisNHWC2NCHW(size_t n_dims) {
+  std::vector<data_type> nhwc2nchw_axis(n_dims);
+  nhwc2nchw_axis[0] = 0;
+  if (n_dims > 1) nhwc2nchw_axis[1] = n_dims - 1;
+  for (size_t i = 2; i < n_dims; ++i) {
+    nhwc2nchw_axis[i] = i - 1;
+  }
+  return nhwc2nchw_axis;
+}
+
+template <typename data_type>
+inline std::vector<data_type> GetAxisNCHW2NHWC(size_t n_dims) {
+  std::vector<data_type> nchw2nhwc_axis(n_dims);
+  nchw2nhwc_axis[0] = 0;
+  for (size_t i = 1; i < n_dims - 1; ++i) {
+    nchw2nhwc_axis[i] = i + 1;
+  }
+  if (n_dims > 1) nchw2nhwc_axis[n_dims - 1] = 1;
+  return nchw2nhwc_axis;
 }
 
 template <paddle::lite_api::PrecisionType>

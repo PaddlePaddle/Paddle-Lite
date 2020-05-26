@@ -38,24 +38,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // ================== Trans1: NHWC => NCHW ===========================
   auto input_tensor = graph->GetNode(x_var_name);
-  //   std::vector<int> nhwc_to_nchw_axis = {0, 3, 1, 2};
-  std::vector<int> trans_1_axis;
-  switch (x->dims().size()) {
-    case 4:
-      trans_1_axis = {0, 3, 1, 2};
-      break;
-    case 3:
-      trans_1_axis = {0, 2, 1};
-      break;
-    case 2:
-      trans_1_axis = {0, 1};
-      break;
-    case 1:
-      trans_1_axis = {0};
-      break;
-    default:
-      break;
-  }
+  auto trans_1_axis = std::move(GetAxisNHWC2NCHW<int>(x->dims().size()));
   auto trans1_out = graph->AddNode(x_var_name + ".trans.i",
                                    x->dims().Vectorize(),
                                    CNML_TENSOR,
@@ -95,24 +78,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // ======================= Flatten End ===================================
 
   // ================== Trans2: NCHW => NHWC ===============================
-  //   std::vector<int> nchw_to_nhwc_axis = {0, 2, 3, 1};
-  std::vector<int> trans_2_axis;
-  switch (output->dims().size()) {
-    case 4:
-      trans_2_axis = {0, 2, 3, 1};
-      break;
-    case 3:
-      trans_2_axis = {0, 2, 1};
-      break;
-    case 2:
-      trans_2_axis = {0, 1};
-      break;
-    case 1:
-      trans_2_axis = {0};
-      break;
-    default:
-      break;
-  }
+  auto trans_2_axis = std::move(GetAxisNCHW2NHWC<int>(output->dims().size()));
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
   cnmlBaseOp_t trans2_op{nullptr};

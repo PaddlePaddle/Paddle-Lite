@@ -53,12 +53,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int32_t> begin_index(input_shape.size(), 0);
   std::vector<int32_t> end_index(input_shape.size());
   std::vector<int32_t> strides(input_shape.size(), 1);
-  std::vector<int> nhwc2nchw_axis(input_shape.size());
-  nhwc2nchw_axis[0] = 0;
-  if (input_shape.size() > 1) nhwc2nchw_axis[1] = input_shape.size() - 1;
-  for (size_t i = 2; i < input_shape.size(); ++i) {
-    nhwc2nchw_axis[i] = i - 1;
-  }
+  auto nhwc2nchw_axis = std::move(GetAxisNHWC2NCHW<int>(input_shape.size()));
   for (size_t i = 0; i < input_shape.size(); ++i) {
     end_index[nhwc2nchw_axis[i]] = input_shape[i];
   }

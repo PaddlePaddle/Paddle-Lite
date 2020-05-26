@@ -108,31 +108,19 @@ static void test_case(std::vector<int64_t> x_shape,
   std::vector<float> out_ref(out->data_size(), 0);
   slice_ref(x_data, x_shape, axes, starts, ends, out_ref.data());
 
-  std::vector<int> nhwc2nchw_axis(x_shape.size());
-  nhwc2nchw_axis[0] = 0;
-  if (x_shape.size() > 1) nhwc2nchw_axis[1] = x_shape.size() - 1;
-  for (size_t i = 2; i < x_shape.size(); ++i) {
-    nhwc2nchw_axis[i] = i - 1;
-  }
-
-  std::vector<int> nchw2nhwc_axis(x_shape.size());
-  nchw2nhwc_axis[0] = 0;
-  for (size_t i = 1; i < x_shape.size() - 1; ++i) {
-    nchw2nhwc_axis[i] = i + 1;
-  }
-  if (x_shape.size() > 1) nchw2nhwc_axis[x_shape.size() - 1] = 1;
-
   auto type_cast = [](int64_t in) { return static_cast<int>(in); };
   std::vector<int> i_dims;
   std::transform(
       x_shape.cbegin(), x_shape.cend(), std::back_inserter(i_dims), type_cast);
 
+  auto nchw2nhwc_axis = std::move(GetAxisNCHW2NHWC<int>(x_shape.size()));
+
   Tensor input_x;
   input_x.Resize(x->dims());
-  transpose<float*>(x->mutable_data<float>(),
-                    input_x.mutable_data<float>(),
-                    i_dims,
-                    nchw2nhwc_axis);
+  transpose<float>(x->mutable_data<float>(),
+                   input_x.mutable_data<float>(),
+                   i_dims,
+                   nchw2nhwc_axis);
   x->CopyDataFrom(input_x);
 
   auto op = CreateOp<operators::SliceOp>(opdesc, &scope);
@@ -145,10 +133,10 @@ static void test_case(std::vector<int64_t> x_shape,
   for (size_t i = 0; i < os.size(); ++i) {
     o_dims[i] = os[nchw2nhwc_axis[i]];
   }
-  transpose<float*>(out->mutable_data<float>(),
-                    output_trans.mutable_data<float>(),
-                    o_dims,
-                    nhwc2nchw_axis);
+  transpose<float>(out->mutable_data<float>(),
+                   output_trans.mutable_data<float>(),
+                   o_dims,
+                   GetAxisNHWC2NCHW<int>(x_shape.size()));
 
   auto out_data = output_trans.mutable_data<float>();
   for (int i = 0; i < out->dims().production(); i++) {
