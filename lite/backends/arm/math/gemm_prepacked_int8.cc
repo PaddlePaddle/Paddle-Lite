@@ -2133,7 +2133,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int k,
                              int rem) {
   float new_ptr[8] = {
-      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0}; 
+      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
