@@ -153,7 +153,7 @@ void FillTransformerInput(
     }
   }
 
-#if 0
+#if 1
   // trg_word  [2,1]  int64  0; need lod: [[0,2],[0,1,2]]
   auto trg_word_tensor = predictor->GetInput(3);
   std::vector<int64_t> trg_word_dims{2, 1};
@@ -312,13 +312,15 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     predictor->Run();
     LOG(INFO) << i << ", " << GetCurrentUS() - start << "us";
 
-#if 0
+#if 1
     auto out_tensor_0 = predictor->GetOutput(0);
     auto out_data_0 = out_tensor_0->data<int64_t>();
     auto out_size_0 = ShapeProduction(out_tensor_0->shape());
     for (int i = 0; i < out_size_0; i++) {
       LOG(INFO) << "-- out_0: " << out_data_0[i];
     }
+    std::string dir_0 = "/data/local/tmp/zpy/out/output_0.txt";
+    SaveOut(std::move(out_tensor_0), dir_0);
 
     auto out_tensor_1 = predictor->GetOutput(1);
     auto out_data_1 = out_tensor_1->data<float>();
@@ -326,6 +328,8 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     for (int i = 0; i < out_size_1; i++) {
       LOG(INFO) << "-- out_1: " << out_data_1[i];
     }
+    std::string dir_1 = "/data/local/tmp/zpy/out/output_1.txt";
+    SaveOut(std::move(out_tensor_1), dir_1);
 #else
     for (int j = 0; j < predictor->GetOutputNames().size(); j++) {
       auto out_tensor = predictor->GetOutput(j);
@@ -360,7 +364,7 @@ TEST(Subgraph, generate_model_and_check_precision) {
 #endif
   });
 // Generate and run optimized model on CPU as the reference predictor
-#if 0
+#if 1
   auto ref_predictor = TestModel(FLAGS_model_dir,
                                  FLAGS_model_file,
                                  FLAGS_params_file,
