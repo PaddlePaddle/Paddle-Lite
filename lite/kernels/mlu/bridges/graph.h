@@ -150,6 +150,23 @@ class Graph {
     CNML_CALL(cnmlCompileFusionOp_V2(fusion_op_));
   }
 
+#define MEASURE_HWTIME_START(que)                       \
+  do {                                                  \
+    CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que)); \
+  } while (0)
+
+#define MEASURE_HWTIME_END(que)                                                \
+  do {                                                                         \
+    thread_local float hw_time;                                                \
+    CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));                          \
+    CNRT_CALL(cnrtSyncQueue(que));                                             \
+    CNRT_CALL(cnrtNotifierDuration(notifier_start_, notifier_end_, &hw_time)); \
+    hw_time /= 1000.0f;                                                        \
+    DLOG(INFO) << "cnml hardware time " << hw_time << "ms" << std::endl;       \
+    std::lock_guard<std::mutex> lk(time_mut_);                                 \
+    time_log_.push_back(hw_time);                                              \
+  } while (0)
+
   void Compute(cnrtInvokeFuncParam_t forward_param, cnrtQueue_t que) {
     input_addrs_.resize(input_tensors_.size());
     output_addrs_.resize(output_tensors_.size());
@@ -161,8 +178,7 @@ class Graph {
     }
 
 #if PRINT_HW_TIME
-    thread_local float hw_time;
-    CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que));
+    MEASURE_HWTIME_START(que);
 #endif
     CNML_CALL(cnmlComputeFusionOpForward_V3(fusion_op_,
                                             input_addrs_.data(),
@@ -172,18 +188,11 @@ class Graph {
                                             &forward_param,
                                             que));
 #if PRINT_HW_TIME
-    CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));
-    CNRT_CALL(cnrtSyncQueue(que));
-    CNRT_CALL(cnrtNotifierDuration(notifier_start_, notifier_end_, &hw_time));
-    hw_time /= 1000.0f;
-    DLOG(INFO) << "cnml hardware time " << hw_time << "ms" << std::endl;
-    std::lock_guard<std::mutex> lk(time_mut_);
-    time_log_.push_back(hw_time);
+    MEASURE_HWTIME_END(que);
 #endif
   }
 
-  void Compute(cnrtInvokeFuncParam_t forward_param,
-               cnrtQueue_t que,
+  void Compute(cnrtQueue_t que,
                const std::vector<std::shared_ptr<MLUTensor>>& in,
                const std::vector<std::shared_ptr<MLUTensor>>& out) {
     std::vector<cnmlTensor_t> in_tensor;
@@ -200,8 +209,7 @@ class Graph {
     }
 
 #if PRINT_HW_TIME
-    thread_local float hw_time;
-    CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que));
+    MEASURE_HWTIME_START(que);
 #endif
     /* Because of using cnmlSetTensorDimMutable, cnmlComputeFusionOpForward_V3
      * -> cnmlComputeFusionOpForward_V4 */
@@ -215,15 +223,11 @@ class Graph {
                                             que,
                                             NULL));
 #if PRINT_HW_TIME
-    CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));
-    CNRT_CALL(cnrtSyncQueue(que));
-    CNRT_CALL(cnrtNotifierDuration(notifier_start_, notifier_end_, &hw_time));
-    hw_time /= 1000.0f;
-    DLOG(INFO) << "cnml hardware time " << hw_time << "ms" << std::endl;
-    std::lock_guard<std::mutex> lk(time_mut_);
-    time_log_.push_back(hw_time);
+    MEASURE_HWTIME_END(que);
 #endif
   }
+#undef MEASURE_HWTIME_START
+#undef MEASURE_HWTIME_END
 
   template <typename T>
   void* RegisterConstData(size_t len) {
