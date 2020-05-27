@@ -32,33 +32,23 @@ namespace lite {
 namespace kernels {
 namespace npu {
 
-template <typename T>
-static std::vector<size_t> sort_indexes(const vector<T>& v) {
-  std::vector<size_t> indexes(v.size());
-  std::iota(indexes.begin(), indexes.end(), 0);
-  std::sort(indexes.begin(), indexes.end(), [&v](size_t i, size_t j) {
-    return v[i] < v[j];
-  });
-  return indexes;
-}
-
-// Generate the model name by using md5 hashes based on the sorted variable
-// names and shapes of the origin input and output tensors
-static std::string generate_name(
+// Generate the model name by using md5 hashes based on the variable
+// names and shapes of the origin input and output tensors(All of them are
+// assumed to be sorted)
+std::string RuntimeProgram::GenerateModelName(
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims) {
   std::ostringstream os;
-  auto indexes = sort_indexes(input_names);
-  for (auto idx : indexes) {
-    os << input_names[idx];
-    for (auto dim : origin_idims[idx]) {
+  CHECK_EQ(input_names.size(), origin_idims.size());
+  for (int i = 0; i < input_names.size(); i++) {
+    os << input_names[i];
+    for (auto dim : origin_idims[i]) {
       os << dim;
     }
   }
-  indexes = sort_indexes(output_names);
-  for (auto idx : indexes) {
-    os << output_names[idx];
+  for (auto output_name : output_names) {
+    os << output_name;
   }
   return md5(os.str());
 }
@@ -72,20 +62,17 @@ bool RuntimeProgram::LoadFromCacheFile(
     const std::string& model_cache_dir) {
   // Generate the model name if not initialized
   if (model_name_.empty()) {
-    model_name_ = generate_name(input_names, output_names, origin_idims);
+    model_name_ = GenerateModelName(input_names, output_names, origin_idims);
   }
   // Load from the cached model file, return a HiAI model manager client for
   // inference
   auto model_path = model_cache_dir + "/" + model_name_ + ".om";
   VLOG(3) << "[NPU] Load model from " << model_path;
-  std::ifstream model_file(model_path.c_str(), std::ios::binary);
-  if (!model_file.is_open()) {
+  std::vector<char> model_buffer;
+  if (!ReadFile(model_path, &model_buffer)) {
     LOG(WARNING) << "[NPU] Open " << model_path << " for reading failed!";
     return false;
   }
-  std::vector<char> model_buffer((std::istreambuf_iterator<char>(model_file)),
-                                 std::istreambuf_iterator<char>());
-  model_file.close();
   model_client_ = lite::npu::Device::Global().Load(model_name_, model_buffer);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
@@ -95,33 +82,23 @@ bool RuntimeProgram::LoadFromCacheFile(
   // cached configuration file
   auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
   VLOG(3) << "[NPU] Load configuration from " << config_path;
-  std::ifstream config_file(config_path.c_str());
-  if (!config_file.is_open()) {
+  std::vector<char> config_buffer;
+  if (!ReadFile(config_path, &config_buffer)) {
     LOG(WARNING) << "[NPU] Open " << config_path << " for reading failed!";
     return false;
   }
-  std::string str((std::istreambuf_iterator<char>(config_file)),
-                  std::istreambuf_iterator<char>());
-  config_file.close();
-  // Parse the precision and shapes
-  std::vector<PrecisionType> types;
-  std::vector<std::vector<int64_t>> dims;
-  auto outs = Split<std::string>(str, ";");
-  CHECK_EQ(outs.size(), output_names.size());
-  for (const auto& out : outs) {
-    auto items = Split<std::string>(out, ":");
-    CHECK_EQ(items.size(), 2);  // precision and shapes
-    types.push_back(static_cast<PrecisionType>(std::stoi(items[0])));
-    dims.push_back(Split<int64_t>(items[1], ","));
-  }
-  // Reorder the precision and shapes
+  std::string str;
+  str.insert(str.begin(), config_buffer.begin(), config_buffer.end());
+  // Parse the precision and shapes of the output tensors
+  auto output_options = Split<std::string>(str, ";");
+  CHECK_EQ(output_options.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
   origin_odims_.resize(output_names.size());
-  auto indexes = sort_indexes(output_names);
-  for (int i = 0; i < indexes.size(); i++) {
-    auto idx = indexes[i];
-    origin_otypes_[idx] = types[i];
-    origin_odims_[idx] = dims[i];
+  for (int i = 0; i < output_names.size(); i++) {
+    auto items = Split<std::string>(output_options[i], ":");
+    CHECK_EQ(items.size(), 2);  // precision and shapes
+    origin_otypes_[i] = static_cast<PrecisionType>(std::stoi(items[0]));
+    origin_odims_[i] = Split<int64_t>(items[1], ",");
   }
   return true;
 }
@@ -135,7 +112,7 @@ bool RuntimeProgram::BuildGraphAndCacheToFile(
     const std::string& model_cache_dir) {
   // Generate the model name if not initialized
   if (model_name_.empty()) {
-    model_name_ = generate_name(input_names, output_names, origin_idims);
+    model_name_ = GenerateModelName(input_names, output_names, origin_idims);
   }
   // Convert all of ops and their input vars and weights to HiAI IR nodes,
   // then added them into the HiAI IR graph
@@ -198,35 +175,24 @@ bool RuntimeProgram::BuildGraphAndCacheToFile(
     // offline model generation
     auto model_path = model_cache_dir + "/" + model_name_ + ".om";
     VLOG(3) << "[NPU] Save model to " << model_path;
-    std::ofstream model_file(model_path.c_str(), std::ios::binary);
-    if (model_file.is_open()) {
-      std::copy(model_buffer.begin(),
-                model_buffer.end(),
-                std::ostreambuf_iterator<char>(model_file));
-      model_file.close();
-    } else {
+    if (!WriteFile(model_path, model_buffer)) {
       LOG(WARNING) << "[NPU] Open " << model_path << " for writting failed!";
     }
     // Serialize the precisions and shapes of the origin output tensors into the
     // configuration file
+    std::ostringstream os;
+    for (int i = 0; i < output_names.size(); i++) {
+      os << static_cast<int32_t>(origin_otypes_[i]) << ":";
+      for (auto dim : origin_odims_[i]) {
+        os << dim << ",";
+      }
+      os << ";";
+    }
+    auto str = os.str();
+    std::vector<char> config_buffer(str.begin(), str.end());
     auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
     VLOG(3) << "[NPU] Save configuration to " << config_path;
-    std::ofstream config_file(config_path.c_str());
-    if (config_file.is_open()) {
-      std::ostringstream os;
-      std::vector<size_t> indexes = sort_indexes(output_names);
-      for (auto idx : indexes) {
-        os << static_cast<int32_t>(origin_otypes_[idx]) << ":";
-        for (const auto& dim : origin_odims_[idx]) {
-          os << dim << ",";
-        }
-        os << ";";
-      }
-      auto str = os.str();
-      std::copy(
-          str.begin(), str.end(), std::ostreambuf_iterator<char>(config_file));
-      config_file.close();
-    } else {
+    if (!WriteFile(config_path, config_buffer)) {
       LOG(WARNING) << "[NPU] Open " << config_path << " for writting failed!";
     }
   }

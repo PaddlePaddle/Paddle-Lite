@@ -32,6 +32,10 @@ class RuntimeProgram {
  public:
   RuntimeProgram() {}
   ~RuntimeProgram() {}
+  std::string GenerateModelName(
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims);
   bool LoadFromCacheFile(const std::vector<std::string>& input_names,
                          const std::vector<std::string>& output_names,
                          const std::vector<std::vector<int64_t>>& origin_idims,

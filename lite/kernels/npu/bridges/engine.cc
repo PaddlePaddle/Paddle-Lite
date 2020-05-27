@@ -15,6 +15,7 @@
 #include "lite/kernels/npu/bridges/engine.h"
 #include <sys/time.h>
 #include <time.h>
+#include <algorithm>
 #include <utility>
 #include "lite/kernels/npu/bridges/registry.h"
 
@@ -31,9 +32,16 @@ Engine::Engine(KernelContext *ctx,
     : ctx_(ctx),
       block_idx_(block_idx),
       program_desc_(program_desc),
-      exec_scope_(exec_scope),
-      input_names_(input_names),
-      output_names_(output_names) {}
+      exec_scope_(exec_scope) {
+  input_names_ = input_names;
+  output_names_ = output_names;
+  // Sort the name of input and output tensors, it's convenient for us to get
+  // the info of input and output tensors in the same order from the device
+  // program, because the result of subgraph division may be different but right
+  // at each call of the subgraph pass.
+  std::sort(input_names_.begin(), input_names_.end());
+  std::sort(output_names_.begin(), output_names_.end());
+}
 
 bool Engine::Run() {
   if (is_first_epoch_) {

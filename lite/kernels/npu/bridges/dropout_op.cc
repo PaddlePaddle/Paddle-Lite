@@ -56,7 +56,7 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scale_node = graph->Add<ge::op::Scale>(out_name);
   auto scale_op = scale_node->data<ge::op::Scale>();
   scale_op->set_input_x(*x_node->data());
-  scale_op->set_attr_filler_value(0.9f);
+  scale_op->set_attr_filler_value(scale);
 
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

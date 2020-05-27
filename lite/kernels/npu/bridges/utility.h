@@ -28,7 +28,6 @@
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 
-#if 1
 // Extended ops based on HIAI DDK
 namespace ge {
 /*
@@ -120,7 +119,6 @@ REG_OP(Pad)
     .OP_END()
 
 }  // namespace ge
-#endif
 
 namespace paddle {
 namespace lite {
