@@ -54,11 +54,13 @@ class Graph {
     CNRT_CALL(cnrtDestroyNotifier(&notifier_start_));
     CNRT_CALL(cnrtDestroyNotifier(&notifier_end_));
     double total_time = 0;
-    for (auto& f : time_log_) {
-      total_time += f;
+    if (!time_log_.empty()) {
+      for (auto& f : time_log_) {
+        total_time += f;
+      }
+      std::cout << "cnml hardware time for " << time_log_.size()
+                << " process:" << total_time / time_log_.size() << std::endl;
     }
-    std::cout << "cnml hardware time for " << time_log_.size()
-              << " process:" << total_time / time_log_.size() << std::endl;
 #endif
   }
   // Data node
