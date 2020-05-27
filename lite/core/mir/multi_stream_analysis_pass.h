@@ -15,11 +15,11 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <memory>
 #include <queue>
+#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -73,11 +73,11 @@ class MultiStreamAnalysisPass : public StmtPass {
   std::queue<Node*> exec_que_;
   std::vector<Node*> exec_ops_;
   std::vector<std::vector<Node*>> ops_in_streams_;
-  std::unordered_map<std::string, bool> resources_;
-  std::unordered_map<std::string, int> map_arg_to_lane_;
+  std::map<std::string, bool> resources_;
+  std::map<std::string, int> map_arg_to_lane_;
   int max_stream_;
   int io_copy_once_num_;
-  std::unordered_set<std::string> op_types_set_;
+  std::set<std::string> op_types_set_;
 };
 
 }  // namespace mir

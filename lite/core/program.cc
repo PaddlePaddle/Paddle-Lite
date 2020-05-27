@@ -14,7 +14,7 @@
 
 #include "lite/core/program.h"
 #include <algorithm>
-#include <unordered_map>
+#include <map>
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/cpp/op_desc.h"
 #include "lite/model_parser/cpp/var_desc.h"
@@ -70,7 +70,7 @@ void RuntimeProgram::SaveOpInfosToProgram(cpp::ProgramDesc* desc) {
 void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
   CHECK(desc);
   CHECK(desc->BlocksSize());
-  std::unordered_map<std::string, cpp::VarDesc> origin_var_maps;
+  std::map<std::string, cpp::VarDesc> origin_var_maps;
   auto& main_block = *desc->GetBlock<cpp::BlockDesc>(0);
   auto var_size = main_block.VarsSize();
   for (int i = 0; i < var_size; i++) {
@@ -87,7 +87,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
     auto in_names = op->op_info()->input_names();
     auto out_names = op->op_info()->output_names();
     in_names.insert(in_names.end(), out_names.begin(), out_names.end());
-    std::sort(in_names.begin(), in_names.end());
+    std::stable_sort(in_names.begin(), in_names.end());
     in_names.erase(std::unique(in_names.begin(), in_names.end()),
                    in_names.end());
     for (auto& in_name : in_names) {

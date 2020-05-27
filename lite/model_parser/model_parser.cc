@@ -17,7 +17,6 @@
 #include <fstream>
 #include <limits>
 #include <set>
-#include <unordered_set>
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -187,7 +186,7 @@ void LoadCombinedParamsPb(const std::string &path,
     if (!IsPersistable(var)) continue;
     paramlist.push_back(var.Name());
   }
-  std::sort(paramlist.begin(), paramlist.end());
+  std::stable_sort(paramlist.begin(), paramlist.end());
 
   // Load vars
   auto load_var_func = [&](std::istream &is) {
@@ -321,7 +320,7 @@ void SaveCombinedParamsPb(const std::string &path,
     if (!IsPersistable(var)) continue;
     paramlist.push_back(var.Name());
   }
-  std::sort(paramlist.begin(), paramlist.end());
+  std::stable_sort(paramlist.begin(), paramlist.end());
 
   // Load vars
   std::ofstream file(path, std::ios::binary);
@@ -530,7 +529,7 @@ void SaveCombinedParamsNaive(const std::string &path,
   auto prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
   // set unique_var_names to avoid saving shared params repeatedly
-  std::unordered_set<std::string> unique_var_names;
+  std::set<std::string> unique_var_names;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
     if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||

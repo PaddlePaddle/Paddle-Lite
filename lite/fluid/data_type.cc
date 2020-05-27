@@ -15,8 +15,8 @@
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 #include "lite/fluid/data_type.h"
 #include <stdint.h>
+#include <map>
 #include <string>
-#include <unordered_map>
 
 using float16 = paddle::lite::fluid::float16;
 
@@ -25,11 +25,10 @@ namespace lite {
 namespace fluid {
 
 struct DataTypeMap {
-  std::unordered_map<std::type_index, framework::proto::VarType::Type>
-      cpp_to_proto_;
-  std::unordered_map<int, std::type_index> proto_to_cpp_;
-  std::unordered_map<int, std::string> proto_to_str_;
-  std::unordered_map<int, size_t> proto_to_size_;
+  std::map<std::type_index, framework::proto::VarType::Type> cpp_to_proto_;
+  std::map<int, std::type_index> proto_to_cpp_;
+  std::map<int, std::string> proto_to_str_;
+  std::map<int, size_t> proto_to_size_;
 };
 
 static DataTypeMap* InitDataTypeMap();

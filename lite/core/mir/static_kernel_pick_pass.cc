@@ -15,9 +15,9 @@
 #include "lite/core/mir/static_kernel_pick_pass.h"
 #include <algorithm>
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
@@ -46,8 +46,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
 
-    std::unordered_map<std::string, PrecisionType> in_types;
-    std::unordered_map<std::string, PrecisionType> out_types;
+    std::map<std::string, PrecisionType> in_types;
+    std::map<std::string, PrecisionType> out_types;
     for (std::list<Node*>::iterator i = node.inlinks.begin();
          i != node.inlinks.end();
          ++i) {
@@ -77,7 +77,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
               << " score:" << score;
       scored.emplace_back(score, std::move(kernel));
     }
-    std::sort(scored.begin(), scored.end(), KernelScoreCmp);
+    std::stable_sort(scored.begin(), scored.end(), KernelScoreCmp);
     instruct.kernels().clear();
 
     if (!instruct.op_info()->HasAttr("enable_int8")) {
@@ -131,7 +131,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                     instruct.op_info()->output_names());
           scored.emplace_back(score, std::move(kernel));
         }
-        std::sort(scored.begin(), scored.end(), KernelScoreCmp);
+        std::stable_sort(scored.begin(), scored.end(), KernelScoreCmp);
         instruct.kernels().clear();
       }
       // If the out_type_int8 is true, we should pick the kernel with the

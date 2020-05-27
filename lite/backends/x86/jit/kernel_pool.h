@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>  // for unique_ptr
 #include <string>
-#include <unordered_map>
 #include <utility>  // for move
 #include <vector>
 #include "lite/backends/x86/jit/gen_base.h"
@@ -30,7 +30,7 @@ namespace jit {
 template <KernelType KT>
 class JitCodePool {
   typedef std::unique_ptr<GenBase> GenBasePtr;
-  typedef std::unordered_map<int64_t, GenBasePtr> JitCodeMap;
+  typedef std::map<int64_t, GenBasePtr> JitCodeMap;
 
  public:
   JitCodePool() = default;
@@ -53,9 +53,7 @@ class JitCodePool {
 
 class JitCodeCreatorPool {
   typedef std::unique_ptr<const GenCreator> GenCreatorPtr;
-  typedef std::unordered_map<KernelKey,
-                             std::vector<GenCreatorPtr>,
-                             KernelKey::Hash>
+  typedef std::map<KernelKey, std::vector<GenCreatorPtr>, KernelKey::Hash>
       GenCreatorPtrMap;
 
  public:
@@ -74,8 +72,7 @@ class JitCodeCreatorPool {
 };
 
 typedef std::unique_ptr<const Kernel> KernelPtr;
-typedef std::unordered_map<KernelKey, std::vector<KernelPtr>, KernelKey::Hash>
-    KernelMap;
+typedef std::map<KernelKey, std::vector<KernelPtr>, KernelKey::Hash> KernelMap;
 
 class KernelPool {
  public:

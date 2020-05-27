@@ -15,8 +15,8 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <string>
-#include <unordered_map>
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 
@@ -35,8 +35,7 @@ inline bool CHECK_REBUILD_WHEN_SHAPE_CHANGED(int status) {
 
 using cvt_func_type =
     std::function<int(void* ctx, OpLite* op, KernelBase* kernel)>;
-using cvt_map_type =
-    std::unordered_map<int, std::unordered_map<std::string, cvt_func_type>>;
+using cvt_map_type = std::map<int, std::map<std::string, cvt_func_type>>;
 class Registry {
  public:
   static Registry& Instance();

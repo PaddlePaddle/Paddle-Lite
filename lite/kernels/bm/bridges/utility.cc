@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/bm/bridges/utility.h"
+#include <map>
 #include <mutex>  //NOLINT
-#include <unordered_map>
 
 namespace paddle {
 namespace lite {
@@ -23,7 +23,7 @@ namespace bm {
 
 std::string UniqueName(const std::string& prefix) {
   static std::mutex counter_mtx;
-  static std::unordered_map<std::string, int> counter_map;
+  static std::map<std::string, int> counter_map;
   std::unique_lock<std::mutex> counter_lck(counter_mtx);
   int counter = 1;
   auto it = counter_map.find(prefix);
