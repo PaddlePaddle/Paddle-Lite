@@ -801,8 +801,8 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
       for (auto& input_arg : op_input_args) {
         auto op_input = new_desc->Input(input_arg);
         for (auto& it : i_names) {
-          auto index = std::find(op_input.cbegin(), op_input.cend(), it);
-          if (index != op_input.cend() &&
+          auto index = std::find(op_input.begin(), op_input.end(), it);
+          if (index != op_input.end() &&
               node_replace.find(it) != node_replace.end()) {
             index = op_input.erase(index);
             op_input.emplace(index, node_replace.at(it));
@@ -817,8 +817,8 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
       for (auto& output_arg : op_output_args) {
         auto op_output = new_desc->Output(output_arg);
         for (auto& it : o_names) {
-          auto index = std::find(op_output.cbegin(), op_output.cend(), it);
-          if (index != op_output.cend() &&
+          auto index = std::find(op_output.begin(), op_output.end(), it);
+          if (index != op_output.end() &&
               node_replace.find(it) != node_replace.end()) {
             index = op_output.erase(index);
             op_output.emplace(index, node_replace.at(it));
