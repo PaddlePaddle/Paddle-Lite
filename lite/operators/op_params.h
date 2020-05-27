@@ -1515,6 +1515,46 @@ struct XPUFcParam : ParamBase {
   std::string activation_type{""};
 };
 
+// For DeformableConvolution op
+struct DeformableConvParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* filter{};
+  lite::Tensor* offset{};
+  lite::Tensor* mask{};
+  lite::Tensor* bias{nullptr};
+  lite::Tensor* output{};
+  std::vector<int> strides{1, 1};
+  std::vector<int> paddings{1, 1};
+  std::vector<int> dilations{1, 1};
+  int groups{1};
+  int deformable_groups{1};
+  int im2col_step{1};
+  bool modulated{true};  // True-v2 False-v1
+  bool fuse_relu{false};
+  std::string data_format{"Anylayout"};
+  // for activation
+  ActivationParam activation_param;
+  // support var_length or not
+  bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
