@@ -364,18 +364,6 @@ class KernelRegistry final {
                                                 PrecisionType precision,
                                                 DataLayoutType layout);
 
-  // Get a kernel registry offset in all the registries.
-  template <TargetType Target, PrecisionType Precision, DataLayoutType Layout>
-  static int GetKernelOffset() {
-    CHECK_LT(static_cast<int>(Target), static_cast<int>(TARGET(NUM)));
-    CHECK_LT(static_cast<int>(Precision), static_cast<int>(PRECISION(NUM)));
-    CHECK_LT(static_cast<int>(Layout), static_cast<int>(DATALAYOUT(NUM)));
-    return static_cast<int>(Target) * static_cast<int>(PRECISION(NUM)) *
-               static_cast<int>(DATALAYOUT(NUM)) +                            //
-           static_cast<int>(Precision) * static_cast<int>(DATALAYOUT(NUM)) +  //
-           static_cast<int>(Layout);
-  }
-
   std::string DebugString() const {
 #ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
     return "No more debug info";
