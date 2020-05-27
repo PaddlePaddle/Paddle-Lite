@@ -66,6 +66,6 @@ int ArgmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(argmax,
+REGISTER_SUBGRAPH_BRIDGE(arg_max,
                          kMLU,
                          paddle::lite::subgraph::mlu::ArgmaxConverter);
