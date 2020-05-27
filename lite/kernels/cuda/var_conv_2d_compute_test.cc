@@ -222,15 +222,14 @@ class VarConvTest : public ::testing::Test {
     param.kernel_w = kernel_w;
     param.input_channel = in_channels;
     param.output_channel = out_channels;
-
-    W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
-                                                   W_gpu.dims());
   }
 
   void float_data_init() {
     X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
                                                    X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
+    W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
+                                                   W_gpu.dims());
   }
 
   void half_data_init() {
@@ -241,6 +240,13 @@ class VarConvTest : public ::testing::Test {
     }
     X_gpu.Assign<__half, lite::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
+
+    W_half.Resize(W_ref.dims());
+    auto w_half_data = W_half.mutable_data<half>();
+    for (int64_t i = 0; i < W_half.numel(); i++) {
+      w_half_data[i] = half(lite::float16(W_ref.data<float>()[i]));
+    }
+    W_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, W_gpu.dims());
   }
 
   void conv_cpu_base(const lite::Tensor* X,
@@ -269,7 +275,7 @@ class VarConvTest : public ::testing::Test {
   std::vector<int64_t> x_shape, w_shape, out_shape;
   lite::Tensor X_ref, W_ref, Out_ref, Col_ref;
   lite::Tensor X_gpu, W_gpu;
-  lite::Tensor X_half;
+  lite::Tensor X_half, W_half;
   lite::Tensor Out_cpu, Out_gpu;
 
   operators::VarConv2DParam param;

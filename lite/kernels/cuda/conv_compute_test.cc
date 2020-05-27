@@ -13,11 +13,14 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/conv_compute.h"
+
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
+
 #include "lite/api/test_helper.h"
 #include "lite/utils/float16.h"
 
@@ -119,27 +122,40 @@ class Conv2dTest : public ::testing::Test {
     param.dilations->push_back(dilation_w);
     param.strides[0] = stride_h;
     param.strides[1] = stride_w;
-
-    W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
-                                                   W_gpu.dims());
-    b_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(b_ref.data<float>(),
-                                                   b_gpu.dims());
   }
 
   void float_data_init() {
     X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
                                                    X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
+    W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
+                                                   W_gpu.dims());
+    b_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(b_ref.data<float>(),
+                                                   b_gpu.dims());
   }
 
   void half_data_init() {
     X_half.Resize(lite::DDim(x_shape));
-    auto x_half_data = X_half.mutable_data<__half>();
+    auto x_half_data = X_half.mutable_data<half>();
     for (int64_t i = 0; i < X_half.numel(); i++) {
       x_half_data[i] = half(lite::float16(X_ref.data<float>()[i]));
     }
-    X_gpu.Assign<__half, lite::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
+    X_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
+
+    W_half.Resize(W_ref.dims());
+    auto w_half_data = W_half.mutable_data<half>();
+    for (int64_t i = 0; i < W_half.numel(); i++) {
+      w_half_data[i] = half(lite::float16(W_ref.data<float>()[i]));
+    }
+    W_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, W_gpu.dims());
+
+    b_half.Resize(b_ref.dims());
+    auto b_half_data = b_half.mutable_data<half>();
+    for (int64_t i = 0; i < b_half.numel(); i++) {
+      b_half_data[i] = half(lite::float16(b_ref.data<float>()[i]));
+    }
+    b_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(b_half_data, b_gpu.dims());
   }
 
   void conv_cpu_base(const lite::Tensor* X,
@@ -155,7 +171,7 @@ class Conv2dTest : public ::testing::Test {
   std::vector<int64_t> x_shape, w_shape, b_shape, out_shape;
   lite::Tensor X_ref, W_ref, b_ref, Out_ref;
   lite::Tensor X_gpu, W_gpu, b_gpu;
-  lite::Tensor X_half;
+  lite::Tensor X_half, W_half, b_half;
   lite::Tensor Out_cpu, Out_gpu;
 
   operators::ConvParam param;
