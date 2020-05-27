@@ -107,6 +107,13 @@
         using param_t = operators::ArgmaxParam;
         void Run() override;
         virtual ~ArgmaxCompute() = default;
+    #ifdef LITE_WITH_PROFILE
+        virtual void SetProfileRuntimeKernelInfo(
+            paddle::lite::profile::OpCharacter* ch) {
+            ch->kernel_func_name = kernel_func_name_;
+        }
+        std::string kernel_func_name_{"NotImplForArgmax"};
+    #endif
     };
     ```
 - 在paddlelite/lite/kernels/arm/目录下新建argmax_compute.cc文件，主要实现Run函数。`Run()`函数调用paddlelite/lite/bachends/arm/math/argmax.h中的`argmax_func()`函数，根据输入计算输出。最后在argmax_compute.cc文件中，我们绑定argmax的输入输出（为tensor的输入参数都需要绑定），代码如下：
@@ -117,6 +124,9 @@
         lite::Tensor* output = param.Out;
         int axis = param.Axis;
         lite::arm::math::argmax_func(input, axis, output);
+    #ifdef LITE_WITH_PROFILE
+        kernel_func_name_ = "argmax_func";
+    #endif
         return;
     }
 
