@@ -20,9 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import sys
-sys.path.append('../../python/lib')
-
 from paddlelite.lite import *
 
 # Command arguments
@@ -42,8 +39,8 @@ def RunModel(args):
         config.set_param_file(args.param_file)
     else:
         config.set_model_dir(args.model_dir)
-    # For x86, you can set places = [Place(TargetType.X86, PrecisionType.FP32)]
-    places = [Place(TargetType.ARM, PrecisionType.FP32)]
+    # For arm platform (armlinux), you can set places = [Place(TargetType.ARM, PrecisionType.FP32)]
+    places = [Place(TargetType.X86, PrecisionType.FP32)]
     config.set_valid_places(places)
 
     # 2. Create paddle predictor

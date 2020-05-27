@@ -27,12 +27,19 @@ tar zxf mobilenet_v1.tar.gz
   - 非combined形式：模型文件夹model_dir下存在一个模型文件和多个参数文件时，传入模型文件夹路径，模型文件名默认为__model__。
 
   ```shell
-  paddle_lite_opt --model_dir=./mobilenet_v1  --valid_targets=mobilenet_v1_opt --valid_targets=x86
+  paddle_lite_opt --model_dir=./mobilenet_v1  \
+                  --optimize_out=mobilenet_v1_opt \
+                  --optimize_out_type=naive_buffer \
+                  --valid_targets=x86
   ```
   - combined形式：模型文件夹model_dir下只有一个模型文件__model__和一个参数文件__params__时，传入模型文件和参数文件路径
 
   ```shell
-  paddle_lite_opt --model_file=./mobilenet_v1/__model__ --param_file=./mobilenet_v1/__params__  --valid_targets=mobilenet_v1_opt --valid_targets=x86
+  paddle_lite_opt --model_file=./mobilenet_v1/__model__ \
+                  --param_file=./mobilenet_v1/__params__  \
+                  --optimize_out=mobilenet_v1_opt \
+                  --optimize_out_type=naive_buffer \
+                  --valid_targets=x86
   ```
 
 - windows环境
@@ -70,7 +77,7 @@ python demo 完整代码位于 [demo/python](https://github.com/PaddlePaddle/Pad
 from paddlelite.lite import *
 
 config = MobileConfig()
-config.set_model_dir(/YOU_MODEL_PATH/mobilenet_v1_opt.nb)
+config.set_model_from_file(/YOU_MODEL_PATH/mobilenet_v1_opt.nb)
 ```
 
 (2) 创建predictor
