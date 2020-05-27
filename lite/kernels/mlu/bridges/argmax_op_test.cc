@@ -88,7 +88,7 @@ void test_argmax(const std::vector<int64_t>& input_shape, int axis) {
   FillTensor<float, float>(x, -9, 9);
   // initialize op desc
   cpp::OpDesc opdesc;
-  opdesc.SetType("argmax");
+  opdesc.SetType("arg_max");
   opdesc.SetInput("X", {x_var_name});
   opdesc.SetOutput("Out", {out_var_name});
   opdesc.SetAttr("axis", static_cast<int64_t>(axis));
@@ -131,7 +131,7 @@ void test_argmax(const std::vector<int64_t>& input_shape, int axis) {
   }
 }
 
-TEST(MLUBridges, argmax) {
+TEST(MLUBridges, arg_max) {
   test_argmax({1, 2, 3, 4}, 1);
   test_argmax({1, 2, 3, 4}, 2);
   test_argmax({1, 2, 3, 4}, 3);
@@ -142,4 +142,4 @@ TEST(MLUBridges, argmax) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_SUBGRAPH_BRIDGE(argmax, kMLU);
+USE_SUBGRAPH_BRIDGE(arg_max, kMLU);
