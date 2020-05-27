@@ -55,6 +55,8 @@ class SubgraphEngine : public subgraph::Engine {
             << GetBoolFromEnv("PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL");
     VLOG(4) << "[MLU] PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE is "
             << GetBoolFromEnv("PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE");
+    VLOG(4) << "[MLU] LITE_DISABLE_MLU_CAST is "
+            << GetBoolFromEnv("LITE_DISABLE_MLU_CAST");
     if (GetBoolFromEnv("PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE")) {
       disable_batch_size_changeable_ = true;
     }
@@ -105,6 +107,7 @@ class SubgraphEngine : public subgraph::Engine {
     if (shape_graph_map_.count(inputs_shape_) > 0) {
       return false;
     }
+    VLOG(3) << "MLU graph input shape changed" << std::endl;
     return true;
   }
 
@@ -131,8 +134,8 @@ class SubgraphEngine : public subgraph::Engine {
       if (subgraph::CHECK_SUCCESS(status)) {
         return status;
       }
-      VLOG(4) << "[MLU] build batch_size changeable subgraph op failed, "
-                 "changed to input_shape changeable";
+      LOG(INFO) << "[MLU] build batch_size changeable subgraph op failed, "
+                   "changed to input_shape changeable";
     }
     error_compile_batch_size_changeable_ = true;
     disable_batch_size_changeable_ = true;
