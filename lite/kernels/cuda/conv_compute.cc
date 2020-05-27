@@ -35,33 +35,11 @@ inline int ConvOutputSize(int input_size,
   return output_size;
 }
 
-template <>
-void ConvCompute<float, PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+template <typename T, PrecisionType PType>
+void ConvCompute<T, PType>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<float, PRECISION(kFloat)>);
-  conv_impl_->init(param, &ctx);
-}
-
-template <>
-void ConvCompute<half, PRECISION(kFP16)>::PrepareForRun() {
-  auto& ctx = this->ctx_->template As<CUDAContext>();
-  auto& param = this->Param<param_t>();
-  w_half_tensor_.Resize(param.filter->dims());
-  lite::cuda::math::fp32_to_fp16(
-      param.filter->numel(),
-      param.filter->data<float>(),
-      w_half_tensor_.mutable_data<half>(TARGET(kCUDA)));
-  param.filter = &w_half_tensor_;
-  if (param.bias) {
-    b_half_tensor_.Resize(param.bias->dims());
-    lite::cuda::math::fp32_to_fp16(
-        param.bias->numel(),
-        param.bias->data<float>(),
-        b_half_tensor_.mutable_data<half>(TARGET(kCUDA)));
-    param.bias = &b_half_tensor_;
-  }
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<half, PRECISION(kFP16)>);
+  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<T, PType>);
   conv_impl_->init(param, &ctx);
 }
 
@@ -159,11 +137,10 @@ REGISTER_LITE_KERNEL(conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNCHW))})
-    .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kCUDA),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -193,11 +170,10 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNCHW))})
-    .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .BindInput("Filter",
                {LiteType::GetTensorTy(TARGET(kCUDA),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kCUDA),

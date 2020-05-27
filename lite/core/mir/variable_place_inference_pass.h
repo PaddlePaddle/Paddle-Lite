@@ -69,6 +69,9 @@ class VariablePlaceInferencePass : public DebugPass {
     } else if (lite_with_targets.at("kOpenCL")) {
       w->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    } else if (lite_with_targets.at("kCUDA")) {
+      w->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
       w->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
@@ -87,6 +90,7 @@ class VariablePlaceInferencePass : public DebugPass {
     };
     std::map<std::string, bool> lite_with_targets{
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
+        {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
         {"kFPGA", valid_places_has_target(TARGET(kFPGA))}};
     VLOG(4) << "lite_with_targets['kOpenCL']:" << lite_with_targets["kOpenCL"];
     VLOG(4) << "lite_with_targets['kFPGA']:" << lite_with_targets["kFPGA"];

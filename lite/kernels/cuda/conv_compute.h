@@ -33,8 +33,6 @@ class ConvCompute : public KernelLite<TARGET(kCUDA), PType> {
 
  private:
   std::unique_ptr<lite::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
-  // for fp16.
-  lite::Tensor w_half_tensor_, b_half_tensor_;
 };
 
 template <PrecisionType Ptype_out>

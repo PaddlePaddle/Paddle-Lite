@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+
 #include "lite/backends/cuda/math/utils.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -105,6 +106,25 @@ void CalibComputeFp32ToFp16::Run() {
   int blocks = (num + threads - 1) / threads;
   param.output->set_lod(param.input->lod());
   Fp32ToFp16Kernel<<<blocks, threads, 0, stream>>>(num, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
+void CalibOnceComputeFp32ToFp16::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<CUDAContext>();
+  auto stream = ctx.exec_stream();
+  const auto* din = param.input->data<float>();
+  auto* dout = param.output->mutable_data<__half>(TARGET(kCUDA));
+  int num = static_cast<int>(param.input->numel());
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  param.output->set_lod(param.input->lod());
+  Fp32ToFp16Kernel<<<blocks, threads>>>(num, din, dout);
+
+  // remove the unneeded fp32 weights.
+  const_cast<lite::Tensor*>(param.input)->clear();
+
   cudaError_t error = cudaGetLastError();
   CHECK(error == cudaSuccess) << cudaGetErrorString(error);
 }
@@ -243,7 +263,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeFp32ToFp16,
+                     paddle::lite::kernels::cuda::CalibOnceComputeFp32ToFp16,
                      fp32_to_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
