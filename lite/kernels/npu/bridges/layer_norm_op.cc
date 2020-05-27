@@ -54,7 +54,9 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto right = x_mat_dims[1];
 
   if (x_name == "tmp_3" || x_name == "tmp_5" || x_name == "tmp_6" ||
-      x_name == "tmp_8" || x_name == "tmp_9") {
+      x_name == "tmp_8" || x_name == "tmp_9" || x_name == "tmp_15" ||
+      x_name == "tmp_17" || x_name == "tmp_19" || x_name == "tmp_20" ||
+      x_name == "tmp_22" || x_name == "tmp_24" || x_name == "tmp_25") {
     std::shared_ptr<Node> x_node = nullptr;
     if (graph->Has(x_name)) {
       x_node = graph->Get(x_name);
