@@ -18,7 +18,7 @@ Paddle-Lite提供的物体检测demo ，在移动端上提供了检测多个物�
 
 ## Linux(ARM) demo部署方法
 
-下面我们以**目标检测（object_detection_demo)**为例讲解如何部署工程。
+下面我们以**目标检测（object_detection_demo)**为例讲解如何部署Linux(ARM)工程。
 
 **目的**：将基于Paddle-Lite的预测库部署到Linux(ARM)设备，实现物体检测的目标。
 
