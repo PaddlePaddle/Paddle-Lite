@@ -50,7 +50,7 @@ tar zxf mobilenet_v1.tar.gz
  
   ```shell
   python -m pip install paddlelite
-  paddle_opt_lite --model_dir=./mobilenet_v1 --optimize_out_type=naive_buffer   --optimize_out=./mobilenet_v1_opt
+  paddle_lite_opt --model_dir=./mobilenet_v1 --optimize_out_type=naive_buffer   --optimize_out=./mobilenet_v1_opt
   ```
 **结果如下图所示：**
 
