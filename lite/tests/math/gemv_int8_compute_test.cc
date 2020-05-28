@@ -230,7 +230,7 @@ bool test_gemv_int8(bool tra,
                                        flag_act > 0,
                                        act,
                                        &ctx,
-                                       six,
+                                       six / scale_c[0],
                                        alpha);
     t0.Stop();
   }
