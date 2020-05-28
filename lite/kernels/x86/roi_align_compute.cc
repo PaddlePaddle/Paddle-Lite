@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/roi_align_compute.h"
+#include <cmath>
 #include <string>
 #include <vector>
 #include "lite/core/op_registry.h"
