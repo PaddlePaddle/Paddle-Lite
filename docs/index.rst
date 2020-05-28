@@ -50,6 +50,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/python_demo
   demo_guides/android_app_demo
   demo_guides/ios_app_demo
+  demo_guides/linux_arm_demo
   demo_guides/x86
   demo_guides/cuda
   demo_guides/opencl
