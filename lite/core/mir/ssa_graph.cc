@@ -14,9 +14,9 @@
 
 #include "lite/core/mir/ssa_graph.h"
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <set>
-#include <unordered_map>
 #include <utility>
 
 namespace paddle {
@@ -55,9 +55,10 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
         nodes.push_back(adj_n);
       }
     }
-    std::sort(nodes.begin(),
-              nodes.end(),
-              [](mir::Node *node1, mir::Node *node2) { return node1 > node2; });
+    std::stable_sort(
+        nodes.begin(), nodes.end(), [](mir::Node *node1, mir::Node *node2) {
+          return node1 > node2;
+        });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
   }
@@ -75,9 +76,10 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
     for (auto &var : n.inlinks) {
       nodes.push_back(var);
     }
-    std::sort(nodes.begin(),
-              nodes.end(),
-              [](mir::Node *node1, mir::Node *node2) { return node1 > node2; });
+    std::stable_sort(
+        nodes.begin(), nodes.end(), [](mir::Node *node1, mir::Node *node2) {
+          return node1 > node2;
+        });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
   }
@@ -161,10 +163,9 @@ void SSAGraph::Build(const Program &program,
     return true;
   };
 
-  std::unordered_map<std::string, PrecisionType> var_types =
-      program.var_data_type();
+  std::map<std::string, PrecisionType> var_types = program.var_data_type();
 
-  std::unordered_map<std::string, mir::Node *> arg_update_node_map_;
+  std::map<std::string, mir::Node *> arg_update_node_map_;
   for (auto &op : program.ops()) {
     VLOG(3) << op->op_info()->Type();
     auto *op_node = GraphCreateInstructNode(op, valid_places);

@@ -15,9 +15,9 @@
 #pragma once
 
 #include <cmath>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
@@ -230,7 +230,7 @@ class Graph {
 
  private:
   cnmlDataType_t fp_type_{CNML_DATA_FLOAT32};
-  std::unordered_map<std::string, std::shared_ptr<MLUTensor>> nodes_;
+  std::map<std::string, std::shared_ptr<MLUTensor>> nodes_;
   std::vector<cnmlTensor_t> inputs_;
   std::vector<cnmlTensor_t> outputs_;
   std::vector<void*> input_addrs_;

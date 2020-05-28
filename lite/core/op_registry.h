@@ -20,7 +20,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/api/paddle_lite_factory_helper.h"

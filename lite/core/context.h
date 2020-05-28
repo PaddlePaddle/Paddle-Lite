@@ -19,7 +19,6 @@
 #include "lite/backends/cuda/context.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif

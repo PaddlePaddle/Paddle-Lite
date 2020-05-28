@@ -75,12 +75,12 @@ void SearchGrnnCompute<T>::PrepareLayout(const Tensor* input_blob) {
     width_data[i] = offset[i + 1] - offset[i];
     idx_sorted_by_width_data[i] = i;
   }
-  std::sort(idx_sorted_by_width_data,
-            idx_sorted_by_width_data + batch,
-            [&_width](int a, int b) {
-              return _width.template data<int>()[a] >
-                     _width.template data<int>()[b];
-            });
+  std::stable_sort(idx_sorted_by_width_data,
+                   idx_sorted_by_width_data + batch,
+                   [&_width](int a, int b) {
+                     return _width.template data<int>()[a] >
+                            _width.template data<int>()[b];
+                   });
   int max_width = width_data[idx_sorted_by_width_data[0]];
 
   // start of reorganizing the input

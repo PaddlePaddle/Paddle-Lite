@@ -16,9 +16,8 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include "lite/core/mir/pass.h"
 
@@ -51,7 +50,7 @@ class SubgraphDetector {
   // pointer of the Node. This is to avoid changing the original graph in the
   // process of graph analysis.
   struct node_dat_t;
-  using node_map_t = std::unordered_map<Node*, node_dat_t*>;
+  using node_map_t = std::map<Node*, node_dat_t*>;
   using node_set_t = std::vector<node_dat_t*>;
   struct node_dat_t {
     explicit node_dat_t(Node* _node) : node(_node) {}
@@ -73,7 +72,7 @@ class SubgraphDetector {
                    const std::function<bool(const node_dat_t*)>& enter,
                    const std::function<bool(const node_dat_t*)>& leave);
 
-  std::unordered_set<Node*> GetExcludedNodesFromConfigFile();
+  std::set<Node*> GetExcludedNodesFromConfigFile();
 
   void InitNodes(node_map_t* nodes);
 
@@ -114,18 +113,17 @@ class SubgraphFuser {
 };
 
 void ExtractInputsOutputs(const std::vector<Node*>& op_nodes,
-                          std::unordered_set<Node*>* input_var_nodes,
-                          std::unordered_set<Node*>* weight_var_nodes,
-                          std::unordered_set<Node*>* output_var_nodes,
-                          std::unordered_set<Node*>* local_var_nodes,
-                          std::unordered_set<Node*>* unused_var_nodes);
+                          std::set<Node*>* input_var_nodes,
+                          std::set<Node*>* weight_var_nodes,
+                          std::set<Node*>* output_var_nodes,
+                          std::set<Node*>* local_var_nodes,
+                          std::set<Node*>* unused_var_nodes);
 
-std::unordered_set<const Node*> GetNodes2RM(
+std::set<const Node*> GetNodes2RM(
     const std::vector<Node*>& op_nodes,
-    const std::vector<std::unordered_set<Node*>>& excluded_var_nodes);
+    const std::vector<std::set<Node*>>& excluded_var_nodes);
 
-std::vector<Node*> GetTopologicalOrder(
-    const std::unordered_set<Node*>& unordered_nodes);
+std::vector<Node*> GetTopologicalOrder(const std::set<Node*>& unordered_nodes);
 
 }  // namespace mir
 }  // namespace lite

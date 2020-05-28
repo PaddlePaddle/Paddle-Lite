@@ -14,9 +14,9 @@
 
 #pragma once
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/variable.h"
@@ -74,7 +74,7 @@ class Scope final {
   // Scope in `kids_` are owned by this class.
   mutable std::list<Scope*> kids_;
   const Scope* parent_{nullptr};
-  std::unordered_map<std::string, std::unique_ptr<Variable>> vars_;
+  std::map<std::string, std::unique_ptr<Variable>> vars_;
 };
 
 }  // namespace lite

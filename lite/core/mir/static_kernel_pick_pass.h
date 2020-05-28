@@ -15,9 +15,9 @@
 #pragma once
 
 #include <limits>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/types.h"
@@ -50,14 +50,13 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(
-      const lite::mir::Node::Stmt& instruct,
-      const lite::KernelBase& kernel,
-      const std::vector<Place>& places,
-      const std::unordered_map<std::string, PrecisionType>& in_types,
-      const std::unordered_map<std::string, PrecisionType>& out_types,
-      const std::vector<std::string>& in_names,
-      const std::vector<std::string>& out_names) {
+  size_t KernelGrade(const lite::mir::Node::Stmt& instruct,
+                     const lite::KernelBase& kernel,
+                     const std::vector<Place>& places,
+                     const std::map<std::string, PrecisionType>& in_types,
+                     const std::map<std::string, PrecisionType>& out_types,
+                     const std::vector<std::string>& in_names,
+                     const std::vector<std::string>& out_names) {
     CHECK_GT(places.size(), static_cast<size_t>(0)) << "valid_places is empty.";
     float final_score{-1.};
     Place winner_place{places[0]};
