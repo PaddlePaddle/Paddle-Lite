@@ -50,7 +50,7 @@ bool ReduceOp::InferShapeImpl() const {
   } else {
     size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
     std::vector<DDim::value_type> out_dims(out_rank);
-    sort(dims.begin(), dims.end());
+    std::stable_sort(dims.begin(), dims.end());
     int dim_index = 0;
     int out_index = 0;
     for (size_t i = 0; i < x_rank; ++i) {

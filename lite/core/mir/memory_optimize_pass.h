@@ -17,11 +17,10 @@
 #include <algorithm>
 #include <limits>
 #include <list>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -38,18 +37,16 @@ namespace mir {
 class MemoryOptimizePass : public ProgramPass {
  public:
   using lifecycle_t = std::pair<int, int>;
-  using lifecycle_map_t = std::unordered_map<std::string, lifecycle_t>;
+  using lifecycle_map_t = std::map<std::string, lifecycle_t>;
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
   void CollectLifeCycleByDevice(
-      std::unordered_map<std::string, lifecycle_map_t>* lifecycles, SSAGraph*);
-  void MakeReusePlan(
-      const lifecycle_map_t& lifecycles,
-      std::unordered_map<std::string, std::string>* node2cluster);
-  void PerformReusePlan(
-      SSAGraph* graph,
-      const std::unordered_map<std::string, std::string>& reuse_table);
+      std::map<std::string, lifecycle_map_t>* lifecycles, SSAGraph*);
+  void MakeReusePlan(const lifecycle_map_t& lifecycles,
+                     std::map<std::string, std::string>* node2cluster);
+  void PerformReusePlan(SSAGraph* graph,
+                        const std::map<std::string, std::string>& reuse_table);
 
  private:
   int max_lifecycle_{-1};

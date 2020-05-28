@@ -15,10 +15,10 @@
 #pragma once
 #include <iostream>
 #include <list>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include "lite/utils/all.h"
 #include "lite/utils/cp_logging.h"
@@ -82,7 +82,7 @@ class Factory {
   }
 
  protected:
-  std::unordered_map<std::string, std::list<creator_t>> creators_;
+  std::map<std::string, std::list<creator_t>> creators_;
 };
 
 /* A helper function to help run a lambda at the start.

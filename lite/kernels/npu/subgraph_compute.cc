@@ -33,7 +33,7 @@ namespace npu {
 std::string SubgraphEngine::GenerateModelCacheName() const {
   auto inames = device_inames_;
   auto onames = device_onames_;
-  std::sort(inames.begin(), inames.end());
+  std::stable_sort(inames.begin(), inames.end());
 
   std::string model_cache_name = "subgraph_" + std::to_string(block_idx_);
   for (auto iname : inames) {

@@ -15,7 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <algorithm>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 namespace paddle {
@@ -45,7 +45,7 @@ class AlgorithmsCache {
                           std::function<TAlgorithm()> gen_func);
 
  private:
-  std::unordered_map<int64_t, TAlgorithm> hash_;
+  std::map<int64_t, TAlgorithm> hash_;
   int search_times_;
 };
 
