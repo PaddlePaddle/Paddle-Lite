@@ -83,57 +83,57 @@ std::list<std::unique_ptr<KernelBase>> KernelRegistry::Create(
     case TARGET(kHost): {
       CREATE_KERNEL(kHost);
     } break;
-#ifdef LITE_WITH_X86
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_X86)
     case TARGET(kX86): {
       CREATE_KERNEL(kX86);
     } break;
 #endif
-#ifdef LITE_WITH_CUDA
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_CUDA)
     case TARGET(kCUDA): {
       CREATE_KERNEL(kCUDA);
     } break;
 #endif
-#ifdef LITE_WITH_ARM
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_ARM)
     case TARGET(kARM): {
       CREATE_KERNEL(kARM);
     } break;
 #endif
-#ifdef LITE_WITH_OPENCL
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_OPENCL)
     case TARGET(kOpenCL): {
       CREATE_KERNEL(kOpenCL);
     } break;
 #endif
-#ifdef LITE_WITH_NPU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_NPU)
     case TARGET(kNPU): {
       CREATE_KERNEL(kNPU);
     } break;
 #endif
-#ifdef LITE_WITH_APU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_APU)
     case TARGET(kAPU): {
       CREATE_KERNEL(kAPU);
     } break;
 #endif
-#ifdef LITE_WITH_XPU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_XPU)
     case TARGET(kXPU): {
       CREATE_KERNEL(kXPU);
     } break;
 #endif
-#ifdef LITE_WITH_FPGA
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_FPGA)
     case TARGET(kFPGA): {
       CREATE_KERNEL(kFPGA);
     } break;
 #endif
-#ifdef LITE_WITH_BM
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_BM)
     case TARGET(kBM): {
       CREATE_KERNEL(kBM);
     } break;
 #endif
-#ifdef LITE_WITH_MLU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_MLU)
     case TARGET(kMLU): {
       CREATE_KERNEL(kMLU);
     } break;
 #endif
-#ifdef LITE_WITH_RKNPU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_RKNPU)
     case TARGET(kRKNPU): {
       CREATE_KERNEL(kRKNPU);
     } break;
@@ -158,7 +158,7 @@ KernelRegistry::KernelRegistry() : registries_() {
                                    PRECISION(precision__),   \
                                    DATALAYOUT(layout__)>::Global());
 // Currently, just register 2 kernel targets.
-#ifdef LITE_WITH_CUDA
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_CUDA)
   INIT_FOR(kCUDA, kFloat, kNCHW);
   INIT_FOR(kCUDA, kFloat, kNHWC);
   INIT_FOR(kCUDA, kInt8, kNCHW);
@@ -169,7 +169,7 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kCUDA, kInt64, kNHWC);
 #endif
 
-#ifdef LITE_WITH_MLU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_MLU)
   INIT_FOR(kMLU, kFloat, kNHWC);
   INIT_FOR(kMLU, kFloat, kNCHW);
   INIT_FOR(kMLU, kFP16, kNHWC);
@@ -205,13 +205,13 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kHost, kInt64, kNHWC);
   INIT_FOR(kHost, kInt64, kAny);
 
-#ifdef LITE_WITH_X86
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_X86)
   INIT_FOR(kX86, kFloat, kNCHW);
   INIT_FOR(kX86, kAny, kNCHW);
   INIT_FOR(kX86, kAny, kAny);
   INIT_FOR(kX86, kInt64, kNCHW);
 #endif
-#ifdef LITE_WITH_ARM
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_ARM)
   INIT_FOR(kARM, kFloat, kNCHW);
   INIT_FOR(kARM, kFloat, kNHWC);
   INIT_FOR(kARM, kInt8, kNCHW);
@@ -221,7 +221,7 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kARM, kInt32, kNCHW);
   INIT_FOR(kARM, kInt64, kNCHW);
 #endif
-#ifdef LITE_WITH_OPENCL
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_OPENCL)
   INIT_FOR(kOpenCL, kFloat, kNCHW);
   INIT_FOR(kOpenCL, kFloat, kNHWC);
   INIT_FOR(kOpenCL, kAny, kNCHW);
@@ -241,7 +241,7 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kOpenCL, kAny, kImageFolder);
   INIT_FOR(kOpenCL, kAny, kImageNW);
 #endif
-#ifdef LITE_WITH_NPU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_NPU)
   INIT_FOR(kNPU, kFloat, kNCHW);
   INIT_FOR(kNPU, kFloat, kNHWC);
   INIT_FOR(kNPU, kInt8, kNCHW);
@@ -250,27 +250,27 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kNPU, kAny, kNHWC);
   INIT_FOR(kNPU, kAny, kAny);
 #endif
-#ifdef LITE_WITH_APU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_APU)
   INIT_FOR(kAPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kFloat, kNCHW);
   INIT_FOR(kXPU, kInt8, kNCHW);
   INIT_FOR(kXPU, kAny, kNCHW);
   INIT_FOR(kXPU, kAny, kAny);
 #endif
-#ifdef LITE_WITH_FPGA
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_FPGA)
   INIT_FOR(kFPGA, kFP16, kNHWC);
   INIT_FOR(kFPGA, kFP16, kAny);
   INIT_FOR(kFPGA, kFloat, kNHWC);
   INIT_FOR(kFPGA, kAny, kNHWC);
   INIT_FOR(kFPGA, kAny, kAny);
 #endif
-#ifdef LITE_WITH_BM
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_BM)
   INIT_FOR(kBM, kFloat, kNCHW);
   INIT_FOR(kBM, kInt8, kNCHW);
   INIT_FOR(kBM, kAny, kNCHW);
   INIT_FOR(kBM, kAny, kAny);
 #endif
-#ifdef LITE_WITH_RKNPU
+#if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_RKNPU)
   INIT_FOR(kRKNPU, kFloat, kNCHW);
   INIT_FOR(kRKNPU, kInt8, kNCHW);
   INIT_FOR(kRKNPU, kAny, kNCHW);
