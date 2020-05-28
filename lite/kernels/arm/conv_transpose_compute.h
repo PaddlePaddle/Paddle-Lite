@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/conv_transpose_op.h"
@@ -32,6 +33,14 @@ class Conv2DTransposeCompute
   void Run() override;
 
   ~Conv2DTransposeCompute() = default;
+
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForConvTranspose"};
+#endif
 
  protected:
   int workspace_size_{0};
