@@ -351,14 +351,23 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (auto* quantized_node : quantized_nodes) {
     // Save quantization info in op_info attr
     auto op_info = *quantized_node->stmt()->op_info();
+    op_info.SetAttr<int>("bit_length", bit_length);
+
     std::string argname;
     int index;
     op_info.GetInputArgname(output_act_name, &argname);
     op_info.GetInputIndex(output_act_name, &index);
     op_info.SetAttr<float>(argname + std::to_string(index) + "_input_scale",
                            scale_value);
-    op_info.SetAttr<float>("input_scale", scale_value);  // Save it for now
-    op_info.SetAttr<int>("bit_length", bit_length);
+    std::string op_type = op_info.Type();
+    // Analyse the weight scale or input scale.
+    if (((op_type == "conv2d" || op_type == "depthwise_conv2d") &&
+         argname == "Input") ||
+        ((op_type == "mul" || op_type == "matmul") && argname == "Y")) {
+      op_info.SetAttr<float>("weight_scale", scale_value);
+    } else {
+      op_info.SetAttr<float>("input_scale", scale_value);
+    }
 
     op_info.UpdateAllInputs(output_act_name, input_act_name);
     quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
