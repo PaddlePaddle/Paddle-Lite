@@ -31,7 +31,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
   virtual void PrepareForRun();
 
   virtual void ReInitWhenNeeded() {
-    auto& param = this->Param<param_t>();
+    auto& param = this->template Param<param_t>();
     auto w_dims = param.filter->dims();
     auto& ctx = this->ctx_->template As<ARMContext>();
     auto o_dims = param.output->dims();
@@ -54,11 +54,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
   }
 #endif
 
-  ~DeformableConvCompute() {
-    if (impl_ != nullptr) {
-      delete impl_;
-    }
-  }
+  ~DeformableConvCompute() = default;
 
  private:
   using param_t = operators::DeformableConvParam;

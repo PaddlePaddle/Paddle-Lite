@@ -541,10 +541,10 @@ float deformable_bilinear(const float* bottom_data, const int data_width,
 //! for float, dtype1 and type2 is float
 //! for int8, dytpe1 is char, dtype2 is int
 template<typename Dtype1, typename Dtype2>
-void deformabel_conv_basic(const Dtype1* in_data,
+void deformable_conv_basic(const Dtype1* in_data,
                            const float* offset_data,
                            const float* mask_data,
-                           Dtype2* dout,
+                           Dtype2* out_data,
                            int num,
                            int chout,
                            int hout,
@@ -597,8 +597,7 @@ void deformabel_conv_basic(const Dtype1* in_data,
                             const float offset_w = offset_data_ptr[data_offset_w_ptr];
                             const float iw = ow * stride_w - pad_w + kernel_w * dila_w + offset_w;
                             const float ih = oh * stride_h - pad_h + kernel_h * dila_h + offset_h;
-
-                          if (ih > -1 && ih < hin && iw > -1 && iw < win) {
+                            if (ih > -1 && ih < hin && iw > -1 && iw < win) {
                               // get data
                               const float map_h = kernel_h * dila_h + offset_h;
                               const float map_w = kernel_w * dila_w + offset_w;
@@ -619,23 +618,29 @@ void deformabel_conv_basic(const Dtype1* in_data,
                             //                                     + ih * win 
                             //                                     + iw;
                             //   float val = deformable_bilinear(in_data_offset, win, hin, win, ih, iw);
-                              if (param.modulated) {
-                                  // use mask
-                                  const float* mask_ptr = mask_data + n * group * kernel_size * out_size
-                                                          + g * kernel_size * out_size
-                                                          + (fh * kernel_w + fw) * hout * wout
-                                                          + oh * wout + ow; 
-                                  val *= mask_ptr[0];
-                              }
-                              int widx = g * out_c_group * in_c_group * kernel_size
-                                                + oc * in_c_group * kernel_size
-                                                + ic * kernel_size
-                                                + fh * kernel_w
-                                                + fw;
-                              out_data[out_idx] += val * filter_data[widx];
+                            //printf("--- map_h: %f, map_w: %f, cur_height: %d, cur_width: %d \n", map_h, map_w, cur_height, cur_width);  
+                            //printf("--- val: %f \n", val);
+                            if (modulated) {
+                               // use mask
+                               const float* mask_ptr = mask_data + n * group * kernel_size * out_size
+                                                       + g * kernel_size * out_size
+                                                       + (fh * kernel_w + fw) * hout * wout
+                                                       + oh * wout + ow; 
+                               val *= mask_ptr[0];
+                            }
+                            //printf("--- val: %f \n", val);
+                            int widx = g * out_c_group * in_c_group * kernel_size
+                                       + oc * in_c_group * kernel_size
+                                       + ic * kernel_size
+                                       + fh * kernel_w
+                                       + fw;
+                            out_data[out_idx] += val * weights[widx];
                           }
                         }
                     }
+                  }
+                  if (flag_relu) {
+                     out_data[out_idx] = out_data[out_idx] > 0 ? out_data[out_idx] : 0;
                   }
               }
           }

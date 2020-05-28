@@ -101,6 +101,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto kw = filter_dims[3];
   auto hout = out_dims[2];
   auto wout = out_dims[3];
+  bool is_bias = param.bias ? true : false;
   const float* bias = param.bias ? param.bias->data<float>() : nullptr;
 
   auto in_c_group = cin / group;
@@ -113,12 +114,15 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int c_out_size = cout * out_size;
   int kernel_size = kw * kh;
 
-  lite::Tensor col;
-  col.Resize({num, cin * kernel_size, hin, win});
+  //lite::Tensor col;
+  //col.Resize({num, cin * kernel_size, hin, win});
+  int col_size = num * cin * kernel_size * in_size;
 //   float* tmp_work_space =
 //       ctx.workspace_data<float>() + ctx.llc_size() / sizeof(float);
   auto offset_in_size = 2 * group * kernel_size * in_size; 
-  auto* col_data = col.mutable_data<float>();
+  //auto* col_data = col.mutable_data<float>();
+  float* col_data = new float[col_size];
+  memset(col_data, 0.0, sizeof(float) * col_size);
   for (int n = 0; n < num; n++) {
       for (int g = 0; g < group; ++g) {
           for (int ic = 0; ic < in_c_group; ++ic) {
@@ -137,7 +141,6 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                             const float offset_w = offset_data_ptr[data_offset_w_ptr];
                             const float im_w = iw * stride[1] - paddings[1] + kw * dilation[1] + offset_w;
                             const float im_h = ih * stride[0] - paddings[0] + kh * dilation[0] + offset_h;
-
                             if (im_h > -1 && im_h < hin && im_w > -1 && im_w < win) {
                                 // get data
                                 const float map_h = kh * dilation[0] + offset_h;
@@ -153,16 +156,19 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                 int out_idx = n * c_in_size * kernel_size + g * in_c_group * kernel_size * in_size
                                                 + ic * kernel_size * in_size + ((fh * kw + fw) * ih + ih) * win + iw;
                                 float val = deformable_bilinear(in_data_offset, 
-                                                                    win, cur_height, cur_width, map_h, map_w);
+                                                                win, cur_height, cur_width, map_h, map_w);
+                                //printf("map_h: %f, map_w: %f, cur_height: %d, cur_width: %d \n", map_h, map_w, cur_height, cur_width);
+                                // printf("val: %f \n", val);
                                 if (param.modulated) {
-                                    // use mask
-                                    const float* mask_ptr = mask_data + n * group * kernel_size * in_size
-                                                            + g * kernel_size * in_size
-                                                            + (fh * kw + fw) * hout * wout
-                                                            + ih * win + iw; 
-                                    alpha *= mask_ptr[0];
+                                   // use mask
+                                   const float* mask_ptr = mask_data + n * group * kernel_size * in_size
+                                                           + g * kernel_size * in_size
+                                                           + (fh * kw + fw) * hout * wout
+                                                           + ih * win + iw; 
+                                   val *= mask_ptr[0];
                                 }
-                                col_data[out_idx] = alpha * val;
+                                //printf("val: %f \n", val);
+                                col_data[out_idx] = val;
                             }
                           }
                       }
@@ -192,7 +198,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                     false,
                     m,
                     k,
-                    param.bias,
+                    is_bias,
                     bias_group,
                     param.activation_param.has_active,
                     param.activation_param.active_type,
@@ -212,25 +218,24 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                             dout_group,
                             n,
                             bias_group,
-                            param.bias,
+                            is_bias,
                             param.activation_param,
                             &ctx);
           }
       }
   }
-  delete col_data;
-  delete col;
+ delete[] col_data;
 }
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-/*
-typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kFloat),
+
+typedef paddle::lite::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
                                                 PRECISION(kFloat)>
-    ConvFp32;
+    DeformableConvFp32;
 
-REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
+REGISTER_LITE_KERNEL(deformconv2d, kARM, kFloat, kNCHW, DeformableConvFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -238,13 +243,3 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Offset", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-
-REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Offset", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
-*/

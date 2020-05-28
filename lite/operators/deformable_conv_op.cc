@@ -82,4 +82,3 @@ bool DeformableConvOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(DeformableConv2d, paddle::lite::operators::DeformableConvOpLite);
-REGISTER_LITE_OP(depthwise_DeformableConv2d, paddle::lite::operators::DeformableConvOpLite);
