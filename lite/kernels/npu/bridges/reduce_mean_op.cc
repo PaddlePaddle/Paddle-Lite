@@ -43,7 +43,7 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dim[i] += x_dims.size();
     }
   }
-  std::sort(dim.begin(), dim.end());
+  std::stable_sort(dim.begin(), dim.end());
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;

@@ -21,10 +21,9 @@
 // for analysis and runtime.
 
 #include <map>
+#include <set>
 #include <string>
 #include <typeinfo>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/core/version.h"

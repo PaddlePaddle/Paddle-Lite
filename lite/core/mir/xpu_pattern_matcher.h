@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <unordered_set>
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/pattern_matcher.h"
@@ -52,7 +52,7 @@ namespace xpu {
  *    matcher(&graph, handler);
  */
 struct XPUPatternMatcher {
-  using subgraph_t = std::unordered_map<PMNode*, Node*>;
+  using subgraph_t = std::map<PMNode*, Node*>;
 
   // Operate on the detected pattern.
   using handle_t =
@@ -83,7 +83,7 @@ struct XPUPatternMatcher {
   using hit_rcd_t =
       std::pair<Node* /*node in graph*/, PMNode* /*node in pattern*/>;
   PMPattern pattern_;
-  std::unordered_map<const PMNode*, std::unordered_set<Node*>> pmnodes2nodes_;
+  std::map<const PMNode*, std::set<Node*>> pmnodes2nodes_;
   std::vector<std::vector<Node*>> extra_input_vars_;
 };
 
