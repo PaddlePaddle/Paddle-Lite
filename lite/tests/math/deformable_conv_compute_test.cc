@@ -67,10 +67,10 @@ typedef paddle::lite::operators::ActivationParam ActivationParam;
 using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::DeformableConvParam& param) {
+                     const paddle::lite::operators::ConvParam& param) {
   DDim dim_out = dim_in;
-  auto paddings = param.paddings;
-  auto dilations = param.dilations;
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
   dim_out[1] = param.filter->dims()[0];
   auto kernel_h = param.filter->dims()[2];
   auto kernel_w = param.filter->dims()[3];
@@ -78,14 +78,16 @@ DDim compute_out_dim(const DDim& dim_in,
   auto w = dim_in[3];
   int dila_h = dilations[0];
   int dila_w = dilations[1];
-  int pad_h = paddings[0];
-  int pad_w = paddings[1];
+  int pad_top = paddings[0];
+  int pad_bottom = paddings[1];
+  int pad_left = paddings[2];
+  int pad_right = paddings[3];
   int stride_h = param.strides[0];
   int stride_w = param.strides[1];
   auto kernel_exten = dila_h * (kernel_h - 1) + 1;
-  auto hout = (h + 2 * pad_h - kernel_exten) / stride_h + 1;
+  auto hout = (h + pad_top + pad_bottom - kernel_exten) / stride_h + 1;
   kernel_exten = dila_w * (kernel_w - 1) + 1;
-  auto wout = (w + 2 * pad_w - kernel_exten) / stride_w + 1;
+  auto wout = (w + pad_left + pad_right - kernel_exten) / stride_w + 1;
   dim_out[2] = hout;
   dim_out[3] = wout;
   return dim_out;
@@ -110,22 +112,22 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
   DeformableConvParam param;
   param.x = new Tensor;
   param.x->set_precision(PRECISION(kFloat));
-  param.filter = new Tensor;
-  param.filter->Resize(weight_dim);
-  param.filter->set_precision(PRECISION(kFloat));
+  param.conv_param.filter = new Tensor;
+  param.conv_param.filter->Resize(weight_dim);
+  param.conv_param.filter->set_precision(PRECISION(kFloat));
   param.offset = new Tensor;
   param.offset->set_precision(PRECISION(kFloat));
   param.mask = new Tensor;
   param.mask->set_precision(PRECISION(kFloat));
   if (flag_bias) {
-    param.bias = new Tensor;
-    param.bias->Resize({weight_dim[0]});
-    param.bias->set_precision(PRECISION(kFloat));
+    param.conv_param.bias = new Tensor;
+    param.conv_param.bias->Resize({weight_dim[0]});
+    param.conv_param.bias->set_precision(PRECISION(kFloat));
   }
-  param.strides = strides;
-  param.paddings = pads;
-  param.dilations = dilas;
-  param.groups = group;
+  param.conv_param.strides = strides;
+  param.conv_param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.conv_param.dilations = std::make_shared<std::vector<int>>(dilas);
+  param.conv_param.groups = group;
   param.deformable_groups = group;
   param.modulated = modulated;
   const float six = 6.f;
@@ -142,7 +144,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
     } else if (flag_act == 4) {
       act_param.Leaky_relu_alpha = leakey_relu_scale;
     }
-    param.activation_param = act_param;
+    param.conv_param.activation_param = act_param;
   }
 
   param.output = new Tensor;
@@ -154,8 +156,8 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
     paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
     //    paddle::lite::fill_tensor_const(*param.bias, 1.f);
   }
-  auto wptr = param.filter->data<float>();
-  auto bias_ptr = flag_bias ? param.bias->data<float>() : nullptr;
+  auto wptr = param.conv_param.filter->data<float>();
+  auto bias_ptr = flag_bias ? param.conv_param.bias->data<float>() : nullptr;
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
@@ -169,7 +171,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
       /// set param and context
       for (auto& dim_in : input_dims) {
         param.x->Resize(dim_in);
-        DDim out_tmp_dims = compute_out_dim(dim_in, param);
+        DDim out_tmp_dims = compute_out_dim(dim_in, param.conv_param);
         if (out_tmp_dims[2] < 1 || out_tmp_dims[3] < 1) {
           continue;
         }
@@ -184,7 +186,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
       for (auto& dim_in : input_dims) {
         CHECK_EQ(weight_dim[1] * group, dim_in[1])
             << "input channel must equal to weights channel";
-        DDim dim_out = compute_out_dim(dim_in, param);
+        DDim dim_out = compute_out_dim(dim_in, param.conv_param);
         int num = dim_in[0];
         int in_size = dim_in[2] * dim_in[3];
         int kernel_size = weight_dim[2] * weight_dim[3];
@@ -253,7 +255,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
         }
 
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
-                      weight_dim[3] / param.groups;
+                      weight_dim[3] / param.conv_param.groups;
         LOG(INFO) << "deformable conv fp32: input shape: " << dim_in << ", output shape"
                   << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
                   << ", min time: " << t0.LapTimes().Min()
@@ -282,6 +284,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
                          << ", output: " << dim_out
                          << ", weight dim: " << weight_dim
                          << ", pad: " << pads[0] << ", " << pads[1]
+                         << ", " << pads[2] << ", " << pads[3]
                          << ", stride: " << strides[0] << ", " << strides[1]
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
                          << ", group: " << group
@@ -296,6 +299,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
         LOG(INFO) << "test fp32 deformable conv: input: " << dim_in
                   << ", output: " << dim_out << ", weight dim: " << weight_dim
                   << ", pad: " << pads[0] << ", " << pads[1]
+                  << ", " << pads[2] << ", " << pads[3]
                   << ", stride: " << strides[0] << ", " << strides[1]
                   << ", dila_: " << dilas[0] << ", " << dilas[1]
                   << ", group: " << group
@@ -371,7 +375,7 @@ TEST(TestDeformableConvRand, test_deformable_conv_rand) {
                                 weights_dim,
                                 g,
                                 {stride, stride},
-                                {pad_h, pad_w},
+                                {pad_h, pad_h, pad_w, pad_w},
                                 {dila, dila},
                                 flag_bias,
                                 flag_act,
@@ -409,7 +413,7 @@ TEST(TestDeformableConvCustom, test_deformable_conv_fp32_custom_size) {
             FLAGS_kernel_w}),
       FLAGS_group,
       {FLAGS_stride_h, FLAGS_stride_w},
-      {FLAGS_pad_h, FLAGS_pad_w},
+      {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
       {FLAGS_dila_h, FLAGS_dila_w},
       FLAGS_flag_bias,
       FLAGS_flag_act,

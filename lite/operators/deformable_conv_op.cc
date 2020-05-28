@@ -24,13 +24,13 @@ namespace operators {
 bool DeformableConvOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
-  CHECK_OR_FALSE(param_.filter);
+  CHECK_OR_FALSE(param_.conv_param.filter);
   CHECK_OR_FALSE(param_.mask);
   CHECK_OR_FALSE(param_.offset);
   // bias is optional.
 
   const auto in_dims = param_.x->dims();
-  const auto filter_dims = param_.filter->dims();
+  const auto filter_dims = param_.conv_param.filter->dims();
 
   CHECK_OR_FALSE(in_dims.size() == 4);
 
@@ -46,27 +46,29 @@ bool DeformableConvOpLite::CheckShape() const {
 inline int DeformableConvOutputSize(int input_size,
                           int filter_size,
                           int dilation,
-                          int padding,
+                          int pad_left,
+                          int pad_right,
                           int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
   int output_size =
-      (input_size + 2 * padding - dkernel) / stride + 1;
+      (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
 
   return output_size;
 }
 
 bool DeformableConvOpLite::InferShapeImpl() const {
   const auto in_dims = param_.x->dims();
-  const auto filter_dims = param_.filter->dims();
+  const auto filter_dims = param_.conv_param.filter->dims();
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
-  auto paddings = param_.paddings;
-  auto dilations = param_.dilations;
-  for (size_t i = 0; i < param_.strides.size(); ++i) {
+  auto paddings = *param_.conv_param.paddings;
+  auto dilations = *param_.conv_param.dilations;
+  for (size_t i = 0; i < param_.conv_param.strides.size(); ++i) {
     output_shape.push_back(DeformableConvOutputSize(in_dims[i + 2],
                                           filter_dims[i + 2],
                                           dilations[i],
-                                          paddings[i],
-                                          param_.strides[i]));
+                                          paddings[2 * i],
+                                          paddings[2 * i + 1],
+                                          param_.conv_param.strides[i]));
   }
 
   // Set output dims

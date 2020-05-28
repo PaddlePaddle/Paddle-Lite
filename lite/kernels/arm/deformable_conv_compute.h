@@ -32,7 +32,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 
   virtual void ReInitWhenNeeded() {
     auto& param = this->template Param<param_t>();
-    auto w_dims = param.filter->dims();
+    auto w_dims = param.conv_param.filter->dims();
     auto& ctx = this->ctx_->template As<ARMContext>();
     auto o_dims = param.output->dims();
     int n = o_dims[2] * o_dims[3];

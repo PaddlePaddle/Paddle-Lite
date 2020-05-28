@@ -78,18 +78,18 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* in_data = param.x->data<float>();
-  const auto* filter_data = param.filter->data<float>();
+  const auto* filter_data = param.conv_param.filter->data<float>();
   const auto* offset_data = param.offset->data<float>();
   const auto* mask_data = param.mask->data<float>();
   float* out_data = param.output->mutable_data<float>();
 
   auto in_dims = param.x->dims();
-  auto filter_dims = param.filter->dims();
+  auto filter_dims = param.conv_param.filter->dims();
   auto out_dims = param.output->dims();
-  auto stride = param.strides;
-  auto paddings = param.paddings;
-  auto dilation = param.dilations;
-  auto group = param.groups;
+  auto stride = param.conv_param.strides;
+  auto paddings = *param.conv_param.paddings;
+  auto dilation = *param.conv_param.dilations;
+  auto group = param.conv_param.groups;
   auto deformable_group = param.deformable_groups;
 
   auto num = in_dims[0];
@@ -101,8 +101,8 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto kw = filter_dims[3];
   auto hout = out_dims[2];
   auto wout = out_dims[3];
-  bool is_bias = param.bias ? true : false;
-  const float* bias = param.bias ? param.bias->data<float>() : nullptr;
+  bool is_bias = param.conv_param.bias ? true : false;
+  const float* bias = param.conv_param.bias ? param.conv_param.bias->data<float>() : nullptr;
 
   auto in_c_group = cin / group;
   auto out_c_group = cout / group;
@@ -139,19 +139,19 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                             * hout + ih) * wout + iw;
                             const float offset_h = offset_data_ptr[data_offset_h_ptr];
                             const float offset_w = offset_data_ptr[data_offset_w_ptr];
-                            const float im_w = iw * stride[1] - paddings[1] + kw * dilation[1] + offset_w;
+                            const float im_w = iw * stride[1] - paddings[2] + kw * dilation[1] + offset_w;
                             const float im_h = ih * stride[0] - paddings[0] + kh * dilation[0] + offset_h;
                             if (im_h > -1 && im_h < hin && im_w > -1 && im_w < win) {
                                 // get data
                                 const float map_h = kh * dilation[0] + offset_h;
                                 const float map_w = kw * dilation[1] + offset_w;
                                 const int cur_height = hin - (ih * stride[0] - paddings[0]);
-                                const int cur_width = win - (iw * stride[1] - paddings[1]);
+                                const int cur_width = win - (iw * stride[1] - paddings[2]);
 
                                 const float* in_data_offset = in_data + n * c_in_size
                                                                 + (g * in_c_group + ic) * hin * win 
                                                                 + (ih * stride[0] - paddings[0]) * win 
-                                                                + (iw * stride[1] - paddings[1]);
+                                                                + (iw * stride[1] - paddings[2]);
 
                                 int out_idx = n * c_in_size * kernel_size + g * in_c_group * kernel_size * in_size
                                                 + ic * kernel_size * in_size + ((fh * kw + fw) * ih + ih) * win + iw;
@@ -185,7 +185,20 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_trans_weights_) {
     filter_data = weights_.data<float>();
   }
-  for (int b = 0; b < num; ++b) {
+  lite::arm::math::conv_im2col_gemm(col_data,
+                                    out_data,
+                                    num,
+                                    cout,
+                                    hout,
+                                    wout,
+                                    cin,
+                                    hin,
+                                    win,
+                                    filter_data,
+                                    bias,
+                                    param.conv_param,
+                                    &ctx);
+  /*for (int b = 0; b < num; ++b) {
       for (int g = 0; g < group; ++g) {
           float* dout_group = out_data + (b * cout + g * m) * out_size;
           const float* din_group = col_data + (b * cin + g * in_c_group) * in_size;
@@ -200,11 +213,11 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                     k,
                     is_bias,
                     bias_group,
-                    param.activation_param.has_active,
-                    param.activation_param.active_type,
+                    param.conv_param.activation_param.has_active,
+                    param.conv_param.activation_param.active_type,
                     &ctx,
-                    param.activation_param.Relu_clipped_coef,
-                    param.activation_param.Leaky_relu_alpha);
+                    param.conv_param.activation_param.Relu_clipped_coef,
+                    param.conv_param.activation_param.Leaky_relu_alpha);
           } else {
               int ldb = n;
               lite::arm::math::sgemm_prepack(false,
@@ -219,11 +232,12 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                             n,
                             bias_group,
                             is_bias,
-                            param.activation_param,
+                            param.conv_param.activation_param,
                             &ctx);
           }
       }
   }
+  */
  delete[] col_data;
 }
 }  // namespace arm

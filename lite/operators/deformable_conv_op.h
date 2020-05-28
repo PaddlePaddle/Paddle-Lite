@@ -72,17 +72,32 @@ class DeformableConvOpLite : public OpLite {
     auto Out = op_desc.Output("Output").front();
 
     param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
-    param_.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
     param_.mask = scope->FindVar(Mask)->GetMutable<lite::Tensor>();
     param_.offset = scope->FindVar(Offset)->GetMutable<lite::Tensor>();
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
-
-    param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
-    param_.groups = op_desc.GetAttr<int>("groups");
     param_.deformable_groups = op_desc.GetAttr<int>("deformable_groups");
-    param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
     param_.im2col_step =  op_desc.GetAttr<int>("im2col_step");
+
+    param_.conv_param.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
+    param_.conv_param.strides = op_desc.GetAttr<std::vector<int>>("strides");
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+    param_.conv_param.groups = op_desc.GetAttr<int>("groups");
+    param_.conv_param.dilations = std::make_shared<std::vector<int>>(dilations);
+
+    // 2-pad to 4-pad
+    if (paddings.size() == 2L) {
+      for (size_t i = 0; i < param_.conv_param.strides.size(); ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings.size() != 4L) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the input size.";
+      }
+    }
+    param_.conv_param.paddings = std::make_shared<std::vector<int>>(paddings);
 
     // optional params
     std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
@@ -92,25 +107,25 @@ class DeformableConvOpLite : public OpLite {
       if (bias_arguments.size() > 0) {
         auto bias_var = scope->FindVar(bias_arguments.front());
         if (bias_var != nullptr) {
-          param_.bias =
+          param_.conv_param.bias =
               const_cast<lite::Tensor*>(&(bias_var->Get<lite::Tensor>()));
         }
       }
     }
     if (op_desc.HasAttr("with_act") && op_desc.GetAttr<bool>("with_act")) {
-      param_.activation_param.has_active = true;
+      param_.conv_param.activation_param.has_active = true;
       auto act_type = op_desc.GetAttr<std::string>("act_type");
       if (act_type == "relu") {
-        param_.activation_param.active_type = lite_api::ActivationType::kRelu;
-        param_.fuse_relu = true;
+        param_.conv_param.activation_param.active_type = lite_api::ActivationType::kRelu;
+        param_.conv_param.fuse_relu = true;
       } else if (act_type == "relu6") {
-        param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
-        param_.activation_param.Relu_clipped_coef =
+        param_.conv_param.activation_param.active_type = lite_api::ActivationType::kRelu6;
+        param_.conv_param.activation_param.Relu_clipped_coef =
             op_desc.GetAttr<float>("fuse_brelu_threshold");  // 6.f
       } else if (act_type == "leaky_relu") {
-        param_.activation_param.active_type =
+        param_.conv_param.activation_param.active_type =
             lite_api::ActivationType::kLeakyRelu;
-        param_.activation_param.Leaky_relu_alpha =
+        param_.conv_param.activation_param.Leaky_relu_alpha =
             op_desc.GetAttr<float>("leaky_relu_alpha");
       } else {
         CHECK(false)
