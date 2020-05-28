@@ -14,8 +14,8 @@
 
 #pragma once
 
+#include <map>
 #include <string>
-#include <unordered_map>
 
 #include "lite/core/tensor.h"
 
@@ -38,7 +38,7 @@ class Debugger {
   }
 
  private:
-  std::unordered_map<std::string, bool> op_config;
+  std::map<std::string, bool> op_config;
   Debugger() {
     op_config["concat"] = true;
     op_config["pooling"] = true;

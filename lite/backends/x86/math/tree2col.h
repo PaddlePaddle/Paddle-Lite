@@ -15,7 +15,7 @@
 #pragma once
 
 #include <array>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/core/context.h"

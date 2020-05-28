@@ -44,7 +44,7 @@ bool ReduceProdOpLite::InferShapeImpl() const {
     }
     CHECK_OR_FALSE(static_cast<size_t>(dim[i]) < x_rank);
   }
-  std::sort(dim.begin(), dim.end());
+  std::stable_sort(dim.begin(), dim.end());
 
   if (reduce_all || dim.size() == 0) {
     if (keep_dim) {

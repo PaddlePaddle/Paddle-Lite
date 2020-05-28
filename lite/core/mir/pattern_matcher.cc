@@ -146,7 +146,7 @@ void PatternMatcher::ValidateByNodeRole(
                      subgraphs->end(),
                      [](const PatternMatcher::subgraph_t &subgraph) -> bool {
                        // Collect the inlinks and outlinks.
-                       std::unordered_set<Node *> ios;
+                       std::set<Node *> ios;
                        for (auto &item : subgraph) {
                          ios.insert(item.second);
                        }
@@ -170,7 +170,7 @@ void PatternMatcher::ValidateByNodeRole(
 }
 
 struct HitGroup {
-  std::unordered_map<PMNode *, Node *> roles;
+  std::map<PMNode *, Node *> roles;
 
   bool Match(Node *node, PMNode *pat) {
     if (nodes_.count(node)) {
@@ -188,7 +188,7 @@ struct HitGroup {
   }
 
  private:
-  std::unordered_set<Node *> nodes_;
+  std::set<Node *> nodes_;
 };
 
 // Tell whether Node a links to b.
@@ -279,12 +279,13 @@ void PatternMatcher::UniquePatterns(
   if (subgraphs->empty()) return;
   std::vector<PatternMatcher::subgraph_t> result;
 
-  std::unordered_set<size_t> set;
+  std::set<size_t> set;
   std::hash<std::string> hasher;
   for (auto &g : *subgraphs) {
     // Sort the items in the sub-graph, and transform to a string key.
     std::vector<std::pair<PMNode *, Node *>> sorted_keys(g.begin(), g.end());
-    std::sort(sorted_keys.begin(), sorted_keys.end(), GraphItemLessThan());
+    std::stable_sort(
+        sorted_keys.begin(), sorted_keys.end(), GraphItemLessThan());
     STL::stringstream ss;
     for (auto &item : sorted_keys) {
       ss << reinterpret_cast<size_t>(item.first) << ":"
@@ -301,7 +302,7 @@ void PatternMatcher::UniquePatterns(
 
 void PatternMatcher::RemoveOverlappedMatch(std::vector<subgraph_t> *subgraphs) {
   std::vector<subgraph_t> result;
-  std::unordered_set<Node *> node_set;
+  std::set<Node *> node_set;
 
   for (const auto &subgraph : *subgraphs) {
     bool valid = true;
@@ -325,7 +326,7 @@ std::string PMPattern::DotString() const {
   Dot dot;
   int id = 0;
   // Create Nodes
-  std::unordered_map<PMNode *, std::string> node2dot;
+  std::map<PMNode *, std::string> node2dot;
   for (const auto &node : nodes()) {
     std::string node_id = string_format("Node%d", id++);
     dot.AddNode(node_id, {}, node->name());
@@ -519,7 +520,7 @@ bool HasInput(const Node &op, const std::string &argument) {
 }
 
 void GraphSafeRemoveNodes(SSAGraph *graph,
-                          const std::unordered_set<const Node *> &nodes) {
+                          const std::set<const Node *> &nodes) {
   for (auto *node : nodes) {
     graph->RemoveNode(node);
   }

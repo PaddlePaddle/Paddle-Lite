@@ -14,7 +14,7 @@
 
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
 #include <memory>
-#include <unordered_set>
+#include <set>
 #include <vector>
 #include "lite/utils/string.h"
 
@@ -78,7 +78,7 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
   }
 
   // delete nodes and edges
-  std::unordered_set<const Node*> nodes2rm = {
+  std::set<const Node*> nodes2rm = {
       input_scale_node, quant_node, output_scale_node, output_act_node};
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
@@ -365,7 +365,7 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     IR_NODE_LINK_TO(input_act_node, quantized_node);
   }
   // delete nodes and edges
-  std::unordered_set<const Node*> nodes2rm = {
+  std::set<const Node*> nodes2rm = {
       input_scale_node, quant_dequant_node, output_scale_node, output_act_node};
   GraphSafeRemoveNodes(graph, nodes2rm);
 }

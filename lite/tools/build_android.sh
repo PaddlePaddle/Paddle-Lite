@@ -1,5 +1,5 @@
 #!/bin/bash
-set +x
+set -x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
@@ -176,7 +176,7 @@ function make_full_publish_so {
 
   prepare_thirdparty
 
-  build_directory=$workspace/build.lite.android.$ARCH.$ARM_LANG
+  build_directory=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
 
   if [ -d $build_directory ]
   then
@@ -202,7 +202,7 @@ function make_full_publish_so {
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
-      -DARM_TARGET_LANG=$ARM_LANG \
+      -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 

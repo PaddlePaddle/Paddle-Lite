@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
@@ -175,7 +175,7 @@ class Graph {
   xtcl::network::xTensorCompiler::ParamNDArrayMap params_;
 
  private:
-  std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
+  std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
 };
 
 }  // namespace xpu

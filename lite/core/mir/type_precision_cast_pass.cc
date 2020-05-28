@@ -138,7 +138,7 @@ void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // record the copied node.
-  std::unordered_map<std::string, Node*> cast_nodes;
+  std::map<std::string, Node*> cast_nodes;
 
   for (auto& node : nodes) {
     if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
@@ -153,7 +153,7 @@ void PrecisionCastPass::ComplementInputs(
     SSAGraph* graph,
     Node* inst_node,
     Node* in,
-    std::unordered_map<std::string, Node*>* cast_nodes) {
+    std::map<std::string, Node*>* cast_nodes) {
   // If this input is out of date.
   if (inst_node->inlinks.end() ==
       std::find(inst_node->inlinks.begin(), inst_node->inlinks.end(), in))
@@ -194,14 +194,13 @@ void PrecisionCastPass::ComplementInputs(
   }
 }
 
-void PrecisionCastPass::AddCastInst(
-    const Type& from,
-    const Type& to,
-    Node* in,
-    SSAGraph* graph,
-    Node* inst_node,
-    std::unordered_map<std::string, Node*>* cast_nodes,
-    const std::vector<Place>& valid_places) {
+void PrecisionCastPass::AddCastInst(const Type& from,
+                                    const Type& to,
+                                    Node* in,
+                                    SSAGraph* graph,
+                                    Node* inst_node,
+                                    std::map<std::string, Node*>* cast_nodes,
+                                    const std::vector<Place>& valid_places) {
   CHECK(!valid_places.empty()) << "valid_place should be set";
 
   // var -> new_transform_op -> new_var -> inst
