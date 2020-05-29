@@ -3,7 +3,7 @@ set -ex
 
 # global variables with default value
 ASCEND_HOME="/usr/local/Ascend"    # Ascend SDK root directory
-TARGET_NAME="test_subgraph_pass"    # default target
+TARGET_NAME="test_kernel_activation_compute"    # default target
 BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF
 
@@ -80,7 +80,7 @@ function build_hw_ascend_npu {
         -DWITH_TESTING=${WITH_TESTING} \
         -DASCEND_HOME=${HW_ASCEND_NPU_SDK_ROOT}
 
-    make -j$NUM_CORES_FOR_COMPILE
+    make $TARGET_NAME -j2
 
     cd -
     echo "Done"

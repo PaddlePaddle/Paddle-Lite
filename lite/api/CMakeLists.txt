@@ -69,7 +69,7 @@ if (WITH_TESTING)
       XPU_DEPS ${xpu_kernels}
       BM_DEPS ${bm_kernels}
       HW_ASCEND_NPU_DEPS ${hw_ascend_npu_kernels}
-      # MLU_DEPS ${mlu_kernels}
+      MLU_DEPS ${mlu_kernels}
     )
 endif()
 if(LITE_WITH_FPGA)

@@ -16,7 +16,7 @@
 #include <map>
 #include <string>
 #include "ge/ge_api_types.h"
-#include "lite/backends/hw_ascend_npu/runtime.h"
+#include "lite/backends/hw_ascend_npu/build.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -26,31 +26,90 @@ std::shared_ptr<HWAscendNPURuntime> Device::Build(
     std::vector<ge::Operator>& input_nodes,  // NOLINT
     std::vector<ge::Operator>& output_nodes  // NOLINT
     ) {
-  VLOG(3) << "[HWAscendNPU] Build model";
-  // Build the IR graph to the om model
-  ge::Graph ir_graph("graph");
-  ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
-  ge::ModelBufferData model;
-
-  std::map<std::string, std::string> build_options;
-  build_options.insert({ge::ir_option::EXEC_DISABLE_REUSED_MEMORY, "1"});
-
-  ge::graphStatus ret = aclgrphBuildModel(ir_graph, build_options, model);
-
-  if (ret != ge::GRAPH_SUCCESS) {
-    LOG(ERROR) << "[HWAscendNPU] Build model failed, error code: " << ret;
+  std::shared_ptr<ge::ModelBufferData> model_data =
+      paddle::lite::hw_ascend_npu::Build(input_nodes, output_nodes);
+  if (model_data == nullptr) {
+    LOG(ERROR) << "[HWAscendNPU] Build model failed";
     return nullptr;
   }
+  LOG(INFO) << "[HWAscendNPU] Build model success";
 
+  if (!inited_) {
+    if (0 == InitDevice()) {
+      LOG(INFO) << "Init success.";
+      inited_ = true;
+    }
+  }
   std::shared_ptr<HWAscendNPURuntime> model_runtime(
-      new HWAscendNPURuntime(model.data, model.length));
+      new HWAscendNPURuntime(model_data->data, model_data->length));
   CHECK(model_runtime != nullptr);
   if (!model_runtime->model_loaded()) {
     LOG(ERROR) << "[HWAscendNPU]: Can not create model runtime instance";
     return nullptr;
   }
-  VLOG(3) << "[HWAscendNPU]: Build done";
+  LOG(INFO) << "[HWAscendNPU]: Build done";
   return model_runtime;
+}
+
+int Device::InitDevice() {
+  const char* acl_conf = "/usr/local/acl.json";
+  aclError ret = aclInit(acl_conf);
+  if (ret != ACL_ERROR_NONE) {
+    LOG(ERROR) << "[HWAscendNPU] acl init failed";
+    return -1;
+  }
+
+  // open device
+  ret = aclrtSetDevice(device_id_);
+  if (ret != ACL_ERROR_NONE) {
+    LOG(ERROR) << "[HWAscendNPU] acl open device " << device_id_ << " failed";
+    return -1;
+  }
+
+  ret = aclrtCreateContext(&context_ptr_, device_id_);
+  if (ret != ACL_ERROR_NONE) {
+    LOG(ERROR) << "acl create context failed";
+    return -1;
+  }
+
+  // create stream
+  ret = aclrtCreateStream(&stream_ptr_);
+  if (ret != ACL_ERROR_NONE) {
+    LOG(ERROR) << "[HWAscendNPU] acl create stream failed";
+    return -1;
+  }
+
+  // get run mode
+  aclrtGetRunMode runMode;
+  ret = aclrtGetMode(&runMode);
+  if (ret != ACL_ERROR_NONE) {
+    LOG(ERROR) << "[HWAscendNPU] acl get run mode failed";
+    return -1;
+  }
+  is_devcie_ = (runMode == ACL_DEVICE);
+  LOG(INFO) << "[HWAscendNPU] Hardware initialization done";
+  return 0;
+}
+
+void Device::ReleaseDevice() {
+  aclError ret;
+  if (stream_ptr_ != nullptr) {
+    ret = aclrtDestroyStream(stream_ptr_);
+    if (ret != ACL_ERROR_NONE) {
+      LOG(ERROR) << "[HWAscendNPU] destroy stream failed";
+    }
+    stream_ptr_ = nullptr;
+  }
+  LOG(INFO) << "[HWAscendNPU] end to destroy stream";
+
+  if (context_ptr_ != nullptr) {
+    ret = aclrtDestroyContext(context_ptr_);
+    if (ret != ACL_ERROR_NONE) {
+      LOG(ERROR) << "[HWAscendNPU] destroy context failed";
+    }
+    context_ptr_ = nullptr;
+  }
+  LOG(INFO) << "[HWAscendNPU] Release device successfully";
 }
 
 }  // namespace hw_ascend_npu

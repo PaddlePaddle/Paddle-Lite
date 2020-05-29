@@ -30,7 +30,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[HWAscendNPU] Converting " + op_type + "...";
+  LOG(INFO) << "[HWAscendNPU] Converting " + op_type + "...";
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
@@ -64,28 +64,35 @@ int ActConverter<ge::op::Activation>(void* ctx,
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[HWAscendNPU] Converting " + op_type + "...";
+  LOG(INFO) << "[HWAscendNPU] Converting " + op_type + "...";
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
+  LOG(INFO) << "[HWAscendNPU] xname: " << x_name << ", dims: " << x_dims;
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
+    LOG(INFO) << "[HWAscendNPU] graph has node: " << x_name;
     x_node = graph->Get(x_name);
   } else {
+    LOG(INFO) << "[HWAscendNPU] graph does no have node: " << x_name;
     x_node = graph->Add(x_name, *x);
   }
+  LOG(INFO) << "[HWAscendNPU] out name: " << out_name;
 
+#if 0
   // Act node
   auto act_node = graph->template Add<ge::op::Activation>(out_name);
   auto act_op = act_node->template data<ge::op::Activation>();
   act_op->set_input_x(*x_node->data());
   // TODO(hong19860320) set the coef value for act Ops, such as leaky_relu,
   // clipped_relu etc.
+  LOG(INFO) << "[HWAscendNPU] activation mode: " << op_type
+      << ", type: " << CvtActMode(op_type);
   act_op->set_attr_mode(CvtActMode(op_type));
   if (op_type == "relu_clipped") {
     auto Relu_clipped_coef = op_info->GetAttr<float>("Relu_clipped_coef");
@@ -94,6 +101,12 @@ int ActConverter<ge::op::Activation>(void* ctx,
     float Relu_clipped_coef = 6.f;
     act_op->set_attr_coef(Relu_clipped_coef);
   }
+#else
+  // Act node
+  auto act_node = graph->template Add<ge::op::Relu>(out_name);
+  auto act_op = act_node->template data<ge::op::Relu>();
+  act_op->set_input_x(*x_node->data());
+#endif
   return SUCCESS;
 }
 

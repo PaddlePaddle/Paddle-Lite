@@ -105,15 +105,19 @@ bool Engine::InputShapeChanged() {
 }
 
 int Engine::Launch() {
+  LOG(INFO) << "[HWAscendNPU] in Launch, start to build if needed";
   // Rebuild device program when the shapes of input tensors have been changed.
   if (CHECK_SUCCESS(build_device_program_status_) &&
       CHECK_REBUILD_WHEN_SHAPE_CHANGED(build_device_program_status_) &&
       InputShapeChanged()) {
     Build();
   }
+  LOG(INFO) << "[HWAscendNPU] launch program";
   if (CHECK_FAILED(build_device_program_status_)) {
+    LOG(INFO) << "[HWAscendNPU] launch original program";
     LaunchOriginProgram();
   } else {
+    LOG(INFO) << "[HWAscendNPU] launch device program";
     LaunchDeviceProgram();
   }
   return 0;

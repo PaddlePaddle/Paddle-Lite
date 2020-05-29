@@ -27,7 +27,8 @@ int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
   if (it != nodes_.end()) {
     // Only variable node can be shared with the same name
     if (!node->is_var() || !it->second.back()->is_var()) {
-      LOG(FATAL) << "[NPU] Const or data node " << name << " is redefined.";
+      LOG(FATAL) << "[HWAscendNPU] Const or data node " << name
+                 << " is redefined.";
       return -1;
     }
   } else {
@@ -65,6 +66,13 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  PrecisionType precision,
                                  DataLayoutType layout) {
   auto node = Add<ge::op::Data>(name, precision, layout);
+  std::stringstream iss;
+  iss << "[HWAscendNPU] Add data node, shape: ";
+  for (auto& s : shape) {
+    iss << s << ",";
+  }
+  iss << " name: " << name;
+  LOG(INFO) << iss.str();
   ge::TensorDesc desc(
       ge::Shape(shape), CvtDataLayoutType(layout), CvtPrecisionType(precision));
   node->data<ge::op::Data>()->update_input_desc_data(desc);

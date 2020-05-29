@@ -293,6 +293,7 @@ TEST(Activation_relu, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_HW_ASCEND_NPU)
   place = TARGET(kHWAscendNPU);
+  std::cout << "-----------test relu with hw_ascend_npu" << std::endl;
 #else
   return;
 #endif

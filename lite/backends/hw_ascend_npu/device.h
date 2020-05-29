@@ -18,8 +18,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "ge/ge_ir_build.h"  // NOLINT
+#include "ge/ge_ir_build.h"
 #include "lite/backends/hw_ascend_npu/runtime.h"
+#include "lite/utils/cp_logging.h"
 namespace paddle {
 namespace lite {
 namespace hw_ascend_npu {
@@ -30,12 +31,11 @@ class Device {
     static Device x;
     return x;
   }
-  Device() {}
+  Device() : inited_(false) {}
 
-  int freq_level() { return freq_level_; }
-  int framework_type() { return framework_type_; }
-  int model_type() { return model_type_; }
-  int device_type() { return device_type_; }
+  ~Device() { ReleaseDevice(); }
+
+  bool is_device() const { return is_devcie_; }
 
   // Build the IR graph to om model, return a HWAscendNPURuntime instance to
   // load om model and run inference.
@@ -45,10 +45,15 @@ class Device {
       );                                       // NOLINT
 
  private:
-  int freq_level_{3};
-  int framework_type_{0};
-  int model_type_{0};
-  int device_type_{0};
+  int InitDevice();
+  void ReleaseDevice();
+
+ private:
+  bool inited_{false};
+  int device_id_{0};
+  bool is_devcie_{false};
+  aclrtContext context_ptr_{nullptr};
+  aclrtStream stream_ptr_{nullptr};
 };
 
 }  // namespace hw_ascend_npu

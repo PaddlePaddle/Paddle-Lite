@@ -32,22 +32,31 @@ int SubgraphEngine::BuildDeviceProgram() {
   // the HWAscendNPU IR graph
   subgraph::hw_ascend_npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
+  LOG(INFO) << "[HWAscendNPU] Build device program";
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
+    LOG(INFO) << "[HWAscendNPU] trying to convert OP: " << op_type;
     if (!bridges.Exists(op_type, TARGET(kHWAscendNPU))) {
+      LOG(ERROR) << "[HWAscendNPU] OP: " << op_type
+                 << " does not exist for target HWAscendNPU";
       return subgraph::FAILED;
     }
+    LOG(INFO) << "[HWAscendNPU] OP: " << op_type << " exists for HWAscendNPU";
     auto kernel = inst.kernel();
     status |= bridges.Select(op_type, TARGET(kHWAscendNPU))(
         reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
+      LOG(ERROR) << "[HWAscendNPU] OP: " << op_type << " select kernel failed";
       return subgraph::FAILED;
     }
+    LOG(INFO) << "[HWAscendNPU] OP: " << op_type
+              << " select kernel for HWAscendNPU";
   }
+  LOG(INFO) << "[HWAscendNPU] Graph size: " << graph.size();
   // Collect the valid input and output nodes in the HiAI IR graph and update
   // the input and output names
   device_inames_.clear();
@@ -55,8 +64,12 @@ int SubgraphEngine::BuildDeviceProgram() {
   std::vector<ge::Operator> device_inodes;
   std::vector<ge::Operator> device_onodes;
   for (auto& input_name : input_names_) {
+    LOG(INFO) << "[HWAscendNPU] input name: " << input_name;
     if (graph.Has(input_name)) {
+      LOG(INFO) << "[HWAscendNPU] Graph has input name: " << input_name;
       if (graph.Get(input_name)->is_data()) {
+        LOG(INFO) << "[HWAscendNPU] the current input name: " << input_name
+                  << " is data";
         device_inodes.push_back(*graph.Get(input_name)->data());
         device_inames_.push_back(input_name);
       } else {
@@ -82,10 +95,15 @@ int SubgraphEngine::BuildDeviceProgram() {
   CHECK(!device_onames_.empty())
       << "[HWAscendNPU] No output nodes found for building NPU model";
 
+  LOG(INFO) << "[HWAscendNPU] Graph size to build: " << graph.size();
+
   // Build the IR graph to om model as the device program
   if (device_program_map_.count(inputs_shape_) > 0) {
     return status;
   }
+  LOG(INFO) << "[HWAscendNPU] Start to build, device_inodes = "
+            << device_inodes.size()
+            << ", device_onodes = " << device_onodes.size();
   auto device_client =
       lite::hw_ascend_npu::Device::Global().Build(device_inodes, device_onodes);
   if (device_client == nullptr) {
@@ -188,12 +206,14 @@ int SubgraphEngine::LaunchDeviceProgram() {
   // tensors
   auto device_program = device_program_map_[inputs_shape_];
   int ret = 0;
+  LOG(INFO) << "[HWAscendNPU] start to set input...";
 
   ret = device_program->client->SetInput(origin_itensors_,
                                          device_program->origin_idims);
   if (ret != 0) {
     return ret;
   }
+  LOG(INFO) << "[HWAscendNPU] start to create output...";
 
   device_program->client->CreateOutput(device_program->origin_odims);
 
@@ -205,10 +225,11 @@ int SubgraphEngine::LaunchDeviceProgram() {
   };
   auto start_time = GetCurrentUS();
   CHECK_EQ(device_program->client->Process(), 0);
-  VLOG(3) << "[HWAscendNPU] Process cost " << GetCurrentUS() - start_time
-          << " us";
+  LOG(INFO) << "[HWAscendNPU] Process cost " << GetCurrentUS() - start_time
+            << " us";
 
   device_program->client->GetOutput(&origin_otensors_);
+  LOG(INFO) << "[HWAscendNPU] Get ouput done";
 
   return 0;
 }
@@ -238,7 +259,9 @@ void SubgraphCompute::PrepareForRun() {
 }
 
 void SubgraphCompute::Run() {
+  LOG(INFO) << "[HWAscendNPU] Start to run";
   CHECK(engine_);
+  LOG(INFO) << "[HWAscendNPU] Start to call Launch";
   engine_->Launch();
 }
 

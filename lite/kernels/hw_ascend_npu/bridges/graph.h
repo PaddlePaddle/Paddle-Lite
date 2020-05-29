@@ -181,13 +181,14 @@ class Graph {
   }
 
   std::shared_ptr<Node> Get(std::string name) {
-    CHECK(Has(name)) << "[NPU] Node " << name << " not found.";
+    CHECK(Has(name)) << "[HWAscendNPU] Node " << name << " not found.";
     return nodes_.at(name).back();
   }
 
   bool Has(const std::string& name) {
     return nodes_.find(name) != nodes_.end();
   }
+  size_t size() const { return nodes_.size(); }
 
  private:
   std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;

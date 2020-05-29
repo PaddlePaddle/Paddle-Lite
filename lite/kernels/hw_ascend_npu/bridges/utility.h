@@ -47,7 +47,7 @@ ge::Tensor CvtTensor(const Tensor& in_tensor,
                      std::vector<int64_t> out_shape = {},
                      DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
-int CvtActMode(std::string act_type);
+int CvtActMode(const std::string& act_type);
 }  // namespace hw_ascend_npu
 }  // namespace subgraph
 }  // namespace lite

@@ -42,11 +42,14 @@ int HWAscendNPURuntime::LoadModelFromMem(
                                         &model_size_,
                                         &model_weights_size_);
   if (ret != ACL_ERROR_NONE) {
-    LOG(ERROR) << "[HWAscendNPU]: Can query size from a built model buffer, "
+    LOG(ERROR) << "[HWAscendNPU]: Can't query size from a built model buffer, "
                   "error code: "
-               << ret;
+               << ret << ", model buffer size: " << model_buff_size;
     return ret;
   }
+
+  LOG(INFO) << "[HWAscendNPU]: Query model info success, model_size: "
+            << model_size_ << ", model weights_size_: " << model_weights_size_;
 
   ret = aclrtMalloc(&model_ptr_, model_size_, ACL_MEM_MALLOC_NORMAL_ONLY);
   if (ret != ACL_ERROR_NONE) {
