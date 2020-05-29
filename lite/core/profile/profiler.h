@@ -78,6 +78,13 @@ struct OpCharacter {
     }
     return dim_str;
   }
+
+  std::string str() {
+    std::string str{""};
+    str += kernel_name + "/" + kernel_func_name + "/" + remark + "/" +
+           input_shape + "/" + filter_shape + "/" + output_shape;
+    return str;
+  }
 };
 
 class StatisUnit final {
@@ -102,8 +109,10 @@ class Profiler final {
   void StopTiming(Type type, const int index, KernelContext* ctx);
   std::string Summary(Type type, bool concise = true, size_t warm_up = 10);
   int GetKernelFuncCalledTimes(const std::string& op_type,
+                               const std::string& kernel_attr,
                                const std::string& kernel_func_name);
   float GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                 const std::string& kernel_attr,
                                  const std::string& kernel_func_name);
   OpCharacter* GetOpCharacter(const size_t index);
 
