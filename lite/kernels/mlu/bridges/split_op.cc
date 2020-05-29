@@ -55,8 +55,7 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto dims = x_dims.size();
   int axis = (param_axis < 0) ? (param_axis + dims) : param_axis;
   CHECK_LE(axis, 4) << "Unsupport dims in mlu concat";
-  int nchw_to_nhwc_axis_map[4] = {0, 3, 1, 2};
-  int nhwc_axis = nchw_to_nhwc_axis_map[axis];
+  int nhwc_axis = GetAxisNHWC2NCHW<int>(dims)[axis];
 
   CHECK(graph->HasNode(x_var_name));
   auto input_tensor = graph->GetNode(x_var_name);
