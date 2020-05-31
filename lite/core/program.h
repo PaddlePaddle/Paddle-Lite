@@ -38,11 +38,12 @@ struct Program {
   explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
   Program(const cpp::ProgramDesc& desc,
           const std::shared_ptr<Scope>& root,
-          const std::vector<Place>& valid_places)
+          const std::vector<Place>& valid_places,
+          const std::vector<std::string>& var_names = {})
       : scope_(root), valid_places_(valid_places), desc_(desc) {
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
-    PrepareWorkspace(desc);
+    PrepareWorkspace(desc, var_names);
     VLOG(4) << "build desc";
     Build(desc);
     VLOG(4) << "build desc finished";
@@ -72,7 +73,7 @@ struct Program {
   // Build from a program and scope.
   void Build(const cpp::ProgramDesc& program);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program);
+  void PrepareWorkspace(const cpp::ProgramDesc& program, const std::vector<std::string>& var_names = {});
 
  private:
   std::unordered_map<std::string, PrecisionType> var_data_type_;

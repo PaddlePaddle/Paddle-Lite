@@ -52,9 +52,10 @@ class LITE_API Predictor {
       : scope_(root_scope) {}
   Predictor(const std::shared_ptr<cpp::ProgramDesc>& desc,
             const std::shared_ptr<Scope>& root,
-            const std::vector<Place>& valid_places)
+            const std::vector<Place>& valid_places,
+            const std::vector<std::string>& var_names = {})
       : program_desc_(desc), scope_(root) {
-    Program program(*desc.get(), scope_, valid_places);
+    Program program(*desc.get(), scope_, valid_places, var_names);
     optimizer_ = Optimizer(std::move(program), valid_places);
     exec_scope_ = optimizer_.exec_scope();
     valid_places_ = valid_places;
@@ -93,7 +94,7 @@ class LITE_API Predictor {
     //    CHECK(scope_) << "Both program and scope of current predicotr should
     //    be not be nullptr in Clone mode.";
     auto predictor =
-        std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
+        std::make_shared<Predictor>(program_desc_, scope_, valid_places_, var_names);
 
     for (auto i : var_names) {
       predictor->exec_scope_->LocalVar(i);
