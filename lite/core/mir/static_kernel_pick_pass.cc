@@ -48,6 +48,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
     std::map<std::string, PrecisionType> in_types;
     std::map<std::string, PrecisionType> out_types;
+    // threse precision info store in __model__ file, if selected fp16 kernel,
+    // the output precision should be changed
     for (std::list<Node*>::iterator i = node.inlinks.begin();
          i != node.inlinks.end();
          ++i) {

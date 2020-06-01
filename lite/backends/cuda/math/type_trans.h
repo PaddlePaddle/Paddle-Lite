@@ -15,6 +15,7 @@
 #pragma once
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {
 namespace lite {
@@ -30,6 +31,12 @@ void fp32_to_int8_nhwc(int num,
                        int H,
                        int W,
                        cudaStream_t stream);
+
+void fp32_to_fp16(int num, const float* din, half* dout, cudaStream_t stream);
+void fp32_to_fp16(int num, const float* din, half* dout);
+
+void fp16_to_fp32(int num, const half* din, float* dout, cudaStream_t stream);
+void fp16_to_fp32(int num, const half* din, float* dout);
 
 }  // namespace math
 }  // namespace cuda
