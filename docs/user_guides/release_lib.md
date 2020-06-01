@@ -15,44 +15,50 @@
 
 | Arch  |with_extra|arm_stl|with_cv|下载|
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv7|OFF|c++_shared|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_shared.tiny_publish.tar.gz)|
-|armv7|OFF|c++_shared|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_shared.with_cv.tiny_publish.tar.gz)|
-|armv7|ON|c++_shared|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.tiny_publish.tar.gz)|
-|armv7|ON|c++_shared|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.with_cv.tiny_publish.tar.gz)|
-|armv7|OFF|c++_static|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_static.tiny_publish.tar.gz)|
-|armv7|OFF|c++_static|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_static.with_cv.tiny_publish.tar.gz)|
-|armv7|ON|c++_static|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.tiny_publish.tar.gz)|
-|armv7|ON|c++_static|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.with_cv.tiny_publish.tar.gz)|
-|armv8|OFF|c++_shared|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_shared.tiny_publish.tar.gz)|
-|armv8|OFF|c++_shared|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_shared.with_cv.tiny_publish.tar.gz)|
-|armv8|ON|c++_shared|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.tiny_publish.tar.gz)|
-|armv8|ON|c++_shared|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.with_cv.tiny_publish.tar.gz)|
-|armv8|OFF|c++_static|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_static.tiny_publish.tar.gz)|
-|armv8|OFF|c++_static|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_static.with_cv.tiny_publish.tar.gz)|
-|armv8|ON|c++_static|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.tiny_publish.tar.gz)|
-|armv8|ON|c++_static|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/Android/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.with_cv.tiny_publish.tar.gz)|
+|armv7|OFF|c++_shared|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_shared.CV_OFF.tar.gz)|
+|armv7|OFF|c++_shared|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_shared.CV_ON.tar.gz)|
+|armv7|ON|c++_shared|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.CV_OFF.tar.gz)|
+|armv7|ON|c++_shared|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_shared.with_extra.CV_ON.tar.gz)|
+|armv7|OFF|c++_static|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_static.CV_OFF.tar.gz)|
+|armv7|OFF|c++_static|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_static.CV_ON.tar.gz)|
+|armv7|ON|c++_static|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.CV_OFF.tar.gz)|
+|armv7|ON|c++_static|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv7.gcc.c++_static.with_extra.CV_ON.tar.gz)|
+|armv8|OFF|c++_shared|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_shared.CV_OFF.tar.gz)|
+|armv8|OFF|c++_shared|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_shared.CV_ON.tar.gz)|
+|armv8|ON|c++_shared|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.CV_OFF.tar.gz)|
+|armv8|ON|c++_shared|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.CV_ON.tar.gz)|
+|armv8|OFF|c++_static|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_static.CV_OFF.tar.gz)|
+|armv8|OFF|c++_static|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_static.CV_ON.tar.gz)|
+|armv8|ON|c++_static|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.CV_OFF.tar.gz)|
+|armv8|ON|c++_static|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/Android/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.CV_ON.tar.gz)|
 
 
 ## iOS
 
 |ARM Version|with_extra|with_cv|下载|
 |:-------:|:-----:|:-----:|:-----:|
-|armv7|OFF|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv7.tiny_publish.tar.gz)|
-|armv7|OFF|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv7.with_cv.tiny_publish.tar.gz)|
-|armv7|ON|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv7.with_cv.with_extra.tiny_publish.tar.gz)|
-|armv7|ON|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv7.with_extra.tiny_publish.tar.gz)|
-|armv8|OFF|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv8.tiny_publish.tar.gz)|
-|armv8|OFF|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv8.with_cv.tiny_publish.tar.gz)|
-|armv8|ON|OFF|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv8.with_cv.with_extra.tiny_publish.tar.gz)|
-|armv8|ON|ON|[release/v2.6](https://paddlelite-data.bj.bcebos.com/Release/2.6.0/iOS/inference_lite_lib.ios.armv8.with_extra.tiny_publish.tar.gz)|
+|armv7|OFF|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios.armv7.CV_OFF.tar.gz)|
+|armv7|OFF|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios.armv7.CV_ON.tar.gz)|
+|armv7|ON|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios.armv7.with_extra.CV_OFF.tar.gz)|
+|armv7|ON|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios.armv7.with_extra.CV_ON.tar.gz)|
+|armv8|OFF|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios64.armv8.CV_OFF.tar.gz)|
+|armv8|OFF|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios64.armv8.CV_ON.tar.gz)|
+|armv8|ON|OFF|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios64.armv8.with_extra.CV_OFF.tar.gz)|
+|armv8|ON|ON|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/iOS/inference_lite_lib.ios64.armv8.with_extra.CV_ON.tar.gz)|
+
+## x86
+
+|Operating System|下载|
+|:-------:|:-----:|
+|Ubuntu (Linux)|[release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/X86/Linux/inference_lite_lib.x86.linux.tar.gz)|
 
 
 ## opt 工具
 
 | 运行系统 |      下载       |
 | :---------: |  :--------------: |
-|    Linux    | [release/v2.3](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt) |
-|    MacOs   | [release/v2.3](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac) |
+|    Linux    | [release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/opt/opt) |
+|    MacOs   | [release/v2.6.1](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/opt/opt_mac) |
 
 ## 安装Paddle-Lite python 库方法
 
