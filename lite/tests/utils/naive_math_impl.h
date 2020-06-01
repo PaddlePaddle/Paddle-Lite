@@ -203,8 +203,8 @@ static void basic_gemv(int m,
         c[i] = tmp > (type2)0 ? tmp : (type2)0;
       } else if (flag_act == 2) {  // relu 6
         c[i] = tmp > (type2)0 ? tmp : (type2)0;
-        c[i] = c[i] < six ? c[i] : six;
-      } else if (flag_act == 4) {  // leakey relu
+        c[i] = c[i] < six ? c[i] : six;  // ut compute
+      } else if (flag_act == 4) {        // leakey relu
         c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
       }
     } else {
