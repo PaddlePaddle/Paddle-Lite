@@ -21,11 +21,11 @@ namespace lite {
 namespace cuda {
 namespace math {
 
-template <>
-bool BatchedGemm<float, float>::init(const bool trans_a,
-                                     const bool trans_b,
-                                     const int max_batch_size,
-                                     Context<TARGET(kCUDA)> *ctx) {
+template <typename PtypeIn, typename PtypeOut>
+bool BatchedGemm<PtypeIn, PtypeOut>::init(const bool trans_a,
+                                          const bool trans_b,
+                                          const int max_batch_size,
+                                          Context<TARGET(kCUDA)> *ctx) {
   if (cu_handle_ == nullptr) {
     this->exe_stream_ = ctx->exec_stream();
     CUBLAS_CALL(cublasCreate(&cu_handle_));
@@ -37,7 +37,7 @@ bool BatchedGemm<float, float>::init(const bool trans_a,
     cudaFree(A_);
   }
   cudaMalloc(reinterpret_cast<void **>(&A_),
-             3 * max_batch_size * sizeof(float *));
+             3 * max_batch_size * sizeof(PtypeIn *));
   return true;
 }
 
@@ -94,6 +94,58 @@ bool BatchedGemm<float, float>::run(const float alpha,
 }
 
 template <>
+bool BatchedGemm<half, half>::run(const half alpha,
+                                  const half beta,
+                                  const half *a[],
+                                  const half *b[],
+                                  half *c[],
+                                  const int m,
+                                  const int n,
+                                  const int k,
+                                  const int batch_size) {
+  CHECK(a != nullptr);
+  CHECK(b != nullptr);
+  CHECK(c != nullptr);
+  lda_ = (cu_trans_a_ == CUBLAS_OP_N) ? k : m;
+  ldb_ = (cu_trans_b_ == CUBLAS_OP_N) ? n : k;
+  ldc_ = n;
+  m_ = m;
+  n_ = n;
+  k_ = k;
+  cudaMemcpyAsync(A_,
+                  a,
+                  batch_size * sizeof(const half *),
+                  cudaMemcpyHostToDevice,
+                  exe_stream_);
+  cudaMemcpyAsync(A_ + batch_size,
+                  b,
+                  batch_size * sizeof(const half *),
+                  cudaMemcpyHostToDevice,
+                  exe_stream_);
+  cudaMemcpyAsync(A_ + batch_size * 2,
+                  c,
+                  batch_size * sizeof(half *),
+                  cudaMemcpyHostToDevice,
+                  exe_stream_);
+  CUBLAS_CALL(cublasHgemmBatched(cu_handle_,
+                                 cu_trans_b_,
+                                 cu_trans_a_,
+                                 n_,
+                                 m_,
+                                 k_,
+                                 &alpha,
+                                 const_cast<const half **>(A_ + batch_size),
+                                 ldb_,
+                                 const_cast<const half **>(A_),
+                                 lda_,
+                                 &beta,
+                                 A_ + batch_size * 2,
+                                 ldc_,
+                                 batch_size));
+  return true;
+}
+
+template <>
 bool BatchedGemm<float, float>::run(const float alpha,
                                     const float beta,
                                     const float *a[],
@@ -130,6 +182,47 @@ bool BatchedGemm<float, float>::run(const float alpha,
                                  batch_size));
   return true;
 }
+
+template <>
+bool BatchedGemm<half, half>::run(const half alpha,
+                                  const half beta,
+                                  const half *a[],
+                                  const int m,
+                                  const int n,
+                                  const int k,
+                                  const int batch_size) {
+  CHECK(a != nullptr);
+  lda_ = (cu_trans_a_ == CUBLAS_OP_N) ? k : m;
+  ldb_ = (cu_trans_b_ == CUBLAS_OP_N) ? n : k;
+  ldc_ = n;
+  m_ = m;
+  n_ = n;
+  k_ = k;
+  cudaMemcpyAsync(A_,
+                  a,
+                  3 * batch_size * sizeof(const half *),
+                  cudaMemcpyDefault,
+                  exe_stream_);
+  CUBLAS_CALL(cublasHgemmBatched(cu_handle_,
+                                 cu_trans_b_,
+                                 cu_trans_a_,
+                                 n_,
+                                 m_,
+                                 k_,
+                                 &alpha,
+                                 const_cast<const half **>(A_ + batch_size),
+                                 ldb_,
+                                 const_cast<const half **>(A_),
+                                 lda_,
+                                 &beta,
+                                 A_ + batch_size * 2,
+                                 ldc_,
+                                 batch_size));
+  return true;
+}
+
+template class BatchedGemm<float, float>;
+template class BatchedGemm<half, half>;
 
 }  // namespace math
 }  // namespace cuda

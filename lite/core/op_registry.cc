@@ -162,11 +162,15 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kCUDA, kFloat, kNCHW);
   INIT_FOR(kCUDA, kFloat, kNHWC);
   INIT_FOR(kCUDA, kInt8, kNCHW);
+  INIT_FOR(kCUDA, kFP16, kNCHW);
+  INIT_FOR(kCUDA, kFP16, kNHWC);
   INIT_FOR(kCUDA, kAny, kNCHW);
   INIT_FOR(kCUDA, kAny, kAny);
   INIT_FOR(kCUDA, kInt8, kNHWC);
   INIT_FOR(kCUDA, kInt64, kNCHW);
   INIT_FOR(kCUDA, kInt64, kNHWC);
+  INIT_FOR(kCUDA, kInt32, kNCHW);
+  INIT_FOR(kCUDA, kInt32, kNHWC);
 #endif
 
 #if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_MLU)
