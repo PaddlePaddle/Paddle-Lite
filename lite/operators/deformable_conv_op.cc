@@ -44,11 +44,11 @@ bool DeformableConvOpLite::CheckShape() const {
 }
 
 inline int DeformableConvOutputSize(int input_size,
-                          int filter_size,
-                          int dilation,
-                          int pad_left,
-                          int pad_right,
-                          int stride) {
+                                    int filter_size,
+                                    int dilation,
+                                    int pad_left,
+                                    int pad_right,
+                                    int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
   int output_size =
       (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
@@ -63,12 +63,13 @@ bool DeformableConvOpLite::InferShapeImpl() const {
   auto paddings = *param_.conv_param.paddings;
   auto dilations = *param_.conv_param.dilations;
   for (size_t i = 0; i < param_.conv_param.strides.size(); ++i) {
-    output_shape.push_back(DeformableConvOutputSize(in_dims[i + 2],
-                                          filter_dims[i + 2],
-                                          dilations[i],
-                                          paddings[2 * i],
-                                          paddings[2 * i + 1],
-                                          param_.conv_param.strides[i]));
+    output_shape.push_back(
+        DeformableConvOutputSize(in_dims[i + 2],
+                                 filter_dims[i + 2],
+                                 dilations[i],
+                                 paddings[2 * i],
+                                 paddings[2 * i + 1],
+                                 param_.conv_param.strides[i]));
   }
 
   // Set output dims
@@ -83,4 +84,5 @@ bool DeformableConvOpLite::InferShapeImpl() const {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(DeformableConv2d, paddle::lite::operators::DeformableConvOpLite);
+REGISTER_LITE_OP(DeformableConv2d,
+                 paddle::lite::operators::DeformableConvOpLite);

@@ -41,7 +41,7 @@ class DeformableConvOpLite : public OpLite {
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
-    auto filter_dims = param_.filter->dims();
+    auto filter_dims = param_.conv_param.filter->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
     ch->input_shape = ch->DimToStr(input_dims);
@@ -49,16 +49,16 @@ class DeformableConvOpLite : public OpLite {
     ch->filter_shape = ch->DimToStr(filter_dims);
     ch->remark =
         std::to_string(filter_dims[2]) + "x" + std::to_string(filter_dims[3]) +
-        "p" + std::to_string((*param_.paddings)[0]) + "s" +
-        std::to_string(param_.strides[0]) + "g" +
-        std::to_string(param_.groups) + "d" +
-        std::to_string((*param_.dilations)[0]) + (param_.bias ? "Bias" : "") +
-        ActivationTypeToStr(param_.activation_param.active_type);
+        "p" + std::to_string((*param_.conv_param.paddings)[0]) + "s" +
+        std::to_string(param_.conv_param.strides[0]) + "g" +
+        std::to_string(param_.conv_param.groups) + "d" +
+        std::to_string((*param_.conv_param.dilations)[0]) + (param_.conv_param.bias ? "Bias" : "") +
+        ActivationTypeToStr(param_.conv_param.activation_param.active_type);
     // MACs = 2.f * kw * kh * batchsize * out_c * out_h * out_w * in_c / group
     // GMACs = 1e-9f * MACs
     // GMACPS = 1e-6f * MACs / predict_ms
     ch->macs = 2.f * filter_dims[2] * filter_dims[3] *
-               output_dims.production() * input_dims[1] / param_.groups;
+               output_dims.production() * input_dims[1] / param_.conv_param.groups;
   }
 #endif
 
@@ -76,9 +76,10 @@ class DeformableConvOpLite : public OpLite {
     param_.offset = scope->FindVar(Offset)->GetMutable<lite::Tensor>();
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
     param_.deformable_groups = op_desc.GetAttr<int>("deformable_groups");
-    param_.im2col_step =  op_desc.GetAttr<int>("im2col_step");
+    param_.im2col_step = op_desc.GetAttr<int>("im2col_step");
 
-    param_.conv_param.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
+    param_.conv_param.filter =
+        scope->FindVar(Filter)->GetMutable<lite::Tensor>();
     param_.conv_param.strides = op_desc.GetAttr<std::vector<int>>("strides");
     auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
@@ -116,10 +117,12 @@ class DeformableConvOpLite : public OpLite {
       param_.conv_param.activation_param.has_active = true;
       auto act_type = op_desc.GetAttr<std::string>("act_type");
       if (act_type == "relu") {
-        param_.conv_param.activation_param.active_type = lite_api::ActivationType::kRelu;
+        param_.conv_param.activation_param.active_type =
+            lite_api::ActivationType::kRelu;
         param_.conv_param.fuse_relu = true;
       } else if (act_type == "relu6") {
-        param_.conv_param.activation_param.active_type = lite_api::ActivationType::kRelu6;
+        param_.conv_param.activation_param.active_type =
+            lite_api::ActivationType::kRelu6;
         param_.conv_param.activation_param.Relu_clipped_coef =
             op_desc.GetAttr<float>("fuse_brelu_threshold");  // 6.f
       } else if (act_type == "leaky_relu") {
@@ -129,7 +132,8 @@ class DeformableConvOpLite : public OpLite {
             op_desc.GetAttr<float>("leaky_relu_alpha");
       } else {
         CHECK(false)
-            << "The fused DeformableConv only supports fuse with relu and leaky relu";
+            << "The fused DeformableConv only supports fuse with relu"
+               "and leaky relu";
       }
     }
     return true;

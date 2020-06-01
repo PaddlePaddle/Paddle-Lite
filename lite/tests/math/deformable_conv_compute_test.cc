@@ -95,17 +95,17 @@ DDim compute_out_dim(const DDim& dim_in,
 
 #ifdef LITE_WITH_ARM
 void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
-                    const DDim& weight_dim,
-                    int group,
-                    const std::vector<int>& strides,
-                    const std::vector<int>& pads,
-                    const std::vector<int>& dilas,
-                    bool flag_bias,
-                    bool flag_relu,
-                    bool modulated,
-                    const std::vector<int>& thread_num,
-                    const std::vector<int>& power_mode,
-                    const float leakey_relu_scale) {
+                               const DDim& weight_dim,
+                               int group,
+                               const std::vector<int>& strides,
+                               const std::vector<int>& pads,
+                               const std::vector<int>& dilas,
+                               bool flag_bias,
+                               bool flag_relu,
+                               bool modulated,
+                               const std::vector<int>& thread_num,
+                               const std::vector<int>& power_mode,
+                               const float leakey_relu_scale) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -162,7 +162,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
       paddle::lite::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
-                                              PRECISION(kFloat)>
+                                                        PRECISION(kFloat)>
           deformableConv;
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
           new paddle::lite::KernelContext);
@@ -190,7 +190,8 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
         int num = dim_in[0];
         int in_size = dim_in[2] * dim_in[3];
         int kernel_size = weight_dim[2] * weight_dim[3];
-        param.offset->Resize({num, 2 * group * kernel_size, dim_in[2], dim_in[3]});
+        param.offset->Resize(
+            {num, 2 * group * kernel_size, dim_in[2], dim_in[3]});
         param.mask->Resize({num, group * kernel_size, dim_in[2], dim_in[3]});
         paddle::lite::fill_tensor_rand(*param.offset, -1.f, 1.f);
         paddle::lite::fill_tensor_rand(*param.mask, -1.f, 1.f);
@@ -198,7 +199,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
           continue;
         }
         if (dim_out[2] != dim_in[2] || dim_out[3] != dim_in[3]) {
-           continue;
+          continue;
         }
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
@@ -217,31 +218,31 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
           auto dout_basic = tout_basic.mutable_data<float>();
           LOG(INFO) << "flag_relu: " << flag_relu;
           deformable_conv_basic<float, float>(din,
-                                   offset_data,
-                                   mask_data,
-                                   dout_basic,
-                                   dim_in[0],
-                                   dim_out[1],
-                                   dim_out[2],
-                                   dim_out[3],
-                                   dim_in[1],
-                                   dim_in[2],
-                                   dim_in[3],
-                                   wptr,
-                                   bias_ptr,
-                                   group,
-                                   weight_dim[3],
-                                   weight_dim[2],
-                                   strides[1],
-                                   strides[0],
-                                   dilas[1],
-                                   dilas[0],
-                                   pads[2],
-                                   pads[0],
-                                   flag_bias,
-                                   flag_relu,
-                                   modulated);
-         }
+                                              offset_data,
+                                              mask_data,
+                                              dout_basic,
+                                              dim_in[0],
+                                              dim_out[1],
+                                              dim_out[2],
+                                              dim_out[3],
+                                              dim_in[1],
+                                              dim_in[2],
+                                              dim_in[3],
+                                              wptr,
+                                              bias_ptr,
+                                              group,
+                                              weight_dim[3],
+                                              weight_dim[2],
+                                              strides[1],
+                                              strides[0],
+                                              dilas[1],
+                                              dilas[0],
+                                              pads[2],
+                                              pads[0],
+                                              flag_bias,
+                                              flag_relu,
+                                              modulated);
+        }
         /// warm up
         for (int i = 0; i < FLAGS_warmup; ++i) {
           deformableConv.Launch();
@@ -256,8 +257,9 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
 
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
                       weight_dim[3] / param.conv_param.groups;
-        LOG(INFO) << "deformable conv fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+        LOG(INFO) << "deformable conv fp32: input shape: " << dim_in
+                  << ", output shape" << dim_out
+                  << ",running time, avg: " << t0.LapTimes().Avg()
                   << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
                   << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
@@ -285,31 +287,30 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
               LOG(FATAL) << "test fp32 deformable conv: input: " << dim_in
                          << ", output: " << dim_out
                          << ", weight dim: " << weight_dim
-                         << ", pad: " << pads[0] << ", " << pads[1]
-                         << ", " << pads[2] << ", " << pads[3]
+                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
+                         << pads[2] << ", " << pads[3]
                          << ", stride: " << strides[0] << ", " << strides[1]
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
                          << ", group: " << group
                          << ", bias: " << (flag_bias ? "true" : "false")
                          << ", relu: " << (flag_relu ? "true" : "false")
                          << ", modulated: " << (modulated ? "V2" : "V1")
-                         << ", threads: " << th
-                         << ", power_mode: " << cls << " failed!!\n";
+                         << ", threads: " << th << ", power_mode: " << cls
+                         << " failed!!\n";
             }
           }
         }
         LOG(INFO) << "test fp32 deformable conv: input: " << dim_in
                   << ", output: " << dim_out << ", weight dim: " << weight_dim
-                  << ", pad: " << pads[0] << ", " << pads[1]
-                  << ", " << pads[2] << ", " << pads[3]
-                  << ", stride: " << strides[0] << ", " << strides[1]
-                  << ", dila_: " << dilas[0] << ", " << dilas[1]
+                  << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
+                  << ", " << pads[3] << ", stride: " << strides[0] << ", "
+                  << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
                   << ", group: " << group
                   << ", bias: " << (flag_bias ? "true" : "false")
                   << ", relu: " << (flag_relu ? "true" : "false")
                   << ", modulated: " << (modulated ? "V2" : "V1")
-                  << ", threads: " << th
-                  << ", power_mode: " << cls << " successed!!\n";
+                  << ", threads: " << th << ", power_mode: " << cls
+                  << " successed!!\n";
       }
     }
   }
@@ -323,17 +324,17 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
 }
 #else
 void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
-                    const DDim& weight_dim,
-                    int group,
-                    const std::vector<int>& strides,
-                    const std::vector<int>& pads,
-                    const std::vector<int>& dilas,
-                    bool flag_bias,
-                    bool flag_relu,
-                    bool modulated,
-                    const std::vector<int>& thread_num,
-                    const std::vector<int>& power_mode,
-                    const float leakey_relu_scale) {}
+                               const DDim& weight_dim,
+                               int group,
+                               const std::vector<int>& strides,
+                               const std::vector<int>& pads,
+                               const std::vector<int>& dilas,
+                               bool flag_bias,
+                               bool flag_relu,
+                               bool modulated,
+                               const std::vector<int>& thread_num,
+                               const std::vector<int>& power_mode,
+                               const float leakey_relu_scale) {}
 #endif  // LITE_WITH_ARM
 
 #if 1  /// random param conv
@@ -346,9 +347,9 @@ TEST(TestDeformableConvRand, test_deformable_conv_rand) {
             for (auto& kh : {1, 2, 3}) {
               for (auto& stride : {1, 2}) {
                 for (auto& pad_h : {0, 1, 2}) {
-                  for (auto& pad_w : {0, 1,2}) {
+                  for (auto& pad_w : {0, 1, 2}) {
                     for (auto& dila : {1, 2}) {
-                      for (auto& modulated: {false, true}) {
+                      for (auto& modulated : {false, true}) {
                         for (auto& flag_bias : {false, true}) {
                           for (auto& flag_act : {0, 1}) {
                             if (cin % g != 0 || cout % g != 0) {
@@ -360,16 +361,6 @@ TEST(TestDeformableConvRand, test_deformable_conv_rand) {
                               for (auto& h : {1, 3, 16, 19, 32, 64}) {
                                 dims.push_back(DDim({batch, cin, h, h}));
                               }
-                            }
-                            // skip 3x3 depthwise conv
-                            if (g == cin && cin == cout && kw == 3 &&
-                                kh == 3) {
-                              break;
-                            }
-                            // skip 3x3s1 direct conv
-                            if (g == 1 && (cin != 1 || cout != 1) &&
-                                kw == 3 && kh == 3 && stride == 1) {
-                              break;
                             }
                             const float leakey_relu_scale = 8.88;
                             test_deformable_conv_fp32(

@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
-#include "lite/backends/arm/math/conv_impl.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
@@ -41,11 +41,11 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
       return;
     }
     if (n > 1) {
-        lite::arm::math::trans_gemm_weights<Ptype>(
+      lite::arm::math::trans_gemm_weights<Ptype>(
             *(param.conv_param.filter), weights_, param.conv_param.groups, &ctx);
-        flag_trans_weights_ = true;
+      flag_trans_weights_ = true;
     } else if (n == 1) {
-        flag_trans_weights_ = false;
+      flag_trans_weights_ = false;
     }
     last_shape_ = x_dims;
     last_weights_shape_ = w_dims;
