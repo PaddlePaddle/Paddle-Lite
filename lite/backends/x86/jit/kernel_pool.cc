@@ -13,9 +13,9 @@
  * limitations under the License. */
 
 #include "lite/backends/x86/jit/kernel_pool.h"
+#include <map>
 #include <memory>  // for shared_ptr
 #include <string>
-#include <unordered_map>
 
 namespace paddle {
 namespace lite {

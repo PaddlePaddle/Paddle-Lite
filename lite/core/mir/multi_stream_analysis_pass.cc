@@ -126,7 +126,7 @@ void MultiStreamAnalysisPass::Init(SSAGraph* graph) {
 }
 
 bool MultiStreamAnalysisPass::CheckOpSupport() {
-  std::unordered_set<std::string> invalid_op = {
+  std::set<std::string> invalid_op = {
       "while", "conditional_block", "conditional_block_infer", "graph_op"};
   for (auto& op_type : op_types_set_) {
     if (invalid_op.count(op_type)) {

@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class ConvCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ConvCompute : public KernelLite<TARGET(kCUDA), PType> {
  public:
   using param_t = operators::ConvParam;
 
@@ -31,7 +32,7 @@ class ConvCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~ConvCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>> conv_impl_;
+  std::unique_ptr<lite::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
 };
 
 template <PrecisionType Ptype_out>

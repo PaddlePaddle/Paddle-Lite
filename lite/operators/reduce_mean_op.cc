@@ -52,7 +52,7 @@ bool ReduceMeanOp::InferShapeImpl() const {
       }
     }
   }
-  sort(dims.begin(), dims.end());
+  std::stable_sort(dims.begin(), dims.end());
   if (dims.size() == 0) {
     reduce_all = true;
   }

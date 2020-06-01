@@ -207,7 +207,7 @@ class ReduceProdComputeTester : public arena::TestCase {
         }
       }
     }
-    sort(dim_.begin(), dim_.end());
+    std::stable_sort(dim_.begin(), dim_.end());
 
     if (reduce_all_ || dim_.size() == 0) {
       if (keep_dim_) {

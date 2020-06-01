@@ -35,6 +35,9 @@ void ArgmaxCompute::Run() {
   }
 
   lite::arm::math::argmax_func(input, axis, output);
+#ifdef LITE_WITH_PROFILE
+  kernel_func_name_ = "argmax_func";
+#endif
   return;
 }
 

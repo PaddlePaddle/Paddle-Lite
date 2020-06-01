@@ -21,16 +21,17 @@ namespace lite {
 namespace cuda {
 namespace math {
 
-template <>
-bool Gemm<float, float>::init(const bool trans_a,
-                              bool trans_b,
-                              const int m,
-                              const int n,
-                              const int k,
-                              Context<TARGET(kCUDA)> *ctx) {
+template <typename PTypeIn, typename PTypeOut>
+bool Gemm<PTypeIn, PTypeOut>::init(const bool trans_a,
+                                   bool trans_b,
+                                   const int m,
+                                   const int n,
+                                   const int k,
+                                   Context<TARGET(kCUDA)> *ctx) {
   if (cu_handle_ == nullptr) {
     this->exe_stream_ = ctx->exec_stream();
     CUBLAS_CALL(cublasCreate(&cu_handle_));
+    CUBLAS_CALL(cublasSetMathMode(cu_handle_, CUBLAS_TENSOR_OP_MATH));
     CUBLAS_CALL(cublasSetStream(cu_handle_, this->exe_stream_));
   }
   lda_ = (!trans_a) ? k : m;
@@ -44,19 +45,20 @@ bool Gemm<float, float>::init(const bool trans_a,
   return true;
 }
 
-template <>
-bool Gemm<float, float>::init(const bool trans_a,
-                              bool trans_b,
-                              const int m,
-                              const int n,
-                              const int k,
-                              const int lda,
-                              const int ldb,
-                              const int ldc,
-                              Context<TARGET(kCUDA)> *ctx) {
+template <typename PTypeIn, typename PTypeOut>
+bool Gemm<PTypeIn, PTypeOut>::init(const bool trans_a,
+                                   bool trans_b,
+                                   const int m,
+                                   const int n,
+                                   const int k,
+                                   const int lda,
+                                   const int ldb,
+                                   const int ldc,
+                                   Context<TARGET(kCUDA)> *ctx) {
   if (cu_handle_ == nullptr) {
     this->exe_stream_ = ctx->exec_stream();
     CUBLAS_CALL(cublasCreate(&cu_handle_));
+    CUBLAS_CALL(cublasSetMathMode(cu_handle_, CUBLAS_TENSOR_OP_MATH));
     CUBLAS_CALL(cublasSetStream(cu_handle_, this->exe_stream_));
   }
   m_ = m;
@@ -93,6 +95,33 @@ bool Gemm<float, float>::run(const float alpha,
                           ldc_));
   return true;
 }
+
+template <>
+bool Gemm<half, half>::run(const half alpha,
+                           const half beta,
+                           const half *a,
+                           const half *b,
+                           half *c,
+                           Context<TARGET(kCUDA)> *ctx) {
+  CUBLAS_CALL(cublasHgemm(cu_handle_,
+                          cu_trans_b_,
+                          cu_trans_a_,
+                          n_,
+                          m_,
+                          k_,
+                          &alpha,
+                          b,
+                          ldb_,
+                          a,
+                          lda_,
+                          &beta,
+                          c,
+                          ldc_));
+  return true;
+}
+
+template class Gemm<float, float>;
+template class Gemm<half, half>;
 
 }  // namespace math
 }  // namespace cuda
