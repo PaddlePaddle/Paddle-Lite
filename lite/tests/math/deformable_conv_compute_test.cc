@@ -138,7 +138,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
     act_param.active_type = (paddle::lite_api::ActivationType)
         flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
     if (flag_act == 1) {
-      param.fuse_relu = true;
+      param.conv_param.fuse_relu = true;
     } else if (flag_act == 2) {
       act_param.Relu_clipped_coef = six;
     } else if (flag_act == 4) {
@@ -150,10 +150,10 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
 
-  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
+  paddle::lite::fill_tensor_rand(*param.conv_param.filter, -1.f, 1.f);
   //  paddle::lite::fill_tensor_const(*param.filter, 1.f);
   if (flag_bias) {
-    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
+    paddle::lite::fill_tensor_rand(*param.conv_param.bias, -1.f, 1.f);
     //    paddle::lite::fill_tensor_const(*param.bias, 1.f);
   }
   auto wptr = param.conv_param.filter->data<float>();
@@ -236,7 +236,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
                                    strides[0],
                                    dilas[1],
                                    dilas[0],
-                                   pads[1],
+                                   pads[2],
                                    pads[0],
                                    flag_bias,
                                    flag_relu,
@@ -271,6 +271,8 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
                     << ", max ratio: " << max_ratio;
           if (std::abs(max_ratio) > 1e-3f) {
             if (max_diff > 5e-4f) {
+              LOG(WARNING) << "weights data";
+              print_tensor(*param.conv_param.filter);
               LOG(WARNING) << "basic result";
               print_tensor(tout_basic);
               LOG(WARNING) << "lite result";
@@ -313,11 +315,11 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
   }
 
   delete param.x;
-  delete param.filter;
+  delete param.conv_param.filter;
   delete param.offset;
   delete param.mask;
   delete param.output;
-  delete param.bias;
+  delete param.conv_param.bias;
 }
 #else
 void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
@@ -348,14 +350,14 @@ TEST(TestDeformableConvRand, test_deformable_conv_rand) {
                     for (auto& dila : {1, 2}) {
                       for (auto& modulated: {false, true}) {
                         for (auto& flag_bias : {false, true}) {
-                          for (auto& flag_act : {0, 1, 2, 4}) {
+                          for (auto& flag_act : {0, 1}) {
                             if (cin % g != 0 || cout % g != 0) {
                               continue;
                             }
                             std::vector<DDim> dims;
-                            DDim weights_dim({cout, cin / g, 3,3}); //kh, kw});
+                            DDim weights_dim({cout, cin / g, kh, kw});
                             for (auto& batch : {1, 2}) {
-                              for (auto& h : {1, 3, 19, 32}) {
+                              for (auto& h : {1, 3, 16, 19, 32, 64}) {
                                 dims.push_back(DDim({batch, cin, h, h}));
                               }
                             }

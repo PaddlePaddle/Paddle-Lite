@@ -35,10 +35,10 @@ bool DeformableConvOpLite::CheckShape() const {
   CHECK_OR_FALSE(in_dims.size() == 4);
 
   CHECK_EQ_OR_FALSE(in_dims.size(), filter_dims.size());
-  CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
+  CHECK_OR_FALSE(in_dims.size() - param_.conv_param.strides.size() == 2U);
   CHECK_EQ_OR_FALSE(filter_dims.size(), 4UL);
-  CHECK_EQ_OR_FALSE(filter_dims[0] % param_.groups, 0);
-  CHECK_EQ_OR_FALSE(param_.groups, param_.deformable_groups);
+  CHECK_EQ_OR_FALSE(filter_dims[0] % param_.conv_param.groups, 0);
+  CHECK_EQ_OR_FALSE(param_.conv_param.groups, param_.deformable_groups);
 
   return true;
 }

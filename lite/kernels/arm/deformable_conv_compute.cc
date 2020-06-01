@@ -122,7 +122,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto offset_in_size = 2 * group * kernel_size * in_size; 
   //auto* col_data = col.mutable_data<float>();
   float* col_data = new float[col_size];
-  memset(col_data, 0.0, sizeof(float) * col_size);
+ // memset(col_data, 0.0, sizeof(float) * col_size);
   for (int n = 0; n < num; n++) {
       for (int g = 0; g < group; ++g) {
           for (int ic = 0; ic < in_c_group; ++ic) {
@@ -141,7 +141,10 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                             const float offset_w = offset_data_ptr[data_offset_w_ptr];
                             const float im_w = iw * stride[1] - paddings[2] + kw * dilation[1] + offset_w;
                             const float im_h = ih * stride[0] - paddings[0] + kh * dilation[0] + offset_h;
-                            if (im_h > -1 && im_h < hin && im_w > -1 && im_w < win) {
+                         //   printf("im_h: %f, im_w: %f \n", im_h, im_w);
+                            int out_idx = n * c_in_size * kernel_size + g * in_c_group * kernel_size * in_size
+                                          + ic * kernel_size * in_size + ((fh * kw + fw) * hin + ih) * win + iw;
+                            if (im_h >= 0 && im_h < hin && im_w >= 0 && im_w < win) {
                                 // get data
                                 const float map_h = kh * dilation[0] + offset_h;
                                 const float map_w = kw * dilation[1] + offset_w;
@@ -153,8 +156,10 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                                 + (ih * stride[0] - paddings[0]) * win 
                                                                 + (iw * stride[1] - paddings[2]);
 
-                                int out_idx = n * c_in_size * kernel_size + g * in_c_group * kernel_size * in_size
-                                                + ic * kernel_size * in_size + ((fh * kw + fw) * ih + ih) * win + iw;
+                                //int  out_idx = n * c_in_size * kernel_size + g * in_c_group * kernel_size * in_size
+                                  //              + ic * in_size * kernel_size + ((ih * win + iw) * kh + fh) * kw + fw; 
+                                //int out_idx = n * c_in_size * kernel_size + g * in_c_group * kernel_size * in_size
+                                //              + ic * kernel_size * in_size + ((fh * kw + fw) * hin + ih) * win + iw;
                                 float val = deformable_bilinear(in_data_offset, 
                                                                 win, cur_height, cur_width, map_h, map_w);
                                 //printf("map_h: %f, map_w: %f, cur_height: %d, cur_width: %d \n", map_h, map_w, cur_height, cur_width);
@@ -167,8 +172,10 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                            + ih * win + iw; 
                                    val *= mask_ptr[0];
                                 }
-                                //printf("val: %f \n", val);
+                            //    printf("idx: %d, val: %f \n", out_idx, val);
                                 col_data[out_idx] = val;
+                            } else {
+                                col_data[out_idx] = 0.0;
                             }
                           }
                       }
@@ -177,6 +184,17 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
           }
       }
   }
+/*  printf("col_data: \n");
+for (int n = 0; n < num; n++) {
+      for (int c = 0; c < cin; c++) {
+        for (int k = 0; k < kernel_size; k++) {
+            for (int h = 0; h < in_size; h++) {
+                printf("%f  ", col_data[n * cin * kernel_size * in_size + c * kernel_size * in_size + k * in_size + h]);
+            }
+            printf("\n");
+        }
+      }
+  }*/
   // convolution
   int m = cout / group;
   int n = hout * wout;
@@ -185,23 +203,15 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_trans_weights_) {
     filter_data = weights_.data<float>();
   }
-  lite::arm::math::conv_im2col_gemm(col_data,
-                                    out_data,
-                                    num,
-                                    cout,
-                                    hout,
-                                    wout,
-                                    cin,
-                                    hin,
-                                    win,
-                                    filter_data,
-                                    bias,
-                                    param.conv_param,
-                                    &ctx);
-  /*for (int b = 0; b < num; ++b) {
+  if (flag_trans_weights_) printf("weights: %d\n", weights_.numel()); 
+  printf("flag_trans_weights_: %d \n", flag_trans_weights_);
+  /*for (int i = 0; i < weights_.numel(); i++) {
+      printf("%f  ", filter_data[i]);
+  }*/
+  for (int b = 0; b < num; ++b) {
       for (int g = 0; g < group; ++g) {
           float* dout_group = out_data + (b * cout + g * m) * out_size;
-          const float* din_group = col_data + (b * cin + g * in_c_group) * in_size;
+          const float* din_group = col_data + (b * cin + g * in_c_group) * in_size * kernel_size;
           const float* weights_group = filter_data + g * weights_size_per_group;
           const float* bias_group = bias + g * m;
           if (n == 1) {
@@ -237,7 +247,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
           }
       }
   }
-  */
+  
  delete[] col_data;
 }
 }  // namespace arm

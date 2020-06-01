@@ -597,28 +597,27 @@ void deformable_conv_basic(const Dtype1* in_data,
                             const float offset_w = offset_data_ptr[data_offset_w_ptr];
                             const float iw = ow * stride_w - pad_w + kernel_w * dila_w + offset_w;
                             const float ih = oh * stride_h - pad_h + kernel_h * dila_h + offset_h;
-                            if (ih > -1 && ih < hin && iw > -1 && iw < win) {
+                            //printf("--- im_h: %f, im_w: %f \n", ih, iw);
+                            if (ih >= 0 && ih < hin && iw >= 0 && iw < win) {
                               // get data
                               const float map_h = kernel_h * dila_h + offset_h;
                               const float map_w = kernel_w * dila_w + offset_w;
                               const int cur_height = hin - (oh * stride_h - pad_h);
                               const int cur_width = win - (ow * stride_w - pad_w);
-
+                             
                               const float* in_data_offset = in_data 
                                                                 + n * c_in_size
                                                                 + (g * in_c_group + ic) * in_size
-                                                                + (oh * stride_h - pad_h) * win 
+                                                                + (oh  * stride_h - pad_h) * win
                                                                 + (ow * stride_w - pad_w);
 
+                              //printf("--- oh: %d, ow: %d, ih: %f, iw: %f \n", oh, ow, ih, iw); 
                               float val = deformable_bilinear(in_data_offset, 
                                                                 win, cur_height, cur_width, map_h, map_w);
-                            //   const float* in_data_offset = in_data 
-                            //                                     + n * group * in_c_group * hin * win
-                            //                                     + (g * in_c_group + ic) * hin * win 
-                            //                                     + ih * win 
-                            //                                     + iw;
-                            //   float val = deformable_bilinear(in_data_offset, win, hin, win, ih, iw);
-                            //printf("--- map_h: %f, map_w: %f, cur_height: %d, cur_width: %d \n", map_h, map_w, cur_height, cur_width);  
+                             
+                            //  const float* in_data_offset = in_data + n * c_in_size + (g * in_c_group + ic) * in_size + ih * win + iw;
+                              //float val = deformable_bilinear(in_data_offset, win, hin, win, ih, iw);
+                              //printf("--- map_h: %f, map_w: %f, cur_height: %d, cur_width: %d \n", map_h, map_w, cur_height, cur_width);  
                             //printf("--- val: %f \n", val);
                             if (modulated) {
                                // use mask
@@ -628,12 +627,13 @@ void deformable_conv_basic(const Dtype1* in_data,
                                                        + oh * wout + ow; 
                                val *= mask_ptr[0];
                             }
-                            //printf("--- val: %f \n", val);
+                            //printf("--- out_idx: %d, val: %f \n", out_idx, val);
                             int widx = g * out_c_group * in_c_group * kernel_size
                                        + oc * in_c_group * kernel_size
                                        + ic * kernel_size
                                        + fh * kernel_w
                                        + fw;
+                            //printf("weights: %d, %f \n", widx, weights[widx]);
                             out_data[out_idx] += val * weights[widx];
                           }
                         }

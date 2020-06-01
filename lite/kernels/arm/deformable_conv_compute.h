@@ -32,17 +32,23 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 
   virtual void ReInitWhenNeeded() {
     auto& param = this->template Param<param_t>();
+    auto& x_dims = param.x->dims();
     auto w_dims = param.conv_param.filter->dims();
     auto& ctx = this->ctx_->template As<ARMContext>();
     auto o_dims = param.output->dims();
     int n = o_dims[2] * o_dims[3];
-    if (!flag_trans_weights_ && n > 1) {
+    if (last_shape_ == x_dims && last_weights_shape_ == w_dims) {
+      return;
+    }
+    if (n > 1) {
         lite::arm::math::trans_gemm_weights<Ptype>(
-            *(param.filter), weights_, param.groups, &ctx);
+            *(param.conv_param.filter), weights_, param.conv_param.groups, &ctx);
         flag_trans_weights_ = true;
-    } else {
+    } else if (n == 1) {
         flag_trans_weights_ = false;
     }
+    last_shape_ = x_dims;
+    last_weights_shape_ = w_dims;
   }
 
   virtual void Run();
@@ -58,6 +64,8 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 
  private:
   using param_t = operators::DeformableConvParam;
+  DDim last_shape_;
+  DDim last_weights_shape_;
   bool flag_trans_weights_;
   Tensor weights_;
 };
