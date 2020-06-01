@@ -22,7 +22,7 @@ namespace lite {
 namespace cuda {
 namespace math {
 
-// fp32
+// fp32 and half
 template <typename T>
 void relu(int num, const T* din, T* dout, float alpha, cudaStream_t stream);
 

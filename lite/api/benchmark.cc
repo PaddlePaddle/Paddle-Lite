@@ -163,7 +163,7 @@ void Run(const std::vector<int64_t>& input_shape,
     auto end = GetCurrentUS();
     perf_vct.push_back((end - start) / 1000.0);
   }
-  std::sort(perf_vct.begin(), perf_vct.end());
+  std::stable_sort(perf_vct.begin(), perf_vct.end());
   float min_res = perf_vct.back();
   float max_res = perf_vct.front();
   float total_res = accumulate(perf_vct.begin(), perf_vct.end(), 0.0);

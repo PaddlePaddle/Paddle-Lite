@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/backends/apu/neuron_adapter.h"
@@ -97,7 +97,7 @@ class Graph {
 
  private:
   NeuronModel* model_;
-  std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
+  std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
   int32_t operandIdx_ = 0;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;

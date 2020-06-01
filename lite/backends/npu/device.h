@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "HiAiModelManagerService.h"  // NOLINT
 #include "hiai_ir_build.h"            // NOLINT

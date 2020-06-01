@@ -16,6 +16,7 @@
 #include <cmath>
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -80,9 +81,9 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        int N,
                        int K,
                        bool is_bias,
-                       bool is_relu,
                        bool is_transB,
                        const float* scale,
+                       const operators::ActivationParam act_param,
                        ARMContext* ctx);
 
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))

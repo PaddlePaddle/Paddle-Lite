@@ -371,7 +371,7 @@ void CheckIfModelSupported() {
     for (size_t i = 0; i < valid_places.size(); i++) {
       targets.push_back(valid_places[i].target);
     }
-    std::sort(targets.begin(), targets.end());
+    std::stable_sort(targets.begin(), targets.end());
     targets.erase(unique(targets.begin(), targets.end()), targets.end());
     std::string targets_str = TargetToStr(targets[0]);
     for (size_t i = 1; i < targets.size(); i++) {

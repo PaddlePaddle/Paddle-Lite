@@ -15,9 +15,9 @@
 #include "lite/core/mir/quantized_op_attributes_inference_pass.h"
 #include <algorithm>
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"

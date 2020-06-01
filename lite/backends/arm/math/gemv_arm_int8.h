@@ -32,8 +32,11 @@ bool gemv_int8(const int8_t* A,
                const float* scale,
                bool is_bias,
                const float* bias,
-               bool is_relu,
-               const ARMContext* ctx);
+               bool flag_act,
+               lite_api::ActivationType act,
+               const ARMContext* ctx,
+               float six = 6.f,
+               float alpha = 1.f);
 
 }  // namespace math
 }  // namespace arm

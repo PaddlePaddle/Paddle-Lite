@@ -16,9 +16,9 @@
 #include <gflags/gflags.h>
 #include <algorithm>
 #include <fstream>
+#include <map>
+#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "lite/api/cxx_api.h"
@@ -63,7 +63,7 @@ struct DebugConfig {
   int tensor_output_length;
   int arm_thread_num;
 
-  std::unordered_map<std::string, lite::pb::VarDesc> var_descs;
+  std::map<std::string, lite::pb::VarDesc> var_descs;
   std::vector<std::vector<std::string>> input_values;
 };
 
@@ -83,7 +83,7 @@ std::vector<T> Split2Vector(const std::string& input,
   return tgt;
 }
 
-void CollectFeedVarsInfo(std::unordered_map<int, std::string>* feed_vars_info,
+void CollectFeedVarsInfo(std::map<int, std::string>* feed_vars_info,
                          const framework::proto::ProgramDesc& prog_desc) {
   CHECK(feed_vars_info);
   auto desc = prog_desc;
@@ -134,7 +134,7 @@ void PrepareModelInputTensor(const DebugConfig& conf,
                              const framework::proto::ProgramDesc& desc) {
   CHECK(scope);
 
-  std::unordered_map<int, std::string> feed_vars_info;
+  std::map<int, std::string> feed_vars_info;
   CollectFeedVarsInfo(&feed_vars_info, desc);
   auto* feed_var =
       scope->FindVar("feed")->GetMutable<std::vector<lite::Tensor>>();
@@ -243,23 +243,22 @@ void CollectAndDumpTopoInfo(const std::vector<Instruction>& instructions,
   os.close();
 }
 
-void CollectVarDescs(
-    std::unordered_map<std::string, lite::pb::VarDesc>* var_descs,
-    framework::proto::ProgramDesc* desc) {
+void CollectVarDescs(std::map<std::string, lite::pb::VarDesc>* var_descs,
+                     framework::proto::ProgramDesc* desc) {
   CHECK(desc);
   CHECK(var_descs);
   CHECK(!desc->blocks().empty());
-  std::unordered_set<std::string> weights;
+  std::set<std::string> weights;
   for (auto& proto_var_desc : *desc->mutable_blocks(0)->mutable_vars()) {
     lite::pb::VarDesc var_desc(&proto_var_desc);
     (*var_descs).emplace(var_desc.Name(), std::move(var_desc));
   }
 }
 
-std::unordered_set<std::string> CollectUnusedVars(
+std::set<std::string> CollectUnusedVars(
     const std::vector<Instruction>& instructions) {
-  std::unordered_set<std::string> unused;
-  std::unordered_set<std::string> all_inputs;
+  std::set<std::string> unused;
+  std::set<std::string> all_inputs;
   for (auto& inst : instructions) {
     for (const auto& name : inst.op()->op_info()->input_names()) {
       all_inputs.insert(name);
@@ -295,7 +294,7 @@ void CollectAndDumpTensorInfo(const std::vector<Instruction>& instructions,
   std::ofstream os(conf.tensor_output_file);
   CHECK(os.is_open());
 
-  std::unordered_set<std::string> dump_vars;
+  std::set<std::string> dump_vars;
 #define DUMP_TENSOR_ONCE(name__)                                  \
   LOG(INFO) << "----------------- dump tensor: " << name__;       \
   auto& tensor = scope->FindVar(name__)->Get<lite::Tensor>();     \
@@ -314,8 +313,7 @@ void CollectAndDumpTensorInfo(const std::vector<Instruction>& instructions,
   }
 
   if (conf.tensor_names.size() == 0) {
-    std::unordered_set<std::string> unused(
-        std::move(CollectUnusedVars(instructions)));
+    std::set<std::string> unused(std::move(CollectUnusedVars(instructions)));
 
     for (auto& inst : instructions) {
       DUMP_OP_TENSOR_ONCE(input, feed);

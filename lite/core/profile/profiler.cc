@@ -24,14 +24,9 @@ namespace profile {
 
 namespace {
 auto op_comp = [](const OpCharacter& c1, const OpCharacter& c2) {
-  if (c1.kernel_func_name == "NotImpl" && c2.kernel_func_name == "NotImpl") {
-    return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
-           (c1.kernel_name < c2.kernel_name) || (c1.remark < c2.remark);
-  } else {  // compare with ch.kernel_func_name
-    return (c1.target < c2.target) || (c1.op_type < c2.op_type) ||
-           (c1.kernel_name < c2.kernel_name) ||
-           (c1.kernel_func_name < c2.kernel_func_name);
-  }
+  // compare for unique key of map
+  return (c1.kernel_name + c1.kernel_func_name <
+          c2.kernel_name + c2.kernel_func_name);
 };
 }  // namespace
 
@@ -95,14 +90,13 @@ void Profiler::StopTiming(Type type, const int index, KernelContext* ctx) {
 }
 
 int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,
+                                       const std::string& kernel_attr,
                                        const std::string& kernel_func_name) {
   int count = 0;
   for (size_t i = 0; i < units_.size(); ++i) {
     if ((units_[i].character.kernel_func_name == kernel_func_name) &&
-        (units_[i].character.kernel_func_name != "NotImpl")) {
-      ++count;
-    } else if ((units_[i].character.kernel_func_name == "NotImpl") &&
-               (units_[i].character.op_type == op_type)) {
+        (units_[i].character.kernel_attr == kernel_attr) &&
+        (units_[i].character.op_type == op_type)) {
       ++count;
     }
   }
@@ -110,14 +104,13 @@ int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,
 }
 
 float Profiler::GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                         const std::string& kernel_attr,
                                          const std::string& kernel_func_name) {
   float GOPs = 0;
   for (size_t i = 0; i < units_.size(); ++i) {
     if ((units_[i].character.kernel_func_name == kernel_func_name) &&
-        (units_[i].character.kernel_func_name != "NotImpl")) {
-      GOPs += units_[i].character.macs;
-    } else if ((units_[i].character.kernel_func_name == "NotImpl") &&
-               (units_[i].character.op_type == op_type)) {
+        (units_[i].character.kernel_attr == kernel_attr) &&
+        (units_[i].character.op_type == op_type)) {
       GOPs += units_[i].character.macs;
     }
   }
@@ -232,9 +225,11 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setprecision(2) << percent << "%   "
          << " " << setw(7) << left << fixed << setprecision(3)
          << GetKernelFuncSummaryGOPs(item.first.op_type,
+                                     item.first.kernel_attr,
                                      item.first.kernel_func_name)
          << " " << setw(11) << left << fixed
          << GetKernelFuncCalledTimes(item.first.op_type,
+                                     item.first.kernel_attr,
                                      item.first.kernel_func_name);
 #ifdef LITE_WITH_OPENCL
       float cl_percent = 0;

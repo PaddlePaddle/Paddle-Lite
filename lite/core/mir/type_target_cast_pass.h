@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/op_registry.h"
@@ -36,14 +36,14 @@ class TypeTargetTransformPass : public ProgramPass {
   void ComplementInputs(SSAGraph* graph,
                         Node* inst_node,
                         Node* in,
-                        std::unordered_map<std::string, Node*>* copied_nodes);
+                        std::map<std::string, Node*>* copied_nodes);
 
   void AddIoCopyInst(const Type& from,
                      const Type& to,
                      Node* in,
                      SSAGraph* graph,
                      Node* inst_node,
-                     std::unordered_map<std::string, Node*>* copied_nodes,
+                     std::map<std::string, Node*>* copied_nodes,
                      const std::vector<Place>& valid_places);
 
   void SetValidPlaces(const std::vector<Place>& valid_places);
