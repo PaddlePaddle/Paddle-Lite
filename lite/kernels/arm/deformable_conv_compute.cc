@@ -125,25 +125,26 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   float* col_data = new float[col_size];
   for (int n = 0; n < num; n++) {
     for (int g = 0; g < group; ++g) {
-      const float* offset_data_ptr = offset_data +
-                                     n * offset_in_size +
-                                     g * 2 * kernel_size * in_size;
-      const float* in_data_offset = in_data + n * c_in_size +
-                                    g * in_c_group * in_size;
+      const float* offset_data_ptr =
+          offset_data + n * offset_in_size + g * 2 * kernel_size * in_size;
+      const float* in_data_offset =
+          in_data + n * c_in_size + g * in_c_group * in_size;
       float* col_data_g = col_data + n * c_in_size * kernel_size +
-                              g * in_c_group * kernel_size * in_size;
+                          g * in_c_group * kernel_size * in_size;
       for (int ic = 0; ic < in_c_group; ++ic) {
         const float* in_data_ch = in_data_offset + ic * in_size;
         float* col_data_ch = col_data_g + ic * kernel_size * in_size;
         for (int fh = 0; fh < kh; fh++) {
           for (int fw = 0; fw < kw; fw++) {
-              const float* offset_data_ptr_h = offset_data_ptr + (2 * (fh * kw + fw)) * out_size;
-              const float* offset_data_ptr_w = offset_data_ptr + (2 * (fh * kw + fw) + 1) * out_size;
-              float* col_data_g_ksize = col_data_g + (fh * kw + fw) * in_size;
+            const float* offset_data_ptr_h =
+                offset_data_ptr + (2 * (fh * kw + fw)) * out_size;
+            const float* offset_data_ptr_w =
+                offset_data_ptr + (2 * (fh * kw + fw) + 1) * out_size;
+            float* col_data_g_ksize = col_data_g + (fh * kw + fw) * in_size;
             for (int ih = 0; ih < hin; ih++) {
-                const float* offset_data_ptr_h_w = offset_data_ptr_h + ih * wout;
-                const float* offset_data_ptr_w_w = offset_data_ptr_w + ih * wout;
-                float* col_data_g_ksize_h = col_data_g_ksize + ih * win;
+              const float* offset_data_ptr_h_w = offset_data_ptr_h + ih * wout;
+              const float* offset_data_ptr_w_w = offset_data_ptr_w + ih * wout;
+              float* col_data_g_ksize_h = col_data_g_ksize + ih * win;
               for (int iw = 0; iw < win; iw++) {
                 const int data_offset_h_ptr = ih * wout + iw;
                 const int data_offset_w_ptr = ih * wout + iw;
@@ -154,19 +155,8 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                 const float im_h =
                     ih * stride[0] - paddings[0] + kh * dilation[0] + offset_h;
                 if (im_h >= 0 && im_h < hin && im_w >= 0 && im_w < win) {
-                //   const float map_h = kh * dilation[0] + offset_h;
-                //   const float map_w = kw * dilation[1] + offset_w;
-                //   const int cur_height = hin - (ih * stride[0] - paddings[0]);
-                //   const int cur_width = win - (iw * stride[1] - paddings[2]);
-
-                //   const float* in_data_offset =
-                //       in_data + n * c_in_size +
-                //       (g * in_c_group + ic) * in_size +
-                //       (ih * stride[0] - paddings[0]) * win +
-                //       (iw * stride[1] - paddings[2]);
-
-                  float val = deformable_bilinear(
-                      in_data_ch, hin, win, im_h, im_w);
+                  float val =
+                      deformable_bilinear(in_data_ch, hin, win, im_h, im_w);
 
                   if (param.modulated) {
                     // use mask
