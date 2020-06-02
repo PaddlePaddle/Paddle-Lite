@@ -2569,34 +2569,10 @@ void pooling3x3s2p0_max(const float* din,
         if (w_unroll_size > 0) {
 #ifdef __aarch64__
           asm volatile(P3x3S2P0_INIT P3x3S2P0_MAX
-                      "cmp       %[remain], #0                           @cmp cnt_num, 0\n"
-                       "sub      %[dr0], %[dr0], #32                            @sub - 8\n"
-                       "sub      %[dr1],%[dr1], #32                            @sub - 8\n"
-                       "sub      %[dr2],%[dr2], #32                            @sub - 8\n"
-                       "ble      4f                                 @ble exit1\n"
-                       "2:                              @mid loop\n"
-                          "ld1 {v0.4s}, [%[dr0], #16] \n"
-                          "ld1 {v1.4s}, [%[dr1], #16] \n"
-                          "ld1 {v2.4s}, [%[dr2], #16] \n"
-                          "fmov s3, s2 \n"
-                          "fmov s7, s6 \n"
-                          "fmov s11, s10 \n"
-                          "fmax v0.4s, v0.4s, v1.4s\n"
-                          "sub  %[dr0], %[dr0], #8\n"
-                          "sub  %[dr1], %[dr1], #8\n"
-                          "sub  %[dr2], %[dr2], #8\n"
-                          "fmax v0.4s, v0.4s, v2.4s\n"
-                          "fpmax d0, d0, d1 \n"
-                          "fpmax d0, d0, d0 \n"
-                          "subs  %w[remain], %w[remain], #1\n"
-                          "st1 s0, [%[dr_out], #4]\n"
-                          "bne       2b                     @bne s3_max_loop_mid_1\n"
-                        "4:                                           @exit\n"
                        : [dr0] "+r"(dr0),
                          [dr1] "+r"(dr1),
                          [dr2] "+r"(dr2),
                          [dr_out] "+r"(dr_out),
-                         [remain] "+r" (cnt_remain),
                          [cnt_num] "+r"(cnt_num)
                        :
                        : "cc",
@@ -2688,19 +2664,6 @@ void pooling3x3s2p0_max(const float* din,
           }
 #endif
         }
-        // int rem = win - (w_unroll_size * 4) * S;
-        // int wstart = 0;
-        // for (int j = 0; j < w_unroll_remian; ++j) {
-        //   int wend = std::min(wstart + K, rem);
-        //   float tmp = dr0[wstart];  // std::numeric_limits<float>::min();
-        //   for (int i = wstart; i < wend; i++) {
-        //     tmp = std::max(tmp, dr0[i]);
-        //     tmp = std::max(tmp, dr1[i]);
-        //     tmp = std::max(tmp, dr2[i]);
-        //   }
-        //   *(dr_out++) = tmp;
-        //   wstart += S;
-        // }
 
         r0 = r2;
         r1 = r0 + win;

@@ -318,7 +318,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& tra : {false}) {
           for (auto& has_bias : {false, true}) {
-            for (auto& flag_act : {0, 1, 4}) {
+            for (auto& has_relu : {false, true}) {
               for (auto& th : {1, 2, 4}) {
                 float six = 6.f;
                 float alpha = 8.88f;
@@ -326,7 +326,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
                                            m,
                                            n,
                                            has_bias,
-                                           flag_act,
+                                           has_relu > 0,
                                            FLAGS_power_mode,
                                            th,
                                            six,
@@ -334,13 +334,13 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
                 if (flag) {
                   LOG(INFO) << "test m = " << m << ", n=" << n
                             << ", bias: " << (has_bias ? "true" : "false")
-                            << ", act: " << flag_act
+                            << ",  relu: " << (has_relu ? "true" : "false")
                             << ", trans A: " << (tra ? "true" : "false")
                             << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", n=" << n
                              << ", bias: " << (has_bias ? "true" : "false")
-                             << ", act: " << flag_act
+                             << ",  relu: " << (has_relu ? "true" : "false")
                              << ", trans A: " << (tra ? "true" : "false")
                              << " failed\n";
                 }
