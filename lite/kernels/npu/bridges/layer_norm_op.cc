@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <set>
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/npu/bridges/utility.h"
@@ -53,10 +54,29 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto left = x_mat_dims[0];
   auto right = x_mat_dims[1];
 
-  if (x_name == "tmp_3" || x_name == "tmp_5" || x_name == "tmp_6" ||
-      x_name == "tmp_8" || x_name == "tmp_9" || x_name == "tmp_15" ||
-      x_name == "tmp_17" || x_name == "tmp_19" || x_name == "tmp_20" ||
-      x_name == "tmp_22" || x_name == "tmp_24" || x_name == "tmp_25") {
+  std::set<std::string> all{"tmp_3",
+                            "tmp_5",
+                            "tmp_6",
+                            "tmp_8",
+                            "tmp_9",
+                            "tmp_15",
+                            "tmp_17",
+                            "tmp_19",
+                            "tmp_20",
+                            "tmp_22",
+                            "tmp_24",
+                            "tmp_25"};
+  std::set<std::string> scale_0d1{"tmp_3",
+                                  "tmp_5",
+                                  "tmp_15",
+                                  "tmp_17",
+                                  "tmp_19",
+                                  "tmp_20",
+                                  "tmp_22",
+                                  "tmp_24"};
+  std::set<std::string> scale_0d01{"tmp_6", "tmp_8", "tmp_25"};
+  std::set<std::string> scale_0d005{"tmp_9"};
+  if (all.count(x_name) > 0) {
     std::shared_ptr<Node> x_node = nullptr;
     if (graph->Has(x_name)) {
       x_node = graph->Get(x_name);
@@ -64,9 +84,15 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       x_node = graph->Add(x_name, *x, CvtShape(x_dims));
     }
 
-    float scale = 0.01f;
-    if (x_name == "tmp_8" || x_name == "tmp_9") {
-      scale = 0.001f;
+    float scale = 1.f;
+    if (scale_0d1.count(x_name) > 0) {
+      scale = 0.1f;
+    } else if (scale_0d01.count(x_name) > 0) {
+      scale = 0.01f;
+    } else if (scale_0d005.count(x_name) > 0) {
+      scale = 0.005;
+    } else {
+      LOG(FATAL) << "not find: " << x_name;
     }
     // Scale node
     x_name += "/scale";
