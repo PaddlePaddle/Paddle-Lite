@@ -25,57 +25,6 @@
 namespace paddle {
 namespace lite {
 
-void pool_avg(const int padding_height,
-              const int padding_width,
-              const int stride_height,
-              const int stride_width,
-              const int ksize_height,
-              const int ksize_width,
-              const float* input_data,
-              const DDim& in_dim,
-              float* output_data,
-              const DDim& out_dim) {
-  const int batch_size = in_dim[0];
-  const int input_height = in_dim[2];
-  const int input_width = in_dim[3];
-  const int output_channels = out_dim[1];
-  const int output_height = out_dim[2];
-  const int output_width = out_dim[3];
-
-  const size_t input_spatial_size = input_height * input_width;
-  const size_t output_spatial_size = output_height * output_width;
-
-  for (int i = 0; i < batch_size; i++) {
-    for (int c = 0; c < output_channels; ++c) {
-      int channel = i * output_channels + c;
-      const float* input_ptr = input_data + channel * input_spatial_size;
-      float* output_ptr = output_data + channel * output_spatial_size;
-
-      for (int ph = 0; ph < output_height; ++ph) {
-        int hstart = ph * stride_height - padding_height;
-        int hend = std::min(hstart + ksize_height, input_height);
-        hstart = std::max(hstart, 0);
-        for (int pw = 0; pw < output_width; ++pw) {
-          int wstart = pw * stride_width - padding_width;
-          int wend = std::min(wstart + ksize_width, input_width);
-          wstart = std::max(wstart, 0);
-
-          float val = 0.f;
-          int count = 0;
-          for (int h = hstart; h < hend; ++h) {
-            for (int w = wstart; w < wend; ++w) {
-              val += input_ptr[h * input_width + w];
-              ++count;
-            }
-          }
-          output_ptr[ph * output_width + pw] =
-              (count > 0) ? val * (1.f / count) : 0.f;
-        }
-      }
-    }
-  }
-}
-
 TEST(pixel_shuffle_image2d, compute) {
   LOG(INFO) << "create kernel ...";
   auto kernels = KernelRegistry::Global().Create("pixel_shuffle",
@@ -157,30 +106,7 @@ TEST(pixel_shuffle_image2d, compute) {
                                                           out_image_shape[1]);
   kernel->Launch();
   CLRuntime::Global()->command_queue().finish();
-#if 0
-  auto GetCurrentUS = []() -> double {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return 1e+6 * time.tv_sec + time.tv_usec;
-  };
-  const int profile_times = 10000;
-  long sum_time = 0;
-  for (size_t i = 0; i < profile_times; i++) {
-    auto begin_time_inner = GetCurrentUS();
-
-    kernel->Launch();
-    CLRuntime::Global()->command_queue().finish();
-    auto end_time_inner = GetCurrentUS();
-    int delta = end_time_inner - begin_time_inner;
-    sum_time += delta;
-    LOG(INFO) << "pool avg : " << i + 1 << "/" << profile_times << "  =  "
-              << (delta);
-  }
-
-  LOG(INFO) << "pool avg avg time : " << sum_time / profile_times;
-#endif
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
-  // pool_avg(0, 0, 2, 2, 7, 7, input_v.data(), in_dim, out_ref.get(), out_dim);
   std::vector<float> out_data_v{
       0, 4, 1, 5, 8, 12, 9, 13, 2, 6, 3, 7, 10, 14, 11, 15};
 
