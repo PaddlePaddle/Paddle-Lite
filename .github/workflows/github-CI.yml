@@ -8,6 +8,7 @@ jobs:
   build:
     env:
       NEUWARE_HOME: /usr/local/neuware
+      LD_LIBRARY_PATH: "/home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite/build.lite.mlu/third_party/mklml/src/extern_mklml/lib:/usr/local/neuware/lib64"
 
     runs-on: self-hosted
 
@@ -51,26 +52,60 @@ jobs:
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_lrn_converter_mlu
     - name: test_gather_converter_mlu
       run: ./build.lite.mlu/lite/kernels/mlu/bridges/test_gather_converter_mlu
-    - name: test_classification
+    - name: test_classification_resnet50
       run: |
         cd ..
         rm -rf Paddle-Lite-models
-        git clone -b develop git@github.com:Cambricon/Paddle-Lite-models.git
+        git clone -b gtest git@github.com:Cambricon/Paddle-Lite-models.git
         cd Paddle-Lite-models
         sed -i 's/\/home\/dingminghui\/paddle/${PWD}\/../' prepare_paddle_env.sh
-        sed -i 's/\/home\/dingminghui\/paddle\/data/\/opt\/share\/paddle_model\//' classification/classification_demo.cpp
         cp /opt/share/datasets/imagenet/val_1000.txt classification/filelist
         sed -i 's/^/\/opt\/share\/datasets\/imagenet\//' classification/filelist
-        LD_LIBRARY_PATH=${PWD}/../Paddle-Lite/build.lite.mlu/third_party/mklml/src/extern_mklml/lib ./prepare_paddle_env.sh 0
+        ./prepare_paddle_env.sh 0
         cd classification 
-        LD_LIBRARY_PATH=${PWD}/../../Paddle-Lite/build.lite.mlu/third_party/mklml/src/extern_mklml/lib ./classification_demo 1 &> log
-    - name: compare_subgraph_num
+        ./classification_demo --gtest_filter="classification_test.resnet50" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        # [ `awk -v num=0 -v last=0 'BEGIN{} /average preprocess time/ {last=last*10+num; num=0} /START TO CONVERT/ {num++} END{print last}' log` -eq 171 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
+    - name: test_classification_resnet50_without_batchsize_changeble
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
+        PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE=true ./classification_demo --gtest_filter="classification_test.resnet50" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        # [ `awk -v num=0 -v last=0 'BEGIN{} /average preprocess time/ {last=last*10+num; num=0} /START TO CONVERT/ {num++} END{print last}' log` -eq 171 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
+    - name: test_classification_resnet101
       run: |
-        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' ${PWD}/../Paddle-Lite-models/classification/log` -eq 1 ]
-    - name: compare_hardward_time
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
+        ./classification_demo --gtest_filter="classification_test.resnet101" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        hardware_time=`awk '/hardware/ {print $7}' log` && [ `awk -v a=$hardware_time -v b=10 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
+    - name: test_classification_mobilenetv2
       run: |
-        tmp=`awk '/hardware/ {print $6}' ${PWD}/../Paddle-Lite-models/classification/log` && hardware_time=${tmp:8} && [ `awk -v a=$hardware_time -v b=6.0 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
-    - name: compare_top1_&_top5
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
+        ./classification_demo --gtest_filter="classification_test.mobilenetv2_KL" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        hardware_time=`awk '/hardware/ {print $7}' log` && [ `awk -v a=$hardware_time -v b=5 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
+    - name: test_classification_googlenet
       run: |
-        tmp=`awk '/top1/ {print $5}' ${PWD}/../Paddle-Lite-models/classification/log` && [ `awk -v a=$tmp -v b=0.7 'BEGIN{print(a>b)?"0":"1"}'` -eq 0 ]
-        tmp=`awk '/top5/ {print $5}' ${PWD}/../Paddle-Lite-models/classification/log` && [ `awk -v a=$tmp -v b=0.9 'BEGIN{print(a>b)?"0":"1"}'` -eq 0 ]
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
+        ./classification_demo --gtest_filter="classification_test.googlenet_KL" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        hardware_time=`awk '/hardware.*101/ {print $7}' log` && [ `awk -v a=$hardware_time -v b=4 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
+        # tmp=`grep -o "START TO CONVERT" log | wc -l` && [ $tmp -eq 2 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} /build batch_size changeable subgraph op failed/ {num--}END{print result}' log` -eq 0 ]
+    - name: test_classification_MobileNet
+      run: |
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
+        ./classification_demo --gtest_filter="classification_test.MobileNetV1" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        hardware_time=`awk '/hardware/ {print $7}' log` && [ `awk -v a=$hardware_time -v b=3.5 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
+    - name: test_classification_resnet50_extra
+      run: |
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
+        ./classification_demo --gtest_filter="classification_test.resnet50_extra" &> log
+        [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
+        hardware_time=`awk  'BEGIN {max=-1} /hardware/ {if($7>max) max=$7 fi} END {print max}' log` && [ `awk -v a=$hardware_time -v b=8 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
+        [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
