@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -ex
-
 if [ -z ${BRANCH} ]; then
     BRANCH="develop"
 fi
@@ -14,8 +12,6 @@ git_count=`git diff --numstat upstream/$BRANCH| awk '{sum+=$1}END{print sum}'`
 failed_num=0
 echo_list=()
 
-echo ${git_files}
-echo ${git_count}
 function add_failed(){
     failed_num=`expr $failed_num + 1`
     echo_list="${echo_list[@]}$1"
