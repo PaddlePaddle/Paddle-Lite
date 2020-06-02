@@ -1429,6 +1429,19 @@ struct InstanceNormParam : ParamBase {
   lite::Tensor* saved_variance{};
   float epsilon;
 };
+/// --------------------- group_norm operators --------------------
+struct GroupNormParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
+  int groups;
+  int channels;
+};
+
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
