@@ -22,6 +22,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
+WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
@@ -126,6 +127,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -219,6 +221,7 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -488,6 +491,17 @@ function main {
                 ;;
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            --with_exception=*)
+                WITH_EXCEPTION="${i#*=}"
+                if [[ $WITH_EXCEPTION == "ON" && $ARM_ABI == "armv7" && $ARM_LANG != "clang" ]]; then
+                     set +x
+                     echo
+                     echo -e "error: only clang provide C++ exception handling support for 32-bit ARM."
+                     echo
+                     exit 1
+                fi
                 shift
                 ;;
             --with_profile=*)

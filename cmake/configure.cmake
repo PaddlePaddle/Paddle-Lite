@@ -190,6 +190,10 @@ if (LITE_WITH_LOG)
   add_definitions("-DLITE_WITH_LOG")
 endif()
 
+if (LITE_WITH_EXCEPTION)
+  add_definitions("-DLITE_WITH_EXCEPTION")
+endif()
+
 if (LITE_ON_TINY_PUBLISH)
   add_definitions("-DLITE_ON_TINY_PUBLISH")
 endif()
