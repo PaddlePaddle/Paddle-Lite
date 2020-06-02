@@ -106,7 +106,6 @@ TEST(pixel_shuffle_image2d, compute) {
                                                           out_image_shape[1]);
   kernel->Launch();
   CLRuntime::Global()->command_queue().finish();
-  std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
   std::vector<float> out_data_v{
       0, 4, 1, 5, 8, 12, 9, 13, 2, 6, 3, 7, 10, 14, 11, 15};
 
@@ -134,7 +133,7 @@ TEST(pixel_shuffle_image2d, compute) {
   }
 
   for (int i = 0; i < out_dim.production(); i++) {
-    auto abs_diff = abs(out_data[i] - out_ref[i]);
+    auto abs_diff = abs(out_data[i] - out_data_v[i]);
     auto relative_diff = COMPUTE_RELATIVE_DIFF(out_data[i], out_ref[i]);
     EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
               true);
