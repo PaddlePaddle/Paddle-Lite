@@ -42,7 +42,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
     }
     if (n > 1) {
       lite::arm::math::trans_gemm_weights<Ptype>(
-            *(param.conv_param.filter), weights_, param.conv_param.groups, &ctx);
+          *(param.conv_param.filter), weights_, param.conv_param.groups, &ctx);
       flag_trans_weights_ = true;
     } else if (n == 1) {
       flag_trans_weights_ = false;

@@ -52,13 +52,15 @@ class DeformableConvOpLite : public OpLite {
         "p" + std::to_string((*param_.conv_param.paddings)[0]) + "s" +
         std::to_string(param_.conv_param.strides[0]) + "g" +
         std::to_string(param_.conv_param.groups) + "d" +
-        std::to_string((*param_.conv_param.dilations)[0]) + (param_.conv_param.bias ? "Bias" : "") +
+        std::to_string((*param_.conv_param.dilations)[0]) +
+        (param_.conv_param.bias ? "Bias" : "") +
         ActivationTypeToStr(param_.conv_param.activation_param.active_type);
     // MACs = 2.f * kw * kh * batchsize * out_c * out_h * out_w * in_c / group
     // GMACs = 1e-9f * MACs
     // GMACPS = 1e-6f * MACs / predict_ms
     ch->macs = 2.f * filter_dims[2] * filter_dims[3] *
-               output_dims.production() * input_dims[1] / param_.conv_param.groups;
+               output_dims.production() * input_dims[1] /
+               param_.conv_param.groups;
   }
 #endif
 
@@ -131,9 +133,8 @@ class DeformableConvOpLite : public OpLite {
         param_.conv_param.activation_param.Leaky_relu_alpha =
             op_desc.GetAttr<float>("leaky_relu_alpha");
       } else {
-        CHECK(false)
-            << "The fused DeformableConv only supports fuse with relu"
-               "and leaky relu";
+        CHECK(false) << "The fused DeformableConv only supports fuse with relu"
+                        "and leaky relu";
       }
     }
     return true;

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/deformable_conv_compute.h"
-#include <utility>
 #include <cmath>
+#include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/kernels/arm/conv_depthwise.h"
@@ -34,7 +34,6 @@ void DeformableConvCompute<PRECISION(kFloat),
 }
 
 static inline float deformable_bilinear(const float* bottom_data,
-                                        const int data_width,
                                         const int height,
                                         const int width,
                                         float h,
@@ -45,14 +44,14 @@ static inline float deformable_bilinear(const float* bottom_data,
   int w_high = w_low + 1;
   if (h_low >= height - 1) {
     h_high = h_low = height - 1;
-    h = (float) h_low;
+    h = (float)h_low;
   } else {
     h_high = h_low + 1;
   }
 
   if (w_low >= width - 1) {
     w_high = w_low = width - 1;
-    w = (float) w_low;
+    w = (float)w_low;
   } else {
     w_high = w_low + 1;
   }
@@ -60,10 +59,10 @@ static inline float deformable_bilinear(const float* bottom_data,
   float lw = w - w_low;
   float hh = 1 - lh;
   float hw = 1 - lw;
-  float v1 = bottom_data[h_low * data_width + w_low];
-  float v2 = bottom_data[h_low * data_width + w_high];
-  float v3 = bottom_data[h_high * data_width + w_low];
-  float v4 = bottom_data[h_high * data_width + w_high];
+  float v1 = bottom_data[h_low * width + w_low];
+  float v2 = bottom_data[h_low * width + w_high];
+  float v3 = bottom_data[h_high * width + w_low];
+  float v4 = bottom_data[h_high * width + w_high];
   float w1 = hh * hw;
   float w2 = hh * lw;
   float w3 = lh * hw;
@@ -122,58 +121,64 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int kernel_size = kw * kh;
 
   int col_size = num * cin * kernel_size * in_size;
-  auto offset_in_size = 2 * group * kernel_size * in_size; 
+  auto offset_in_size = 2 * group * kernel_size * in_size;
   float* col_data = new float[col_size];
   for (int n = 0; n < num; n++) {
     for (int g = 0; g < group; ++g) {
+      const float* offset_data_ptr = offset_data +
+                                     n * offset_in_size +
+                                     g * 2 * kernel_size * in_size;
+      const float* in_data_offset = in_data + n * c_in_size +
+                                    g * in_c_group * in_size;
+      float* col_data_g = col_data + n * c_in_size * kernel_size +
+                              g * in_c_group * kernel_size * in_size;
       for (int ic = 0; ic < in_c_group; ++ic) {
+        const float* in_data_ch = in_data_offset + ic * in_size;
+        float* col_data_ch = col_data_g + ic * kernel_size * in_size;
         for (int fh = 0; fh < kh; fh++) {
           for (int fw = 0; fw < kw; fw++) {
+              const float* offset_data_ptr_h = offset_data_ptr + (2 * (fh * kw + fw)) * out_size;
+              const float* offset_data_ptr_w = offset_data_ptr + (2 * (fh * kw + fw) + 1) * out_size;
+              float* col_data_g_ksize = col_data_g + (fh * kw + fw) * in_size;
             for (int ih = 0; ih < hin; ih++) {
+                const float* offset_data_ptr_h_w = offset_data_ptr_h + ih * wout;
+                const float* offset_data_ptr_w_w = offset_data_ptr_w + ih * wout;
+                float* col_data_g_ksize_h = col_data_g_ksize + ih * win;
               for (int iw = 0; iw < win; iw++) {
-                const float* offset_data_ptr = offset_data +
-                                               n * offset_in_size +
-                                               g * 2 * kernel_size * in_size;
-                const int data_offset_h_ptr =
-                    ((2 * (fh * kw + fw)) * hout + ih) * wout + iw;
-                const int data_offset_w_ptr =
-                    ((2 * (fh * kw + fw) + 1) * hout + ih) * wout + iw;
-                const float offset_h = offset_data_ptr[data_offset_h_ptr];
-                const float offset_w = offset_data_ptr[data_offset_w_ptr];
+                const int data_offset_h_ptr = ih * wout + iw;
+                const int data_offset_w_ptr = ih * wout + iw;
+                const float offset_h = *offset_data_ptr_h_w++;
+                const float offset_w = *offset_data_ptr_w_w++;
                 const float im_w =
                     iw * stride[1] - paddings[2] + kw * dilation[1] + offset_w;
                 const float im_h =
                     ih * stride[0] - paddings[0] + kh * dilation[0] + offset_h;
-                int out_idx = n * c_in_size * kernel_size +
-                              g * in_c_group * kernel_size * in_size +
-                              ic * kernel_size * in_size +
-                              ((fh * kw + fw) * hin + ih) * win + iw;
                 if (im_h >= 0 && im_h < hin && im_w >= 0 && im_w < win) {
-                  const float map_h = kh * dilation[0] + offset_h;
-                  const float map_w = kw * dilation[1] + offset_w;
-                  const int cur_height = hin - (ih * stride[0] - paddings[0]);
-                  const int cur_width = win - (iw * stride[1] - paddings[2]);
+                //   const float map_h = kh * dilation[0] + offset_h;
+                //   const float map_w = kw * dilation[1] + offset_w;
+                //   const int cur_height = hin - (ih * stride[0] - paddings[0]);
+                //   const int cur_width = win - (iw * stride[1] - paddings[2]);
 
-                  const float* in_data_offset =
-                      in_data + n * c_in_size +
-                      (g * in_c_group + ic) * hin * win +
-                      (ih * stride[0] - paddings[0]) * win +
-                      (iw * stride[1] - paddings[2]);
+                //   const float* in_data_offset =
+                //       in_data + n * c_in_size +
+                //       (g * in_c_group + ic) * in_size +
+                //       (ih * stride[0] - paddings[0]) * win +
+                //       (iw * stride[1] - paddings[2]);
 
                   float val = deformable_bilinear(
-                      in_data_offset, win, cur_height, cur_width, map_h, map_w);
+                      in_data_ch, hin, win, im_h, im_w);
 
                   if (param.modulated) {
                     // use mask
                     const float* mask_ptr =
                         mask_data + n * group * kernel_size * in_size +
                         g * kernel_size * in_size +
-                        (fh * kw + fw) * hout * wout + ih * win + iw; 
+                        (fh * kw + fw) * hout * wout + ih * win + iw;
                     val *= mask_ptr[0];
                   }
-                  col_data[out_idx] = val;
+                  *col_data_g_ksize_h++ = val;
                 } else {
-                  col_data[out_idx] = 0.0;
+                  *col_data_g_ksize_h++ = 0.0;
                 }
               }
             }
@@ -213,21 +218,21 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
             param.conv_param.activation_param.Relu_clipped_coef,
             param.conv_param.activation_param.Leaky_relu_alpha);
       } else {
-            int ldb = n;
-            lite::arm::math::sgemm_prepack(false,
-                                           m,
-                                           n,
-                                           k,
-                                           weights_group,
-                                           din_group,
-                                           ldb,
-                                           0.f,
-                                           dout_group,
-                                           n,
-                                           bias_group,
-                                           is_bias,
-                                           param.conv_param.activation_param,
-                                           &ctx);
+        int ldb = n;
+        lite::arm::math::sgemm_prepack(false,
+                                       m,
+                                       n,
+                                       k,
+                                       weights_group,
+                                       din_group,
+                                       ldb,
+                                       0.f,
+                                       dout_group,
+                                       n,
+                                       bias_group,
+                                       is_bias,
+                                       param.conv_param.activation_param,
+                                       &ctx);
       }
     }
   }
