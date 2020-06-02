@@ -585,7 +585,7 @@ void deformable_conv_basic(const Dtype1* in_data,
         for (int oh = 0; oh < hout; oh++) {
           for (int ow = 0; ow < wout; ow++) {
             int out_idx = n * c_out_size + g * out_c_group * out_size +
-                          oc * out_size + oh *  wout + ow;
+                          oc * out_size + oh * wout + ow;
             Dtype2 bias_d = flag_bias ? bias[g * out_c_group + oc] : 0;
             out_data[out_idx] = bias_d + out_data[out_idx];
             for (int ic = 0; ic < in_c_group; ++ic) {
