@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <memory>
 #include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
