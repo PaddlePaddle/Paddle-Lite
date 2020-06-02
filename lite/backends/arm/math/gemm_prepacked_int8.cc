@@ -1217,7 +1217,6 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/       \
   "fmax   v10.4s, v10.4s, v2.4s\n" /* relu*/       \
   "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/       \
-  "ld1    {v3.4s}, [%[alpha]]    \n"    /* relu6 alpha */ \
   "fmax   v12.4s, v12.4s, v2.4s\n" /* relu*/       \
   "fmax   v13.4s, v13.4s, v2.4s\n" /* relu*/       \
   "fmax   v14.4s, v14.4s, v2.4s\n" /* relu*/       \
@@ -2144,11 +2143,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  [c_ptr3] "+r"(c_ptr3),
                  [k] "+r"(k)
                : [is_relu] "r"(is_relu),
-<<<<<<< HEAD
-                 [alpha] "r"(alpha),
-=======
                  [alpha] "r"(new_ptr),
->>>>>>> PaddlePaddle-develop1
                  [bias] "r"(bias),
                  [rem] "r"(rem),
                  [scale] "r"(scale)
