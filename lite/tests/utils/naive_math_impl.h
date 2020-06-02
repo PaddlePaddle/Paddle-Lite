@@ -609,7 +609,6 @@ void deformable_conv_basic(const Dtype1* in_data,
                     const float map_w = kernel_w * dila_w + offset_w;
                     const int cur_height = hin - (oh * stride_h - pad_h);
                     const int cur_width = win - (ow * stride_w - pad_w);
-        
                     const float* in_data_offset =
                         in_data + n * c_in_size +
                         (g * in_c_group + ic) * in_size +
