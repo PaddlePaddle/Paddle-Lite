@@ -18,11 +18,11 @@
 #include <gtest/gtest_prod.h>
 #endif
 
+#include <map>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/node.h"
@@ -127,6 +127,7 @@ struct PMNode {
   PMNode* assert_is_var();
   PMNode* assert_var_not_persistable();
   PMNode* assert_is_persistable_var();
+  PMNode* assert_only_one_output();
   PMNode* assert_is_op_output(const std::string& op_type);
   PMNode* assert_is_op_input(const std::string& op_type);
   PMNode* assert_is_op_input(const std::string& op_type,
@@ -160,6 +161,12 @@ struct PMNode {
   PMNode* assert_op_attr(const std::string& attr_name, const T& attr) {
     return assert_op_attr_satisfied<T>(
         attr_name, [=](const T& src) { return src == attr; });
+  }
+
+  PMNode* assert_node_satisfied(
+      const std::function<bool(const Node*)>& condition) {
+    asserts_.push_back(condition);
+    return this;
   }
 
  private:
@@ -247,7 +254,7 @@ class PMPattern {
 
   std::vector<std::unique_ptr<PMNode>> nodes_;
   std::vector<edge_t> edges_;
-  std::unordered_map<std::string, PMNode*> node_map_;
+  std::map<std::string, PMNode*> node_map_;
   static size_t id_;
 };
 
@@ -279,7 +286,7 @@ class PMPattern {
  */
 class PatternMatcher {
  public:
-  using subgraph_t = std::unordered_map<PMNode*, Node*>;
+  using subgraph_t = std::map<PMNode*, Node*>;
 
   // Operate on the detected pattern.
   using handle_t =
@@ -317,7 +324,7 @@ class PatternMatcher {
   using hit_rcd_t =
       std::pair<Node* /*node in graph*/, PMNode* /*node in pattern*/>;
   PMPattern pattern_;
-  std::unordered_map<const PMNode*, std::unordered_set<Node*>> pmnodes2nodes_;
+  std::map<const PMNode*, std::set<Node*>> pmnodes2nodes_;
 };
 
 // Check whether a var node is a op node's nth input.
@@ -330,8 +337,7 @@ bool IsNthInput(const Node& var,
 bool HasInput(const Node& op, const std::string& argument);
 
 // Graph safely remove some nodes, will automatically clean up the edges.
-void GraphSafeRemoveNodes(SSAGraph* graph,
-                          const std::unordered_set<const Node*>& nodes);
+void GraphSafeRemoveNodes(SSAGraph* graph, const std::set<const Node*>& nodes);
 
 // Some pre-defined patterns those can be reused in multiple passes.
 // The related Fluid Layer or Op should be one pattern here for better re-usage
@@ -347,7 +353,7 @@ struct KeyCounter {
   int IncCounter(const std::string& key) { return dic_[key]++; }
 
  private:
-  std::unordered_map<std::string, size_t> dic_;
+  std::map<std::string, size_t> dic_;
 };
 
 // Generate a unique PMNode's name with name_scope and id.

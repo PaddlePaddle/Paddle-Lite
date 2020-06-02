@@ -217,7 +217,7 @@ void reduce_mean_ref(const std::shared_ptr<operators::ReduceMeanOp> op) {
   }
 
   bool reduce_all = false;
-  sort(dim.begin(), dim.end());
+  std::stable_sort(dim.begin(), dim.end());
   if (dim.size() == 0) {
     reduce_all = true;
   }

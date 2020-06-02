@@ -46,26 +46,50 @@ void XPUMultiEncoderCompute::Run() {
 
   int batch_size = param.input->dims()[0];
   int seq_len = param.input->dims()[1];
-  int r = xdnn::bert_encoder_transformer_int16<int16_t>(
-      ctx.GetRawContext(),                             /* context */
-      batch_size,                                      /* batch_size */
-      seq_len,                                         /* from_seq_len */
-      seq_len,                                         /* to_seq_len */
-      param.head_num,                                  /* head_num */
-      param.size_per_head,                             /* size_per_head */
-      param.n_layers,                                  /* n_layers */
-      param.input->data<float>(),                      /* from_tensor */
-      param.input->data<float>(),                      /* to_tensor */
-      param.mask->data<float>(),                       /* att_mask */
-      &arg_fc_weight_[0],                              /* fc_weights */
-      &arg_fc_bias_[0],                                /* fc_biass */
-      &arg_ln_scale_[0],                               /* ln_scales */
-      &arg_ln_bias_[0],                                /* ln_biass */
-      param.output->mutable_data<float>(TARGET(kXPU)), /* output */
-      param.fc_weight_max->data<float>(),              /* fc_weights_max */
-      true,                                            /* pretrans_b */
-      true,                                            /* use_l3 */
-      act_type_ /* act_type */);
+  int r = -1;
+  if (param.precision == "int31") {
+    r = xdnn::bert_encoder_transformer_int31(
+        ctx.GetRawContext(),                             /* context */
+        batch_size,                                      /* batch_size */
+        seq_len,                                         /* from_seq_len */
+        seq_len,                                         /* to_seq_len */
+        param.head_num,                                  /* head_num */
+        param.size_per_head,                             /* size_per_head */
+        param.n_layers,                                  /* n_layers */
+        param.input->data<float>(),                      /* from_tensor */
+        param.input->data<float>(),                      /* to_tensor */
+        param.mask->data<float>(),                       /* att_mask */
+        (const float**)(&arg_fc_weight_[0]),             /* fc_weights */
+        &arg_fc_bias_[0],                                /* fc_biass */
+        &arg_ln_scale_[0],                               /* ln_scales */
+        &arg_ln_bias_[0],                                /* ln_biass */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
+        param.fc_weight_max->data<float>(),              /* fc_weights_max */
+        true,                                            /* pretrans_b */
+        true,                                            /* use_l3 */
+        act_type_ /* act_type */);
+  } else {
+    r = xdnn::bert_encoder_transformer_int16<int16_t>(
+        ctx.GetRawContext(),                             /* context */
+        batch_size,                                      /* batch_size */
+        seq_len,                                         /* from_seq_len */
+        seq_len,                                         /* to_seq_len */
+        param.head_num,                                  /* head_num */
+        param.size_per_head,                             /* size_per_head */
+        param.n_layers,                                  /* n_layers */
+        param.input->data<float>(),                      /* from_tensor */
+        param.input->data<float>(),                      /* to_tensor */
+        param.mask->data<float>(),                       /* att_mask */
+        &arg_fc_weight_[0],                              /* fc_weights */
+        &arg_fc_bias_[0],                                /* fc_biass */
+        &arg_ln_scale_[0],                               /* ln_scales */
+        &arg_ln_bias_[0],                                /* ln_biass */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
+        param.fc_weight_max->data<float>(),              /* fc_weights_max */
+        true,                                            /* pretrans_b */
+        true,                                            /* use_l3 */
+        act_type_ /* act_type */);
+  }
   CHECK_EQ(r, 0);
 }
 

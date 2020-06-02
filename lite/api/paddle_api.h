@@ -118,18 +118,27 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
+  // to save subgraph model for npu/xpu/...
+  std::string subgraph_model_cache_dir_{""};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
   // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
   const std::string& model_dir() const { return model_dir_; }
-  // set Power_mode
-  void set_power_mode(PowerMode mode);
-  PowerMode power_mode() const { return mode_; }
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const { return mode_; }
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  const std::string& subgraph_model_cache_dir() const {
+    return subgraph_model_cache_dir_;
+  }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
@@ -137,6 +146,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<Place> valid_places_;
   std::string model_file_;
   std::string param_file_;
+  std::vector<std::string> passes_internal_{};
   bool model_from_memory_{false};
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
@@ -165,7 +175,16 @@ class LITE_API CxxConfig : public ConfigBase {
     param_file_ = std::string(param_buffer, param_buffer + param_buffer_size);
     model_from_memory_ = true;
   }
-
+  // internal inference to choose passes for model optimizing,
+  // it's designed for internal developer and not recommanded
+  // for comman users.
+  void set_passes_internal(
+      const std::vector<std::string>& passes_internal = {}) {
+    passes_internal_ = passes_internal;
+  }
+  const std::vector<std::string>& get_passes_internal() const {
+    return passes_internal_;
+  }
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
@@ -216,6 +235,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+  void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

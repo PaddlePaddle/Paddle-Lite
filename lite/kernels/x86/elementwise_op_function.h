@@ -14,16 +14,15 @@ limitations under the License. */
 
 #pragma once
 
-#include <glog/logging.h>
 #include <algorithm>
 #include <iterator>
 #include <vector>
-#include "lite/fluid/eigen.h"
-#include "lite/fluid/transform.h"
-#include "lite/utils/paddle_enforce.h"
-
 #include "lite/backends/x86/math/math_function.h"
+#include "lite/fluid/eigen.h"
 #include "lite/fluid/for_range.h"
+#include "lite/fluid/transform.h"
+#include "lite/utils/cp_logging.h"
+#include "lite/utils/paddle_enforce.h"
 #include "lite/utils/variant.h"
 
 namespace paddle {
@@ -324,7 +323,7 @@ void ElementwiseComputeEx(const lite::Context<Target> &ctx,
   }
 
   axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  PADDLE_ENFORCE(axis >= 0 && axis < x_dims.size(),
+  PADDLE_ENFORCE(axis >= 0 && axis < static_cast<int>(x_dims.size()),
                  "Axis should be in range [0, x_dims)");
   auto y_dims = trim_trailing_singular_dims(y_dims_untrimed);
   axis = (y_dims.size() == 0) ? x_dims.size() : axis;

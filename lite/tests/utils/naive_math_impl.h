@@ -27,7 +27,7 @@ static void basic_trans_mat_to_c4(const type* input,
     k_round = K;
   }
   const int m_loop = m_round / 4;
-  type zero_buf[K];
+  type* zero_buf = new type[K];
   memset(zero_buf, 0, K * sizeof(type));
   for (int i = 0; i < m_loop; ++i) {
     const type* in0 = input + i * 4 * ldin;
@@ -59,6 +59,7 @@ static void basic_trans_mat_to_c4(const type* input,
       *output++ = static_cast<type>(0);
     }
   }
+  delete[] zero_buf;
 }
 
 template <typename type, typename type2>
@@ -202,8 +203,8 @@ static void basic_gemv(int m,
         c[i] = tmp > (type2)0 ? tmp : (type2)0;
       } else if (flag_act == 2) {  // relu 6
         c[i] = tmp > (type2)0 ? tmp : (type2)0;
-        // c[i] = c[i] < six ? c[i] : six; // ut compute
-      } else if (flag_act == 4) {  // leakey relu
+        c[i] = c[i] < six ? c[i] : six;  // ut compute
+      } else if (flag_act == 4) {        // leakey relu
         c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
       }
     } else {

@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class VarConv2DCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class VarConv2DCompute : public KernelLite<TARGET(kCUDA), PType> {
  public:
   using param_t = operators::VarConv2DParam;
 
@@ -32,7 +33,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
 
  private:
   mutable operators::ConvParam conv_param_;
-  std::unique_ptr<lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>> conv_impl_;
+  std::unique_ptr<lite::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
   lite::Tensor offset_;
 };
 

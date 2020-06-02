@@ -1,0 +1,4 @@
+*paddle*lite*
+*touch_*
+*mir_pass_*
+*PyInit_lite*

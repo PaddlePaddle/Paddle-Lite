@@ -19,7 +19,6 @@
 #include "lite/backends/cuda/context.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
@@ -85,6 +84,16 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+
+  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir() {
+    return subgraph_model_cache_dir_;
+  }
+
+ private:
+  static std::string subgraph_model_cache_dir_;
 };
 #endif
 
@@ -177,6 +186,9 @@ class Context<TargetType::kXPU> {
   }
 
   std::string name() const { return "XPUContext"; }
+
+ public:
+  static std::string _multi_encoder_precision;  // NOLINT
 
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;

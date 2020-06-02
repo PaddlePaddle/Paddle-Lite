@@ -15,7 +15,6 @@
 #include "lite/core/mir/subgraph/subgraph_detector.h"
 #include <memory>
 #include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/dot.h"
@@ -46,13 +45,13 @@ std::string SubgraphVisualizer::operator()() {
       "khaki1",       "ivory4",         "sandybrown",     "olivedrab2",
       "turquoise4",   "snow3",          "sienna4",        "salmon2",
   };
-  std::unordered_map<Node *, int> subgraph_indices;
+  std::map<Node *, int> subgraph_indices;
   for (size_t i = 0; i < subgraphs_.size(); i++) {
     for (size_t j = 0; j < subgraphs_[i].size(); j++) {
       subgraph_indices[subgraphs_[i][j]] = i;
     }
   }
-  std::unordered_map<std::string, int> exists_ops;
+  std::map<std::string, int> exists_ops;
   std::set<std::string> exists_args;
   for (auto &node : graph_->StmtTopologicalOrder()) {
     if (!node->IsStmt()) {
@@ -125,9 +124,9 @@ void SubgraphDetector::node_dat_t::UnionFindCombine(node_dat_t *candidate) {
   candidate->union_find_parent = union_find_parent;
 
   // Obtain the input and output nodes for the combined one
-  std::unordered_set<node_dat_t *> inputs(inlinks.begin(), inlinks.end());
-  std::unordered_set<node_dat_t *> outputs(candidate->outlinks.begin(),
-                                           candidate->outlinks.end());
+  std::set<node_dat_t *> inputs(inlinks.begin(), inlinks.end());
+  std::set<node_dat_t *> outputs(candidate->outlinks.begin(),
+                                 candidate->outlinks.end());
   for (auto *out_node : outlinks) {
     if (out_node != candidate) {
       outputs.insert(out_node);
@@ -185,7 +184,7 @@ void SubgraphDetector::FlexibleDFS(
   for (auto &node : source) {
     stack.push_back(std::pair<const node_dat_t *, bool>(node, false));
   }
-  std::unordered_set<const node_dat_t *> visited;
+  std::set<const node_dat_t *> visited;
   while (!stack.empty()) {
     auto top = stack.back();
     stack.pop_back();
@@ -210,9 +209,9 @@ void SubgraphDetector::FlexibleDFS(
   }
 }
 
-std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
+std::set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
   // get exclude nodes from config file
-  std::unordered_set<Node *> excluded_nodes;
+  std::set<Node *> excluded_nodes;
   std::string config_file_path =
       GetStringFromEnv(SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE);
   if (!IsFileExists(config_file_path)) {
@@ -285,7 +284,7 @@ std::unordered_set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
 
 void SubgraphDetector::InitNodes(node_map_t *nodes) {
   // Initialize and mark the subgraph detector nodes based on teller.
-  std::unordered_set<Node *> excluded_nodes = GetExcludedNodesFromConfigFile();
+  std::set<Node *> excluded_nodes = GetExcludedNodesFromConfigFile();
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
       it.second->inlinks.push_back((*nodes)[in_node]);
@@ -337,7 +336,7 @@ std::vector<std::vector<Node *>> SubgraphDetector::ExtractSubgraphs(
     //  then the src and dst nodes can not be fused into one node,
     //  otherwise it can be done.
     while (true) {
-      std::unordered_set<node_dat_t *> contract_nodes;
+      std::set<node_dat_t *> contract_nodes;
       for (auto *out_node : node->outlinks) {
         // must be an candidate
         if (!out_node->marked) continue;
@@ -372,7 +371,7 @@ std::vector<std::vector<Node *>> SubgraphDetector::ExtractSubgraphs(
     }
   }
 
-  std::unordered_map<node_dat_t * /*ancestor*/, std::vector<Node *>> clusters;
+  std::map<node_dat_t * /*ancestor*/, std::vector<Node *>> clusters;
   for (auto &node : graph_->StmtTopologicalOrder()) {
     if (!node->IsStmt()) continue;
     if ((*nodes)[node]->marked) {
@@ -426,11 +425,11 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   subgraph_op_desc.SetAttr<int32_t>("sub_block", sub_block_idx);
 
   // Extract input and output nodes from the target subgraph
-  std::unordered_set<Node *> input_var_nodes;
-  std::unordered_set<Node *> weight_var_nodes;
-  std::unordered_set<Node *> output_var_nodes;
-  std::unordered_set<Node *> local_var_nodes;
-  std::unordered_set<Node *> unused_var_nodes;
+  std::set<Node *> input_var_nodes;
+  std::set<Node *> weight_var_nodes;
+  std::set<Node *> output_var_nodes;
+  std::set<Node *> local_var_nodes;
+  std::set<Node *> unused_var_nodes;
   ExtractInputsOutputs(subgraph_nodes,
                        &input_var_nodes,
                        &weight_var_nodes,
@@ -551,11 +550,11 @@ void SubgraphFuser::operator()() {
 }
 
 void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,
-                          std::unordered_set<Node *> *input_var_nodes,
-                          std::unordered_set<Node *> *weight_var_nodes,
-                          std::unordered_set<Node *> *output_var_nodes,
-                          std::unordered_set<Node *> *local_var_nodes,
-                          std::unordered_set<Node *> *unused_var_nodes) {
+                          std::set<Node *> *input_var_nodes,
+                          std::set<Node *> *weight_var_nodes,
+                          std::set<Node *> *output_var_nodes,
+                          std::set<Node *> *local_var_nodes,
+                          std::set<Node *> *unused_var_nodes) {
   for (auto &op_node : op_nodes) {
     for (auto &var_node : op_node->inlinks) {
       if (var_node->AsArg().is_weight) {
@@ -597,10 +596,10 @@ void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,
   }
 }
 
-std::unordered_set<const Node *> GetNodes2RM(
+std::set<const Node *> GetNodes2RM(
     const std::vector<Node *> &op_nodes,
-    const std::vector<std::unordered_set<Node *>> &excluded_var_nodes) {
-  std::unordered_set<const Node *> nodes2rm(op_nodes.begin(), op_nodes.end());
+    const std::vector<std::set<Node *>> &excluded_var_nodes) {
+  std::set<const Node *> nodes2rm(op_nodes.begin(), op_nodes.end());
   for (auto &op_node : op_nodes) {
     for (auto &var_node : op_node->inlinks) {
       if (!nodes2rm.count(var_node)) {
@@ -625,8 +624,8 @@ std::unordered_set<const Node *> GetNodes2RM(
 }
 
 static void SortHelper(Node *node,
-                       const std::unordered_set<Node *> &unordered_nodes,
-                       std::unordered_set<const Node *> *visited_nodes,
+                       const std::set<Node *> &unordered_nodes,
+                       std::set<const Node *> *visited_nodes,
                        std::vector<Node *> *ordered_nodes) {
   for (auto &var_node : node->inlinks) {
     if (var_node->inlinks.empty()) continue;
@@ -640,8 +639,8 @@ static void SortHelper(Node *node,
 }
 
 std::vector<Node *> GetTopologicalOrder(
-    const std::unordered_set<Node *> &unordered_nodes) {
-  std::unordered_set<const Node *> visited_nodes;
+    const std::set<Node *> &unordered_nodes) {
+  std::set<const Node *> visited_nodes;
   std::vector<Node *> ordered_nodes;
   for (auto &node : unordered_nodes) {
     if (!node->IsStmt()) continue;

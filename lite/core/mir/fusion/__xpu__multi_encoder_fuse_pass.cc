@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include <memory>
+#include <set>
 #include <vector>
 #include "lite/backends/xpu/math.h"
+#include "lite/core/context.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/type_precision_cast_pass.h"  // For UpdateInputs()
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
@@ -125,14 +127,6 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qk_softmax_out = VarNode("qk_softmax_out")
                                ->assert_is_op_output("softmax", "Out")
                                ->AsIntermediate();
-    auto* qk_dropout = OpNode("qk_dropout", "dropout")->AsIntermediate();
-    auto* qk_dropout_out = VarNode("qk_dropout_out")
-                               ->assert_is_op_output("dropout", "Out")
-                               ->assert_is_op_input("matmul", "X")
-                               ->AsIntermediate();
-    auto* qk_dropout_mask = VarNode("qk_dropout_mask")
-                                ->assert_is_op_output("dropout", "Mask")
-                                ->AsIntermediate();
 
     auto* v_mul_y =
         VarNode("v_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
@@ -203,16 +197,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_add = OpNode("qkv_add", "elementwise_add")->AsIntermediate();
     auto* qkv_add_out = VarNode("qkv_add_out")
                             ->assert_is_op_output("elementwise_add", "Out")
-                            ->assert_is_op_input("dropout", "X")
                             ->AsIntermediate();
-    auto* qkv_dropout = OpNode("qkv_dropout", "dropout")->AsIntermediate();
-    auto* qkv_dropout_out = VarNode("qkv_dropout_out")
-                                ->assert_is_op_output("dropout", "Out")
-                                ->assert_is_op_input("elementwise_add", "X")
-                                ->AsIntermediate();
-    auto* qkv_dropout_mask = VarNode("qkv_dropout_mask")
-                                 ->assert_is_op_output("dropout", "Mask")
-                                 ->AsIntermediate();
 
     auto* qkv_add_2 = OpNode("qkv_add_2", "elementwise_add")->AsIntermediate();
     auto* qkv_add_2_out = VarNode("qkv_add_2_out")
@@ -271,16 +256,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_add_4 = OpNode("qkv_add_4", "elementwise_add")->AsIntermediate();
     auto* qkv_add_4_out = VarNode("qkv_add_4_out")
                               ->assert_is_op_output("elementwise_add", "Out")
-                              ->assert_is_op_input("dropout", "X")
                               ->AsIntermediate();
-    auto* qkv_dropout_4 = OpNode("qkv_dropout_4", "dropout")->AsIntermediate();
-    auto* qkv_dropout_4_out = VarNode("qkv_dropout_4_out")
-                                  ->assert_is_op_output("dropout", "Out")
-                                  ->assert_is_op_input("elementwise_add", "X")
-                                  ->AsIntermediate();
-    auto* qkv_dropout_4_mask = VarNode("qkv_dropout_4_mask")
-                                   ->assert_is_op_output("dropout", "Mask")
-                                   ->AsIntermediate();
 
     auto* qkv_add_5 = OpNode("qkv_add_5", "elementwise_add")->AsIntermediate();
     auto* qkv_add_5_out = VarNode("qkv_add_5_out")
@@ -321,9 +297,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     *k_transpose2 >> *k_transpose2_xshape;
 
     *qk_matmul >> *qk_matmul_out >> *qk_add >> *qk_add_out >> *qk_softmax >>
-        *qk_softmax_out >> *qk_dropout >> *qk_dropout_out >> *qkv_matmul;
+        *qk_softmax_out >> *qkv_matmul;
     *qk_mask >> *qk_add;
-    *qk_dropout >> *qk_dropout_mask;
 
     *input >> *v_mul >> *v_mul_out >> *v_add >> *v_add_out >> *v_reshape2 >>
         *v_reshape2_out >> *v_transpose2 >> *v_transpose2_out >> *qkv_matmul;
@@ -334,13 +309,11 @@ class XPUSingleEncoderFuser : public FuseBase {
 
     *qkv_matmul >> *qkv_matmul_out >> *qkv_transpose2 >> *qkv_transpose2_out >>
         *qkv_reshape2 >> *qkv_reshape2_out >> *qkv_mul >> *qkv_mul_out >>
-        *qkv_add >> *qkv_add_out >> *qkv_dropout >> *qkv_dropout_out >>
-        *qkv_add_2;
+        *qkv_add >> *qkv_add_out >> *qkv_add_2;
     *qkv_transpose2 >> *qkv_transpose2_xshape;
     *qkv_reshape2 >> *qkv_reshape2_xshape;
     *qkv_mul_y >> *qkv_mul;
     *qkv_add_y >> *qkv_add;
-    *qkv_dropout >> *qkv_dropout_mask;
 
     *input >> *qkv_add_2 >> *qkv_add_2_out >> *qkv_ln_2 >> *qkv_ln_2_out;
     *qkv_ln_2_scale >> *qkv_ln_2;
@@ -350,13 +323,11 @@ class XPUSingleEncoderFuser : public FuseBase {
 
     *qkv_ln_2_out >> *qkv_mul_3 >> *qkv_mul_3_out >> *qkv_add_3 >>
         *qkv_add_3_out >> *qkv_act >> *qkv_act_out >> *qkv_mul_4 >>
-        *qkv_mul_4_out >> *qkv_add_4 >> *qkv_add_4_out >> *qkv_dropout_4 >>
-        *qkv_dropout_4_out >> *qkv_add_5;
+        *qkv_mul_4_out >> *qkv_add_4 >> *qkv_add_4_out >> *qkv_add_5;
     *qkv_mul_3_y >> *qkv_mul_3;
     *qkv_add_3_y >> *qkv_add_3;
     *qkv_mul_4_y >> *qkv_mul_4;
     *qkv_add_4_y >> *qkv_add_4;
-    *qkv_dropout_4 >> *qkv_dropout_4_mask;
 
     *qkv_ln_2_out >> *qkv_add_5 >> *qkv_add_5_out >> *qkv_ln_5 >> *qkv_ln_5_out;
     *qkv_ln_5_scale >> *qkv_ln_5;
@@ -451,6 +422,9 @@ class XPUSingleEncoderFuser : public FuseBase {
 
 class XPUMultiEncoderFuser {
  public:
+  explicit XPUMultiEncoderFuser(const std::set<int>& fc_int31_ids)
+      : fc_int31_ids_(fc_int31_ids) {}
+
   bool IsDirectPredecessorOf(Node* op1, Node* op2) {
     for (auto* out : op1->outlinks) {
       for (auto* in : op2->inlinks) {
@@ -487,12 +461,12 @@ class XPUMultiEncoderFuser {
       }
     }
 
-    std::unordered_set<const Node*> to_remove;
+    std::set<const Node*> to_remove;
     Node* first_encoder = all_encoders[0];
     std::string in_name, out_name;
     std::vector<std::string> arg_names{
         "FCWeight", "FCBias", "LNScale", "LNBias"};
-    std::unordered_map<std::string, std::vector<std::string>> arg_map;
+    std::map<std::string, std::vector<std::string>> arg_map;
     for (size_t i = 0; i < all_encoders.size(); ++i) {
       Node* cur_encoder = all_encoders[i];
       auto* op_info = cur_encoder->stmt()->op_info();
@@ -542,6 +516,8 @@ class XPUMultiEncoderFuser {
     op_desc.SetAttr<int>("n_layers", all_encoders.size());
     op_desc.SetAttr<std::string>(
         "act_type", first_encoder_op_info->GetAttr<std::string>("act_type"));
+    op_desc.SetAttr<std::string>("precision",
+                                 (fc_int31_ids_.empty() ? "int16" : "int31"));
 
     auto* scope = multi_encoder_stmt->op()->scope();
     std::vector<float> fc_weight_max(arg_map["FCWeight"].size());
@@ -553,18 +529,33 @@ class XPUMultiEncoderFuser {
       float* weight_on_host = weight_t->mutable_data<float>();
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+      // i ranges from 0 to 6*encoder_num, so we need to do i%6 to get relative
+      // position in the encoder
+      if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
+        // FCs in encoder use int31
+        VLOG(3) << "Use FC-int31 in FC-" << i << ", " << i / 6 << "-" << i % 6;
+        std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
+        paddle::lite::xpu::math::Transpose(weight_on_host,
+                                           weight_trans_fp32.get(),
+                                           weight_dims[0],
+                                           weight_dims[1]);
 
-      std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
-      std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-      paddle::lite::xpu::math::ConvertFP32ToInt16(
-          weight_on_host, weight_int16.get(), max_f, weight_len);
-      paddle::lite::xpu::math::Transpose(weight_int16.get(),
-                                         weight_trans_int16.get(),
-                                         weight_dims[0],
-                                         weight_dims[1]);
-      memcpy(weight_on_host,
-             weight_trans_int16.get(),
-             weight_len * sizeof(int16_t));
+        memcpy(weight_on_host,
+               weight_trans_fp32.get(),
+               weight_len * sizeof(float));
+      } else {
+        std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
+        std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
+        paddle::lite::xpu::math::ConvertFP32ToInt16(
+            weight_on_host, weight_int16.get(), max_f, weight_len);
+        paddle::lite::xpu::math::Transpose(weight_int16.get(),
+                                           weight_trans_int16.get(),
+                                           weight_dims[0],
+                                           weight_dims[1]);
+        memcpy(weight_on_host,
+               weight_trans_int16.get(),
+               weight_len * sizeof(int16_t));
+      }
       fc_weight_max[i] = max_f;
     }
 
@@ -598,7 +589,7 @@ class XPUMultiEncoderFuser {
       }
     }
     if (stack) {
-      std::unordered_set<const Node*> to_remove2;
+      std::set<const Node*> to_remove2;
       Node* stack_out = stack->outlinks.front();
       // avoid modification while traversing
       auto stack_out_outlinks = stack_out->outlinks;
@@ -631,6 +622,9 @@ class XPUMultiEncoderFuser {
       GraphSafeRemoveNodes(graph, to_remove2);
     }
   }
+
+ private:
+  std::set<int> fc_int31_ids_;
 };
 
 }  // namespace fusion
@@ -641,15 +635,35 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(miaotianxiang): backup graph, recover from failed match
     std::vector<std::string> act_types{"gelu", "relu"};
+
+    std::set<int> fc_int31_ids;
+#ifdef LITE_WITH_XPU
+    // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
+    // access Context<kXPU>::_multi_encoder_precision, but this static member
+    // variable in class specialization defined in lite/core/context.cc
+    // is only compiled iff LITE_WITH_XPU==ON. To suppress linkage error, we use
+    // #ifdef here. Any better idea?
+    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
+        lite::Context<TargetType::kXPU>::_multi_encoder_precision == "int31") {
+      fc_int31_ids = {0, 1, 2, 3, 4, 5};
+      VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
+              << "lite::Context<>::_multi_encoder_precision="
+              << lite::Context<TargetType::kXPU>::_multi_encoder_precision;
+    } else {
+      VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
+              << "lite::Context<>::_multi_encoder_precision="
+              << lite::Context<TargetType::kXPU>::_multi_encoder_precision;
+    }
+#endif
+
     for (auto& act_type : act_types) {
       fusion::XPUSingleEncoderFuser single_encoder_fuser(act_type);
       single_encoder_fuser(graph.get());
-      fusion::XPUMultiEncoderFuser multi_encoder_fuser;
+      fusion::XPUMultiEncoderFuser multi_encoder_fuser(fc_int31_ids);
       multi_encoder_fuser(graph.get());
     }
   }
 };
-
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

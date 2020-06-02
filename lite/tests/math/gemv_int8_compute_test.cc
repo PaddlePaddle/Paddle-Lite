@@ -236,7 +236,7 @@ bool test_gemv_int8(bool tra,
                                        flag_act > 0,
                                        act,
                                        &ctx,
-                                       six,
+                                       six / scale_c[0],
                                        alpha);
     t0.Stop();
   }
@@ -332,7 +332,11 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
                                            m,
                                            n,
                                            has_bias,
+<<<<<<< HEAD
                                            flag_act,
+=======
+                                           has_relu > 0,
+>>>>>>> PaddlePaddle-develop1
                                            FLAGS_power_mode,
                                            th,
                                            six,
@@ -340,13 +344,21 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
                 if (flag) {
                   LOG(INFO) << "test m = " << m << ", n=" << n
                             << ", bias: " << (has_bias ? "true" : "false")
+<<<<<<< HEAD
                             << ", act: " << flag_act
+=======
+                            << ",  relu: " << (has_relu ? "true" : "false")
+>>>>>>> PaddlePaddle-develop1
                             << ", trans A: " << (tra ? "true" : "false")
                             << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", n=" << n
                              << ", bias: " << (has_bias ? "true" : "false")
+<<<<<<< HEAD
                              << ", act: " << flag_act
+=======
+                             << ",  relu: " << (has_relu ? "true" : "false")
+>>>>>>> PaddlePaddle-develop1
                              << ", trans A: " << (tra ? "true" : "false")
                              << " failed\n";
                 }

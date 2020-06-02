@@ -92,9 +92,9 @@ class LoDTensor2BatchFunctor {
       seq_info[seq_id].seq_idx = seq_id;
     }
 
-    std::sort(seq_info.begin(), seq_info.end(), [](SeqInfo a, SeqInfo b) {
-      return a.length > b.length;
-    });
+    std::stable_sort(seq_info.begin(),
+                     seq_info.end(),
+                     [](SeqInfo a, SeqInfo b) { return a.length > b.length; });
 
     // Calculate the start position of each batch.
     // example:  sequences = {s0, s1, s2}

@@ -79,7 +79,20 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     }
     flag_trans_bias_ = true;
   }
+  //! update relu6 parameter
+  if (param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
+    param.activation_param.Relu_clipped_coef =
+        param.activation_param.Relu_clipped_coef / param.output_scale;
+  }
 }
+
+#ifdef LITE_WITH_PROFILE
+template <>
+void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -111,11 +124,25 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv1x1s1_gemm";
+#endif
   } else {
     lite::arm::math::conv_im2col_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_im2col_gemm";
+#endif
   }
 }
+
+#ifdef LITE_WITH_PROFILE
+template <>
+void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
@@ -159,6 +186,9 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                          param,
                                          &ctx,
                                          w_scale_.data());
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv1x1s1_gemm_int8";
+#endif
   } else {
     lite::arm::math::conv_im2col_gemm_int8(din,
                                            dout,
@@ -174,8 +204,19 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                            param,
                                            &ctx,
                                            w_scale_.data());
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_im2col_gemm_int8";
+#endif
   }
 }
+
+#ifdef LITE_WITH_PROFILE
+template <>
+void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
@@ -219,6 +260,9 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                          param,
                                          &ctx,
                                          w_scale_.data());
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv1x1s1_gemm_int8";
+#endif
   } else {
     lite::arm::math::conv_im2col_gemm_int8(din,
                                            dout,
@@ -234,6 +278,9 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                            param,
                                            &ctx,
                                            w_scale_.data());
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_im2col_gemm_int8";
+#endif
   }
 }
 
