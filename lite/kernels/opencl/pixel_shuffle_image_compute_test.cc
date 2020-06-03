@@ -133,14 +133,14 @@ TEST(pixel_shuffle_image2d, compute) {
 
   for (int i = 0; i < out_dim.production(); i++) {
     auto abs_diff = abs(out_data[i] - out_data_v[i]);
-    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_data[i], out_ref[i]);
+    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_data[i], out_data_v[i]);
     EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
               true);
     if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
       LOG(ERROR) << "error idx:" << i << " out_data[" << i
                  << "]:" << out_data[i] << " "
                                            "out_ref["
-                 << i << "]:" << out_ref[i] << " abs_diff:" << abs_diff
+                 << i << "]:" << out_data_v[i] << " abs_diff:" << abs_diff
                  << " relative_diff:" << relative_diff
                  << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
     }
