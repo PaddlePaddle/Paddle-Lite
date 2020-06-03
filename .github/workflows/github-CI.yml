@@ -68,6 +68,7 @@ jobs:
         # [ `awk -v num=0 -v last=0 'BEGIN{} /average preprocess time/ {last=last*10+num; num=0} /START TO CONVERT/ {num++} END{print last}' log` -eq 171 ]
         [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
     - name: test_classification_resnet50_without_batchsize_changeble
+      run: |
         cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/classification
         PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE=true ./classification_demo --gtest_filter="classification_test.resnet50" &> log
         [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
@@ -109,3 +110,9 @@ jobs:
         [ `awk  'BEGIN {min=65536} /detected.*subgraph/ {if($6<min) min=$6 fi} END {print min}' log` -eq 1 ]
         hardware_time=`awk  'BEGIN {max=-1} /hardware/ {if($7>max) max=$7 fi} END {print max}' log` && [ `awk -v a=$hardware_time -v b=8 'BEGIN{print(a<b)?"0":"1"}'` -eq 0 ]
         [ `awk -v num=0 -v result=0 'BEGIN{} /compile_times/ {if($2!=num) result++; num=0 fi} /START TO CONVERT/ {num++} END{print result}' log` -eq 0 ]
+    - name: test_detection
+      run: |
+        cd /home/jiaopu/actions-runner/_work/Paddle-Lite/Paddle-Lite-models/detection/
+        cp /opt/share/datasets/imagenet/val_1000.txt ./filelist
+        sed -i 's/^/\/opt\/share\/datasets\/imagenet\//' filelist
+        ./detection
