@@ -1515,6 +1515,11 @@ struct XPUFcParam : ParamBase {
   std::string activation_type{""};
 };
 
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
