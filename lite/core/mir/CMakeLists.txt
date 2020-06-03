@@ -35,6 +35,7 @@ lite_cc_library(mir_passes
       generate_program_pass.cc
       argument_type_display_pass.cc
       demo_pass.cc
+      int64_to_int32_pass.cc
       runtime_context_assign_pass.cc
       memory_optimize_pass.cc
       multi_stream_analysis_pass.cc
