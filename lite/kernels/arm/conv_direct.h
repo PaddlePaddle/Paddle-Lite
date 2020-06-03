@@ -39,7 +39,8 @@ inline bool direct_conv_trans_weights(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale) {  // NOLINT
+    std::vector<float>& merge_scale,  // NOLINT
+    float* relu_clipped_coef) {
   constexpr int cblock = 4;
   int oc = win->dims()[0];
   int ic = win->dims()[1];
@@ -64,7 +65,8 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale) {  // NOLINT
+    std::vector<float>& merge_scale,  // NOLINT
+    float* relu_clipped_coef) {
   int cblock = 4;
   if (stride == 2) {
     cblock = lite::arm::math::conv_3x3s2_direct_int8_c_num();
@@ -103,7 +105,8 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale) {  // NOLINT
+    std::vector<float>& merge_scale,  // NOLINT
+    float* relu_clipped_coef) {
   int cblock = 4;
   if (stride == 2) {
     cblock = lite::arm::math::conv_3x3s2_direct_int8_c_num();
@@ -130,6 +133,8 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
       merge_scale[i] = w_scale[i] * scale;
     }
   }
+  /// update relu_clipped_coef
+  *relu_clipped_coef /= out_scale;
   /// update bias
   if (bin) {
     bout->Resize(bin->dims());
@@ -167,16 +172,17 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
         << "direct conv only support conv3x3s1 and conv3x3s2";
     CHECK(kw == 3 && kh == 3)
         << "direct conv only support conv3x3s1 and conv3x3s2";
-    flag_trans_bias_ =
-        direct_conv_trans_weights<Ptype, OutType>(param.filter,
-                                                  &weights_,
-                                                  param.bias,
-                                                  &bias_,
-                                                  sw,
-                                                  param.weight_scale,
-                                                  param.input_scale,
-                                                  param.output_scale,
-                                                  w_scale_);
+    flag_trans_bias_ = direct_conv_trans_weights<Ptype, OutType>(
+        param.filter,
+        &weights_,
+        param.bias,
+        &bias_,
+        sw,
+        param.weight_scale,
+        param.input_scale,
+        param.output_scale,
+        w_scale_,
+        &param.activation_param.Relu_clipped_coef);
   }
 
   virtual void Run();

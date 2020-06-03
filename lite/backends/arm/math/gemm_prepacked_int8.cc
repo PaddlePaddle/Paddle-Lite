@@ -534,18 +534,18 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "fmin   v17.4s, v17.4s, v1.4s\n" /* relu6 */     \
   "fmin   v18.4s, v18.4s, v1.4s\n" /* relu6 */     \
   "fmin   v19.4s, v19.4s, v1.4s\n" /* relu6 */     \
-  "fmin   v20.4s, v20.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v21.4s, v21.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v22.4s, v22.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v23.4s, v23.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v24.4s, v24.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v25.4s, v25.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v26.4s, v26.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v27.4s, v27.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v28.4s, v28.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v29.4s, v29.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v30.4s, v30.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v31.4s, v31.4s, v0.4s\n" /* relu6 */     \
+  "fmin   v20.4s, v20.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v21.4s, v21.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v22.4s, v22.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v23.4s, v23.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v24.4s, v24.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v25.4s, v25.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v26.4s, v26.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v27.4s, v27.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v28.4s, v28.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v29.4s, v29.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v30.4s, v30.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v31.4s, v31.4s, v1.4s\n" /* relu6 */     \
   "b      9f                    \n"   /* relu end */
 
 #define GEMM_INT8_LEAKY_RELU                       \
