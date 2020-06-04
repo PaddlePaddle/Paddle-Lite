@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <functional>
 #include <iostream>
 #include <list>
 #include <map>
