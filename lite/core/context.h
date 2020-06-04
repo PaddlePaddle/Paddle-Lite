@@ -76,8 +76,6 @@ class Context<TargetType::kHost> {
 template <>
 class Context<TargetType::kNPU> {
  public:
-  Context() {}
-  explicit Context(const NPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(NPUContext* ctx) {}
@@ -101,8 +99,6 @@ class Context<TargetType::kNPU> {
 template <>
 class Context<TargetType::kAPU> {
  public:
-  Context() {}
-  explicit Context(const APUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(APUContext* ctx) {}
@@ -116,8 +112,6 @@ class Context<TargetType::kAPU> {
 template <>
 class Context<TargetType::kBM> {
  public:
-  Context() {}
-  explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
   void CopySharedTo(BMContext* ctx) {}
@@ -131,8 +125,6 @@ class Context<TargetType::kBM> {
 template <>
 class Context<TargetType::kRKNPU> {
  public:
-  Context() {}
-  explicit Context(const RKNPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(RKNPUContext* ctx) {}
@@ -146,9 +138,6 @@ class Context<TargetType::kRKNPU> {
 template <>
 class Context<TargetType::kXPU> {
  public:
-  Context() {}
-  explicit Context(const XPUContext& ctx);
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
@@ -200,11 +189,6 @@ class Context<TargetType::kXPU> {
 template <>
 class Context<TargetType::kARM> {
  public:
-  Context() {}
-  explicit Context(const ARMContext& ctx);
-
-  ARMContext& operator=(const ARMContext& ctx) {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { DeviceInfo::Init(); }
 
@@ -246,7 +230,6 @@ class Context<TargetType::kARM> {
 template <>
 class Context<TargetType::kFPGA> {
  public:
-  Context() {}
   void InitOnce() {}
 
   FPGAContext& operator=(const FPGAContext& ctx) {}
@@ -340,8 +323,6 @@ class Context<TargetType::kMLU> {
 template <>
 class Context<TargetType::kX86> {
  public:
-  Context() {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
