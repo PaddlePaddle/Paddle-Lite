@@ -480,9 +480,7 @@ TEST(expand_c4hw_image2d, compute) {
                                                           out_image_shape[1]);
   kernel->Launch();
   CLRuntime::Global()->command_queue().finish();
-  std::vector<float> out_data_v{0,  1,  2,  0,  1,  2,  3,  4,  5,  3,  4,  5,
-                                6,  7,  8,  6,  7,  8,  9,  10, 11, 9,  10, 11,
-                                12, 13, 14, 12, 13, 14, 15, 16, 17, 15, 16, 17};
+  std::vector<float> out_data_v{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
