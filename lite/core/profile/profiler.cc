@@ -164,6 +164,10 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
      << " " << setw(9) << left << "clMin(ms)"
      << " " << setw(9) << left << "clMax(ms)"
      << " " << setw(9) << left << "clAvg(%)";
+  if (!concise) {
+    ss << " " << setw(12) << left << "GlobalWorkSize"
+       << " " << setw(12) << left << "LocalWorkSize";
+  }
 #endif
   ss << std::endl;
 
@@ -301,7 +305,10 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << cl_times.Avg(w) << " " << setw(9) << left << fixed
          << setprecision(3) << cl_times.Min(w) << " " << setw(9) << left
          << fixed << setprecision(3) << cl_times.Max(w) << " " << left
-         << setprecision(2) << cl_percent << "%   ";
+         << setprecision(2) << cl_percent << "%   "
+         << " " << setw(12) << left << fixed
+         << unit.Character().global_work_size << " " << setw(12) << left
+         << fixed << unit.Character().local_work_size;
 #endif
       ss << std::endl;
     }
