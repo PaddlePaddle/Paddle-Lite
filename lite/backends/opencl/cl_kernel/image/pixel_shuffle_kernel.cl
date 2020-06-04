@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #include <cl_common.h>
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
 __kernel void pixel_shuffle(__read_only image2d_t input_image,
                             __write_only image2d_t output_image,
                             __private const int in_N,
@@ -38,10 +37,10 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
   int in_w = out_w / upscale_factor;
   int in_nh = out_n * in_H + in_h;
 
-  half4 res;
+  CL_DTYPE4 res;
   int out_c;
   int in_c;
-  half4 in;
+  CL_DTYPE4 in;
   int2 in_pos;
 
   out_c = out_c4 * 4 + 0;
@@ -49,7 +48,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = read_imageh(input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
   if (in_c % 4 == 0) {
     res.x = in.x;
   } else if (in_c % 4 == 1) {
@@ -65,7 +64,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = read_imageh(input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
   if (in_c % 4 == 0) {
     res.y = in.x;
   } else if (in_c % 4 == 1) {
@@ -81,7 +80,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = read_imageh(input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
   if (in_c % 4 == 0) {
     res.z = in.x;
   } else if (in_c % 4 == 1) {
@@ -97,7 +96,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = read_imageh(input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
   if (in_c % 4 == 0) {
     res.w = in.x;
   } else if (in_c % 4 == 1) {
@@ -111,5 +110,5 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
   int2 out_pos;
   out_pos.x = out_c4 * out_W + out_w;
   out_pos.y = out_nh;
-  write_imageh(output_image, out_pos, res);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, out_pos, res);
 }
