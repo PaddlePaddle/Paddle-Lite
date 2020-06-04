@@ -126,7 +126,7 @@ class KernelBase {
   }
   template <typename T>
   void SetParam(T param) {
-    param_.set<T>(param);
+    param_.set(param);
   }
   template <typename P>
   P& Param() const {
