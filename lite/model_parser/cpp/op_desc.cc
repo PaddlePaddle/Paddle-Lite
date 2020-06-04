@@ -24,7 +24,7 @@ namespace cpp {
   template <>                                                    \
   void OpDesc::SetAttr<T>(const std::string& name, const T& v) { \
     attr_types_[name] = AttrType::repr__;                        \
-    attrs_[name].set<T>(v);                                      \
+    attrs_[name].set(v);                                         \
   }
 
 SET_ATTR_IMPL(int32_t, INT);
