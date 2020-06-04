@@ -57,11 +57,14 @@ set(mlu_subgraph_bridges
 
 if (LITE_BUILD_EXTRA)
   lite_cc_library(subgraph_bridge_lrn_op_mlu SRCS lrn_op.cc DEPS ${subgraph_bridge_deps_mlu})
-  list(APPEND mlu_subgraph_bridges subgraph_bridge_lrn_op_mlu)
   lite_cc_library(subgraph_bridge_gather_op_mlu SRCS gather_op.cc DEPS ${subgraph_bridge_deps_mlu})
-  list(APPEND mlu_subgraph_bridges subgraph_bridge_gather_op_mlu)
   lite_cc_library(subgraph_bridge_norm_op_mlu SRCS norm_op.cc DEPS ${subgraph_bridge_deps_mlu})
-  list(APPEND mlu_subgraph_bridges subgraph_bridge_norm_op_mlu)
+  set(mlu_subgraph_bridges
+      "${mlu_subgraph_bridges}"
+      subgraph_bridge_lrn_op_mlu
+      subgraph_bridge_gather_op_mlu
+      subgraph_bridge_norm_op_mlu
+      CACHE INTERNAL "mlu_subgraph_bridges")
 endif()
 
 lite_cc_library(subgraph_test_helper_mlu SRCS test_helper.cc DEPS ${mlu_subgraph_bridges})
