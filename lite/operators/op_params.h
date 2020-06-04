@@ -24,7 +24,6 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
-#include "lite/utils/variant.h"
 /*
  * This file contains all the argument parameter data structure for operators.
  */
