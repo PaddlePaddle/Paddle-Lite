@@ -44,14 +44,14 @@ static inline float deformable_bilinear(const float* bottom_data,
   int w_high = w_low + 1;
   if (h_low >= height - 1) {
     h_high = h_low = height - 1;
-    h = (float)h_low;
+    h = static_cast<float>(h_low);
   } else {
     h_high = h_low + 1;
   }
 
   if (w_low >= width - 1) {
     w_high = w_low = width - 1;
-    w = (float)w_low;
+    w = static_cast<float>((w_low);
   } else {
     w_high = w_low + 1;
   }
