@@ -19,6 +19,9 @@
 #include <vector>
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_include.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -63,6 +66,21 @@ struct OpCharacter {
 
 #ifdef LITE_WITH_OPENCL
   cl::Event cl_event{};
+  std::string global_work_size{"N/A"};
+  std::string local_work_size{"N/A"};
+
+  std::string NDRangeToStr(const cl::NDRange& range) {
+    std::string range_str{""};
+    const size_t range_size = 3;
+    for (size_t i = 0; i < range_size /*range.size()*/; ++i) {
+      LOG(INFO) << "range[" << i << "]:" << std::to_string(range[i]);
+      range_str += std::to_string(range[i]);
+      if (i != range_size - 1) {
+        range_str += ",";
+      }
+    }
+    return range_str;
+  }
 #else
   void* cl_event{nullptr};
 #endif
