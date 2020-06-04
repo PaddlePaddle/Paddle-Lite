@@ -42,8 +42,30 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                             Context<TARGET(kARM)>* ctx,
                             const float* scale) {
   auto paddings = *param.paddings;
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias;
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 1;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 2;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 3;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
   int pad_h = paddings[0];
   int pad_w = paddings[2];
 
@@ -442,7 +464,8 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                                    chout,
                                    hout,
                                    wout,
-                                   flag_relu,
+                                   flag_act,
+                                   alpha,
                                    bias_local,
                                    flag_bias,
                                    ptr_write,

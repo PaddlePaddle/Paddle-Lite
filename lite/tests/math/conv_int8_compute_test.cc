@@ -56,7 +56,7 @@ DEFINE_int32(dila_w, 1, "dilation width");
 DEFINE_bool(flag_act, true, "do act");
 DEFINE_bool(flag_bias, true, "with bias");
 DEFINE_double(clipped_coef, 1.0, "clipped relu coef");
-DEFINE_double(leakey_relu_alpha, 8.88, "leakey relu alpha");
+DEFINE_double(leakey_relu_alpha, 2.22, "leakey relu alpha");
 
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
@@ -188,7 +188,14 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
   }
 
   std::vector<float> scale_in{1.f / 127};
-  std::vector<float> scale_out{weight_dim.count(1, 4) / 127.f};
+  std::vector<float> scale_out(1, weight_dim.count(1, 4) / 127.f);
+  if (flag_act == 2) {
+    scale_out[0] = six / 127.f;
+  } else if (flag_act == 4) {
+    if (std::abs(alpha) > 1) {
+      scale_out[0] *= std::abs(alpha);
+    }
+  }
   std::vector<float> scale_w(weight_dim[0], 1.f / 127);
 
   param_int8_out.input_scale = scale_in[0];
@@ -484,7 +491,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1}) {
         for (auto& flag_bias : {false, true}) {
-          for (auto& flag_act : {0, 1}) {
+          for (auto& flag_act : {0, 1, 2, 4}) {
             for (auto& c : {1, 3, 5, 8, 16, 32}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 3, 3});
@@ -520,7 +527,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1, 2, 3, 4}) {
         for (auto& flag_bias : {false, true}) {
-          for (auto& flag_act : {0, 1}) {
+          for (auto& flag_act : {0, 1, 2, 4}) {
             for (auto& c : {1, 5, 15, 33}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});
@@ -553,7 +560,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
 #if 1  /// conv1x1s1
 TEST(TestConv1x1s1Int8, test_conv1x1s1) {
   if (FLAGS_basic_test) {
-    for (auto& cin : {1, 3, 8, 32}) {
+    for (auto& cin : {1, 3, 8, 33}) {
       for (auto& cout : {1, 5, 17}) {
         for (auto& g : {1, 2}) {
           for (auto& flag_bias : {false, true}) {
@@ -599,7 +606,7 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
             for (auto& pad_left : {1, 2}) {
               for (auto& pad_right : {1, 2}) {
                 for (auto& flag_bias : {false, true}) {
-                  for (auto& flag_act : {0, 1}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
@@ -641,7 +648,7 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
             for (auto& pad_left : {1, 2}) {
               for (auto& pad_right : {1, 2}) {
                 for (auto& flag_bias : {false, true}) {
-                  for (auto& flag_act : {0, 1}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
@@ -673,7 +680,7 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
 }
 #endif  /// conv3x3s2
 
-#if 0   /// random param conv
+#if 1  /// random param conv
 TEST(TestConvRandInt8, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 17}) {
