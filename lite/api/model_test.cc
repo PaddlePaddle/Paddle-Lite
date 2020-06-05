@@ -200,6 +200,7 @@ int main(int argc, char** argv) {
               << "--model_dir /path/to/your/model";
     exit(0);
   }
+
   std::string save_optimized_model_dir = "";
   if (FLAGS_use_optimize_nb) {
     save_optimized_model_dir = FLAGS_model_dir;
