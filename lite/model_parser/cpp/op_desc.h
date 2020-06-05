@@ -15,6 +15,7 @@
 #pragma once
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/any.h"
@@ -106,10 +107,23 @@ class OpDesc : public OpDescAPI {
   }
 
   template <typename T>
-  void SetAttr(const std::string& name, const T& v);
+  void SetAttr(const std::string& name, const T& v) {
+    attr_types_[name] = OpDescAPI::DataTypeTrait<T>::AT;
+    attrs_[name].set(v);
+  }
 
   template <typename T>
-  T GetAttr(const std::string& name) const;
+  T GetAttr(const std::string& name) const {
+    auto it = attrs().find(name);
+    CHECK(it != attrs().end()) << "No attributes called " << name << " found";
+    auto attr_it = attr_types().find(name);
+    CHECK(attr_it != attr_types().end());
+    auto pair = std::make_pair(it, attr_it);
+    CHECK(pair.second->second == OpDescAPI::DataTypeTrait<T>::AT)
+        << "required type is " << OpDescAPI::DataTypeTrait<T>::ATN
+        << " not match the true type";
+    return pair.first->second.get<T>();
+  }
 
   const std::map<std::string, Any>& attrs() const { return attrs_; }
   const std::map<std::string, AttrType>& attr_types() const {
