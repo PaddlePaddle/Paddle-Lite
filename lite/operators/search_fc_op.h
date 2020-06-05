@@ -35,7 +35,20 @@ class SearchFcOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "search_fc"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->filter_shape = ch->DimToStr(param_.W->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    ch->remark = "out_size" + std::to_string(param_.out_size);
+    auto x_dims = param_.X->dims();
+    auto w_dims = param_.W->dims();
+    ch->macs = 2.f * x_dims[0] * x_dims[1] * w_dims[0];
+  }
+#endif
 
  private:
   mutable SearchFcParam param_;

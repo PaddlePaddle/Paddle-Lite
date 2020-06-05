@@ -32,14 +32,26 @@ tar zxf mobilenet_v1.tar.gz
 
 ![image](https://paddlelite-data.bj.bcebos.com/doc_images/cxx_demo/3inference_model.png)
 
-（2）下载[opt工具](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt)。放入同一文件夹，终端输入命令转化模型：
+（2）模型转换
 
-```shell
-wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt
-chmod +x opt
-./opt --model_dir=./mobilenet_v1 --optimize_out_type=naive_buffer   --optimize_out=./mobilenet_v1_opt
-```
 
+  - v2.6.0版本之前
+
+  下载[opt工具](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt)。放入同一文件夹，终端输入命令转化模型
+
+  ```shell
+  wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.3.0/opt
+  chmod +x opt
+  ./opt --model_dir=./mobilenet_v1 --optimize_out_type=naive_buffer   --optimize_out=./mobilenet_v1_opt
+  ```
+  - v2.6.0版本以及后续版本
+
+  安装paddlelite，终端输入命令转化模型
+ 
+  ```shell
+  python -m pip install paddlelite
+  paddle_lite_opt --model_dir=./mobilenet_v1 --optimize_out_type=naive_buffer   --optimize_out=./mobilenet_v1_opt
+  ```
 **结果如下图所示：**
 
 ![image](https://paddlelite-data.bj.bcebos.com/doc_images/cxx_demo/2opt_model.png)

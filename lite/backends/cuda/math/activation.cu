@@ -23,7 +23,7 @@ namespace math {
 
 template <typename T>
 __global__ void relu_kernel(const int num,
-                            const T alpha,
+                            const float alpha,
                             const T* input,
                             T* output) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -33,6 +33,26 @@ __global__ void relu_kernel(const int num,
                                               : __ldg(input + index) * alpha;
 #else
     output[index] = input[index] >= 0 ? input[index] : input[index] * alpha;
+#endif
+  }
+}
+
+template <>
+__global__ void relu_kernel<half>(const int num,
+                                  const float alpha,
+                                  const half* input,
+                                  half* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+    const half kZero = __float2half(0.0f);
+#if __CUDA_ARCH__ >= 530
+    output[index] = __hgt(__ldg(input + index), kZero)
+                        ? __ldg(input + index)
+                        : __hmul(__ldg(input + index), __float2half(alpha));
+#else
+    output[index] = (__half2float(input[index]) > 0)
+                        ? input[index]
+                        : __float2half(__half2float(input[index]) * alpha);
 #endif
   }
 }
@@ -419,6 +439,19 @@ void relu(int num, const T* din, T* dout, float alpha, cudaStream_t stream) {
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 
+template <>
+void relu<half>(
+    int num, const half* din, half* dout, float alpha, cudaStream_t stream) {
+  if (num == 0) {
+    return;
+  }
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  relu_kernel<half><<<block, thread, 0, stream>>>(num, alpha, din, dout);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
+}
+
 template <typename T>
 void bias_relu(int num,
                const T* din,
@@ -433,6 +466,7 @@ void bias_relu(int num,
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 template void relu(int, const float*, float*, float, cudaStream_t);
+template void relu(int, const half*, half*, float, cudaStream_t);
 template void bias_relu(
     int, const float*, const float* bias, float*, float, cudaStream_t);
 

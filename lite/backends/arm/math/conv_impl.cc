@@ -790,8 +790,30 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
   int pad_h = paddings[0];
   int pad_w = paddings[2];
   int stride = param.strides[1];
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 1;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 2;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 3;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
   if (stride == 1) {
     conv_depthwise_3x3s1_int8(reinterpret_cast<float*>(dout),
                               reinterpret_cast<const int8_t*>(din),
@@ -799,7 +821,8 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -816,7 +839,8 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -849,8 +873,30 @@ void conv_depthwise_3x3_int8_int8(const void* din,
   int pad_h = paddings[0];
   int pad_w = paddings[2];
   int stride = param.strides[1];
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 1;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 2;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 3;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
   if (stride == 1) {
     conv_depthwise_3x3s1_int8(reinterpret_cast<int8_t*>(dout),
                               reinterpret_cast<const int8_t*>(din),
@@ -858,7 +904,8 @@ void conv_depthwise_3x3_int8_int8(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -875,7 +922,8 @@ void conv_depthwise_3x3_int8_int8(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -908,8 +956,30 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
   int pad_h = paddings[0];
   int pad_w = paddings[2];
   int stride = param.strides[1];
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 1;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 2;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 3;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
   if (stride == 1) {
     conv_depthwise_5x5s1_int8(reinterpret_cast<float*>(dout),
                               reinterpret_cast<const int8_t*>(din),
@@ -917,7 +987,8 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -934,7 +1005,8 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -967,8 +1039,30 @@ void conv_depthwise_5x5_int8_int8(const void* din,
   int pad_h = paddings[0];
   int pad_w = paddings[2];
   int stride = param.strides[1];
-  bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 1;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 2;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 3;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
   if (stride == 1) {
     conv_depthwise_5x5s1_int8(reinterpret_cast<int8_t*>(dout),
                               reinterpret_cast<const int8_t*>(din),
@@ -976,7 +1070,8 @@ void conv_depthwise_5x5_int8_int8(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,
@@ -993,7 +1088,8 @@ void conv_depthwise_5x5_int8_int8(const void* din,
                               scale,
                               bias,
                               flag_bias,
-                              flag_relu,
+                              flag_act,
+                              alpha,
                               num,
                               ch_in,
                               h_in,

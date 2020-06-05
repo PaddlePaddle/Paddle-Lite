@@ -5,7 +5,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ## 已支持的设备
 
-- 华为nova5、nova5i pro、mate30、mate30 pro、mate30 5G、荣耀v30，以及即将推出的mate40、p40。据华为透露，今后上市的大部分手机都会搭载其自研达芬奇架构NPU。
+- 华为nova5、nova5i pro、mate30、mate30 pro、mate30 5G、荣耀v30、p40、p40 pro，以及即将推出的mate40、。据华为透露，今后上市的大部分手机都会搭载其自研达芬奇架构NPU。
 
 ## 已支持的模型
 
@@ -13,8 +13,13 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 - MobileNetV2
 - ResNet-18/50
 - ShuffleNetV2
+- squeezenet
+- mnasnet
+- yolov3
 - CycleGAN (暂时需要华为内部rom的支持)
 - 百度内部业务模型（由于涉密，不方便透露具体细节）
+
+*CPU/NPU混合调度在部分模型可以获得更佳的性能*
 
 ## 已支持（或部分支持）的Paddle算子
 
@@ -64,8 +69,8 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ## 编译支持NPU的Paddle Lite库
 
-- 从https://developer.huawei.com/consumer/cn/hiai/下载华为HiAI DDK后解压到任意路径（注意：华为提供了多个版本的DDK，我们需要下载针对麒麟810/990芯片HiAI Foundation开发套件，例如最新的[DDK V310版本](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)）。
-- 将HiAI DDK中的ai_ddk_lib目录拷贝至Paddle Lite源码根目录后，使用[NPU编译脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_npu.sh)编译full_publish和tiny_publish。
+- 从[华为HiAI平台](https://developer.huawei.com/consumer/cn/hiai)下载华为HiAI DDK后解压到任意路径（注意：华为提供了多个版本的DDK，我们需要下载针对麒麟810/990芯片HiAI Foundation开发套件，例如[DDK V310版本](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)）。
+- 将HiAI DDK中的ai_ddk_lib目录拷贝至Paddle Lite源码根目录后，使用[编译脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_android.sh)编译 (需要指定NPU相关选项)。
 
 注意：以下是HiAI DDK V310版解压后的目录结构，需要将ai_ddk_lib目录拷贝至Paddle Lite源码根目录。
 ```shell
@@ -79,16 +84,11 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 - tools
 ```
 
-- full_publish and tiny_publish for armv8，由于HiAI DDK的armv7和armv8的so库均基于c++_shared构建，因此，建议使用c++_shared编译Paddle Lite。
+- 推荐编译命令。由于HiAI DDK的so库均基于c++_shared构建，因此，建议使用c++_shared编译Paddle Lite。
 ```shell
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared full_publish
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared tiny_publish
-```
-
-- full_publish and tiny_publish for armv7
-```shell
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared full_publish
-$ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared tiny_publish
+# huawei_kirin_npu_sdk_root 需要指向 ai_ddk_lib 的路径
+$ ./lite/tools/build_android.sh --android_stl=c++_shared --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=<path-to-ai_ddk_lib>
+# 其它选项可以通过 "./lite/tools/build_android.sh help" 查看，例如arm版本等 
 ```
 
 注意：为了保证编译环境一致，建议参考[源码编译](../user_guides/source_compile)中的Docker开发环境进行配置，然后再执行上述命令。
@@ -110,16 +110,11 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 
 ## 通过JAVA接口加载并执行NPU模型
 
+**注意：由于华为手机root权限限制，现在仅支持JAVA接口加载和执行NPU模型**
+
 - 使用方法和[Java实例](java_demo)一致，无需额外设置任何参数，只需将模型换成NPU模型即可。[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中的Image Classification Demo for Android是同时支持CPU和NPU两种模型的图像分类Demo。
 
 注意：在拷贝libpaddle_lite_jni.so的时候，由于依赖HiAI DDK so和libc++_shared.so库，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，拷到libpaddle_lite_jni.so同级目录下。
-
-## 通过C++接口加载并执行NPU模型
-
-- 使用方法和[C++实例](cpp_demo)一致，同样无需额外设置任何参数，只需将模型换成NPU模型即可。
-
-注意：1）不能使用安卓模拟器，需要使用真实设备，且必须是支持NPU的华为手机。2）在使用adb push命令向手机推送目标程序时，需要将HiAI DDK中ai_ddk_lib/lib或ai_ddk_lib/lib64目录下的所有so和libc++_shared.so，推送到目标程序同级目录下。
-
 
 ## 其它说明
 
@@ -171,15 +166,15 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
 - 2、初步分析
 
     - 下图是ssd_mobilenet_v1中的部分结构。其中红色部分暂时不支持在NPU上运行，蓝色部分可能NPU上的性能不理想。此时，如果直接让预测库自动调度的话，可能会分成多个子图，而且整体性能不佳。因此，可以将蓝色部分和绿色部分整体指定在CPU上运行，让其他部分自动运行在NPU上(红色部分会自动在CPU上运行)。
-    ![ssd_mobilenet_v1_example](https://user-images.githubusercontent.com/50474132/80453173-525b5280-895a-11ea-847f-c7dd5b5799de.png)
+    ![](https://user-images.githubusercontent.com/50474132/80453173-525b5280-895a-11ea-847f-c7dd5b5799de.png)
 
 - 3、使用opt转换模型
 
     - opt转换过程中会打印log信息。在log中搜索```digraph G```和```// end G```可以找到优化后的模型图。
-    ![image](https://user-images.githubusercontent.com/50474132/80454098-145f2e00-895c-11ea-9f16-dde1483a9beb.png)
-    ![image](https://user-images.githubusercontent.com/50474132/80454123-1de89600-895c-11ea-86b9-a62d78a6616d.png)
+    ![](https://user-images.githubusercontent.com/50474132/80454098-145f2e00-895c-11ea-9f16-dde1483a9beb.png)
+    ![](https://user-images.githubusercontent.com/50474132/80454123-1de89600-895c-11ea-86b9-a62d78a6616d.png)
     - 将从```digraph G```开始的，到```// end G```结束的整段模型图信息，保存到```.dot```格式的文件中。可以用```graphviz```打开查看，或者在[网页版](http://dreampuf.github.io/GraphvizOnline/)查看。
-    ![image](https://user-images.githubusercontent.com/50474132/80454841-47ee8800-895d-11ea-9531-5689c5560fcb.png)
+    ![](https://user-images.githubusercontent.com/50474132/80454841-47ee8800-895d-11ea-9531-5689c5560fcb.png)
     - 在此处确认需要被指定的算子是否被优化了。(期望是被指定的算子都还独立存在，如果被融合为了一个算子，需要指定此时融合后的算子)。
 
 - 4、写配置文件
@@ -191,7 +186,7 @@ $ ./lite/tools/build_npu.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --an
     concat
     softmax
     ```
-    - 由于这些算子都指定在NPU上运行，因此不需要特意配置算子的输入输出名称。
+    - 由于这些算子都指定在CPU上运行，因此不需要特意配置算子的输入输出名称。
 
 - 5、指定配置文件路径
 

@@ -90,7 +90,7 @@ ios-detection_demo/detection_demo/ViewController.mm
 
 ## 代码讲解 （如何使用Paddle-Lite C++ API 执行预测）
 
-IOS 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/java_api_doc.html)。
+IOS 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/cxx_api_doc.html)。
 
 ```c++
 #include <iostream>

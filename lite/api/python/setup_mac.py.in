@@ -35,6 +35,8 @@ else:
 # core lib of paddlelite is stored as lite.so
 LITE_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/lite'
 PACKAGE_DATA = {'paddlelite': ['lite.so']}
+# copy scripts of paddlelite
+shutil.copy('${PADDLE_SOURCE_DIR}/lite/api/python/bin/paddle_lite_opt', LITE_PATH)
 # put all thirdparty libraries in paddlelite.libs
 PACKAGE_DATA['paddlelite.libs'] = []
 LIB_PATH = '${PADDLE_BINARY_DIR}/inference_lite_lib/python/install/libs'
@@ -45,7 +47,7 @@ if '${WITH_MKL}' == 'ON':
     PACKAGE_DATA['paddlelite.libs'] += ['libmklml.dylib', 'libiomp5.dylib']
 
 # link lite.so to paddlelite.libs
-COMMAND = "install_name_tool -id \"@loader_path/../libs/\" ${PADDLE_BINARY_DIR}\
+COMMAND = "install_name_tool -add_rpath \"@loader_path/libs/\" ${PADDLE_BINARY_DIR}\
 /inference_lite_lib/python/install/lite/lite.so"
 if os.system(COMMAND) != 0:
     raise Exception("patch third_party libs failed, command: %s" % COMMAND)
@@ -66,6 +68,7 @@ setup(
     name='paddlelite',
     version=PADDLELITE_VERSION,
     description='Paddle-Lite Library',
+    scripts=['lite/paddle_lite_opt'],
     packages=['paddlelite', 'paddlelite.libs'],
     package_dir=PACKAGE_DIR,
     package_data=PACKAGE_DATA,

@@ -224,7 +224,7 @@ class ReduceSumComputeTester : public arena::TestCase {
       }
     }
 
-    sort(dim_.begin(), dim_.end());
+    std::stable_sort(dim_.begin(), dim_.end());
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
       if (keep_dim_) {

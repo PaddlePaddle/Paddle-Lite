@@ -34,8 +34,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-  auto x_rank = x_dims.size();
-  CHECK_GE(x_rank, 2);
 
   auto out_name = op_info->Output("Out").front();
 
@@ -45,9 +43,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (dropout_implementation == "upscale_in_train") {
     scale = 1.f;
   }
-  // HiAI only support [n, c, 1, 1] for the shape of scale
-  std::vector<int64_t> scale_shape = {
-      1, x_rank < 3 ? 1 : x_dims[x_rank - 3], 1, 1};
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
@@ -61,11 +56,7 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scale_node = graph->Add<ge::op::Scale>(out_name);
   auto scale_op = scale_node->data<ge::op::Scale>();
   scale_op->set_input_x(*x_node->data());
-  scale_op->set_attr_axis(1);
-
-  // Add filter node(fill with scale)
-  auto filter_node = graph->Add(out_name + "/filter", scale, scale_shape);
-  scale_op->set_input_filter(*filter_node->data());
+  scale_op->set_attr_filler_value(scale);
 
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

@@ -4,7 +4,7 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# armv7 or armv8 or armv7hf, default armv8.
+# armv8 or armv7hf or armv7, default armv8.
 ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
@@ -12,6 +12,7 @@ TOOLCHAIN=gcc
 WITH_EXTRA=OFF
 # controls whether to compile python lib, default is OFF.
 WITH_PYTHON=OFF
+PY_VERSION=""
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
@@ -56,6 +57,7 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_LANG=$TOOLCHAIN \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
+                        -DPY_VERSION=$PY_VERSION \
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
@@ -201,10 +203,11 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh help                                                                                                                 |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                                  |"
-    echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                                          |"
+    echo -e "|     --arch: (armv8|armv7hf|armv7), default is armv8                                                                                                  |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
+    echo -e "|     --python_version: (2.7|3.5|3.7); controls python version to compile whl, default is None                                                         |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|                                                                                                                                                      |"
@@ -241,7 +244,7 @@ function main {
     # Parse command line.
     for i in "$@"; do
         case $i in
-            # armv7 or armv8, default armv8
+            # armv8 or armv7hf or armv7, default armv8
             --arch=*)
                 ARCH="${i#*=}"
                 shift
@@ -259,6 +262,11 @@ function main {
             # ON or OFF, default OFF
             --with_python=*)
                 WITH_PYTHON="${i#*=}"
+                shift
+                ;;
+            # 2.7 or 3.5 or 3.7, default is None
+            --python_version=*)
+                PY_VERSION="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

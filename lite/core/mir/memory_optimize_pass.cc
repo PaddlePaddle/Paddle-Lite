@@ -28,12 +28,11 @@ typedef struct {
   std::string name;
   int cluster;
   std::pair<int, int> lifetime;
-  std::unordered_set<std::string> adj;
+  std::set<std::string> adj;
 } MemNode;
 
 void MemoryOptimizePass::CollectLifeCycleByDevice(
-    std::unordered_map<std::string, lifecycle_map_t>* lifecycles,
-    SSAGraph* graph) {
+    std::map<std::string, lifecycle_map_t>* lifecycles, SSAGraph* graph) {
   max_lifecycle_ = 0;
 
   auto is_host = [](TargetType x) -> bool {
@@ -41,22 +40,22 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   };
 
   // The all of input and output variables of the Ops will not be reused.
-  std::unordered_set<std::string> invalid_op_nodes = {"while",
-                                                      "conditional_block",
-                                                      "conditional_block_infer",
-                                                      "merge_lod_tensor_infer",
-                                                      "merge_lod_tensor",
-                                                      "equal",
-                                                      "lod_reset",
-                                                      "concat",
-                                                      "yolo_box",
-                                                      "subgraph",
-                                                      "feed",
-                                                      "fetch"};
+  std::set<std::string> invalid_op_nodes = {"while",
+                                            "conditional_block",
+                                            "conditional_block_infer",
+                                            "merge_lod_tensor_infer",
+                                            "merge_lod_tensor",
+                                            "equal",
+                                            "lod_reset",
+                                            "concat",
+                                            "yolo_box",
+                                            "subgraph",
+                                            "feed",
+                                            "fetch"};
 
   auto insert_invalid_op_nodes_for_specific_target = [&](
-      std::unordered_set<std::string> op_node_set, TargetType specific_target) {
-    std::unordered_set<std::string> invalid_op_nodes_opencl = {"layout", "fc"};
+      std::set<std::string> op_node_set, TargetType specific_target) {
+    std::set<std::string> invalid_op_nodes_opencl = {"layout", "fc"};
     for (auto& op_node : graph->StmtTopologicalOrder()) {
       if (!op_node->IsStmt()) continue;
       TargetType op_target_type = op_node->AsStmt().place().target;
@@ -76,7 +75,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
 
   // Collect the invalid input and output variables that will not be reused.
-  std::unordered_set<std::string> invalid_var_names;
+  std::set<std::string> invalid_var_names;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     // variables of invalid_op_nodes wil not be reused
     if (!op_node->IsStmt()) continue;
@@ -97,9 +96,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
     // The specified input and output variables of the Ops whose 'inplace' attr
     // is true will not be reused, such as reshape/reshape2's X and Out
     // variables
-    std::unordered_map<std::string,
-                       std::pair<std::unordered_set<std::string>,
-                                 std::unordered_set<std::string>>>
+    std::map<std::string,
+             std::pair<std::set<std::string>, std::set<std::string>>>
         inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
                             {"reshape2", {{"X"}, {"Out"}}}};
     auto inplace_op_node = inplace_op_nodes.find(op_type);
@@ -162,7 +160,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
 
 void MemoryOptimizePass::MakeReusePlan(
     const lifecycle_map_t& lifecycles,
-    std::unordered_map<std::string, std::string>* node2cluster) {
+    std::map<std::string, std::string>* node2cluster) {
   std::vector<MemNode> mem_nodes;
   std::vector<std::string> cluster;
   for (auto& data : lifecycles) {
@@ -193,7 +191,7 @@ void MemoryOptimizePass::MakeReusePlan(
     mem_nodes[i].cluster = cluster_index;
     (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
     cluster.push_back(mem_nodes[i].name);
-    std::unordered_set<std::string> cluster_adj = mem_nodes[i].adj;
+    std::set<std::string> cluster_adj = mem_nodes[i].adj;
     for (size_t j = i + 1; j < mem_nodes.size(); j++) {
       if (mem_nodes[j].cluster < 0 &&
           (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end())) {
@@ -211,14 +209,13 @@ void MemoryOptimizePass::MakeReusePlan(
 }
 
 void MemoryOptimizePass::PerformReusePlan(
-    SSAGraph* graph,
-    const std::unordered_map<std::string, std::string>& reuse_table) {
+    SSAGraph* graph, const std::map<std::string, std::string>& reuse_table) {
   int node_append_idx = 0;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto& stmt = op_node->AsStmt();
     auto* op_info = stmt.mutable_op_info();
-    std::unordered_map<std::string, std::vector<std::string>> in_args, out_args;
+    std::map<std::string, std::vector<std::string>> in_args, out_args;
     // replace the op's input according the reuse table.
     for (auto argument : op_info->inputs()) {
       for (const auto& x : argument.second) {
@@ -298,10 +295,10 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // name of var and the value in the table represents the current name of var.
   // 3. Perform reuse plan: Replace all var's name in the model according to the
   // mapping table.
-  std::unordered_map<std::string, lifecycle_map_t> lifecycles;
+  std::map<std::string, lifecycle_map_t> lifecycles;
   CollectLifeCycleByDevice(&lifecycles, graph.get());
   for (auto& ele : lifecycles) {
-    std::unordered_map<std::string, std::string> node2cluster;
+    std::map<std::string, std::string> node2cluster;
     MakeReusePlan(ele.second, &node2cluster);
     PerformReusePlan(graph.get(), node2cluster);
   }
