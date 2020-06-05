@@ -14,8 +14,8 @@ limitations under the License. */
 #pragma once
 
 #include <jni.h>
-#include <string>
-#include <vector>
+#include <string>  // NOLINT
+#include <vector>  // NOLINT
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
