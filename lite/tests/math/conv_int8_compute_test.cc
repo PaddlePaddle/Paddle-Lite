@@ -56,11 +56,7 @@ DEFINE_int32(dila_w, 1, "dilation width");
 DEFINE_bool(flag_act, true, "do act");
 DEFINE_bool(flag_bias, true, "with bias");
 DEFINE_double(clipped_coef, 1.0, "clipped relu coef");
-<<<<<<< HEAD
-DEFINE_double(leakey_relu_alpha, 8.88, "leakey relu alpha");
-=======
 DEFINE_double(leakey_relu_alpha, 2.22, "leakey relu alpha");
->>>>>>> 1c415218f9e7ce243837d855ba8d9929f3b8457d
 
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
@@ -495,11 +491,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1}) {
         for (auto& flag_bias : {false, true}) {
-<<<<<<< HEAD
-          for (auto& flag_act : {0, 1}) {
-=======
           for (auto& flag_act : {0, 1, 2, 4}) {
->>>>>>> 1c415218f9e7ce243837d855ba8d9929f3b8457d
             for (auto& c : {1, 3, 5, 8, 16, 32}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 3, 3});
