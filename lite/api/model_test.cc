@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-#include <sstream>
-#include <string>
-#include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
@@ -25,6 +21,10 @@
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
+#include <gflags/gflags.h>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using paddle::lite::profile::Timer;
 
