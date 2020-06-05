@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/gather_compute.h"
-#include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

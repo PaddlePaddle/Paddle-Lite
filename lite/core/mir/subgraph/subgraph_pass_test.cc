@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
 #include <cmath>
+
+#include <gtest/gtest.h>
 #include "lite/api/paddle_api.h"
 #include "lite/api/test_helper.h"
 #include "lite/utils/cp_logging.h"

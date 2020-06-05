@@ -12,11 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
 #include <memory>
 #include <random>
 #include <vector>
+
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/target_wrapper.h"

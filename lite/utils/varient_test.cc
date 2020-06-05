@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/utils/varient.h"
-#include <gtest/gtest.h>
+
 #include <set>
 #include <string>
+
+#include <gtest/gtest.h>
 #include "lite/utils/all.h"
 
 namespace paddle {

@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/shape_compute.h"
-#include <gtest/gtest.h>
+
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

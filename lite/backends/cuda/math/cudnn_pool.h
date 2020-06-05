@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #pragma once
-#include <cudnn.h>
 #include <string>
 #include <vector>
+
+#include <cudnn.h>
 #include "lite/api/paddle_place.h"
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/context.h"

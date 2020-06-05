@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/mul_compute.h"
-#include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
+
+#include <gtest/gtest.h>
 #include "lite/backends/cuda/blas.h"
 
 namespace paddle {

@@ -13,13 +13,15 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/fc_compute.h"
-#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

@@ -27,9 +27,11 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/relu_compute.h"
-#include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
+
+#include <gtest/gtest.h>
 
 namespace paddle {
 namespace lite {

@@ -14,13 +14,12 @@
 
 #include "lite/kernels/cuda/conv_compute.h"
 
-#include <gtest/gtest.h>
-
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
 
+#include <gtest/gtest.h>
 #include "lite/api/test_helper.h"
 #include "lite/utils/float16.h"
 

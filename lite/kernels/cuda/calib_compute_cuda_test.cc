@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/cuda/calib_compute.h"
-#include <gtest/gtest.h>
 #include <algorithm>
 #include <memory>
+
+#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
+#include "lite/kernels/cuda/calib_compute.h"
 
 namespace paddle {
 namespace lite {

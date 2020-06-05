@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/conv_compute.h"
-#include <gtest/gtest.h>
+
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/core/op_registry.h"
 

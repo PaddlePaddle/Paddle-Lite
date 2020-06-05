@@ -9,13 +9,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/utils/float16.h"
-
-#include <gtest/gtest.h>
 #include <bitset>
 #include <iostream>
 #include <typeindex>
+
+#include <gtest/gtest.h>
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/float16.h"
 
 #define ARITHMETIC_KERNEL(op_type, sign)                                 \
   __global__ void op_type(const half* in1, const half* in2, half* out) { \

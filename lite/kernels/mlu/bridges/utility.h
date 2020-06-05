@@ -14,11 +14,13 @@
 
 #pragma once
 
-#include <cnml.h>
-#include <cnrt.h>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <cnml.h>
+#include <cnrt.h>
+
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"

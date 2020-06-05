@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/python/pybind/pybind.h"
-#include <pybind11/numpy.h>
-#include <pybind11/stl.h>
+
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -24,9 +23,13 @@
 #include <utility>
 #include <vector>
 
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
+
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/cxx_api.h"
 #include "lite/api/opt_base.h"
+
 #endif
 
 #include "lite/api/light_api.h"

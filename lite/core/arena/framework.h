@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include <gtest/gtest.h>
 #include <time.h>
+
 #include <algorithm>
 #include <chrono>  // NOLINT
 #include <cmath>
@@ -24,6 +24,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/scope.h"

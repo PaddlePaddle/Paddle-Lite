@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/var_conv_2d_compute.h"
-#include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/api/test_helper.h"
 #include "lite/utils/float16.h"
 

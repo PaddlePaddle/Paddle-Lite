@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <bmcompiler_if.h>
-#include <user_bmcpu_common.h>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <bmcompiler_if.h>
+#include <user_bmcpu_common.h>
+
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"

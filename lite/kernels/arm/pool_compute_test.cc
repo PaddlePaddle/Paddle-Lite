@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/pool_compute.h"
-#include <gtest/gtest.h>
+
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 

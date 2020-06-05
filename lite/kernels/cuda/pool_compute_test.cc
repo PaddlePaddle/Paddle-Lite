@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/pool_compute.h"
-#include <gtest/gtest.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 
 namespace paddle {
 namespace lite {

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/sequence_reverse_compute.h"
-#include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
+
+#include <gtest/gtest.h>
 
 namespace paddle {
 namespace lite {

@@ -15,10 +15,11 @@
 /*
  * We test multiple apis here.
  */
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
 #include <sstream>
 #include <vector>
+
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "lite/api/cxx_api.h"
 #include "lite/api/light_api.h"
 #include "lite/core/mir/pass_registry.h"

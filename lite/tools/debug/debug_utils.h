@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-#include <gflags/gflags.h>
 #include <algorithm>
 #include <fstream>
 #include <map>
@@ -21,6 +20,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <gflags/gflags.h>
 #include "lite/api/cxx_api.h"
 #include "lite/core/tensor.h"
 #include "lite/model_parser/pb/op_desc.h"

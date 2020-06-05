@@ -13,12 +13,13 @@
 // limitations under the License.
 
 #pragma once
+#include <limits>
+#include <string>
+
 #include <cuda.h>
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
 #include <cudnn.h>
-#include <limits>
-#include <string>
 
 namespace paddle {
 namespace lite {

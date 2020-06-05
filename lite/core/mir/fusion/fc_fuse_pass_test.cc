@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/fc_fuse_pass.h"
+
+#include <vector>
+
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"

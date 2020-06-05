@@ -13,10 +13,11 @@
 // limitations under the License.
 
 #pragma once
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <string>
 #include <vector>
+
+#include <cuda.h>
+#include <cuda_runtime.h>
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 

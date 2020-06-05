@@ -13,12 +13,14 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/argmax_compute.h"
-#include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
+
+#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

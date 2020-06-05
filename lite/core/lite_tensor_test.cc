@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
 #include <cstring>
+
+#include <gtest/gtest.h>
 #include "lite/core/tensor.h"
 
 namespace paddle {

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+
+#include <vector>
+
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include <vector>
 #include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
