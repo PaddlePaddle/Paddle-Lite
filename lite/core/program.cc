@@ -118,7 +118,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
           auto tensor = scope->FindVar(in_name)->GetMutable<Tensor>();
           v->SetPersistable(tensor->persistable());
           if (in_name != "feed" && in_name != "fetch") {
-            v->SetShape(tensor->dims().data());
+            v->SetShape(tensor->dims().Vectorize());
             switch (tensor->precision()) {
 #define SET_DATATYPE(precision__, data_type)                    \
   case PrecisionType::precision__:                              \

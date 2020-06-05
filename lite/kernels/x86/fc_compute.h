@@ -69,12 +69,12 @@ class FCFunctor {
 
       // NOTE: here need to mutable_data for temporary Tensor X1 and Y1,
       //  the overhead is unmeasured.
-      lite::Tensor X1;
-      X1.Resize(std::vector<int64_t>{M * KK});
+      Tensor X1;
+      X1.Resize(std::vector<int64_t>({M * KK}));
       T* X1_data = X1.mutable_data<T>();
 
-      lite::Tensor Y1;
-      Y1.Resize(std::vector<int64_t>{M * NN});
+      Tensor Y1;
+      Y1.Resize(std::vector<int64_t>({M * NN}));
       Y1_data = Y1.mutable_data<T>();
 
       auto parallel_memcpy_x = [&](int64_t begin, int64_t end) {

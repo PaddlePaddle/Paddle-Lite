@@ -64,8 +64,8 @@ void SearchGrnnCompute<T>::PrepareLayout(const Tensor* input_blob) {
   auto& offset = _input->lod()[0];
 
   Tensor _width;
-  _width.Resize({batch});
-  _idx_sorted_by_width->Resize({batch});
+  _width.Resize(std::vector<int64_t>({batch}));
+  _idx_sorted_by_width->Resize(std::vector<int64_t>({batch}));
   int* width_data = _width.template mutable_data<int>();
   int* idx_sorted_by_width_data =
       _idx_sorted_by_width->template mutable_data<int>();

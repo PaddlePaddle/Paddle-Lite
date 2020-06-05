@@ -33,7 +33,7 @@ static void softmax_compute_ref(const operators::SoftmaxParam& param) {
   const dtype* x_data = param.x->mutable_data<const dtype>();
   dtype* output_data = param.output->mutable_data<dtype>();
   DDim x_dims = param.x->dims();
-  ASSERT_EQ(x_dims.data(), param.output->dims().data());
+  ASSERT_EQ(x_dims, param.output->dims());
   auto x_rank = x_dims.size();
   int axis = param.axis;
   if (axis < 0) {
