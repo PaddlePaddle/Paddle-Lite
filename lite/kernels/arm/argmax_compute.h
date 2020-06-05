@@ -16,6 +16,10 @@
 #include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/operators/argmax_op.h"
+#ifdef LITE_WITH_PROFILE
+#include <string>
+#include "lite/core/profile/profiler.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -29,6 +33,14 @@ class ArgmaxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
 
   virtual ~ArgmaxCompute() = default;
+
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForArgmax"};
+#endif
 };
 
 }  // namespace arm

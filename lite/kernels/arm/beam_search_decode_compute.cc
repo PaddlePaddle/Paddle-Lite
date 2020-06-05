@@ -78,14 +78,14 @@ struct BeamSearchDecoder {
 
     for (size_t src_idx = 0; src_idx < src_num; ++src_idx) {
       if (sort_by_score) {
-        sort(sentence_vector_list[src_idx].begin(),
-             sentence_vector_list[src_idx].end(),
-             [reverse](const Sentence<T>& a, const Sentence<T>& b) {
-               if (reverse)
-                 return a.scores.front() > b.scores.front();
-               else
-                 return a.scores.back() > b.scores.back();
-             });
+        std::stable_sort(sentence_vector_list[src_idx].begin(),
+                         sentence_vector_list[src_idx].end(),
+                         [reverse](const Sentence<T>& a, const Sentence<T>& b) {
+                           if (reverse)
+                             return a.scores.front() > b.scores.front();
+                           else
+                             return a.scores.back() > b.scores.back();
+                         });
       }
       for (Sentence<T>& sentence : sentence_vector_list[src_idx]) {
         if (reverse) {

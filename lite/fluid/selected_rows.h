@@ -15,9 +15,9 @@ limitations under the License. */
 #pragma once
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <mutex>  // NOLINT
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -148,7 +148,7 @@ class SelectedRows {
   // SelectedRows are simply concated when adding together. Until a
   // SelectedRows add a Tensor, will the duplicate rows be handled.
   std::vector<int64_t> rows_;
-  std::unordered_map<int64_t, int64_t>
+  std::map<int64_t, int64_t>
       id_to_index_;  // should not be used when rows_ has duplicate member
   std::unique_ptr<Tensor> value_{nullptr};
   int64_t height_;  // height indicates the underline tensor's height

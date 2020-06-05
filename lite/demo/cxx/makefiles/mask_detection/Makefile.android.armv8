@@ -43,7 +43,7 @@ CXX_LIBS = ${OPENCV_LIBS} -L$(LITE_ROOT)/cxx/lib/ -lpaddle_light_api_shared $(SY
 mask_detection: fetch_opencv mask_detection.o
 	$(CC) $(SYSROOT_LINK) $(CXXFLAGS_LINK) mask_detection.o -o mask_detection  $(CXX_LIBS) $(LDFLAGS)
 
-mask_detection.o: mask_detection.cc
+mask_detection.o: fetch_opencv mask_detection.cc
 	$(CC) $(SYSROOT_COMPLILE) $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o mask_detection.o -c mask_detection.cc
 
 fetch_opencv:

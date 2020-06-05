@@ -36,6 +36,8 @@ void SetVarDesc(VarDescType* desc) {
   desc->SetName("X");
   desc->SetPersistable(true);
   desc->SetType(VarDescAPI::Type::LOD_TENSOR);
+  desc->SetShape({1, 3, 224, 224});
+  desc->SetDataType(VarDescAPI::VarDataType::FP32);
 }
 
 template <typename VarDescType>
@@ -43,6 +45,8 @@ void SetVarDesc1(VarDescType* desc) {
   desc->SetName("Y");
   desc->SetPersistable(false);
   desc->SetType(VarDescAPI::Type::SELECTED_ROWS);
+  desc->SetShape({1, 3, 224, 224});
+  desc->SetDataType(VarDescAPI::VarDataType::FP32);
 }
 
 template <typename VarDescType>

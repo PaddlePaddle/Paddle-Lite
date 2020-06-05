@@ -38,6 +38,15 @@ class LayerNormOp : public OpLite {
 
   std::string DebugString() const override { return "layer_norm"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->output_shape = ch->DimToStr(param_.Y->dims());
+    ch->remark = "begin_norm_axis" + std::to_string(param_.begin_norm_axis);
+    ch->macs = param_.Y->numel() * 7.f;
+  }
+#endif
+
  private:
   mutable LayerNormParam param_;
 };

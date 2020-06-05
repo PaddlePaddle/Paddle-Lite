@@ -47,11 +47,11 @@ static void slice_ref(const float* input,
     }
   }
   const int LEN = in_dims.size();
-  int dst_step[LEN];
+  std::vector<int> dst_step(LEN);
   for (int i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
   }
-  int src_step[LEN];
+  std::vector<int> src_step(LEN);
   for (int i = 0; i < in_dims.size(); ++i) {
     src_step[i] = 1;
   }

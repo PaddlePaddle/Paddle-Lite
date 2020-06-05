@@ -20,7 +20,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/api/paddle_lite_factory_helper.h"
@@ -332,7 +331,7 @@ class KernelRegistry final {
           &&creator) {
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
-    auto &varient = registries_[GetKernelOffset<Target, Precision, Layout>()];
+    auto &varient = registries_[std::make_tuple(Target, Precision, Layout)];
     auto *reg = varient.template get<kernel_registor_t *>();
     CHECK(reg) << "Can not be empty of " << name;
     reg->Register(name, std::move(creator));
@@ -349,10 +348,12 @@ class KernelRegistry final {
     using kernel_registor_t =
         KernelRegistryForTarget<Target, Precision, Layout>;
     std::list<std::unique_ptr<KernelBase>> kernel_list;
-    if (registries_[GetKernelOffset<Target, Precision, Layout>()].valid()) {
-      kernel_list = registries_[GetKernelOffset<Target, Precision, Layout>()]
-                        .template get<kernel_registor_t *>()
-                        ->Creates(op_type);
+    std::tuple<TargetType, PrecisionType, DataLayoutType> temp_tuple(
+        Target, Precision, Layout);
+    if (registries_[temp_tuple].valid()) {
+      kernel_list =
+          registries_[temp_tuple].template get<kernel_registor_t *>()->Creates(
+              op_type);
     }
     return kernel_list;
   }
@@ -361,18 +362,6 @@ class KernelRegistry final {
                                                 TargetType target,
                                                 PrecisionType precision,
                                                 DataLayoutType layout);
-
-  // Get a kernel registry offset in all the registries.
-  template <TargetType Target, PrecisionType Precision, DataLayoutType Layout>
-  static int GetKernelOffset() {
-    CHECK_LT(static_cast<int>(Target), static_cast<int>(TARGET(NUM)));
-    CHECK_LT(static_cast<int>(Precision), static_cast<int>(PRECISION(NUM)));
-    CHECK_LT(static_cast<int>(Layout), static_cast<int>(DATALAYOUT(NUM)));
-    return static_cast<int>(Target) * static_cast<int>(PRECISION(NUM)) *
-               static_cast<int>(DATALAYOUT(NUM)) +                            //
-           static_cast<int>(Precision) * static_cast<int>(DATALAYOUT(NUM)) +  //
-           static_cast<int>(Layout);
-  }
 
   std::string DebugString() const {
 #ifndef LITE_ON_MODEL_OPTIMIZE_TOOL
@@ -404,7 +393,9 @@ class KernelRegistry final {
   }
 
  private:
-  mutable std::vector<any_kernel_registor_t> registries_;
+  mutable std::map<std::tuple<TargetType, PrecisionType, DataLayoutType>,
+                   any_kernel_registor_t>
+      registries_;
 #ifndef LITE_ON_TINY_PUBLISH
   mutable std::map<
       std::string,

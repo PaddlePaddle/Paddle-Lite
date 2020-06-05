@@ -19,7 +19,6 @@
 #include "lite/backends/cuda/context.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
@@ -77,14 +76,22 @@ class Context<TargetType::kHost> {
 template <>
 class Context<TargetType::kNPU> {
  public:
-  Context() {}
-  explicit Context(const NPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(NPUContext* ctx) {}
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+
+  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir() {
+    return subgraph_model_cache_dir_;
+  }
+
+ private:
+  static std::string subgraph_model_cache_dir_;
 };
 #endif
 
@@ -92,8 +99,6 @@ class Context<TargetType::kNPU> {
 template <>
 class Context<TargetType::kAPU> {
  public:
-  Context() {}
-  explicit Context(const APUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(APUContext* ctx) {}
@@ -107,8 +112,6 @@ class Context<TargetType::kAPU> {
 template <>
 class Context<TargetType::kBM> {
  public:
-  Context() {}
-  explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
   void CopySharedTo(BMContext* ctx) {}
@@ -122,8 +125,6 @@ class Context<TargetType::kBM> {
 template <>
 class Context<TargetType::kRKNPU> {
  public:
-  Context() {}
-  explicit Context(const RKNPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(RKNPUContext* ctx) {}
@@ -137,9 +138,6 @@ class Context<TargetType::kRKNPU> {
 template <>
 class Context<TargetType::kXPU> {
  public:
-  Context() {}
-  explicit Context(const XPUContext& ctx);
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
@@ -178,6 +176,9 @@ class Context<TargetType::kXPU> {
 
   std::string name() const { return "XPUContext"; }
 
+ public:
+  static std::string _multi_encoder_precision;  // NOLINT
+
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;
   static int _workspace_l3_size_per_thread;
@@ -188,11 +189,6 @@ class Context<TargetType::kXPU> {
 template <>
 class Context<TargetType::kARM> {
  public:
-  Context() {}
-  explicit Context(const ARMContext& ctx);
-
-  ARMContext& operator=(const ARMContext& ctx) {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { DeviceInfo::Init(); }
 
@@ -234,7 +230,6 @@ class Context<TargetType::kARM> {
 template <>
 class Context<TargetType::kFPGA> {
  public:
-  Context() {}
   void InitOnce() {}
 
   FPGAContext& operator=(const FPGAContext& ctx) {}
@@ -328,8 +323,6 @@ class Context<TargetType::kMLU> {
 template <>
 class Context<TargetType::kX86> {
  public:
-  Context() {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 

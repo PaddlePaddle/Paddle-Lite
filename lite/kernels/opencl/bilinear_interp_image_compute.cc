@@ -23,6 +23,10 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/logging.h"
 #include "lite/utils/replace_stl/stream.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -142,13 +146,13 @@ class BilinearInterpImageCompute
                     static_cast<cl::size_type>(default_work_size[1]),
                     static_cast<cl::size_type>(default_work_size[2])};
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
 #ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "

@@ -23,7 +23,7 @@ namespace math {
 std::vector<TreeNode> Tree2ColUtil::construct_patch(
     size_t root, int max_depth, const std::vector<std::vector<int>> &tr) {
   std::stack<TreeNode, std::deque<TreeNode>> stack;
-  std::unordered_map<int, bool> visited;
+  std::map<int, bool> visited;
   std::vector<TreeNode> patch;
 
   stack.push(TreeNode(root, 1, 1, 0));

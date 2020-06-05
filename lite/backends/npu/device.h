@@ -14,9 +14,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "HiAiModelManagerService.h"  // NOLINT
 #include "hiai_ir_build.h"            // NOLINT
@@ -41,10 +41,11 @@ class Device {
   // Build the HiAI IR graph to om model, return HiAI model manager client to
   // load om model and run inference.
   std::shared_ptr<hiai::AiModelMngerClient> Build(
-      const std::string model_name,            // NOLINT
-      std::vector<ge::Operator>& input_nodes,  // NOLINT
-      std::vector<ge::Operator>& output_nodes  // NOLINT
-      );                                       // NOLINT
+      const std::string model_name,             // NOLINT
+      std::vector<ge::Operator>& input_nodes,   // NOLINT
+      std::vector<ge::Operator>& output_nodes,  // NOLINT
+      const std::string model_cache_name        // NOLINT
+      );                                        // NOLINT
 
  private:
   int freq_level_{3};

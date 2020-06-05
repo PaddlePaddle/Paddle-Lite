@@ -19,6 +19,10 @@
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -245,6 +249,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   }
 
   std::string doc() { return "Concat using cl::Image, kFP16"; }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
   int axis_size_ = 1;
   int axis_ = 1;

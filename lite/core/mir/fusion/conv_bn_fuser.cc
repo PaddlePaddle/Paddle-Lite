@@ -14,7 +14,7 @@
 
 #include "lite/core/mir/fusion/conv_bn_fuser.h"
 #include <memory>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace paddle {

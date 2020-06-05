@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/naive_buffer/naive_buffer_wrapper_helper.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
@@ -51,7 +52,13 @@ class VarDesc : public VarDescAPI {
 
   void SetPersistable(bool persistable) override;
 
+  void SetDataType(VarDescAPI::VarDataType data_type);
   VarDescAPI::VarDataType GetDataType() const;
+
+  // Get var's shape
+  std::vector<int64_t> GetShape() const;
+  // Set var's shape
+  void SetShape(const std::vector<int64_t> &dims);
 
  private:
   const proto::VarType &GetVarType() const;

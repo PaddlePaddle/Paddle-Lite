@@ -36,27 +36,21 @@ bool OpLite::InferShapeWithCache() {
   // 1. Get vector of current input tensors
   auto *current_inputs = op_param_->input_tensor_ptrs();
   // 2. Get hash value of current inputs shape and lod
-  size_t new_hash = 0;
-  for (auto iter = current_inputs->begin(); iter != current_inputs->end();
-       iter++) {
-    // combined dims value into new_hash value.
-    auto &element_dims = (*iter)->dims();
-    for (size_t i = 0; i < element_dims.size(); i++) {
-      new_hash =
-          lite::hash_combine(new_hash, static_cast<int>(element_dims[i]));
-    }
-    // combine lod value into new_hash valud.
-    auto &emement_lods = (*iter)->lod();
-    for (auto lod_iter = emement_lods.begin(); lod_iter != emement_lods.end();
-         lod_iter++) {
-      for (size_t i = 0; i < lod_iter->size(); i++) {
-        new_hash =
-            lite::hash_combine(new_hash, static_cast<int>(lod_iter->at(i)));
+  bool use_cache = true;
+  if (last_input_shapes.size() == current_inputs->size()) {
+    for (int i = 0; i < current_inputs->size(); i++) {
+      if (last_input_shapes[i] != current_inputs->at(i)->dims() ||
+          last_input_lods[i] != current_inputs->at(i)->lod()) {
+        use_cache = false;
+        break;
       }
     }
+  } else {
+    use_cache = false;
   }
+
   // 3. infer shapes of output tensors
-  if (new_hash == io_shape_lod_hash_ && new_hash != 0) {
+  if (use_cache) {
     // if current hash value is consistent with io_shape_lod_hash_,
     // previous outputs shape and lod are reused.
     auto *current_outputs = op_param_->output_tensor_ptrs();
@@ -66,7 +60,6 @@ bool OpLite::InferShapeWithCache() {
     }
   } else {
     // otherwise, current hash value is changed, InferShapeImpl will apply.
-    io_shape_lod_hash_ = new_hash;
     this->InferShapeImpl();
     auto *current_outputs = op_param_->output_tensor_ptrs();
     last_output_shapes.clear();
@@ -74,6 +67,12 @@ bool OpLite::InferShapeWithCache() {
     for (size_t i = 0; i < current_outputs->size(); i++) {
       last_output_shapes.push_back(current_outputs->at(i)->dims());
       last_output_lods.push_back(current_outputs->at(i)->lod());
+    }
+    last_input_shapes.clear();
+    last_input_lods.clear();
+    for (size_t i = 0; i < current_inputs->size(); i++) {
+      last_input_shapes.push_back(current_inputs->at(i)->dims());
+      last_input_lods.push_back(current_inputs->at(i)->lod());
     }
   }
   return true;
