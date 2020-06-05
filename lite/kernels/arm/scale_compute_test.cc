@@ -103,8 +103,7 @@ TEST(scale_arm, compute) {
 }
 
 TEST(scale, retrive_op) {
-  auto scale =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("scale");
+  auto scale = KernelRegistry::Global().Create("scale");
   ASSERT_FALSE(scale.empty());
   ASSERT_TRUE(scale.front());
 }

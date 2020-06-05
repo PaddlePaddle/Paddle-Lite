@@ -277,8 +277,7 @@ TEST(pool_fpga, compute) {
 }
 
 TEST(pool_fpga, retrive_op) {
-  auto pool = KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>(
-      "pool2d");
+  auto pool = KernelRegistry::Global().Create("pool2d");
   ASSERT_FALSE(pool.empty());
   ASSERT_TRUE(pool.front());
 }

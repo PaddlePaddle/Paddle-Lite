@@ -94,9 +94,7 @@ static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
 }  // namespace
 
 TEST(sequence_concat_x86, retrive_op) {
-  auto sequence_concat =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_concat");
+  auto sequence_concat = KernelRegistry::Global().Create("sequence_concat");
   ASSERT_FALSE(sequence_concat.empty());
   ASSERT_TRUE(sequence_concat.front());
 }

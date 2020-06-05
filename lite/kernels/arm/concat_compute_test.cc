@@ -221,8 +221,7 @@ TEST(concat_arm, compute_input_multi) {
 }
 
 TEST(concat, retrive_op) {
-  auto concat =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kAny)>("concat");
+  auto concat = KernelRegistry::Global().Create("concat");
   ASSERT_FALSE(concat.empty());
   ASSERT_TRUE(concat.front());
 }

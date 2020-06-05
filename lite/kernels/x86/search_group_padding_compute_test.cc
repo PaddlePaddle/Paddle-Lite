@@ -26,8 +26,7 @@ namespace x86 {
 
 TEST(search_group_padding_x86, retrieve_op) {
   auto search_group_padding =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "search_group_padding");
+      KernelRegistry::Global().Create("search_group_padding");
   ASSERT_FALSE(search_group_padding.empty());
   ASSERT_TRUE(search_group_padding.front());
 }

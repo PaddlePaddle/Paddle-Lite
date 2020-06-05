@@ -26,9 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(elementwise_add_x86, retrive_op) {
-  auto elementwise_add =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "elementwise_add");
+  auto elementwise_add = KernelRegistry::Global().Create("elementwise_add");
   ASSERT_FALSE(elementwise_add.empty());
   ASSERT_TRUE(elementwise_add.front());
 }

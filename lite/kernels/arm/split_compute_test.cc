@@ -165,8 +165,7 @@ TEST(split_arm, compute) {
 }
 
 TEST(split, retrive_op) {
-  auto split =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("split");
+  auto split = KernelRegistry::Global().Create("split");
   ASSERT_FALSE(split.empty());
   ASSERT_TRUE(split.front());
 }

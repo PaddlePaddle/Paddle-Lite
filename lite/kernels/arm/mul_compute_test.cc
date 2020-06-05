@@ -69,8 +69,7 @@ void FillData(T* a,
 }
 
 TEST(mul_arm, retrive_op) {
-  auto mul =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("mul");
+  auto mul = KernelRegistry::Global().Create("mul");
   ASSERT_FALSE(mul.empty());
   ASSERT_TRUE(mul.front());
 }

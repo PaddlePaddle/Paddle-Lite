@@ -24,9 +24,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(sequence_pool_x86, retrive_op) {
-  auto sequence_pool =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_pool");
+  auto sequence_pool = KernelRegistry::Global().Create("sequence_pool");
   ASSERT_FALSE(sequence_pool.empty());
   ASSERT_TRUE(sequence_pool.front());
 }

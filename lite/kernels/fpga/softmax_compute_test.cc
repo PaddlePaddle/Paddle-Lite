@@ -121,9 +121,7 @@ TEST(softmax_arm, compute) {
 }
 
 TEST(softmax, retrive_op) {
-  auto softmax =
-      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>(
-          "softmax");
+  auto softmax = KernelRegistry::Global().Create("softmax");
   ASSERT_FALSE(softmax.empty());
   ASSERT_TRUE(softmax.front());
 }

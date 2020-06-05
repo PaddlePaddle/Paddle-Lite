@@ -27,8 +27,7 @@ namespace x86 {
 
 TEST(sequence_expand_as_x86, retrive_op) {
   auto sequence_expand_as =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_expand_as");
+      KernelRegistry::Global().Create("sequence_expand_as");
   ASSERT_FALSE(sequence_expand_as.empty());
   ASSERT_TRUE(sequence_expand_as.front());
 }

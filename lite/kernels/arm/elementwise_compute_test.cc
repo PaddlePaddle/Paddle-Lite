@@ -25,9 +25,7 @@ namespace kernels {
 namespace arm {
 
 TEST(elementwise_add_arm, retrive_op) {
-  auto elementwise_add =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "elementwise_add");
+  auto elementwise_add = KernelRegistry::Global().Create("elementwise_add");
   ASSERT_FALSE(elementwise_add.empty());
   ASSERT_TRUE(elementwise_add.front());
 }
@@ -336,8 +334,7 @@ TEST(elementwise_add, compute) {
 
 TEST(fusion_elementwise_add_activation_arm, retrive_op) {
   auto fusion_elementwise_add_activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "fusion_elementwise_add_activation");
+      KernelRegistry::Global().Create("fusion_elementwise_add_activation");
   ASSERT_FALSE(fusion_elementwise_add_activation.empty());
   ASSERT_TRUE(fusion_elementwise_add_activation.front());
 }
@@ -435,9 +432,7 @@ TEST(fusion_elementwise_add_activation_arm, compute) {
 }
 
 TEST(elementwise_mul_arm, retrive_op) {
-  auto elementwise_mul =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "elementwise_mul");
+  auto elementwise_mul = KernelRegistry::Global().Create("elementwise_mul");
   ASSERT_FALSE(elementwise_mul.empty());
   ASSERT_TRUE(elementwise_mul.front());
 }
@@ -530,8 +525,7 @@ TEST(elementwise_mul, compute) {
 
 TEST(fusion_elementwise_mul_activation_arm, retrive_op) {
   auto fusion_elementwise_mul_activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "fusion_elementwise_mul_activation");
+      KernelRegistry::Global().Create("fusion_elementwise_mul_activation");
   ASSERT_FALSE(fusion_elementwise_mul_activation.empty());
   ASSERT_TRUE(fusion_elementwise_mul_activation.front());
 }
@@ -629,9 +623,7 @@ TEST(fusion_elementwise_mul_activation_arm, compute) {
 }
 
 TEST(elementwise_max_arm, retrive_op) {
-  auto elementwise_max =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "elementwise_max");
+  auto elementwise_max = KernelRegistry::Global().Create("elementwise_max");
   ASSERT_FALSE(elementwise_max.empty());
   ASSERT_TRUE(elementwise_max.front());
 }
@@ -724,8 +716,7 @@ TEST(elementwise_max, compute) {
 
 TEST(fusion_elementwise_max_activation_arm, retrive_op) {
   auto fusion_elementwise_max_activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "fusion_elementwise_max_activation");
+      KernelRegistry::Global().Create("fusion_elementwise_max_activation");
   ASSERT_FALSE(fusion_elementwise_max_activation.empty());
   ASSERT_TRUE(fusion_elementwise_max_activation.front());
 }

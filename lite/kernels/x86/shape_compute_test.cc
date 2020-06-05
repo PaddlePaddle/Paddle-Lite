@@ -23,8 +23,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(shape_x86, retrive_op) {
-  auto shape =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("shape");
+  auto shape = KernelRegistry::Global().Create("shape");
   ASSERT_FALSE(shape.empty());
   ASSERT_TRUE(shape.front());
 }

@@ -26,9 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(dropout_x86, retrive_op) {
-  auto dropout =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "dropout");
+  auto dropout = KernelRegistry::Global().Create("dropout");
   ASSERT_FALSE(dropout.empty());
   ASSERT_TRUE(dropout.front());
 }

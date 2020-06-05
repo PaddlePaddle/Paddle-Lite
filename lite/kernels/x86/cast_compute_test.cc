@@ -25,8 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(cast_x86, retrive_op) {
-  auto cast =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("cast");
+  auto cast = KernelRegistry::Global().Create("cast");
   ASSERT_FALSE(cast.empty());
   ASSERT_TRUE(cast.front());
 }

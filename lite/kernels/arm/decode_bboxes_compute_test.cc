@@ -115,9 +115,7 @@ void decode_bboxes_compute_ref(const operators::DecodeBboxesParam& param) {
 }
 
 TEST(decode_bboxes_arm, retrive_op) {
-  auto decode_bboxes =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "decode_bboxes");
+  auto decode_bboxes = KernelRegistry::Global().Create("decode_bboxes");
   ASSERT_FALSE(decode_bboxes.empty());
   ASSERT_TRUE(decode_bboxes.front());
 }

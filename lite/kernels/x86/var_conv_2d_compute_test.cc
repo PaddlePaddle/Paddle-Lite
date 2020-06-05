@@ -197,9 +197,7 @@ static void var_conv_2d_ref(const lite::Tensor* bottom,
 }
 
 TEST(var_conv_2d_x86, retrive_op) {
-  auto var_conv_2d =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "var_conv_2d");
+  auto var_conv_2d = KernelRegistry::Global().Create("var_conv_2d");
   ASSERT_FALSE(var_conv_2d.empty());
   ASSERT_TRUE(var_conv_2d.front());
 }

@@ -26,8 +26,7 @@ namespace x86 {
 
 TEST(fill_constant_batch_size_like_x86, retrive_op) {
   auto fill_constant_batch_size_like =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "fill_constant_batch_size_like");
+      KernelRegistry::Global().Create("fill_constant_batch_size_like");
   ASSERT_FALSE(fill_constant_batch_size_like.empty());
   ASSERT_TRUE(fill_constant_batch_size_like.front());
 }

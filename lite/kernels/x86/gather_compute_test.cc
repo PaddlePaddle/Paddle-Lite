@@ -25,9 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(gather_x86, retrive_op) {
-  auto gather =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "gather");
+  auto gather = KernelRegistry::Global().Create("gather");
   ASSERT_FALSE(gather.empty());
   int cnt = 0;
   for (auto item = gather.begin(); item != gather.end(); ++item) {

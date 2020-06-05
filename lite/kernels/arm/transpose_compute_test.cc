@@ -121,9 +121,7 @@ TEST(transpose_arm, compute_shape_nchw) {
 }
 
 TEST(transpose, retrive_op) {
-  auto transpose =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "transpose");
+  auto transpose = KernelRegistry::Global().Create("transpose");
   ASSERT_FALSE(transpose.empty());
   ASSERT_TRUE(transpose.front());
 }
@@ -189,9 +187,7 @@ TEST(transpose2_arm, compute_shape_nchw) {
 }
 
 TEST(transpose2, retrive_op) {
-  auto transpose2 =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "transpose2");
+  auto transpose2 = KernelRegistry::Global().Create("transpose2");
   ASSERT_FALSE(transpose2.empty());
   ASSERT_TRUE(transpose2.front());
 }

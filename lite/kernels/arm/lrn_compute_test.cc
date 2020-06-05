@@ -133,8 +133,7 @@ void lrn_compute_ref(const operators::LrnParam& param) {
 }
 
 TEST(lrn_arm, retrive_op) {
-  auto lrn =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("lrn");
+  auto lrn = KernelRegistry::Global().Create("lrn");
   ASSERT_FALSE(lrn.empty());
   ASSERT_TRUE(lrn.front());
 }

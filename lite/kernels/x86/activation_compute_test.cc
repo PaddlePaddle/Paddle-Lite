@@ -26,8 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(relu_x86, retrive_op) {
-  auto relu =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("relu");
+  auto relu = KernelRegistry::Global().Create("relu");
   ASSERT_FALSE(relu.empty());
   ASSERT_TRUE(relu.front());
 }

@@ -56,9 +56,7 @@ void LookupTableComputeRef(const operators::LookupTableParam& param) {
 }
 
 TEST(lookup_table_cuda, retrieve_op) {
-  auto lookup_table =
-      KernelRegistry::Global().Create<TARGET(kCUDA), PRECISION(kFloat)>(
-          "lookup_table");
+  auto lookup_table = KernelRegistry::Global().Create("lookup_table");
   ASSERT_FALSE(lookup_table.empty());
   ASSERT_TRUE(lookup_table.front());
 }

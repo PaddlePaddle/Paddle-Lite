@@ -24,9 +24,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(leaky_relu_x86, retrive_op) {
-  auto leaky_relu =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "leaky_relu");
+  auto leaky_relu = KernelRegistry::Global().Create("leaky_relu");
   ASSERT_FALSE(leaky_relu.empty());
   ASSERT_TRUE(leaky_relu.front());
 }

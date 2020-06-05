@@ -78,9 +78,7 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
 }
 
 TEST(batch_norm_arm, retrive_op) {
-  auto batch_norm =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "batch_norm");
+  auto batch_norm = KernelRegistry::Global().Create("batch_norm");
   ASSERT_FALSE(batch_norm.empty());
   ASSERT_TRUE(batch_norm.front());
 }

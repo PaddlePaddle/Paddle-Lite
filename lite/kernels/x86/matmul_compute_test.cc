@@ -25,9 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(matmul_x86, retrive_op) {
-  auto matmul =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "matmul");
+  auto matmul = KernelRegistry::Global().Create("matmul");
   ASSERT_FALSE(matmul.empty());
   ASSERT_TRUE(matmul.front());
 }

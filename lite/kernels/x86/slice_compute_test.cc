@@ -79,8 +79,7 @@ static void slice_ref(const float* input,
 }
 
 TEST(slice_x86, retrive_op) {
-  auto slice =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("slice");
+  auto slice = KernelRegistry::Global().Create("slice");
   ASSERT_FALSE(slice.empty());
   ASSERT_TRUE(slice.front());
 }

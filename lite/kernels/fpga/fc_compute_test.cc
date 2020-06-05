@@ -76,8 +76,7 @@ void FillData(T* a,
 }
 
 TEST(fc_fpga, retrive_op) {
-  auto fc =
-      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>("fc");
+  auto fc = KernelRegistry::Global().Create("fc");
   ASSERT_FALSE(fc.empty());
   ASSERT_TRUE(fc.front());
 }

@@ -181,9 +181,7 @@ TEST(layer_norm_arm, compute) {
 }
 
 TEST(layer_norm, retrive_op) {
-  auto layer_norm =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "layer_norm");
+  auto layer_norm = KernelRegistry::Global().Create("layer_norm");
   ASSERT_FALSE(layer_norm.empty());
   ASSERT_TRUE(layer_norm.front());
 }

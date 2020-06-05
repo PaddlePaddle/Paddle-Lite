@@ -25,9 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(conv_x86, retrive_op) {
-  auto conv2d =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "conv2d");
+  auto conv2d = KernelRegistry::Global().Create("conv2d");
   ASSERT_FALSE(conv2d.empty());
   ASSERT_TRUE(conv2d.front());
 }

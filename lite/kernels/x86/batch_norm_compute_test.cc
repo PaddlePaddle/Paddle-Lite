@@ -26,9 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(batch_norm_x86, retrive_op) {
-  auto batch_norm =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "batch_norm");
+  auto batch_norm = KernelRegistry::Global().Create("batch_norm");
   ASSERT_FALSE(batch_norm.empty());
   ASSERT_TRUE(batch_norm.front());
 }

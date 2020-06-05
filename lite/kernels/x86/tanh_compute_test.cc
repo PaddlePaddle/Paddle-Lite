@@ -26,8 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(tanh_x86, retrive_op) {
-  auto tanh =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("tanh");
+  auto tanh = KernelRegistry::Global().Create("tanh");
   ASSERT_FALSE(tanh.empty());
   ASSERT_TRUE(tanh.front());
 }

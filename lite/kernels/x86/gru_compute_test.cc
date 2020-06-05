@@ -26,8 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(gru_x86, retrive_op) {
-  auto gru =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("gru");
+  auto gru = KernelRegistry::Global().Create("gru");
   ASSERT_FALSE(gru.empty());
   ASSERT_TRUE(gru.front());
 }

@@ -37,8 +37,7 @@ void activation_compute_ref(const operators::ActivationParam& param) {
 }
 
 TEST(activation_fpga, retrive_op) {
-  auto activation =
-      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>("relu");
+  auto activation = KernelRegistry::Global().Create("relu");
   ASSERT_FALSE(activation.empty());
   ASSERT_TRUE(activation.front());
 }

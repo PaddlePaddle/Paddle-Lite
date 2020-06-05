@@ -61,8 +61,7 @@ void axpy_compute_ref(const operators::AxpyParam& param) {
 }
 
 TEST(axpy_arm, retrive_op) {
-  auto axpy =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("axpy");
+  auto axpy = KernelRegistry::Global().Create("axpy");
   ASSERT_FALSE(axpy.empty());
   ASSERT_TRUE(axpy.front());
 }

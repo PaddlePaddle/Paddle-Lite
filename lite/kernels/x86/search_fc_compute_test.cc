@@ -53,9 +53,7 @@ void fc_cpu_base(const lite::Tensor* X,
 }
 
 TEST(search_fc_x86, retrive_op) {
-  auto search_fc =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "search_fc");
+  auto search_fc = KernelRegistry::Global().Create("search_fc");
   ASSERT_FALSE(search_fc.empty());
   ASSERT_TRUE(search_fc.front());
 }

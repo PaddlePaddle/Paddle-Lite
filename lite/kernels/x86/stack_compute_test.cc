@@ -25,8 +25,7 @@ namespace x86 {
 
 // stack
 TEST(stack_x86, retrive_op) {
-  auto stack =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("stack");
+  auto stack = KernelRegistry::Global().Create("stack");
   ASSERT_FALSE(stack.empty());
   ASSERT_TRUE(stack.front());
 }

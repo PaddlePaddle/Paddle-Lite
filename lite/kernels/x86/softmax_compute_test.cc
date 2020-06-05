@@ -25,9 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(softmax_x86, retrive_op) {
-  auto softmax =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "softmax");
+  auto softmax = KernelRegistry::Global().Create("softmax");
   ASSERT_FALSE(softmax.empty());
   ASSERT_TRUE(softmax.front());
 }

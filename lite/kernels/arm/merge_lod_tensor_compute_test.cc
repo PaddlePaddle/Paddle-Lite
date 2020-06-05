@@ -26,9 +26,7 @@ namespace kernels {
 namespace arm {
 
 TEST(merge_lod_tensor_arm, retrive_op) {
-  auto kernel =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "merge_lod_tensor");
+  auto kernel = KernelRegistry::Global().Create("merge_lod_tensor");
   ASSERT_FALSE(kernel.empty());
   ASSERT_TRUE(kernel.front());
 }

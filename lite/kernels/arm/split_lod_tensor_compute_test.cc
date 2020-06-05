@@ -26,9 +26,7 @@ namespace kernels {
 namespace arm {
 
 TEST(split_lod_tensor_arm, retrive_op) {
-  auto kernel =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "split_lod_tensor");
+  auto kernel = KernelRegistry::Global().Create("split_lod_tensor");
   ASSERT_FALSE(kernel.empty());
   ASSERT_TRUE(kernel.front());
 }

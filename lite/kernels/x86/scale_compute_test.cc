@@ -24,8 +24,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(scale_x86, retrive_op) {
-  auto scale =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("scale");
+  auto scale = KernelRegistry::Global().Create("scale");
   ASSERT_FALSE(scale.empty());
   ASSERT_TRUE(scale.front());
 }

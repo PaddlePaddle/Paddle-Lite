@@ -74,9 +74,7 @@ std::vector<float> ref(lite::Tensor* x,
 
 // layer_norm
 TEST(layer_norm_x86, retrive_op) {
-  auto layer_norm =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "layer_norm");
+  auto layer_norm = KernelRegistry::Global().Create("layer_norm");
   ASSERT_FALSE(layer_norm.empty());
   ASSERT_TRUE(layer_norm.front());
 }

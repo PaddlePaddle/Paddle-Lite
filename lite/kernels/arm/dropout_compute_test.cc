@@ -30,9 +30,7 @@ TEST(dropout_arm, init) {
 }
 
 TEST(dropout, retrive_op) {
-  auto dropout =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "dropout");
+  auto dropout = KernelRegistry::Global().Create("dropout");
   ASSERT_FALSE(dropout.empty());
   ASSERT_TRUE(dropout.front());
 }

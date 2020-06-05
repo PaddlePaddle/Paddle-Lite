@@ -44,9 +44,7 @@ static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
 }  // namespace
 
 TEST(sequence_reverse_x86, retrive_op) {
-  auto sequence_reverse =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_reverse");
+  auto sequence_reverse = KernelRegistry::Global().Create("sequence_reverse");
   ASSERT_FALSE(sequence_reverse.empty());
   ASSERT_TRUE(sequence_reverse.front());
 }

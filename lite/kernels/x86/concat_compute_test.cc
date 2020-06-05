@@ -23,9 +23,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(concat_x86, retrive_op) {
-  auto concat =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "concat");
+  auto concat = KernelRegistry::Global().Create("concat");
   ASSERT_FALSE(concat.empty());
   ASSERT_TRUE(concat.front());
 }

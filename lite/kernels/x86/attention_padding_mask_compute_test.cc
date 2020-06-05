@@ -81,8 +81,7 @@ int get_max_len(const LoD& lod) {
 
 TEST(attention_padding_mask_x86, retrive_op) {
   auto attention_padding_mask =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "attention_padding_mask");
+      KernelRegistry::Global().Create("attention_padding_mask");
   ASSERT_FALSE(attention_padding_mask.empty());
   ASSERT_TRUE(attention_padding_mask.front());
 }

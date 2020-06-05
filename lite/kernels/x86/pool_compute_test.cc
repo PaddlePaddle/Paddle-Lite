@@ -26,9 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(pool_x86, retrive_op) {
-  auto pool2d =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "pool2d");
+  auto pool2d = KernelRegistry::Global().Create("pool2d");
   ASSERT_FALSE(pool2d.empty());
   ASSERT_TRUE(pool2d.front());
 }

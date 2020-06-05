@@ -77,8 +77,7 @@ void prepare_input(Tensor* x, const LoD& x_lod) {
 
 TEST(sequence_arithmetic_x86, retrive_op) {
   auto sequence_arithmetic =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_arithmetic");
+      KernelRegistry::Global().Create("sequence_arithmetic");
   ASSERT_FALSE(sequence_arithmetic.empty());
   ASSERT_TRUE(sequence_arithmetic.front());
 }

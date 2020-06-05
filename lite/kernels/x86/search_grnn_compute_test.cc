@@ -25,9 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(search_grnn_x86, retrive_op) {
-  auto kernel =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "search_grnn");
+  auto kernel = KernelRegistry::Global().Create("search_grnn");
   ASSERT_FALSE(kernel.empty());
   ASSERT_TRUE(kernel.front());
 }
