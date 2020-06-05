@@ -22,10 +22,12 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 
 DEFINE_int32(power_mode,
              3,
@@ -92,6 +94,11 @@ bool test_gemm_int8(bool tra,
   std::vector<float> scale_c = {k / 127.f};
   std::vector<float> scale_merge_fp32(static_cast<size_t>(m));
   std::vector<float> scale_merge_int8(static_cast<size_t>(m));
+  ActivationParam act_param;
+  act_param.has_active = has_relu;
+  if (has_relu) {
+    act_param.active_type = (paddle::lite_api::ActivationType)1;
+  }
   for (int j = 0; j < m; ++j) {
     scale_merge_fp32[j] = scale_a[j] * scale_b[0];
     scale_merge_int8[j] = scale_merge_fp32[j] / scale_c[0];
@@ -178,9 +185,9 @@ bool test_gemm_int8(bool tra,
                                                n,
                                                k,
                                                has_bias,
-                                               has_relu,
                                                trb,
                                                scale_merge_fp32.data(),
+                                               act_param,
                                                &ctx);
   }
 
@@ -202,9 +209,9 @@ bool test_gemm_int8(bool tra,
                                                n,
                                                k,
                                                has_bias,
-                                               has_relu,
                                                trb,
                                                scale_merge_int8.data(),
+                                               act_param,
                                                &ctx);
     t0.Stop();
   }
@@ -229,9 +236,9 @@ bool test_gemm_int8(bool tra,
                                                n,
                                                k,
                                                has_bias,
-                                               has_relu,
                                                trb,
                                                scale_merge_fp32.data(),
+                                               act_param,
                                                &ctx);
     t0.Stop();
   }

@@ -15,8 +15,8 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
-#include <unordered_set>
 #include "lite/core/mir/pass.h"
 
 namespace paddle {

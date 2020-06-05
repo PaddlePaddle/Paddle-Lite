@@ -14,6 +14,7 @@
 
 #include "lite/kernels/cuda/conv_compute.h"
 #include <vector>
+#include "lite/backends/cuda/math/type_trans.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -34,17 +35,22 @@ inline int ConvOutputSize(int input_size,
   return output_size;
 }
 
-void ConvCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+template <typename T, PrecisionType PType>
+void ConvCompute<T, PType>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>);
+  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<T, PType>);
   conv_impl_->init(param, &ctx);
 }
 
-void ConvCompute::Run() {
-  auto& param = this->Param<param_t>();
+template <typename T, PrecisionType PType>
+void ConvCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
   conv_impl_->run(param);
 }
+
+template class ConvCompute<float, PRECISION(kFloat)>;
+template class ConvCompute<half, PRECISION(kFP16)>;
 
 template <PrecisionType Ptype_out>
 void ConvComputeInt8<Ptype_out>::PrepareForRun() {
@@ -104,8 +110,12 @@ template class ConvComputeInt8<PRECISION(kFloat)>;
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    conv2d, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::ConvCompute, def)
+using ConvFp32 =
+    paddle::lite::kernels::cuda::ConvCompute<float, PRECISION(kFloat)>;
+using ConvFp16 =
+    paddle::lite::kernels::cuda::ConvCompute<half, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(conv2d, kCUDA, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFloat),
@@ -122,12 +132,23 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(depthwise_conv2d,
-                     kCUDA,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::cuda::ConvCompute,
-                     def)
+REGISTER_LITE_KERNEL(conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFloat),
@@ -141,6 +162,22 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kCUDA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 

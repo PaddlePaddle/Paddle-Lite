@@ -33,25 +33,17 @@ namespace npu {
 std::string SubgraphEngine::GenerateModelCacheName() const {
   auto inames = device_inames_;
   auto onames = device_onames_;
-  std::sort(inames.begin(), inames.end());
-  std::sort(onames.begin(), onames.end());
+  std::stable_sort(inames.begin(), inames.end());
 
-  std::string model_cache_name = "";
+  std::string model_cache_name = "subgraph_" + std::to_string(block_idx_);
   for (auto iname : inames) {
+    model_cache_name += "_";
     auto itensor = scope_->FindTensor(iname);
-    std::replace(iname.begin(), iname.end(), '/', '_');
-    model_cache_name += "_" + iname;
+    int tmp = 0;
     for (auto i : itensor->dims().Vectorize()) {
-      model_cache_name += "_" + std::to_string(i);
+      tmp += i * i;
     }
-  }
-  for (auto oname : onames) {
-    auto otensor = scope_->FindTensor(oname);
-    std::replace(oname.begin(), oname.end(), '/', '_');
-    model_cache_name += "_" + oname;
-    for (auto i : otensor->dims().Vectorize()) {
-      model_cache_name += "_" + std::to_string(i);
-    }
+    model_cache_name += std::to_string(tmp % 1999);
   }
   model_cache_name += "_.om";
 
@@ -128,7 +120,9 @@ int SubgraphEngine::BuildDeviceProgram() {
     return subgraph::FAILED;
   }
   auto device_program = std::make_shared<device_program_t>(device_client);
-  device_program_map_[inputs_shape_] = device_program;
+  if (!inputs_shape_.empty()) {
+    device_program_map_[inputs_shape_] = device_program;
+  }
 
   // Query and check the dimensions of valid input and output tensors
   std::vector<hiai::TensorDimension> device_idims, device_odims;

@@ -461,12 +461,12 @@ class XPUMultiEncoderFuser {
       }
     }
 
-    std::unordered_set<const Node*> to_remove;
+    std::set<const Node*> to_remove;
     Node* first_encoder = all_encoders[0];
     std::string in_name, out_name;
     std::vector<std::string> arg_names{
         "FCWeight", "FCBias", "LNScale", "LNBias"};
-    std::unordered_map<std::string, std::vector<std::string>> arg_map;
+    std::map<std::string, std::vector<std::string>> arg_map;
     for (size_t i = 0; i < all_encoders.size(); ++i) {
       Node* cur_encoder = all_encoders[i];
       auto* op_info = cur_encoder->stmt()->op_info();
@@ -589,7 +589,7 @@ class XPUMultiEncoderFuser {
       }
     }
     if (stack) {
-      std::unordered_set<const Node*> to_remove2;
+      std::set<const Node*> to_remove2;
       Node* stack_out = stack->outlinks.front();
       // avoid modification while traversing
       auto stack_out_outlinks = stack_out->outlinks;

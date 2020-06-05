@@ -17,6 +17,7 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 # global variables
 #whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
 USE_ADB_EMULATOR=ON
+LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
 os_nmae=`uname -s`
@@ -96,9 +97,14 @@ function check_need_ci {
     git log -1 --oneline | grep "test=develop" || exit -1
 }
 
+function check_coverage() {
+    bash ../tools/coverage/paddle_lite_coverage.sh
+}
+
 function cmake_x86 {
     prepare_workspace
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
+    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
 }
 
 function cmake_opencl {
@@ -202,7 +208,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON 
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -240,7 +246,9 @@ function build_single {
 
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-
+    if [ $LITE_WITH_COVERAGE = "ON" ];then
+        make coveralls_generate -j	
+    fi 
     # test publish inference lib
     # make publish_inference
 }
@@ -279,6 +287,17 @@ function build_test_server {
 
     test_server
     test_model_optimize_tool_compile
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_coverage {
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    cmake_x86_for_CI
+    build
+
+    test_server
 }
 
 # The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
@@ -1058,6 +1077,10 @@ function main {
                 USE_ADB_EMULATOR="${i#*=}"
                 shift
                 ;;
+            --lite_with_coverage=*)
+                LITE_WITH_COVERAGE="${i#*=}"
+                shift
+                ;;
             build)
                 build $TESTS_FILE
                 build $LIBS_FILE
@@ -1121,6 +1144,11 @@ function main {
                 ;;
             build_test_server)
                 build_test_server
+                shift
+                ;;
+            build_check_coverage)
+                build_test_coverage
+                check_coverage
                 shift
                 ;;
             build_test_xpu)

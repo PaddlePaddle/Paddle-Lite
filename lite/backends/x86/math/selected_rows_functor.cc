@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <algorithm>
+#include <map>
 #include <set>
-#include <unordered_map>
 
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/selected_rows_functor.h"
@@ -329,14 +329,14 @@ struct MergeAdd<lite::TargetType::kX86, T> {
                                       merged_row_set.end());
 
       if (sorted_result) {
-        std::sort(merge_rows.begin(), merge_rows.end());
+        std::stable_sort(merge_rows.begin(), merge_rows.end());
       }
 
       out.set_rows(merge_rows);
       math::SetConstant<lite::TargetType::kX86, T> constant_functor;
       constant_functor(context, out.mutable_value(), 0.0);
 
-      std::unordered_map<int64_t, size_t> rows_to_id;
+      std::map<int64_t, size_t> rows_to_id;
       for (size_t i = 0; i < merge_rows.size(); ++i) {
         rows_to_id[merge_rows[i]] = i;
       }

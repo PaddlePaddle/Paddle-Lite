@@ -14,9 +14,9 @@
 
 #include "lite/core/mir/type_target_cast_pass.h"
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/graph_visualize_pass.h"
@@ -38,7 +38,7 @@ void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   CHECK(!valid_places_.empty());
 
   // record the copied node.
-  std::unordered_map<std::string, Node*> copied_nodes;
+  std::map<std::string, Node*> copied_nodes;
 
   for (auto& node : nodes) {
     if (!node->IsStmt() || node->AsStmt().op_type() == "while") continue;
@@ -53,7 +53,7 @@ void TypeTargetTransformPass::ComplementInputs(
     SSAGraph* graph,
     Node* inst_node,
     Node* in,
-    std::unordered_map<std::string, Node*>* copied_nodes) {
+    std::map<std::string, Node*>* copied_nodes) {
   // If this input is out of date.
   if (inst_node->inlinks.end() ==
       std::find(inst_node->inlinks.begin(), inst_node->inlinks.end(), in))
@@ -90,7 +90,7 @@ void TypeTargetTransformPass::AddIoCopyInst(
     Node* in,
     SSAGraph* graph,
     Node* inst_node,
-    std::unordered_map<std::string, Node*>* copied_nodes,
+    std::map<std::string, Node*>* copied_nodes,
     const std::vector<Place>& valid_places) {
   CHECK(!valid_places.empty()) << "valid_place should be set";
   // var -> new_transform_op -> new_var -> inst

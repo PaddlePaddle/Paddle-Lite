@@ -16,9 +16,9 @@
 
 #include <dlfcn.h>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
