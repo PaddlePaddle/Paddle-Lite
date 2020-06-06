@@ -173,3 +173,6 @@ mobilenet_v2 |48.60 |25.43 |13.76 |43.06 |22.10 |12.09 |
 |---|---|---|---|---|
 ||cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |
 |ssd_mobilenetv1|  65.67|  18.21|  71.8|	16.6|
+
+
+*说明：ssd_mobilenetv1的npu性能为npu、cpu混合调度运行的总时间*
