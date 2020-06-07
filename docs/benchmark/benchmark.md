@@ -144,7 +144,7 @@ mobilenet_v2 |48.60 |25.43 |13.76 |43.06 |22.10 |12.09 |
       * HUAWEI P40, Kirin 990 5G
       * 2 x Cortex-A76 Based 2.86GHz + 2 x Cortex-A76 Based 2.36GHz + 4 x Cortex-A55 1.95GHz
 
-* HIAI ddk 版本： 310
+* HIAI ddk 版本： 310 or 320
  
 * 测试说明
     * branch: release/v2.6.1
@@ -156,10 +156,23 @@ mobilenet_v2 |48.60 |25.43 |13.76 |43.06 |22.10 |12.09 |
 
 #### paddlepaddle model
 
+- ddk 310
+
 |Kirin |810||990||990 5G||
 |---|---|---|---|---|---|---|
-||cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |
-|mobilenet_v1|	33.84|	3.10|  	31.91|  4.07|	33.97|  3.20|
-|mobilenet_v2|	23.32|  3.51|	22.47|  5.61|	23.17|  3.51|
-|squeezenet|	18.47| 4.35|  17.79|  5.05|	18.65|  3.47|
-|mnasnet|	20.24|  3.28|	19.54|  5.17|	20.34| 3.32|
+|  |cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |
+|mobilenet_v1|	 41.20|  12.76|  31.91|  4.07|  33.97|  3.20|
+|mobilenet_v2|	 29.57|  12.12|  22.47|  5.61|  23.17|  3.51|
+|squeezenet|  23.96|  9.04|  17.79|  3.82|	 18.65|  3.01|
+|mnasnet|  26.47|  13.62|  19.54|  5.17|	 20.34|  3.32|
+
+
+- ddk 320
+
+|模型 |990||990-5G||
+|---|---|---|---|---|
+||cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |
+|ssd_mobilenetv1|  65.67|  18.21|  71.8|	16.6|
+
+
+*说明：ssd_mobilenetv1的npu性能为npu、cpu混合调度运行的总时间*
