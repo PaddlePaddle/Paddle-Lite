@@ -14,8 +14,8 @@ limitations under the License. */
 #pragma once
 
 #include <jni.h>
-#include <string>
-#include <vector>
+#include <string>  // NOLINT
+#include <vector>  // NOLINT
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
@@ -78,6 +78,14 @@ inline jfloatArray cpp_array_to_jfloatarray(JNIEnv *env,
   return result;
 }
 
+inline jbyteArray cpp_array_to_jbytearray(JNIEnv *env,
+                                          const int8_t *buf,
+                                          int64_t len) {
+  jbyteArray result = env->NewByteArray(len);
+  env->SetByteArrayRegion(result, 0, len, buf);
+  return result;
+}
+
 inline jintArray cpp_array_to_jintarray(JNIEnv *env,
                                         const int *buf,
                                         int64_t len) {
@@ -86,11 +94,11 @@ inline jintArray cpp_array_to_jintarray(JNIEnv *env,
   return result;
 }
 
-inline jbyteArray cpp_array_to_jbytearray(JNIEnv *env,
-                                          const int8_t *buf,
+inline jlongArray cpp_array_to_jlongarray(JNIEnv *env,
+                                          const int64_t *buf,
                                           int64_t len) {
-  jbyteArray result = env->NewByteArray(len);
-  env->SetByteArrayRegion(result, 0, len, buf);
+  jlongArray result = env->NewLongArray(len);
+  env->SetLongArrayRegion(result, 0, len, buf);
   return result;
 }
 
