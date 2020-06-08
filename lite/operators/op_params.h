@@ -1518,24 +1518,15 @@ struct XPUFcParam : ParamBase {
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
-  // lite::Tensor* filter{};
   lite::Tensor* offset{};
   lite::Tensor* mask{};
-  // lite::Tensor* bias{nullptr};
   lite::Tensor* output{};
-  // std::vector<int> strides{1, 1};
-  // std::vector<int> paddings{1, 1};
-  // std::vector<int> dilations{1, 1};
-  // int groups{1};
   int deformable_groups{1};
   int im2col_step{1};
   bool modulated{true};  // True-v2 False-v1
-  // bool fuse_relu{false};
   std::string data_format{"Anylayout"};
   // convolution parameter
   ConvParam conv_param;
-  // for activation
-  // ActivationParam activation_param;
   // support var_length or not
   bool var_length{false};
   // only used in conv_transpose.
