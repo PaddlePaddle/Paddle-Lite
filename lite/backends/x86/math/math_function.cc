@@ -123,6 +123,7 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
     auto size = input.numel() / in_dims[0];
     PADDLE_ENFORCE_EQ(vector.numel(), size);
     PADDLE_ENFORCE_EQ(output->dims(), in_dims);
+
     const T* input_data = input.data<T>();
     const T* vector_data = vector.data<T>();
     T* output_data = output->template mutable_data<T>();

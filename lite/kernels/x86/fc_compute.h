@@ -82,7 +82,8 @@ class FCFunctor {
           memcpy(X1_data + i * KK, X + i * K, K * sizeof(T));
         }
       };
-      parallel_memcpy_x(0, M);
+      lite::x86::RunParallelFor(0, M, parallel_memcpy_x);
+
       blas.GEMM(false,
                 false,
                 M,
@@ -103,17 +104,18 @@ class FCFunctor {
             memcpy(Y + i * N, Y1_data + i * NN, N * sizeof(T));
           }
         };
-        parallel_memcpy_y(0, M);
+        lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
         return;
       }
 
-      parallel_compute(0, M);
+      lite::x86::RunParallelFor(0, M, parallel_compute);
     } else {
       blas.MatMul(M, N, K, X, W, Y);
       if (!B) {
         return;
       }
-      parallel_compute(0, M);
+
+      lite::x86::RunParallelFor(0, M, parallel_compute);
     }
   }
 };

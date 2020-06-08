@@ -31,16 +31,21 @@ class SequenceReshapeCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::SequenceReshapeParam>();
+    // auto& context = context_->As<X86Context>();
     auto* in = param.x;
     auto* out = param.output;
     int out_width = param.new_dim;
+
     const auto& in_dims = in->dims();
     int64_t in_width = in_dims[1];
+
     auto& in_lod = in->lod();
     CHECK_EQ(in_lod.size(), 1UL);
     CHECK_EQ((uint64_t)in_dims[0], in_lod[0].back());
+
     auto in_lod_l0 = in_lod[0];
     int seq_num = in_lod_l0.size() - 1;
+
     if (in_width == out_width) {
       out->set_lod(in->lod());
     } else {
@@ -56,6 +61,7 @@ class SequenceReshapeCompute
         out_lod[0][i + 1] = out_lod[0][i] + offset;
       }
     }
+
     out->Resize(std::vector<int64_t>{in->numel() / out_width, out_width});
     auto* dst_ptr = out->template mutable_data<T>();
     auto size = in->numel() * sizeof(T);
