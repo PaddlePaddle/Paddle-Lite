@@ -72,6 +72,8 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 if(ARM_TARGET_LANG STREQUAL "clang")
+    # note(ysh329): fix slow compilation for arm cpu, 
+    #               and abnormal exit compilation for opencl due to lots of warning
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-inconsistent-missing-override -Wno-return-type")
 endif()
 
