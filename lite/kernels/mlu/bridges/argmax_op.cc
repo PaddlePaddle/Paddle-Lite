@@ -91,6 +91,9 @@ int ArgmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   graph->FuseOp(argmax_op);
   CNML_CALL(cnmlDestroyBaseOp(&argmax_op));
+  if (cast_op) {
+    CNML_CALL(cnmlDestroyBaseOp(&cast_op));
+  }
   return SUCCESS;
 }
 
