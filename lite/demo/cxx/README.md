@@ -51,6 +51,20 @@ cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/demo/cxx/mask_d
 sh prepare.sh
 ```
 
+当然，大家也可以通过PaddleHub下载人脸检测模型和口罩佩戴判断模型，然后使用 `opt`工具转换，最后替换 `mask_demo` 文件中的模型文件。
+```
+# 参考[文档](https://github.com/PaddlePaddle/PaddleHub)安装PaddleHub
+
+# 参考[文档](https://www.paddlepaddle.org.cn/hubdetail?name=pyramidbox_lite_mobile_mask&en_category=ObjectDetection)安装模型，执行 hub install pyramidbox_lite_mobile_mask==1.3.0
+
+#通过python执行以下代码，将模型保存在test_program文件夹之中，人脸检测和口罩佩戴判断模型分别存储在pyramidbox_lite和mask_detector之中。文件夹中的__model__是模型结构文件，__param__文件是权重文件
+import paddlehub as hub
+pyramidbox_lite_mobile_mask = hub.Module(name="pyramidbox_lite_mobile_mask")
+pyramidbox_lite_mobile_mask.processor.save_inference_model(dirname="test_program")
+
+# 从PaddleHub下载的是预测模型，需要使用PaddleLite提供的 opt 对预测模型进行转换，请参考[模型转换文档](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/model_optimize_tool/)。
+```
+
 电脑连接安卓手机，在电脑shell端进入 `mask_demo` 目录。
 
 执行 `sh run.sh`，会将文件push到手机端、执行口罩检测、pull结果图片。
@@ -58,17 +72,6 @@ sh prepare.sh
 在电脑端查看 `test_img_result.jpg`，即是口罩检测结果，如下图。
 
 ![test_mask_detection_result](https://user-images.githubusercontent.com/7383104/75131866-bae64300-570f-11ea-9cad-17acfaea1cfc.jpg)
-
-当然，大家也可以通过PaddleHub下载人脸检测模型和口罩佩戴判断模型。
-```
-# 下载paddlehub以后，通过python执行以下代码
-import paddlehub as hub
-pyramidbox_lite_mobile_mask = hub.Module(name="pyramidbox_lite_mobile_mask")
-# 将模型保存在test_program文件夹之中
-pyramidbox_lite_mobile_mask.processor.save_inference_model(dirname="test_program") 
-# 通过以上命令，可以获得人脸检测和口罩佩戴判断模型，分别存储在pyramidbox_lite和mask_detector之中。文件夹中的__model__是模型结构文件，__param__文件是权重文件。
-# 从PaddleHub下载的是预测模型，需要使用PaddleLite提供的model_optimize_tools对预测模型进行转换，请参考[模型转换文档](https://paddlepaddle.github.io/Paddle-Lite/v2.2.0/model_optimize_tool/)。
-```
 
 注：mask_detetion.cc 中的缩放因子shrink, 检测阈值detect_threshold, 可供自由配置:
    - 缩放因子越大，模型运行速度越慢，检测准确率越高。

@@ -28,62 +28,63 @@ List of devices attached
 执行以下命令，完成Benchmark：
 
 ```shell
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/run_benchmark.sh
+# Test v2.6 branch
+wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.6/run_benchmark.sh
+sh run_benchmark.sh
+
+# Test v2.3 branch
+wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.3/run_benchmark.sh
 sh run_benchmark.sh
 ```
 
 该`run_benchmark.sh`脚本会：
 
-1. 下载模型，并上传手机：包含mobilenetv1/v2、shufflenetv2、squeezenetv1.1、mnasnet；
+1. 下载模型，并上传手机：包含mobilenetv1、mobilenetv2、shufflenetv2、squeezenetv1.1、mnasnet、mobilenetv1_int8、mobilenetv2_int8；
 2. 下载pre-built android-armv7和android-armv8的可执行文件，并上传手机：`benchmark_bin_v7`和`benchmark_bin_v8`；
 3. 自动执行另一个脚本`benchmark.sh`（多台手机连接USB，请在`benchmark.sh`脚本中对`adb`命令后加上测试手机的`serial number`）；
 4. 从手机下载benchmark结果`result_armv7.txt`和`result_armv8.txt`，到当前目录，并显示Benchmark结果。
 
 ## 二. 逐步Benchmark
 
-### 1. 获取benchmark可执行文件
+### 1. 编译benchmark可执行文件
 
-benchmark_bin文件可以测试PaddleLite的性能，有下面两种方式获得。
-
-#### 方式一：下载benchmark_bin可执行文件
-
-```shell
-# Download benchmark_bin for android-armv7
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/benchmark_bin_v7
-
-# Download benchmark_bin for android-armv8
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/benchmark_bin_v8
-```
-
-#### 方式二：由源码编译benchmark_bin文件
-
-根据[源码编译](../user_guides/source_compile)准备编译环境，拉取PaddleLite最新release发布版代码，并在仓库根目录下，执行：
+根据[源码编译](../user_guides/source_compile)准备编译环境，拉取PaddleLite最新特定分支代码，并在仓库根目录下，执行：
 
 ```shell
 ###########################################
 # Build benchmark_bin for android-armv7   #
 ###########################################
-./lite/tools/ci_build.sh  \
-  --arm_os="android" \
-  --arm_abi="armv7" \
-  --arm_lang="gcc " \
-  build_arm
+
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv7 \
+  --arm_lang=gcc \
+  --android_stl=c++_static \
+  --build_extra=ON \
+  --with_log=OFF \
+  full_publish
 
 # `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv7.gcc/lite/api/benchmark_bin
 
 ###########################################
 # Build benchmark_bin for android-armv8   #
 ###########################################
-./lite/tools/ci_build.sh  \
-  --arm_os="android" \
-  --arm_abi="armv8" \
-  --arm_lang="gcc "  \
-  build_arm
+
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv8 \
+  --arm_lang=gcc \
+  --android_stl=c++_static \
+  --build_extra=ON \
+  --with_log=OFF \
+  full_publish
 
 # `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv8.gcc/lite/api/benchmark_bin
 ```
 
 > **注意**：为了避免在docker内部访问不到手机的问题，建议编译得到benchmark_bin后退出到docker外面，并且将benchmark_bin文件拷贝到一个临时目录。然后在该临时目录下，按照下面步骤下载模型、拷贝脚本、测试。
+
+> **注意**：如果不是测试常见分类模型（单输入，输入shape是1x3x224x224），需要根据实际情况修改`/PaddleLite/lite/api/benchmark.cc`文件，然后编译得到可执行文件。
 
 ### 2. 准备模型
 

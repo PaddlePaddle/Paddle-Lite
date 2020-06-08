@@ -137,11 +137,11 @@ bool SeqSortedseqTranseUtil::get_sorted_map(const std::vector<int>& offset_vec,
     return false;
   }
 
-  std::sort(_length_index.begin(),
-            _length_index.end(),
-            [&length_vec](int i1, int i2) {
-              return length_vec[i1] > length_vec[i2];
-            });
+  std::stable_sort(_length_index.begin(),
+                   _length_index.end(),
+                   [&length_vec](int i1, int i2) {
+                     return length_vec[i1] > length_vec[i2];
+                   });
 
   _emit_offset_vec.resize(max_len + 1);
   _map_vec.resize(word_sum);

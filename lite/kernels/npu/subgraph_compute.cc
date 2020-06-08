@@ -15,6 +15,7 @@
 #include "lite/kernels/npu/subgraph_compute.h"
 #include <sys/time.h>
 #include <time.h>
+#include <algorithm>
 #include <utility>
 #include "hiai_ir_build.h"  // NOLINT
 #include "lite/backends/npu/device.h"
@@ -22,11 +23,32 @@
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
 #include "lite/kernels/npu/bridges/utility.h"
+#include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace npu {
+
+std::string SubgraphEngine::GenerateModelCacheName() const {
+  auto inames = device_inames_;
+  auto onames = device_onames_;
+  std::stable_sort(inames.begin(), inames.end());
+
+  std::string model_cache_name = "subgraph_" + std::to_string(block_idx_);
+  for (auto iname : inames) {
+    model_cache_name += "_";
+    auto itensor = scope_->FindTensor(iname);
+    int tmp = 0;
+    for (auto i : itensor->dims().Vectorize()) {
+      tmp += i * i;
+    }
+    model_cache_name += std::to_string(tmp % 1999);
+  }
+  model_cache_name += "_.om";
+
+  return model_cache_name;
+}
 
 int SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
@@ -88,14 +110,19 @@ int SubgraphEngine::BuildDeviceProgram() {
   if (device_program_map_.count(inputs_shape_) > 0) {
     return status;
   }
+  std::string model_cache_full_dir =
+      model_cache_dir_.empty() ? "" : model_cache_dir_ + "/" +
+                                          GenerateModelCacheName();
   auto device_client = lite::npu::Device::Global().Build(
-      model_name_, device_inodes, device_onodes);
+      model_name_, device_inodes, device_onodes, model_cache_full_dir);
   if (device_client == nullptr) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return subgraph::FAILED;
   }
   auto device_program = std::make_shared<device_program_t>(device_client);
-  device_program_map_[inputs_shape_] = device_program;
+  if (!inputs_shape_.empty()) {
+    device_program_map_[inputs_shape_] = device_program;
+  }
 
   // Query and check the dimensions of valid input and output tensors
   std::vector<hiai::TensorDimension> device_idims, device_odims;
@@ -212,12 +239,6 @@ int SubgraphEngine::LaunchDeviceProgram() {
            hiai::AI_SUCCESS);
   VLOG(3) << "[NPU] Process cost " << GetCurrentUS() - start_time << " us";
 
-  // Copy the data of output HiAI tensor to the buffer of origin output tensors
-  for (size_t i = 0; i < device_otensors_.size(); i++) {
-    std::memcpy(const_cast<void*>(origin_otensors_[i]->raw_data()),
-                device_otensors_[i]->GetBuffer(),
-                device_otensors_[i]->GetSize());
-  }
   return 0;
 }
 
@@ -236,16 +257,34 @@ int SubgraphEngine::Build() {
 void SubgraphEngine::InitDeviceTensor() {
   auto device_program = device_program_map_[inputs_shape_];
   for (size_t i = 0; i < device_itensors_.size(); i++) {
-    device_itensors_[i]->Init(&(device_program->device_idims[i]));
-    std::memcpy(device_itensors_[i]->GetBuffer(),
-                origin_itensors_[i]->raw_data(),
-                origin_itensors_[i]->memory_size());
+    if (device_itensors_[i]->GetBuffer() != origin_itensors_[i]->raw_data()) {
+      VLOG(3) << "init device_itensors and share input tensor buf between "
+                 "device and host";
+      device_itensors_[i]->Init(&(device_program->device_idims[i]));
+      std::memcpy(device_itensors_[i]->GetBuffer(),
+                  origin_itensors_[i]->raw_data(),
+                  origin_itensors_[i]->memory_size());
+      // share data buf between device_itensor and origin_itensor
+      std::shared_ptr<Buffer> buffer =
+          std::make_shared<Buffer>(device_itensors_[i]->GetBuffer(),
+                                   lite_api::TargetType::kHost,
+                                   device_itensors_[i]->GetSize());
+      origin_itensors_[i]->ResetBuffer(buffer, device_itensors_[i]->GetSize());
+    }
   }
   for (size_t i = 0; i < device_otensors_.size(); i++) {
-    device_otensors_[i]->Init(&(device_program->device_odims[i]));
-  }
-  for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+    if (device_otensors_[i]->GetBuffer() != origin_otensors_[i]->raw_data()) {
+      VLOG(3) << "init device_otensors and share output tensor buf between "
+                 "device and host";
+      device_otensors_[i]->Init(&(device_program->device_odims[i]));
+      // share data buf between device_itensor and origin_itensor
+      origin_otensors_[i]->Resize(device_program->origin_odims[i]);
+      std::shared_ptr<Buffer> buffer =
+          std::make_shared<Buffer>(device_otensors_[i]->GetBuffer(),
+                                   lite_api::TargetType::kHost,
+                                   device_otensors_[i]->GetSize());
+      origin_otensors_[i]->ResetBuffer(buffer, device_otensors_[i]->GetSize());
+    }
   }
 }
 
@@ -268,7 +307,8 @@ void SubgraphCompute::PrepareForRun() {
                                    param.sub_block_desc,
                                    param.input_data_names,
                                    param.output_data_names,
-                                   param.scope));
+                                   param.scope,
+                                   NPUContext::SubgraphModelCacheDir()));
   CHECK(engine_);
   engine_->Build();
 }

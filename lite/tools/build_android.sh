@@ -1,5 +1,5 @@
 #!/bin/bash
-set +x
+set -x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
@@ -176,7 +176,7 @@ function make_full_publish_so {
 
   prepare_thirdparty
 
-  build_directory=$workspace/build.lite.android.$ARCH.$ARM_LANG
+  build_directory=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
 
   if [ -d $build_directory ]
   then
@@ -202,7 +202,7 @@ function make_full_publish_so {
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
-      -DARM_TARGET_LANG=$ARM_LANG \
+      -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
@@ -233,7 +233,7 @@ function print_usage {
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                          |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
-    echo -e "|     --android_stl: (c++_static|c++_shared|gnu_static|gnu_shared), default is c++_static                                              |"
+    echo -e "|     --android_stl: (c++_static|c++_shared), default is c++_static                                                                    |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"

@@ -63,7 +63,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
   if (x0 + 1 < 0 || x0 + 1 > out_width - 1 || y0 + 1 < 0 || y0 + 1 > out_height - 1){
       input3 = (CL_DTYPE4)(0.0);
   }
-  CL_DTYPE4 out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
+  CL_DTYPE4 out_val = input0 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ye) +
+                      input1 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ye) + 
+		      input2 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ys) +
+		      input3 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ys);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, outpoints, out_val);
  
   // y
@@ -97,7 +100,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
       input3 = (CL_DTYPE4)(0.0);
   }
 
-  out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
+  out_val = input0 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ye) +
+            input1 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ye) +
+            input2 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ys) +
+            input3 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ys);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y + 1), out_val);
 
   // z
@@ -130,7 +136,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
   if (x0 + 1 < 0 || x0 + 1 > out_width - 1 || y0 + 1 < 0 || y0 + 1 > out_height - 1){
       input3 = (CL_DTYPE4)(0.0);
   }
-  out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
+  out_val = input0 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ye) +
+            input1 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ye) +
+            input2 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ys) +
+            input3 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ys);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y + 2), out_val);
 
   // w
@@ -163,6 +172,9 @@ __kernel void grid_sampler(__read_only image2d_t input,
   if (x0 + 1 < 0 || x0 + 1 > out_width - 1 || y0 + 1 < 0 || y0 + 1 > out_height - 1){
       input3 = (CL_DTYPE4)(0.0);
   }
-  out_val = input0 * xe * ye + input1 * xs * ye + input2 * xe * ys + input3 * xs * ys;
+  out_val = input0 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ye) +
+            input1 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ye) + 
+            input2 * (CL_DTYPE4)(xe) * (CL_DTYPE4)(ys) +
+            input3 * (CL_DTYPE4)(xs) * (CL_DTYPE4)(ys);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y + 3), out_val);
 }

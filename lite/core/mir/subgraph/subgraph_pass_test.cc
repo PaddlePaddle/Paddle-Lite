@@ -25,6 +25,7 @@ DEFINE_string(optimized_model_dir, "", "path of optimized naive buffer model");
 DEFINE_string(input_tensor_shape, "1,3,224,224", "shape of input tensors");
 DEFINE_string(input_tensor_type, "float32", "data type of input tensors");
 DEFINE_string(output_tensor_type, "float32", "data type of output tensors");
+DEFINE_string(subgraph_model_cache_dir, "", "dir of subgraph model cache");
 
 namespace paddle {
 namespace lite {
@@ -132,6 +133,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
   mobile_config.set_model_from_file(optimized_model_dir + ".nb");
   mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
+  mobile_config.set_subgraph_model_cache_dir(FLAGS_subgraph_model_cache_dir);
   predictor = lite_api::CreatePaddlePredictor(mobile_config);
   FillInputTensors(predictor, input_tensor_shape, input_tensor_type, 1);
   // Run optimized model
@@ -139,6 +141,7 @@ std::shared_ptr<lite_api::PaddlePredictor> TestModel(
     predictor->Run();
   }
   for (int i = 0; i < FLAGS_repeats; i++) {
+    FillInputTensors(predictor, input_tensor_shape, input_tensor_type, i);
     auto start = GetCurrentUS();
     predictor->Run();
     LOG(INFO) << i << ", " << GetCurrentUS() - start << "us";

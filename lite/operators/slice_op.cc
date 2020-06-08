@@ -43,7 +43,7 @@ bool SliceOp::InferShapeImpl() const {
     CHECK_LT(param_.axes[i], in_dims.size()) << "The index of dimension in "
                                                 "axes must be less than the "
                                                 "size of input shape.";
-    if (param_.infer_flags[i] == -1) {
+    if (param_.infer_flags.size() > i && param_.infer_flags[i] == -1) {
       out_dims[axes[i]] = -1;
     } else {
       // infer out_dim shape

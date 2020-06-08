@@ -19,9 +19,9 @@
 #include <chrono>  // NOLINT
 #include <cmath>
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"

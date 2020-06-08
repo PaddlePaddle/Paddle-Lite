@@ -1,11 +1,8 @@
 /* Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +13,7 @@ limitations under the License. */
 #include <memory>
 #include <vector>
 #include "lite/backends/cuda/math/gemm.h"
+#include "lite/backends/cuda/math/type_trans.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
@@ -60,15 +58,16 @@ __global__ void eliminate_pad_effect(dtype* src,
     int width_id = tid % num_width;
     int cur_len = offset[batch_id + 1] - offset[batch_id];
     if (width_id >= cur_len) {
-      src[tid] = 0.;
+      src[tid] = 0.f;
     }
   }
 }
 
-void VarConv2DCompute::PrepareForRun() {
+template <typename T, PrecisionType PType>
+void VarConv2DCompute<T, PType>::PrepareForRun() {
   auto& context = this->ctx_->template As<CUDAContext>();
   auto stream = context.exec_stream();
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   conv_param_.x = const_cast<lite::Tensor*>(param.X);
   conv_param_.var_length = true;
 
@@ -105,14 +104,15 @@ void VarConv2DCompute::PrepareForRun() {
     conv_param_.activation_param.active_type = lite_api::ActivationType::kRelu;
   }
   conv_param_.output->Resize({output_shape});
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<PRECISION(kFloat)>);
+  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<T, PType>);
   conv_impl_->init(conv_param_, &context);
 }
 
-void VarConv2DCompute::Run() {
+template <typename T, PrecisionType PType>
+void VarConv2DCompute<T, PType>::Run() {
   auto& context = this->ctx_->template As<CUDAContext>();
   auto stream = context.exec_stream();
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   param.Out->set_lod(param.X->lod());
   std::vector<int64_t> output_shape(
@@ -132,7 +132,7 @@ void VarConv2DCompute::Run() {
 
   // Avoid situations where cascading conv does not support multiple batch
   // calculations
-  float* out_data = param.Out->mutable_data<float>();
+  T* out_data = param.Out->template mutable_data<T>();
   const int batch_num = output_shape[1] * output_shape[2] * output_shape[3];
   std::vector<int64_t> lod(param.X->lod()[0].size(), 0);
   for (size_t i = 0; i < param.X->lod()[0].size(); ++i) {
@@ -155,17 +155,17 @@ void VarConv2DCompute::Run() {
                                  IoDirection::HtoD,
                                  stream);
 
-  eliminate_pad_effect<float><<<blocks, threads, 0, stream>>>(out_data,
-                                                              d_offset,
-                                                              output_shape[0],
-                                                              batch_stride,
-                                                              output_shape[1],
-                                                              channel_stride,
-                                                              output_shape[2],
-                                                              height_stride,
-                                                              output_shape[3],
-                                                              width_stride,
-                                                              count);
+  eliminate_pad_effect<T><<<blocks, threads, 0, stream>>>(out_data,
+                                                          d_offset,
+                                                          output_shape[0],
+                                                          batch_stride,
+                                                          output_shape[1],
+                                                          channel_stride,
+                                                          output_shape[2],
+                                                          height_stride,
+                                                          output_shape[3],
+                                                          width_stride,
+                                                          count);
 
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(ERROR) << cudaGetErrorString(error);
@@ -176,14 +176,21 @@ void VarConv2DCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(var_conv_2d,
-                     kCUDA,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::cuda::VarConv2DCompute,
-                     def)
+using VarConvFp32 =
+    paddle::lite::kernels::cuda::VarConv2DCompute<float, PRECISION(kFloat)>;
+using VarConvFp16 =
+    paddle::lite::kernels::cuda::VarConv2DCompute<half, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(var_conv_2d, kCUDA, kFloat, kNCHW, VarConvFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(var_conv_2d, kCUDA, kFP16, kNCHW, VarConvFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();

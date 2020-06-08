@@ -53,12 +53,15 @@ DEFINE_int32(stride_w, 1, "stride width");
 DEFINE_int32(dila_h, 1, "dilation height");
 DEFINE_int32(dila_w, 1, "dilation width");
 
-DEFINE_bool(flag_relu, true, "do relu");
+DEFINE_bool(flag_act, true, "do act");
 DEFINE_bool(flag_bias, true, "with bias");
+DEFINE_double(clipped_coef, 1.0, "clipped relu coef");
+DEFINE_double(leakey_relu_alpha, 2.22, "leakey relu alpha");
 
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
@@ -129,9 +132,11 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                     const std::vector<int>& pads,
                     const std::vector<int>& dilas,
                     bool flag_bias,
-                    bool flag_relu,
+                    int flag_act,
                     const std::vector<int>& thread_num,
-                    const std::vector<int>& power_mode) {
+                    const std::vector<int>& power_mode,
+                    const float six = 6.f,
+                    const float alpha = 1.f) {
   paddle::lite::DeviceInfo::Init();
   ConvParam param_int8_out;
   ConvParam param_fp32_out;
@@ -142,7 +147,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                    pads,
                                    dilas,
                                    flag_bias,
-                                   flag_relu,
+                                   flag_act > 0,
                                    &param_int8_out);
 
   get_conv_param<PRECISION(kFloat)>(weight_dim,
@@ -151,7 +156,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                     pads,
                                     dilas,
                                     flag_bias,
-                                    flag_relu,
+                                    flag_act > 0,
                                     &param_fp32_out);
   Tensor weight_fp32;
   Tensor bias_fp32;
@@ -165,9 +170,32 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
     param_fp32_out.bias->CopyDataFrom(*param_int8_out.bias);
     bias_fp32.CopyDataFrom(*param_int8_out.bias);
   }
+  if (flag_act > 0) {
+    ActivationParam act_param;
+    act_param.has_active = true;
+    act_param.active_type = (paddle::lite_api::ActivationType)
+        flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
+    if (flag_act == 1) {
+      param_fp32_out.fuse_relu = true;
+      param_int8_out.fuse_relu = true;
+    } else if (flag_act == 2) {
+      act_param.Relu_clipped_coef = six;
+    } else if (flag_act == 4) {
+      act_param.Leaky_relu_alpha = alpha;
+    }
+    param_fp32_out.activation_param = act_param;
+    param_int8_out.activation_param = act_param;
+  }
 
   std::vector<float> scale_in{1.f / 127};
-  std::vector<float> scale_out{weight_dim.count(1, 4) / 127.f};
+  std::vector<float> scale_out(1, weight_dim.count(1, 4) / 127.f);
+  if (flag_act == 2) {
+    scale_out[0] = six / 127.f;
+  } else if (flag_act == 4) {
+    if (std::abs(alpha) > 1) {
+      scale_out[0] *= std::abs(alpha);
+    }
+  }
   std::vector<float> scale_w(weight_dim[0], 1.f / 127);
 
   param_int8_out.input_scale = scale_in[0];
@@ -291,7 +319,9 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                    pads[2],
                                    pads[0],
                                    flag_bias,
-                                   static_cast<int>(flag_relu));
+                                   flag_act,
+                                   six,
+                                   alpha);
           paddle::lite::arm::math::fp32_to_int8(dout_basic_fp32,
                                                 dout_basic_int8,
                                                 scale_out.data(),
@@ -299,7 +329,6 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                                                 1,
                                                 dim_out.production());
         }
-
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
                       weight_dim[3] / group;
         /// warm up
@@ -364,9 +393,8 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
                          << ", group: " << group
                          << ", bias: " << (flag_bias ? "true" : "false")
-                         << ", relu: " << (flag_relu ? "true" : "false")
-                         << ", threads: " << th << ", power_mode: " << cls
-                         << " failed!!\n";
+                         << ", act: " << flag_act << ", threads: " << th
+                         << ", power_mode: " << cls << " failed!!\n";
             }
           }
         }
@@ -423,9 +451,8 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                          << ", stride: " << strides[0] << ", " << strides[1]
                          << ", dila_: " << dilas[0] << ", " << dilas[1]
                          << ", bias: " << (flag_bias ? "true" : "false")
-                         << ", relu: " << (flag_relu ? "true" : "false")
-                         << ", threads: " << th << ", power_mode: " << cls
-                         << " failed!!\n";
+                         << ", act: " << flag_act << ", threads: " << th
+                         << ", power_mode: " << cls << " failed!!\n";
             }
           }
         }
@@ -435,9 +462,8 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                   << ", " << pads[3] << ", stride: " << strides[0] << ", "
                   << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
                   << ", bias: " << (flag_bias ? "true" : "false")
-                  << ", relu: " << (flag_relu ? "true" : "false")
-                  << ", threads: " << th << ", power_mode: " << cls
-                  << " successed!!\n";
+                  << ", act: " << flag_act << ", threads: " << th
+                  << ", power_mode: " << cls << " successed!!\n";
       }
     }
   }
@@ -452,9 +478,11 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                     const std::vector<int>& pads,
                     const std::vector<int>& dilas,
                     bool flag_bias,
-                    bool flag_relu,
+                    int flag_act,
                     const std::vector<int>& thread_num,
-                    const std::vector<int>& power_mode) {}
+                    const std::vector<int>& power_mode,
+                    float six = 6.f,
+                    float alpha = 1.f) {}
 #endif  // LITE_WITH_ARM
 
 #if 1  /// 3x3dw
@@ -463,7 +491,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1}) {
         for (auto& flag_bias : {false, true}) {
-          for (auto& flag_relu : {false, true}) {
+          for (auto& flag_act : {0, 1, 2, 4}) {
             for (auto& c : {1, 3, 5, 8, 16, 32}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 3, 3});
@@ -479,9 +507,11 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
                              {pad, pad, pad, pad},
                              {1, 1},
                              flag_bias,
-                             flag_relu,
+                             flag_act,
                              {4},
-                             {FLAGS_power_mode});
+                             {FLAGS_power_mode},
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
             }
           }
         }
@@ -497,7 +527,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1, 2, 3, 4}) {
         for (auto& flag_bias : {false, true}) {
-          for (auto& flag_relu : {false, true}) {
+          for (auto& flag_act : {0, 1, 2, 4}) {
             for (auto& c : {1, 5, 15, 33}) {
               std::vector<DDim> dims;
               DDim weights_dim({c, 1, 5, 5});
@@ -513,9 +543,11 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
                              {pad, pad, pad, pad},
                              {1, 1},
                              flag_bias,
-                             flag_relu,
+                             flag_act,
                              {1, 4},
-                             {FLAGS_power_mode});
+                             {FLAGS_power_mode},
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
             }
           }
         }
@@ -528,11 +560,11 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
 #if 1  /// conv1x1s1
 TEST(TestConv1x1s1Int8, test_conv1x1s1) {
   if (FLAGS_basic_test) {
-    for (auto& cin : {1, 3, 8, 32}) {
+    for (auto& cin : {1, 3, 8, 33}) {
       for (auto& cout : {1, 5, 17}) {
         for (auto& g : {1, 2}) {
           for (auto& flag_bias : {false, true}) {
-            for (auto& flag_relu : {false, true}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
               std::vector<DDim> dims;
               if (cin % g != 0 || cout % g != 0) {
                 continue;
@@ -550,9 +582,11 @@ TEST(TestConv1x1s1Int8, test_conv1x1s1) {
                              {0, 0, 0, 0},
                              {1, 1},
                              flag_bias,
-                             flag_relu,
+                             flag_act,
                              {4},
-                             {FLAGS_power_mode});
+                             {FLAGS_power_mode},
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
             }
           }
         }
@@ -572,7 +606,7 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
             for (auto& pad_left : {1, 2}) {
               for (auto& pad_right : {1, 2}) {
                 for (auto& flag_bias : {false, true}) {
-                  for (auto& flag_relu : {false, true}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
@@ -587,9 +621,11 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                                    {pad_top, pad_bottom, pad_left, pad_right},
                                    {1, 1},
                                    flag_bias,
-                                   flag_relu,
+                                   flag_act,
                                    {4},
-                                   {FLAGS_power_mode});
+                                   {FLAGS_power_mode},
+                                   FLAGS_clipped_coef,
+                                   FLAGS_leakey_relu_alpha);
                   }
                 }
               }
@@ -612,7 +648,7 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
             for (auto& pad_left : {1, 2}) {
               for (auto& pad_right : {1, 2}) {
                 for (auto& flag_bias : {false, true}) {
-                  for (auto& flag_relu : {false, true}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
@@ -627,9 +663,11 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
                                    {pad_top, pad_bottom, pad_left, pad_right},
                                    {1, 1},
                                    flag_bias,
-                                   flag_relu,
+                                   flag_act,
                                    {4},
-                                   {FLAGS_power_mode});
+                                   {FLAGS_power_mode},
+                                   FLAGS_clipped_coef,
+                                   FLAGS_leakey_relu_alpha);
                   }
                 }
               }
@@ -642,7 +680,7 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
 }
 #endif  /// conv3x3s2
 
-#if 0   /// random param conv
+#if 1  /// random param conv
 TEST(TestConvRandInt8, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 17}) {
@@ -657,7 +695,7 @@ TEST(TestConvRandInt8, test_conv_rand) {
                       for (auto& pad_right : {0, 1, 2}) {
                         for (auto& dila : {1, 2}) {
                           for (auto& flag_bias : {false, true}) {
-                            for (auto& flag_relu : {false, true}) {
+                            for (auto& flag_act : {0, 1, 2, 4}) {
                               if (cin % g != 0 || cout % g != 0) {
                                 break;
                               }
@@ -676,9 +714,11 @@ TEST(TestConvRandInt8, test_conv_rand) {
                                   {pad_top, pad_bottom, pad_left, pad_right},
                                   {dila, dila},
                                   flag_bias,
-                                  flag_relu,
+                                  flag_act,
                                   {4},
-                                  {FLAGS_power_mode});
+                                  {FLAGS_power_mode},
+                                  FLAGS_clipped_coef,
+                                  FLAGS_leakey_relu_alpha);
                             }
                           }
                         }
@@ -713,8 +753,10 @@ TEST(TestConvCustomInt8, test_conv_custom_size) {
       {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
       {FLAGS_dila_h, FLAGS_dila_w},
       FLAGS_flag_bias,
-      FLAGS_flag_relu,
+      FLAGS_flag_act,
       {FLAGS_threads},
-      {FLAGS_power_mode});
+      {FLAGS_power_mode},
+      FLAGS_clipped_coef,
+      FLAGS_leakey_relu_alpha);
 }
 #endif  // custom

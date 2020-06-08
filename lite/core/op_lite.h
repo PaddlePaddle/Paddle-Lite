@@ -73,6 +73,9 @@ class OpLite : public Registry {
   // Indicate whether the Op runs only once or not
   virtual bool run_once() const { return false; }
   std::string Type() { return op_type_; }
+#ifdef LITE_WITH_PROFILE
+  virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
+#endif
 
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);

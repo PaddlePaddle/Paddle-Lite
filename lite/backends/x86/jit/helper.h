@@ -15,8 +15,8 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include <string>
-#include <unordered_map>
 #include <utility>  // for std::move
 #include <vector>
 #include "lite/backends/x86/jit/gen_base.h"
@@ -208,7 +208,7 @@ class KernelFuncs {
   }
 
  private:
-  std::unordered_map<int64_t, typename KernelTuple::func_type> funcs_;
+  std::map<int64_t, typename KernelTuple::func_type> funcs_;
 };
 
 const char* to_string(KernelType kt);

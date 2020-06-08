@@ -38,6 +38,16 @@ class BinaryLogicalOp : public OpLite {
 
   std::string DebugString() const override { return "binary logical"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = "X" + ch->DimToStr(param_.X->dims()) + "Y" +
+                      ch->DimToStr(param_.Y->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    // ch->remark = "";
+    ch->macs = param_.Out->numel() * 3.f;
+  }
+#endif
+
  private:
   mutable LogicalParam param_;
 };
@@ -56,6 +66,16 @@ class UnaryLogicalOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "binary logical"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = "X" + ch->DimToStr(param_.X->dims()) + "Y" +
+                      ch->DimToStr(param_.Y->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    // ch->remark = "";
+    ch->macs = param_.Out->numel() * 3.f;
+  }
+#endif
 
  private:
   mutable LogicalParam param_;

@@ -125,9 +125,10 @@ int main(int argc, char** argv) {
 
     // get output
     std::iota(index.begin(), index.end(), 0);
-    sort(index.begin(), index.end(), [output0_data](size_t i1, size_t i2) {
-      return output0_data[i1] > output0_data[i2];
-    });
+    std::stable_sort(
+        index.begin(), index.end(), [output0_data](size_t i1, size_t i2) {
+          return output0_data[i1] > output0_data[i2];
+        });
     test_num++;
     if (label == index[0]) {
       top1_num++;

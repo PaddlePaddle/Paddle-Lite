@@ -1,5 +1,5 @@
 
-# 预测库编译
+# 源码编译方法
 
 PaddleLite已经提供官方Release预测库下载，请参考[文档](release_lib)。
 
@@ -10,11 +10,12 @@ PaddleLite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`�
 
 ## 一、环境准备
 
-目前支持三种编译的环境：
+目前支持四种编译的环境：
 
 1. Docker 容器环境，
 2. Linux（推荐 Ubuntu 16.04）环境，
-3. Mac OS 环境。
+3. Mac OS 环境，
+4. [Windows 环境](../demo_guides/x86.html#windows)
 
 ### 1、 Docker开发环境
 
@@ -156,7 +157,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 ###### 编译环境要求
 
-- gcc、g++、git、make、wget、python
+- gcc、g++、git、make、wget、python、pip、python-dev、patchelf
 - cmake（建议使用3.10或以上版本）
 
 ###### 具体步骤
@@ -167,7 +168,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 # 1. Install basic software
 apt update
 apt-get install -y --no-install-recomends \
-  gcc g++ make wget python unzip
+  gcc g++ make wget python unzip patchelf python-dev
 
 # 2. install cmake 3.10 or above
 wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz

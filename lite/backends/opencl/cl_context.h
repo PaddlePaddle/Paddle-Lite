@@ -17,7 +17,6 @@ limitations under the License. */
 #include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/backends/opencl/cl_image.h"
 #include "lite/backends/opencl/cl_include.h"
@@ -74,7 +73,7 @@ class CLContext {
   //                                   size_t max_work_size);
 
  private:
-  std::unordered_map<std::string, std::unique_ptr<cl::Program>> programs_;
+  std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
 };
