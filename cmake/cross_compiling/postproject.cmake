@@ -71,6 +71,10 @@ if (LITE_ON_TINY_PUBLISH)
     check_linker_flag(-Wl,--gc-sections)
 endif()
 
+if(LITE_WITH_OPENCL AND (ARM_TARGET_LANG STREQUAL "clang"))
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-inconsistent-missing-override -Wno-return-type")
+endif()
+
 if(LITE_WITH_OPENMP)
     find_package(OpenMP REQUIRED)
     if(OPENMP_FOUND OR OpenMP_CXX_FOUND)
