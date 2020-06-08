@@ -151,9 +151,19 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+  int idx = -1;
   for (auto& inst : instructions_) {
+    ++idx;
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
+#endif
+#ifdef LITE_WITH_NVTX
+    const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
+    nvtxStringHandle_t registered_name = register_layer_names_[idx];
+    if (annotator.IsEnabled()) {
+      annotation.generate(registered_name, lite::Color::Runner);
+    }
 #endif
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {

@@ -130,9 +130,15 @@ add_dependencies(op op_list_h)
 
 lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
+if (LITE_WITH_NVTX)
+lite_cc_library(program SRCS program.cc
+    DEPS op kernel model_parser ${ops} ${cpp_wrapper} nvtx_wrapper
+    PROFILE_DEPS lite_profiler)
+else()
 lite_cc_library(program SRCS program.cc
     DEPS op kernel model_parser ${ops} ${cpp_wrapper}
     PROFILE_DEPS lite_profiler)
+endif()
 
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)

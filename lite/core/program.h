@@ -26,6 +26,9 @@
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
+#ifdef LITE_WITH_NVTX
+#include "lite/backends/cuda/nvtx_wrapper.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -173,6 +176,14 @@ class LITE_API RuntimeProgram {
 #ifdef LITE_WITH_PROFILE
     set_profiler();
 #endif
+#ifdef LITE_WITH_NVTX
+    for (auto& inst : instructions_) {
+      const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+      NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
+      register_layer_names_.push_back(annotator.RegisterString(
+          const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
+    }
+#endif
   }
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
@@ -211,6 +222,9 @@ class LITE_API RuntimeProgram {
       i->set_profiler(&profiler_);
     }
   }
+#endif
+#ifdef LITE_WITH_NVTX
+  std::vector<nvtxStringHandle_t> register_layer_names_;
 #endif
 };
 
