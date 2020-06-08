@@ -42,7 +42,7 @@ template <typename ValueType, size_t DimLength>
 class SmallVector {
  public:
   SmallVector() {
-    data_ = new ValueType[DimLength]();
+    data_ = new ValueType[DimLength];
     //    data_ = static_cast<ValueType *>(malloc(DimLength *
     //    sizeof(ValueType)));
     //    data_.resize(DimLength);
@@ -50,9 +50,10 @@ class SmallVector {
     size_ = DimLength;
   }
   ~SmallVector() {
-    if (data_) {
+    if (data_ != nullptr) {
       delete[] data_;
       data_ = nullptr;
+      size_ = 0U;
       //    free(data_);
     }
   }
@@ -60,9 +61,15 @@ class SmallVector {
   size_t size() const { return size_; }
   void resize(size_t new_size) {
     if (new_size != size_) {
-      if (data_) delete[] data_;
-      data_ = new ValueType[new_size]();
-      size_ = new_size;
+      if (data_ != nullptr) {
+        delete[] data_;
+        data_ = nullptr;
+        size_ = 0U;
+      }
+      if (new_size > 0U) {
+        data_ = new ValueType[new_size];
+        size_ = new_size;
+      }
     }
   }
 
@@ -98,7 +105,9 @@ class DDimLite {
 
   void ConstructFrom(const std::vector<value_type> &x) {
     data_.resize(x.size());
-    memcpy(data_.mutable_data(), x.data(), x.size() * sizeof(value_type));
+    if (x.size() > 0U) {
+      memcpy(data_.mutable_data(), x.data(), x.size() * sizeof(value_type));
+    }
   }
   value_type operator[](int offset) const { return data_[offset]; }
   value_type &operator[](int offset) { return data_[offset]; }
@@ -145,9 +154,11 @@ class DDimLite {
 
   DDimLite &operator=(const DDimLite &a) {
     this->data_.resize(a.size());
-    memcpy(this->data_.mutable_data(),
-           a.data_.data(),
-           a.size() * sizeof(value_type));
+    if (a.size() > 0U) {
+      memcpy(this->data_.mutable_data(),
+             a.data().data(),
+             a.size() * sizeof(value_type));
+    }
     return *this;
   }
 
