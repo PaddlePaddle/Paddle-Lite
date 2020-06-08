@@ -76,7 +76,8 @@ struct Program {
   // Build from a program and scope.
   void Build(const cpp::ProgramDesc& program);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program, const std::vector<std::string>& var_names = {});
+  void PrepareWorkspace(const cpp::ProgramDesc& program,
+                        const std::vector<std::string>& var_names = {});
 
  private:
   std::map<std::string, PrecisionType> var_data_type_;

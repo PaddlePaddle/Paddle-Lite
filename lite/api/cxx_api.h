@@ -93,8 +93,8 @@ class LITE_API Predictor {
     //    should  be not be nullptr in Clone mode." ;
     //    CHECK(scope_) << "Both program and scope of current predicotr should
     //    be not be nullptr in Clone mode.";
-    auto predictor =
-        std::make_shared<Predictor>(program_desc_, scope_, valid_places_, var_names);
+    auto predictor = std::make_shared<Predictor>(
+        program_desc_, scope_, valid_places_, var_names);
 
     for (auto i : var_names) {
       predictor->exec_scope_->LocalVar(i);
