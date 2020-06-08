@@ -259,7 +259,7 @@ TEST(unsqueeze, precision) {
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#else
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #endif
   test_unsqueeze(place, abs_error);
@@ -271,7 +271,7 @@ TEST(unsqueeze2, precision) {
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#else
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #endif
 
