@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
 #include <string>
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"

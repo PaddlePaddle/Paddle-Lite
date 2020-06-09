@@ -385,7 +385,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
                                int win,
                                const int16_t* weight,
                                const float* bias,
-                               float* scale,
+                               const float* scale,
                                const operators::ConvParam& param,
                                ARMContext* ctx);
 

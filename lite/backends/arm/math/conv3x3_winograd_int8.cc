@@ -51,7 +51,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
                                int win,
                                const int16_t* weight,
                                const float* bias,
-                               float* scale,
+                               const float* scale,
                                const operators::ConvParam& param,
                                ARMContext* ctx) {
   auto act_param = param.activation_param;
@@ -106,7 +106,28 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
                                sizeof(int16_t)));
   int32_t* g_trans_tmp_data =
       (int32_t*)(g_trans_remain_tmp_data + threads * 128);  // NOLINT
-
+  auto act_type = act_param.active_type;
+  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 1;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 2;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 3;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
   // begin compute
   for (int ni = 0; ni < num; ++ni) {
     // trans input to c8
@@ -265,7 +286,11 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
       }
       //*/
     }  // for block_count
+    const float* bias_local_ptr = bias;
     for (int ci = 0; ci < oc_8; ++ci) {
+      float bias_local[8] = {bias_local_ptr[0], bias_local_ptr[1], bias_local_ptr[2],
+	                     bias_local_ptr[3], bias_local_ptr[4], bias_local_ptr[5],
+			     bias_local_ptr[6], bias_local_ptr[7]};
       write_int32_nchwc8_to_nchw(output_c8 + ci * oc_8_stride,
                                  output_ptr,
                                  ci * 8,
@@ -277,11 +302,13 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
                                  chout,
                                  hout,
                                  wout,
-                                 param.fuse_relu,
-                                 bias + ci * 8,
+                                 flag_act,
+				 alpha,
+                                 bias_local, //  + ci * 8,
                                  param.bias,
                                  zero_ptr,
                                  scale + ci * 8);
+      bias_local_ptr += 8;
     }
   }  // for num
 }  // conv compute
@@ -297,7 +324,7 @@ template void conv_compute_2x2_3x3_int8<int8_t>(
     int win,
     const int16_t* weight,
     const float* bias,
-    float* scale,
+    const float* scale,
     const operators::ConvParam& param,
     ARMContext* ctx);
 template void conv_compute_2x2_3x3_int8<float>(
@@ -312,7 +339,7 @@ template void conv_compute_2x2_3x3_int8<float>(
     int win,
     const int16_t* weight,
     const float* bias,
-    float* scale,
+    const float* scale,
     const operators::ConvParam& param,
     ARMContext* ctx);
 
