@@ -53,6 +53,44 @@ TEST(CXXApi, save_model) {
                       lite_api::LiteModelType::kNaiveBuffer);
 }
 
+TEST(CXXApi, clone_predictor) {
+  lite::Predictor predictor;
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
+  auto cloned_predictor = predictor.Clone();
+  // primary predicotr
+  auto* input_tensor = predictor.GetInput(0);
+  input_tensor->Resize(std::vector<int64_t>({1, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100; i++) {
+    data[i] = 1;
+  }
+
+  predictor.Run();
+  auto* output_tensor = predictor.GetOutput(0);
+  auto output_shape = output_tensor->dims().Vectorize();
+  ASSERT_EQ(output_shape.size(), 2);
+  ASSERT_EQ(output_shape[0], 1);
+  ASSERT_EQ(output_shape[1], 500);
+
+  // cloned predictor
+  auto* cloned_input_tensor = cloned_predictor->GetInput(0);
+  cloned_input_tensor->Resize(std::vector<int64_t>({1, 100}));
+  auto* cloned_data = cloned_input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100; i++) {
+    cloned_data[i] = 1;
+  }
+  cloned_predictor->Run();
+  auto* cloned_output_tensor = cloned_predictor->GetOutput(0);
+
+  int step = 50;
+  for (int i = 0; i < output_tensor->data_size(); i += step) {
+    EXPECT_NEAR(output_tensor->data<float>()[i],
+                cloned_output_tensor->data<float>()[i],
+                1e-6);
+  }
+}
+
 /*TEST(CXXTrainer, train) {
   Place place({TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)});
   std::vector<Place> valid_places({place});
