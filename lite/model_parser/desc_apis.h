@@ -105,6 +105,12 @@ class OpDescAPI {
     UNK,
   };
 
+  template <AttrType Type>
+  struct AttrTypeTrait;
+
+  template <typename T>
+  struct DataTypeTrait;
+
   virtual ~OpDescAPI() = default;
 
   /// Get operator's type.
@@ -161,6 +167,28 @@ class OpDescAPI {
     return ss.str();
   }
 };
+
+#define TYPE_TRAIT_IMPL(T, type__)                          \
+  template <>                                               \
+  struct OpDescAPI::AttrTypeTrait<OpDescAPI::AttrType::T> { \
+    typedef type__ DT;                                      \
+  };                                                        \
+  template <>                                               \
+  struct OpDescAPI::DataTypeTrait<type__> {                 \
+    static constexpr AttrType AT = OpDescAPI::AttrType::T;  \
+    static constexpr const char* ATN = #T;                  \
+  };
+
+TYPE_TRAIT_IMPL(INT, int32_t);
+TYPE_TRAIT_IMPL(FLOAT, float);
+TYPE_TRAIT_IMPL(STRING, std::string);
+TYPE_TRAIT_IMPL(BOOLEAN, bool);
+TYPE_TRAIT_IMPL(LONG, int64_t);
+TYPE_TRAIT_IMPL(INTS, std::vector<int>);
+TYPE_TRAIT_IMPL(FLOATS, std::vector<float>);
+TYPE_TRAIT_IMPL(STRINGS, std::vector<std::string>);
+TYPE_TRAIT_IMPL(LONGS, std::vector<int64_t>);
+#undef TYPE_TRAIT_IMPL
 
 class BlockDescAPI {
  public:

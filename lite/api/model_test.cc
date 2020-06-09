@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -25,6 +24,7 @@
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
+#include <gflags/gflags.h>
 
 using paddle::lite::profile::Timer;
 
@@ -34,6 +34,10 @@ DEFINE_string(input_shape,
 DEFINE_bool(use_optimize_nb,
             false,
             "optimized & naive buffer model for mobile devices");
+DEFINE_string(backend,
+              "arm_cpu",
+              "choose backend for valid_places: arm_cpu | opencl. Compile "
+              "OpenCL version if you choose opencl");
 DEFINE_string(arg_name, "", "the arg name");
 
 namespace paddle {
@@ -49,9 +53,19 @@ void OutputOptModel(const std::string& load_model_dir,
                            Place{TARGET(kX86), PRECISION(kInt64)},
                            Place{TARGET(kHost), PRECISION(kFloat)}});
 #else
-  config.set_valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-  });
+  if (FLAGS_backend == "opencl") {
+    config.set_valid_places({
+        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+        TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
+    });
+  } else {  // arm_cpu
+    config.set_valid_places({
+        Place{TARGET(kARM), PRECISION(kFloat)},
+    });
+  }
 #endif
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -117,16 +131,40 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
             << ", min time: " << ti.LapTimes().Min() << " ms"
             << ", max time: " << ti.LapTimes().Max() << " ms.";
 
-  auto output = predictor->GetOutput(0);
-  auto out = output->data<float>();
-  LOG(INFO) << "out " << out[0];
-  LOG(INFO) << "out " << out[1];
-  auto output_shape = output->shape();
-  int output_num = 1;
-  for (int i = 0; i < output_shape.size(); ++i) {
-    output_num *= output_shape[i];
+  // output summary
+  size_t output_tensor_num = predictor->GetOutputNames().size();
+  LOG(INFO) << "output tensor num:" << output_tensor_num;
+
+  for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
+    auto output_tensor = predictor->GetOutput(tidx);
+    LOG(INFO) << "============= output tensor " << tidx << " =============";
+    auto tensor_shape = output_tensor->shape();
+    std::string tensor_shape_str{""};
+    int output_tensor_numel = 1;
+    for (int i = 0; i < tensor_shape.size(); ++i) {
+      output_tensor_numel *= tensor_shape[i];
+      tensor_shape_str += std::to_string(tensor_shape[i]);
+      tensor_shape_str += (i < tensor_shape.size() - 1) ? "x" : "";
+    }
+    auto out_data = output_tensor->data<float>();
+    auto out_mean =
+        paddle::lite::compute_mean<float>(out_data, output_tensor_numel);
+    auto out_std_dev = paddle::lite::compute_standard_deviation<float>(
+        out_data, output_tensor_numel, true, out_mean);
+
+    LOG(INFO) << "output tensor " << tidx << " dims:" << tensor_shape_str;
+    LOG(INFO) << "output tensor " << tidx
+              << " elements num:" << output_tensor_numel;
+    LOG(INFO) << "output tensor " << tidx
+              << " standard deviation:" << out_std_dev;
+    LOG(INFO) << "output tensor " << tidx << " mean value:" << out_mean << "\n";
+
+    // print result
+    for (int i = 0; i < output_tensor_numel; ++i) {
+      VLOG(2) << "output_tensor->data<float>()[" << i
+              << "]:" << output_tensor->data<float>()[i];
+    }
   }
-  LOG(INFO) << "output_num: " << output_num;
 
   // please turn off memory_optimize_pass to use this feature.
   if (FLAGS_arg_name != "") {
@@ -162,6 +200,7 @@ int main(int argc, char** argv) {
               << "--model_dir /path/to/your/model";
     exit(0);
   }
+
   std::string save_optimized_model_dir = "";
   if (FLAGS_use_optimize_nb) {
     save_optimized_model_dir = FLAGS_model_dir;

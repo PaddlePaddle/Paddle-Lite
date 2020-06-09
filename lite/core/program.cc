@@ -302,6 +302,7 @@ void Instruction::Run() {
 
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
+    kernel_->SetIsKernelTest(false);
     SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
     first_epoch_for_profiler_ = false;
   }
