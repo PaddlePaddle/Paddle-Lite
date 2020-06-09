@@ -399,7 +399,6 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
   const int ih = 112;
   const int iw = 112;
 #endif
-        stride = (stride == 1) ? 2 : 1;
         // pad = (pad == 0) ? 1 : 0;
         const int fb = oc;
         const int ic = oc;
