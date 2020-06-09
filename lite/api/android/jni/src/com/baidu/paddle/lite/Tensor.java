@@ -141,6 +141,11 @@ public class Tensor {
      */
     public native int[] getIntData();
 
+    /**
+     * @return the tensor data as long array.
+     */
+    public native long[] getLongData();
+
     private native boolean nativeResize(long[] dims);
 
     private native boolean nativeSetData(float[] buf);
@@ -148,6 +153,8 @@ public class Tensor {
     private native boolean nativeSetData(byte[] buf);
 
     private native boolean nativeSetData(int[] buf);
+
+    private native boolean nativeSetData(long[] buf);
 
     /**
      * Delete C++ Tenor object pointed by the input pointer, which is presented by a

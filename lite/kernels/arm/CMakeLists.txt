@@ -96,6 +96,9 @@ add_kernel(fill_constant_batch_size_like_compute_arm ARM basic SRCS fill_constan
 add_kernel(lod_reset_compute_arm ARM extra SRCS lod_reset_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(lstm_arm ARM extra SRCS lstm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
+# for deformable-convNet
+add_kernel(deformable_conv_compute_arm ARM extra SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps} math_arm)
+
 # 4. training kernels
 add_kernel(mean_compute_arm ARM extra SRCS mean_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
