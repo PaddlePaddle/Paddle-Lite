@@ -111,13 +111,17 @@ class OpLiteRegistrar {
                   std::function<std::shared_ptr<OpLite>()> fun) {
     OpLiteFactory::Global().register_factory_fun(op_type, fun);
   }
+  void touch() {}
 };
 
 class KernelFactory {
  public:
   void register_factory_fun(const std::string& op_type,
+                            TargetType target,
+                            PrecisionType precision,
+                            DataLayoutType layout,
                             std::function<std::unique_ptr<KernelBase>()> fun) {
-    _map[op_type].push_back(fun);
+    _map[op_type][std::make_tuple(target, precision, layout)].push_back(fun);
   }
 
   static KernelFactory& Global() {
@@ -125,11 +129,27 @@ class KernelFactory {
     return *x;
   }
 
-  std::list<std::unique_ptr<KernelBase>> Create(const std::string& op_type,
-                                                ...) const {
+  std::list<std::unique_ptr<KernelBase>> Create(const std::string& op_type) {
     std::list<std::unique_ptr<KernelBase>> res;
-    auto it = _map.find(op_type);
-    if (it == _map.end()) return res;
+    if (_map.find(op_type) == _map.end()) return res;
+    auto& _inner_map = _map[op_type];
+    for (auto it = _inner_map.begin(); it != _inner_map.end(); ++it) {
+      for (auto& fun : it->second) {
+        res.emplace_back(fun());
+      }
+    }
+    return res;
+  }
+
+  std::list<std::unique_ptr<KernelBase>> Create(const std::string& op_type,
+                                                TargetType target,
+                                                PrecisionType precision,
+                                                DataLayoutType layout) {
+    std::list<std::unique_ptr<KernelBase>> res;
+    if (_map.find(op_type) == _map.end()) return res;
+    auto& _inner_map = _map[op_type];
+    auto it = _inner_map.find(std::make_tuple(target, precision, layout));
+    if (it == _inner_map.end()) return res;
     for (auto& fun : it->second) {
       res.emplace_back(fun());
     }
@@ -145,7 +165,9 @@ class KernelFactory {
   }
 
  protected:
-  std::map<std::string, std::list<std::function<std::unique_ptr<KernelBase>()>>>
+  std::map<std::string,
+           std::map<std::tuple<TargetType, PrecisionType, DataLayoutType>,
+                    std::list<std::function<std::unique_ptr<KernelBase>()>>>>
       _map;
 };
 
@@ -155,9 +177,14 @@ using KernelRegistry = KernelFactory;
 class KernelRegistrar {
  public:
   KernelRegistrar(const std::string& op_type,
+                  TargetType target,
+                  PrecisionType precision,
+                  DataLayoutType layout,
                   std::function<std::unique_ptr<KernelBase>()> fun) {
-    KernelFactory::Global().register_factory_fun(op_type, fun);
+    KernelFactory::Global().register_factory_fun(
+        op_type, target, precision, layout, fun);
   }
+  void touch() {}
 };
 
 }  // namespace lite
@@ -170,6 +197,7 @@ class KernelRegistrar {
         return std::unique_ptr<paddle::lite::OpLite>(new OpClass(#op_type__)); \
       });                                                                      \
   int touch_op_##op_type__() {                                                 \
+    op_type__##__registry.touch();                                             \
     OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);          \
     return 0;                                                                  \
   }
@@ -180,13 +208,19 @@ class KernelRegistrar {
     op_type__, target__, precision__, layout__, KernelClass, alias__)         \
   static paddle::lite::KernelRegistrar                                        \
       op_type__##target__##precision__##layout__##alias__##_kernel_registry(  \
-          #op_type__, []() {                                                  \
+          #op_type__,                                                         \
+          TARGET(target__),                                                   \
+          PRECISION(precision__),                                             \
+          DATALAYOUT(layout__),                                               \
+          []() {                                                              \
             std::unique_ptr<KernelClass> x(new KernelClass);                  \
             x->set_op_type(#op_type__);                                       \
             x->set_alias(#alias__);                                           \
             return x;                                                         \
           });                                                                 \
   int touch_##op_type__##target__##precision__##layout__##alias__() {         \
+    op_type__##target__##precision__##layout__##alias__##_kernel_registry     \
+        .touch();                                                             \
     OpKernelInfoCollector::Global().AddKernel2path(                           \
         #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__, \
         __FILE__);                                                            \
