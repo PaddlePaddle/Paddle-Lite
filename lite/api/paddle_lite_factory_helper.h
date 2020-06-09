@@ -19,50 +19,7 @@
 #pragma once
 
 // some platform-independent defintion
-// #include "lite/utils/macros.h"
-// just copy lite/utils/macros.h here temperarily by mlu, since it affects
-// compilation of demos
-// BEGIN by MLU
-#ifndef DISALLOW_COPY_AND_ASSIGN
-#define DISALLOW_COPY_AND_ASSIGN(class__) \
-  class__(const class__&) = delete;       \
-  class__& operator=(const class__&) = delete;
-#endif
-
-#define LITE_UNIMPLEMENTED CHECK(false) << "Not Implemented";
-
-#if defined(_WIN32)
-#define UNUSED
-#define __builtin_expect(EXP, C) (EXP)
-#else
-#define UNUSED __attribute__((unused))
-#endif
-
-/*
-#ifndef LIKELY
-#define LIKELY(x) __builtin_expect(!!(x), 1)
-#endif
-
-#ifndef UNLIKELY
-//#define UNLIKELY(x) __built_expect(!!(x), 0)
-#define UNLIKELY(x) (x)
-#endif
- */
-
-#ifdef __CUDACC__
-#define HOSTDEVICE __host__ __device__
-#define DEVICE __device__
-#define HOST __host__
-#else
-#define HOSTDEVICE
-#define DEVICE
-#define HOST
-#endif
-
-#if defined(__FLT_MAX__)
-#define FLT_MAX __FLT_MAX__
-#endif  // __FLT_MAX__
-// END by MLU
+#include "lite/utils/macros.h"
 
 #define USE_LITE_OP(op_type__)       \
   extern int touch_op_##op_type__(); \
