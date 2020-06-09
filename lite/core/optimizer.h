@@ -60,6 +60,7 @@ class Optimizer {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
+    CHECK(!graph_) << "duplicate optimize found";
 
     graph_.reset(new mir::SSAGraph);
     graph_->Build(program, valid_places);

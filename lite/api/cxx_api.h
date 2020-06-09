@@ -89,10 +89,10 @@ class LITE_API Predictor {
 
   std::shared_ptr<Predictor> Clone(
       const std::vector<std::string>& var_names) const {
-    //    CHECK(program_desc_) << "Both program and scope of current predicotr
-    //    should  be not be nullptr in Clone mode." ;
-    //    CHECK(scope_) << "Both program and scope of current predicotr should
-    //    be not be nullptr in Clone mode.";
+    CHECK(program_desc_) << "Both program and scope of current predicotr "
+                            "should be not be nullptr in Clone mode.";
+    CHECK(scope_) << "Both program and scope of current predicotr should be "
+                     "not be nullptr in Clone mode.";
     auto predictor = std::make_shared<Predictor>(
         program_desc_, scope_, valid_places_, var_names);
 
