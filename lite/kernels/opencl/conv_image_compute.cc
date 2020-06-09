@@ -149,9 +149,9 @@ void ConvImageCompute::PrepareForRun() {
   } else if (filter_dims[1] == 1 && x_dims[1] == output_dims[1] &&
              kernel_h == 3 && kernel_w == 3 && groups > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
-    if (stride_h == 1 && dilations[0] == 1) {
-      kernel_func_names_.push_back("depth_conv2d_3x3s1");
-      impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
+    if (dilations[0] == 1) {
+      kernel_func_names_.push_back("depth_conv2d_3x3d1");
+      impl_ = &ConvImageCompute::DepthwiseConv2d3x3d1;
       {
         // depthwise spl gws s1
         int c_block = (output_dims[1] + 3) / 4;
@@ -1462,7 +1462,7 @@ void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
-void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
+void ConvImageCompute::DepthwiseConv2d3x3d1(bool is_turn) {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const auto& param = *param_.get_mutable<param_t>();

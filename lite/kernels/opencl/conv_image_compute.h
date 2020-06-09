@@ -63,7 +63,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void Conv2d5x5opt(bool is_turn = false);
   void Conv2d7x7(bool is_turn = false);
   void Conv2d7x7opt(bool is_turn = false);
-  void DepthwiseConv2d3x3s1(bool is_turn = false);
+  void DepthwiseConv2d3x3d1(bool is_turn = false);
   void DepthwiseConv2d3x3(bool is_turn = false);
   void DepthwiseConv2d(bool is_turn = false);
 

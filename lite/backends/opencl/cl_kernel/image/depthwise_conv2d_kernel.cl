@@ -244,7 +244,7 @@ __kernel void depth_conv2d_3x3(
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }
 
-__kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
+__kernel void depth_conv2d_3x3d1(__private const int ou_ch_blk,
                                  __private const int ou_w_blk,
                                  __private const int ou_nh,
                                  __read_only image2d_t input,
