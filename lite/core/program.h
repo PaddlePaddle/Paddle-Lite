@@ -176,6 +176,9 @@ class LITE_API RuntimeProgram {
     set_profiler();
 #endif
   }
+  explicit RuntimeProgram(int block_idx,
+                          cpp::ProgramDesc* program_desc,
+                          Scope* exec_scope);
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);

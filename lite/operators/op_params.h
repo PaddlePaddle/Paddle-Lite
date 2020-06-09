@@ -22,6 +22,7 @@
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/cpp/block_desc.h"
+#include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
 #include "lite/utils/variant.h"
@@ -91,9 +92,9 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
-  int sub_block_idx{-1};
-  cpp::BlockDesc* sub_block_desc{nullptr};
-  Scope* scope{nullptr};
+  int block_idx{-1};
+  cpp::ProgramDesc* program_desc{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------

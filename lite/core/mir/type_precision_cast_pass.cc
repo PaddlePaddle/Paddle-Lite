@@ -36,14 +36,19 @@ void UpdateInputsForSubgraph(OpLite* op,
       op_desc->GetAttr<std::vector<std::string>>("input_data_names");
   std::replace(input_data_names.begin(), input_data_names.end(), from, to);
   op_desc->SetAttr("input_data_names", input_data_names);
-  auto* subblock_desc = static_cast<operators::SubgraphOp*>(op)->GetSubBlock();
-  CHECK(subblock_desc);
-  for (size_t i = 0; i < subblock_desc->OpsSize(); i++) {
-    auto* subblock_op_desc = subblock_desc->GetOp<cpp::OpDesc>(i);
-    for (auto& subblock_op_input : *subblock_op_desc->mutable_inputs()) {
-      for (auto& subblock_var_name : subblock_op_input.second) {
-        if (subblock_var_name == from) {
-          subblock_var_name = to;
+  auto* sub_program_desc =
+      static_cast<operators::SubgraphOp*>(op)->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx = op_desc->GetAttr<int32_t>("sub_block");
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  CHECK(sub_block_desc);
+  for (size_t i = 0; i < sub_block_desc->OpsSize(); i++) {
+    auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
+    for (auto& sub_op_input : *sub_block_op_desc->mutable_inputs()) {
+      for (auto& sub_var_name : sub_op_input.second) {
+        if (sub_var_name == from) {
+          sub_var_name = to;
         }
       }
     }

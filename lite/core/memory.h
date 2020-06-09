@@ -119,8 +119,9 @@ class Buffer {
 
   void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
-      CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
-      Free();
+      if (own_data_) {
+        Free();
+      }
       data_ = TargetMalloc(target, size);
       target_ = target;
       space_ = size;

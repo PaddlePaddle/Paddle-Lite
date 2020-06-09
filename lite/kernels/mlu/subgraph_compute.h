@@ -37,12 +37,12 @@ class SubgraphEngine : public subgraph::Engine {
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
                  cpp::BlockDesc* block_desc,
+                 Scope* scope,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
-                 Scope* scope,
                  ::paddle::lite_api::PrecisionType type)
       : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {
+            ctx, block_idx, block_desc, scope, input_names, output_names) {
     graph_.SetFPType(type);
   }
 
