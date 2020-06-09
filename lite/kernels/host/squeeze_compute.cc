@@ -33,10 +33,9 @@ void Squeeze2Compute::Run() {
   auto& param = Param<operators::SqueezeParam>();
   auto x = param.X;
   auto output = param.Out;
-  auto x_dims = x->dims();
-  auto* x_data = x->data<float>();
-  auto* out_data = output->mutable_data<float>();
-  memcpy(out_data, x_data, x_dims.production() * sizeof(float));
+  auto output_dims = output->dims();
+  output->CopyDataFrom(*x);
+  output->Resize(output_dims);
 }
 
 }  // namespace host
