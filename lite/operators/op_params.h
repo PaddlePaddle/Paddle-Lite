@@ -1515,6 +1515,39 @@ struct XPUFcParam : ParamBase {
   std::string activation_type{""};
 };
 
+// For DeformableConvolution op
+struct DeformableConvParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* offset{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+  int deformable_groups{1};
+  int im2col_step{1};
+  bool modulated{true};  // True-v2 False-v1
+  std::string data_format{"Anylayout"};
+  // convolution parameter
+  ConvParam conv_param;
+  // support var_length or not
+  bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
 struct PixelShuffleParam : ParamBase {
   lite::Tensor* x{nullptr};
   lite::Tensor* output{nullptr};
