@@ -31,14 +31,14 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveOpInfosToProgram(&program_desc_);
-  program_->UpdateVarsOfProgram(&program_desc_);
+  program_->SaveOpInfosToProgram(program_desc_.get());
+  program_->UpdateVarsOfProgram(program_desc_.get());
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
-      SaveModelPb(dir, *program_->exec_scope(), program_desc_, true);
+      SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
       break;
     case lite_api::LiteModelType::kNaiveBuffer:
-      SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
+      SaveModelNaive(dir, *program_->exec_scope(), *program_desc_.get());
       break;
     default:
       LOG(FATAL) << "Unknown model type";
@@ -232,9 +232,8 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 #endif
 
 const cpp::ProgramDesc &Predictor::program_desc() const {
-  return program_desc_;
+  return *program_desc_.get();
 }
-
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const lite_api::CxxConfig &config,
@@ -276,14 +275,14 @@ void Predictor::Build(const std::string &model_path,
                   model_file,
                   param_file,
                   scope_.get(),
-                  &program_desc_,
+                  program_desc_.get(),
                   combined_param,
                   model_from_memory);
     } break;
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())
           << "NaiveBuffer backend only supported combined param";
-      LoadModelNaiveFromFile(model_path, scope_.get(), &program_desc_);
+      LoadModelNaiveFromFile(model_path, scope_.get(), program_desc_.get());
       break;
     default:
       LOG(FATAL) << "Unknown model type";
@@ -291,7 +290,7 @@ void Predictor::Build(const std::string &model_path,
   Build(program_desc_, valid_places, passes);
 }
 
-void Predictor::Build(const cpp::ProgramDesc &desc,
+void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
   program_desc_ = desc;
@@ -313,9 +312,9 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
       "fake_dequantize_max_abs",
       "fake_channel_wise_dequantize_max_abs"};
   bool is_quantized_model = false;
-  for (size_t i = 0; i < program_desc_.BlocksSize() && !is_quantized_model;
+  for (size_t i = 0; i < program_desc_->BlocksSize() && !is_quantized_model;
        ++i) {
-    auto *block_desc = program_desc_.GetBlock<cpp::BlockDesc>(i);
+    auto *block_desc = program_desc_->GetBlock<cpp::BlockDesc>(i);
     for (size_t j = 0; j < block_desc->OpsSize() && !is_quantized_model; ++j) {
       auto *op_desc = block_desc->GetOp<cpp::OpDesc>(j);
       std::string op_type = op_desc->Type();
@@ -333,7 +332,8 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
 #endif
   }
 
-  Program program(desc, scope_, inner_places);
+  Program program(*desc.get(), scope_, inner_places);
+  valid_places_ = inner_places;
 
   core::KernelPickFactor factor;
   factor.ConsiderTarget();

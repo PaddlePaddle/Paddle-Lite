@@ -17,6 +17,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
@@ -37,6 +38,21 @@ namespace lite {
  */
 class Optimizer {
  public:
+  Optimizer() {}
+
+  Optimizer(Program&& program, const std::vector<Place>& valid_places) {
+    program_ = &program;
+    valid_places_ = valid_places;
+    CHECK(!valid_places.empty()) << "At least one valid_place should be set";
+
+    core::KernelPickFactor factor;
+    factor.ConsiderTarget();
+    factor.ConsiderPrecision();
+    factor.ConsiderDataLayout();
+
+    Run(std::move(program), valid_places, factor, {});
+  }
+
   void Run(Program&& program,
            const std::vector<Place>& valid_places,
            core::KernelPickFactor kernel_pick_factor,
