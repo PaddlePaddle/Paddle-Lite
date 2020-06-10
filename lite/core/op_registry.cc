@@ -182,6 +182,8 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kMLU, kInt8, kNCHW);
   INIT_FOR(kMLU, kInt16, kNHWC);
   INIT_FOR(kMLU, kInt16, kNCHW);
+  INIT_FOR(kMLU, kInt32, kNHWC);
+  INIT_FOR(kMLU, kInt32, kNCHW);
 #endif
 
   INIT_FOR(kHost, kAny, kNCHW);
@@ -211,6 +213,11 @@ KernelRegistry::KernelRegistry() : registries_() {
 
 #if !defined(LITE_ON_TINY_PUBLISH) || defined(LITE_WITH_X86)
   INIT_FOR(kX86, kFloat, kNCHW);
+  INIT_FOR(kX86, kFP16, kNCHW);
+  INIT_FOR(kX86, kInt8, kNCHW);
+  INIT_FOR(kX86, kFloat, kNHWC);
+  INIT_FOR(kX86, kFP16, kNHWC);
+  INIT_FOR(kX86, kInt8, kNHWC);
   INIT_FOR(kX86, kAny, kNCHW);
   INIT_FOR(kX86, kAny, kAny);
   INIT_FOR(kX86, kInt64, kNCHW);

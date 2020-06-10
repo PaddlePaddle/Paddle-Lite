@@ -24,18 +24,38 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
+template <lite_api::PrecisionType Dtype>
+void PrepareInput(Graph* graph,
+                  const std::string& input_name,
+                  Tensor* input_tensor,
+                  cnmlDataOrder_t order) {
+  thread_local Tensor temp_input;
+  temp_input.Resize(input_tensor->dims().Vectorize());
+  temp_input.CopyDataFrom(*input_tensor);
+  using data_type = typename MLUTypeTraits<Dtype>::type;
+  auto input_node = graph->AddNode(
+      input_name,
+      input_tensor->dims().Vectorize(),
+      CNML_TENSOR,
+      CNML_NCHW,
+      MLUTypeTraits<Dtype>::cnml_type,
+      order,
+      reinterpret_cast<void*>(
+          input_tensor->template mutable_data<data_type>(TARGET(kMLU))));
+  CHECK(input_node);
+  CNRT_CHECK(cnrtMemcpy(input_tensor->template mutable_data<data_type>(),
+                        temp_input.mutable_data<data_type>(),
+                        sizeof(data_type) * input_tensor->dims().production(),
+                        CNRT_MEM_TRANS_DIR_HOST2DEV));
+}
+
 void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
-              const std::vector<std::string>& output_var_names) {
+              const std::vector<std::string>& output_var_names,
+              cnmlDataOrder_t order) {
   CNRT_CALL(cnrtInit(0));
-  ::paddle::lite::SetMluDevice(0);
+  lite::SetMluDevice(0);
   cnrtQueue_t queue_;
-  cnrtInvokeFuncParam_t forward_param;
-  u32_t affinity = 1;
-  int data_param = 1;
-  forward_param.data_parallelism = &data_param;
-  forward_param.affinity = &affinity;
-  forward_param.end = CNRT_PARAM_END;
   CNRT_CALL(cnrtCreateQueue(&queue_));
   cnrtDev_t dev_handle;
   CNRT_CALL(cnrtGetDeviceHandle(&dev_handle, 0));
@@ -50,23 +70,21 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   // Convert input data var and add it into the MLU IR graph
   for (auto& input_name : input_var_names) {
     auto input_tensor = scope->FindMutableTensor(input_name);
-    CHECK(input_tensor);
-    Tensor temp_input;
-    temp_input.Resize(input_tensor->dims().Vectorize());
-    temp_input.CopyDataFrom(*input_tensor);
-    auto input_node =
-        graph.AddNode(input_name,
-                      input_tensor->dims().Vectorize(),
-                      CNML_TENSOR,
-                      CNML_NCHW,
-                      graph.FPType(),
-                      reinterpret_cast<void*>(
-                          input_tensor->mutable_data<float>(TARGET(kMLU))));
-    CHECK(input_node);
-    CNRT_CHECK(cnrtMemcpy(input_tensor->mutable_data<float>(),
-                          temp_input.mutable_data<float>(),
-                          sizeof(float) * input_tensor->dims().production(),
-                          CNRT_MEM_TRANS_DIR_HOST2DEV));
+    auto data_type = input_tensor->precision();
+
+    switch (data_type) {
+#define PREPARE_INPUT(type__)                                                 \
+  case PRECISION(type__):                                                     \
+    PrepareInput<PRECISION(type__)>(&graph, input_name, input_tensor, order); \
+    break;
+      PREPARE_INPUT(kFP16)
+      PREPARE_INPUT(kFloat)
+      PREPARE_INPUT(kInt8)
+      PREPARE_INPUT(kInt32)
+#undef PREPARE_INPUT
+      default:
+        CHECK(0);
+    }
   }
   op->CheckShape();
   op->InferShape();
@@ -89,8 +107,9 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   }
 
   graph.Compile(CNML_MLU270, 1);
+  graph.Compute(queue_, *(graph.MutableInputs()), *(graph.MutableOutputs()));
+  CNRT_CALL(cnrtSyncQueue(queue_));
 
-  graph.Compute(forward_param, queue_);
   for (auto& output_name : output_var_names) {
     auto output_tensor = scope->FindMutableTensor(output_name);
     Tensor temp_out;

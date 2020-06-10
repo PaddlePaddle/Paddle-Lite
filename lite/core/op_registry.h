@@ -124,8 +124,20 @@ class KernelRegistry final {
                                       PRECISION(kFloat),
                                       DATALAYOUT(kNCHW)> *,  //
               KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
                                       PRECISION(kInt8),
                                       DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kX86),
+                                      PRECISION(kInt8),
+                                      DATALAYOUT(kNHWC)> *,  //
 
               KernelRegistryForTarget<TARGET(kHost),
                                       PRECISION(kFloat),
@@ -317,6 +329,12 @@ class KernelRegistry final {
                                       DATALAYOUT(kNHWC)> *,  //
               KernelRegistryForTarget<TARGET(kMLU),
                                       PRECISION(kInt16),
+                                      DATALAYOUT(kNCHW)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNHWC)> *,  //
+              KernelRegistryForTarget<TARGET(kMLU),
+                                      PRECISION(kInt32),
                                       DATALAYOUT(kNCHW)> *  //
               >;
 

@@ -102,6 +102,10 @@ if(WITH_GRPC)
     add_definitions(-DPADDLE_WITH_GRPC)
 endif(WITH_GRPC)
 
+if(LITE_BUILD_EXTRA)
+  add_definitions(-DLITE_BUILD_EXTRA)
+endif()
+
 if(WITH_BRPC_RDMA)
     add_definitions(-DPADDLE_WITH_BRPC_RDMA)
 endif(WITH_BRPC_RDMA)
