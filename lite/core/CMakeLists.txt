@@ -152,6 +152,7 @@ endif()
 #         ${host_kernels}
 #         )
 
+lite_cc_test(test_tensor SRC tensor_test.cc DEPS tensor)
 lite_cc_test(test_scope SRCS scope_test.cc DEPS scope)
 lite_cc_test(test_kernel SRCS kernel_test.cc DEPS kernel target_wrapper any)
 lite_cc_test(test_op SRCS op_lite_test.cc DEPS op)
