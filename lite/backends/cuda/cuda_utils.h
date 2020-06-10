@@ -17,6 +17,7 @@
 #include <cublas_api.h>
 #include <cublas_v2.h>
 #include <cuda.h>
+#include <cuda_fp16.h>
 #include <cudnn.h>
 #include "lite/utils/cp_logging.h"
 
@@ -64,6 +65,9 @@ inline int CUDA_GET_BLOCKS(const int N) {
 inline int CUDA_GET_BLOCKS(const int N, const int base) {
   return (N + base - 1) / base;
 }
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
 
 namespace paddle {
 namespace lite {

@@ -103,7 +103,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y)
 #else
 #define CHECK(x) if (!(x)) paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
-#define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y) << x << "!" #cmp << y << " "
+#define _CHECK_BINARY(x, cmp, y) CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " " // NOLINT(*)
 #endif
 
 // clang-format on

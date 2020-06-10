@@ -216,7 +216,8 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   }
 }
 
-void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
+void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
+                               const std::vector<std::string>& var_names) {
   CHECK(!exec_scope_) << "Duplicate PrepareWorkspace found";
   exec_scope_ = &scope_->NewScope();
   // Create Feed and Fetch var.
@@ -274,6 +275,13 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
       }
     }
   }
+
+  for (auto i : var_names) {
+    exec_scope_->LocalVar(i);
+    auto* tensor = scope_->Var(i)->GetMutable<lite::Tensor>();
+    auto* sub_tensor = exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+    sub_tensor->CopyDataFrom(*tensor);
+  }
 }
 
 void Instruction::Run() {
@@ -302,6 +310,7 @@ void Instruction::Run() {
 
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
+    kernel_->SetIsKernelTest(false);
     SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
     first_epoch_for_profiler_ = false;
   }

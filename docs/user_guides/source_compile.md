@@ -1,5 +1,5 @@
 
-# 预测库编译
+# 源码编译方法
 
 PaddleLite已经提供官方Release预测库下载，请参考[文档](release_lib)。
 

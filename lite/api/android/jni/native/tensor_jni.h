@@ -59,6 +59,14 @@ Java_com_baidu_paddle_lite_Tensor_getIntData(JNIEnv *, jobject);
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    getLongData
+ * Signature: ()[L
+ */
+JNIEXPORT jlongArray JNICALL
+Java_com_baidu_paddle_lite_Tensor_getLongData(JNIEnv *, jobject);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
  * Method:    nativeResize
  * Signature: ([J)Z
  */
@@ -88,6 +96,14 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3B(
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3I(
     JNIEnv *, jobject, jintArray);
+
+/*
+ * Class:     com_baidu_paddle_lite_Tensor
+ * Method:    nativeSetData
+ * Signature: ([L)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3L(
+    JNIEnv *, jobject, jlongArray);
 
 /*
  * Class:     com_baidu_paddle_lite_Tensor

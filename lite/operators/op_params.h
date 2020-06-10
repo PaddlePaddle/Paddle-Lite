@@ -377,17 +377,17 @@ struct ConvParam : ParamBase {
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
   /* dilations type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
@@ -471,10 +471,10 @@ struct PoolParam : ParamBase {
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
@@ -1515,6 +1515,44 @@ struct XPUFcParam : ParamBase {
   std::string activation_type{""};
 };
 
+// For DeformableConvolution op
+struct DeformableConvParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* offset{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+  int deformable_groups{1};
+  int im2col_step{1};
+  bool modulated{true};  // True-v2 False-v1
+  std::string data_format{"Anylayout"};
+  // convolution parameter
+  ConvParam conv_param;
+  // support var_length or not
+  bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
+struct PixelShuffleParam : ParamBase {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* output{nullptr};
+  int upscale_factor{1};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

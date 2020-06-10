@@ -106,7 +106,7 @@ class CudnnConv2DBase {
   Tensor scale_;
 };
 
-template <PrecisionType Ptype_out>
+template <typename T, PrecisionType Ptype_out>
 class CudnnConv2D : public CudnnConv2DBase<Ptype_out> {
  public:
   CudnnConv2D() : CudnnConv2DBase<Ptype_out>() {}

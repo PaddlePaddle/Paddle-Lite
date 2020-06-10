@@ -5,6 +5,7 @@ set -ex
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 CUDNN_ROOT="/usr/local/cudnn"
+LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -277,11 +278,19 @@ function test_server {
     done
 }
 
+function assert_api_spec_approvals() {
+    /bin/bash ${LITE_ROOT}/lite/tools/check_api_approvals.sh
+    if [ "$?" != 0 ];then
+       exit 1
+    fi
+}
+
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_server {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    assert_api_spec_approvals
     cmake_x86_for_CI
     build
 

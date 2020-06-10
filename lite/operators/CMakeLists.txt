@@ -142,6 +142,8 @@ add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
 add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_op.cc DEPS ${op_DEPS})
 add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
 add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
+# for deformable-convNet
+add_operator(deformable_conv_op basic SRCS deformable_conv_op.cc DEPS ${op_DEPS})
 
 # 4. training op
 add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})
