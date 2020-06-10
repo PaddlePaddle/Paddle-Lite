@@ -188,27 +188,27 @@ class Optimizer {
     };
 
     auto* program_desc = program_->program_desc();
-    LOG(INFO) << "program_desc->BlocksSize():" << program_desc->BlocksSize();
+    VLOG(5) << "program_desc->BlocksSize():" << program_desc->BlocksSize();
     auto blocks_desc = program_desc->GetBlocks();
     for (size_t bidx = 0; bidx < blocks_desc.size(); ++bidx) {
       auto block_desc = blocks_desc[bidx];
       auto vars_desc = block_desc.GetVars();
       for (size_t vidx = 0; vidx < vars_desc.size(); ++vidx) {
         auto var_desc = vars_desc[vidx];
-        LOG(INFO) << var_desc.Name() << " "
-                  << dims_to_str_func(var_desc.GetShape());
+        VLOG(5) << var_desc.Name() << " "
+                << dims_to_str_func(var_desc.GetShape());
         if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
         //        auto* var = exec_scope_->FindVar(var_desc.Name());
         auto* var = program_->exec_scope()->FindVar(var_desc.Name());
         auto tensor = var->GetMutable<lite::Tensor>();
         if (tensor->dims().size() == 0 && var_desc.GetShape().size() != 0) {
-          LOG(INFO) << "var_desc.Name():" << var_desc.Name()
-                    << " shape:" << dims_to_str_func(var_desc.GetShape());
+          VLOG(5) << "var_desc.Name():" << var_desc.Name()
+                  << " shape:" << dims_to_str_func(var_desc.GetShape());
           tensor->Resize(var_desc.GetShape());
         }
-        LOG(INFO) << "var_desc.Name():" << var_desc.Name()
-                  << " shape:" << dims_to_str_func(var_desc.GetShape())
-                  << " tensor:" << tensor->dims();
+        VLOG(5) << "var_desc.Name():" << var_desc.Name()
+                << " shape:" << dims_to_str_func(var_desc.GetShape())
+                << " tensor:" << tensor->dims();
       }
     }
   }
