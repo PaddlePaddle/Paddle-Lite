@@ -375,6 +375,7 @@ function make_x86 {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DWITH_GPU=OFF \
+            -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_LOG=${WITH_LOG} \
