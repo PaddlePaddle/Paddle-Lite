@@ -198,7 +198,6 @@ class Optimizer {
         VLOG(5) << var_desc.Name() << " "
                 << dims_to_str_func(var_desc.GetShape());
         if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
-        //        auto* var = exec_scope_->FindVar(var_desc.Name());
         auto* var = program_->exec_scope()->FindVar(var_desc.Name());
         auto tensor = var->GetMutable<lite::Tensor>();
         if (tensor->dims().size() == 0 && var_desc.GetShape().size() != 0) {
