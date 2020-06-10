@@ -177,12 +177,13 @@ class LITE_API RuntimeProgram {
     set_profiler();
 #endif
 #ifdef LITE_WITH_NVTX
+    const NVTXAnnotator& annotator = NVTXAnnotator::Global();
     for (auto& inst : instructions_) {
-      const NVTXAnnotator& annotator = NVTXAnnotator::Global();
       NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
       register_layer_names_.push_back(annotator.RegisterString(
           const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
     }
+    register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
   }
   ~RuntimeProgram() {

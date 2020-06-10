@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef LITE_WITH_NVTX
 #include "lite/backends/cuda/nvtx_wrapper.h"
 
 #include <cuda.h>
@@ -68,3 +69,4 @@ NVTXAnnotator::NVTXAnnotator(const char* domainName)
 
 }  // namespace lite
 }  // namespace paddle
+#endif

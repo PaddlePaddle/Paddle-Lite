@@ -151,6 +151,14 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+#ifdef LITE_WITH_NVTX
+  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
+  if (annotator.IsEnabled()) {
+    annotation_one_loop.generate(register_layer_names_.back(),
+                                 lite::Color::Engine);
+  }
+#endif
   int idx = -1;
   for (auto& inst : instructions_) {
     ++idx;
@@ -158,7 +166,6 @@ void RuntimeProgram::Run() {
     if (inst.is_feed_fetch_op()) continue;
 #endif
 #ifdef LITE_WITH_NVTX
-    const NVTXAnnotator& annotator = NVTXAnnotator::Global();
     NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
     nvtxStringHandle_t registered_name = register_layer_names_[idx];
     if (annotator.IsEnabled()) {
