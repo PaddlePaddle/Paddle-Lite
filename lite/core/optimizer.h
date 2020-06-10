@@ -92,7 +92,8 @@ class Optimizer {
            "bm_subgraph_pass",
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
-           "static_kernel_pick_pass",        // pick original kernel from graph
+           "static_kernel_pick_pass",  // pick original kernel from graph
+           "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
            // using kernel info
@@ -158,6 +159,44 @@ class Optimizer {
 
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
+  void SetVarDescShapeToScopeVar() {
+    auto dims_to_str_func = [](std::vector<int64_t> shape) -> std::string {
+      std::string str_res;
+      for (size_t i = 0; i < shape.size(); ++i) {
+        str_res += std::to_string(shape[i]);
+        if (i != shape.size() - 1) {
+          str_res += "x";
+        }
+      }
+      return str_res;
+    };
+
+    auto* program_desc = program_->program_desc();
+    LOG(INFO) << "program_desc->BlocksSize():" << program_desc->BlocksSize();
+    auto blocks_desc = program_desc->GetBlocks();
+    for (size_t bidx = 0; bidx < blocks_desc.size(); ++bidx) {
+      auto block_desc = blocks_desc[bidx];
+      auto vars_desc = block_desc.GetVars();
+      for (size_t vidx = 0; vidx < vars_desc.size(); ++vidx) {
+        auto var_desc = vars_desc[vidx];
+        LOG(INFO) << var_desc.Name() << " "
+                  << dims_to_str_func(var_desc.GetShape());
+        if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
+        //        auto* var = exec_scope_->FindVar(var_desc.Name());
+        auto* var = program_->exec_scope()->FindVar(var_desc.Name());
+        auto tensor = var->GetMutable<lite::Tensor>();
+        if (tensor->dims().size() == 0 && var_desc.GetShape().size() != 0) {
+          LOG(INFO) << "var_desc.Name():" << var_desc.Name()
+                    << " shape:" << dims_to_str_func(var_desc.GetShape());
+          tensor->Resize(var_desc.GetShape());
+        }
+        LOG(INFO) << "var_desc.Name():" << var_desc.Name()
+                  << " shape:" << dims_to_str_func(var_desc.GetShape())
+                  << " tensor:" << tensor->dims();
+      }
+    }
+  }
+
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
@@ -198,6 +237,7 @@ class Optimizer {
 
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
+    SetVarDescShapeToScopeVar();
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);

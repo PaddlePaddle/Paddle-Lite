@@ -47,10 +47,22 @@ namespace lite {
 template <>
 void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
                                            cpp::VarDesc *cpp_desc) {
+  auto dims_to_str_func = [](const pb::VarDesc &any_desc) -> std::string {
+    std::string str_res;
+    for (size_t i = 0; i < any_desc.GetShape().size(); ++i) {
+      str_res += std::to_string(any_desc.GetShape()[i]);
+      if (i != any_desc.GetShape().size() - 1) {
+        str_res += "x";
+      }
+    }
+    return str_res;
+  };
+
   cpp_desc->SetName(any_desc.Name());
   cpp_desc->SetType(any_desc.GetType());
   cpp_desc->SetPersistable(any_desc.Persistable());
   if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
+    LOG(INFO) << any_desc.Name() << " " << dims_to_str_func(any_desc);
     cpp_desc->SetDataType(any_desc.GetDataType());
     cpp_desc->SetShape(any_desc.GetShape());
   }

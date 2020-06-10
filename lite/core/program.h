@@ -67,6 +67,8 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
+  cpp::ProgramDesc* program_desc() { return &desc_; }
+
   const std::map<std::string, PrecisionType>& var_data_type() const {
     return var_data_type_;
   }
