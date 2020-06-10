@@ -67,8 +67,8 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int cnml_trans2_input_shape[4];
   CNML_CALL(
       cnmlGetTensorShape(trans2_input->mlu_tensor(), cnml_trans2_input_shape));
-  CNML_CALL(
-      cnmlCreateNdReshapeOpParam(&reshape_param, cnml_trans2_input_shape, 4));
+  CNML_CALL(cnmlCreateNdReshapeOpParam(
+      &reshape_param, cnml_trans2_input_shape, output_dims.size()));
 
   // Use cnmlCreatexxxOpForward to create op.
   CNML_CALL(cnmlCreateReshapeOp(&reshape_op,
