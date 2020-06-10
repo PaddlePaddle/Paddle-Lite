@@ -614,6 +614,9 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
+		    if (cin == 1 && cout == 1) {
+                      continue;
+                    }
                     test_conv_int8(dims,
                                    weights_dim,
                                    1,
