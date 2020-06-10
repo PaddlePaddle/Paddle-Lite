@@ -330,7 +330,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
 endif()
 
-bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
+# bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
 
 # These tests needs CLI arguments, and is not supported in ARM CI.
