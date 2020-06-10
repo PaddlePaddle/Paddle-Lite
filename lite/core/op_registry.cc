@@ -215,9 +215,6 @@ KernelRegistry::KernelRegistry() : registries_() {
   INIT_FOR(kX86, kFloat, kNCHW);
   INIT_FOR(kX86, kFP16, kNCHW);
   INIT_FOR(kX86, kInt8, kNCHW);
-  INIT_FOR(kX86, kFloat, kNHWC);
-  INIT_FOR(kX86, kFP16, kNHWC);
-  INIT_FOR(kX86, kInt8, kNHWC);
   INIT_FOR(kX86, kAny, kNCHW);
   INIT_FOR(kX86, kAny, kAny);
   INIT_FOR(kX86, kInt64, kNCHW);
