@@ -91,9 +91,8 @@ class Optimizer {
            "bm_subgraph_pass",
            "rknpu_subgraph_pass",
            "int64_to_int32_pass",
-           //  "identity_cast_eliminate_pass",
+           "identity_cast_eliminate_pass",
            "mlu_subgraph_pass",
-
            "static_kernel_pick_pass",        // pick original kernel from graph
            "variable_place_inference_pass",  // inference arg/var's
 
