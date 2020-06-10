@@ -22,7 +22,7 @@ bool TestDDimLite(const std::vector<int64_t>& data) {
   DDimLite dims(data);
   auto result = dims.data();
   for (int i = 0; i < data.size(); i++) {
-    ASSERT_EQ(result[i], data[i])
+    EXPECT_NEAR(result[i], data[i], 1e-3);
   }
   return true;
 }
@@ -31,7 +31,7 @@ TEST(Tensor, DDimLite) {
   DDimLite dims;
   for (int64_t i = 0; i < 1000; i++) {
     for (int64_t j = 0; j < 1000; j++) {
-      TestDDimLite(std::vector<int64_t>({i, j});
+      TestDDimLite(std::vector<int64_t>({i, j}));
     }
   }
 }
