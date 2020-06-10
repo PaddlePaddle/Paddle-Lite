@@ -79,7 +79,9 @@ else()
             # Need to add RKNPU runtime libs dependency
             target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
         endif()
-
+    else()
+      add_library(paddle_light_api_static STATIC "")
+      target_sources(paddle_light_api_static PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
     endif()
 endif()
 
