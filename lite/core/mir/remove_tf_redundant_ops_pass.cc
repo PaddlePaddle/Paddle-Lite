@@ -34,7 +34,9 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
   bool found = false;
   Node* softmax_node{nullptr};
   Node* reshape2_node{nullptr};
+  std::string reshape2_out_arg_name;
   Node* fetch_node{nullptr};
+  std::string fetch_in_arg_name;
   DDim softmax_out_dims;
   DDim reshape2_out_dims;
 
@@ -45,6 +47,7 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
       reshape2_node = op_node;
     } else if (op_node->AsStmt().picked_kernel().op_type() == "fetch") {
       fetch_node = op_node;
+      fetch_in_arg_name = fetch_node->inlinks.front()->AsArg().name;
     }
   }
 
@@ -61,8 +64,7 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
 
   for (auto out_node : reshape2_node->outlinks) {
     if (out_node->IsArg() && out_node->outlinks.size() != 0) {
-      auto reshape2_out_arg_name =
-          reshape2_node->outlinks.front()->AsArg().name;
+      reshape2_out_arg_name = reshape2_node->outlinks.front()->AsArg().name;
       auto reshape2_out_tensor =
           scope->FindVar(reshape2_out_arg_name)->Get<lite::Tensor>();
       reshape2_out_dims = reshape2_out_tensor.dims();
@@ -73,7 +75,9 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
   VLOG(3) << "softmax_out_dims:" << softmax_out_dims;
   VLOG(3) << "found:" << found;
 
-  if (softmax_out_dims == reshape2_out_dims) {
+  if (softmax_out_dims == reshape2_out_dims &&
+      softmax_node->outlinks.front() == reshape2_node->inlinks.front() &&
+      reshape2_out_arg_name == fetch_in_arg_name) {
     found = true;
   }
 
