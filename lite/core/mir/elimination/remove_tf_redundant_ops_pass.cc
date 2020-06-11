@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/remove_tf_redundant_ops_pass.h"
+#include "lite/core/mir/elimination/remove_tf_redundant_ops_pass.h"
 #include <set>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass.h"
