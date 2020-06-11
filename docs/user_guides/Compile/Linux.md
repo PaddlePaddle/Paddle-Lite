@@ -11,7 +11,7 @@
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite && git checkout release/v2.6
 
-# 2. 编译Paddle-Lite Android预测库 (armv8, gcc编译)
+# 2. 编译Paddle-Lite Linux(arm)预测库 (armv8, gcc编译)
 ./lite/tools/build_linux.sh
 ```
 
