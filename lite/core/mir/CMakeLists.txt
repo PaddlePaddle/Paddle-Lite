@@ -29,6 +29,7 @@ lite_cc_library(mir_passes
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
+      elimination/remove_tf_redundant_ops_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
@@ -45,7 +46,6 @@ lite_cc_library(mir_passes
       mlu_postprocess_pass.cc
       weight_quantization_preprocess_pass.cc
       quantized_op_attributes_inference_pass.cc
-      remove_tf_redundant_ops_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
