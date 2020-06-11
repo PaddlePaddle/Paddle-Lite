@@ -27,6 +27,10 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+/*
+ * mir::RemoveTFRedundantOpsPass remove reshape2->squeeze2 pattern
+ * and last reshape2 op for tensorflow mobilenetv1/v2.
+ */
 class RemoveTFRedundantOpsPass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
