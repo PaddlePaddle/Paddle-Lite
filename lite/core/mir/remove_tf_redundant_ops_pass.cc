@@ -242,4 +242,4 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
 
 REGISTER_MIR_PASS(remove_tf_redundant_ops_pass,
                   paddle::lite::mir::RemoveTFRedundantOpsPass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kOpenCL), TARGET(kARM)});
