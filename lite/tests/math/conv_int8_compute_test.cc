@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -596,8 +596,7 @@ TEST(TestConv1x1s1Int8, test_conv1x1s1) {
 }
 #endif  /// conv1x1s1
 
-#if 0  /// conv3x3s1
-/// leave segment default problem  to repair
+#if 1  /// conv3x3s1
 TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 33}) {
