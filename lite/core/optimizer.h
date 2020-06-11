@@ -178,10 +178,9 @@ class Optimizer {
   // Set shape(dims) infos of var descs to scope var.
   //  developer can write pass using input / output tensor dims of op.
   //
-  // Example: If you have node `softmax_node`,
+  // Example: If you have node `Node* softmax_node`,
   //   you can get dims of output tensor in passes:
   //
-  //   Node* softmax_node;
   //   auto* scope = softmax_node->AsStmt().op()->scope();
   //   auto softmax_out_arg_name =
   //             softmax_node->outlinks.front()->AsArg().name;
