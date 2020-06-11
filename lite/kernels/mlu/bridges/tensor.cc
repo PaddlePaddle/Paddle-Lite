@@ -347,7 +347,8 @@ void MLUTensor::ToFile(std::string file_name) {
     of << outs.str();
     of.close();
   } else {
-    LOG(FATAL) << "mlu ptr is null ,can not dump mlu content to : " << file_name;
+    LOG(FATAL) << "mlu ptr is null ,can not dump mlu content to : "
+               << file_name;
   }
 }
 
