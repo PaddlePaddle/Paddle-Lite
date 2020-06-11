@@ -175,6 +175,19 @@ class Optimizer {
 
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
+  // Set shape(dims) infos of var descs to scope var.
+  //  developer can write pass using input / output tensor dims of op.
+  //
+  // Example: If you have node `softmax_node`,
+  //   you can get dims of output tensor in passes:
+  //
+  //   Node* softmax_node;
+  //   auto* scope = softmax_node->AsStmt().op()->scope();
+  //   auto softmax_out_arg_name =
+  //             softmax_node->outlinks.front()->AsArg().name;
+  //   auto softmax_out_tensor =
+  //             scope->FindVar(softmax_out_arg_name)->Get<lite::Tensor>();
+  //   softmax_out_dims = softmax_out_tensor.dims();
   void SetVarDescShapeToScopeVar() {
     auto dims_to_str_func = [](std::vector<int64_t> shape) -> std::string {
       std::string str_res;
