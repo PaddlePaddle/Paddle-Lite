@@ -32,7 +32,7 @@ int data_index(std::vector<int> pos, DDimLite dims) {
 
 std::vector<int> pos_trans(std::vector<int> in_pos, std::vector<int> axis) {
   std::vector<int> out_pos(in_pos.size());
-  for (int i = 0; i < axis.size(); i++) {
+  for (size_t i = 0; i < axis.size(); i++) {
     out_pos[axis[i]] = in_pos[i];
   }
   return out_pos;
