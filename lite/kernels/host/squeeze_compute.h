@@ -22,14 +22,16 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class SqueezeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SqueezeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
   virtual ~SqueezeCompute() = default;
 };
 
-class Squeeze2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class Squeeze2Compute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
