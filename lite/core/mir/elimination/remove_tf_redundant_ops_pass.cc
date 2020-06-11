@@ -201,7 +201,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
           << next_inst_node_of_reshape2_out->AsStmt().picked_kernel().op_type();
     }
 
-    VLOG(1) << "==============================";
+    VLOG(5) << "==============================";
     VLOG(5) << "out_arg_dims:" << out_arg_dims;
     VLOG(5) << "squeeze2_out_dims:" << squeeze2_out_dims;
     VLOG(5) << "reshape2_out_dims:" << reshape2_out_dims;
@@ -231,7 +231,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
     auto next_inst_op_desc =
         next_inst_node_of_reshape2_out->AsStmt().mutable_op_info();
     next_inst_op_desc->SetInput("X", {out_arg_node->AsArg().name});
-    VLOG(1) << Visualize(graph.get());
+    VLOG(5) << Visualize(graph.get());
   }
   VLOG(5) << "replace pattern fininshed";
 }
