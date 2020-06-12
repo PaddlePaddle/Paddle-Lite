@@ -44,7 +44,6 @@ void GroupNormCompute::Run() {
   int ngroup = n * groups;
   int cnt = spatial_size >> 4;
   int remain = spatial_size % 16;
-  LOG(INFO) << "param.y dims: " << param.out->dims();
 // compute saved_mean and saved_variance
 #pragma omp parallel for
   for (int n = 0; n < ngroup; ++n) {
