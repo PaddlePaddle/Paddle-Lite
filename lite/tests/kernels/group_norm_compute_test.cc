@@ -47,7 +47,7 @@ class GroupNormComputeTest : public arena::TestCase {
         dims_(dims),
         epsilon_(epsilon),
         groups_(groups),
-        channels_(channels){}
+        channels_(channels) {}
 
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(x_);
@@ -108,8 +108,8 @@ class GroupNormComputeTest : public arena::TestCase {
         float* y_ch_ptr = y_ptr + c * in_size;
         for (int j = 0; j < in_size; j++) {
           y_ch_ptr[j] = scale_val * (x_ch_ptr[j] - saved_mean_data[i]) *
-                            saved_variance_data[i] + bias_val;
-         // LOG(INFO) << "j: " << j << ", " << y_ch_ptr[j];
+                            saved_variance_data[i] +
+                        bias_val;
         }
       }
     }
@@ -129,7 +129,6 @@ class GroupNormComputeTest : public arena::TestCase {
   }
 
   void PrepareData() override {
-    LOG(INFO) << "dims_: " << dims_[0] << ", " << dims_[1] << ", " << dims_[2] << ", " << dims_[3];
     std::vector<float> x(dims_.production());
     fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
 
@@ -152,14 +151,14 @@ void TestGroupNorm(Place place,
     for (auto& c : {1}) {
       for (auto& h : {1, 16, 33, 56}) {
         for (auto& w : {1, 17, 55}) {
-          for (auto& groups: {1, 2, 4}) {
+          for (auto& groups : {1, 2, 4}) {
             if (c % groups != 0) {
               continue;
             }
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-5f;
-            std::unique_ptr<arena::TestCase> tester(
-                new GroupNormComputeTest(place, "def", dim_in, epsilon, groups, c));
+            std::unique_ptr<arena::TestCase> tester(new GroupNormComputeTest(
+                place, "def", dim_in, epsilon, groups, c));
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
               auto& ctx = tester->context()->As<ARMContext>();

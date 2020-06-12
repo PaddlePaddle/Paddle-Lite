@@ -235,7 +235,8 @@ typedef paddle::lite::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
                                                           PRECISION(kFloat)>
     DeformableConvFp32;
 
-REGISTER_LITE_KERNEL(deformable_conv, kARM, kFloat, kNCHW, DeformableConvFp32, def)
+REGISTER_LITE_KERNEL(
+    deformable_conv, kARM, kFloat, kNCHW, DeformableConvFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
