@@ -39,8 +39,10 @@ bool GroupNormOp::CheckShape() const {
   CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
   CHECK_GT(param_.epsilon, 0.f) << "epsilon should be greater than 0.f";
   CHECK_LT(param_.epsilon, 0.01f) << "epsilon should be less than 0.01f";
-  CHECK_EQ(param_.channels, x_dims[1]) << "Input channels must be equal input_shape[1]";
-  CHECK_EQ(param_.channels % param_.groups, 0) << "channels must be divide groups";
+  CHECK_EQ(param_.channels, x_dims[1])
+      << "Input channels must be equal input_shape[1]";
+  CHECK_EQ(param_.channels % param_.groups, 0)
+      << "channels must be divide groups";
   return true;
 }
 
@@ -54,8 +56,7 @@ bool GroupNormOp::InferShapeImpl() const {
   return true;
 }
 
-bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                lite::Scope* scope) {
+bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.scale =
       scope->FindVar(op_desc.Input("Scale").front())->GetMutable<Tensor>();
