@@ -48,6 +48,7 @@ add_operator(io_copy_once_op basic SRCS io_copy_once_op.cc DEPS io_copy_op ${op_
 add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
 add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
+add_operator(group_norm_op basic SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
 add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
@@ -143,7 +144,7 @@ add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_o
 add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
 add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
 # for deformable-convNet
-add_operator(deformable_conv_op basic SRCS deformable_conv_op.cc DEPS ${op_DEPS})
+add_operator(deformable_conv_op extra SRCS deformable_conv_op.cc DEPS ${op_DEPS})
 
 # 4. training op
 add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})
