@@ -48,7 +48,6 @@ add_operator(io_copy_once_op basic SRCS io_copy_once_op.cc DEPS io_copy_op ${op_
 add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
 add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
-add_operator(group_norm_op basic SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
 add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
@@ -58,6 +57,7 @@ add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
 add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
 add_operator(power_op extra SRCS power_op.cc DEPS ${op_DEPS})
+add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops

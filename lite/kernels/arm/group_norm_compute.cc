@@ -35,7 +35,6 @@ void GroupNormCompute::Run() {
   float epsilon = param.epsilon;
   int groups = param.groups;
   int channels = param.channels;
-
   int n = param.x->dims()[0];
   int c = param.x->dims()[1];
   int ch_per_group = channels / groups;
@@ -45,6 +44,7 @@ void GroupNormCompute::Run() {
   int ngroup = n * groups;
   int cnt = spatial_size >> 4;
   int remain = spatial_size % 16;
+  LOG(INFO) << "param.y dims: " << param.out->dims();
 // compute saved_mean and saved_variance
 #pragma omp parallel for
   for (int n = 0; n < ngroup; ++n) {
@@ -138,9 +138,9 @@ void GroupNormCompute::Run() {
         float32x4_t out2 = vmlaq_f32(vbias, submean2, vsstd);
         float32x4_t out3 = vmlaq_f32(vbias, submean3, vsstd);
         vst1q_f32(out_p, out0);
-        vst1q_f32(out_p + 4, out0);
-        vst1q_f32(out_p + 8, out0);
-        vst1q_f32(out_p + 12, out0);
+        vst1q_f32(out_p + 4, out1);
+        vst1q_f32(out_p + 8, out2);
+        vst1q_f32(out_p + 12, out3);
         in_p += 16;
         out_p += 16;
       }
@@ -157,7 +157,7 @@ void GroupNormCompute::Run() {
         in_p++;
         out_p++;
       }
-    } 
+    }
   }
 }
 
