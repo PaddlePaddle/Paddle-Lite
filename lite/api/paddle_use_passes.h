@@ -26,6 +26,7 @@ USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
 USE_MIR_PASS(graph_visualize_pass);
 
+USE_MIR_PASS(remove_tf_redundant_ops_pass);
 USE_MIR_PASS(lite_conv_bn_fuse_pass);
 USE_MIR_PASS(lite_fc_fuse_pass);
 USE_MIR_PASS(lite_shuffle_channel_fuse_pass);
