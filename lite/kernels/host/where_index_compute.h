@@ -22,8 +22,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T, PrecisionType PType>
-class WhereIndexCompute : public KernelLite<TARGET(kHost), PType> {
+class WhereIndexCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::WhereIndexParam;
 

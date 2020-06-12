@@ -28,12 +28,10 @@ static void where_index_rank4(const int64_t* true_index,
                               const int64_t* stride,
                               int64_t* out) {
   int cnt = true_num >> 1;
-  int remain = true_num & 1;
   register int64_t stride0 = stride[0];
   register int64_t stride1 = stride[1];
   register int64_t stride2 = stride[2];
   register int64_t stride3 = stride[3];
-#pragma omp parallel for
   for (int i = 0; i < cnt; ++i) {
     int64_t index0 = true_index[i * 2];
     int64_t index1 = true_index[i * 2 + 1];
@@ -100,9 +98,8 @@ static void where_index_rankn(const int64_t* true_index,
   }
 }
 
-template <typename T, PrecisionType PType>
-void WhereIndexCompute<T, PType>::Run() {
-  auto& param = this->template Param<operators::WhereIndexParam>();
+template <typename T>
+void WhereIndexKernel(const operators::WhereIndexParam& param) {
   auto* input = param.input;
   auto* output = param.output;
   auto dims = input->dims();
@@ -137,32 +134,40 @@ void WhereIndexCompute<T, PType>::Run() {
   }
 }
 
+void WhereIndexCompute::Run() {
+  auto& param = this->Param<operators::WhereIndexParam>();
+  switch (param.input->precision()) {
+    case PRECISION(kFloat):
+      WhereIndexKernel<float>(param);
+      break;
+    case PRECISION(kInt32):
+      WhereIndexKernel<int32_t>(param);
+      break;
+    case PRECISION(kInt64):
+      WhereIndexKernel<int64_t>(param);
+      break;
+    case PRECISION(kInt8):
+      WhereIndexKernel<int8_t>(param);
+      break;
+    case PRECISION(kBool):
+      WhereIndexKernel<bool>(param);
+      break;
+    default:
+      LOG(FATAL) << "WhereIndex does not implement for the "
+                 << "input type:" << static_cast<int>(param.input->precision());
+  }
+}
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-using whereindex_int64 =
-    paddle::lite::kernels::host::WhereIndexCompute<int64_t, PRECISION(kInt64)>;
-using whereindex_int32 =
-    paddle::lite::kernels::host::WhereIndexCompute<int32_t, PRECISION(kInt32)>;
-using whereindex_bool =
-    paddle::lite::kernels::host::WhereIndexCompute<bool, PRECISION(kBool)>;
+using whereindex = paddle::lite::kernels::host::WhereIndexCompute;
 
-REGISTER_LITE_KERNEL(where_index, kHost, kInt64, kAny, whereindex_int64, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(where_index, kHost, kInt32, kAny, whereindex_int32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(where_index, kHost, kBool, kAny, whereindex_bool, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+REGISTER_LITE_KERNEL(where_index, kHost, kAny, kAny, whereindex, def)
+    .BindInput("Condition",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
