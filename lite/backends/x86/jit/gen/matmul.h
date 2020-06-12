@@ -32,7 +32,7 @@ class MatMulJitCode : public JitCode {
                          size_t code_size = 256 * 1024,
                          void* code_ptr = nullptr)
       : JitCode(code_size, code_ptr), m_(attr.m), n_(attr.n), k_(attr.k) {
-    PADDLE_ENFORCE_EQ(m_, 1, "Only support m==1 yet");
+    PADDLELITE_ENFORCE_EQ(m_, 1, "Only support m==1 yet");
     this->genCode();
   }
 

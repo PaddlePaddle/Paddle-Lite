@@ -63,10 +63,10 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     out.ShareDataWith(*y);
     out.Resize(matrix_shape);
 
-    PADDLE_ENFORCE_EQ(Mean->numel(), left);
-    PADDLE_ENFORCE_EQ(Var->numel(), left);
-    PADDLE_ENFORCE_EQ(Scale->numel(), right);
-    PADDLE_ENFORCE_EQ(Bias->numel(), right);
+    PADDLELITE_ENFORCE_EQ(Mean->numel(), left);
+    PADDLELITE_ENFORCE_EQ(Var->numel(), left);
+    PADDLELITE_ENFORCE_EQ(Scale->numel(), right);
+    PADDLELITE_ENFORCE_EQ(Bias->numel(), right);
 
     auto ker = paddle::lite::jit::KernelFuncs<jit::LayerNormTuple<T>,
                                               lite::fluid::CPUPlace>::Cache()

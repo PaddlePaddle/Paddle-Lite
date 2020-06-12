@@ -66,11 +66,12 @@ class LoDTensor2BatchFunctor {
                   bool is_reverse = false) const {
     if (!is_cal_batch_lod) {
       auto lods = batch->lod();
-      PADDLE_ENFORCE_GT(lods.size(),
-                        2UL,
-                        "The LoD of LoDTensor should inlcude at least 2-level "
-                        "sequence information.");
-      PADDLE_ENFORCE_EQ(
+      PADDLELITE_ENFORCE_GT(
+          lods.size(),
+          2UL,
+          "The LoD of LoDTensor should inlcude at least 2-level "
+          "sequence information.");
+      PADDLELITE_ENFORCE_EQ(
           lods[1].size(),
           static_cast<size_t>(lod_tensor.dims()[0]),
           "The LoD information should be consistent with the dims.");
@@ -80,7 +81,8 @@ class LoDTensor2BatchFunctor {
     }
 
     auto lods = lod_tensor.lod();
-    PADDLE_ENFORCE_EQ(lods.size(), 1UL, "Only support one level sequence now.");
+    PADDLELITE_ENFORCE_EQ(
+        lods.size(), 1UL, "Only support one level sequence now.");
 
     const auto& lod = lods[0];
 
@@ -165,11 +167,12 @@ class Batch2LoDTensorFunctor {
                   const lite::Tensor& batch,
                   lite::Tensor* lod_tensor) const {
     auto in_lod = batch.lod();
-    PADDLE_ENFORCE_GT(in_lod.size(),
-                      2UL,
-                      "The LoD of LoDTensor should inlcude at least 2-level "
-                      "sequence information.");
-    PADDLE_ENFORCE_EQ(
+    PADDLELITE_ENFORCE_GT(
+        in_lod.size(),
+        2UL,
+        "The LoD of LoDTensor should inlcude at least 2-level "
+        "sequence information.");
+    PADDLELITE_ENFORCE_EQ(
         in_lod[1].size(),
         static_cast<size_t>(lod_tensor->dims()[0]),
         "The LoD information should be consistent with the dims.");

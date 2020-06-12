@@ -178,7 +178,7 @@ auto error_msg =
 #endif  // !_WIN32
   if (throw_on_error) {
     CHECK(dso_handle != nullptr);
-    // PADDLE_ENFORCE(nullptr != dso_handle, error_msg, dlPath, errorno);
+    // PADDLELITE_ENFORCE(nullptr != dso_handle, error_msg, dlPath, errorno);
   } else if (nullptr == dso_handle) {
     // LOG(WARNING) << string::Sprintf(error_msg, dlPath, errorno);
   }

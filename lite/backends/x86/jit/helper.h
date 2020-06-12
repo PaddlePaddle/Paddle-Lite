@@ -78,8 +78,8 @@ inline const Kernel* GetReferKernel() {
   auto& ref_pool = ReferKernelPool::Instance().AllKernels();
   KernelKey kkey(KernelTuple::kernel_type, lite::fluid::CPUPlace());
   auto ref_iter = ref_pool.find(kkey);
-  PADDLE_ENFORCE(ref_iter != ref_pool.end(),
-                 "Every Kernel should have reference function.");
+  PADDLELITE_ENFORCE(ref_iter != ref_pool.end(),
+                     "Every Kernel should have reference function.");
   auto& ref_impls = ref_iter->second;
   for (auto& impl : ref_impls) {
     auto i = dynamic_cast<const ReferKernel<KernelTuple>*>(impl.get());
@@ -94,7 +94,7 @@ template <typename KernelTuple>
 inline typename KernelTuple::func_type GetReferFunc() {
   auto ker = GetReferKernel<KernelTuple>();
   auto p = dynamic_cast<const ReferKernel<KernelTuple>*>(ker);
-  PADDLE_ENFORCE(p, "The Refer kernel should exsit");
+  PADDLELITE_ENFORCE(p, "The Refer kernel should exsit");
   return p->GetFunc();
 }
 
@@ -125,7 +125,7 @@ std::vector<const Kernel*> GetAllCandidateKernels(
 
   // The last implementation should be reference function on CPUPlace.
   auto ref = GetReferKernel<KernelTuple>();
-  PADDLE_ENFORCE(ref != nullptr, "Refer Kernel can not be empty.");
+  PADDLELITE_ENFORCE(ref != nullptr, "Refer Kernel can not be empty.");
   res.emplace_back(ref);
   return res;
 }
@@ -140,11 +140,11 @@ GetAllCandidateFuncsWithTypes(const typename KernelTuple::attr_type& attr) {
     std::string name = k->ImplType();
     if (name == "JitCode") {
       auto i = dynamic_cast<const GenBase*>(k);
-      PADDLE_ENFORCE(i, "jitcode kernel cast can not fail.");
+      PADDLELITE_ENFORCE(i, "jitcode kernel cast can not fail.");
       res.emplace_back(std::make_pair(name, i->template getCode<Func>()));
     } else {
       auto i = dynamic_cast<const KernelMore<KernelTuple>*>(k);
-      PADDLE_ENFORCE(i, "kernel cast can not fail.");
+      PADDLELITE_ENFORCE(i, "kernel cast can not fail.");
       res.emplace_back(std::make_pair(name, i->GetFunc()));
     }
   }
@@ -166,7 +166,7 @@ template <typename KernelTuple, typename PlaceType = lite::fluid::CPUPlace>
 typename KernelTuple::func_type GetDefaultBestFunc(
     const typename KernelTuple::attr_type& attr) {
   auto funcs = GetAllCandidateFuncs<KernelTuple, PlaceType>(attr);
-  PADDLE_ENFORCE_GE(funcs.size(), 1UL);
+  PADDLELITE_ENFORCE_GE(funcs.size(), 1UL);
   // Here could do some runtime benchmark of this attr and return the best one.
   // But yet just get the first one as the default best one,
   // which is searched in order and tuned by offline.

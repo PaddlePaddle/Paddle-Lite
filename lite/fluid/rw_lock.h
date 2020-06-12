@@ -33,17 +33,17 @@ struct RWLock {
   ~RWLock() { pthread_rwlock_destroy(&lock_); }
 
   inline void RDLock() {
-    PADDLE_ENFORCE_EQ(
+    PADDLELITE_ENFORCE_EQ(
         pthread_rwlock_rdlock(&lock_), 0, "acquire read lock failed");
   }
 
   inline void WRLock() {
-    PADDLE_ENFORCE_EQ(
+    PADDLELITE_ENFORCE_EQ(
         pthread_rwlock_wrlock(&lock_), 0, "acquire write lock failed");
   }
 
   inline void UNLock() {
-    PADDLE_ENFORCE_EQ(pthread_rwlock_unlock(&lock_), 0, "unlock failed");
+    PADDLELITE_ENFORCE_EQ(pthread_rwlock_unlock(&lock_), 0, "unlock failed");
   }
 
  private:

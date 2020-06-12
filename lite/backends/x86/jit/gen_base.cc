@@ -62,12 +62,13 @@ void* GenBase::operator new(size_t size) {
 #ifdef _WIN32
   ptr = _aligned_malloc(size, alignment);
 #else
-  PADDLE_ENFORCE_EQ(posix_memalign(&ptr, alignment, size),
-                    0,
-                    "GenBase Alloc %ld error!",
-                    size);
+  PADDLELITE_ENFORCE_EQ(posix_memalign(&ptr, alignment, size),
+                        0,
+                        "GenBase Alloc %ld error!",
+                        size);
 #endif
-  PADDLE_ENFORCE(ptr, "Fail to allocate GenBase CPU memory: size = %d .", size);
+  PADDLELITE_ENFORCE(
+      ptr, "Fail to allocate GenBase CPU memory: size = %d .", size);
   return ptr;
 }
 

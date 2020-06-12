@@ -46,7 +46,7 @@ inline ActivationType GetActivationType(const std::string &type) {
     return ActivationType::kIdentity;
   }
   LOG(ERROR) << "Not support type " << type;
-  // PADDLE_ENFORCE(false, "Not support type %s", type);
+  // PADDLELITE_ENFORCE(false, "Not support type %s", type);
   // PADDLE_THROW("Not support type %s.", type);
   return ActivationType();
 }

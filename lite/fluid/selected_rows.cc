@@ -119,7 +119,7 @@ void DeserializeFromStream(
     // the 1st field, unit32_t version for SelectedRows
     uint32_t version;
     is.read(reinterpret_cast<char*>(&version), sizeof(version));
-    PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
+    PADDLELITE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
   }
   {
     // the 2st field, rows information
@@ -213,16 +213,16 @@ void SelectedRows::Get(const lite::Tensor& ids,
                        lite::Tensor* value,
                        bool auto_grown,
                        bool is_test) {
-  PADDLE_ENFORCE(value->IsInitialized(),
-                 "The value tensor should be initialized.");
+  PADDLELITE_ENFORCE(value->IsInitialized(),
+                     "The value tensor should be initialized.");
   if (ids.numel() == 0) {
     VLOG(3) << "keys is empty, please check data!";
   } else {
     int64_t value_width = value_->numel() / value_->dims()[0];
-    PADDLE_ENFORCE_EQ(value_width,
-                      value->numel() / value->dims()[0],
-                      "output tensor should have the same shape with table "
-                      "except the dims[0].");
+    PADDLELITE_ENFORCE_EQ(value_width,
+                          value->numel() / value->dims()[0],
+                          "output tensor should have the same shape with table "
+                          "except the dims[0].");
     for (int i = 0; i < ids.numel(); ++i) {
       auto id = ids.data<int64_t>()[i];
       int64_t index = AutoGrownIndex(id, auto_grown, is_test);

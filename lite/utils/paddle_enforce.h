@@ -13,27 +13,34 @@
 // limitations under the License.
 
 /*
- * This file defines PADDLE_ENFORCE_xx, which helps to adapt the legacy fluid
+ * This file defines PADDLELITE_ENFORCE_xx, which helps to adapt the legacy
+ * fluid
  * codes.
  */
 #pragma once
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
-#define PADDLE_ENFORCE(cond, ...) \
+namespace paddle {
+namespace lite {
+
+#define PADDLELITE_ENFORCE(cond, ...) \
   CHECK((cond)) << paddle::lite::string_format("" __VA_ARGS__);
-#define PADDLE_ENFORCE_EQ(a, b, ...) \
+#define PADDLELITE_ENFORCE_EQ(a, b, ...) \
   CHECK_EQ((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
-#define PADDLE_ENFORCE_LE(a, b, ...) \
+#define PADDLELITE_ENFORCE_LE(a, b, ...) \
   CHECK_LE((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
-#define PADDLE_ENFORCE_LT(a, b, ...) \
+#define PADDLELITE_ENFORCE_LT(a, b, ...) \
   CHECK_LT((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
 
-#define PADDLE_ENFORCE_GE(a, b, ...) \
+#define PADDLELITE_ENFORCE_GE(a, b, ...) \
   CHECK_GE((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
-#define PADDLE_ENFORCE_GT(a, b, ...) \
+#define PADDLELITE_ENFORCE_GT(a, b, ...) \
   CHECK_GT((a), (b)) << paddle::lite::string_format("" __VA_ARGS__);
 
 #ifndef PADDLE_THROW
 #define PADDLE_THROW(...) printf("" __VA_ARGS__);
 #endif
+
+}  // namespace lite
+}  // namespace paddle

@@ -76,7 +76,7 @@ class VBroadcastCreator : public JitCodeCreator<int64_t> {
     return 96 + (w / YMM_FLOAT_BLOCK) * 16 * 8;
   }
   std::unique_ptr<GenBase> CreateJitCode(const int64_t& w) const override {
-    PADDLE_ENFORCE_GT(w, 0);
+    PADDLELITE_ENFORCE_GT(w, 0);
     return make_unique<VBroadcastJitCode>(w, CodeSize(w));
   }
 };
