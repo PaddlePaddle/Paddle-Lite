@@ -119,6 +119,8 @@ class Buffer {
 
   void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
+      // only free owned buffer.
+      // unowned buffer commonly is shared, and must be freed by actual owner
       if (own_data_) {
         Free();
       }

@@ -139,7 +139,6 @@ static bool WriteFile(const std::string& filename,
   FILE* fp = fopen(filename.c_str(), "wb");
   if (!fp) return false;
   size_t size = contents.size();
-  size_t offset = 0;
   const char* ptr = contents.data();
   size_t already_written = fwrite(ptr, 1, size, fp);
   fclose(fp);
