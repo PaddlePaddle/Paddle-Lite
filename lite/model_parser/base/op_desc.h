@@ -79,6 +79,9 @@ class OpDescReadAPI {
   template <typename T>
   T GetAttr(const std::string& name) const;
 
+  template <typename T>
+  T GetAttr(size_t idx) const;
+
   std::string Repr() const {
     STL::stringstream ss;
     ss << Type();

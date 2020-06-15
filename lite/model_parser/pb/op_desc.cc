@@ -110,10 +110,25 @@ GetFindAttr(const framework::proto::OpDesc &desc, const std::string &name) {
   return it;
 }
 
+google::protobuf::internal::RepeatedPtrIterator<
+    const framework::proto::OpDesc_Attr>
+GetFindAttr(const framework::proto::OpDesc &desc, size_t idx) {
+  auto &xs = desc.attrs();
+  CHECK_LT(idx, xs.size());
+  auto it = xs.begin();
+  std::advance(it, idx);
+  return it;
+}
+
 #define GET_ATTR_IMPL(T, pb_f__)                        \
   template <>                                           \
   T OpDesc::GetAttr<T>(const std::string &name) const { \
     auto it = GetFindAttr(*desc_, name);                \
+    return it->pb_f__();                                \
+  }                                                     \
+  template <>                                           \
+  T OpDesc::GetAttr<T>(size_t idx) const {              \
+    auto it = GetFindAttr(*desc_, idx);                 \
     return it->pb_f__();                                \
   }
 
@@ -121,6 +136,15 @@ GetFindAttr(const framework::proto::OpDesc &desc, const std::string &name) {
   template <>                                           \
   T OpDesc::GetAttr<T>(const std::string &name) const { \
     auto it = GetFindAttr(*desc_, name);                \
+    T res;                                              \
+    for (const auto &v : it->pb_f__()) {                \
+      res.push_back(v);                                 \
+    }                                                   \
+    return res;                                         \
+  }                                                     \
+  template <>                                           \
+  T OpDesc::GetAttr<T>(size_t idx) const {              \
+    auto it = GetFindAttr(*desc_, idx);                 \
     T res;                                              \
     for (const auto &v : it->pb_f__()) {                \
       res.push_back(v);                                 \

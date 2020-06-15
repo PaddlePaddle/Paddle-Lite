@@ -142,6 +142,9 @@ class OpDesc : public OpDescAPI {
   template <typename T>
   T GetAttr(const std::string &name) const;
 
+  template <typename T>
+  T GetAttr(size_t idx) const;
+
  private:
   std::vector<std::string> GetArguments(
       const google::protobuf::RepeatedPtrField<framework::proto::OpDesc_Var>

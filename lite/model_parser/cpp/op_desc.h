@@ -125,6 +125,21 @@ class OpDesc : public OpDescAPI {
     return pair.first->second.get<T>();
   }
 
+  template <typename T>
+  T GetAttr(size_t idx) const {
+    CHECK_LT(idx, attrs().size());
+    CHECK_LT(idx, attr_types().size());
+    auto it = attrs().begin();
+    auto attr_it = attr_types().begin();
+    std::advance(it, idx);
+    std::advance(attr_it, idx);
+    auto pair = std::make_pair(it, attr_it);
+    CHECK(pair.second->second == OpDataTypeTrait<T>::AT)
+        << "required type is " << OpDataTypeTrait<T>::ATN
+        << " not match the true type";
+    return pair.first->second.get<T>();
+  }
+
   const std::map<std::string, Any>& attrs() const { return attrs_; }
   const std::map<std::string, AttrType>& attr_types() const {
     return attr_types_;

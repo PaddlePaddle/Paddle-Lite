@@ -93,10 +93,24 @@ const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc,
   return *it;
 }
 
+const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc, size_t idx) {
+  auto& xs = desc.GetField<ListBuilder<proto::OpDesc::Attr>>("attrs");
+  CHECK_LT(idx, xs.size());
+  auto it = xs.begin();
+  std::advance(it, idx);
+  return *it;
+}
+
 #define GET_ATTR_IMPL(T, bd__, pb_f__)                   \
   template <>                                            \
   T OpDesc::GetAttr<T>(const std::string& name) const {  \
     auto& it = GetFindAttr(*desc_, name);                \
+    auto& builder = it.GetField<bd__##Builder>(#pb_f__); \
+    return builder.data();                               \
+  }                                                      \
+  template <>                                            \
+  T OpDesc::GetAttr<T>(size_t idx) const {               \
+    auto& it = GetFindAttr(*desc_, idx);                 \
     auto& builder = it.GetField<bd__##Builder>(#pb_f__); \
     return builder.data();                               \
   }
@@ -113,6 +127,16 @@ GET_ATTR_IMPL(std::string, String, s);
   std::vector<T> OpDesc::GetAttr<std::vector<T>>(const std::string& name)  \
       const {                                                              \
     auto& it = GetFindAttr(*desc_, name);                                  \
+    std::vector<T> res;                                                    \
+    auto& list_builder = it.GetField<ListBuilder<bd__##Builder>>(#pb_f__); \
+    for (size_t i = 0; i < list_builder.size(); ++i) {                     \
+      res.push_back(list_builder.Get(i).data());                           \
+    }                                                                      \
+    return res;                                                            \
+  }                                                                        \
+  template <>                                                              \
+  std::vector<T> OpDesc::GetAttr<std::vector<T>>(size_t idx) const {       \
+    auto& it = GetFindAttr(*desc_, idx);                                   \
     std::vector<T> res;                                                    \
     auto& list_builder = it.GetField<ListBuilder<bd__##Builder>>(#pb_f__); \
     for (size_t i = 0; i < list_builder.size(); ++i) {                     \
