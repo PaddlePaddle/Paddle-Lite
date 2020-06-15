@@ -54,6 +54,13 @@ void sgemm_prepack_c4_small(int M,
                             const float* B,
                             float* C,
                             ARMContext* ctx);
+void sgemm_prepack_c8_int16_small(int M,
+                                  int N,
+                                  int K,
+                                  const int16_t* A_packed,
+                                  const int16_t* B,
+                                  int32_t* C,
+                                  ARMContext* ctx);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
