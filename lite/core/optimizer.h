@@ -111,6 +111,7 @@ class Optimizer {
            "mlu_subgraph_pass",
 
            "static_kernel_pick_pass",        // pick original kernel from graph
+           "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
 
            "mlu_postprocess_pass",
