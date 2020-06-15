@@ -1553,6 +1553,20 @@ struct PixelShuffleParam : ParamBase {
   lite::Tensor* output{nullptr};
   int upscale_factor{1};
 };
+
+struct RetinanetDetectionOutputParam : ParamBase {
+  std::vector<Tensor*> bboxes{};
+  std::vector<Tensor*> scores{};
+  std::vector<Tensor*> anchors{};
+  Tensor* im_info{};
+  Tensor* out{};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{};
+  float nms_eta{};
+  int keep_top_k{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

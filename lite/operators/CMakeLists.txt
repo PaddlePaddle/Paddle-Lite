@@ -136,6 +136,7 @@ add_operator(topk_op extra SRCS topk_op.cc DEPS ${op_DEPS})
 add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
 add_operator(layer_norm_op extra SRCS layer_norm_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
+add_operator(retinanet_detection_output_op extra SRCS retinanet_detection_output_op.cc DEPS ${op_DEPS})
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
 add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
