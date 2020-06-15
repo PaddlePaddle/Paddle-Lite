@@ -37,6 +37,11 @@ class ProgramDesc : public ProgramDescAPI {
   T* GetBlock(int32_t idx);
 
   template <typename T>
+  T const* GetBlock(int32_t idx) const {
+    return GetBlock<T>(idx);
+  }
+
+  template <typename T>
   T* AddBlock();
 
   // Just return default versoin
