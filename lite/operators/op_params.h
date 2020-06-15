@@ -1568,6 +1568,11 @@ struct PixelShuffleParam : ParamBase {
   lite::Tensor* output{nullptr};
   int upscale_factor{1};
 };
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
