@@ -753,6 +753,16 @@ void act_abs<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <>
+void act_thresholded_relu<float>(
+    const float* din, float* dout, int size, float threshold, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (din[0] > threshold ? din[0] : 0.f);
+    din++;
+    dout++;
+  }
+}
+
 #ifdef LITE_WITH_TRAIN
 template <>
 void act_square_grad(const float* din,
