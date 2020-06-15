@@ -106,7 +106,7 @@ void CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clCreateCommandQueue);
   // note(ysh329): consider compatibility for cl_driver_version 1.10
   // using clCreateCommandQueue instead.
-  //  PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+  // PADDLE_DLSYM(clCreateCommandQueueWithProperties);
   PADDLE_DLSYM(clReleaseCommandQueue);
   PADDLE_DLSYM(clCreateProgramWithBinary);
   PADDLE_DLSYM(clRetainContext);
@@ -445,9 +445,8 @@ CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
   //     ->clCreateCommandQueueWithProperties()(
   //         context, device, properties, errcode_ret);
   //
-  cl_command_queue_properties cl_cmd_properties;
   return paddle::lite::CLWrapper::Global()->clCreateCommandQueue()(
-      context, device, cl_cmd_properties, errcode_ret);
+      context, device, 0, errcode_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseCommandQueue(
