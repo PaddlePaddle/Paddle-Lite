@@ -74,6 +74,7 @@ class OpDescReadAPI {
   virtual std::vector<std::string> OutputArgumentNames() const = 0;
   virtual bool HasAttr(const std::string& name) const = 0;
   virtual OpAttrType GetAttrType(const std::string& name) const = 0;
+  virtual OpAttrType GetAttrType(size_t idx) const = 0;
   virtual std::vector<std::string> AttrNames() const = 0;
 
   template <typename T>

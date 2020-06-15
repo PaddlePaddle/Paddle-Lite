@@ -98,6 +98,13 @@ class OpDesc : public OpDescAPI {
     return it->second;
   }
 
+  AttrType GetAttrType(size_t idx) const override {
+    CHECK_LT(idx, attr_types().size());
+    auto it = attr_types().begin();
+    std::advance(it, idx);
+    return it->second;
+  }
+
   std::vector<std::string> AttrNames() const override {
     std::vector<std::string> res;
     for (const auto& x : attrs_) {

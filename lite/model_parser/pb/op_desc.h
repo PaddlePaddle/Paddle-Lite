@@ -125,6 +125,36 @@ class OpDesc : public OpDescAPI {
 #undef DEF_ONE
   }
 
+  AttrType GetAttrType(size_t idx) const override {
+    const auto &xs = desc_->attrs();
+    CHECK_LT(idx, xs.size());
+    auto it = xs.begin();
+    std::advance(it, idx);
+    CHECK(it != xs.end());
+#define DEF_ONE(type__)                    \
+  case framework::proto::AttrType::type__: \
+    return AttrType::type__;
+
+    switch (it->type()) {
+      DEF_ONE(INT);
+      DEF_ONE(FLOAT);
+      DEF_ONE(STRING);
+      DEF_ONE(INTS);
+      DEF_ONE(FLOATS);
+      DEF_ONE(STRINGS);
+      DEF_ONE(BOOLEAN);
+      DEF_ONE(BOOLEANS);
+      DEF_ONE(BLOCK);
+      DEF_ONE(LONG);
+      DEF_ONE(BLOCKS);
+      DEF_ONE(LONGS);
+      default:
+        LOG(FATAL) << "Unknown attribute type";
+        return static_cast<AttrType>(-1);
+    }
+#undef DEF_ONE
+  }
+
   std::vector<std::string> AttrNames() const override {
     std::vector<std::string> res;
     const auto &xs = desc_->attrs();
