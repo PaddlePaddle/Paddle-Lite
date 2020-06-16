@@ -36,6 +36,12 @@ if(NOT CNRT_INC)
   message(FATAL_ERROR "Can not find cnrt.h in ${NEUWARE_HOME}/include")
 endif()
 
+find_path(CNPLUGIN_INC NAMES cnplugin.h
+  PATHS ${NEUWARE_HOME}/include NO_DEFAULT_PATH)
+if(NOT CNPLUGIN_INC)
+  message(FATAL_ERROR "Can not find cnplugin.h in ${NEUWARE_HOME}/include")
+endif()
+
 include_directories("${NEUWARE_HOME}/include")
 
 find_library(CNML_LIB_FILE NAMES cnml
@@ -58,4 +64,16 @@ else()
   message(STATUS "Found CNRT Library: ${CNRT_LIB_FILE}")
   add_library(cnrt_lib SHARED IMPORTED GLOBAL)
   set_property(TARGET cnrt_lib PROPERTY IMPORTED_LOCATION ${CNRT_LIB_FILE})
+endif()
+
+
+find_library(CNPLUGIN_LIB_FILE NAMES cnplugin
+  PATHS ${NEUWARE_HOME}/lib64)
+
+if(NOT CNPLUGIN_LIB_FILE)
+  message(FATAL_ERROR "Can not find CNPLUGIN Library in ${NEUWARE_HOME}/lib64")
+else()
+  message(STATUS "Found CNPLUGIN Library: ${CNPLUGIN_LIB_FILE}")
+  add_library(cnplugin_lib SHARED IMPORTED GLOBAL)
+  set_property(TARGET cnplugin_lib PROPERTY IMPORTED_LOCATION ${CNPLUGIN_LIB_FILE})
 endif()

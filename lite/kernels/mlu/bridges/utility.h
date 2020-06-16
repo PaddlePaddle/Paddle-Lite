@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cnml.h>
+#include <cnplugin.h>
 #include <cnrt.h>
 
 #include <memory>
