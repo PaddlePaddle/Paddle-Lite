@@ -82,7 +82,11 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.hard_swish_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "reciprocal") {
     param_.active_type = lite_api::ActivationType::kReciprocal;
+  } else if (opdesc.Type() == "thresholded_relu") {
+    param_.active_type = lite_api::ActivationType::kThresholdedRelu;
+    param_.relu_threshold = opdesc.GetAttr<float>("threshold");
   }
+
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
 
   param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
@@ -100,3 +104,4 @@ REGISTER_LITE_OP(relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
