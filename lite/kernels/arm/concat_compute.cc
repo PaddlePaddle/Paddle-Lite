@@ -68,7 +68,7 @@ void ConcatCompute::Run() {
     axis = axis_tensor_data[0];
   }
   if (axis < 0) {
-    axis += inputs[i]->dims().size();
+    axis += inputs[0]->dims().size();
   }
 
   switch (inputs.front()->precision()) {
