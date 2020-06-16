@@ -74,10 +74,10 @@ namespace lite {
 
 class OpLiteFactory {
  public:
-  // Every fun is a creactor
-  void register_factory_fun(const std::string& op_type,
-                            std::function<std::shared_ptr<OpLite>()> fun) {
-    _map[op_type] = fun;
+  // Register a function to create an op
+  void RegisterCreator(const std::string& op_type,
+                       std::function<std::shared_ptr<OpLite>()> fun) {
+    op_registry_[op_type] = fun;
   }
 
   static OpLiteFactory& Global() {
@@ -86,21 +86,21 @@ class OpLiteFactory {
   }
 
   std::shared_ptr<OpLite> Create(const std::string& op_type) const {
-    auto it = _map.find(op_type);
-    if (it == _map.end()) return nullptr;
+    auto it = op_registry_.find(op_type);
+    if (it == op_registry_.end()) return nullptr;
     return it->second();
   }
 
   std::string DebugString() const {
-    std::stringstream ss;
-    for (const auto& item : _map) {
+    STL::stringstream ss;
+    for (const auto& item : op_registry_) {
       ss << " - " << item.first << "\n";
     }
     return ss.str();
   }
 
  protected:
-  std::map<std::string, std::function<std::shared_ptr<OpLite>()>> _map;
+  std::map<std::string, std::function<std::shared_ptr<OpLite>()>> op_registry_;
 };
 
 using LiteOpRegistry = OpLiteFactory;
@@ -110,7 +110,7 @@ class OpLiteRegistrar {
  public:
   OpLiteRegistrar(const std::string& op_type,
                   std::function<std::shared_ptr<OpLite>()> fun) {
-    OpLiteFactory::Global().register_factory_fun(op_type, fun);
+    OpLiteFactory::Global().RegisterCreator(op_type, fun);
   }
   // Touch function is used to guarantee registrar was initialized.
   void touch() {}
@@ -118,12 +118,14 @@ class OpLiteRegistrar {
 
 class KernelFactory {
  public:
-  void register_factory_fun(const std::string& op_type,
-                            TargetType target,
-                            PrecisionType precision,
-                            DataLayoutType layout,
-                            std::function<std::unique_ptr<KernelBase>()> fun) {
-    _map[op_type][std::make_tuple(target, precision, layout)].push_back(fun);
+  // Register a function to create kernels
+  void RegisterCreator(const std::string& op_type,
+                       TargetType target,
+                       PrecisionType precision,
+                       DataLayoutType layout,
+                       std::function<std::unique_ptr<KernelBase>()> fun) {
+    op_registry_[op_type][std::make_tuple(target, precision, layout)].push_back(
+        fun);
   }
 
   static KernelFactory& Global() {
@@ -136,9 +138,9 @@ class KernelFactory {
    */
   std::list<std::unique_ptr<KernelBase>> Create(const std::string& op_type) {
     std::list<std::unique_ptr<KernelBase>> res;
-    if (_map.find(op_type) == _map.end()) return res;
-    auto& _inner_map = _map[op_type];
-    for (auto it = _inner_map.begin(); it != _inner_map.end(); ++it) {
+    if (op_registry_.find(op_type) == op_registry_.end()) return res;
+    auto& kernel_registry = op_registry_[op_type];
+    for (auto it = kernel_registry.begin(); it != kernel_registry.end(); ++it) {
       for (auto& fun : it->second) {
         res.emplace_back(fun());
       }
@@ -154,10 +156,10 @@ class KernelFactory {
                                                 PrecisionType precision,
                                                 DataLayoutType layout) {
     std::list<std::unique_ptr<KernelBase>> res;
-    if (_map.find(op_type) == _map.end()) return res;
-    auto& _inner_map = _map[op_type];
-    auto it = _inner_map.find(std::make_tuple(target, precision, layout));
-    if (it == _inner_map.end()) return res;
+    if (op_registry_.find(op_type) == op_registry_.end()) return res;
+    auto& kernel_registry = op_registry_[op_type];
+    auto it = kernel_registry.find(std::make_tuple(target, precision, layout));
+    if (it == kernel_registry.end()) return res;
     for (auto& fun : it->second) {
       res.emplace_back(fun());
     }
@@ -165,8 +167,8 @@ class KernelFactory {
   }
 
   std::string DebugString() const {
-    std::stringstream ss;
-    for (const auto& item : _map) {
+    STL::stringstream ss;
+    for (const auto& item : op_registry_) {
       ss << " - " << item.first << "\n";
     }
     return ss.str();
@@ -175,11 +177,12 @@ class KernelFactory {
  protected:
   // Outer map: op -> a map of kernel.
   // Inner map: kernel -> creator function.
-  // Each kernel was represented by a combination of <TargetType, PrecisionType, DataLayoutType>
+  // Each kernel was represented by a combination of <TargetType, PrecisionType,
+  // DataLayoutType>
   std::map<std::string,
            std::map<std::tuple<TargetType, PrecisionType, DataLayoutType>,
                     std::list<std::function<std::unique_ptr<KernelBase>()>>>>
-      _map;
+      op_registry_;
 };
 
 using KernelRegistry = KernelFactory;
@@ -192,7 +195,7 @@ class KernelRegistrar {
                   PrecisionType precision,
                   DataLayoutType layout,
                   std::function<std::unique_ptr<KernelBase>()> fun) {
-    KernelFactory::Global().register_factory_fun(
+    KernelFactory::Global().RegisterCreator(
         op_type, target, precision, layout, fun);
   }
   // Touch function is used to guarantee registrar was initialized.
