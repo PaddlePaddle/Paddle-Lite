@@ -815,8 +815,7 @@ TEST(fusion_elementwise_max_activation_arm, compute) {
 
 TEST(elementwise_mod_int64_arm, retrive_op) {
   auto elementwise_mod =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kInt64)>(
-          "elementwise_mod");
+      KernelRegistry::Global().Create("elementwise_mod");
   ASSERT_FALSE(elementwise_mod.empty());
   ASSERT_TRUE(elementwise_mod.front());
 }
