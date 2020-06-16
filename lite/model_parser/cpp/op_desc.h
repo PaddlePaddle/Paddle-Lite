@@ -108,7 +108,7 @@ class OpDesc : public OpDescAPI {
 
   template <typename T>
   void SetAttr(const std::string& name, const T& v) {
-    attr_types_[name] = OpDescAPI::DataTypeTrait<T>::AT;
+    attr_types_[name] = OpDataTypeTrait<T>::AT;
     attrs_[name].set(v);
   }
 
@@ -119,8 +119,8 @@ class OpDesc : public OpDescAPI {
     auto attr_it = attr_types().find(name);
     CHECK(attr_it != attr_types().end());
     auto pair = std::make_pair(it, attr_it);
-    CHECK(pair.second->second == OpDescAPI::DataTypeTrait<T>::AT)
-        << "required type is " << OpDescAPI::DataTypeTrait<T>::ATN
+    CHECK(pair.second->second == OpDataTypeTrait<T>::AT)
+        << "required type is " << OpDataTypeTrait<T>::ATN
         << " not match the true type";
     return pair.first->second.get<T>();
   }

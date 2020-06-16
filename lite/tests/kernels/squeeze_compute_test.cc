@@ -123,7 +123,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     CHECK(out);
     auto* xshape = scope->NewTensor(xshape_);
     CHECK(xshape);
-    std::vector<int64_t> xshape_sp(dims_.size() + 1, 1);
+    std::vector<int64_t> xshape_sp(dims_.size() + 1, 0);
     for (size_t i = 0; i < dims_.size(); ++i) {
       xshape_sp[i + 1] = dims_[i];
     }
@@ -169,9 +169,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
 
     auto* input_data = input->data<float>();
     auto* out_data = out->mutable_data<float>();
-    auto* xshape_data = xshape->mutable_data<float>();
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
-    memcpy(xshape_data, input_data, sizeof(float) * dims_.production());
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -221,7 +219,7 @@ void test_squeeze2(Place place) {
             std::unique_ptr<arena::TestCase> tester(new Squeeze2ComputeTester(
                 place, "def", axes, DDim({N, C, H, W})));
             arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
+            arena.TestPrecision({"XShape"});
           }
         }
       }
@@ -230,23 +228,17 @@ void test_squeeze2(Place place) {
 }
 
 TEST(squeeze, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
   test_squeeze(place);
-#endif
 }
 
 TEST(squeeze2, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
   test_squeeze2(place);
-#endif
 }
 
 }  // namespace lite
