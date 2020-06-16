@@ -354,7 +354,7 @@ void RetinanetDetectionOutputCompute::Run() {
   int64_t out_dim = box_dim + 2;
 
   std::vector<std::vector<std::vector<float>>> all_nmsed_out;
-  std::vector<size_t> batch_starts = {0};
+  std::vector<uint64_t> batch_starts = {0};
   for (int i = 0; i < batch_size; ++i) {
     int num_nmsed_out = 0;
     std::vector<Tensor> box_per_batch_list(boxes_list.size());
@@ -380,14 +380,14 @@ void RetinanetDetectionOutputCompute::Run() {
     batch_starts.push_back(batch_starts.back() + num_nmsed_out);
   }
 
-  int num_kept = batch_starts.back();
+  uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
     outs->Resize({0, out_dim});
   } else {
-    outs->Resize({num_kept, out_dim});
+    outs->Resize({static_cast<int64_t>(num_kept), out_dim});
     for (int i = 0; i < batch_size; ++i) {
-      int64_t s = batch_starts[i];
-      int64_t e = batch_starts[i + 1];
+      int64_t s = static_cast<int64_t>(batch_starts[i]);
+      int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
       if (e > s) {
         Tensor out = outs->Slice<float>(s, e);
         MultiClassOutput(all_nmsed_out[i], &out);
