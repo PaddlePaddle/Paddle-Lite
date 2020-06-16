@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/squeeze_compute.h"
+#include "lite/kernels/host/squeeze_compute.h"
 #include <vector>
 
 namespace paddle {
@@ -24,23 +24,18 @@ void SqueezeCompute::Run() {
   auto& param = Param<operators::SqueezeParam>();
   auto x = param.X;
   auto output = param.Out;
-  auto x_dims = x->dims();
-  auto* x_data = x->data<float>();
-  auto* out_data = output->mutable_data<float>();
-  memcpy(out_data, x_data, x_dims.production() * sizeof(float));
+  auto output_dims = output->dims();
+  output->CopyDataFrom(*x);
+  output->Resize(output_dims);
 }
 
 void Squeeze2Compute::Run() {
   auto& param = Param<operators::SqueezeParam>();
   auto x = param.X;
   auto output = param.Out;
-  auto xshape = param.XShape;
-  auto x_dims = x->dims();
-  auto* x_data = x->data<float>();
-  auto* out_data = output->mutable_data<float>();
-  auto* xshape_data = xshape->mutable_data<float>();
-  memcpy(out_data, x_data, x_dims.production() * sizeof(float));
-  memcpy(xshape_data, x_data, x_dims.production() * sizeof(float));
+  auto output_dims = output->dims();
+  output->CopyDataFrom(*x);
+  output->Resize(output_dims);
 }
 
 }  // namespace host
@@ -49,22 +44,32 @@ void Squeeze2Compute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(squeeze,
-                     kARM,
-                     kFloat,
-                     kNCHW,
+                     kHost,
+                     kAny,
+                     kAny,
                      paddle::lite::kernels::host::SqueezeCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();
 
 REGISTER_LITE_KERNEL(squeeze2,
-                     kARM,
-                     kFloat,
-                     kNCHW,
+                     kHost,
+                     kAny,
+                     kAny,
                      paddle::lite::kernels::host::Squeeze2Compute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();

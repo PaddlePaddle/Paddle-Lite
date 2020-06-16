@@ -2242,19 +2242,45 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
       Dtype* tmp1 = nullptr;
       Dtype* tmp2 = nullptr;
       Dtype* tmp3 = nullptr;
-      float32_t scale_local[4];
+      float32_t scale_local[4] = {0, 0, 0, 0};
       float32_t bias_local[4] = {0, 0, 0, 0};
       if (is_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
+        if (y + 4 <= M) {
+          bias_local[0] = bias[y];
+          bias_local[1] = bias[y + 1];
+          bias_local[2] = bias[y + 2];
+          bias_local[3] = bias[y + 3];
+        } else {
+          switch (M - y) {
+            case 3:
+              bias_local[2] = bias[y + 2];
+            case 2:
+              bias_local[1] = bias[y + 1];
+            case 1:
+              bias_local[0] = bias[y + 0];
+            default:
+              break;
+          }
+        }
       }
       if (scale) {
-        scale_local[0] = scale[y];
-        scale_local[1] = scale[y + 1];
-        scale_local[2] = scale[y + 2];
-        scale_local[3] = scale[y + 3];
+        if (y + 4 <= M) {
+          scale_local[0] = scale[y];
+          scale_local[1] = scale[y + 1];
+          scale_local[2] = scale[y + 2];
+          scale_local[3] = scale[y + 3];
+        } else {
+          switch (M - y) {
+            case 3:
+              scale_local[2] = scale[y + 2];
+            case 2:
+              scale_local[1] = scale[y + 1];
+            case 1:
+              scale_local[0] = scale[y + 0];
+            default:
+              break;
+          }
+        }
       }
       if (y + MBLOCK_INT8_OTH > M) {
         switch (y + MBLOCK_INT8_OTH - M) {

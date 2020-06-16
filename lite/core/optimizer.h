@@ -17,6 +17,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
@@ -37,6 +38,21 @@ namespace lite {
  */
 class Optimizer {
  public:
+  Optimizer() {}
+
+  Optimizer(Program&& program, const std::vector<Place>& valid_places) {
+    program_ = &program;
+    valid_places_ = valid_places;
+    CHECK(!valid_places.empty()) << "At least one valid_place should be set";
+
+    core::KernelPickFactor factor;
+    factor.ConsiderTarget();
+    factor.ConsiderPrecision();
+    factor.ConsiderDataLayout();
+
+    Run(std::move(program), valid_places, factor, {});
+  }
+
   void Run(Program&& program,
            const std::vector<Place>& valid_places,
            core::KernelPickFactor kernel_pick_factor,
@@ -92,7 +108,8 @@ class Optimizer {
            "bm_subgraph_pass",
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
-           "static_kernel_pick_pass",        // pick original kernel from graph
+           "static_kernel_pick_pass",  // pick original kernel from graph
+           "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
            // info(target/precision/layout/device)
            // using kernel info
@@ -158,6 +175,55 @@ class Optimizer {
 
   const lite::Scope* exec_scope() const { return exec_scope_; }
 
+  // Set shape(dims) infos of var descs to scope var.
+  //  developer can write pass using input / output tensor dims of op.
+  //
+  // Example: If you have node `Node* softmax_node`,
+  //   you can get dims of output tensor in passes:
+  //
+  //   auto* scope = softmax_node->AsStmt().op()->scope();
+  //   auto softmax_out_arg_name =
+  //             softmax_node->outlinks.front()->AsArg().name;
+  //   auto softmax_out_tensor =
+  //             scope->FindVar(softmax_out_arg_name)->Get<lite::Tensor>();
+  //   softmax_out_dims = softmax_out_tensor.dims();
+  void SetVarDescShapeToScopeVar() {
+    auto dims_to_str_func = [](std::vector<int64_t> shape) -> std::string {
+      std::string str_res;
+      for (size_t i = 0; i < shape.size(); ++i) {
+        str_res += std::to_string(shape[i]);
+        if (i != shape.size() - 1) {
+          str_res += "x";
+        }
+      }
+      return str_res;
+    };
+
+    auto* program_desc = program_->program_desc();
+    VLOG(5) << "program_desc->BlocksSize():" << program_desc->BlocksSize();
+    auto blocks_desc = program_desc->GetBlocks();
+    for (size_t bidx = 0; bidx < blocks_desc.size(); ++bidx) {
+      auto block_desc = blocks_desc[bidx];
+      auto vars_desc = block_desc.GetVars();
+      for (size_t vidx = 0; vidx < vars_desc.size(); ++vidx) {
+        auto var_desc = vars_desc[vidx];
+        VLOG(5) << var_desc.Name() << " "
+                << dims_to_str_func(var_desc.GetShape());
+        if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
+        auto* var = program_->exec_scope()->FindVar(var_desc.Name());
+        auto tensor = var->GetMutable<lite::Tensor>();
+        if (tensor->dims().size() == 0 && var_desc.GetShape().size() != 0) {
+          VLOG(5) << "var_desc.Name():" << var_desc.Name()
+                  << " shape:" << dims_to_str_func(var_desc.GetShape());
+          tensor->Resize(var_desc.GetShape());
+        }
+        VLOG(5) << "var_desc.Name():" << var_desc.Name()
+                << " shape:" << dims_to_str_func(var_desc.GetShape())
+                << " tensor:" << tensor->dims();
+      }
+    }
+  }
+
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
@@ -198,6 +264,7 @@ class Optimizer {
 
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
+    SetVarDescShapeToScopeVar();
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);

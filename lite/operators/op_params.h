@@ -358,6 +358,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0};
   float hard_swish_scale{6.0};
   float hard_swish_offset{3.0};
+  // thresholded_relu
+  float relu_threshold{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1429,6 +1431,19 @@ struct InstanceNormParam : ParamBase {
   lite::Tensor* saved_variance{};
   float epsilon;
 };
+/// --------------------- group_norm operators --------------------
+struct GroupNormParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
+  int groups;
+  int channels;
+};
+
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
@@ -1515,11 +1530,49 @@ struct XPUFcParam : ParamBase {
   std::string activation_type{""};
 };
 
+// For DeformableConvolution op
+struct DeformableConvParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* offset{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+  int deformable_groups{1};
+  int im2col_step{1};
+  bool modulated{true};  // True-v2 False-v1
+  std::string data_format{"Anylayout"};
+  // convolution parameter
+  ConvParam conv_param;
+  // support var_length or not
+  bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
 struct PixelShuffleParam : ParamBase {
   lite::Tensor* x{nullptr};
   lite::Tensor* output{nullptr};
   int upscale_factor{1};
 };
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

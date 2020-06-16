@@ -165,7 +165,7 @@ TEST(Scale, precision) {
   abs_error = 4e-3;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 3e-4;  // Some operations use fp16 in XPU
 #elif defined(LITE_WITH_X86)

@@ -13,30 +13,28 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace host {
+namespace operators {
 
-class SqueezeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class WhereIndexdOp : public OpLite {
  public:
-  void Run() override;
+  WhereIndexdOp() {}
+  explicit WhereIndexdOp(const std::string &op_type) : OpLite(op_type) {}
+  bool CheckShape() const override;
+  bool InferShapeImpl() const override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "where_index_op"; }
 
-  virtual ~SqueezeCompute() = default;
+ private:
+  mutable WhereIndexParam param_;
 };
 
-class Squeeze2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~Squeeze2Compute() = default;
-};
-
-}  // namespace host
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

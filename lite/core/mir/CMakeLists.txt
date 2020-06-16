@@ -29,6 +29,7 @@ lite_cc_library(mir_passes
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
+      elimination/remove_tf_redundant_ops_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc
