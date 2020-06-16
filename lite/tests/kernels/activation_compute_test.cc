@@ -300,7 +300,7 @@ TEST(Activation_relu, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;
@@ -426,7 +426,7 @@ TEST(Activation_tanh, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;
@@ -572,7 +572,7 @@ TEST(Activation_gelu, precision) {
   LOG(INFO) << "test gelu op";
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;
