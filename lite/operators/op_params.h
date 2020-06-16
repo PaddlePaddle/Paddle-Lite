@@ -358,6 +358,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0};
   float hard_swish_scale{6.0};
   float hard_swish_offset{3.0};
+  // thresholded_relu
+  float relu_threshold{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1566,6 +1568,11 @@ struct PixelShuffleParam : ParamBase {
   lite::Tensor* output{nullptr};
   int upscale_factor{1};
 };
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -351,6 +351,29 @@ void ElementwiseDivActivationCompute::Run() {
   }
 }
 
+template <typename T, PrecisionType PType>
+void ElementwiseModCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ElementwiseParam>();
+  auto* x_data = param.X->template data<T>();
+  auto* y_data = param.Y->template data<T>();
+  auto* out_data = param.Out->template mutable_data<T>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (x_dims.size() < y_dims.size() &&
+      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_mod_broadcast<T>(
+        y_data, x_data, out_data, pre, n, post);
+  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    lite::arm::math::elementwise_mod_broadcast<T>(
+        x_data, y_data, out_data, pre, n, post);
+  } else {
+    lite::arm::math::elementwise_mod<T>(
+        x_data, y_data, out_data, x_dims.production());
+  }
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -486,4 +509,14 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_mod_int64 =
+    paddle::lite::kernels::arm::ElementwiseModCompute<int64_t,
+                                                      PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mod, kARM, kInt64, kNCHW, elementwise_mod_int64, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
