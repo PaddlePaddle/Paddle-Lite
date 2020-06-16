@@ -68,6 +68,7 @@ class OpLite : public Registry {
   // Inference the outputs' shape.
   virtual bool InferShapeImpl() const { return true; }
   virtual bool InferShape();
+  virtual bool SetParam(operators::ParamBase *param) { return false; }
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not

@@ -31,6 +31,8 @@ class ActivationOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
+  bool SetParam(ParamBase* param) override;
+
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }

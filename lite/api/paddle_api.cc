@@ -35,6 +35,22 @@ const lite::Tensor *ctensor(void *x) {
   return static_cast<const lite::Tensor *>(x);
 }
 
+#ifdef LITE_WITH_COMPUTE_API
+lite::Tensor *mtensor(void *x) { return static_cast<lite::Tensor *>(x); }
+Tensor::Tensor() : raw_tensor_(new lite::Tensor()) {}
+
+void Tensor::ReleaseRawTensor() {
+  delete static_cast<lite::Tensor *>(raw_tensor_);
+  raw_tensor_ = nullptr;
+}
+
+void Tensor::set_precision(PrecisionType ptype) {
+  mtensor(raw_tensor_)->set_precision(ptype);
+}
+
+void *Tensor::GetRawTensor() { return raw_tensor_; }
+#endif
+
 void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }

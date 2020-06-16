@@ -93,6 +93,11 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   return true;
 }
 
+bool ActivationOp::SetParam(ParamBase* param) {
+  param_ = *static_cast<ActivationParam*>(param);
+  return true;
+}
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

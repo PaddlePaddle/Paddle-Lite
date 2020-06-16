@@ -39,6 +39,11 @@ bool ConvOpLite::CheckShape() const {
   return true;
 }
 
+bool ConvOpLite::SetParam(ParamBase* param) {
+  param_ = *static_cast<ConvParam*>(param);
+  return true;
+}
+
 inline int ConvOutputSize(int input_size,
                           int filter_size,
                           int dilation,

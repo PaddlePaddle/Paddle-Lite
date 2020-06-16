@@ -106,6 +106,7 @@ lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kerne
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 # cv build options
 lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF)
+lite_option(LITE_WITH_COMPUTE_API  "Enable build conmpute api in lite" OFF)
 lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." ON)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 

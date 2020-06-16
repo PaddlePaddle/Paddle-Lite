@@ -36,6 +36,12 @@ struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
 
+#ifdef LITE_WITH_COMPUTE_API
+  Tensor();
+  void ReleaseRawTensor();
+  void set_precision(PrecisionType ptype);
+  void* GetRawTensor();
+#endif
   void Resize(const shape_t& shape);
 
   /// Readonly data.

@@ -61,6 +61,7 @@ class ConvOpLite : public OpLite {
                output_dims.production() * input_dims[1] / param_.groups;
   }
 #endif
+  bool SetParam(ParamBase* param) override;
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
