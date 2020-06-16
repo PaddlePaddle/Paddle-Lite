@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
+#include <mutex>   // NOLINT
+#include <thread>  // NOLINT
 #include <vector>
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/target_wrapper.h"
@@ -25,6 +28,41 @@ using TargetWrapperMlu = TargetWrapper<TARGET(kMLU)>;
 template <>
 class TargetWrapper<TARGET(kMLU)> {
  public:
+  struct ThreadLocalInfo {
+    cnmlCoreVersion_t mlu_core_version_;
+    int mlu_core_number_;
+    bool use_first_conv_;
+    std::vector<float> mean_vec_;
+    std::vector<float> std_vec_;
+    DataLayoutType input_layout_;
+
+    ThreadLocalInfo() {}
+
+    ThreadLocalInfo(lite_api::MLUCoreVersion core_version,
+                    int core_number,
+                    bool use_first_conv,
+                    const std::vector<float>& mean_vec,
+                    const std::vector<float>& std_vec,
+                    DataLayoutType input_layout)
+        : mlu_core_number_(core_number),
+          use_first_conv_(use_first_conv),
+          mean_vec_(mean_vec),
+          std_vec_(std_vec),
+          input_layout_(input_layout) {
+      switch (core_version) {
+        case (lite_api::MLUCoreVersion::MLU_220):
+          mlu_core_version_ = CNML_MLU220;
+          break;
+        case (lite_api::MLUCoreVersion::MLU_270):
+          mlu_core_version_ = CNML_MLU270;
+          break;
+        default:
+          mlu_core_version_ = CNML_MLU270;
+          break;
+      }
+    }
+  };
+
   using queue_t = cnrtQueue_t;
 
   static size_t num_devices();
@@ -44,12 +82,14 @@ class TargetWrapper<TARGET(kMLU)> {
                          const void* src,
                          size_t size,
                          IoDirection dir);
-  static void SetMLURunMode(lite_api::MLUCoreVersion core_version,
+  static void SetMLURunMode(int64_t predictor_addr,
+                            lite_api::MLUCoreVersion core_version,
                             int core_number,
                             bool use_first_conv,
                             const std::vector<float>& mean_vec,
                             const std::vector<float>& std_vec,
                             DataLayoutType input_layout);
+  static void RegisterMLURunningPredictor(int64_t);
   static cnmlCoreVersion_t MLUCoreVersion();
   static int MLUCoreNumber();
   static bool UseFirstConv();
@@ -61,13 +101,10 @@ class TargetWrapper<TARGET(kMLU)> {
   //                         size_t size,
   //                         IoDirection dir,
   //                         const queue_t& queue);
- private:
-  static thread_local cnmlCoreVersion_t mlu_core_version_;
-  static thread_local int mlu_core_number_;
-  static thread_local bool use_first_conv_;
-  static thread_local std::vector<float> mean_vec_;
-  static thread_local std::vector<float> std_vec_;
-  static thread_local DataLayoutType input_layout_;
+ public:
+  static std::mutex info_map_mutex_;
+  static std::map<int64_t, ThreadLocalInfo> predictor_info_map_;
+  static std::map<std::thread::id, int64_t> thread_predictor_map_;
 };
 
 }  // namespace lite

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/mlu/bridges/test_helper.h"
+#include <thread>  // NOLINT
 #include <utility>
 #include "lite/core/device_info.h"
 #include "lite/core/op_registry.h"
@@ -53,6 +54,17 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
               const std::vector<std::string>& output_var_names,
               cnmlDataOrder_t order) {
+  // add initialization of some global variables which maybe used in converter
+  // such as conv converter
+  lite::TargetWrapperMlu::SetMLURunMode(0,  // just a fake address of predictor
+                                        lite_api::MLUCoreVersion::MLU_270,
+                                        1,
+                                        false,  // used in conv converter
+                                        {},
+                                        {},
+                                        DATALAYOUT(kNCHW));
+  lite::TargetWrapperMlu::RegisterMLURunningPredictor(0);
+
   CNRT_CALL(cnrtInit(0));
   lite::SetMluDevice(0);
   cnrtQueue_t queue_;

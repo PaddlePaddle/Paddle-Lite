@@ -36,12 +36,10 @@ void cnrtMemcpyDtoH(void* dst, const void* src, size_t size) {
 
 }  // namespace mlu
 
-thread_local cnmlCoreVersion_t TargetWrapperMlu::mlu_core_version_{CNML_MLU270};
-thread_local int TargetWrapperMlu::mlu_core_number_{1};
-thread_local bool TargetWrapperMlu::use_first_conv_{false};
-thread_local std::vector<float> TargetWrapperMlu::mean_vec_;
-thread_local std::vector<float> TargetWrapperMlu::std_vec_;
-thread_local DataLayoutType TargetWrapperMlu::input_layout_{DATALAYOUT(kNCHW)};
+std::map<int64_t, TargetWrapperMlu::ThreadLocalInfo>
+    TargetWrapperMlu::predictor_info_map_;
+std::map<std::thread::id, int64_t> TargetWrapperMlu::thread_predictor_map_;
+std::mutex TargetWrapperMlu::info_map_mutex_;
 
 size_t TargetWrapperMlu::num_devices() {
   uint32_t dev_count = 0;
@@ -84,43 +82,65 @@ void TargetWrapperMlu::MemcpySync(void* dst,
       LOG(FATAL) << "Unsupported IoDirection" << static_cast<int>(dir);
   }
 }
-void TargetWrapperMlu::SetMLURunMode(lite_api::MLUCoreVersion core_version,
+
+void TargetWrapperMlu::SetMLURunMode(int64_t predictor_addr,
+                                     lite_api::MLUCoreVersion core_version,
                                      int core_number,
                                      bool use_first_conv,
                                      const std::vector<float>& mean_vec,
                                      const std::vector<float>& std_vec,
                                      DataLayoutType input_layout) {
-  switch (core_version) {
-    case (lite_api::MLUCoreVersion::MLU_220):
-      mlu_core_version_ = CNML_MLU220;
-      break;
-    case (lite_api::MLUCoreVersion::MLU_270):
-      mlu_core_version_ = CNML_MLU270;
-      break;
-    default:
-      mlu_core_version_ = CNML_MLU270;
-      break;
-  }
-  mlu_core_number_ = core_number;
-  use_first_conv_ = use_first_conv;
-  mean_vec_ = mean_vec;
-  std_vec_ = std_vec;
-  input_layout_ = input_layout;
+  ThreadLocalInfo info = ThreadLocalInfo(core_version,
+                                         core_number,
+                                         use_first_conv,
+                                         mean_vec,
+                                         std_vec,
+                                         input_layout);
+  std::lock_guard<std::mutex> lock(info_map_mutex_);
+  predictor_info_map_[predictor_addr] = info;
+  VLOG(6) << "predictor_info_map_ add key: " << predictor_addr;
+  thread_predictor_map_[std::this_thread::get_id()] = predictor_addr;
+  VLOG(6) << "thread_predictor_map_ add key: " << std::this_thread::get_id()
+          << ", add value: " << predictor_addr;
 }
+
+void TargetWrapperMlu::RegisterMLURunningPredictor(int64_t predictor_addr) {
+  std::lock_guard<std::mutex> lock(info_map_mutex_);
+  thread_predictor_map_[std::this_thread::get_id()] = predictor_addr;
+  VLOG(6) << "thread_predictor_map_ add key: " << std::this_thread::get_id()
+          << ", add value: " << predictor_addr;
+}
+
+#define RETURN_MLU_INFO(x)                                        \
+  do {                                                            \
+    std::lock_guard<std::mutex> lock(info_map_mutex_);            \
+    VLOG(6) << "call from thread: " << std::this_thread::get_id() \
+            << ", predictor key: "                                \
+            << thread_predictor_map_[std::this_thread::get_id()]; \
+    return predictor_info_map_                                    \
+        [thread_predictor_map_[std::this_thread::get_id()]]       \
+            .x;                                                   \
+  } while (0)
 
 cnmlCoreVersion_t TargetWrapperMlu::MLUCoreVersion() {
-  return mlu_core_version_;
+  RETURN_MLU_INFO(mlu_core_version_);
 }
 
-int TargetWrapperMlu::MLUCoreNumber() { return mlu_core_number_; }
+int TargetWrapperMlu::MLUCoreNumber() { RETURN_MLU_INFO(mlu_core_number_); }
 
-bool TargetWrapperMlu::UseFirstConv() { return use_first_conv_; }
+bool TargetWrapperMlu::UseFirstConv() { RETURN_MLU_INFO(use_first_conv_); }
 
-const std::vector<float>& TargetWrapperMlu::MeanVec() { return mean_vec_; }
+const std::vector<float>& TargetWrapperMlu::MeanVec() {
+  RETURN_MLU_INFO(mean_vec_);
+}
 
-const std::vector<float>& TargetWrapperMlu::StdVec() { return std_vec_; }
+const std::vector<float>& TargetWrapperMlu::StdVec() {
+  RETURN_MLU_INFO(std_vec_);
+}
 
-DataLayoutType TargetWrapperMlu::InputLayout() { return input_layout_; }
+DataLayoutType TargetWrapperMlu::InputLayout() {
+  RETURN_MLU_INFO(input_layout_);
+}
 
 // void TargetWrapperMlu::MemcpyAsync(void* dst,
 //                                    const void* src,
