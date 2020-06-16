@@ -85,12 +85,8 @@ bool SqueezeOp::InferShapeImpl() const {
 
 bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   AttachParam(&param_);
-  auto x_var = scope->FindVar(opdesc.Input("X").front());
-  auto output_var = scope->FindVar(opdesc.Output("Out").front());
-  CHECK(x_var);
-  CHECK(output_var);
-  param_.X = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.Out = output_var->GetMutable<lite::Tensor>();
+  param_.X = scope->FindTensor(opdesc.Input("X").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
 
   if (opdesc.HasAttr("axes")) {
     param_.axes = opdesc.GetAttr<std::vector<int>>("axes");
@@ -109,7 +105,7 @@ bool Squeeze2Op::CheckShape() const {
 bool Squeeze2Op::InferShapeImpl() const {
   SqueezeOp::InferShapeImpl();
   auto x_dims = param_.X->dims();
-  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
@@ -119,9 +115,7 @@ bool Squeeze2Op::InferShapeImpl() const {
 
 bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   SqueezeOp::AttachImpl(opdesc, scope);
-  auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  CHECK(xshape_var);
-  param_.XShape = xshape_var->GetMutable<lite::Tensor>();
+  param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
   CHECK(param_.XShape) << "Output(XShape) of SqueezeOp should not be null.";
   return true;
 }

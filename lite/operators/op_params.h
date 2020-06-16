@@ -358,6 +358,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0};
   float hard_swish_scale{6.0};
   float hard_swish_offset{3.0};
+  // thresholded_relu
+  float relu_threshold{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1429,6 +1431,19 @@ struct InstanceNormParam : ParamBase {
   lite::Tensor* saved_variance{};
   float epsilon;
 };
+/// --------------------- group_norm operators --------------------
+struct GroupNormParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
+  int groups;
+  int channels;
+};
+
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
@@ -1565,6 +1580,11 @@ struct RetinanetDetectionOutputParam : ParamBase {
   float nms_threshold{};
   float nms_eta{};
   int keep_top_k{};
+};
+
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
 };
 
 }  // namespace operators

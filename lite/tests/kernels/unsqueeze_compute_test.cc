@@ -153,7 +153,7 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
     CHECK(out);
     auto* xshape = scope->NewTensor(xshape_);
     CHECK(xshape);
-    std::vector<int64_t> xshape_sp(dims_.size() + 1, 1);
+    std::vector<int64_t> xshape_sp(dims_.size() + 1, 0);
     for (size_t i = 0; i < dims_.size(); ++i) {
       xshape_sp[i + 1] = dims_[i];
     }
@@ -198,9 +198,7 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
 
     auto* input_data = input->data<float>();
     auto* out_data = out->mutable_data<float>();
-    auto* xshape_data = xshape->mutable_data<float>();
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
-    memcpy(xshape_data, input_data, sizeof(float) * dims_.production());
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -238,9 +236,7 @@ void test_unsqueeze(Place place, float abs_error = 2e-5) {
   }
 }
 
-void test_unsqueeze2(Place place,
-                     float abs_error = 2e-5,
-                     std::vector<std::string> ignored_outs = {}) {
+void test_unsqueeze2(Place place, float abs_error = 2e-5) {
   for (std::vector<int> axes : {std::vector<int>({0}),
                                 std::vector<int>({0, 2}),
                                 std::vector<int>({0, -2})}) {
@@ -252,7 +248,7 @@ void test_unsqueeze2(Place place,
       std::unique_ptr<arena::TestCase> tester(
           new Unsqueeze2ComputeTester(place, "def", axes, DDim(dims)));
       arena::Arena arena(std::move(tester), place, abs_error);
-      arena.TestPrecision(ignored_outs);
+      arena.TestPrecision({"XShape"});
     }
   }
 }
@@ -263,7 +259,7 @@ TEST(unsqueeze, precision) {
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#else
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #endif
   test_unsqueeze(place, abs_error);
@@ -272,16 +268,14 @@ TEST(unsqueeze, precision) {
 TEST(unsqueeze2, precision) {
   Place place;
   float abs_error = 2e-5;
-  std::vector<std::string> ignored_outs = {};
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
-  abs_error = 1e-2;                  // Using fp16 in NPU
-  ignored_outs.push_back("XShape");  // not supported out in NPU
-#else
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #endif
 
-  test_unsqueeze2(place, abs_error, ignored_outs);
+  test_unsqueeze2(place, abs_error);
 }
 
 }  // namespace lite
