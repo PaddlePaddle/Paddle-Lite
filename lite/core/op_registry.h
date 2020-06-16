@@ -74,6 +74,7 @@ namespace lite {
 
 class OpLiteFactory {
  public:
+  // Every fun is a creactor
   void register_factory_fun(const std::string& op_type,
                             std::function<std::shared_ptr<OpLite>()> fun) {
     _map[op_type] = fun;
@@ -104,13 +105,14 @@ class OpLiteFactory {
 
 using LiteOpRegistry = OpLiteFactory;
 
-// register OpLite by initializing a static OpLiteRegistrar instance
+// Register OpLite by initializing a static OpLiteRegistrar instance
 class OpLiteRegistrar {
  public:
   OpLiteRegistrar(const std::string& op_type,
                   std::function<std::shared_ptr<OpLite>()> fun) {
     OpLiteFactory::Global().register_factory_fun(op_type, fun);
   }
+  // Touch function is used to guarantee registrar was initialized.
   void touch() {}
 };
 
@@ -129,6 +131,9 @@ class KernelFactory {
     return *x;
   }
 
+  /**
+   * Create all kernels belongs to an op.
+   */
   std::list<std::unique_ptr<KernelBase>> Create(const std::string& op_type) {
     std::list<std::unique_ptr<KernelBase>> res;
     if (_map.find(op_type) == _map.end()) return res;
@@ -141,6 +146,9 @@ class KernelFactory {
     return res;
   }
 
+  /**
+   * Create a specific kernel. Return a list for API compatible.
+   */
   std::list<std::unique_ptr<KernelBase>> Create(const std::string& op_type,
                                                 TargetType target,
                                                 PrecisionType precision,
@@ -165,6 +173,9 @@ class KernelFactory {
   }
 
  protected:
+  // Outer map: op -> a map of kernel.
+  // Inner map: kernel -> creator function.
+  // Each kernel was represented by a combination of <TargetType, PrecisionType, DataLayoutType>
   std::map<std::string,
            std::map<std::tuple<TargetType, PrecisionType, DataLayoutType>,
                     std::list<std::function<std::unique_ptr<KernelBase>()>>>>
@@ -173,7 +184,7 @@ class KernelFactory {
 
 using KernelRegistry = KernelFactory;
 
-// register Kernel by initializing a static KernelRegistrar instance
+// Register Kernel by initializing a static KernelRegistrar instance
 class KernelRegistrar {
  public:
   KernelRegistrar(const std::string& op_type,
@@ -184,13 +195,14 @@ class KernelRegistrar {
     KernelFactory::Global().register_factory_fun(
         op_type, target, precision, layout, fun);
   }
+  // Touch function is used to guarantee registrar was initialized.
   void touch() {}
 };
 
 }  // namespace lite
 }  // namespace paddle
 
-// OpLite registry
+// Register an op.
 #define REGISTER_LITE_OP(op_type__, OpClass)                                   \
   static paddle::lite::OpLiteRegistrar op_type__##__registry(                  \
       #op_type__, []() {                                                       \
@@ -202,8 +214,7 @@ class KernelRegistrar {
     return 0;                                                                  \
   }
 
-// Kernel registry
-
+// Register a kernel.
 #define REGISTER_LITE_KERNEL(                                                 \
     op_type__, target__, precision__, layout__, KernelClass, alias__)         \
   static paddle::lite::KernelRegistrar                                        \
