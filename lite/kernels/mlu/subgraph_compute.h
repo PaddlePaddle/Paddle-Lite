@@ -142,6 +142,18 @@ class SubgraphEngine : public subgraph::Engine {
     return BuildDeviceProgramImpl();
   }
 
+  cpp::OpDesc* GetFirstNode(const std::string& input_name) {
+    for (size_t i = 0; i < block_desc_->OpsSize(); ++i) {
+      auto desc = block_desc_->GetOp<cpp::OpDesc>(i);
+      auto inputs = desc->input_vars();
+      if (std::find(inputs.cbegin(), inputs.cend(), input_name) !=
+          inputs.cend()) {
+        return desc;
+      }
+    }
+    return nullptr;
+  }
+
   int BuildDeviceProgramImpl() {
     int status = 0;
     auto graph = std::make_shared<paddle::lite::subgraph::mlu::Graph>();
@@ -150,12 +162,12 @@ class SubgraphEngine : public subgraph::Engine {
     origin_itensors_.clear();
     origin_otensors_.clear();
 
-    auto data_order = block_desc_->GetOp<cpp::OpDesc>(0)->Type() == "layout"
-                          ? CNML_NCHW
-                          : CNML_NHWC;
     // Convert all of input data vars and added into the MLU IR graph
     status |= subgraph::REBUILD_WHEN_SHAPE_CHANGED;
     for (auto& input_name : input_names_) {
+      auto first_node = GetFirstNode(input_name);
+      CHECK(first_node);
+      auto data_order = first_node->Type() == "layout" ? CNML_NCHW : CNML_NHWC;
       auto input_tensor = scope_->FindMutableTensor(input_name);
       auto data_type = input_tensor->precision();
       cnmlDataType_t fp_type = PrecisionToDatatype(data_type);

@@ -180,30 +180,35 @@ template <paddle::lite_api::PrecisionType>
 struct MLUTypeTraits {
   /* using type = void; */
   /* static constexpr cnmlDataType_t cnml_type = CNML_DATA_INVALID; */
+  /* static constexpr int proto_type = 17; */
 };
 
 template <>
 struct MLUTypeTraits<paddle::lite_api::PrecisionType::kFloat> {
   using type = float;
   static constexpr cnmlDataType_t cnml_type = CNML_DATA_FLOAT32;
+  static constexpr int proto_type = 5;
 };
 
 template <>
 struct MLUTypeTraits<paddle::lite_api::PrecisionType::kFP16> {
   using type = paddle::lite::fluid::float16;
   static constexpr cnmlDataType_t cnml_type = CNML_DATA_FLOAT16;
+  static constexpr int proto_type = 4;
 };
 
 template <>
 struct MLUTypeTraits<paddle::lite_api::PrecisionType::kInt8> {
   using type = int8_t;
   static constexpr cnmlDataType_t cnml_type = CNML_DATA_INT8;
+  static constexpr int proto_type = 21;
 };
 
 template <>
 struct MLUTypeTraits<paddle::lite_api::PrecisionType::kInt32> {
   using type = int32_t;
   static constexpr cnmlDataType_t cnml_type = CNML_DATA_INT32;
+  static constexpr int proto_type = 2;
 };
 
 }  // namespace mlu

@@ -88,14 +88,12 @@ class MLUPostprocessPass : public ProgramPass {
   void InsertBefore(SSAGraph* graph,
                     Node* head_node,
                     Node* inst_node,
-                    const Type* type,
-                    bool use_mlu_cast);
+                    const Type* type);
 
   void InsertAfter(SSAGraph* graph,
                    Node* tail_node,
                    Node* inst_node,
-                   const Type* type,
-                   bool use_mlu_cast);
+                   const Type* type);
 
   Node* InsertCastBefore(const std::string& op_type,
                          const std::string& cast_arg_name,
@@ -123,6 +121,7 @@ class MLUPostprocessPass : public ProgramPass {
 
  private:
   std::set<std::string> first_conv_nodes_;
+  bool fuse_cast_{false};
 };
 
 }  // namespace mir
