@@ -273,7 +273,7 @@ TEST(Slice, precision) {
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   Place place(TARGET(kXPU));
   test_slice(place);
 #endif

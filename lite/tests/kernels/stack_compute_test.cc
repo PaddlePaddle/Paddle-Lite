@@ -106,7 +106,7 @@ TEST(Stack, precision) {
   Place place;
 #ifdef LITE_WITH_ARM
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;
