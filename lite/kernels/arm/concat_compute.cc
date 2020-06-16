@@ -44,7 +44,9 @@ void ConcatCompute::Run() {
     auto* axis_tensor_data = axis_tensor->data<int>();
     axis = axis_tensor_data[0];
   }
-  out->mutable_data<float>();
+  if (axis < 0) {
+    axis += inputs[0]->dims().size();
+  }
 
   /// Sometimes direct copies will be faster, this maybe need deeply analysis.
   if (axis == 0 && inputs.size() < 10) {
@@ -71,11 +73,7 @@ void ConcatCompute::Run() {
       output_offset += in_stride[0];
     }
   } else {
-    std::vector<lite::Tensor*> inputs_concat(inputs.size());
-    for (int j = 0; j < inputs.size(); ++j) {
-      inputs_concat[j] = inputs[j];
-    }
-    lite::arm::math::concat_func(inputs_concat, axis, out);
+    lite::arm::math::concat_func(inputs, axis, out);
   }
   return;
 }
