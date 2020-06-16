@@ -2253,7 +2253,7 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
         } else {
           switch (M - y) {
             case 3:
-             bias_local[2] = bias[y + 2];
+              bias_local[2] = bias[y + 2];
             case 2:
               bias_local[1] = bias[y + 1];
             case 1:
@@ -2269,8 +2269,8 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
           scale_local[1] = scale[y + 1];
           scale_local[2] = scale[y + 2];
           scale_local[3] = scale[y + 3];
-       } else {
-         switch (M - y) {
+        } else {
+          switch (M - y) {
             case 3:
               scale_local[2] = scale[y + 2];
             case 2:

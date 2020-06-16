@@ -58,6 +58,7 @@ add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
 add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
 add_operator(power_op extra SRCS power_op.cc DEPS ${op_DEPS})
+add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops
@@ -137,6 +138,7 @@ add_operator(topk_op extra SRCS topk_op.cc DEPS ${op_DEPS})
 add_operator(increment_op extra SRCS increment_op.cc DEPS ${op_DEPS})
 add_operator(layer_norm_op extra SRCS layer_norm_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
+add_operator(where_index_op extra SRCS where_index_op.cc DEPS ${op_DEPS})
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
 add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
@@ -144,7 +146,7 @@ add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_o
 add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
 add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
 # for deformable-convNet
-add_operator(deformable_conv_op basic SRCS deformable_conv_op.cc DEPS ${op_DEPS})
+add_operator(deformable_conv_op extra SRCS deformable_conv_op.cc DEPS ${op_DEPS})
 
 # 4. training op
 add_operator(mean_op extra SRCS mean_op.cc DEPS ${op_DEPS})

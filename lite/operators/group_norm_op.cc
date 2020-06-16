@@ -39,23 +39,38 @@ bool GroupNormOp::CheckShape() const {
   CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
   CHECK_GT(param_.epsilon, 0.f) << "epsilon should be greater than 0.f";
   CHECK_LT(param_.epsilon, 0.01f) << "epsilon should be less than 0.01f";
+<<<<<<< HEAD
   CHECK_EQ(param_.channels, x_dims[1]) << "Input channels must be equal input_shape[1]";
   CHECK_EQ(param_.channels % param_.groups, 0) << "channels must be divide groups";
+=======
+  CHECK_EQ(param_.channels, x_dims[1])
+      << "Input channels must be equal input_shape[1]";
+  CHECK_EQ(param_.channels % param_.groups, 0)
+      << "channels must be divide groups";
+>>>>>>> PaddlePaddle-develop
   return true;
 }
 
 bool GroupNormOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   int64_t batch_size = x_dims[0];
+<<<<<<< HEAD
   int64_t num = param_.channels / param_.group;
+=======
+  int64_t num = param_.channels / param_.groups;
+>>>>>>> PaddlePaddle-develop
   param_.saved_mean->Resize({batch_size * num});
   param_.saved_variance->Resize({batch_size * num});
   param_.out->Resize(x_dims);
   return true;
 }
 
+<<<<<<< HEAD
 bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc,
                                 lite::Scope* scope) {
+=======
+bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+>>>>>>> PaddlePaddle-develop
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.scale =
       scope->FindVar(op_desc.Input("Scale").front())->GetMutable<Tensor>();
@@ -78,4 +93,8 @@ bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc,
 } /* namespace lite */
 } /* namespace paddle */
 
+<<<<<<< HEAD
 REGISTER_LITE_OP(Group_norm, paddle::lite::operators::GroupNormOp);
+=======
+REGISTER_LITE_OP(group_norm, paddle::lite::operators::GroupNormOp);
+>>>>>>> PaddlePaddle-develop

@@ -35,7 +35,6 @@ void GroupNormCompute::Run() {
   float epsilon = param.epsilon;
   int groups = param.groups;
   int channels = param.channels;
-
   int n = param.x->dims()[0];
   int c = param.x->dims()[1];
   int ch_per_group = channels / groups;
@@ -75,10 +74,10 @@ void GroupNormCompute::Run() {
       in_p += 16;
     }
     for (int i = 0; i < remain - 3; i += 4) {
-        float32x4_t in0 = vld1q_f32(in_p);
-        sum1 = vaddq_f32(sum1, in0);
-        summ1 = vmlaq_f32(summ1, in0, in0);
-        in_p += 4;
+      float32x4_t in0 = vld1q_f32(in_p);
+      sum1 = vaddq_f32(sum1, in0);
+      summ1 = vmlaq_f32(summ1, in0, in0);
+      in_p += 4;
     }
     float sum = 0.0;
     float summ = 0.0;
@@ -87,14 +86,14 @@ void GroupNormCompute::Run() {
     summ0 = vaddq_f32(summ0, summ1);
     summ2 = vaddq_f32(summ2, summ3);
     for (int i = 0; i < remain % 4; i++) {
-        sum += *in_p;
-        summ += (*in_p) * (*in_p);
-        in_p++;
+      sum += *in_p;
+      summ += (*in_p) * (*in_p);
+      in_p++;
     }
     sum0 = vaddq_f32(sum0, sum2);
     summ0 = vaddq_f32(summ0, summ2);
     float32x2_t sum_low = vpadd_f32(vget_low_f32(sum0), vget_high_f32(sum0));
-    float32x2_t sum_high = padd_f32(vget_low_f32(summ0), vget_high_f32(summ0));
+    float32x2_t sum_high = vpadd_f32(vget_low_f32(summ0), vget_high_f32(summ0));
     float32x2_t sum_mix = vpadd_f32(sum_low, sum_high);
     sum += vget_lane_f32(sum_mix, 0);
     summ += vget_lane_f32(sum_mix, 1);
@@ -125,39 +124,39 @@ void GroupNormCompute::Run() {
       const float32x4_t vbias = vdupq_n_f32(bias_val);
       const float32x4_t vmean = vdupq_n_f32(mean_val);
       for (int k = 0; k < cnt; k++) {
-          float32x4_t in0 = vld1q_f32(in_p);
-          float32x4_t in1 = vld1q_f32(in_p + 4);
-          float32x4_t in2 = vld1q_f32(in_p + 8);
-          float32x4_t in3 = vld1q_f32(in_p + 12);
-          float32x4_t submean0 = vsubq_f32(in0, vmean);
-          float32x4_t submean1 = vsubq_f32(in1, vmean);
-          float32x4_t submean2 = vsubq_f32(in2, vmean);
-          float32x4_t submean3 = vsubq_f32(in3, vmean);
-          float32x4_t out0 = vmlaq_f32(vbias, submean0, vsstd);
-          float32x4_t out1 = vmlaq_f32(vbias, submean1, vsstd);
-          float32x4_t out2 = vmlaq_f32(vbias, submean2, vsstd);
-          float32x4_t out3 = vmlaq_f32(vbias, submean3, vsstd);
-          vst1q_f32(out_p, out0);
-          vst1q_f32(out_p + 4, out0);
-          vst1q_f32(out_p + 8, out0);
-          vst1q_f32(out_p + 12, out0);
-          in_p += 16;
-          out_p += 16;
+        float32x4_t in0 = vld1q_f32(in_p);
+        float32x4_t in1 = vld1q_f32(in_p + 4);
+        float32x4_t in2 = vld1q_f32(in_p + 8);
+        float32x4_t in3 = vld1q_f32(in_p + 12);
+        float32x4_t submean0 = vsubq_f32(in0, vmean);
+        float32x4_t submean1 = vsubq_f32(in1, vmean);
+        float32x4_t submean2 = vsubq_f32(in2, vmean);
+        float32x4_t submean3 = vsubq_f32(in3, vmean);
+        float32x4_t out0 = vmlaq_f32(vbias, submean0, vsstd);
+        float32x4_t out1 = vmlaq_f32(vbias, submean1, vsstd);
+        float32x4_t out2 = vmlaq_f32(vbias, submean2, vsstd);
+        float32x4_t out3 = vmlaq_f32(vbias, submean3, vsstd);
+        vst1q_f32(out_p, out0);
+        vst1q_f32(out_p + 4, out1);
+        vst1q_f32(out_p + 8, out2);
+        vst1q_f32(out_p + 12, out3);
+        in_p += 16;
+        out_p += 16;
       }
       for (int k = 0; k < remain - 3; k += 4) {
-          float32x4_t in0 = vld1q_f32(in_p);
-          in_p += 4;
-          float32x4_t submean0 = vsubq_f32(in0, vmean);
-          float32x4_t out0 = vmlaq_f32(vbias, submean0, vsstd);
-          vst1q_f32(out_p, out0);
-          out_p += 4;
+        float32x4_t in0 = vld1q_f32(in_p);
+        in_p += 4;
+        float32x4_t submean0 = vsubq_f32(in0, vmean);
+        float32x4_t out0 = vmlaq_f32(vbias, submean0, vsstd);
+        vst1q_f32(out_p, out0);
+        out_p += 4;
       }
       for (int k = 0; k < remain % 4; k++) {
-          *out_p = (*in_p - mean_val) * sstd_val + bias_val;
-          in_p++;
-          out_p++;
+        *out_p = (*in_p - mean_val) * sstd_val + bias_val;
+        in_p++;
+        out_p++;
       }
-    } 
+    }
   }
 }
 
