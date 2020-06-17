@@ -157,13 +157,21 @@ void CxxPaddleApiImpl::OutputSync() {
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
+#ifdef LITE_WITH_CUDA
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x, io_stream_));
+#else
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+#endif
 }
 
 std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
     int i) const {
   const auto *x = raw_predictor_->GetOutput(i);
+#ifdef LITE_WITH_CUDA
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x, io_stream_));
+#else
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+#endif
 }
 
 std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {

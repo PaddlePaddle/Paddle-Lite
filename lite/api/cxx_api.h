@@ -61,9 +61,8 @@ class LITE_API Predictor {
             const std::vector<std::string>& var_names = {})
       : program_desc_(desc), scope_(root) {
     Program program(*desc.get(), scope_, valid_places, var_names);
-    std::vector<std::string> passes{};
     // TODO(wilber): rethink a new way to associate config and passes.
-    optimizer_ = Optimizer(std::move(program), valid_places, passes);
+    optimizer_ = Optimizer(std::move(program), valid_places);
     exec_scope_ = optimizer_.exec_scope();
     valid_places_ = valid_places;
   }
