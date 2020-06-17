@@ -330,7 +330,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
         out_e.device(eigen_device) = in_e.sum(Eigen::array<int, 1>({{0}})) /
                                      std::sqrt(static_cast<T>(h));
       } else {
-        PADDLE_THROW("unsupported pooling pooltype");
+        PADDLELITE_THROW("unsupported pooling pooltype");
       }
     }
   }
@@ -389,7 +389,7 @@ class SequencePoolGradFunctor<TARGET(kX86), T> {
       } else if (pooltype == "FIRST") {
         in_g_e.chip(0, 0).device(eigen_device) = out_g_e_v;
       } else {
-        PADDLE_THROW("unsupported pooling pooltype");
+        PADDLELITE_THROW("unsupported pooling pooltype");
       }
     }
   }

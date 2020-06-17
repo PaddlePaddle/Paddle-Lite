@@ -652,7 +652,7 @@ class VecActivations {
     } else if (type == "identity" || type == "") {
       return vec_identity<T, isa>;
     }
-    PADDLE_THROW("Not support type: %s", type);
+    PADDLELITE_THROW("Not support type: %s", type);
   }
 };
 

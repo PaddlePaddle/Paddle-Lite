@@ -163,14 +163,14 @@ int64_t SelectedRows::AutoGrownIndex(int64_t key,
   if (iter == id_to_index_.end()) {
     rwlock_->UNLock();
     if (!auto_grown) {
-      PADDLE_THROW("key %ld not found", key);
+      PADDLELITE_THROW("key %ld not found", key);
     }
     rwlock_->WRLock();
     auto map_size = id_to_index_.size();
     auto vector_size = rows_.size();
     if (map_size != vector_size) {
       rwlock_->UNLock();
-      PADDLE_THROW(
+      PADDLELITE_THROW(
           "id_to_index_ size %lu should have the same size with rows_ %lu",
           map_size,
           vector_size);
@@ -180,7 +180,8 @@ int64_t SelectedRows::AutoGrownIndex(int64_t key,
       int row_num = rows_.size();
       if (row_num == value_->dims()[0]) {
         rwlock_->UNLock();
-        PADDLE_THROW("selected rows is full, then length exceed %d", row_num);
+        PADDLELITE_THROW("selected rows is full, then length exceed %d",
+                         row_num);
       }
       // key logic to put a key into id_to_index_
       rows_.push_back(key);

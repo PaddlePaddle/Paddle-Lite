@@ -287,22 +287,36 @@ struct CBlas<double> {
 
 template <>
 struct CBlas<lite::fluid::float16> {
-  static void GEMM(...) { PADDLE_THROW("float16 GEMM not supported on CPU"); }
+  static void GEMM(...) {
+    PADDLELITE_THROW("float16 GEMM not supported on CPU");
+  }
   static void SMM_GEMM(...) {
-    PADDLE_THROW("float16 SMM_GEMM not supported on CPU");
+    PADDLELITE_THROW("float16 SMM_GEMM not supported on CPU");
   }
-  static void VMUL(...) { PADDLE_THROW("float16 VMUL not supported on CPU"); }
-  static void VEXP(...) { PADDLE_THROW("float16 VEXP not supported on CPU"); }
+  static void VMUL(...) {
+    PADDLELITE_THROW("float16 VMUL not supported on CPU");
+  }
+  static void VEXP(...) {
+    PADDLELITE_THROW("float16 VEXP not supported on CPU");
+  }
   static void VSQUARE(...) {
-    PADDLE_THROW("float16 VSQUARE not supported on CPU");
+    PADDLELITE_THROW("float16 VSQUARE not supported on CPU");
   }
-  static void VPOW(...) { PADDLE_THROW("float16 VPOW not supported on CPU"); }
-  static void DOT(...) { PADDLE_THROW("float16 DOT not supported on CPU"); };
-  static void SCAL(...) { PADDLE_THROW("float16 SCAL not supported on CPU"); };
-  static void ASUM(...) { PADDLE_THROW("float16 ASUM not supported on CPU"); };
+  static void VPOW(...) {
+    PADDLELITE_THROW("float16 VPOW not supported on CPU");
+  }
+  static void DOT(...) {
+    PADDLELITE_THROW("float16 DOT not supported on CPU");
+  };
+  static void SCAL(...) {
+    PADDLELITE_THROW("float16 SCAL not supported on CPU");
+  };
+  static void ASUM(...) {
+    PADDLELITE_THROW("float16 ASUM not supported on CPU");
+  };
 #ifdef PADDLE_WITH_MKLML
   static void GEMM_BATCH(...) {
-    PADDLE_THROW("float16 GEMM_BATCH not supported on CPU");
+    PADDLELITE_THROW("float16 GEMM_BATCH not supported on CPU");
   }
 #endif
 };

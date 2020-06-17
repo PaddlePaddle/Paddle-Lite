@@ -72,7 +72,7 @@ inline void VisitDataType(framework::proto::VarType::Type type,
 
   _ForEachDataType_(VisitDataTypeCallback);
 #undef VisitDataTypeCallback
-  PADDLE_THROW("Not supported %d", type);
+  PADDLELITE_THROW("Not supported %d", type);
 }
 
 extern std::string DataTypeToString(const framework::proto::VarType::Type type);
