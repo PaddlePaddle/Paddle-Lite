@@ -13,10 +13,8 @@
 // limitations under the License.
 
 #include "lite/core/mir/ssa_graph.h"
-
-#include <memory>
-
 #include <gtest/gtest.h>
+#include <memory>
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/op_registry.h"

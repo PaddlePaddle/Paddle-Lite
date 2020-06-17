@@ -14,11 +14,10 @@
 
 #pragma once
 
+#include <gflags/gflags.h>
 #include <memory>  // for unique_ptr
 #include <string>
 #include <vector>
-
-#include <gflags/gflags.h>
 #include "lite/backends/x86/jit/kernel_base.h"
 
 // DECLARE_bool(dump_jitcode);

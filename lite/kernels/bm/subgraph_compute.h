@@ -14,14 +14,12 @@
 
 #pragma once
 
+#include <bmcompiler_if.h>
+#include <bmruntime_interface.h>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <bmcompiler_if.h>
-#include <bmruntime_interface.h>
-
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"

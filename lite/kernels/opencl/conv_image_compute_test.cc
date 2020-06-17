@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <random>
-
 #include <gtest/gtest.h>
+
+#include <random>
 
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"

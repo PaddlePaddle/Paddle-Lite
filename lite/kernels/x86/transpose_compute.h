@@ -14,9 +14,8 @@
 
 #pragma once
 
-#include <vector>
-
 #include <Eigen/Core>
+#include <vector>
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"

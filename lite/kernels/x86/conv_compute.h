@@ -13,10 +13,9 @@
 // limitations under the License.
 #pragma once
 
+#include <Eigen/Core>
 #include <string>
 #include <vector>
-
-#include <Eigen/Core>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"

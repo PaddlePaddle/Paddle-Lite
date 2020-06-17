@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
-
+#include "lite/operators/argmax_op.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/npu/bridges/test_helper.h"
-#include "lite/operators/argmax_op.h"
 
 namespace paddle {
 namespace lite {

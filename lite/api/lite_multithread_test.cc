@@ -12,22 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
-#include <thread>  // NOLINT
-#include <vector>
-
 #include <gflags/gflags.h>
+#include <string>
+#include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
 #include "lite/core/profile/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
-
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
-
-#endif  // LITE_WITH_PROFILE
+#endif             // LITE_WITH_PROFILE
+#include <thread>  // NOLINT
 
 using paddle::lite::profile::Timer;
 

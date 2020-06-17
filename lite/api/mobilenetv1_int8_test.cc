@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fstream>
-#include <vector>
-
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <fstream>
+#include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"

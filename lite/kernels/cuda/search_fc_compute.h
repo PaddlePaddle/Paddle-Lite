@@ -13,9 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include <memory>
-
 #include <cudnn.h>
+#include <memory>
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/gemm.h"
 #include "lite/core/kernel.h"

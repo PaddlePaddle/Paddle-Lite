@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <random>
-
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <memory>
+#include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/profile/timer.h"

@@ -13,10 +13,8 @@
 // limitations under the License.
 
 #include "lite/core/mir/pattern_matcher_high_api.h"
-
-#include <memory>
-
 #include <gtest/gtest.h>
+#include <memory>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"

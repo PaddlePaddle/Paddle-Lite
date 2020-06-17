@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <random>
-
+#include "lite/operators/concat_op.h"
 #include <gtest/gtest.h>
+#include <random>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
 #include "lite/kernels/npu/bridges/registry.h"
-#include "lite/operators/concat_op.h"
 
 namespace paddle {
 namespace lite {

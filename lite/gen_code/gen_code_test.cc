@@ -13,14 +13,12 @@
 // limitations under the License.
 
 #include "lite/gen_code/gen_code.h"
-
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include <fstream>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/context.h"

@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <random>
-
 #include <gtest/gtest.h>
+#include <random>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"

@@ -13,15 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/calib_compute.h"
-
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
-
-#include <gtest/gtest.h>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 

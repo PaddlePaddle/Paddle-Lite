@@ -12,15 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <gflags/gflags.h>
+#include <glog/logging.h>
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <iostream>
 #include <random>
 #include <string>
 #include <vector>
-
-#include <gflags/gflags.h>
-#include <glog/logging.h>
-#include <gtest/gtest.h>
 #include "lite/backends/x86/cpu_info.h"
 #include "lite/backends/x86/jit/kernels.h"
 #include "lite/backends/x86/legacy_place.h"

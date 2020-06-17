@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <vector>
-
-#include <gflags/gflags.h>
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 
 #if defined(_WIN32)
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
-
 #endif
 
 using namespace paddle::lite_api;  // NOLINT

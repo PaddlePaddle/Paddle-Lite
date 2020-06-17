@@ -13,14 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/elementwise_compute.h"
-
+#include <gtest/gtest.h>
 #include <string>
 #include <vector>
-
-#include <gtest/gtest.h>
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {

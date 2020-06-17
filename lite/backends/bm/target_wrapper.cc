@@ -11,12 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <utility>
-
+#include "lite/backends/bm/target_wrapper.h"
 #include <bmcompiler_if.h>
 #include <bmlib_runtime.h>
-
-#include "lite/backends/bm/target_wrapper.h"
+#include <utility>
 
 namespace paddle {
 namespace lite {

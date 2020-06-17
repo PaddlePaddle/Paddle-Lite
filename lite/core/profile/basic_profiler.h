@@ -18,8 +18,8 @@
  * of each kernel.
  */
 #pragma once
+#include <gflags/gflags.h>
 #include <time.h>
-
 #include <algorithm>
 #include <chrono>  // NOLINT
 #include <fstream>
@@ -28,8 +28,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <gflags/gflags.h>
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"

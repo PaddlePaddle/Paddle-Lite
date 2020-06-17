@@ -13,11 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/reshape_op.h"
-
+#include <gtest/gtest.h>
 #include <map>
 #include <vector>
-
-#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

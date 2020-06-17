@@ -13,11 +13,9 @@
 // limitations under the License.
 
 #include "lite/core/optimizer.h"
-
+#include <gtest/gtest.h>
 #include <memory>
 #include <utility>
-
-#include <gtest/gtest.h>
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"

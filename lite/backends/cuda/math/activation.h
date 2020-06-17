@@ -13,10 +13,9 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <string>
 
 namespace paddle {
 namespace lite {

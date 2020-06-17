@@ -15,18 +15,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include <gflags/gflags.h>
 #include "lite/api/paddle_api.h"
 #include "lite/api/test_helper.h"
 #include "lite/core/device_info.h"
 #include "lite/core/profile/timer.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
-
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/basic_profiler.h"
-
 #endif  // LITE_WITH_PROFILE
 #include <gflags/gflags.h>
 

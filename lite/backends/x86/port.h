@@ -15,10 +15,10 @@
 #pragma once
 
 #include <time.h>
-
 #include <cstdio>
-#include <memory>
 #include <stdexcept>
+
+#include <memory>
 #include <string>
 
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
@@ -29,22 +29,19 @@
 #include <execinfo.h>  // backtrace
 #include <sys/stat.h>
 #include <sys/time.h>
-
 #include <algorithm>  // std::accumulate
-
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 // solve static linking error in windows
 // https://github.com/google/glog/issues/301
 #define GOOGLE_GLOG_DLL_DECL
-#include <stdio.h>
-#include <numeric>  // std::accumulate in msvc
-
 #include <io.h>  // _popen, _pclose
+#include <stdio.h>
+#define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
 #include <winsock.h>
-
-#ifndef S_ISDIR  // windows port for sys/stat.h
+#include <numeric>  // std::accumulate in msvc
+#ifndef S_ISDIR     // windows port for sys/stat.h
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif  // S_ISDIR
 

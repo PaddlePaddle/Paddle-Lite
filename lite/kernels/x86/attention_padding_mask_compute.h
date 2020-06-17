@@ -14,10 +14,9 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <random>
 #include <string>
-
-#include <Eigen/Core>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"

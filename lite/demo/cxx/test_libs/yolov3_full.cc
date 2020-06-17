@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gflags/gflags.h>
 #include <fstream>
 #include <iostream>
-
-#include <gflags/gflags.h>
 #include "paddle_api.h"   // NOLINT
 #include "test_helper.h"  // NOLINT
 

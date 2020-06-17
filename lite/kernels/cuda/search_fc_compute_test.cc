@@ -13,12 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/search_fc_compute.h"
-
+#include <gtest/gtest.h>
 #include <memory>
 #include <utility>
 #include <vector>
-
-#include <gtest/gtest.h>
 
 namespace paddle {
 namespace lite {

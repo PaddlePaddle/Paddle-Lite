@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
-
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/fusion/conv_activation_fuse_pass.h"
