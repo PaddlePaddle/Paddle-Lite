@@ -70,7 +70,7 @@ else()
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
         endif()
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
+        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h framework_fbs_header)
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
