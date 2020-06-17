@@ -85,6 +85,9 @@ void ConvImageCompute::PrepareForRun() {
           << paddings[2] << " " << paddings[3];
   CHECK(pad_equal && stride_equal && dilation_equal);
 
+  if (!is_mali) {
+    use_turn_ = false;
+  }
   // general gws..
   auto out_image_shape = InitImageDimInfoWith(output_dims);
 
