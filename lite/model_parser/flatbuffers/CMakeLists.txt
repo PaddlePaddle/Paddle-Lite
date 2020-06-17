@@ -1,0 +1,11 @@
+function(lite_fbs_library TARGET)
+  set(multiValueArgs SRCS FBS_DEPS)
+  cmake_parse_arguments(args "" "" "${multiValueArgs}" ${ARGN})
+  lite_cc_library(${TARGET} SRCS ${args_SRCS})
+  add_dependencies(${TARGET} ${args_FBS_DEPS})
+endfunction()
+
+lite_fbs_library(fbs_op_desc SRCS op_desc.cc FBS_DEPS framework_fbs_header)
+lite_fbs_library(fbs_var_desc SRCS var_desc.cc FBS_DEPS framework_fbs_header)
+lite_fbs_library(fbs_block_desc SRCS block_desc.cc FBS_DEPS framework_fbs_header)
+lite_fbs_library(fbs_program_desc SRCS program_desc.cc FBS_DEPS framework_fbs_header)
