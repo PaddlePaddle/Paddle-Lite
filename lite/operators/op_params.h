@@ -1166,6 +1166,13 @@ struct AffineChannelParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct AffineGridParam : ParamBase {
+  const lite::Tensor* X{};  // Theta:shape {?, 2, 3}
+  std::vector<int> output_shape;
+  const lite::Tensor* OutputShape;
+  lite::Tensor* Out{};
+};
+
 struct AnchorGeneratorParam : ParamBase {
   const lite::Tensor* Input{};
   std::vector<float> anchor_sizes{};
