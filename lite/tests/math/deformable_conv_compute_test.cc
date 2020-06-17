@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -342,7 +342,7 @@ TEST(TestDeformableConvRand, test_deformable_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
       for (auto& cout : {1, 5, 16}) {
-        for (auto& g : {1, 2}) {
+        for (auto& g : {1}) {
           for (auto& kw : {1, 2, 3}) {
             for (auto& kh : {1, 2, 3}) {
               for (auto& stride : {1, 2}) {

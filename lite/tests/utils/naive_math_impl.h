@@ -62,6 +62,72 @@ static void basic_trans_mat_to_c4(const type* input,
   }
   delete[] zero_buf;
 }
+template <typename type>
+static void basic_trans_mat_to_c8(const type* input,
+                                  type* output,
+                                  const int ldin,
+                                  const int M,
+                                  const int K,
+                                  bool pack_k) {
+  const int m_round = (M + 7) / 8 * 8;
+  int k_round = (K + 7) / 8 * 8;
+  if (!pack_k) {
+    k_round = K;
+  }
+  const int m_loop = m_round / 8;
+  type zero_buf[K];
+  memset(zero_buf, 0, K * sizeof(type));
+  for (int i = 0; i < m_loop; ++i) {
+    const type* in0 = input + i * 8 * ldin;
+    const type* in1 = in0 + ldin;
+    const type* in2 = in1 + ldin;
+    const type* in3 = in2 + ldin;
+    const type* in4 = in3 + ldin;
+    const type* in5 = in4 + ldin;
+    const type* in6 = in5 + ldin;
+    const type* in7 = in6 + ldin;
+    if (8 * (i + 1) - M > 0) {
+      switch (8 * (i + 1) - M) {
+        case 7:
+          in1 = zero_buf;
+        case 6:
+          in2 = zero_buf;
+        case 5:
+          in3 = zero_buf;
+        case 4:
+          in4 = zero_buf;
+        case 3:
+          in5 = zero_buf;
+        case 2:
+          in6 = zero_buf;
+        case 1:
+          in7 = zero_buf;
+        default:
+          break;
+      }
+    }
+    for (int j = 0; j < K; ++j) {
+      *output++ = *in0++;
+      *output++ = *in1++;
+      *output++ = *in2++;
+      *output++ = *in3++;
+      *output++ = *in4++;
+      *output++ = *in5++;
+      *output++ = *in6++;
+      *output++ = *in7++;
+    }
+    for (int j = K; j < k_round; ++j) {
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+      *output++ = static_cast<type>(0);
+    }
+  }
+}
 
 template <typename type, typename type2>
 static void basic_gemm_c4(bool trans_a,
@@ -118,6 +184,60 @@ static void basic_gemm_c4(bool trans_a,
   free(tmp_c);
 }
 
+template <typename type, typename type2>
+static void basic_gemm_c8(bool trans_a,
+                          bool trans_b,
+                          int m,
+                          int n,
+                          int k,
+                          type2 alpha,
+                          const type* a,
+                          int lda,
+                          const type* b,
+                          int ldb,
+                          type2 beta,
+                          type2* c,
+                          int ldc,
+                          const type2* bias,
+                          bool flag_bias = false,
+                          bool flag_relu = false) {
+  type2* tmp_c = reinterpret_cast<type2*>(malloc(m * ldc * sizeof(type2)));
+  memset(tmp_c, 0, m * ldc * sizeof(type2));
+#pragma omp parallel for
+  for (int i = 0; i < m; ++i) {
+    auto bias_data = static_cast<type2>(0);
+    if (flag_bias) {
+      bias_data = bias[i];
+    }
+    for (int j = 0; j < n; ++j) {
+      auto sum = static_cast<type2>(0);
+      for (int l = 0; l < k; ++l) {
+        type av;
+        type bv;
+        if (trans_a) {
+          av = a[l * lda + i];
+        } else {
+          av = a[i * lda + l];
+        }
+        if (trans_b) {
+          bv = b[j * ldb + l];
+        } else {
+          bv = b[l * ldb + j];
+        }
+        sum += av * bv;
+      }
+      type2 tmp = alpha * sum + beta * tmp_c[i * ldc + j] + bias_data;
+      if (flag_relu) {
+        tmp_c[i * ldc + j] = tmp > (type2)0 ? tmp : (type2)0;
+      } else {
+        tmp_c[i * ldc + j] = tmp;
+      }
+    }
+  }
+  //! trans c to c4
+  basic_trans_mat_to_c8(tmp_c, c, ldc, m, n, false);
+  free(tmp_c);
+}
 template <typename type, typename type2>
 static void basic_gemm(bool trans_a,
                        bool trans_b,
