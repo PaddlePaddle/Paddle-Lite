@@ -93,7 +93,7 @@ TEST(Ernie, test_ernie_lite_xpu) {
   for (size_t i = 0; i < results.size(); ++i) {
     for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(
-          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 2e-5);
+          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 1e-5);
     }
   }
 }
