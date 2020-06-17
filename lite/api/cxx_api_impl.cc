@@ -237,6 +237,7 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
 }
 
 CxxPaddleApiImpl::~CxxPaddleApiImpl() {
+#ifdef LITE_WITH_CUDA
   TargetWrapperCuda::DestroyEvent(input_event_);
   for (size_t i = 0; i < output_events_.size(); ++i) {
     TargetWrapperCuda::DestroyEvent(output_events_[i]);
@@ -245,6 +246,7 @@ CxxPaddleApiImpl::~CxxPaddleApiImpl() {
     TargetWrapperCuda::DestroyStream(*io_stream_);
     TargetWrapperCuda::DestroyStream(*exec_stream_);
   }
+#endif
 }
 
 }  // namespace lite
