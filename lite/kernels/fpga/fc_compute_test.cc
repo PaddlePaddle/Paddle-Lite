@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/fc_compute.h"
+#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <iostream>
@@ -21,8 +21,8 @@
 #include <utility>
 #include <vector>
 
-#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
+#include "lite/kernels/fpga/fc_compute.h"
 
 namespace paddle {
 namespace lite {

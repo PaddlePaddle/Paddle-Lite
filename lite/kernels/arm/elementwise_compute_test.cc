@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/elementwise_compute.h"
 #include <gtest/gtest.h>
+
 #include <cmath>
 #include <string>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/elementwise_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -814,8 +816,7 @@ TEST(fusion_elementwise_max_activation_arm, compute) {
 }
 
 TEST(elementwise_mod_int64_arm, retrive_op) {
-  auto elementwise_mod =
-      KernelRegistry::Global().Create("elementwise_mod");
+  auto elementwise_mod = KernelRegistry::Global().Create("elementwise_mod");
   ASSERT_FALSE(elementwise_mod.empty());
   ASSERT_TRUE(elementwise_mod.front());
 }

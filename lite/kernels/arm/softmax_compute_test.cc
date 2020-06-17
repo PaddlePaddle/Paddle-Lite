@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/softmax_compute.h"
+#include <gtest/gtest.h>
 
 #include <cmath>
 #include <limits>
 #include <vector>
 
-#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/softmax_compute.h"
 
 namespace paddle {
 namespace lite {
