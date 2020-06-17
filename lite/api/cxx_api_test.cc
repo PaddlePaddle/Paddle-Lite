@@ -84,7 +84,7 @@ TEST(CXXApi, clone_predictor) {
   auto* cloned_output_tensor = cloned_predictor->GetOutput(0);
 
   int step = 50;
-  for (int i = 0; i < output_tensor->data_size(); i += step) {
+  for (size_t i = 0; i < output_tensor->data_size(); i += step) {
     EXPECT_NEAR(output_tensor->data<float>()[i],
                 cloned_output_tensor->data<float>()[i],
                 1e-6);

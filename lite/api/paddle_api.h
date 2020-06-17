@@ -24,6 +24,10 @@
 #include <vector>
 #include "paddle_place.h"  // NOLINT
 
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/cuda_utils.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
 
@@ -61,8 +65,16 @@ struct LITE_API Tensor {
   // Set LoD of the tensor
   void SetLoD(const lod_t& lod);
 
+#ifdef LITE_WITH_CUDA
+  explicit Tensor(void* raw, cudaStream_t* stream);
+  explicit Tensor(const void* raw, cudaStream_t* stream);
+#endif
+
  private:
   void* raw_tensor_;
+#ifdef LITE_WITH_CUDA
+  cudaStream_t* io_stream_{nullptr};
+#endif
 };
 
 /// The PaddlePredictor defines the basic interfaces for different kinds of
@@ -155,6 +167,8 @@ class LITE_API CxxConfig : public ConfigBase {
 #endif
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
+  cudaStream_t* exec_stream_{nullptr};
+  cudaStream_t* io_stream_{nullptr};
 #endif
 #ifdef LITE_WITH_MLU
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
@@ -203,6 +217,12 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
   bool multi_stream() const { return multi_stream_; }
+  void set_exec_stream(cudaStream_t* exec_stream) {
+    exec_stream_ = exec_stream;
+  }
+  void set_io_stream(cudaStream_t* io_stream) { io_stream_ = io_stream; }
+  cudaStream_t* exec_stream() { return exec_stream_; }
+  cudaStream_t* io_stream() { return io_stream_; }
 #endif
 
 #ifdef LITE_WITH_MLU

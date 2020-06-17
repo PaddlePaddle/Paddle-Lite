@@ -20,11 +20,16 @@
 #include <utility>
 #include <vector>
 #include "lite/api/paddle_api.h"
+#include "lite/core/device_info.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/optimizer.h"
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
+
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/cuda_utils.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -56,7 +61,9 @@ class LITE_API Predictor {
             const std::vector<std::string>& var_names = {})
       : program_desc_(desc), scope_(root) {
     Program program(*desc.get(), scope_, valid_places, var_names);
-    optimizer_ = Optimizer(std::move(program), valid_places);
+    std::vector<std::string> passes{};
+    // TODO(wilber): rethink a new way to associate config and passes.
+    optimizer_ = Optimizer(std::move(program), valid_places, passes);
     exec_scope_ = optimizer_.exec_scope();
     valid_places_ = valid_places;
   }
@@ -146,14 +153,23 @@ class LITE_API Predictor {
       bool record_info = false);
   void SaveOpKernelInfo(const std::string& model_dir);
 
-  // #ifdef LITE_WITH_TRAIN
-  //   void Run(const std::vector<framework::Tensor>& tensors) {
-  //     FeedVars(tensors);
-  //     program_->Run();
-  //   }
+// #ifdef LITE_WITH_TRAIN
+//   void Run(const std::vector<framework::Tensor>& tensors) {
+//     FeedVars(tensors);
+//     program_->Run();
+//   }
 
-  //   void FeedVars(const std::vector<framework::Tensor>& tensors);
-  // #endif
+//   void FeedVars(const std::vector<framework::Tensor>& tensors);
+// #endif
+
+#ifdef LITE_WITH_CUDA
+  void SetMultiStream(bool multi_stream) { multi_stream_ = multi_stream; }
+  bool multi_stream() { return multi_stream_; }
+  void SetExecStream(cudaStream_t* stream) { exec_stream_ = stream; }
+  void SetIoStream(cudaStream_t* stream) { io_stream_ = stream; }
+  const cudaStream_t& exec_stream() { return *exec_stream_; }
+  const cudaStream_t& io_stream() { return *io_stream_; }
+#endif
 
  private:
   Optimizer optimizer_;
@@ -165,6 +181,11 @@ class LITE_API Predictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
+#ifdef LITE_WITH_CUDA
+  bool multi_stream_{false};
+  cudaStream_t* io_stream_;
+  cudaStream_t* exec_stream_;
+#endif
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
@@ -177,6 +198,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       : raw_predictor_(raw_predictor) {
     status_is_cloned_ = true;
   }
+
+  ~CxxPaddleApiImpl();
 
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
@@ -217,10 +240,30 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       bool record_info = false) override;
 
  private:
+#ifdef LITE_WITH_CUDA
+  // Cuda related environment initialization, including setting stream pointers,
+  // initializing synchronization events, setting predictor_id, etc.
+  void CudaEnvInit(std::vector<std::string>* passes);
+  // Due to the asynchronous nature of cuda kernel execution, synchronization is
+  // required before setting input and getting output.
+  void InputSync();
+  void OutputSync();
+#endif
+
+ private:
   std::shared_ptr<Predictor> raw_predictor_;
   lite_api::CxxConfig config_;
   std::mutex mutex_;
   bool status_is_cloned_;
+#ifdef LITE_WITH_CUDA
+  bool multi_stream_{false};
+  cudaStream_t* io_stream_;
+  cudaStream_t* exec_stream_;
+  cudaEvent_t input_event_;
+  std::vector<cudaEvent_t> output_events_;
+  // only for multi exec stream mode.
+  std::vector<cudaStream_t*> exec_streams_;
+#endif
 };
 
 /*

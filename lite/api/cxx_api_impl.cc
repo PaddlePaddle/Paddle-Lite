@@ -23,7 +23,9 @@
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/paddle_use_passes.h"
 #endif
-
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/cuda_utils.h"
+#endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL) && !defined(__APPLE__)
 #include <omp.h>
@@ -34,23 +36,20 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
-  if (!status_is_cloned_) {
-    auto places = config.valid_places();
-    std::vector<std::string> passes = config.get_passes_internal();
+  auto places = config.valid_places();
+  std::vector<std::string> passes = config.get_passes_internal();
 #ifdef LITE_WITH_CUDA
-    // if kCUDA is included in valid places, it should be initialized first,
-    // otherwise skip this step.
-    for (auto &p : places) {
-      if (p.target == TARGET(kCUDA)) {
-        Env<TARGET(kCUDA)>::Init();
-        if (config_.multi_stream()) {
-          passes = {"multi_stream_analysis_pass"};
-          VLOG(3) << "add pass: " << passes[0];
-        }
-        break;
-      }
+  // if kCUDA is included in valid places, it should be initialized first,
+  // otherwise skip this step.
+  for (auto &p : places) {
+    if (p.target == TARGET(kCUDA)) {
+      CudaEnvInit(&passes);
+      break;
     }
+  }
 #endif
+
+  if (!status_is_cloned_) {
 #ifdef LITE_WITH_MLU
     Env<TARGET(kMLU)>::Init();
     lite::DeviceInfo::Global().SetMLURunMode(config.mlu_core_version(),
@@ -73,6 +72,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     raw_predictor_->PrepareFeedFetch();
     CHECK(raw_predictor_) << "The Predictor can not be nullptr in Clone mode.";
   }
+
   mode_ = config.power_mode();
   threads_ = config.threads();
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
@@ -87,15 +87,83 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
 }
 
+#ifdef LITE_WITH_CUDA
+void CxxPaddleApiImpl::CudaEnvInit(std::vector<std::string> *passes) {
+  Env<TARGET(kCUDA)>::Init();
+
+  // init two streams for each predictor.
+  if (config_.exec_stream()) {
+    exec_stream_ = config_.exec_stream();
+  } else {
+    exec_stream_ = new cudaStream_t();
+    TargetWrapperCuda::CreateStream(exec_stream_);
+  }
+  if (config_.io_stream()) {
+    io_stream_ = config_.io_stream();
+  } else {
+    io_stream_ = new cudaStream_t();
+    TargetWrapperCuda::CreateStream(io_stream_);
+  }
+
+  raw_predictor_->SetExecStream(exec_stream_);
+  raw_predictor_->SetIoStream(io_stream_);
+
+  // init sync events.
+  if (config_.multi_stream()) {
+    multi_stream_ = true;
+    raw_predictor_->SetMultiStream(multi_stream_);
+    passes->push_back("multi_stream_analysis_pass");
+    VLOG(3) << "add pass: " << (*passes)[0];
+    Env<TargetType::kCUDA>::Devs &devs = Env<TargetType::kCUDA>::Global();
+    int dev_id = TargetWrapperCuda::GetCurDevice();
+    for (size_t i = 0; i < lite::kMaxStream; ++i) {
+      exec_streams_.push_back(
+          const_cast<cudaStream_t *>(&devs[dev_id].exec_streams()[i]));
+      cudaEvent_t out_event;
+      TargetWrapperCuda::CreateEventWithFlags(&out_event);
+      output_events_.push_back(out_event);
+    }
+  } else {
+    cudaEvent_t out_event;
+    TargetWrapperCuda::CreateEventWithFlags(&out_event);
+    output_events_.push_back(out_event);
+  }
+  TargetWrapperCuda::CreateEventWithFlags(&input_event_);
+}
+
+void CxxPaddleApiImpl::InputSync() {
+  TargetWrapperCuda::RecordEvent(input_event_, *io_stream_);
+  if (multi_stream_) {
+    for (int i = 0; i < lite::kMaxStream; ++i) {
+      TargetWrapperCuda::StreamSync(*exec_streams_[i], input_event_);
+    }
+  } else {
+    TargetWrapperCuda::StreamSync(*exec_stream_, input_event_);
+  }
+}
+
+void CxxPaddleApiImpl::OutputSync() {
+  if (multi_stream_) {
+    for (size_t i = 0; i < output_events_.size(); ++i) {
+      TargetWrapperCuda::RecordEvent(output_events_[i], *exec_streams_[i]);
+      TargetWrapperCuda::StreamSync(*io_stream_, output_events_[i]);
+    }
+  } else {
+    TargetWrapperCuda::RecordEvent(output_events_[0], *exec_stream_);
+    TargetWrapperCuda::StreamSync(*io_stream_, output_events_[0]);
+  }
+}
+#endif
+
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x, io_stream_));
 }
 
 std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
     int i) const {
   const auto *x = raw_predictor_->GetOutput(i);
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x, io_stream_));
 }
 
 std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
@@ -114,7 +182,15 @@ void CxxPaddleApiImpl::Run() {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
+#ifdef LITE_WITH_CUDA
+  InputSync();
+#endif
+
   raw_predictor_->Run();
+
+#ifdef LITE_WITH_CUDA
+  OutputSync();
+#endif
 }
 
 std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
@@ -158,6 +234,17 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
                                           lite_api::LiteModelType model_type,
                                           bool record_info) {
   raw_predictor_->SaveModel(model_dir, model_type, record_info);
+}
+
+CxxPaddleApiImpl::~CxxPaddleApiImpl() {
+  TargetWrapperCuda::DestroyEvent(input_event_);
+  for (size_t i = 0; i < output_events_.size(); ++i) {
+    TargetWrapperCuda::DestroyEvent(output_events_[i]);
+  }
+  if (multi_stream_) {
+    TargetWrapperCuda::DestroyStream(*io_stream_);
+    TargetWrapperCuda::DestroyStream(*exec_stream_);
+  }
 }
 
 }  // namespace lite

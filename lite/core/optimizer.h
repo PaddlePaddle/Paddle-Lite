@@ -40,7 +40,9 @@ class Optimizer {
  public:
   Optimizer() {}
 
-  Optimizer(Program&& program, const std::vector<Place>& valid_places) {
+  Optimizer(Program&& program,
+            const std::vector<Place>& valid_places,
+            const std::vector<std::string>& passes) {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
@@ -50,7 +52,7 @@ class Optimizer {
     factor.ConsiderPrecision();
     factor.ConsiderDataLayout();
 
-    Run(std::move(program), valid_places, factor, {});
+    Run(std::move(program), valid_places, factor, passes);
   }
 
   void Run(Program&& program,

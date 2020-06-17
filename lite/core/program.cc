@@ -73,7 +73,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
   std::map<std::string, cpp::VarDesc> origin_var_maps;
   auto& main_block = *desc->GetBlock<cpp::BlockDesc>(0);
   auto var_size = main_block.VarsSize();
-  for (int i = 0; i < var_size; i++) {
+  for (int i = 0; i < static_cast<int>(var_size); i++) {
     auto v = main_block.GetVar<cpp::VarDesc>(i);
     auto name = v->Name();
     origin_var_maps.emplace(name, *v);
@@ -144,6 +144,15 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
     }
   }
 }
+
+#ifdef LITE_WITH_CUDA
+void RuntimeProgram::UpdateContext(cudaStream_t* exec, cudaStream_t* io) {
+  for (auto& inst : instructions_) {
+    inst.UpdateContext(exec, io);
+  }
+}
+#endif
+
 void RuntimeProgram::Run() {
 #ifdef LITE_WITH_PRECISION_PROFILE
   auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
@@ -210,7 +219,8 @@ void Program::Build(const cpp::ProgramDesc& prog) {
     if (op_type == "while" || op_type == "conditional_block" ||
         op_type == "subgraph") {
       auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
-      CHECK(sub_block_idx >= 0 && sub_block_idx < program.BlocksSize())
+      CHECK(sub_block_idx >= 0 &&
+            sub_block_idx < static_cast<int>(program.BlocksSize()))
           << "Invalid attribute sub_block(" << sub_block_idx << ") for "
           << op_type;
       auto sub_block_desc =

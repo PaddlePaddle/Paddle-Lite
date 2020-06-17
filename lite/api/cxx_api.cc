@@ -349,6 +349,11 @@ void Predictor::GenRuntimeProgram() {
   program_ = optimizer_.GenRuntimeProgram();
   CHECK_EQ(exec_scope_, program_->exec_scope());
   program_generated_ = true;
+#ifdef LITE_WITH_CUDA
+  if (!multi_stream_) {
+    program_->UpdateContext(exec_stream_, io_stream_);
+  }
+#endif
 }
 
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {

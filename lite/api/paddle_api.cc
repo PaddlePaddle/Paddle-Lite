@@ -30,6 +30,15 @@ Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 // TODO(Superjomn) refine this by using another `const void* const_raw`;
 Tensor::Tensor(const void *raw) { raw_tensor_ = const_cast<void *>(raw); }
 
+#ifdef LITE_WITH_CUDA
+Tensor::Tensor(void *raw, cudaStream_t *stream)
+    : raw_tensor_(raw), io_stream_(stream) {}
+
+Tensor::Tensor(const void *raw, cudaStream_t *stream) : io_stream_(stream) {
+  raw_tensor_ = const_cast<void *>(raw);
+}
+#endif
+
 lite::Tensor *tensor(void *x) { return static_cast<lite::Tensor *>(x); }
 const lite::Tensor *ctensor(void *x) {
   return static_cast<const lite::Tensor *>(x);
@@ -93,8 +102,8 @@ void Tensor::CopyFromCpu(const T *src_data) {
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
   } else if (type == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+    lite::TargetWrapperCuda::MemcpyAsync(
+        data, src_data, num * sizeof(T), lite::IoDirection::HtoD, *io_stream_);
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
@@ -113,8 +122,9 @@ void Tensor::CopyToCpu(T *data) const {
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
   } else if (type == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
+    lite::TargetWrapperCuda::MemcpyAsync(
+        data, src_data, num * sizeof(T), lite::IoDirection::DtoH, *io_stream_);
+    lite::TargetWrapperCuda::StreamSync(*io_stream_);
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
