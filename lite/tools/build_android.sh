@@ -121,6 +121,7 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+  prepare_thirdparty
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
