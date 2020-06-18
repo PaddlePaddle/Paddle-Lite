@@ -186,5 +186,51 @@ void OpLite::AttachOutput(const cpp::OpDesc &op_desc,
   }
 }
 
+bool OpInfo::GetInputArgname(const std::string &value_name,
+                             std::string *out) const {
+  for (auto &item : inputs_) {
+    auto it = std::find(item.second.begin(), item.second.end(), value_name);
+    if (it != item.second.end()) {
+      *out = item.first;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool OpInfo::GetOutputArgname(const std::string &value_name,
+                              std::string *out) const {
+  for (auto &item : outputs_) {
+    auto it = std::find(item.second.begin(), item.second.end(), value_name);
+    if (it != item.second.end()) {
+      *out = item.first;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool OpInfo::GetInputIndex(const std::string &input_name, int *out) const {
+  for (auto &item : inputs_) {
+    auto it = std::find(item.second.begin(), item.second.end(), input_name);
+    if (it != item.second.end()) {
+      *out = it - item.second.begin();
+      return true;
+    }
+  }
+  return false;
+}
+
+bool OpInfo::GetOutputIndex(const std::string &output_name, int *out) const {
+  for (auto &item : outputs_) {
+    auto it = std::find(item.second.begin(), item.second.end(), output_name);
+    if (it != item.second.end()) {
+      *out = it - item.second.begin();
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace lite
 }  // namespace paddle

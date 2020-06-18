@@ -229,51 +229,77 @@ class OpInfo : public cpp::OpDesc {
     return OutputArgumentNames();
   }
 
-  bool GetInputArgname(const std::string &value_name, std::string *out) const {
-    for (auto &item : inputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = item.first;
-        return true;
-      }
-    }
-    return false;
-  }
-  bool GetOutputArgname(const std::string &value_name, std::string *out) const {
-    for (auto &item : outputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = item.first;
-        return true;
-      }
-    }
-    return false;
-  }
+  bool GetInputArgname(const std::string &value_name, std::string *out) const;
+  bool GetOutputArgname(const std::string &value_name, std::string *out) const;
 
   // For the input variable name, find the index of the corresponding
   // input argname
-  bool GetInputIndex(const std::string &value_name, int *out) const {
-    for (auto &item : inputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = it - item.second.begin();
-        return true;
-      }
-    }
-    return false;
-  }
+  bool GetInputIndex(const std::string &input_name, int *out) const;
 
   // For the output variable name, find the index of the corresponding
   // output argname
-  bool GetOutputIndex(const std::string &value_name, int *out) const {
-    for (auto &item : outputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = it - item.second.begin();
-        return true;
-      }
+  bool GetOutputIndex(const std::string &output_name, int *out) const;
+
+  template <typename T>
+  void SetInputScale(const std::string &input_name, const T &scale_value) {
+    std::string argname;
+    int index;
+    CHECK(GetInputArgname(input_name, &argname));
+    CHECK(GetInputIndex(input_name, &index));
+    SetAttr<T>(argname + std::to_string(index) + "_scale", scale_value);
+  }
+
+  template <typename T>
+  void SetOutputScale(const std::string &output_name, const T &scale_value) {
+    std::string argname;
+    int index;
+    CHECK(GetOutputArgname(output_name, &argname));
+    CHECK(GetOutputIndex(output_name, &index));
+    SetAttr<T>(argname + std::to_string(index) + "_scale", scale_value);
+  }
+
+  bool HasInputScale(const std::string &input_name) const {
+    std::string argname;
+    int index;
+    if (GetInputArgname(input_name, &argname) &&
+        GetInputIndex(input_name, &index)) {
+      return HasAttr(argname + std::to_string(index) + "_scale");
+    } else {
+      return false;
     }
-    return false;
+  }
+
+  template <typename T>
+  T GetInputScale(const std::string &input_name) const {
+    std::string argname;
+    int index;
+    CHECK(GetInputArgname(input_name, &argname));
+    CHECK(GetInputIndex(input_name, &index));
+    return GetAttr<T>(argname + std::to_string(index) + "_scale");
+  }
+
+  bool HasOutputScale(const std::string &output_name) const {
+    std::string argname;
+    int index;
+    if (GetOutputArgname(output_name, &argname) &&
+        GetOutputIndex(output_name, &index)) {
+      return HasAttr(argname + std::to_string(index) + "_scale");
+    } else {
+      return false;
+    }
+  }
+
+  template <typename T>
+  T GetOutputScale(const std::string &output_name) const {
+    std::string argname;
+    int index;
+    CHECK(GetOutputArgname(output_name, &argname));
+    CHECK(GetOutputIndex(output_name, &index));
+    return GetAttr<T>(argname + std::to_string(index) + "_scale");
+  }
+
+  bool IsQuantized() const {
+    return HasAttr("enable_int8") && GetAttr<bool>("enable_int8") == true;
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {

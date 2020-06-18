@@ -57,12 +57,15 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<float> w_scale;
   if (op_info->HasAttr("enable_int8")) {
     if (op_info->GetAttr<bool>("enable_int8")) {
-      if (op_info->HasAttr("input_scale"))
-        input_scale = op_info->GetAttr<float>("input_scale");
-      if (op_info->HasAttr("weight_scale"))
-        w_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
-      if (op_info->HasAttr("output_scale"))
-        out_scale = op_info->GetAttr<float>("output_scale");
+      auto input_name = op_desc.Input("Input").front();
+      auto weight_name = op_desc.Input("W").front();
+      auto out_name = op_desc.Output("Out").front();
+      if (op_info->HasInputScale(input_name))
+        input_scale = op_info->GetInputScale<float>(input_name);
+      if (op_info->HasInputScale(weight_name))
+        w_scale = op_info->GetInputScale<std::vector<float>>(weight_name);
+      if (op_info->HasOutputScale(out_name))
+        out_scale = op_info->GetOutputScale<float>(out_name);
     } else {
       return FAILED;
     }

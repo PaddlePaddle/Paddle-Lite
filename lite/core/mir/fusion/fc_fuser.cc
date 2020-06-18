@@ -71,7 +71,20 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 }
 
 cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
-  cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
+  auto op_desc = *matched.at("mul")->stmt()->op_info();
+
+  // Get the input scale from mul
+  float x_scale = op_desc.GetInputScale<float>(op_desc.Input("X").front());
+  auto y_var_node = matched.at("W")->arg();
+  std::vector<float> y_scale_vct;
+  if (y_var_node->is_weight) {
+    y_scale_vct =
+        op_desc.GetInputScale<std::vector<float>>(op_desc.Input("Y").front());
+  } else {
+    y_scale_vct.push_back(
+        op_desc.GetInputScale<float>(op_desc.Input("Y").front()));
+  }
+
   op_desc.mutable_inputs()->clear();
   op_desc.mutable_outputs()->clear();
   op_desc.SetType("fc");
@@ -85,6 +98,15 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   if (with_relu_) {
     op_desc.SetAttr("activation_type", std::string{"relu"});
   }
+
+  // Set the input scale into fc
+  op_desc.SetInputScale(matched.at("x")->arg()->name, x_scale);
+  if (y_var_node->is_weight) {
+    op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct);
+  } else {
+    op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct.front());
+  }
+
   return op_desc;
 }
 
