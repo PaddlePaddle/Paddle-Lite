@@ -238,6 +238,13 @@ if(WITH_TESTING)
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
               ARGS --model_dir=${LITE_MODEL_DIR}/yolov3)
         endif()
+        if(LITE_WITH_CUDA)
+            lite_cc_test(test_resnet50_lite_cuda SRCS test_resnet50_lite_cuda.cc
+               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               ${ops} ${host_kernels} ${cuda_kernels}
+               ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
+            add_dependencies(test_resnet50_lite_cuda extern_lite_download_resnet50_tar_gz)
+        endif()
     endif()
 endif()
 
