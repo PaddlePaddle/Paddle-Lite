@@ -1345,6 +1345,15 @@ struct SequenceTopkAvgPoolingParam : ParamBase {
   std::vector<int> topks{};
 };
 
+/// --------------- topk_pooling operators ------------------
+struct TopkPoolingParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  int top_k{1};
+  int feat_map_num{1};
+};
+
 /// --------------- search_fc operators ------------------
 struct SearchFcParam : ParamBase {
   const lite::Tensor* X{};
