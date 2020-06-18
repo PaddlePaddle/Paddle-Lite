@@ -564,8 +564,18 @@ function test_arm_model {
 function test_model_optimize_tool_compile {
     cd $workspace
     cd build
+    # Compile opt tool
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     make opt -j$NUM_CORES_FOR_COMPILE
+    # Check whether opt can transform quantized mobilenetv1 successfully.
+    cd lite/api && chmod +x ./opt
+    wget --no-check-certificate https://paddlelite-data.bj.bcebos.com/doc_models/MobileNetV1_quant.tar.gz
+    tar zxf MobileNetV1_quant.tar.gz
+    ./opt --model_dir=./MobileNetV1_quant --valid_targets=arm --optimize_out=quant_mobilenetv1
+    if [ ! -f quant_mobilenetv1.nb ]; then
+       echo -e "Error! Resulted opt can not tramsform MobileNetV1_quant successfully!"
+       exit 1
+    fi
 }
 
 function _test_paddle_code_generator {
