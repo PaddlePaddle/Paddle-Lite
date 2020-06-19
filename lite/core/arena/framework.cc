@@ -23,9 +23,10 @@ namespace arena {
 
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
-  static const std::set<TargetType> targets_with_subgraph_op(
+  static const std::set<TargetType> subgraph_op_supported_targets(
       {TARGET(kNPU), TARGET(kXPU)});
-  bool enable_subgraph_op = targets_with_subgraph_op.count(place_.target) != 0;
+  bool enable_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
+                            subgraph_op_supported_targets.end();
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
   enable_subgraph_op = false;  // Use XPU kernel directly if XTCL is disabled.
 #endif
