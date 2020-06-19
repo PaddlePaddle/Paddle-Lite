@@ -109,6 +109,7 @@ class TensorLite {
   template <typename T, typename R = T>
   const R *data() const {
     return zynq_tensor_->data<R>() + offset_;
+    // return zynq_tensor_->data<R>();
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
@@ -198,7 +199,8 @@ class TensorLite {
   // set values of precision_ and persistable_ after updating it.
   // If your tensor is just a temp tensor, such as activations,
   // you can ignore these two attributes.
-  PrecisionType precision_{PrecisionType::kUnk};
+  // PrecisionType precision_{PrecisionType::kUnk};
+  PrecisionType precision_{PrecisionType::kFloat};
   bool persistable_{false};
 
   DDimLite dims_;
@@ -235,6 +237,28 @@ zynqmp::DataType get_date_type() {
   return data_type;
 }
 
+template <typename T>
+PrecisionType get_precistion_type() {
+  PrecisionType data_type = PrecisionType::kUnk;
+  if (typeid(T) == typeid(float)) {
+    data_type = PrecisionType::kFloat;
+  }
+  if (typeid(T) == typeid(zynqmp::float16)) {
+    data_type = PrecisionType::kFP16;
+  }
+  if (typeid(T) == typeid(int)) {
+    data_type = PrecisionType::kInt32;
+  }
+  if (typeid(T) == typeid(int32_t)) {
+    data_type = PrecisionType::kInt32;
+  }
+  if (typeid(T) == typeid(int8_t)) {
+    data_type = PrecisionType::kInt8;
+  }
+
+  return data_type;
+}
+
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
   std::vector<int> v;
@@ -261,6 +285,7 @@ R *TensorLite::mutable_data() {
   }
   zynqmp::Shape input_shape(layout_type, v);
   zynqmp::DataType data_type = get_date_type<T>();
+  precision_ = get_precistion_type<T>();
 
   if (zynq_tensor_.get() == nullptr) {
     zynq_tensor_.reset(new zynqmp::Tensor());

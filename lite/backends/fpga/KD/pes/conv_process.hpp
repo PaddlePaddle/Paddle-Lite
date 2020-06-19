@@ -264,10 +264,10 @@ inline void format_filter(Tensor* filter,
   quantized_filter->flush();
   fpga_free(quantized_data);
 
-  // for (size_t i = 0; i < max_values.size(); i++) {
-  //   // scales.push_back(max_values[i] / max_value);
-  //   scales.push_back(1.0f);
-  // }
+  for (size_t i = 0; i < max_values.size(); i++) {
+    scales.push_back(max_values[i] / max_value);
+    // scales.push_back(1.0f);
+  }
 
   // filter->saveToFile("filter.txt");
   // std::ofstream ofs;
@@ -374,17 +374,15 @@ inline void split_filter_num(const ConvParam& c_param) {
     std::vector<float> v;  // TODO(chonwhite) change variable name;
     format_filter(&new_filter, &(conv_param->filter), param.groups, v, max);
     conv_param->filter.setDataType(INT8);
-
     Tensor scale;
     Tensor bias;
 
     int chnnnel_start = i * filter_num_per_div;
-
     Shape s_shape(NC, {1, filter_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     for (int n = 0; n < filter_num; n++) {
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
+      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
     }
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
@@ -513,7 +511,7 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     for (int n = 0; n < filter_current_pack; n++) {
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
+      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
     }
     for (int n = 0; n < filter_current_pack; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];

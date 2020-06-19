@@ -141,22 +141,26 @@ class ScalePE : public PE {
     Tensor* output = param_.output;
     Tensor float_input;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
-    input->syncToCPU();
+    // input->syncToCPU();
+    // input->invalidate();
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
 
-    float* scale_data = param_.scale->data<float>();
+    float16* scale_data = param_.scale->data<float16>();
 
     int wh = input->shape().width() * input->shape().height();
 
     float16* in_data = input->data<float16>();
-
     float max = 0;
 
     for (int i = 0; i < wh; i++) {
       for (int c = 0; c < input->shape().channel(); c++) {
         int index = i * input->shape().channel() + c;
-        float value = half_to_float(in_data[index]) * scale_data[c];
+        float x = image_addr[index];
+        float y = half_to_float(scale_data[c]);
+        float value =  x * y;
+        // std::cout << " x = " << std::to_string(x) << " y = " << std::to_string(y) << " v = " << std::to_string(value) << std::endl;
+        // float value = half_to_float(in_data[index]) * 19.3598f;
         data_out[index] = float_to_half(value);
 
         if (value < 0) {
@@ -167,24 +171,27 @@ class ScalePE : public PE {
         }
       }
     }
+    // exit(-1);
     output->flush();
     output->scale()[0] = max / 127.0f;
     output->scale()[1] = 127.0f / max;
   }
 
   bool dispatch() {
-    if (param_.scale->dataType() == FP16) {
-      DepthwiseConvParam& dw_param = dw_pe_.param();
-      memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
-             param_.scale->data<float16>(),
-             param_.scale->shape().numel() * sizeof(float16));
-      dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
-      dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
+    // if (param_.scale->dataType() == FP16) {
+    //   DepthwiseConvParam& dw_param = dw_pe_.param();
+    //   memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
+    //          param_.scale->data<float16>(),
+    //          param_.scale->shape().numel() * sizeof(float16));
+    //   dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
+    //   dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
+    //   dw_param.quantizedFilter()->flush();
+    // }
+    // param_.input->syncToDevice();
+    // return dw_pe_.dispatch();
 
-      dw_param.quantizedFilter()->flush();
-    }
-    param_.input->syncToDevice();
-    return dw_pe_.dispatch();
+    cpu_compute();
+    return true;
   }
 
   ScaleParam& param() { return param_; }

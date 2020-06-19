@@ -266,22 +266,25 @@ class Tensor {
       return;
     }
     BypassArgs args;
-    args.input_data_type =
-        src->dataType_ == FP32 ? DATA_TYPE_FP32 : DATA_TYPE_FP16;
+    args.input_data_type = src->dataType_ == FP32 ? DATA_TYPE_FP32 : DATA_TYPE_FP16;
     args.output_data_type = dataType_ == FP32 ? DATA_TYPE_FP32 : DATA_TYPE_FP16;
     args.input_layout_type = LAYOUT_HWC;
     args.output_layout_type = LAYOUT_HWC;
-    args.image = {.address = src->data<void>(),
-                  .scale_address = src->scale(),
-                  .channels = (uint32_t)src->shape().numel(),
-                  .width = 1,
-                  .height = 1,
-                  .pad_width = 0u,
-                  .pad_height = 0u};
+    args.image = {
+      .address = src->data<void>(),
+      .scale_address = src->scale(),
+      .channels = (uint32_t)src->shape().numel(),
+      .width = 1,
+      .height = 1,
+      .pad_width = 0U,
+      .pad_height = 0U
+    };
 
     ImageOutputArgs output = {
-        .address = data<void>(), .scale_address = scale(),
+      .address = data<void>(),
+      .scale_address = scale(),
     };
+
     args.output = output;
     size_t aligned_remainder = src->shape().numel() % 16;
     if (aligned_remainder > 0) {
@@ -380,6 +383,10 @@ class Tensor {
   }
 
   void save_file_with_name(std::string path) {
+    // std::cout << "saving file: " << path << std::endl;
+    void* add = (void*)this;
+    // printf("tensor @: %p  data: %p \n", (void *)add, (void*)data<void>());  
+    // return;
     std::ofstream ofs;
     ofs.open(path);
     ofs << scale()[0] << " / " << scale()[1] << std::endl;
@@ -399,8 +406,15 @@ class Tensor {
       if (dataType_ == INT32) {
         value = data<int32_t>()[i];
       }
+      
+      if (i < 10) {
+        std::cout << value << ",";
+      }
+
       ofs << value << std::endl;
+
     }
+    usleep(30000);
     ofs.close();
   }
 
@@ -451,6 +465,7 @@ class Tensor {
         value = half_to_float(tensor.data<float16>()[i]);
       }
       os << value << " ";
+
     }
     os << "\n";
     return os;

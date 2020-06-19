@@ -73,6 +73,7 @@ class Debugger {
     op_config["nms"] = true;
     op_config["pb_boxes"] = true;
     op_config["pb_variances"] = true;
+    op_config["reshape"] = true;
     op_config["softmax"] = true;
     op_config["split"] = true;
   }

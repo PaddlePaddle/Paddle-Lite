@@ -25,10 +25,17 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
+void copy_properties(operators::IoCopyParam& param) {
+  param.y->set_persistable(param.x->persistable());
+  auto out_lod = param.y->mutable_lod();
+  *out_lod = param.x->lod();
+  param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+}
+
 /*
  * This kernel copies a tensor from host to FPGA space.
  */
-class IoCopyHostToFpgaCompute
+class IoCopyHostCHWToFpgaHWCCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override {
@@ -37,52 +44,33 @@ class IoCopyHostToFpgaCompute
           param.x->target() == TARGET(kFPGA));
     param.x->ZynqTensor()->flush();
 
+    
+    
     if (param.x->ZynqTensor()->dataType() == zynqmp::INT32) {
       param.y->mutable_data<int>();
       param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+      param.y->ZynqTensor()->flush();
+      copy_properties(param);
       return;
     }
 
-    if (param.x->ZynqTensor()->dataType() == zynqmp::FP32) {
-      param.y->mutable_data<float16>();
-      if (param.x->ZynqTensor()->aligned() &&
-          param.x->ZynqTensor()->shape().shouldAlign()) {
-        zynqmp::Tensor tempTensor;
-        tempTensor.mutableData<float16>(zynqmp::FP16,
-                                        param.x->ZynqTensor()->shape());
-        tempTensor.copyFrom(param.x->ZynqTensor());
-        tempTensor.setAligned(true);
-        tempTensor.unalignImage();
-        param.y->ZynqTensor()->copyFrom(&tempTensor);
-      } else {
-        param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
-      }
-      param.y->ZynqTensor()->invalidate();
-      param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+    param.y->mutable_data<float16>();
+    param.y->ZynqTensor()->setDataLocation(zynqmp::Device);
+    if (param.x->ZynqTensor()->aligned() &&
+        param.x->ZynqTensor()->shape().shouldAlign()) {
+      zynqmp::Tensor tempTensor;
+      tempTensor.mutableData<float16>(zynqmp::FP16,
+                                      param.x->ZynqTensor()->shape());
+      tempTensor.copyFrom(param.x->ZynqTensor());
+      tempTensor.setAligned(true);
+      tempTensor.unalignImage();
+      tempTensor.flush();
+      param.y->ZynqTensor()->copyFrom(&tempTensor);
+    } else {
+      param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
     }
-
-    auto out_lod = param.y->mutable_lod();
-    *out_lod = param.x->lod();
-  }
-
-  std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
-    std::unique_ptr<type_infer_handler_t> res(new type_infer_handler_t);
-    *res = [](const std::map<std::string, const Type*>& inputs,
-              const std::string& out) -> const Type* {
-      CHECK(!inputs.empty());
-      auto* type = inputs.at("Input");
-      CHECK(type->target() == TARGET(kHost));
-
-      auto out_place = type->place();
-      out_place.target = TARGET(kFPGA);
-      auto* out_type = Type::Get(type->id(),
-                                 out_place.target,
-                                 out_place.precision,
-                                 out_place.layout,
-                                 out_place.device);
-      return out_type;
-    };
-    return res;
+    copy_properties(param);
+    param.y->ZynqTensor()->invalidate();
   }
 
   std::string doc() const override { return "Copy IO from HOST to FPGA"; }
@@ -98,10 +86,11 @@ class IoCopyFpgaToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-
+    
+    param.x->ZynqTensor()->syncToDevice();
     param.y->mutable_data<float>();
     param.y->ZynqTensor()->setDataType(zynqmp::FP32);
-    param.x->ZynqTensor()->syncToDevice();
+    param.y->ZynqTensor()->setDataLocation(zynqmp::CPU);
 
     if (param.x->ZynqTensor()->aligned() &&
         param.x->ZynqTensor()->shape().shouldAlign()) {
@@ -115,10 +104,9 @@ class IoCopyFpgaToHostCompute
     } else {
       param.y->ZynqTensor()->copyFrom(param.x->ZynqTensor());
     }
-    param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
-    param.y->ZynqTensor()->flush();
-    auto out_lod = param.y->mutable_lod();
-    *out_lod = param.x->lod();
+    
+    param.y->ZynqTensor()->invalidate();
+    copy_properties(param);
   }
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
 };
@@ -153,14 +141,16 @@ class IoCopyFpgaToHostCHWCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
 
-    Tensor hwc;
+    Tensor hwc;    
     hwc.Resize(param.y->dims());
     float* hwc_data = hwc.mutable_data<float>();
-
     float* chw_data = param.y->mutable_data<float>();
     param.y->ZynqTensor()->setDataType(zynqmp::FP32);
     param.x->ZynqTensor()->syncToDevice();
 
+    hwc.ZynqTensor()->setDataLocation(zynqmp::CPU);
+    param.y->ZynqTensor()->setDataLocation(zynqmp::CPU);
+    
     if (param.x->ZynqTensor()->aligned() &&
         param.x->ZynqTensor()->shape().shouldAlign()) {
       zynqmp::Tensor tempTensor;
@@ -168,10 +158,30 @@ class IoCopyFpgaToHostCHWCompute
                                       param.x->ZynqTensor()->shape());
       tempTensor.copyFrom(param.x->ZynqTensor());
       tempTensor.setAligned(true);
+      // tempTensor.saveToFile("temp_1", true);
       tempTensor.unalignImage();
+      // tempTensor.saveToFile("temp_2", true);
+      
       hwc.ZynqTensor()->copyFrom(&tempTensor);
     } else {
-      hwc.ZynqTensor()->copyFrom(param.x->ZynqTensor());
+      // hwc.ZynqTensor()->copyFrom(param.x->ZynqTensor());
+      float16* in_data = param.x->ZynqTensor()->data<float16>();
+      // float* f_data = 
+      param.x->ZynqTensor()->flush();
+      float max = 0;
+
+      for (int i = 0; i < param.x->dims().production(); i++) {
+        float value = zynqmp::half_to_float(in_data[i]);
+        hwc_data[i] = value;
+        if (value < 0) {
+          value = -value;
+        }
+        if (value > max) {
+          max = value;
+        }
+      }
+      param.x->ZynqTensor()->scale()[0] = max / 127;
+      param.x->ZynqTensor()->scale()[1] = 127 / max;
     }
 
     int num = 1;
@@ -188,10 +198,15 @@ class IoCopyFpgaToHostCHWCompute
                dims.height(),
                dims.width());
 
-    param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+    // param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
     param.y->ZynqTensor()->flush();
-    auto out_lod = param.y->mutable_lod();
-    *out_lod = param.x->lod();
+    copy_properties(param);
+
+    param.x->ZynqTensor()->invalidate();
+    param.x->ZynqTensor()->flush();
+    // hwc.ZynqTensor()->saveToFile("hwc", true);
+    // param.x->ZynqTensor()->saveToFile("io2_x", true);
+    // param.y->ZynqTensor()->saveToFile("io2_y", true);
   }
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
 };
@@ -201,52 +216,36 @@ class IoCopyFpgaToHostCHWCompute
 }  // namespace lite
 }  // namespace paddle
 
-// REGISTER_LITE_KERNEL(io_copy,
-//                      kFPGA,
-//                      kAny,
-//                      kAny,
-//                      paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
-//                      host_to_device)
-//     .BindInput("Input",
-//                {LiteType::GetTensorTy(TARGET(kHost),
-//                                       PRECISION(kAny),
-//                                       DATALAYOUT(kAny))})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(TARGET(kFPGA),
-//                                        PRECISION(kAny),
-//                                        DATALAYOUT(kAny))})
-//     .Finalize();
+REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     host_to_device)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyHostToFpgaCompute,
-                     host_to_device_any_any)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     host_float_chw_to_device_fp16_hwc)
+    .BindInput("Input", {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
-// REGISTER_LITE_KERNEL(io_copy,
-//                      kFPGA,
-//                      kAny,
-//                      kAny,
-//                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCompute,
-//                      device_to_host)
-//     .BindInput("Input",
-//                {LiteType::GetTensorTy(TARGET(kFPGA),
-//                                       PRECISION(kFP16),
-//                                       DATALAYOUT(kNHWC))})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(TARGET(kHost),
-//                                        PRECISION(kFloat),
-//                                        DATALAYOUT(kNHWC))})
-//     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
@@ -311,3 +310,26 @@ REGISTER_LITE_KERNEL(io_copy,
 //                                        PRECISION(kAny),
 //                                        DATALAYOUT(kAny))})
 //     .Finalize();
+
+
+//  ==========================================================
+
+  // std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
+  //   std::unique_ptr<type_infer_handler_t> res(new type_infer_handler_t);
+  //   *res = [](const std::map<std::string, const Type*>& inputs,
+  //             const std::string& out) -> const Type* {
+  //     CHECK(!inputs.empty());
+  //     auto* type = inputs.at("Input");
+  //     CHECK(type->target() == TARGET(kHost));
+
+  //     auto out_place = type->place();
+  //     out_place.target = TARGET(kFPGA);
+  //     auto* out_type = Type::Get(type->id(),
+  //                                out_place.target,
+  //                                out_place.precision,
+  //                                out_place.layout,
+  //                                out_place.device);
+  //     return out_type;
+  //   };
+  //   return res;
+  // }

@@ -64,6 +64,7 @@ void ConcatCompute::Run() {
   auto& param = Param<operators::ConcatParam>();
   std::vector<lite::Tensor*> inputs = param.x;
   CHECK_GE(inputs.size(), 1);
+  // std::cout << "concat size:" << std::to_string(inputs.size()) << std::endl;
   auto* out = param.output;
   int axis = param.axis;
   auto* axis_tensor = param.axis_tensor;
@@ -72,21 +73,22 @@ void ConcatCompute::Run() {
     axis = axis_tensor_data[0];
   }
 
-  switch (inputs.front()->precision()) {
-    case PRECISION(kFloat):
-      ConcatFunc<float>(inputs, axis, out);
-      break;
-    case PRECISION(kInt32):
-      ConcatFunc<int32_t>(inputs, axis, out);
-      break;
-    case PRECISION(kInt64):
-      ConcatFunc<int64_t>(inputs, axis, out);
-      break;
-    default:
-      LOG(FATAL) << "Concat does not implement for the "
-                 << "input type:"
-                 << static_cast<int>(inputs.front()->precision());
-  }
+  ConcatFunc<float>(inputs, axis, out);
+  // switch (inputs.front()->precision()) {
+  //   case PRECISION(kFloat):
+  //     ConcatFunc<float>(inputs, axis, out);
+  //     break;
+  //   case PRECISION(kInt32):
+  //     ConcatFunc<int32_t>(inputs, axis, out);
+  //     break;
+  //   case PRECISION(kInt64):
+  //     ConcatFunc<int64_t>(inputs, axis, out);
+  //     break;
+  //   default:
+  //     LOG(FATAL) << "Concat does not implement for the "
+  //                << "input type:"
+  //                << static_cast<int>(inputs.front()->precision());
+  // }
 }
 
 }  // namespace arm

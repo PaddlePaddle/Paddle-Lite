@@ -134,6 +134,12 @@ void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
   for (auto& node : graph->StmtTopologicalOrder()) {
+
+    // if (node->IsStmt()) {
+    //     auto& s = node->AsStmt();
+    //     std::cout << "type_precision type:" << s.op_type() << std::endl;
+    // }
+    // type_precision_cast_pass
     nodes.push_back(node);
   }
 
@@ -231,6 +237,10 @@ void PrecisionCastPass::AddCastInst(
     // create Op and kernels.
     bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
     std::string cast_type = in_persist ? "calib_once" : "calib";
+
+    // TODO
+    cast_type = "calib";
+
     cast_op_output_arg->AsArg().is_persist = in_persist;
     auto cast_op = LiteOpRegistry::Global().Create(cast_type);
     CHECK(cast_op) << "create op [" << cast_op << "] failed";

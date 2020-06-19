@@ -88,13 +88,33 @@ void ElementwiseMulCompute::PrepareForRun() {
       scale_.mutableData<zynqmp::float16>(zynqmp::FP16, shape);
   zynqmp::float16* bias_data =
       bias_.mutableData<zynqmp::float16>(zynqmp::FP16, shape);
-  float scale_value = param.Y->data<float>()[0];
+  zynqmp::float16 scale_value = 0;
+  if (param.Y->ZynqTensor()->dataType() == zynqmp::FP32) {
+    scale_value = zynqmp::float_to_half(param.Y->data<float>()[0]);
+    // std::cout << "FP32 \n";
+  } else {
+    scale_value = param.Y->data<zynqmp::float16>()[0];
+    // std::cout << "FP16 \n";
+  }
+  
+  // std::cout << "channel:" << channel << std::endl;
+  // std::cout << "production:" << param.Y->dims().production() << std::endl;
+
+  // std::cout << "scale_value:" << std::to_string(zynqmp::half_to_float(scale_value)) << std::endl;
+  // exit(-1);
 
   for (int i = 0; i < channel; i++) {
     if (param.Y->dims().production() != 1) {
-      scale_value = param.Y->ZynqTensor()->data<float>()[i];
+      // scale_value = param.Y->ZynqTensor()->data<zynqmp::float16>()[i];
+      if (param.Y->ZynqTensor()->dataType() == zynqmp::FP32) {
+        scale_value = zynqmp::float_to_half(param.Y->data<float>()[i]);
+      } else {
+        scale_value = param.Y->data<zynqmp::float16>()[i];
+      }
     }
-    scale_data[i] = zynqmp::float_to_half(scale_value);
+    // std::cout << "scale_value:" << std::to_string(zynqmp::half_to_float(scale_value)) << std::endl;
+    // exit(-1);
+    scale_data[i] = scale_value;
     bias_data[i] = zero_;
   }
 
@@ -104,15 +124,17 @@ void ElementwiseMulCompute::PrepareForRun() {
 
 void ElementwiseMulCompute::Run() {
   auto& param = Param<operators::ElementwiseParam>();
+  // std::cout << "param.Y :" << param.Y->persistable() << std::endl;
   if (!param.Y->persistable()) {
+    // TODO
     scale_.copyFrom(param.Y->ZynqTensor());
-    scale_.invalidate();
+    scale_.flush();//TODO
   }
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ScaleParam& scale_param = pe_.param();
-  Debugger::get_instance().registerOutput("ew_mul_in", scale_param.input);
-  Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
+  // Debugger::get_instance().registerOutput("ew_mul_in", scale_param.input);
+  // Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
 #endif
 }
 
@@ -176,6 +198,24 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::ElementwiseMulCompute,
+                     ew_mul_y_arm)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

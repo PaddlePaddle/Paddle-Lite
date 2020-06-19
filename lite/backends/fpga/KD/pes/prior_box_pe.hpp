@@ -35,6 +35,13 @@ class PriorBoxPE : public PE {
 
   PriorBoxParam& param() { return param_; }
 
+  ~PriorBoxPE() {
+    if (cachedBoxes_ != nullptr) {
+      delete cachedBoxes_;
+      delete cachedVariances_;
+    }
+  }
+
  private:
   PriorBoxParam param_;
   Tensor* cachedBoxes_ = nullptr;

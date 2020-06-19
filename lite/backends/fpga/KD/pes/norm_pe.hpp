@@ -103,6 +103,7 @@ class NormPE : public PE {
     float_out.flush();
     // float_out.saveToFile("normalize_", true);
     param_.output->copyFrom(&float_out);
+    param_.output->flush();
   }
 
   bool dispatch() {

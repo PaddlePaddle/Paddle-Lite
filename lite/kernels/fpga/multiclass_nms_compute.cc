@@ -94,6 +94,7 @@ T PolyIoU(const T* box1,
           const size_t box_size,
           const bool normalized) {
   LOG(FATAL) << "PolyIoU not implement.";
+  return *box1;
 }
 
 template <class T>
@@ -128,34 +129,44 @@ void NMSFast(const Tensor& bbox,
              std::vector<int>* selected_indices,
              const bool normalized) {
   // The total boxes for each instance.
+  // std::cout << "1\n";
   int64_t num_boxes = bbox.dims()[0];
+  // std::cout << "1,1\n";
   // 4: [xmin ymin xmax ymax]
   // 8: [x1 y1 x2 y2 x3 y3 x4 y4]
   // 16, 24, or 32: [x1 y1 x2 y2 ...  xn yn], n = 8, 12 or 16
   int64_t box_size = bbox.dims()[1];
+  // std::cout << "1,2\n";
 
   std::vector<T> scores_data(num_boxes);
   std::copy_n(scores.data<T>(), num_boxes, scores_data.begin());
+  // std::cout << "1,3\n";
   std::vector<std::pair<T, int>> sorted_indices;
+  // std::cout << "1,4\n";
   GetMaxScoreIndex(scores_data, score_threshold, top_k, &sorted_indices);
 
+  // std::cout << "2\n";
   selected_indices->clear();
   T adaptive_threshold = nms_threshold;
   const T* bbox_data = bbox.data<T>();
-
+  // std::cout << "3\n";
   while (sorted_indices.size() != 0) {
     const int idx = sorted_indices.front().second;
+    // std::cout << "4\n";
     bool keep = true;
     for (size_t k = 0; k < selected_indices->size(); ++k) {
+      // std::cout << "5\n";
       if (keep) {
         const int kept_idx = (*selected_indices)[k];
         T overlap = T(0.);
+        // std::cout << "6\n";
         // 4: [xmin ymin xmax ymax]
         if (box_size == 4) {
           overlap = JaccardOverlap<T>(bbox_data + idx * box_size,
                                       bbox_data + kept_idx * box_size,
                                       normalized);
         }
+        // std::cout << "7\n";
         // 8: [x1 y1 x2 y2 x3 y3 x4 y4] or 16, 24, 32
         if (box_size == 8 || box_size == 16 || box_size == 24 ||
             box_size == 32) {
@@ -168,10 +179,13 @@ void NMSFast(const Tensor& bbox,
       } else {
         break;
       }
+      // std::cout << "8\n";
     }
+    // std::cout << "9\n";
     if (keep) {
       selected_indices->push_back(idx);
     }
+    // std::cout << "10\n";
     sorted_indices.erase(sorted_indices.begin());
     if (keep && eta < 1 && adaptive_threshold > 0.5) {
       adaptive_threshold *= eta;
@@ -195,21 +209,25 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   T score_threshold = static_cast<T>(param.score_threshold);
 
   int num_det = 0;
-  int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
 
+  int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
+  Tensor bbox_slice, score_slice;
   for (int64_t c = 0; c < class_num; ++c) {
-    Tensor bbox_slice, score_slice;
     if (c == background_label) continue;
+
+    // std::cout << "------ 1 \n";
     if (scores_size == 3) {
+      // std::cout << "------ scores_size = 3 \n";
       scores.Slice<T>(score_slice, c, c + 1);
-      bbox_slice = bboxes;
+      // bbox_slice = bboxes;
     } else {
+      // std::cout << "------ scores_size != 3 \n";
       score_slice.Resize({scores.dims()[0], 1});
       bbox_slice.Resize({scores.dims()[0], 4});
       SliceOneClass<T>(scores, c, &score_slice);
       SliceOneClass<T>(bboxes, c, &bbox_slice);
     }
-    NMSFast(bboxes,
+    NMSFast(bboxes,// TODO
             score_slice,
             score_threshold,
             nms_threshold,
@@ -226,8 +244,6 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   *num_nmsed_out = num_det;
   const T* scores_data = scores.data<T>();
   if (keep_top_k > -1 && num_det > keep_top_k) {
-    Tensor score_slice;
-
     const T* sdata;
     std::vector<std::pair<float, std::pair<int, int>>> score_index_pairs;
     for (const auto& it : *indices) {
@@ -275,7 +291,9 @@ void MultiClassOutput(const Tensor& scores,
                       const Tensor& bboxes,
                       const std::map<int, std::vector<int>>& selected_indices,
                       const int scores_size,
-                      Tensor* outs) {
+                      Tensor* outs,
+                      int* oindices = nullptr,
+                      const int offset = 0) {
   int64_t class_num = scores.dims()[1];
   int64_t predict_dim = scores.dims()[1];
   int64_t box_size = bboxes.dims()[1];
@@ -305,9 +323,15 @@ void MultiClassOutput(const Tensor& scores,
       if (scores_size == 3) {
         bdata = bboxes_data + idx * box_size;
         odata[count * out_dim + 1] = sdata[idx];  // score
+        if (oindices != nullptr) {
+          oindices[count] = offset + idx;
+        }
       } else {
         bdata = bbox.data<T>() + idx * box_size;
         odata[count * out_dim + 1] = *(scores_data + idx * class_num + label);
+        if (oindices != nullptr) {
+          oindices[count] = offset + idx * class_num + label;
+        }
       }
       // xmin, ymin, xmax, ymax or multi-points coordinates
       std::memcpy(odata + count * out_dim + 2, bdata, box_size * sizeof(T));
@@ -318,36 +342,18 @@ void MultiClassOutput(const Tensor& scores,
 
 void MulticlassNmsCompute::Run() {
   auto& param = Param<operators::MulticlassNmsParam>();
-  auto* boxes_in = param.bboxes;
-  auto* scores_in = param.scores;
+  auto* boxes = param.bboxes;
+  auto* scores = param.scores;
   auto* outs = param.out;
-  outs->mutable_data<float>();
-
-  auto score_dims = boxes_in->dims();
+  bool return_index = param.index ? true : false;
+  auto* index = param.index;
+  auto score_dims = scores->dims();
   auto score_size = score_dims.size();
-
-  Tensor boxes_float;
-  Tensor scores_float;
-
-  boxes_float.Resize(boxes_in->dims());
-  scores_float.Resize(scores_in->dims());
-
-  boxes_float.mutable_data<float>();
-  scores_float.mutable_data<float>();
-
-  boxes_float.ZynqTensor()->copyFrom(boxes_in->ZynqTensor());
-  scores_float.ZynqTensor()->copyFrom(scores_in->ZynqTensor());
-
-  Tensor* boxes = &boxes_float;
-  Tensor* scores = &scores_float;
-
-  auto box_dims = boxes->dims();
-  int64_t box_dim = boxes->dims()[2];
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<uint64_t> batch_starts = {0};
   int64_t batch_size = score_dims[0];
-
+  int64_t box_dim = boxes->dims()[2];
   int64_t out_dim = box_dim + 2;
   int num_nmsed_out = 0;
   Tensor boxes_slice, scores_slice;
@@ -372,79 +378,104 @@ void MulticlassNmsCompute::Run() {
 
   uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
-    outs->Resize({1, 1});
-    float* od = outs->mutable_data<float>();
-    od[0] = -1;
-    batch_starts = {0, 1};
+    if (return_index) {
+      outs->Resize({0, out_dim});
+      index->Resize({0, 1});
+    } else {
+      outs->Resize({1, 1});
+      float* od = outs->mutable_data<float>();
+      od[0] = -1;
+      batch_starts = {0, 1};
+    }
   } else {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
+    outs->mutable_data<float>();
+    int offset = 0;
+    int* oindices = nullptr;
     for (int i = 0; i < n; ++i) {
       if (score_size == 3) {
         scores->Slice<float>(scores_slice, i, i + 1);
         boxes->Slice<float>(boxes_slice, i, i + 1);
         scores_slice.Resize({score_dims[1], score_dims[2]});
         boxes_slice.Resize({score_dims[2], box_dim});
+        if (return_index) {
+          offset = i * score_dims[2];
+        }
       } else {
         auto boxes_lod = boxes->lod().back();
         scores->Slice<float>(scores_slice, boxes_lod[i], boxes_lod[i + 1]);
         boxes->Slice<float>(boxes_slice, boxes_lod[i], boxes_lod[i + 1]);
+        if (return_index) {
+          offset = boxes_lod[i] * score_dims[1];
+        }
       }
       int64_t s = static_cast<int64_t>(batch_starts[i]);
       int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
-
       if (e > s) {
         Tensor out;
         outs->Slice<float>(out, s, e);
-        MultiClassOutput<float>(
-            scores_slice, boxes_slice, all_indices[i], score_dims.size(), &out);
+        if (return_index) {
+          index->Resize({static_cast<int64_t>(num_kept), 1});
+          int* output_idx = index->mutable_data<int>();
+          oindices = output_idx + s;
+        }
+        MultiClassOutput<float>(scores_slice,
+                                boxes_slice,
+                                all_indices[i],
+                                score_dims.size(),
+                                &out,
+                                oindices,
+                                offset);
+        // out.ZynqTensor()->saveToFile("nms_o", true);
         outs->ZynqTensor()->copyFrom(out.ZynqTensor());
-        out.ZynqTensor()->saveToFile("nms_oo", true);
+        outs->ZynqTensor()->flush();
       }
-      outs->Resize({static_cast<int64_t>(e - s), out_dim});
     }
   }
+
   LoD lod;
   lod.emplace_back(batch_starts);
+  if (return_index) {
+    index->set_lod(lod);
+  }
   outs->set_lod(lod);
 
-#ifdef FPGA_PRINT_TENSOR
-  Debugger::get_instance().registerOutput("boxes", boxes->ZynqTensor());
-  Debugger::get_instance().registerOutput("scores", scores->ZynqTensor());
-  Debugger::get_instance().registerOutput("nms", outs->ZynqTensor());
-#endif
+  // boxes->ZynqTensor()->saveToFile("boxes", true);
+  // scores->ZynqTensor()->saveToFile("scores", true);
+  // outs->ZynqTensor()->saveToFile("nms", true);
 }
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-// REGISTER_LITE_KERNEL(multiclass_nms,
-//                      kFPGA,
-//                      kFP16,
-//                      kNHWC,
-//                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
-//                      def)
-//     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .Finalize();
-
 REGISTER_LITE_KERNEL(multiclass_nms,
                      kFPGA,
                      kFP16,
                      kNHWC,
                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
-                     def2)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNHWC))})
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+// REGISTER_LITE_KERNEL(multiclass_nms,
+//                      kFPGA,
+//                      kFP16,
+//                      kNHWC,
+//                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
+//                      def2)
+//     .BindInput("BBoxes",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindInput("Scores",
+//                {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kNHWC))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kNHWC))})
+//     .Finalize();

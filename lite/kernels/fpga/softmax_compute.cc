@@ -26,7 +26,8 @@ void SoftmaxCompute::PrepareForRun() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
   auto& param = Param<operators::SoftmaxParam>();
 
-  param.output->mutable_data<float16>();
+  // param.output->mutable_data<float16>();
+  param.output->mutable_data<float>();
   softmax_param.input = param.x->ZynqTensor();
   softmax_param.output = param.output->ZynqTensor();
   pe_.init();
@@ -34,9 +35,13 @@ void SoftmaxCompute::PrepareForRun() {
 }
 
 void SoftmaxCompute::Run() {
-  pe_.dispatch();
-#ifdef FPGA_PRINT_TENSOR
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
+  // softmax_param.input->saveToFile("softmax_in", true);
+  pe_.dispatch();
+  
+  softmax_param.output->flush();
+  // softmax_param.output->saveToFile("softmax", true);
+#ifdef FPGA_PRINT_TENSOR
   Debugger::get_instance().registerOutput("softmax", softmax_param.output);
 #endif
 }
@@ -57,7 +62,17 @@ REGISTER_LITE_KERNEL(softmax,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNHWC))})
+                {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+
+
+
+
+
+
+
+// .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kFPGA),
+//                                        PRECISION(kFP16),
+//                                        DATALAYOUT(kNHWC))})

@@ -105,7 +105,7 @@ class SplitPE : public PE {
                                           in_stride,
                                           out_stride[axis]);
         input_offset += out_stride[axis];
-        // out->flush();
+        out->flush();
       }
       return true;
     }

@@ -102,6 +102,7 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   Resize(other.dims());
   auto shape = other.zynq_tensor_->shape();
   zynq_tensor_->mutableData<void>(zynq_tensor_->dataType(), shape);
+  precision_ = other.precision_;
 
   // this->ZynqTensor()->copyFrom(other.ZynqTensor());
   memcpy(this->ZynqTensor()->data<void>(),

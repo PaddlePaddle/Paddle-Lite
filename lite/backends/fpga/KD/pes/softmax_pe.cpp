@@ -154,6 +154,7 @@ bool SoftmaxPE::dispatch() {
   float_output.flush();
 
   output->copyFrom(&float_output);
+  output->flush();
   return true;
 }
 

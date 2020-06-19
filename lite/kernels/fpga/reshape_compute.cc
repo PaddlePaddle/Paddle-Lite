@@ -23,31 +23,64 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
+
+void FlattenCompute::Run() {
+  auto& param = Param<operators::ReshapeParam>();
+  auto x = param.x;
+  auto output = param.output;
+  output->mutable_data<float16>();
+  auto output_dims = output->dims();
+  if (param.inplace) {
+    output->ShareDataWith(*x);
+  } else {
+    // output->CopyDataFrom(*x);
+  }
+  x->ZynqTensor()->unalignImage();
+  // x->ZynqTensor()->saveToFile("fi", true);
+
+  output->ZynqTensor()->copyFrom(x->ZynqTensor());
+  // output->ZynqTensor()->saveToFile("fo", true);
+  output->ZynqTensor()->flush();
+  output->ZynqTensor()->setAligned(x->ZynqTensor()->aligned());
+  output->Resize(output_dims);
+
+#ifdef FPGA_PRINT_TENSOR
+  Debugger::get_instance().registerOutput("flatten",
+                                          output->ZynqTensor());
+#endif
+}
+
+
 void ReshapeCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
-  param.output->mutable_data<float16>();
   auto x = param.x;
-  // auto actual_shape = param.actual_shape;
-  Tensor* actual_shape = nullptr;  // TODO(chonwhite) change it.
   auto output = param.output;
-  bool inplace = param.inplace;
-  auto x_dims = x->dims();
   auto output_dims = output->dims();
-  if (actual_shape) {
-    auto actual_shape_dims = actual_shape->dims();
-    auto* actual_shape_data = actual_shape->data<int>();
-    auto shape = std::vector<int>(
-        actual_shape_data, actual_shape_data + actual_shape_dims.production());
-    // output_dims = lite::operators::ValidateShape(shape, x_dims); //TODO
-    output->Resize(output_dims);
-  }
-  // if (inplace) {
-  //   output->ShareDataWith(*x);
-  // } else {
-  //   output->CopyDataFrom(*x);
-  // }
-  output->ZynqTensor()->copyFrom(x->ZynqTensor());
+
+  x->ZynqTensor()->unalignImage();
+
+  // x->ZynqTensor()->saveToFile("ri", true);
+
   output->Resize(output_dims);
+  output->mutable_data<float16>();
+
+  if (param.inplace) {
+    output->ShareDataWith(*x);
+  } else {
+    // output->CopyDataFrom(*x);
+  }
+  
+  
+
+  output->ZynqTensor()->copyFrom(x->ZynqTensor());
+  // output->ZynqTensor()->saveToFile("ro", true);
+  output->ZynqTensor()->flush();
+  output->ZynqTensor()->setAligned(x->ZynqTensor()->aligned());
+  
+#ifdef FPGA_PRINT_TENSOR
+  Debugger::get_instance().registerOutput("reshape",
+                                          output->ZynqTensor());
+#endif
 }
 
 }  // namespace fpga
@@ -66,9 +99,9 @@ REGISTER_LITE_KERNEL(reshape,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
@@ -86,9 +119,9 @@ REGISTER_LITE_KERNEL(reshape2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
@@ -103,16 +136,16 @@ REGISTER_LITE_KERNEL(flatten,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ReshapeCompute,
+                     paddle::lite::kernels::fpga::FlattenCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
@@ -123,16 +156,16 @@ REGISTER_LITE_KERNEL(flatten2,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ReshapeCompute,
+                     paddle::lite::kernels::fpga::FlattenCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

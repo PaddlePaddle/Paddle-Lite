@@ -241,7 +241,7 @@ void PriorBoxPE::compute_prior_box() {
   }
 
   boxes.flush();
-  boxes.syncToCPU();
+  // boxes.syncToCPU();
   variances.flush();
   output_boxes->copyFrom(&boxes);
   output_variances->copyFrom(&variances);
@@ -261,11 +261,12 @@ bool PriorBoxPE::dispatch() {
   }
 
   param_.outputBoxes->copyFrom(this->cachedBoxes_);
-
   param_.outputVariances->copyFrom(this->cachedVariances_);
+  
   param_.outputBoxes->flush();
-  param_.outputBoxes->syncToCPU();
+  // param_.outputBoxes->syncToCPU();
   param_.outputVariances->flush();
+  return true;
 }
 
 }  // namespace zynqmp

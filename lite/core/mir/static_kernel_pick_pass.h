@@ -144,6 +144,23 @@ class StaticKernelPickPass : public mir::StmtPass {
       }
     }
 
+    if (kernel.target() == TARGET(kFPGA)) {
+      final_score = 4000;
+      bool in_match = true;
+      for (size_t i = 0; i < in_names.size(); ++i) {
+        std::string tmp;
+        CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+        if (in_types.count(in_names[i]) &&
+            in_types.at(in_names[i]) !=
+                kernel.GetInputDeclType(tmp)->precision()) {
+          in_match = false;
+        }
+      }
+      if (in_match) {
+        final_score = 5000;
+      }
+    }
+
     VLOG(4) << "[score(final)]:" << final_score;
     VLOG(2) << "-------- pick summary for " << instruct.op_type()
             << " --------";

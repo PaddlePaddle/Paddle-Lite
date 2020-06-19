@@ -30,6 +30,14 @@ class ReshapeCompute
   virtual ~ReshapeCompute() = default;
 };
 
+class FlattenCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  void Run() override;
+
+  virtual ~FlattenCompute() = default;
+};
+
 class ReshapeComputeFpgaToHost
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
