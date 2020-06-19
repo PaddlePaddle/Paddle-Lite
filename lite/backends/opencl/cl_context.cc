@@ -123,15 +123,9 @@ cl::NDRange CLContext::LocalWorkSizeTune(cl::NDRange global_work_size,
                                          size_t max_work_size,
                                          int divisor) {
   int preferred_lws = 0;
-#if 1
   auto gws0 = global_work_size[0];
   auto gws1 = global_work_size[1];
   auto gws2 = global_work_size[2];
-#else
-  auto gws2 = global_work_size[0];
-  auto gws1 = global_work_size[1];
-  auto gws0 = global_work_size[2];
-#endif
   if (divisor > 1) {
     max_work_size /= divisor;
   }
@@ -147,30 +141,18 @@ cl::NDRange CLContext::LocalWorkSizeTune(cl::NDRange global_work_size,
   while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
     gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
   }
-#if 1
   return cl::NDRange{static_cast<size_t>(gws0),
                      static_cast<size_t>(gws1),
                      static_cast<size_t>(gws2)};
-#else
-  return cl::NDRange{static_cast<size_t>(gws2),
-                     static_cast<size_t>(gws1),
-                     static_cast<size_t>(gws0)};
-#endif
 }
 
 cl::NDRange CLContext::LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
                                                 size_t max_work_size,
                                                 int divisor) {
   int preferred_lws = 0;
-#if 0
-  auto gws0 = global_work_size[0];
-  auto gws1 = global_work_size[1];
-  auto gws2 = global_work_size[2];
-#else
   auto gws2 = global_work_size[0];
   auto gws1 = global_work_size[1];
   auto gws0 = global_work_size[2];
-#endif
   if (divisor > 1) {
     max_work_size /= divisor;
   }
@@ -186,15 +168,9 @@ cl::NDRange CLContext::LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
   while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
     gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
   }
-#if 0
-  return cl::NDRange{static_cast<size_t>(gws0),
-                     static_cast<size_t>(gws1),
-                     static_cast<size_t>(gws2)};
-#else
   return cl::NDRange{static_cast<size_t>(gws2),
                      static_cast<size_t>(gws1),
                      static_cast<size_t>(gws0)};
-#endif
 }
 
 bool CLContext::IsArmMali() {

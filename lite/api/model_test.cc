@@ -152,12 +152,12 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     auto out_std_dev = paddle::lite::compute_standard_deviation<float>(
         out_data, output_tensor_numel, true, out_mean);
 
-    LOG(INFO) << "output tensor " << tidx << " dims:" << tensor_shape_str;
-    LOG(INFO) << "output tensor " << tidx
-              << " elements num:" << output_tensor_numel;
-    LOG(INFO) << "output tensor " << tidx
-              << " standard deviation:" << out_std_dev;
-    LOG(INFO) << "output tensor " << tidx << " mean value:" << out_mean << "\n";
+    VLOG(0) << "output tensor " << tidx << " dims:" << tensor_shape_str;
+    VLOG(0) << "output tensor " << tidx
+            << " elements num:" << output_tensor_numel;
+    VLOG(0) << "output tensor " << tidx
+            << " standard deviation:" << out_std_dev;
+    VLOG(0) << "output tensor " << tidx << " mean value:" << out_mean << "\n";
 
     // print result
     for (int i = 0; i < output_tensor_numel; ++i) {
