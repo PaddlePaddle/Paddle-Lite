@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/arena/framework.h"
-#include <unordered_set>
+#include <set>
 #include "lite/core/context.h"
 #include "lite/operators/subgraph_op.h"
 
@@ -23,7 +23,7 @@ namespace arena {
 
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
-  static const std::unordered_set<TargetType> targets_with_subgraph_op(
+  static const std::set<TargetType> targets_with_subgraph_op(
       {TARGET(kNPU), TARGET(kXPU)});
   bool enable_subgraph_op = targets_with_subgraph_op.count(place_.target) != 0;
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
