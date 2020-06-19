@@ -149,6 +149,7 @@ bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
   CHECK(b_tensor->target() == TARGET(kHost) ||
         b_tensor->target() == TARGET(kX86) ||
         b_tensor->target() == TARGET(kARM));
+
   const T* a_data{};
   Tensor a_host_tensor;
   a_host_tensor.Resize(a_tensor->dims());
