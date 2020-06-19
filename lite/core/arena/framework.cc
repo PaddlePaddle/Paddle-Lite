@@ -149,13 +149,24 @@ bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
         b_tensor->target() == TARGET(kX86) ||
         b_tensor->target() == TARGET(kARM));
 
-  const T* a_data{};
+  T* a_data{};
+  Tensor a_host_tensor;
+  a_host_tensor.Resize(a_tensor->dims());
   switch (a_tensor->target()) {
     case TARGET(kX86):
     case TARGET(kHost):
     case TARGET(kARM):
       a_data = static_cast<const T*>(a_tensor->raw_data());
       break;
+#ifdef LITE_WITH_XPU
+    case TARGET(kXPU):
+      a_data = a_host_tensor.mutable_data<T>();
+      CopySync<TARGET(kXPU)>(a_data,
+                             a_tensor->raw_data(),
+                             sizeof(T) * a_tensor->dims().production(),
+                             IoDirection::DtoH);
+      break;
+#endif
 
     default:
       // Before compare, need to copy data from `target` device to host.
