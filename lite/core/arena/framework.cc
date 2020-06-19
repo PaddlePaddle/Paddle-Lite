@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/arena/framework.h"
+#include <unordered_set>
 #include "lite/core/context.h"
 #include "lite/operators/subgraph_op.h"
 
@@ -22,7 +23,13 @@ namespace arena {
 
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
-  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU)) {
+  static const std::unordered_set<TargetType> targets_with_subgraph_op(
+      {TARGET(kNPU), TARGET(kXPU)});
+  bool enable_subgraph_op = targets_with_subgraph_op.count(place_.target) != 0;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  enable_subgraph_op = false;  // Use XPU kernel directly if XTCL is disabled.
+#endif
+  if (enable_subgraph_op) {
     // Create a new block desc to wrap the original op desc
     int sub_block_idx = 0;
     auto sub_block_desc = new cpp::BlockDesc();
