@@ -99,7 +99,8 @@ void TestCase::PrepareInputsForInstruction() {
         /// alloc memory and then copy data there.
         if (param_type->type->IsTensor()) {
           const auto* shared_tensor = scope_->FindTensor(var);
-          auto* target_tensor = inst_scope_->NewTensor(var);
+          auto* target_tensor =
+              inst_scope_->LocalVar(var)->GetMutable<Tensor>();
           CHECK(!shared_tensor->dims().empty()) << "shared_tensor is empty yet";
           target_tensor->Resize(shared_tensor->dims());
           TargetCopy(param_type->type->target(),
@@ -111,7 +112,7 @@ void TestCase::PrepareInputsForInstruction() {
           const auto* shared_tensor_array =
               scope_->FindVar(var)->GetMutable<std::vector<Tensor>>();
           auto* target_tensor_array =
-              inst_scope_->Var(var)->GetMutable<std::vector<Tensor>>();
+              inst_scope_->LocalVar(var)->GetMutable<std::vector<Tensor>>();
           CHECK(!shared_tensor_array->empty())
               << "shared_tensor_array is empty yet";
           target_tensor_array->resize(shared_tensor_array->size());
@@ -148,8 +149,7 @@ bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
   CHECK(b_tensor->target() == TARGET(kHost) ||
         b_tensor->target() == TARGET(kX86) ||
         b_tensor->target() == TARGET(kARM));
-
-  T* a_data{};
+  const T* a_data{};
   Tensor a_host_tensor;
   a_host_tensor.Resize(a_tensor->dims());
   switch (a_tensor->target()) {
@@ -160,11 +160,11 @@ bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
       break;
 #ifdef LITE_WITH_XPU
     case TARGET(kXPU):
-      a_data = a_host_tensor.mutable_data<T>();
-      CopySync<TARGET(kXPU)>(a_data,
+      CopySync<TARGET(kXPU)>(a_host_tensor.mutable_data<T>(),
                              a_tensor->raw_data(),
                              sizeof(T) * a_tensor->dims().production(),
                              IoDirection::DtoH);
+      a_data = a_host_tensor.data<T>();
       break;
 #endif
 

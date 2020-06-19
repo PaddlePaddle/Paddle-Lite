@@ -140,7 +140,7 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
           dst, src, size, IoDirection::HtoD);
       break;
 #endif
-#ifdef LITE_WITH_MLU
+#ifdef LITE_WITH_XPU
     case TargetType::kXPU:
       TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);
       break;
