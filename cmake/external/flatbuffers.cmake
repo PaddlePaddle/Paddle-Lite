@@ -44,7 +44,7 @@ SET(OPTIONAL_ARGS "-DCMAKE_CXX_COMPILER=${HOST_CXX_COMPILER}"
 ExternalProject_Add(
     extern_flatbuffers
     ${EXTERNAL_PROJECT_LOG_ARGS}
-    GIT_REPOSITORY  ""
+    GIT_REPOSITORY  "https://github.com/google/flatbuffers.git"
     GIT_TAG         "v1.12.0"
     SOURCE_DIR      ${FLATBUFFERS_SOURCES_DIR}
     PREFIX          ${FLATBUFFERS_INCLUDE_DIR}
