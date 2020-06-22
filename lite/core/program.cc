@@ -151,9 +151,26 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+#ifdef LITE_WITH_NVTX
+  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
+  if (annotator.IsEnabled()) {
+    annotation_one_loop.generate(register_layer_names_.back(),
+                                 lite::Color::Engine);
+  }
+#endif
+  int idx = -1;
   for (auto& inst : instructions_) {
+    ++idx;
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
+#endif
+#ifdef LITE_WITH_NVTX
+    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
+    nvtxStringHandle_t registered_name = register_layer_names_[idx];
+    if (annotator.IsEnabled()) {
+      annotation.generate(registered_name, lite::Color::Runner);
+    }
 #endif
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
@@ -216,7 +233,8 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   }
 }
 
-void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
+void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
+                               const std::vector<std::string>& var_names) {
   CHECK(!exec_scope_) << "Duplicate PrepareWorkspace found";
   exec_scope_ = &scope_->NewScope();
   // Create Feed and Fetch var.
@@ -273,6 +291,13 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
         if (var_desc.Persistable()) scope_->Var(var_desc.Name());
       }
     }
+  }
+
+  for (auto i : var_names) {
+    exec_scope_->LocalVar(i);
+    auto* tensor = scope_->Var(i)->GetMutable<lite::Tensor>();
+    auto* sub_tensor = exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+    sub_tensor->CopyDataFrom(*tensor);
   }
 }
 

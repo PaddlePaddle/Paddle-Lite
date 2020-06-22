@@ -15,28 +15,25 @@
 #pragma once
 #include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
+namespace arm {
 
-class SqueezeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class AffineGridCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
+  using param_t = operators::AffineGridParam;
+  void PrepareForRun() override;
+
   void Run() override;
 
-  virtual ~SqueezeCompute() = default;
+  virtual ~AffineGridCompute() = default;
+  float* vh;
+  float* vw;
 };
 
-class Squeeze2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~Squeeze2Compute() = default;
-};
-
-}  // namespace host
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
