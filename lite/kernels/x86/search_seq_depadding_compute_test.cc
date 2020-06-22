@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/search_seq_depadding_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/search_seq_depadding_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -25,9 +27,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(search_seq_depadding_x86, retrive_op) {
-  auto kernel =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "search_seq_depadding");
+  auto kernel = KernelRegistry::Global().Create("search_seq_depadding");
   ASSERT_FALSE(kernel.empty());
   ASSERT_TRUE(kernel.front());
 }

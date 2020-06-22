@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/batch_norm_compute.h"
 #include <gtest/gtest.h>
+
 #include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/batch_norm_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -78,9 +80,7 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
 }
 
 TEST(batch_norm_arm, retrive_op) {
-  auto batch_norm =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "batch_norm");
+  auto batch_norm = KernelRegistry::Global().Create("batch_norm");
   ASSERT_FALSE(batch_norm.empty());
   ASSERT_TRUE(batch_norm.front());
 }

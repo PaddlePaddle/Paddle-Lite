@@ -50,6 +50,10 @@ void fill_tensor_const(Tensor& tensor, float value) {  // NOLINT
       fill_tensor_host_const_impl(
           tensor.mutable_data<int8_t>(), static_cast<signed char>(value), size);
       break;
+    case PRECISION(kInt16):
+      fill_tensor_host_const_impl(
+          tensor.mutable_data<int16_t>(), static_cast<int16_t>(value), size);
+      break;
     case PRECISION(kInt32):
       fill_tensor_host_const_impl(
           tensor.mutable_data<int>(), static_cast<int>(value), size);
@@ -78,6 +82,12 @@ void fill_tensor_host_rand_impl<signed char>(signed char* dio, int64_t size) {
   }
 }
 template <>
+void fill_tensor_host_rand_impl<int16_t>(int16_t* dio, int64_t size) {
+  for (int64_t i = 0; i < size; ++i) {
+    dio[i] = (rand() % 256 - 128) * 2;  // NOLINT
+  }
+}
+template <>
 void fill_tensor_host_rand_impl<unsigned char>(unsigned char* dio,
                                                int64_t size) {
   for (int64_t i = 0; i < size; ++i) {
@@ -94,6 +104,9 @@ void fill_tensor_rand(Tensor& tensor) {  // NOLINT
   switch (type) {
     case PRECISION(kInt8):
       fill_tensor_host_rand_impl(tensor.mutable_data<int8_t>(), size);
+      break;
+    case PRECISION(kInt16):
+      fill_tensor_host_rand_impl(tensor.mutable_data<int16_t>(), size);
       break;
     case PRECISION(kInt32):
       fill_tensor_host_rand_impl(tensor.mutable_data<int>(), size);

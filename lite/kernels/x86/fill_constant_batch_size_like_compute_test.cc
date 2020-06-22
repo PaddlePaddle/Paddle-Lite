@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/fill_constant_batch_size_like_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/fill_constant_batch_size_like_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -26,8 +29,7 @@ namespace x86 {
 
 TEST(fill_constant_batch_size_like_x86, retrive_op) {
   auto fill_constant_batch_size_like =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "fill_constant_batch_size_like");
+      KernelRegistry::Global().Create("fill_constant_batch_size_like");
   ASSERT_FALSE(fill_constant_batch_size_like.empty());
   ASSERT_TRUE(fill_constant_batch_size_like.front());
 }

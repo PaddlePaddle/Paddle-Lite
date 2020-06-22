@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/sequence_expand_as_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/sequence_expand_as_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -27,8 +29,7 @@ namespace x86 {
 
 TEST(sequence_expand_as_x86, retrive_op) {
   auto sequence_expand_as =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_expand_as");
+      KernelRegistry::Global().Create("sequence_expand_as");
   ASSERT_FALSE(sequence_expand_as.empty());
   ASSERT_TRUE(sequence_expand_as.front());
 }

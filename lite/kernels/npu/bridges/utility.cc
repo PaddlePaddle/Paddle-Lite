@@ -144,6 +144,8 @@ int CvtActMode(std::string act_type) {
     act_mode = 9;
   } else if (act_type == "hard_sigmoid") {
     act_mode = 10;
+  } else if (act_type == "thresholded_relu") {
+    act_mode = 11;
   } else {
     // TODO(hong19860320) support more activation mode
     LOG(FATAL) << "[NPU] Unsupported activation type " << act_type;

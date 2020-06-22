@@ -86,6 +86,10 @@ void act_reciprocal(const T* din, T* dout, int size, int threads);
 template <typename T>
 void act_abs(const T* din, T* dout, int size, int threads);
 
+template <typename T>
+void act_thresholded_relu(
+    const T* din, T* dout, int size, float threshold, int threads);
+
 #ifdef LITE_WITH_TRAIN
 template <typename T>
 void act_square_grad(
