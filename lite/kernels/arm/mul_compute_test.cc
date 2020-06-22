@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/mul_compute.h"
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/mul_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -69,8 +71,7 @@ void FillData(T* a,
 }
 
 TEST(mul_arm, retrive_op) {
-  auto mul =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("mul");
+  auto mul = KernelRegistry::Global().Create("mul");
   ASSERT_FALSE(mul.empty());
   ASSERT_TRUE(mul.front());
 }

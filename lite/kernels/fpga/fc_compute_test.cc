@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/fc_compute.h"
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/fpga/fc_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -76,8 +78,7 @@ void FillData(T* a,
 }
 
 TEST(fc_fpga, retrive_op) {
-  auto fc =
-      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>("fc");
+  auto fc = KernelRegistry::Global().Create("fc");
   ASSERT_FALSE(fc.empty());
   ASSERT_TRUE(fc.front());
 }
