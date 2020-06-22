@@ -97,7 +97,7 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
             --cpp-ptr-type flatbuffers::unique_ptr # Used to test with C++98 STLs
             ${OPT}
             -I "${CMAKE_CURRENT_SOURCE_DIR}/tests/include_test"
-            -o "${SRC_FBS_DIR}"
+            -o "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS}"
     DEPENDS flatbuffers
     COMMENT "Run generation: '${GEN_HEADER}'")
