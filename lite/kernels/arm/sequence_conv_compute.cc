@@ -88,7 +88,7 @@ void SequenceConvCompute::Run() {
       paddle::lite::arm::math::im2col(
           sub_in_data,
           1,
-          sequence_len,
+          input_row_end - input_row_begin,
           hidden_dim,  // C H W -> 1, seq_len, hidden_dim
           kernel_size,
           hidden_dim,  // kernel_h, kernel_w
