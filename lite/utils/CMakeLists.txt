@@ -13,6 +13,10 @@ endif()
 
 lite_cc_test(test_varient SRCS varient_test.cc DEPS utils)
 lite_cc_library(any SRCS any.cc)
+lite_cc_library(span SRCS span.cc)
+
+lite_cc_test(test_span SRCS span_test.cc DEPS span)
+add_dependencies(test_span framework_fbs_header)
 
 if(LITE_ON_TINY_PUBLISH OR LITE_ON_MODEL_OPTIMIZE_TOOL)
   lite_cc_library(stream SRCS replace_stl/stream.cc)
