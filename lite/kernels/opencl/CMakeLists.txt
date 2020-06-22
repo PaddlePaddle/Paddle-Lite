@@ -21,6 +21,7 @@ add_kernel(fusion_elementwise_sub_activation_opencl
 add_kernel(pool_opencl OPENCL basic SRCS pool_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(activation_opencl OPENCL basic SRCS activation_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reshape_opencl OPENCL basic SRCS reshape_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(transpose_opencl OPENCL basic SRCS transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(concat_opencl OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
@@ -67,6 +68,9 @@ lite_cc_test(test_scale_image_opencl SRCS scale_image_compute_test.cc
 lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
              DEPS reshape_opencl op_registry program context)
 
+lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
+             DEPS transpose_opencl layout_opencl op_registry program context)
+             
 lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
              DEPS concat_opencl layout_opencl op_registry program context)
 
