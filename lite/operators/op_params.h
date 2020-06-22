@@ -1563,6 +1563,16 @@ struct XPUFcParam : ParamBase {
   std::string activation_type{""};
 };
 
+struct XPUResNetCbamParam : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> filter;
+  std::vector<lite::Tensor*> bias;
+  std::vector<lite::Tensor*> max_filter;
+  lite::Tensor* output{};
+
+  float pool_p{1.0f};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};

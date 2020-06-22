@@ -16,6 +16,10 @@ if(LITE_WITH_XPU)
         add_dependencies(test_ernie_lite_xpu extern_lite_download_ernie_tar_gz)
         add_dependencies(test_bert_lite_xpu extern_lite_download_bert_tar_gz)
     endif()
+    lite_cc_test(test_fpr_lite_xpu SRCS test_fpr_lite_xpu.cc
+      DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+      ${ops} ${host_kernels} ${x86_kernels} ${xpu_kernels}
+      ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
 endif()
 
 if(LITE_WITH_RKNPU)
