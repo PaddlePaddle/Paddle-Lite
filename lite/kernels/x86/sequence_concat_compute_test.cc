@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/sequence_concat_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/sequence_concat_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -94,9 +97,7 @@ static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
 }  // namespace
 
 TEST(sequence_concat_x86, retrive_op) {
-  auto sequence_concat =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_concat");
+  auto sequence_concat = KernelRegistry::Global().Create("sequence_concat");
   ASSERT_FALSE(sequence_concat.empty());
   ASSERT_TRUE(sequence_concat.front());
 }

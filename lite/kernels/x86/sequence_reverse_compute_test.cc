@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/sequence_reverse_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/sequence_reverse_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -44,9 +46,7 @@ static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
 }  // namespace
 
 TEST(sequence_reverse_x86, retrive_op) {
-  auto sequence_reverse =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_reverse");
+  auto sequence_reverse = KernelRegistry::Global().Create("sequence_reverse");
   ASSERT_FALSE(sequence_reverse.empty());
   ASSERT_TRUE(sequence_reverse.front());
 }

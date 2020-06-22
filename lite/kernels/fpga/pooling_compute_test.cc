@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/pooling_compute.h"
 #include <gtest/gtest.h>
+
 #include <limits>
 #include <string>
 #include <vector>
-#include "lite/core/op_registry.h"
 
 #include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/core/op_registry.h"
+#include "lite/kernels/fpga/pooling_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -277,8 +278,7 @@ TEST(pool_fpga, compute) {
 }
 
 TEST(pool_fpga, retrive_op) {
-  auto pool = KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>(
-      "pool2d");
+  auto pool = KernelRegistry::Global().Create("pool2d");
   ASSERT_FALSE(pool.empty());
   ASSERT_TRUE(pool.front());
 }
