@@ -3,6 +3,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
 endif()
 add_subdirectory(cpp)
 add_subdirectory(naive_buffer)
+add_subdirectory(flatbuffers)
 
 #lite_cc_library(runtime_lite SRCS runtime.cc)
 

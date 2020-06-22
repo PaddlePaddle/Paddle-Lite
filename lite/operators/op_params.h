@@ -1166,6 +1166,13 @@ struct AffineChannelParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct AffineGridParam : ParamBase {
+  const lite::Tensor* X{};  // Theta:shape {?, 2, 3}
+  std::vector<int> output_shape;
+  const lite::Tensor* OutputShape;
+  lite::Tensor* Out{};
+};
+
 struct AnchorGeneratorParam : ParamBase {
   const lite::Tensor* Input{};
   std::vector<float> anchor_sizes{};
@@ -1568,6 +1575,20 @@ struct PixelShuffleParam : ParamBase {
   lite::Tensor* output{nullptr};
   int upscale_factor{1};
 };
+
+struct RetinanetDetectionOutputParam : ParamBase {
+  std::vector<Tensor*> bboxes{};
+  std::vector<Tensor*> scores{};
+  std::vector<Tensor*> anchors{};
+  Tensor* im_info{};
+  Tensor* out{};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{};
+  float nms_eta{};
+  int keep_top_k{};
+};
+
 struct WhereIndexParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
