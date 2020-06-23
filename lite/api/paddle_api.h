@@ -82,14 +82,14 @@ class LITE_API PaddlePredictor {
   virtual std::shared_ptr<PaddlePredictor> Clone(
       const std::vector<std::string>& var_names) = 0;
 
-  virtual std::string GetVersion() const = 0;
+  virtual const std::string& GetVersion() const = 0;
 
   // Get input names
-  virtual std::vector<std::string> GetInputNames() = 0;
+  virtual const std::vector<std::string>& GetInputNames() = 0;
   // Get output names
-  virtual std::vector<std::string> GetOutputNames() = 0;
+  virtual const std::vector<std::string>& GetOutputNames() = 0;
   // Get output names
-  virtual std::vector<std::string> GetParamNames();
+  virtual const std::vector<std::string>& GetParamNames();
 
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;

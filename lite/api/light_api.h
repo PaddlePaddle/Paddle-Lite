@@ -46,6 +46,7 @@ class LITE_API LightPredictor {
   LightPredictor(const std::string& lite_model_file,
                  bool model_from_memory = false) {
     scope_ = std::make_shared<Scope>();
+    cpp_program_desc_ = new cpp::ProgramDesc;
     Build(lite_model_file, model_from_memory);
   }
 
@@ -57,6 +58,7 @@ class LITE_API LightPredictor {
                  lite_api::LiteModelType model_type =
                      lite_api::LiteModelType::kNaiveBuffer) {
     scope_ = std::make_shared<Scope>();
+    cpp_program_desc_ = new cpp::ProgramDesc;
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
   }
 
@@ -75,8 +77,8 @@ class LITE_API LightPredictor {
   }
 
   // get inputnames and get outputnames.
-  std::vector<std::string> GetInputNames();
-  std::vector<std::string> GetOutputNames();
+  const std::vector<std::string>& GetInputNames();
+  const std::vector<std::string>& GetOutputNames();
   void PrepareFeedFetch();
 
  private:
@@ -91,14 +93,14 @@ class LITE_API LightPredictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool model_from_memory = false);
 
-  void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
+  void BuildRuntimeProgram(cpp::ProgramDesc* prog);
 
   void DequantizeWeight();
 
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
-  cpp::ProgramDesc cpp_program_desc_;
+  cpp::ProgramDesc* cpp_program_desc_;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
 };
@@ -116,9 +118,9 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
   std::shared_ptr<lite_api::PaddlePredictor> Clone(
       const std::vector<std::string>& var_names) override;
-  std::string GetVersion() const override;
-  std::vector<std::string> GetInputNames() override;
-  std::vector<std::string> GetOutputNames() override;
+  const std::string& GetVersion() const override;
+  const std::vector<std::string>& GetInputNames() override;
+  const std::vector<std::string>& GetOutputNames() override;
 
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string& name) const override;

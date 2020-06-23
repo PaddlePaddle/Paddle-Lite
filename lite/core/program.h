@@ -42,7 +42,7 @@ static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 struct Program {
  public:
   explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
-  Program(const cpp::ProgramDesc& desc,
+  Program(cpp::ProgramDesc* desc,
           const std::shared_ptr<Scope>& root,
           const std::vector<Place>& valid_places,
           const std::vector<std::string>& var_names = {})
@@ -71,7 +71,7 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
-  cpp::ProgramDesc* program_desc() { return &desc_; }
+  cpp::ProgramDesc* program_desc() { return desc_; }
 
   const std::map<std::string, PrecisionType>& var_data_type() const {
     return var_data_type_;
@@ -79,9 +79,9 @@ struct Program {
 
  private:
   // Build from a program and scope.
-  void Build(const cpp::ProgramDesc& program);
+  void Build(cpp::ProgramDesc* program);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program,
+  void PrepareWorkspace(cpp::ProgramDesc* program,
                         const std::vector<std::string>& var_names = {});
 
  private:
@@ -94,7 +94,7 @@ struct Program {
   std::vector<Place> valid_places_;
   // Runtime scope.
   lite::Scope* exec_scope_{};
-  cpp::ProgramDesc desc_;
+  cpp::ProgramDesc* desc_;
 };
 
 struct Instruction {

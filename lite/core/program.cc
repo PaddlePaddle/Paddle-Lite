@@ -193,28 +193,27 @@ void RuntimeProgram::Run() {
 #endif
 }
 
-void Program::Build(const cpp::ProgramDesc& prog) {
+void Program::Build(cpp::ProgramDesc* prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 
   // Create operators.
-  auto program = prog;
-  CHECK(program.BlocksSize());
-  auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
+  auto* program = prog;
+  CHECK(program->BlocksSize());
+  auto& main_block = *program->GetBlock<cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block.OpsSize(); ++i) {
     auto& op_desc = *main_block.GetOp<cpp::OpDesc>(i);
     auto op_type = op_desc.Type();
-    // if (op_type == "feed" || op_type == "fetch") continue;
     VLOG(4) << "create Op [" << op_type << "]";
     auto op = LiteOpRegistry::Global().Create(op_type);
     CHECK(op) << "no Op found for " << op_type;
     if (op_type == "while" || op_type == "conditional_block" ||
         op_type == "subgraph") {
       auto sub_block_idx = op_desc.GetAttr<int32_t>("sub_block");
-      CHECK(sub_block_idx >= 0 && sub_block_idx < program.BlocksSize())
+      CHECK(sub_block_idx >= 0 && sub_block_idx < program->BlocksSize())
           << "Invalid attribute sub_block(" << sub_block_idx << ") for "
           << op_type;
       auto sub_block_desc =
-          const_cast<cpp::ProgramDesc&>(prog).GetBlock<cpp::BlockDesc>(
+          const_cast<cpp::ProgramDesc*>(prog)->GetBlock<cpp::BlockDesc>(
               sub_block_idx);
       CHECK(sub_block_desc);
       if (op_type == "while") {
@@ -233,7 +232,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   }
 }
 
-void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
+void Program::PrepareWorkspace(cpp::ProgramDesc* prog,
                                const std::vector<std::string>& var_names) {
   CHECK(!exec_scope_) << "Duplicate PrepareWorkspace found";
   exec_scope_ = &scope_->NewScope();
@@ -264,10 +263,10 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
     }
   };
 
-  auto program = prog;
-  CHECK(program.BlocksSize());
-  for (size_t b = 0; b < program.BlocksSize(); ++b) {
-    auto& main_block = *program.GetBlock<cpp::BlockDesc>(b);
+  auto* program = prog;
+  CHECK(program->BlocksSize());
+  for (size_t b = 0; b < program->BlocksSize(); ++b) {
+    auto& main_block = *program->GetBlock<cpp::BlockDesc>(b);
     for (size_t i = 0; i < main_block.VarsSize(); ++i) {
       auto& var_desc = *main_block.GetVar<cpp::VarDesc>(i);
       if (!var_desc.Persistable()) {
@@ -292,7 +291,8 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
       }
     }
   }
-
+  // For predictor is cloned particially, some personal persistable weights will
+  // be stored into exec_scope
   for (auto i : var_names) {
     exec_scope_->LocalVar(i);
     auto* tensor = scope_->Var(i)->GetMutable<lite::Tensor>();

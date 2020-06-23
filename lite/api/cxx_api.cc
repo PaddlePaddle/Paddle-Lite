@@ -146,13 +146,17 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
 #endif
 
 // get inputs names
-std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
+const std::vector<std::string> &Predictor::GetInputNames() {
+  return input_names_;
+}
 
 // get outputnames
-std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
+const std::vector<std::string> &Predictor::GetOutputNames() {
+  return output_names_;
+}
 
 // get param names
-std::vector<std::string> Predictor::GetParamNames() {
+const std::vector<std::string> &Predictor::GetParamNames() {
   return exec_scope_->AttributeVarNames();
 }
 
