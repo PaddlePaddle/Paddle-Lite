@@ -40,158 +40,7 @@ class Node;
 class SSAGraph;
 }
 
-class OpInfo;
-
-/**
- * The base class of an light-weight operators, currently just used in inference
- * to eliminate overhead of some operations in current framework.
- *
- * The Operator are designed as follows:
- * - it can has some members to hold the argument and some other computation
- * resources,
- * - it should act like a function call, no more logic included.
- */
-class OpLite : public Registry {
- public:
-  OpLite() = default;
-  explicit OpLite(const std::string &type) : op_type_(type) {}
-  explicit OpLite(const std::vector<Place> &valid_places)
-      : valid_places_(valid_places) {}
-
-  void SetValidPlaces(const std::vector<Place> &places) {
-    VLOG(5) << "valid places " << valid_places_.size();
-    valid_places_ = places;
-  }
-  const std::vector<Place> &valid_places() const { return valid_places_; }
-  // delete op_info
-  void DeleteOpInfo() { op_info_.release(); }
-  // Check the shape.
-  virtual bool CheckShape() const { return true; }
-  // Inference the outputs' shape.
-  virtual bool InferShapeImpl() const { return true; }
-  virtual bool InferShape();
-  // Run this operator.
-  virtual bool Run();
-  // Indicate whether the Op runs only once or not
-  virtual bool run_once() const { return false; }
-  std::string Type() { return op_type_; }
-#ifdef LITE_WITH_PROFILE
-  virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
-#endif
-
-  // Link the external execution environ to internal context.
-  bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
-
-  template <typename T>
-  inline void AttachParam(T *param) {
-    op_param_ = static_cast<T *>(param);
-  }
-
-  const OpInfo *op_info() const { return op_info_.get(); }
-  OpInfo *mutable_op_info() { return op_info_.get(); }
-
-  // Human-readable information.
-  virtual std::string DebugString() const = 0;
-
-  virtual std::string SerializedOpInfo() const { return "N/A"; }
-
-  const Place &kernel_place() const { return kernel_place_; }
-
-  // Create all the kernels for the valid targets.
-  std::vector<std::unique_ptr<KernelBase>> CreateKernels(
-      const std::vector<Place> &places, const std::string &kernel_type = "");
-
-  lite::Scope *scope() { return scope_; }
-
-  // Assign op param to kernel.
-  virtual void AttachKernel(KernelBase *kernel) = 0;
-  void SetKernel(std::vector<std::unique_ptr<KernelBase>> &kernels) {  // NOLINT
-    kernel_ = std::move(kernels.front());
-    kernel_->SetContext(
-        ContextScheduler::Global().NewContext(kernel_->target()));
-  }
-
-  KernelBase *GetKernel() {  // NOLINT
-    return kernel_.get();
-  }
-
-  // Attach input variable from scope by op_desc and input name
-  void AttachInput(const cpp::OpDesc &op_desc,
-                   lite::Scope *scope,
-                   const std::string &input_name,
-                   bool is_dispensable,
-                   lite::Tensor **input_var);
-
-  // Attach output variable from scope by op_desc and output name
-  void AttachOutput(const cpp::OpDesc &op_desc,
-                    lite::Scope *scope,
-                    const std::string &output_name,
-                    bool is_dispensable,
-                    lite::Tensor **output_var);
-
-  virtual ~OpLite() = default;
-
- protected:
-  // Attach it with the runtime environment.
-  virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
-
-  // Specify the kernel to run by default. This will specify the value of
-  // `kernel_place_`.
-  virtual void StaticPickKernel(const std::vector<Place> &valid_targets) {
-    auto kernels = CreateKernels(valid_targets);
-    kernel_ = std::move(kernels.front());
-  }
-
-  // Wait until all the inputs' events are ready.
-  void SyncInputEvents() {}
-
-  // Record the output events, and that will tell all the dependent operators
-  // some inputs are ready.
-  void RecordOutputEvents() {}
-
-  const Tensor *GetTensor(lite::Scope *scope, const std::string &name) const;
-  Tensor *GetMutableTensor(lite::Scope *scope, const std::string &name) const;
-
-  friend class mir::Node;
-  friend class mir::SSAGraph;
-
- protected:
-  // some helper functions.
-  template <typename T>
-  const T *GetVar(Scope *scope, const std::string &name) {
-    auto *var = scope->FindVar(name);
-    CHECK(var) << "No var found for " << name;
-    return &var->Get<T>();
-  }
-  template <typename T>
-  T *GetMutableVar(Scope *scope, const std::string &name) {
-    auto *var = scope->FindVar(name);
-    CHECK(var) << "No var found for " << name;
-    return var->GetMutable<T>();
-  }
-
- protected:
-  lite::Scope *scope_{nullptr};
-  std::unique_ptr<KernelBase> kernel_;
-  std::string op_type_;
-  std::vector<Place> valid_places_;
-  Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
-  std::unique_ptr<OpInfo> op_info_;
-  // todo: it's prefered to combine last_input_shapes and
-  // last_input_lods into a single hash value to decrease
-  // memory usage.
-  std::vector<DDimLite> last_input_shapes{};
-  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods{};
-  std::vector<DDimLite> last_output_shapes{};
-  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
-  mutable operators::ParamBase *op_param_{nullptr};
-
- private:
-  // Infer Shape according to memory, if current input shapes are consistent
-  // with that of previous inputs, output shapes of last time will be reused.
-  bool InferShapeWithCache();
-};
-
+// class OpInfo;
 /*
  * Operator Information, such as some description. It will be shared by all the
  * kernels of the same operator.
@@ -199,6 +48,7 @@ class OpLite : public Registry {
 class OpInfo : public cpp::OpDesc {
  public:
   OpInfo(const OpInfo &) = default;
+  //  ~OpInfo() = default;
   explicit OpInfo(const cpp::OpDesc &other) : cpp::OpDesc(other) {}
 
   // Collect all the input variable's name.
@@ -293,6 +143,160 @@ class OpInfo : public cpp::OpDesc {
       }
     }
   }
+};
+
+/**
+ * The base class of an light-weight operators, currently just used in inference
+ * to eliminate overhead of some operations in current framework.
+ *
+ * The Operator are designed as follows:
+ * - it can has some members to hold the argument and some other computation
+ * resources,
+ * - it should act like a function call, no more logic included.
+ */
+class OpLite : public Registry {
+ public:
+  OpLite() = default;
+  explicit OpLite(const std::string &type) : op_type_(type) {}
+  explicit OpLite(const std::vector<Place> &valid_places)
+      : valid_places_(valid_places) {}
+
+  void SetValidPlaces(const std::vector<Place> &places) {
+    VLOG(5) << "valid places " << valid_places_.size();
+    valid_places_ = places;
+  }
+  const std::vector<Place> &valid_places() const { return valid_places_; }
+  // delete op_info
+  void DeleteOpInfo() {
+    if (op_info_) {
+      delete op_info_;
+    }
+  }
+  // Check the shape.
+  virtual bool CheckShape() const { return true; }
+  // Inference the outputs' shape.
+  virtual bool InferShapeImpl() const { return true; }
+  virtual bool InferShape();
+  // Run this operator.
+  virtual bool Run();
+  // Indicate whether the Op runs only once or not
+  virtual bool run_once() const { return false; }
+  std::string Type() { return op_type_; }
+#ifdef LITE_WITH_PROFILE
+  virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
+#endif
+
+  // Link the external execution environ to internal context.
+  bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
+
+  template <typename T>
+  inline void AttachParam(T *param) {
+    op_param_ = static_cast<T *>(param);
+  }
+
+  const OpInfo *op_info() const { return op_info_; }
+  OpInfo *mutable_op_info() { return op_info_; }
+
+  // Human-readable information.
+  virtual std::string DebugString() const = 0;
+
+  virtual std::string SerializedOpInfo() const { return "N/A"; }
+
+  const Place &kernel_place() const { return kernel_place_; }
+
+  // Create all the kernels for the valid targets.
+  std::vector<std::unique_ptr<KernelBase>> CreateKernels(
+      const std::vector<Place> &places, const std::string &kernel_type = "");
+
+  lite::Scope *scope() { return scope_; }
+
+  // Assign op param to kernel.
+  virtual void AttachKernel(KernelBase *kernel) = 0;
+  void SetKernel(std::vector<std::unique_ptr<KernelBase>> &kernels) {  // NOLINT
+    kernel_ = std::move(kernels.front());
+    kernel_->SetContext(
+        ContextScheduler::Global().NewContext(kernel_->target()));
+  }
+
+  KernelBase *GetKernel() {  // NOLINT
+    return kernel_.get();
+  }
+
+  // Attach input variable from scope by op_desc and input name
+  void AttachInput(const cpp::OpDesc &op_desc,
+                   lite::Scope *scope,
+                   const std::string &input_name,
+                   bool is_dispensable,
+                   lite::Tensor **input_var);
+
+  // Attach output variable from scope by op_desc and output name
+  void AttachOutput(const cpp::OpDesc &op_desc,
+                    lite::Scope *scope,
+                    const std::string &output_name,
+                    bool is_dispensable,
+                    lite::Tensor **output_var);
+
+  virtual ~OpLite() = default;
+
+ protected:
+  // Attach it with the runtime environment.
+  virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
+
+  // Specify the kernel to run by default. This will specify the value of
+  // `kernel_place_`.
+  virtual void StaticPickKernel(const std::vector<Place> &valid_targets) {
+    auto kernels = CreateKernels(valid_targets);
+    kernel_ = std::move(kernels.front());
+  }
+
+  // Wait until all the inputs' events are ready.
+  void SyncInputEvents() {}
+
+  // Record the output events, and that will tell all the dependent operators
+  // some inputs are ready.
+  void RecordOutputEvents() {}
+
+  const Tensor *GetTensor(lite::Scope *scope, const std::string &name) const;
+  Tensor *GetMutableTensor(lite::Scope *scope, const std::string &name) const;
+
+  friend class mir::Node;
+  friend class mir::SSAGraph;
+
+ protected:
+  // some helper functions.
+  template <typename T>
+  const T *GetVar(Scope *scope, const std::string &name) {
+    auto *var = scope->FindVar(name);
+    CHECK(var) << "No var found for " << name;
+    return &var->Get<T>();
+  }
+  template <typename T>
+  T *GetMutableVar(Scope *scope, const std::string &name) {
+    auto *var = scope->FindVar(name);
+    CHECK(var) << "No var found for " << name;
+    return var->GetMutable<T>();
+  }
+
+ protected:
+  lite::Scope *scope_{nullptr};
+  std::unique_ptr<KernelBase> kernel_;
+  std::string op_type_;
+  std::vector<Place> valid_places_;
+  Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
+  OpInfo *op_info_;
+  // todo: it's prefered to combine last_input_shapes and
+  // last_input_lods into a single hash value to decrease
+  // memory usage.
+  std::vector<DDimLite> last_input_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods{};
+  std::vector<DDimLite> last_output_shapes{};
+  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
+  mutable operators::ParamBase *op_param_{nullptr};
+
+ private:
+  // Infer Shape according to memory, if current input shapes are consistent
+  // with that of previous inputs, output shapes of last time will be reused.
+  bool InferShapeWithCache();
 };
 
 }  // namespace lite

@@ -38,7 +38,7 @@ bool OpLite::InferShapeWithCache() {
   // 2. Get hash value of current inputs shape and lod
   bool use_cache = true;
   if (last_input_shapes.size() == current_inputs->size()) {
-    for (int i = 0; i < current_inputs->size(); i++) {
+    for (size_t i = 0; i < current_inputs->size(); i++) {
       if (last_input_shapes[i] != current_inputs->at(i)->dims() ||
           last_input_lods[i] != current_inputs->at(i)->lod()) {
         use_cache = false;
@@ -135,13 +135,10 @@ bool OpLite::Run() {
 }
 
 bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  // valid_places_.clear();
   CHECK(scope != nullptr);
-  // CHECK(!op_info_.get());
   scope_ = scope;
-  op_info_.reset(
-      new OpInfo(opdesc));  // Force clean the out-of-date infomation.
-  return AttachImpl(*op_info(), scope);
+  op_info_ = new OpInfo(opdesc);
+  return AttachImpl(*op_info_, scope);
 }
 
 const Tensor *OpLite::GetTensor(lite::Scope *scope,
