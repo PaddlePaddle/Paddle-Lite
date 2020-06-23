@@ -73,6 +73,44 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
   return true;
 }
 
+std::shared_ptr<hiai::AiModelMngerClient> Device::LoadOfflineModel(
+          const std::string& model_name, const std::string& model_path) {
+  std::shared_ptr<hiai::AiModelMngerClient> model_client(
+      new hiai::AiModelMngerClient());
+  if (model_client->Init(nullptr) != hiai::AI_SUCCESS) {
+    LOG(WARNING) << "[NPU] AiModelMngerClient init failed!";
+    return nullptr;
+  }
+  std::shared_ptr<hiai::AiModelBuilder> model_builder = std::make_shared<hiai::AiModelBuilder>(model_client);
+  hiai::MemBuffer *model_buffer = model_builder->InputMemBufferCreate(model_path);
+  if (model_buffer == nullptr) {
+    LOG(WARNING) << "[NPU] Cannot find the model file!";
+    return nullptr;
+  }
+  auto model_desc = std::make_shared<hiai::AiModelDescription>(
+      model_name, freq_level(), framework_type(), model_type(), device_type());
+  model_desc->SetModelBuffer(model_buffer->GetMemBufferData(), model_buffer->GetMemBufferSize());
+  VLOG(3) << "[NPU] Get model IO Tensor：" << model_desc->GetName().c_str();
+
+  bool model_comp = false;
+  if (model_client->CheckModelCompatibility(*model_desc, model_comp) != hiai::AI_SUCCESS)
+  {
+    LOG(WARNING) << "[NPU] CheckModelCompatibility failed!s";
+    return nullptr;
+  }
+  VLOG(3) << "[NPU] CheckModelCompatibility result is：" << model_comp;
+
+  std::vector<std::shared_ptr<hiai::AiModelDescription>> model_descs;
+  model_descs.push_back(model_desc);
+  if (model_client->Load(model_descs) != hiai::AI_SUCCESS) {
+    LOG(WARNING) << "[NPU] AiModelMngerClient load offline model failed!";
+    return nullptr;
+  }
+  model_builder->MemBufferDestroy(model_buffer);
+  VLOG(3) << "[NPU] Load offline model done.";
+  return model_client;
+}
+
 }  // namespace npu
 }  // namespace lite
 }  // namespace paddle

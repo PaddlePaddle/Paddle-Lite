@@ -148,6 +148,16 @@ bool RuntimeProgram::BuildGraphAndCacheToFile(
     CHECK(graph.Has(output_names[i]));
     device_onodes.push_back(*graph.Get(output_names[i])->data());
   }
+  auto model_path = model_cache_dir + "/" + model_name_ + ".om";
+  if (IsFileExists(model_path)) {
+    VLOG(3) << "[NPU] Offline model exists:" << model_path;
+    // Load offline cached m
+    model_client_ = lite::npu::Device::Global().LoadOfflineModel(model_name_, model_path);
+    if (model_client_) {
+      VLOG(3) << "[NPU] Load offline model succeed.";
+      return true;
+    }
+  }
   // Build the HiAI IR graph to the HiAI om model
   std::vector<char> model_buffer;
   if (!lite::npu::Device::Global().Build(

@@ -46,6 +46,9 @@ class Device {
   bool Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
              std::vector<ge::Operator>& output_nodes,  // NOLINT
              std::vector<char>* model_buffer);
+  // Load offline cached model
+  std::shared_ptr<hiai::AiModelMngerClient>  LoadOfflineModel(
+    const std::string& model_name, const std::string& model_path);
 
  private:
   int freq_level_{3};
