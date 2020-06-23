@@ -240,34 +240,16 @@ class OpInfo : public cpp::OpDesc {
   // output argname
   bool GetOutputIndex(const std::string &output_name, int *out) const;
 
-  template <typename T>
-  void SetInputScale(const std::string &input_name, const T &scale_value) {
-    std::string argname;
-    int index;
-    CHECK(GetInputArgname(input_name, &argname));
-    CHECK(GetInputIndex(input_name, &index));
-    SetAttr<T>(argname + std::to_string(index) + "_scale", scale_value);
-  }
+  void SetInputScale(const std::string &input_name, const float &scale_value);
+  void SetInputScale(const std::string &input_name,
+                     const std::vector<float> &scale_value);
 
-  template <typename T>
-  void SetOutputScale(const std::string &output_name, const T &scale_value) {
-    std::string argname;
-    int index;
-    CHECK(GetOutputArgname(output_name, &argname));
-    CHECK(GetOutputIndex(output_name, &index));
-    SetAttr<T>(argname + std::to_string(index) + "_scale", scale_value);
-  }
+  void SetOutputScale(const std::string &output_name, const float &scale_value);
+  void SetOutputScale(const std::string &output_name,
+                      const std::vector<float> &scale_value);
 
-  bool HasInputScale(const std::string &input_name) const {
-    std::string argname;
-    int index;
-    if (GetInputArgname(input_name, &argname) &&
-        GetInputIndex(input_name, &index)) {
-      return HasAttr(argname + std::to_string(index) + "_scale");
-    } else {
-      return false;
-    }
-  }
+  bool HasInputScale(const std::string &input_name) const;
+  bool HasOutputScale(const std::string &output_name) const;
 
   template <typename T>
   T GetInputScale(const std::string &input_name) const {
@@ -278,17 +260,6 @@ class OpInfo : public cpp::OpDesc {
     return GetAttr<T>(argname + std::to_string(index) + "_scale");
   }
 
-  bool HasOutputScale(const std::string &output_name) const {
-    std::string argname;
-    int index;
-    if (GetOutputArgname(output_name, &argname) &&
-        GetOutputIndex(output_name, &index)) {
-      return HasAttr(argname + std::to_string(index) + "_scale");
-    } else {
-      return false;
-    }
-  }
-
   template <typename T>
   T GetOutputScale(const std::string &output_name) const {
     std::string argname;
@@ -296,10 +267,6 @@ class OpInfo : public cpp::OpDesc {
     CHECK(GetOutputArgname(output_name, &argname));
     CHECK(GetOutputIndex(output_name, &index));
     return GetAttr<T>(argname + std::to_string(index) + "_scale");
-  }
-
-  bool IsQuantized() const {
-    return HasAttr("enable_int8") && GetAttr<bool>("enable_int8") == true;
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {

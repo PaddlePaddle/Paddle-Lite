@@ -232,5 +232,65 @@ bool OpInfo::GetOutputIndex(const std::string &output_name, int *out) const {
   return false;
 }
 
+void OpInfo::SetInputScale(const std::string &input_name,
+                           const float &scale_value) {
+  std::string argname;
+  int index;
+  CHECK(GetInputArgname(input_name, &argname));
+  CHECK(GetInputIndex(input_name, &index));
+  SetAttr<float>(argname + std::to_string(index) + "_scale", scale_value);
+}
+
+void OpInfo::SetInputScale(const std::string &input_name,
+                           const std::vector<float> &scale_value) {
+  std::string argname;
+  int index;
+  CHECK(GetInputArgname(input_name, &argname));
+  CHECK(GetInputIndex(input_name, &index));
+  SetAttr<std::vector<float>>(argname + std::to_string(index) + "_scale",
+                              scale_value);
+}
+
+void OpInfo::SetOutputScale(const std::string &output_name,
+                            const float &scale_value) {
+  std::string argname;
+  int index;
+  CHECK(GetOutputArgname(output_name, &argname));
+  CHECK(GetOutputIndex(output_name, &index));
+  SetAttr<float>(argname + std::to_string(index) + "_scale", scale_value);
+}
+
+void OpInfo::SetOutputScale(const std::string &output_name,
+                            const std::vector<float> &scale_value) {
+  std::string argname;
+  int index;
+  CHECK(GetOutputArgname(output_name, &argname));
+  CHECK(GetOutputIndex(output_name, &index));
+  SetAttr<std::vector<float>>(argname + std::to_string(index) + "_scale",
+                              scale_value);
+}
+
+bool OpInfo::HasInputScale(const std::string &input_name) const {
+  std::string argname;
+  int index;
+  if (GetInputArgname(input_name, &argname) &&
+      GetInputIndex(input_name, &index)) {
+    return HasAttr(argname + std::to_string(index) + "_scale");
+  } else {
+    return false;
+  }
+}
+
+bool OpInfo::HasOutputScale(const std::string &output_name) const {
+  std::string argname;
+  int index;
+  if (GetOutputArgname(output_name, &argname) &&
+      GetOutputIndex(output_name, &index)) {
+    return HasAttr(argname + std::to_string(index) + "_scale");
+  } else {
+    return false;
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle
