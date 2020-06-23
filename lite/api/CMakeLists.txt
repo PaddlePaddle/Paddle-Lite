@@ -11,6 +11,9 @@ endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
 
+get_property(fbs_headers_tmp GLOBAL PROPERTY FBS_GENERATED_OUTPUTS)
+set(__lite_cc_files ${__lite_cc_files} ${fbs_headers_tmp})
+
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
