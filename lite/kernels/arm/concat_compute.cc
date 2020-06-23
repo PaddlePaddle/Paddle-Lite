@@ -52,11 +52,7 @@ void ConcatFunc(const std::vector<lite::Tensor*> inputs,
       output_offset += in_stride[0];
     }
   } else {
-    std::vector<lite::Tensor*> inputs_concat(inputs.size());
-    for (int j = 0; j < inputs.size(); ++j) {
-      inputs_concat[j] = inputs[j];
-    }
-    lite::arm::math::concat_func<T>(inputs_concat, axis, out);
+    lite::arm::math::concat_func<T>(inputs, axis, out);
   }
 }
 
@@ -70,6 +66,9 @@ void ConcatCompute::Run() {
   if (axis_tensor != nullptr) {
     auto* axis_tensor_data = axis_tensor->data<int>();
     axis = axis_tensor_data[0];
+  }
+  if (axis < 0) {
+    axis += inputs[0]->dims().size();
   }
 
   switch (inputs.front()->precision()) {

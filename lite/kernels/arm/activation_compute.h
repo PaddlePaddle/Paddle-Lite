@@ -175,6 +175,16 @@ class AbsCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~AbsCompute() = default;
 };
 
+class ThresholdedReluCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~ThresholdedReluCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

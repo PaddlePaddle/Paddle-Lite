@@ -24,7 +24,6 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
-#include "lite/utils/variant.h"
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -358,6 +357,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0};
   float hard_swish_scale{6.0};
   float hard_swish_offset{3.0};
+  // thresholded_relu
+  float relu_threshold{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1164,6 +1165,13 @@ struct AffineChannelParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct AffineGridParam : ParamBase {
+  const lite::Tensor* X{};  // Theta:shape {?, 2, 3}
+  std::vector<int> output_shape;
+  const lite::Tensor* OutputShape;
+  lite::Tensor* Out{};
+};
+
 struct AnchorGeneratorParam : ParamBase {
   const lite::Tensor* Input{};
   std::vector<float> anchor_sizes{};
@@ -1566,6 +1574,25 @@ struct PixelShuffleParam : ParamBase {
   lite::Tensor* output{nullptr};
   int upscale_factor{1};
 };
+
+struct RetinanetDetectionOutputParam : ParamBase {
+  std::vector<Tensor*> bboxes{};
+  std::vector<Tensor*> scores{};
+  std::vector<Tensor*> anchors{};
+  Tensor* im_info{};
+  Tensor* out{};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{};
+  float nms_eta{};
+  int keep_top_k{};
+};
+
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

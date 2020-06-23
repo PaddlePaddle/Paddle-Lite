@@ -106,7 +106,8 @@ enum class ActivationType : int {
   kAbs = 9,
   kHardSwish = 10,
   kReciprocal = 11,
-  NUM = 12,
+  kThresholdedRelu = 12,
+  NUM = 13,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
