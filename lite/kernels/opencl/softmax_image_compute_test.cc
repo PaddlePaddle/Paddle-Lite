@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <random>
 
 #include <gtest/gtest.h>
+#include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -172,8 +172,9 @@ TEST(softmax_image2d, compute) {
             // handle output
             const size_t cl_image2d_row_pitch{0};
             const size_t cl_image2d_slice_pitch{0};
-            half_t* out_image_data =
-                new half_t[out_image_shape.production() * 4];
+
+            std::vector<half_t> out_image_v(out_image_shape.production() * 4);
+            half_t* out_image_data = out_image_v.data();
             TargetWrapperCL::ImgcpySync(out_image_data,
                                         out_image,
                                         out_image_shape[0],
