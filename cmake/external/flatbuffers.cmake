@@ -89,7 +89,6 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
   else()
     # --cpp-std is defined by flatc default settings.
   endif()
-  get_filename_component(SRC_FBS ${SRC_FBS} ABSOLUTE)
   message(STATUS "`${SRC_FBS}`: add generation of C++ code with '${OPT}'")
   get_filename_component(SRC_FBS_DIR ${SRC_FBS} PATH)
   message(STATUS "SRC_FBS_DIR: ${SRC_FBS_DIR}")
