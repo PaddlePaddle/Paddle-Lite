@@ -15,19 +15,38 @@
 #include "lite/utils/span.h"
 #include <gtest/gtest.h>
 #include <string>
-#include "lite/model_parser/flatbuffers/framework_generated.h"
 
 namespace paddle {
 namespace lite {
 
 template <typename T>
 void span_vector_test() {
+  std::vector<T> vec({1, 2, 3});
+  lite::Span<T> span(vec);
+  ASSERT_EQ(span.size(), vec.size());
+  for (size_t i = 0; i < span.size(); ++i) {
+    ASSERT_EQ(span[i], vec[i]);
+  }
+  ASSERT_EQ(span.front(), vec.front());
+  ASSERT_EQ(span.back(), vec.back());
+  ASSERT_EQ(span.at(0), vec.at(0));
+  ASSERT_EQ(*span.begin(), *vec.begin());
+  ASSERT_EQ(*span.end(), *vec.end());
+}
+
+template <typename T>
+void span_vector_const_test() {
   const std::vector<T> vec({1, 2, 3});
   lite::Span<const T> span(vec);
   ASSERT_EQ(span.size(), vec.size());
   for (size_t i = 0; i < span.size(); ++i) {
     ASSERT_EQ(span[i], vec[i]);
   }
+  ASSERT_EQ(span.front(), vec.front());
+  ASSERT_EQ(span.back(), vec.back());
+  ASSERT_EQ(span.at(0), vec.at(0));
+  ASSERT_EQ(*span.begin(), *vec.begin());
+  ASSERT_EQ(*span.end(), *vec.end());
 }
 
 template <>
@@ -57,6 +76,11 @@ TEST(span, test) {
   paddle::lite::span_vector_test<float>();
   paddle::lite::span_vector_test<std::string>();
   paddle::lite::span_array_test<int64_t>();
+}
+
+TEST(span, const_test) {
+  paddle::lite::span_vector_const_test<int64_t>();
+  paddle::lite::span_vector_const_test<float>();
 }
 
 }  // namespace lite
