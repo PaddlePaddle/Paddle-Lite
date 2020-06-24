@@ -93,24 +93,162 @@ inline constexpr size_t to_size(T size) {
   return static_cast<size_t>(size);
 }
 
+// ------- void pointer -------
+template <typename T>
+struct byte_pointer {
+  typedef uint8_t* type;
+  typedef void* void_type;
+};
+
+template <typename T>
+struct byte_pointer<const T> {
+  typedef uint8_t const* type;
+  typedef void const* void_type;
+};
+
 }  // namespace span_detail
+
+template <typename T>
+struct IndirectHelper {
+  typedef T return_type;
+  typedef T const const_return_type;
+  typedef T* pointer;
+  typedef T& reference;
+  static const size_t element_stride = sizeof(T);
+  static T& Read(void* p, uint32_t i) { return *(reinterpret_cast<T*>(p) + i); }
+  static T const& Read(void const* p, uint32_t i) {
+    return *(reinterpret_cast<T const*>(p) + i);
+  }
+  static T* Address(void* p, uint32_t i) {
+    return (reinterpret_cast<T*>(p) + i);
+  }
+  static T const* Address(void const* p, uint32_t i) {
+    return (reinterpret_cast<T const*>(p) + i);
+  }
+};
+
+template <typename T, typename IT>
+struct VectorIterator {
+  typedef std::random_access_iterator_tag iterator_category;
+  typedef IT value_type;
+  typedef std::ptrdiff_t difference_type;
+  typedef IT* pointer;
+  typedef IT& reference;
+  typedef typename span_detail::byte_pointer<IT>::type byte_pointer;
+  typedef typename span_detail::byte_pointer<IT>::void_type void_pointer;
+
+  VectorIterator(void_pointer data, uint32_t i)
+      : data_(reinterpret_cast<byte_pointer>(data) +
+              IndirectHelper<T>::element_stride * i) {}
+  VectorIterator(VectorIterator const& other) : data_(other.data_) {}
+  VectorIterator() : data_(nullptr) {}
+
+  VectorIterator& operator=(VectorIterator const& other) {
+    data_ = other.data_;
+    return *this;
+  }
+
+  VectorIterator& operator=(VectorIterator&& other) {
+    data_ = other.data_;
+    return *this;
+  }
+
+  bool operator==(VectorIterator const& other) const {
+    return data_ == other.data_;
+  }
+
+  bool operator<(VectorIterator const& other) const {
+    return data_ < other.data_;
+  }
+
+  bool operator!=(VectorIterator const& other) const {
+    return data_ != other.data_;
+  }
+
+  difference_type operator-(VectorIterator const& other) const {
+    return (data_ - other.data_) / IndirectHelper<T>::element_stride;
+  }
+
+  reference operator*() const { return IndirectHelper<T>::Read(data_, 0); }
+
+  pointer operator->() const { return IndirectHelper<T>::Address(data_, 0); }
+
+  VectorIterator& operator++() {
+    data_ += IndirectHelper<T>::element_stride;
+    return *this;
+  }
+
+  VectorIterator operator++(int) {
+    VectorIterator temp(data_, 0);
+    data_ += IndirectHelper<T>::element_stride;
+    return temp;
+  }
+
+  VectorIterator operator+(uint32_t const& offset) const {
+    return VectorIterator(data_, offset * IndirectHelper<T>::element_stride, 0);
+  }
+
+  VectorIterator& operator+=(uint32_t const& offset) {
+    data_ += offset * IndirectHelper<T>::element_stride;
+    return *this;
+  }
+
+  VectorIterator& operator--() {
+    data_ -= IndirectHelper<T>::element_stride;
+    return *this;
+  }
+
+  VectorIterator operator--(int) {
+    VectorIterator temp(data_, 0);
+    data_ -= IndirectHelper<T>::element_stride;
+    return temp;
+  }
+
+  VectorIterator operator-(uint32_t const& offset) const {
+    return VectorIterator(data_ - offset * IndirectHelper<T>::element_stride,
+                          0);
+  }
+
+  VectorIterator& operator-=(uint32_t const& offset) {
+    data_ -= offset * IndirectHelper<T>::element_stride;
+    return *this;
+  }
+
+ private:
+  byte_pointer data_;
+};
+
+template <typename Iterator>
+struct VectorReverseIterator : public std::reverse_iterator<Iterator> {
+  explicit VectorReverseIterator(Iterator iter)
+      : std::reverse_iterator<Iterator>(iter) {}
+
+  typename Iterator::value_type operator*() const {
+    return *(std::reverse_iterator<Iterator>::current);
+  }
+
+  typename Iterator::value_type operator->() const {
+    return *(std::reverse_iterator<Iterator>::current);
+  }
+};
 
 template <typename T>
 class Span {
  public:
   typedef T element_type;
+  typedef typename IndirectHelper<T>::pointer pointer;
+  typedef typename IndirectHelper<T>::reference reference;
+
   typedef typename std::remove_cv<T>::type value_type;
 
-  typedef T& reference;
-  typedef T* pointer;
-  typedef T const* const_pointer;
-  typedef T const& const_reference;
+  typedef VectorIterator<T, typename IndirectHelper<T>::return_type> iterator;
+  typedef VectorIterator<T, typename IndirectHelper<T>::const_return_type>
+      const_iterator;
+  typedef VectorReverseIterator<iterator> reverse_iterator;
+  typedef VectorReverseIterator<const_iterator> const_reverse_iterator;
+
   typedef size_t size_type;
-  typedef pointer iterator;
-  typedef const_pointer const_iterator;
   typedef std::ptrdiff_t difference_type;
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
   Span() noexcept : data_(nullptr), size_(0) {}
 
@@ -156,7 +294,7 @@ class Span {
 
   reference operator[](size_type idx) const {
     CHECK(0 <= idx && idx < size());
-    return *(data() + idx);
+    return IndirectHelper<T>::Read(data(), idx);
   }
 
   reference at(size_type idx) const { return this->operator[](idx); }
@@ -165,12 +303,12 @@ class Span {
 
   reference front() const noexcept {
     CHECK(!empty());
-    return *data();
+    return IndirectHelper<T>::Read(data(), 0);
   }
 
   reference back() const noexcept {
     CHECK(!empty());
-    return *(data() + size() - 1);
+    return IndirectHelper<T>::Read(data(), size() - 1);
   }
 
   void swap(Span& other) noexcept {
@@ -178,24 +316,24 @@ class Span {
     std::swap(size_, other.size_);
   }
 
-  iterator begin() const noexcept { return data(); }
-
-  iterator end() const noexcept { return (data() + size()); }
-
-  const_iterator cbegin() const noexcept { return data(); }
-
-  const_iterator cend() const noexcept { return (data() + size()); }
-
-  const_iterator rbegin() const noexcept { return reverse_iterator(end()); }
-
-  const_iterator rend() const noexcept { return reverse_iterator(begin()); }
-
-  const_iterator crbegin() const noexcept {
-    return const_reverse_iterator(end());
+  iterator begin() const noexcept { return iterator(data(), 0); }
+  iterator end() const noexcept { return iterator(data(), size()); }
+  reverse_iterator rbegin() const noexcept {
+    return reverse_iterator(end() - 1);
+  }
+  reverse_iterator rend() const noexcept {
+    return reverse_iterator(begin() - 1);
   }
 
-  const_iterator crend() const noexcept {
-    return const_reverse_iterator(begin());
+  const_iterator cbegin() const noexcept { return const_iterator(data(), 0); }
+  const_iterator cend() const noexcept {
+    return const_iterator(data(), size());
+  }
+  const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(end() - 1);
+  }
+  const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(begin() - 1);
   }
 
  private:
