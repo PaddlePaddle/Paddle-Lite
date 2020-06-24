@@ -127,5 +127,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       split_merge_lod_tenosr.cc
       reduce_prod.cc
       lstm.cc
+      clip.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()
