@@ -62,19 +62,36 @@ class Scope final {
   // Create a Tensor variable. This will create a new Variable called `name`.
   Tensor* NewTensor(const std::string& name) {
     auto* var = Var(name);
-    return var->GetMutable<TensorLite>();
+    return var->GetMutable<Tensor>();
   }
 
   const Tensor* FindTensor(const std::string& name) {
     auto* var = FindVar(name);
     if (!var) return nullptr;
-    return &var->Get<TensorLite>();
+    return &var->Get<Tensor>();
   }
 
   Tensor* FindMutableTensor(const std::string& name) {
     auto* var = FindVar(name);
     if (!var) return nullptr;
-    return var->GetMutable<TensorLite>();
+    return var->GetMutable<Tensor>();
+  }
+
+  std::vector<Tensor>* NewTensorList(const std::string& name) {
+    auto* var = Var(name);
+    return var->GetMutable<std::vector<Tensor>>();
+  }
+
+  const std::vector<Tensor>* FindTensorList(const std::string& name) {
+    auto* var = FindVar(name);
+    if (!var) return nullptr;
+    return &var->Get<std::vector<Tensor>>();
+  }
+
+  std::vector<Tensor>* FindMutableTensorList(const std::string& name) {
+    auto* var = FindVar(name);
+    if (!var) return nullptr;
+    return var->GetMutable<std::vector<Tensor>>();
   }
 
  private:
