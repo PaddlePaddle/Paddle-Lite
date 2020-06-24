@@ -44,6 +44,7 @@ add_kernel(match_matrix_tensor_compute_cuda CUDA extra SRCS match_matrix_tensor_
 add_kernel(search_aligned_mat_mul_compute_cuda CUDA extra SRCS search_aligned_mat_mul_compute.cc DEPS ${lite_kernel_deps} cuda_batched_gemm)
 add_kernel(search_seq_fc_compute_cuda CUDA extra SRCS search_seq_fc_compute.cu DEPS ${lite_kernel_deps} cuda_gemm)
 add_kernel(var_conv_2d_compute_cuda CUDA extra SRCS var_conv_2d_compute.cu DEPS ${lite_kernel_deps} ${math_cuda})
+add_kernel(topk_pooling_compute_cuda CUDA extra SRCS topk_pooling_compute.cu DEPS ${lite_kernel_deps})
 
 # unit test
 lite_cc_test(calib_compute_cuda_test SRCS calib_compute_cuda_test.cc DEPS calib_compute_cuda)
@@ -79,4 +80,5 @@ if(LITE_BUILD_EXTRA)
     #nv_test(attention_padding_mask_compute_cuda_test SRCS attention_padding_mask_compute_test.cc DEPS attention_padding_mask_compute_cuda)
     nv_test(sequence_arithmetic_compute_cuda_test SRCS sequence_arithmetic_compute_test.cc DEPS sequence_arithmetic_compute_cuda)
     #nv_test(search_fc_cuda_test SRCS search_fc_compute_test.cc DEPS search_fc_compute_cuda)
+    nv_test(topk_pooling_compute_cuda_test SRCS topk_pooling_compute_test.cc DEPS topk_pooling_compute_cuda)
 endif()
