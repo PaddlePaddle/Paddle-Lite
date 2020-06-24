@@ -15,7 +15,7 @@ limitations under the License. */
 #include "lite/backends/x86/math/im2col.h"
 #include <vector>
 #include "lite/backends/x86/math/im2col_cfo_cpu.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -38,8 +38,8 @@ class Im2ColFunctor<lite::x86::math::ColFormat::kCFO,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
                   lite::Tensor* col) {
-    PADDLELITE_ENFORCE(im.dims().size() == 3);
-    PADDLELITE_ENFORCE(col->dims().size() == 5);
+    CHECK_EQ(im.dims().size(), 3);
+    CHECK_EQ(col->dims().size(), 5);
 
     if (stride[0] == 1 && stride[1] == 1 && dilation[0] == 1 &&
         dilation[1] == 1) {
@@ -72,8 +72,8 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
                   lite::Tensor* im) {
-    PADDLELITE_ENFORCE(im->dims().size() == 3);
-    PADDLELITE_ENFORCE(col.dims().size() == 5);
+    CHECK_EQ(im->dims().size(), 3);
+    CHECK_EQ(col.dims().size(), 5);
     int im_channels = im->dims()[0];
     int im_height = im->dims()[1];
     int im_width = im->dims()[2];
@@ -82,22 +82,20 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
     int col_height = col.dims()[3];
     int col_width = col.dims()[4];
 
-    PADDLELITE_ENFORCE_EQ(
-        (im_height + padding[0] + padding[2] -
-         ((dilation[0] * (filter_height - 1) + 1))) /
-                stride[0] +
-            1,
-        col_height,
-        "Output_height and padding(padding_up, padding_down) are "
-        "inconsistent.");
-    PADDLELITE_ENFORCE_EQ(
-        (im_width + padding[1] + padding[3] -
-         ((dilation[1] * (filter_width - 1) + 1))) /
-                stride[1] +
-            1,
-        col_width,
-        "Output_height and padding(padding_up, padding_down) are "
-        "inconsistent.");
+    CHECK_EQ((im_height + padding[0] + padding[2] -
+              ((dilation[0] * (filter_height - 1) + 1))) /
+                     stride[0] +
+                 1,
+             col_height)
+        << "Output_height and padding(padding_up, padding_down) are "
+           "inconsistent.";
+    CHECK_EQ((im_width + padding[1] + padding[3] -
+              ((dilation[1] * (filter_width - 1) + 1))) /
+                     stride[1] +
+                 1,
+             col_width)
+        << "Output_height and padding(padding_up, padding_down) are "
+           "inconsistent.";
 
     int channels_col = im_channels * filter_height * filter_width;
 
@@ -152,8 +150,8 @@ class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
                   lite::Tensor* col) {
-    PADDLELITE_ENFORCE(im.dims().size() == 3);
-    PADDLELITE_ENFORCE(col->dims().size() == 5);
+    CHECK_EQ(im.dims().size(), 3);
+    CHECK_EQ(col->dims().size(), 5);
     int im_channels = im.dims()[0];
     int im_height = im.dims()[1];
     int im_width = im.dims()[2];
@@ -216,8 +214,8 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
                   lite::Tensor* im) {
-    PADDLELITE_ENFORCE(im->dims().size() == 3);
-    PADDLELITE_ENFORCE(col.dims().size() == 5);
+    CHECK_EQ(im->dims().size(), 3);
+    CHECK_EQ(col.dims().size(), 5);
     int im_channels = im->dims()[0];
     int im_height = im->dims()[1];
     int im_width = im->dims()[2];
@@ -226,16 +224,16 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
     int col_height = col.dims()[0];
     int col_width = col.dims()[1];
 
-    PADDLELITE_ENFORCE_EQ(
+    CHECK_EQ(
         (im_height + padding[0] + padding[2] - filter_height) / stride[0] + 1,
-        col_height,
-        "Output_height and padding(padding_up, padding_down) are "
-        "inconsistent.");
-    PADDLELITE_ENFORCE_EQ(
+        col_height)
+        << "Output_height and padding(padding_up, padding_down) are "
+           "inconsistent.";
+    CHECK_EQ(
         (im_width + padding[1] + padding[3] - filter_width) / stride[1] + 1,
-        col_width,
-        "col_width and padding(padding_left, padding_right) are "
-        "inconsistent.");
+        col_width)
+        << "col_width and padding(padding_left, padding_right) are "
+           "inconsistent.";
 
     T* im_data = im->template mutable_data<T>();
     const T* col_data = col.data<T>();

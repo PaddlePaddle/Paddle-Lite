@@ -20,8 +20,8 @@ limitations under the License. */
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 #include "lite/fluid/float16.h"
-#include "lite/utils/paddle_enforce.h"
-//#include "lite/tensor_util.h"
+#include "lite/utils/cp_logging.h"
+// #include "lite/tensor_util.h"
 
 namespace paddle {
 namespace lite {
