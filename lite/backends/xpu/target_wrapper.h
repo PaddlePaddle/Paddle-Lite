@@ -14,12 +14,32 @@
 
 #pragma once
 
+#include <memory>                                 // std::unique_ptr
+#include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
+
+struct XPUScratchPad {
+  XPUScratchPad(void* addr, bool is_l3) : addr_(addr), is_l3_(is_l3) {}
+
+  void* addr_;
+  bool is_l3_;
+};
+
+struct XPUScratchPadDeleter {
+  void operator()(XPUScratchPad* sp) const {
+    if (!sp->is_l3_) {
+      xpu_free(sp->addr_);
+    }
+    delete sp;
+  }
+};
+
+using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
 
 template <>
 class TargetWrapper<TARGET(kXPU)> {
@@ -34,6 +54,8 @@ class TargetWrapper<TARGET(kXPU)> {
                          const void* src,
                          size_t size,
                          IoDirection dir);
+
+  static XPUScratchPadGuard MallocScratchPad(size_t size, bool use_l3 = true);
 };
 
 }  // namespace lite

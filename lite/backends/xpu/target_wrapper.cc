@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/target_wrapper.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/core/context.h"  // XPUContext
 
 namespace paddle {
 namespace lite {
@@ -40,6 +40,18 @@ void TargetWrapperXPU::MemcpySync(void* dst,
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
   }
+}
+
+XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
+                                                      bool use_l3) {
+  void* ptr{nullptr};
+  if (use_l3) {
+    ptr = xdnn::alloc_workspace(XPUContext::GetRawContext(), size);
+  } else {
+    ptr = TargetWrapperXPU::Malloc(size);
+  }
+  CHECK(ptr != nullptr);
+  return XPUScratchPadGuard(new XPUScratchPad(ptr, use_l3));
 }
 
 }  // namespace lite

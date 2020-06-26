@@ -95,6 +95,7 @@ class Optimizer {
            "identity_dropout_eliminate_pass",
            "__xpu__resnet_fuse_pass",
            "__xpu__resnet_cbam_fuse_pass",
+           "__xpu__mmdnn_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
            "__xpu__embedding_with_eltwise_add_fuse_pass",
            "__xpu__fc_fuse_pass",
