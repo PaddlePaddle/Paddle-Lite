@@ -1602,6 +1602,15 @@ struct WhereIndexParam : ParamBase {
   lite::Tensor* output{nullptr};
 };
 
+struct ClipParam : ParamBase {
+  Tensor* x{};
+  Tensor* min_tensor{};
+  Tensor* max_tensor{};
+  Tensor* out{};
+  float min{};
+  float max{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
