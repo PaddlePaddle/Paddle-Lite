@@ -162,10 +162,10 @@ class LITE_API Predictor {
 // #endif
 
 #ifdef LITE_WITH_CUDA
-  void SetMultiStream(bool multi_stream) { multi_stream_ = multi_stream; }
+  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
   bool multi_stream() { return multi_stream_; }
-  void SetExecStream(cudaStream_t* stream) { exec_stream_ = stream; }
-  void SetIoStream(cudaStream_t* stream) { io_stream_ = stream; }
+  void set_exec_stream(cudaStream_t* stream) { exec_stream_ = stream; }
+  void set_io_stream(cudaStream_t* stream) { io_stream_ = stream; }
   const cudaStream_t& exec_stream() { return *exec_stream_; }
   const cudaStream_t& io_stream() { return *io_stream_; }
 #endif
@@ -182,8 +182,8 @@ class LITE_API Predictor {
   std::vector<Place> valid_places_;
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
-  cudaStream_t* io_stream_;
-  cudaStream_t* exec_stream_;
+  cudaStream_t* io_stream_{nullptr};
+  cudaStream_t* exec_stream_{nullptr};
 #endif
 };
 

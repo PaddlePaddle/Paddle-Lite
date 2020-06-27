@@ -105,13 +105,13 @@ void CxxPaddleApiImpl::CudaEnvInit(std::vector<std::string> *passes) {
     TargetWrapperCuda::CreateStream(io_stream_);
   }
 
-  raw_predictor_->SetExecStream(exec_stream_);
-  raw_predictor_->SetIoStream(io_stream_);
+  raw_predictor_->set_exec_stream(exec_stream_);
+  raw_predictor_->set_io_stream(io_stream_);
 
   // init sync events.
   if (config_.multi_stream()) {
     multi_stream_ = true;
-    raw_predictor_->SetMultiStream(multi_stream_);
+    raw_predictor_->set_multi_stream(multi_stream_);
     passes->push_back("multi_stream_analysis_pass");
     VLOG(3) << "add pass: " << (*passes)[0];
     Env<TargetType::kCUDA>::Devs &devs = Env<TargetType::kCUDA>::Global();
