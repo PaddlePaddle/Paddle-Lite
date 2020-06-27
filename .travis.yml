@@ -1,6 +1,5 @@
 language: cpp
 cache: ccache
-sudo: required
 dist: xenial
 
 os:
@@ -18,11 +17,12 @@ addons:
       - clang-format-3.8
         
 before_install:
-  - sudo pip install cpplint pre-commit==1.10.3
+  - sudo pip install cpplint flake8 pre-commit==1.10.3
   - sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format
   # Download and install recent cmake
 
 script:
+  - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
   - | 
     function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
   - |
