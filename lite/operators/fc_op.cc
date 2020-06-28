@@ -109,12 +109,11 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     auto weight_name = op_info->Input("W").front();
     auto out_name = op_info->Output("Out").front();
     if (op_info->HasInputScale(input_name))
-      param_.input_scale = op_info->GetInputScale<float>(input_name);
+      param_.input_scale = op_info->GetInputScaleScalar(input_name);
     if (op_info->HasInputScale(weight_name))
-      param_.weight_scale =
-          op_info->GetInputScale<std::vector<float>>(weight_name);
+      param_.weight_scale = op_info->GetInputScaleVector(weight_name);
     if (op_info->HasOutputScale(out_name))
-      param_.output_scale = op_info->GetOutputScale<float>(out_name);
+      param_.output_scale = op_info->GetOutputScaleScalar(out_name);
   }
   return true;
 }

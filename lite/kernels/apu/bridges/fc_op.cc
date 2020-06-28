@@ -61,11 +61,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto weight_name = op_desc.Input("W").front();
       auto out_name = op_desc.Output("Out").front();
       if (op_info->HasInputScale(input_name))
-        input_scale = op_info->GetInputScale<float>(input_name);
+        input_scale = op_info->GetInputScaleScalar(input_name);
       if (op_info->HasInputScale(weight_name))
-        w_scale = op_info->GetInputScale<std::vector<float>>(weight_name);
+        w_scale = op_info->GetInputScaleVector(weight_name);
       if (op_info->HasOutputScale(out_name))
-        out_scale = op_info->GetOutputScale<float>(out_name);
+        out_scale = op_info->GetOutputScaleScalar(out_name);
     } else {
       return FAILED;
     }

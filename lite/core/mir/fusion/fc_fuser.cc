@@ -82,13 +82,12 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   bool is_quantized_op = op_desc.HasInputScale(input_x_name) &&
                          op_desc.HasInputScale(input_y_name);
   if (is_quantized_op) {
-    x_scale = op_desc.GetInputScale<float>(input_x_name);
+    x_scale = op_desc.GetInputScaleScalar(input_x_name);
     if (y_var_node->is_weight) {  // the scale of y is a vector
-      y_scale_vct =
-          op_desc.GetInputScale<std::vector<float>>(op_desc.Input("Y").front());
+      y_scale_vct = op_desc.GetInputScaleVector(op_desc.Input("Y").front());
     } else {
       y_scale_vct.push_back(  // the scale of y is scalar
-          op_desc.GetInputScale<float>(op_desc.Input("Y").front()));
+          op_desc.GetInputScaleScalar(op_desc.Input("Y").front()));
     }
   }
 

@@ -119,7 +119,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
         instruct.mutable_op_info()->SetOutputScale(
             out_node_name,
-            one_adj_instruct.op_info()->GetInputScale<float>(out_node_name));
+            one_adj_instruct.op_info()->GetInputScaleScalar(out_node_name));
 
         auto update_desc = *instruct.mutable_op_info();
         instruct.ResetOp(update_desc, graph->valid_places());

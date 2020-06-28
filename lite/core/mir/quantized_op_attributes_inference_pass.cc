@@ -50,7 +50,7 @@ void QuantizedOpAttributesInferencePass::Apply(
         auto& out_inst = out_op_node->AsStmt();
         auto out_op_info = out_inst.op_info();
         if (!out_op_info->HasInputScale(out_var_node_name)) continue;
-        auto input_scale = out_op_info->GetInputScale<float>(out_var_node_name);
+        auto input_scale = out_op_info->GetInputScaleScalar(out_var_node_name);
         if (!found) {
           found = true;
           output_scale = input_scale;

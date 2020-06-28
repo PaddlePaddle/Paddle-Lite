@@ -161,8 +161,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
                    "INT8 mode: Conv should has weight_scale attr");
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
-    auto weight_scale =
-        conv_op_desc->GetInputScale<std::vector<float>>(weight_name);
+    auto weight_scale = conv_op_desc->GetInputScaleVector(weight_name);
     if (conv_type_ == "conv2d_transpose" && !depthwise) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];

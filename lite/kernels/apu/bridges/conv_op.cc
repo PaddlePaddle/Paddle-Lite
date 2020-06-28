@@ -103,11 +103,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto filter_name = op_desc.Input("Filter").front();
       auto output_name = op_desc.Output("Output").front();
       if (op_info->HasInputScale(input_name))
-        input_scale = op_info->GetInputScale<float>(input_name);
+        input_scale = op_info->GetInputScaleScalar(input_name);
       if (op_info->HasInputScale(filter_name))
-        weight_scale = op_info->GetInputScale<std::vector<float>>(filter_name);
+        weight_scale = op_info->GetInputScaleVector(filter_name);
       if (op_info->HasOutputScale(output_name)) {
-        output_scale = op_info->GetOutputScale<float>(output_name);
+        output_scale = op_info->GetOutputScaleScalar(output_name);
       }
       VLOG(3) << "has output scale:" << output_scale;
     } else {
