@@ -95,27 +95,26 @@ REG_OP(Pad)
     .OP_END()
 
     /*
-     * Multiplies slices of two tensors in batches.
-     * <Input>
-     *      x : The input tensor
-     *      y : The input tensor
-     * <Output>
-     *      z : The output tensor
-     * <Attr>
-     *      adj_x : adj_x is true, the input tensor x  is  transposed, otherwise
-     * it will not be transposed. Default is false (The current version only
-     * supports false).
-     *      adj_y : adj_y is true, the input tensor y  is  transposed, otherwise
-     * it will not be transposed. Default is false.
-     * <Added in HiAI version>
-     *      100.320.010.010
-     */
+    * Multiplies slices of two tensors in batches.
+    * <Input>
+    *    x1 : The input tensor
+    *    x2 : The input tensor
+    * <Output>
+    *    y : The output tensor
+    * <Attr>
+    *    adj_x1 : adj_x1 is true, the input tensor x1  is  transposed, otherwise it will not be transposed.
+    *             Default is false (The current version only supports false).
+    *    adj_x2 : adj_x2 is true, the input tensor x2  is  transposed, otherwise it will not be transposed.
+    *             Default is false.
+    * <Added in HiAI version>
+    *    100.320.010.010
+    */
     REG_OP(BatchMatMul)
-    .INPUT(x, TensorType({DT_FLOAT}))
-    .INPUT(y, TensorType({DT_FLOAT}))
-    .OUTPUT(z, TensorType({DT_FLOAT}))
-    .ATTR(adj_x, AttrValue::BOOL{false})
-    .ATTR(adj_y, AttrValue::BOOL{false})
+    .INPUT(x1, TensorType({ DT_FLOAT }))
+    .INPUT(x2, TensorType({ DT_FLOAT }))
+    .OUTPUT(y, TensorType({ DT_FLOAT }))
+    .ATTR(adj_x1, AttrValue::BOOL { false })
+    .ATTR(adj_x2, AttrValue::BOOL { false })
     .OP_END()
 
 }  // namespace ge
