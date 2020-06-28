@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/op_lite.h"
-#include <cstdlib>
 #include <list>
 #include <set>
 #include <utility>
@@ -239,7 +238,8 @@ void OpInfo::SetInputScale(const std::string &input_name,
   int index;
   CHECK(GetInputArgname(input_name, &argname));
   CHECK(GetInputIndex(input_name, &index));
-  SetAttr<float>(argname + to_string(index) + "_scale", scale_value);
+  SetAttr<float>(argname + paddle::lite::to_string(index) + "_scale",
+                 scale_value);
 }
 
 void OpInfo::SetInputScale(const std::string &input_name,
@@ -248,8 +248,8 @@ void OpInfo::SetInputScale(const std::string &input_name,
   int index;
   CHECK(GetInputArgname(input_name, &argname));
   CHECK(GetInputIndex(input_name, &index));
-  SetAttr<std::vector<float>>(argname + to_string(index) + "_scale",
-                              scale_value);
+  SetAttr<std::vector<float>>(
+      argname + paddle::lite::to_string(index) + "_scale", scale_value);
 }
 
 void OpInfo::SetOutputScale(const std::string &output_name,
@@ -258,7 +258,8 @@ void OpInfo::SetOutputScale(const std::string &output_name,
   int index;
   CHECK(GetOutputArgname(output_name, &argname));
   CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<float>(argname + to_string(index) + "_scale", scale_value);
+  SetAttr<float>(argname + paddle::lite::to_string(index) + "_scale",
+                 scale_value);
 }
 
 void OpInfo::SetOutputScale(const std::string &output_name,
@@ -267,8 +268,8 @@ void OpInfo::SetOutputScale(const std::string &output_name,
   int index;
   CHECK(GetOutputArgname(output_name, &argname));
   CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<std::vector<float>>(argname + to_string(index) + "_scale",
-                              scale_value);
+  SetAttr<std::vector<float>>(
+      argname + paddle::lite::to_string(index) + "_scale", scale_value);
 }
 
 bool OpInfo::HasInputScale(const std::string &input_name) const {
@@ -276,7 +277,7 @@ bool OpInfo::HasInputScale(const std::string &input_name) const {
   int index;
   if (GetInputArgname(input_name, &argname) &&
       GetInputIndex(input_name, &index)) {
-    return HasAttr(argname + to_string(index) + "_scale");
+    return HasAttr(argname + paddle::lite::to_string(index) + "_scale");
   } else {
     return false;
   }
@@ -287,7 +288,7 @@ bool OpInfo::HasOutputScale(const std::string &output_name) const {
   int index;
   if (GetOutputArgname(output_name, &argname) &&
       GetOutputIndex(output_name, &index)) {
-    return HasAttr(argname + to_string(index) + "_scale");
+    return HasAttr(argname + paddle::lite::to_string(index) + "_scale");
   } else {
     return false;
   }
