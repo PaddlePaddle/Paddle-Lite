@@ -232,12 +232,7 @@ class OpInfo : public cpp::OpDesc {
   bool GetInputArgname(const std::string &value_name, std::string *out) const;
   bool GetOutputArgname(const std::string &value_name, std::string *out) const;
 
-  // For the input variable name, find the index of the corresponding
-  // input argname
   bool GetInputIndex(const std::string &input_name, int *out) const;
-
-  // For the output variable name, find the index of the corresponding
-  // output argname
   bool GetOutputIndex(const std::string &output_name, int *out) const;
 
   void SetInputScale(const std::string &input_name, const float &scale_value);
@@ -257,7 +252,7 @@ class OpInfo : public cpp::OpDesc {
     int index;
     CHECK(GetInputArgname(input_name, &argname));
     CHECK(GetInputIndex(input_name, &index));
-    return GetAttr<T>(argname + std::to_string(index) + "_scale");
+    return GetAttr<T>(argname + "0" + "_scale");
   }
 
   template <typename T>
@@ -266,7 +261,7 @@ class OpInfo : public cpp::OpDesc {
     int index;
     CHECK(GetOutputArgname(output_name, &argname));
     CHECK(GetOutputIndex(output_name, &index));
-    return GetAttr<T>(argname + std::to_string(index) + "_scale");
+    return GetAttr<T>(argname + "0" + "_scale");
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {
