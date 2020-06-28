@@ -82,30 +82,6 @@ class Graph {
     return nodes_.find(name) != nodes_.end();
   }
 
-  //  const std::vector<std::vector<int64_t>>
-  //  InferOutputsShape(std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
-  //  graph_in){
-  //    CHECK_EQ(graph_in.size(), inputs_.size());
-  //    std::vector<cnmlTensor_t> inputs(inputs_.size());
-  //    for (size_t i = 0; i < graph_in.size(); ++i) {
-  //      inputs[i] = graph_in[i]->mlu_tensor();
-  //    }
-  //    std::vector<cnmlTensor_t> outputs(outputs_.size());
-  //    cnmlInferFusionOpOutputShape(fusion_op_, inputs.data(), inputs.size(),
-  //    outputs.size(), outpus.size());
-  //
-  //    std::vector<std::vector<int64_t>> outputs_shape;
-  //    for (size_t i = 0; i < outputs.size(); ++i) {
-  //      int len;
-  //      cnmlGetTensorLen(outputs[i], &len);
-  //      std::vector<int64_t> tmp_shape(len);
-  //      cnmlGetTensorShape(outputs[i], tmp_shape.data())
-  //      outputs_shape.push_back(std::move(tmp_shape));
-  //    }
-  //
-  //    return outputs_shape;
-  //  }
-
   void AddInput(std::shared_ptr<MLUTensor> tensor,
                 bool disable_batch_size_changeable = true) {
     inputs_.push_back(tensor->mlu_tensor());

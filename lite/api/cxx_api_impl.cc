@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/cxx_api.h"
 #include <memory>
 #include <mutex>  //NOLINT
 #include <string>
+#include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
 #include "lite/core/version.h"
@@ -55,10 +55,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     Env<TARGET(kMLU)>::Init();
     lite::TargetWrapperMlu::SetMLURunMode(config.mlu_core_version(),
                                           config.mlu_core_number(),
-                                          config.mlu_use_first_conv(),
-                                          config.mlu_first_conv_mean(),
-                                          config.mlu_first_conv_std(),
-                                          config.mlu_input_layout());
+                                          config.mlu_input_layout(),
+                                          config.mlu_firstconv_param());
 #endif  // LITE_WITH_MLU
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");

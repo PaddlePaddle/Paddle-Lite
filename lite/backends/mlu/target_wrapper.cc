@@ -84,12 +84,11 @@ void TargetWrapperMlu::MemcpySync(void* dst,
       LOG(FATAL) << "Unsupported IoDirection" << static_cast<int>(dir);
   }
 }
-void TargetWrapperMlu::SetMLURunMode(lite_api::MLUCoreVersion core_version,
-                                     int core_number,
-                                     bool use_first_conv,
-                                     const std::vector<float>& mean_vec,
-                                     const std::vector<float>& std_vec,
-                                     DataLayoutType input_layout) {
+void TargetWrapperMlu::SetMLURunMode(
+    lite_api::MLUCoreVersion core_version,
+    int core_number,
+    DataLayoutType input_layout,
+    std::pair<std::vector<float>, std::vector<float>> firstconv_param) {
   switch (core_version) {
     case (lite_api::MLUCoreVersion::MLU_220):
       mlu_core_version_ = CNML_MLU220;
@@ -102,9 +101,9 @@ void TargetWrapperMlu::SetMLURunMode(lite_api::MLUCoreVersion core_version,
       break;
   }
   mlu_core_number_ = core_number;
-  use_first_conv_ = use_first_conv;
-  mean_vec_ = mean_vec;
-  std_vec_ = std_vec;
+  mean_vec_ = firstconv_param.first;
+  std_vec_ = firstconv_param.second;
+  use_first_conv_ = !(mean_vec_.empty() || std_vec_.empty());
   input_layout_ = input_layout;
 }
 
@@ -121,15 +120,6 @@ const std::vector<float>& TargetWrapperMlu::MeanVec() { return mean_vec_; }
 const std::vector<float>& TargetWrapperMlu::StdVec() { return std_vec_; }
 
 DataLayoutType TargetWrapperMlu::InputLayout() { return input_layout_; }
-
-// void TargetWrapperMlu::MemcpyAsync(void* dst,
-//                                    const void* src,
-//                                    size_t size,
-//                                    IoDirection dir,
-//                                    const stream_t& stream) {
-//   LOG(WARNING) << "Mlu unsupported MemcpyAsync now, use MemcpySync.";
-//   MemcpySync(dst, src, size, dir);
-// }
 
 }  // namespace lite
 }  // namespace paddle

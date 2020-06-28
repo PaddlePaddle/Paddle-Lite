@@ -44,23 +44,18 @@ class TargetWrapper<TARGET(kMLU)> {
                          const void* src,
                          size_t size,
                          IoDirection dir);
-  static void SetMLURunMode(lite_api::MLUCoreVersion core_version,
-                            int core_number,
-                            bool use_first_conv,
-                            const std::vector<float>& mean_vec,
-                            const std::vector<float>& std_vec,
-                            DataLayoutType input_layout);
+  static void SetMLURunMode(
+      lite_api::MLUCoreVersion core_version,
+      int core_number,
+      DataLayoutType input_layout,
+      std::pair<std::vector<float>, std::vector<float>> firstconv_param);
   static cnmlCoreVersion_t MLUCoreVersion();
   static int MLUCoreNumber();
   static bool UseFirstConv();
   static const std::vector<float>& MeanVec();
   static const std::vector<float>& StdVec();
   static DataLayoutType InputLayout();
-  // static void MemcpyAsync(void* dst,
-  //                         const void* src,
-  //                         size_t size,
-  //                         IoDirection dir,
-  //                         const queue_t& queue);
+
  private:
   static thread_local cnmlCoreVersion_t mlu_core_version_;
   static thread_local int mlu_core_number_;
