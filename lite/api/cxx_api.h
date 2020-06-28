@@ -256,8 +256,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   bool status_is_cloned_;
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
-  cudaStream_t* io_stream_{nullptr};
-  cudaStream_t* exec_stream_{nullptr};
+  std::shared_ptr<cudaStream_t> io_stream_;
+  std::shared_ptr<cudaStream_t> exec_stream_;
   cudaEvent_t input_event_;
   std::vector<cudaEvent_t> output_events_;
   // only for multi exec stream mode.

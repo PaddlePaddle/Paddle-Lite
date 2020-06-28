@@ -167,8 +167,8 @@ class LITE_API CxxConfig : public ConfigBase {
 #endif
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
-  cudaStream_t* exec_stream_{nullptr};
-  cudaStream_t* io_stream_{nullptr};
+  std::shared_ptr<cudaStream_t> exec_stream_;
+  std::shared_ptr<cudaStream_t> io_stream_;
 #endif
 #ifdef LITE_WITH_MLU
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
@@ -217,12 +217,14 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
   bool multi_stream() const { return multi_stream_; }
-  void set_exec_stream(cudaStream_t* exec_stream) {
+  void set_exec_stream(std::shared_ptr<cudaStream_t> exec_stream) {
     exec_stream_ = exec_stream;
   }
-  void set_io_stream(cudaStream_t* io_stream) { io_stream_ = io_stream; }
-  cudaStream_t* exec_stream() { return exec_stream_; }
-  cudaStream_t* io_stream() { return io_stream_; }
+  void set_io_stream(std::shared_ptr<cudaStream_t> io_stream) {
+    io_stream_ = io_stream;
+  }
+  std::shared_ptr<cudaStream_t> exec_stream() { return exec_stream_; }
+  std::shared_ptr<cudaStream_t> io_stream() { return io_stream_; }
 #endif
 
 #ifdef LITE_WITH_MLU

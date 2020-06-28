@@ -95,18 +95,18 @@ void CxxPaddleApiImpl::CudaEnvInit(std::vector<std::string> *passes) {
   if (config_.exec_stream()) {
     exec_stream_ = config_.exec_stream();
   } else {
-    exec_stream_ = new cudaStream_t();
-    TargetWrapperCuda::CreateStream(exec_stream_);
+    exec_stream_ = std::make_shared<cudaStream_t>();
+    TargetWrapperCuda::CreateStream(exec_stream_.get());
   }
   if (config_.io_stream()) {
     io_stream_ = config_.io_stream();
   } else {
-    io_stream_ = new cudaStream_t();
-    TargetWrapperCuda::CreateStream(io_stream_);
+    io_stream_ = std::make_shared<cudaStream_t>();
+    TargetWrapperCuda::CreateStream(io_stream_.get());
   }
 
-  raw_predictor_->set_exec_stream(exec_stream_);
-  raw_predictor_->set_io_stream(io_stream_);
+  raw_predictor_->set_exec_stream(exec_stream_.get());
+  raw_predictor_->set_io_stream(io_stream_.get());
 
   // init sync events.
   if (config_.multi_stream()) {
@@ -158,7 +158,8 @@ void CxxPaddleApiImpl::OutputSync() {
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
 #ifdef LITE_WITH_CUDA
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x, io_stream_));
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(x, io_stream_.get()));
 #else
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 #endif
@@ -168,7 +169,8 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
     int i) const {
   const auto *x = raw_predictor_->GetOutput(i);
 #ifdef LITE_WITH_CUDA
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x, io_stream_));
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(x, io_stream_.get()));
 #else
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 #endif
@@ -249,10 +251,6 @@ CxxPaddleApiImpl::~CxxPaddleApiImpl() {
   TargetWrapperCuda::DestroyEvent(input_event_);
   for (size_t i = 0; i < output_events_.size(); ++i) {
     TargetWrapperCuda::DestroyEvent(output_events_[i]);
-  }
-  if (multi_stream_) {
-    TargetWrapperCuda::DestroyStream(*io_stream_);
-    TargetWrapperCuda::DestroyStream(*exec_stream_);
   }
 #endif
 }
