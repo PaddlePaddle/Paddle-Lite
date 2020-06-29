@@ -22,6 +22,14 @@
 namespace paddle {
 namespace lite {
 
+std::string int2string(int index) {
+  const int BUFFER_LENGTH = 30;
+  char buffer[BUFFER_LENGTH];
+  int num = snprintf(buffer, sizeof(buffer), "%d", index);
+  CHECK(num > 0 && num < sizeof(buffer));
+  return std::string(buffer);
+}
+
 bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
   // InferShapeByMemoryInternal will be applied.
@@ -237,7 +245,7 @@ bool OpInfo::HasInputScale(const std::string &input_name) const {
   int index;
   if (GetInputArgname(input_name, &argname) &&
       GetInputIndex(input_name, &index)) {
-    return HasAttr(argname + paddle::lite::to_string(index) + "_scale");
+    return HasAttr(argname + int2string(index) + "_scale");
   } else {
     return false;
   }
@@ -248,7 +256,7 @@ bool OpInfo::HasOutputScale(const std::string &output_name) const {
   int index;
   if (GetOutputArgname(output_name, &argname) &&
       GetOutputIndex(output_name, &index)) {
-    return HasAttr(argname + paddle::lite::to_string(index) + "_scale");
+    return HasAttr(argname + int2string(index) + "_scale");
   } else {
     return false;
   }
@@ -261,8 +269,7 @@ void OpInfo::SetInputScale(const std::string &input_name,
   int index;
   CHECK(GetInputArgname(input_name, &argname));
   CHECK(GetInputIndex(input_name, &index));
-  SetAttr<float>(argname + paddle::lite::to_string(index) + "_scale",
-                 scale_value);
+  SetAttr<float>(argname + int2string(index) + "_scale", scale_value);
 }
 
 template <>
@@ -272,8 +279,8 @@ void OpInfo::SetInputScale(const std::string &input_name,
   int index;
   CHECK(GetInputArgname(input_name, &argname));
   CHECK(GetInputIndex(input_name, &index));
-  SetAttr<std::vector<float>>(
-      argname + paddle::lite::to_string(index) + "_scale", scale_value);
+  SetAttr<std::vector<float>>(argname + int2string(index) + "_scale",
+                              scale_value);
 }
 
 template <>
@@ -283,8 +290,7 @@ void OpInfo::SetOutputScale(const std::string &output_name,
   int index;
   CHECK(GetOutputArgname(output_name, &argname));
   CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<float>(argname + paddle::lite::to_string(index) + "_scale",
-                 scale_value);
+  SetAttr<float>(argname + int2string(index) + "_scale", scale_value);
 }
 
 template <>
@@ -294,8 +300,8 @@ void OpInfo::SetOutputScale(const std::string &output_name,
   int index;
   CHECK(GetOutputArgname(output_name, &argname));
   CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<std::vector<float>>(
-      argname + paddle::lite::to_string(index) + "_scale", scale_value);
+  SetAttr<std::vector<float>>(argname + int2string(index) + "_scale",
+                              scale_value);
 }
 
 }  // namespace lite

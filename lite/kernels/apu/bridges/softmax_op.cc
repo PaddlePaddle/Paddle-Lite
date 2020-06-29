@@ -50,7 +50,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("enable_int8")) {
     if (op_info->GetAttr<bool>("enable_int8")) {
       auto x_name = op_info->Input("X").front();
-      auto out_name = op_desc.Output("Out").front();
+      auto out_name = op_info->Output("Out").front();
       if (op_info->HasInputScale(x_name))
         input_scale = op_info->GetInputScale<float>(x_name);
       if (op_info->HasOutputScale(out_name))

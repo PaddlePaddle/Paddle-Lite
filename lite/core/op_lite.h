@@ -30,6 +30,8 @@
 namespace paddle {
 namespace lite {
 
+std::string int2string(int index);
+
 // For registry factory.
 struct Registry {
   void Touch() {}
@@ -249,10 +251,7 @@ class OpInfo : public cpp::OpDesc {
     int index;
     CHECK(GetInputArgname(input_name, &argname));
     CHECK(GetInputIndex(input_name, &index));
-    char buffer[20];
-    int num = snprintf(buffer, sizeof(buffer), "%d", index);
-    CHECK(num > 0 && num < sizeof(buffer));
-    return GetAttr<T>(argname + std::string(buffer) + "_scale");
+    return GetAttr<T>(argname + int2string(index) + "_scale");
   }
 
   template <typename T>
@@ -261,10 +260,7 @@ class OpInfo : public cpp::OpDesc {
     int index;
     CHECK(GetOutputArgname(output_name, &argname));
     CHECK(GetOutputIndex(output_name, &index));
-    char buffer[20];
-    int num = snprintf(buffer, sizeof(buffer), "%d", index);
-    CHECK(num > 0 && num < sizeof(buffer));
-    return GetAttr<T>(argname + std::string(buffer) + "_scale");
+    return GetAttr<T>(argname + int2string(index) + "_scale");
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {

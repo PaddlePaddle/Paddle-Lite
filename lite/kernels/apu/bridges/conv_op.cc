@@ -99,9 +99,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<float> weight_scale;
   if (op_info->HasAttr("enable_int8")) {
     if (op_info->GetAttr<bool>("enable_int8")) {
-      auto input_name = op_desc.Input("Input").front();
-      auto filter_name = op_desc.Input("Filter").front();
-      auto output_name = op_desc.Output("Output").front();
+      auto input_name = op_info->Input("Input").front();
+      auto filter_name = op_info->Input("Filter").front();
+      auto output_name = op_info->Output("Output").front();
       if (op_info->HasInputScale(input_name))
         input_scale = op_info->GetInputScale<float>(input_name);
       if (op_info->HasInputScale(filter_name))
