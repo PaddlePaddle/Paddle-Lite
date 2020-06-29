@@ -235,16 +235,13 @@ class OpInfo : public cpp::OpDesc {
   bool GetInputIndex(const std::string &input_name, int *out) const;
   bool GetOutputIndex(const std::string &output_name, int *out) const;
 
-  void SetInputScale(const std::string &input_name, const float &scale_value);
-  void SetInputScale(const std::string &input_name,
-                     const std::vector<float> &scale_value);
-
-  void SetOutputScale(const std::string &output_name, const float &scale_value);
-  void SetOutputScale(const std::string &output_name,
-                      const std::vector<float> &scale_value);
-
   bool HasInputScale(const std::string &input_name) const;
   bool HasOutputScale(const std::string &output_name) const;
+
+  template <typename T>
+  void SetInputScale(const std::string &input_name, const T &scale_value);
+  template <typename T>
+  void SetOutputScale(const std::string &output_name, const T &scale_value);
 
   template <typename T>
   T GetInputScale(const std::string &input_name) const {
@@ -252,7 +249,10 @@ class OpInfo : public cpp::OpDesc {
     int index;
     CHECK(GetInputArgname(input_name, &argname));
     CHECK(GetInputIndex(input_name, &index));
-    return GetAttr<T>(argname + "0" + "_scale");
+    char buffer[20];
+    int num = snprintf(buffer, sizeof(buffer), "%d", index);
+    CHECK(num > 0 && num < sizeof(buffer));
+    return GetAttr<T>(argname + std::string(buffer) + "_scale");
   }
 
   template <typename T>
@@ -261,7 +261,10 @@ class OpInfo : public cpp::OpDesc {
     int index;
     CHECK(GetOutputArgname(output_name, &argname));
     CHECK(GetOutputIndex(output_name, &index));
-    return GetAttr<T>(argname + "0" + "_scale");
+    char buffer[20];
+    int num = snprintf(buffer, sizeof(buffer), "%d", index);
+    CHECK(num > 0 && num < sizeof(buffer));
+    return GetAttr<T>(argname + std::string(buffer) + "_scale");
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {
