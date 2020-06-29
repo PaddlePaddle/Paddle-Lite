@@ -279,7 +279,7 @@ function test_server {
 }
 
 function assert_api_spec_approvals() {
-    /bin/bash ${LITE_ROOT}/lite/tools/check_api_approvals.sh
+    /bin/bash ${LITE_ROOT}/lite/tools/check_api_approvals.sh check_modified_file_nums
     if [ "$?" != 0 ];then
        exit 1
     fi
