@@ -37,15 +37,10 @@ void ostream::pad(const std::string& text) {
   }
 }
 
-#ifndef LITE_WITH_LOG
-#define ADD_DATA_AS_STRING(data_, obj_)
-#else
 #define ADD_DATA_AS_STRING(data_, obj_)    \
   std::string text = std::to_string(obj_); \
   pad(text);                               \
   data_ = data_ + text;
-
-#endif
 
 template <>
 ostream& ostream::operator<<(const char* obj) {
