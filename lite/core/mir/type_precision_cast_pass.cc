@@ -107,8 +107,8 @@ static bool InferScale(Node* var_node, Node* op_node, float* scale) {
   if (op_type == "subgraph") {
     found = InferScaleFromSubgraph(var_name, op_info, scale, false);
   } else {
-    if (op_info->HasAttr("input_scale")) {
-      *scale = op_info->GetAttr<float>("input_scale");
+    if (op_info->HasInputScale(var_name)) {
+      *scale = op_info->GetInputScale<float>(var_name);
       found = true;
     } else {
       // Obtain the output_scale from one of its previous Ops
@@ -120,8 +120,8 @@ static bool InferScale(Node* var_node, Node* op_node, float* scale) {
       if (prev_op_type == "subgraph") {
         found = InferScaleFromSubgraph(var_name, prev_op_info, scale, true);
       } else {
-        if (prev_op_info->HasAttr("output_scale")) {
-          *scale = prev_op_info->GetAttr<float>("output_scale");
+        if (prev_op_info->HasOutputScale(var_name)) {
+          *scale = prev_op_info->GetOutputScale<float>(var_name);
           found = true;
         }
       }
