@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/api/cxx_api.h"
 #include <memory>
 #include <mutex>  //NOLINT
 #include <string>
-#include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
 #include "lite/core/version.h"

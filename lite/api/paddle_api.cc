@@ -14,6 +14,8 @@
 
 #include "lite/api/paddle_api.h"
 
+#include <utility>
+
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"

@@ -15,6 +15,7 @@
 #include "lite/backends/mlu/target_wrapper.h"
 
 #include <memory>
+#include <utility>
 
 #include "lite/backends/mlu/mlu_utils.h"
 

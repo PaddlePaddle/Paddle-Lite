@@ -109,7 +109,6 @@ class Optimizer {
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
            "mlu_subgraph_pass",
-
            "static_kernel_pick_pass",  // pick original kernel from graph
 
            "remove_tf_redundant_ops_pass",

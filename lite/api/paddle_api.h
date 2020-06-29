@@ -21,6 +21,7 @@
 #define PADDLE_LITE_API_H_
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "paddle_place.h"  // NOLINT
 

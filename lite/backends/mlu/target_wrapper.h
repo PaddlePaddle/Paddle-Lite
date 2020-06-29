@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <utility>
 #include <vector>
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/target_wrapper.h"
