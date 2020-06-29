@@ -457,21 +457,23 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   std::vector<float> input_data_scales;
   std::vector<float> output_data_scales;
   for (auto &var_node : input_var_nodes) {
+    auto var_node_name = var_node->arg()->name;
     auto any_op_node = var_node->outlinks.front();
     CHECK(any_op_node->IsStmt());
     auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasAttr("input_scale")) {
+    if (any_inst.op_info()->HasInputScale(var_node_name)) {
       input_data_scales.push_back(
-          any_inst.op_info()->GetAttr<float>("input_scale"));
+          any_inst.op_info()->GetInputScale<float>(var_node_name));
     }
   }
   for (auto &var_node : output_var_nodes) {
+    auto var_node_name = var_node->arg()->name;
     auto any_op_node = var_node->inlinks.front();
     CHECK(any_op_node->IsStmt());
     auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasAttr("output_scale")) {
+    if (any_inst.op_info()->HasOutputScale(var_node_name)) {
       output_data_scales.push_back(
-          any_inst.op_info()->GetAttr<float>("output_scale"));
+          any_inst.op_info()->GetOutputScale<float>(var_node_name));
     }
   }
   if (input_data_scales.size() > 0) {
