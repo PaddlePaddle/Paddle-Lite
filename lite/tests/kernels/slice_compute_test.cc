@@ -202,20 +202,15 @@ class SliceComputeTester : public arena::TestCase {
                       DDim({static_cast<int64_t>(ends_.size())}),
                       ends_.data());
     } else if (use_tensor_list_) {
-      Scope& scope_ = this->scope();
       for (int i = 0; i < starts_.size(); ++i) {
-        auto* tensor = scope_.NewTensor("starts_tensor_list_" +
-                                        paddle::lite::to_string(i));
-        tensor->Resize(DDim({1}));
-        auto* d = tensor->mutable_data<int>();
-        d[0] = starts_[i];
+        SetCommonTensor("starts_tensor_list_" + paddle::lite::to_string(i),
+                        DDim({1}),
+                        &starts_[i]);
       }
       for (int i = 0; i < ends_.size(); ++i) {
-        auto* tensor =
-            scope_.NewTensor("ends_tensor_list_" + paddle::lite::to_string(i));
-        tensor->Resize(DDim({1}));
-        auto* d = tensor->mutable_data<int>();
-        d[0] = ends_[i];
+        SetCommonTensor("ends_tensor_list_" + paddle::lite::to_string(i),
+                        DDim({1}),
+                        &ends_[i]);
       }
     }
   }
