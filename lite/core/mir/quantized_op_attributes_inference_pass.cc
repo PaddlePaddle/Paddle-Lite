@@ -37,8 +37,18 @@ void QuantizedOpAttributesInferencePass::Apply(
     auto& inst = op_node->AsStmt();
     auto op_info = inst.op_info();
     auto op_type = op_info->Type();
-    if (!op_info->HasAttr("enable_int8")) continue;
 
+    // Check only if all of the inputs of the op have scale value
+    bool has_input_scale = true;
+    for (auto in_var_node : op_node->inlinks) {
+      CHECK(in_var_node->IsArg());
+      auto in_var_node_name = in_var_node->arg()->name;
+      has_input_scale &= op_info->HasInputScale(in_var_node_name);
+    }
+    if (!has_input_scale) continue;
+
+    // Infer the output scale according to its out_threshold or the input scale
+    // of its adjacent ops
     bool is_quantized = true;
     for (auto out_var_node : op_node->outlinks) {
       CHECK(out_var_node->IsArg());
@@ -72,7 +82,8 @@ void QuantizedOpAttributesInferencePass::Apply(
       }
     }
 
-    if (!is_quantized) {
+    // Fix the missing of the attribute 'enable_int8'.
+    if (is_quantized) {
       inst.mutable_op_info()->SetAttr("enable_int8", true);
     }
   }
