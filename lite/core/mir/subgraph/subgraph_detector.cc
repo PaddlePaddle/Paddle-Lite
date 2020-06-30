@@ -452,39 +452,6 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
                                                      output_var_names);
 
-  // Set input/output scale values of input/output var nodes for
-  // type_precision_cast_pass.
-  std::vector<float> input_data_scales;
-  std::vector<float> output_data_scales;
-  for (auto &var_node : input_var_nodes) {
-    auto var_node_name = var_node->arg()->name;
-    auto any_op_node = var_node->outlinks.front();
-    CHECK(any_op_node->IsStmt());
-    auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasInputScale(var_node_name)) {
-      input_data_scales.push_back(
-          any_inst.op_info()->GetInputScale<float>(var_node_name));
-    }
-  }
-  for (auto &var_node : output_var_nodes) {
-    auto var_node_name = var_node->arg()->name;
-    auto any_op_node = var_node->inlinks.front();
-    CHECK(any_op_node->IsStmt());
-    auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasOutputScale(var_node_name)) {
-      output_data_scales.push_back(
-          any_inst.op_info()->GetOutputScale<float>(var_node_name));
-    }
-  }
-  if (input_data_scales.size() > 0) {
-    subgraph_op_desc.SetAttr<std::vector<float>>("input_data_scales",
-                                                 input_data_scales);
-  }
-  if (output_data_scales.size() > 0) {
-    subgraph_op_desc.SetAttr<std::vector<float>>("output_data_scales",
-                                                 output_data_scales);
-  }
-
   // Set all of the inputs and outputs to the target subgraph op
   // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
   for (auto &var_node : weight_var_nodes) {
@@ -503,6 +470,33 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
       ->SetSubBlock(sub_block_desc);
   auto any_op = (*subgraph_nodes.begin())->AsStmt().op();
   subgraph_op->Attach(subgraph_op_desc, any_op->scope());
+
+  // Export the scale values of the input/output var nodes of the inner op nodes
+  // only for type_precision_cast_pass.
+  for (auto &var_node : input_var_nodes) {
+    auto var_node_name = var_node->arg()->name;
+    auto any_op_node = var_node->outlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasInputScale(var_node_name) &&
+        !var_node->arg()->is_weight) {
+      subgraph_op->mutable_op_info()->SetInputScale(
+          var_node_name,
+          any_inst.op_info()->GetInputScale<float>(var_node_name));
+    }
+  }
+  for (auto &var_node : output_var_nodes) {
+    auto var_node_name = var_node->arg()->name;
+    auto any_op_node = var_node->inlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasOutputScale(var_node_name) &&
+        !var_node->arg()->is_weight) {
+      subgraph_op->mutable_op_info()->SetOutputScale(
+          var_node_name,
+          any_inst.op_info()->GetOutputScale<float>(var_node_name));
+    }
+  }
 
   // Create and add a new subgraph node into the graph
   auto subgraph_op_node =
