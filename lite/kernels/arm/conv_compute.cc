@@ -121,10 +121,14 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
+  } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
+             pads_equal) {
+    impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
+    // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
              pads_equal) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
-    // VLOG(3) << "Run DirectConv Int8";
+    // VLOG(3) << "Run WinogradConv Int8";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run GemmLikeConvInt8";
@@ -168,10 +172,14 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
+  } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
+             pads_equal) {
+    impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
+    // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
              pads_equal) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
-    // VLOG(3) << "Run DirectConv Int8";
+    // VLOG(3) << "Run WinogradConv Int8";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run GemmLikeConvInt8";
