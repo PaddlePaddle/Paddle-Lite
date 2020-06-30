@@ -156,12 +156,13 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   //       little difference for int8
   ///////////////////////////////////////////////////////////////////////////////
   if (enable_int8) {
-    CHECK(conv_op_desc->HasAttr("weight_scale"))
+    std::string weight_name = conv_op_desc->Input("Filter").front();
+    CHECK(conv_op_desc->HasInputScale(weight_name))
         << "INT8 mode: Conv should has weight_scale attr";
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
     auto weight_scale =
-        conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
+        conv_op_desc->GetInputScale<std::vector<float>>(weight_name);
     if (conv_type_ == "conv2d_transpose" && !depthwise) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];
@@ -188,7 +189,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         }
       }
     }
-    conv_op_desc->SetAttr("weight_scale", weight_scale);
+    conv_op_desc->SetInputScale(weight_name, weight_scale);
   } else if (is_weight_quantization) {
     std::string scale_name = conv_weight_name + "_quant_scale";
     if (conv_op_desc->HasAttr(scale_name)) {

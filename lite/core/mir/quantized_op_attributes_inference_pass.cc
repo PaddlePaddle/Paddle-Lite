@@ -37,17 +37,30 @@ void QuantizedOpAttributesInferencePass::Apply(
     auto& inst = op_node->AsStmt();
     auto op_info = inst.op_info();
     auto op_type = op_info->Type();
-    if (!op_info->HasAttr("input_scale")) continue;
-    bool found = false;
-    float output_scale;
+
+    // Check only if all of the inputs of the op have scale value
+    bool has_input_scale = true;
+    for (auto in_var_node : op_node->inlinks) {
+      CHECK(in_var_node->IsArg());
+      auto in_var_node_name = in_var_node->arg()->name;
+      has_input_scale &= op_info->HasInputScale(in_var_node_name);
+    }
+    if (!has_input_scale) continue;
+
+    // Infer the output scale according to its out_threshold or the input scale
+    // of its adjacent ops
+    bool is_quantized = true;
     for (auto out_var_node : op_node->outlinks) {
       CHECK(out_var_node->IsArg());
+      bool found = false;
+      float output_scale;
+      auto out_var_node_name = out_var_node->arg()->name;
       for (auto out_op_node : out_var_node->outlinks) {
         CHECK(out_op_node->IsStmt());
         auto& out_inst = out_op_node->AsStmt();
         auto out_op_info = out_inst.op_info();
-        if (!out_op_info->HasAttr("input_scale")) continue;
-        auto input_scale = out_op_info->GetAttr<float>("input_scale");
+        if (!out_op_info->HasInputScale(out_var_node_name)) continue;
+        auto input_scale = out_op_info->GetInputScale<float>(out_var_node_name);
         if (!found) {
           found = true;
           output_scale = input_scale;
@@ -55,16 +68,22 @@ void QuantizedOpAttributesInferencePass::Apply(
           CHECK_EQ(output_scale, input_scale);
         }
       }
+      if (found) {
+        inst.mutable_op_info()->SetOutputScale(out_var_node_name, output_scale);
+      } else if (op_info->HasAttr("out_threshold")) {
+        // Only consider one output, there are only one out_threshold
+        int bit_length = op_info->GetAttr<int>("bit_length");
+        int range = (1 << (bit_length - 1)) - 1;
+        output_scale = op_info->GetAttr<float>("out_threshold");
+        inst.mutable_op_info()->SetOutputScale(out_var_node_name,
+                                               output_scale / range);
+      } else {
+        is_quantized = false;
+      }
     }
-    if (found) {
-      inst.mutable_op_info()->SetAttr("output_scale", output_scale);
-    } else if (op_info->HasAttr("output_scale")) {
-      int bit_length = op_info->GetAttr<int>("bit_length");
-      int range = (1 << (bit_length - 1)) - 1;
-      output_scale = op_info->GetAttr<float>("output_scale");
-      inst.mutable_op_info()->SetAttr("output_scale", output_scale / range);
-    }
-    if (op_info->HasAttr("output_scale")) {
+
+    // Fix the missing of the attribute 'enable_int8'.
+    if (is_quantized) {
       inst.mutable_op_info()->SetAttr("enable_int8", true);
     }
   }
