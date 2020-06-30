@@ -54,6 +54,10 @@ function CheckModifiedFileNums() {
 #           size of dynamic lib for 10+ kb
 ####################################################################################################
 function CheckLibSizeDiff() {
+    # step0: check reviewers
+    echo_line="Your PR has increased basic inference lib for $diff_size Byte, exceeding maximum requirement of  10485 Byte (0.01M). You need Superjomn's (Yunchunwei) approval or you can contact DannyIsFunny(HuZhiqiang).\n"
+    check_approval 1 $Superjomn $DannyIsFunny
+
     # step1: record lib size of current branch
     lite/tools/build_android.sh --arch=armv8 --toolchain=gcc --android_stl=c++_static --with_log=OFF
     current_size=`stat -c%s build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so`
@@ -66,21 +70,14 @@ function CheckLibSizeDiff() {
     lite/tools/build_android.sh --arch=armv8 --toolchain=gcc --android_stl=c++_static --with_log=OFF
     develop_size=`stat -c%s build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so`
 
-    # step3: if diff_size > 10485, special approval is needed    
+    # step3: if diff_size > 10485, special approval is needed
     diff_size=$[$current_size - $develop_size]
-    if [ $diff_size -gt 10485 ]; then
-        echo_line="Your PR has increased basic inference lib for $diff_size Byte, exceeding maximum requirement of  10485 Byte (0.01M). You need Superjomn's (Yunchunwei) approval or you can contact DannyIsFunny(HuZhiqiang).\n"
-        check_approval 1 $Superjomn $DannyIsFunny
-    fi
 
-    if [ -n "${echo_list}" ];then
+    if [ -n "${echo_list}" ] && [ $diff_size -gt 10485 ];then
       echo "****************"
       echo -e "${echo_list[@]}"
       echo "There are ${failed_num} approved errors."
       echo "****************"
-    fi
- 
-    if [ -n "${echo_list}" ]; then
       exit 1
     fi
 }
