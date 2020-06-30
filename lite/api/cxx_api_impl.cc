@@ -43,7 +43,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   // otherwise skip this step.
   for (auto &p : places) {
     if (p.target == TARGET(kCUDA)) {
-      CudaEnvInit(&passes);
+      InitCudaEnv(&passes);
       break;
     }
   }
@@ -88,7 +88,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 }
 
 #ifdef LITE_WITH_CUDA
-void CxxPaddleApiImpl::CudaEnvInit(std::vector<std::string> *passes) {
+void CxxPaddleApiImpl::InitCudaEnv(std::vector<std::string> *passes) {
   Env<TARGET(kCUDA)>::Init();
 
   // init two streams for each predictor.
@@ -131,7 +131,7 @@ void CxxPaddleApiImpl::CudaEnvInit(std::vector<std::string> *passes) {
   TargetWrapperCuda::CreateEventWithFlags(&input_event_);
 }
 
-void CxxPaddleApiImpl::InputSync() {
+void CxxPaddleApiImpl::SyncInputs() {
   TargetWrapperCuda::RecordEvent(input_event_, *io_stream_);
   if (multi_stream_) {
     for (int i = 0; i < lite::kMaxStream; ++i) {
@@ -142,7 +142,7 @@ void CxxPaddleApiImpl::InputSync() {
   }
 }
 
-void CxxPaddleApiImpl::OutputSync() {
+void CxxPaddleApiImpl::SyncOutputs() {
   if (multi_stream_) {
     for (size_t i = 0; i < output_events_.size(); ++i) {
       TargetWrapperCuda::RecordEvent(output_events_[i], *exec_streams_[i]);
@@ -193,13 +193,13 @@ void CxxPaddleApiImpl::Run() {
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
 #ifdef LITE_WITH_CUDA
-  InputSync();
+  SyncInputs();
 #endif
 
   raw_predictor_->Run();
 
 #ifdef LITE_WITH_CUDA
-  OutputSync();
+  SyncOutputs();
 #endif
 }
 

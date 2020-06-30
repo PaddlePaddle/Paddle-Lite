@@ -242,11 +242,11 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 #ifdef LITE_WITH_CUDA
   // Cuda related environment initialization, including setting stream pointers,
   // initializing synchronization events, setting predictor_id, etc.
-  void CudaEnvInit(std::vector<std::string>* passes);
+  void InitCudaEnv(std::vector<std::string>* passes);
   // Due to the asynchronous nature of cuda kernel execution, synchronization is
   // required before setting input and getting output.
-  void InputSync();
-  void OutputSync();
+  void SyncInputs();
+  void SyncOutputs();
 #endif
 
  private:
