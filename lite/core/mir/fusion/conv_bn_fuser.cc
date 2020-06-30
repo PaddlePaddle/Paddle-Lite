@@ -157,8 +157,8 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   ///////////////////////////////////////////////////////////////////////////////
   if (enable_int8) {
     std::string weight_name = conv_op_desc->Input("Filter").front();
-    PADDLE_ENFORCE(conv_op_desc->HasInputScale(weight_name),
-                   "INT8 mode: Conv should has weight_scale attr");
+    CHECK(conv_op_desc->HasInputScale(weight_name))
+        << "INT8 mode: Conv should has weight_scale attr";
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
     auto weight_scale =

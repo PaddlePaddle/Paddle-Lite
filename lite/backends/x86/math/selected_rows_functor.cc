@@ -31,7 +31,7 @@ struct SelectedRowsAdd<lite::TargetType::kX86, T> {
                   const fluid::SelectedRows& input2,
                   fluid::SelectedRows* output) {
     auto in1_height = input1.height();
-    PADDLE_ENFORCE_EQ(in1_height, input2.height());
+    CHECK_EQ(in1_height, input2.height());
     output->set_height(in1_height);
 
     auto& in1_rows = input1.rows();
@@ -49,8 +49,8 @@ struct SelectedRowsAdd<lite::TargetType::kX86, T> {
     auto& in2_value = input2.value();
 
     auto in1_row_numel = in1_value.numel() / in1_rows.size();
-    PADDLE_ENFORCE_EQ(in1_row_numel, in2_value.numel() / in2_rows.size());
-    PADDLE_ENFORCE_EQ(in1_row_numel, out_value->numel() / out_rows.size());
+    CHECK_EQ(in1_row_numel, in2_value.numel() / in2_rows.size());
+    CHECK_EQ(in1_row_numel, out_value->numel() / out_rows.size());
 
     auto* out_data = out_value->template mutable_data<T>();
     auto* in1_data = in1_value.data<T>();
@@ -73,15 +73,15 @@ struct SelectedRowsAddTensor<lite::TargetType::kX86, T> {
     auto in1_height = input1.height();
     auto in2_dims = input2.dims();
     auto out_dims = output->dims();
-    PADDLE_ENFORCE_EQ(in1_height, in2_dims[0]);
-    PADDLE_ENFORCE_EQ(in1_height, out_dims[0]);
+    CHECK_EQ(in1_height, in2_dims[0]);
+    CHECK_EQ(in1_height, out_dims[0]);
 
     auto& in1_value = input1.value();
     auto& in1_rows = input1.rows();
 
     int64_t in1_row_numel = in1_value.numel() / in1_rows.size();
-    PADDLE_ENFORCE_EQ(in1_row_numel, input2.numel() / in1_height);
-    PADDLE_ENFORCE_EQ(in1_row_numel, output->numel() / in1_height);
+    CHECK_EQ(in1_row_numel, input2.numel() / in1_height);
+    CHECK_EQ(in1_row_numel, output->numel() / in1_height);
 
     SetConstant<lite::TargetType::kX86, T> functor;
     functor(context, output, 0.0);
@@ -113,7 +113,7 @@ struct SelectedRowsAddTo<lite::TargetType::kX86, T> {
                   const int64_t input2_offset,
                   fluid::SelectedRows* input2) {
     auto in1_height = input1.height();
-    PADDLE_ENFORCE_EQ(in1_height, input2->height());
+    CHECK_EQ(in1_height, input2->height());
 
     auto& in1_rows = input1.rows();
     auto& in2_rows = *(input2->mutable_rows());
@@ -149,7 +149,7 @@ struct SelectedRowsSumTo<lite::TargetType::kX86, T> {
       auto& in_rows = (*iter)->rows();
       size += in_rows.end() - in_rows.begin();
       auto in1_height = (*iter)->height();
-      PADDLE_ENFORCE_EQ(in1_height, input2->height());
+      CHECK_EQ(in1_height, input2->height());
     }
     // concat rows
     std::vector<int64_t> in2_rows;
@@ -185,13 +185,13 @@ struct SelectedRowsAddToTensor<lite::TargetType::kX86, T> {
 
     auto in1_height = input1.height();
     auto in2_dims = input2->dims();
-    PADDLE_ENFORCE_EQ(in1_height, in2_dims[0]);
+    CHECK_EQ(in1_height, in2_dims[0]);
 
     auto& in1_value = input1.value();
     auto& in1_rows = input1.rows();
 
     int64_t in1_row_numel = in1_value.numel() / in1_rows.size();
-    PADDLE_ENFORCE_EQ(in1_row_numel, input2->numel() / in1_height);
+    CHECK_EQ(in1_row_numel, input2->numel() / in1_height);
 
     auto* in1_data = in1_value.data<T>();
     auto* input2_data = input2->template mutable_data<T>();
@@ -291,12 +291,11 @@ struct MergeAdd<lite::TargetType::kX86, T> {
       if (input->rows().size() == 0) {
         continue;
       }
-      PADDLE_ENFORCE_EQ(input_width,
-                        input->value().dims()[1],
-                        "all input should have same "
-                        "dimension except for the first one");
-      PADDLE_ENFORCE_EQ(
-          input_height, input->height(), "all input should have same height");
+      CHECK_EQ(input_width, input->value().dims()[1])
+          << "all input should have same "
+             "dimension except for the first one";
+      CHECK_EQ(input_height, input->height())
+          << "all input should have same height";
       row_num += input->rows().size();
       merged_row_set.insert(input->rows().begin(), input->rows().end());
     }
@@ -376,13 +375,13 @@ struct UpdateToTensor<lite::TargetType::kX86, T> {
                   lite::Tensor* input2) {
     auto in1_height = input1.height();
     auto in2_dims = input2->dims();
-    PADDLE_ENFORCE_EQ(in1_height, in2_dims[0]);
+    CHECK_EQ(in1_height, in2_dims[0]);
 
     auto& in1_value = input1.value();
     auto& in1_rows = input1.rows();
 
     int64_t in1_row_numel = in1_value.numel() / in1_rows.size();
-    PADDLE_ENFORCE_EQ(in1_row_numel, input2->numel() / in1_height);
+    CHECK_EQ(in1_row_numel, input2->numel() / in1_height);
 
     auto* in1_data = in1_value.data<T>();
     auto* input2_data = input2->template data<T>();

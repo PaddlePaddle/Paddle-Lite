@@ -129,11 +129,11 @@ class EmbSeqPoolCreator : public JitCodeCreator<emb_seq_pool_attr_t> {
   }
   std::unique_ptr<GenBase> CreateJitCode(
       const emb_seq_pool_attr_t& attr) const override {
-    PADDLE_ENFORCE_GT(attr.table_height, 0);
-    PADDLE_ENFORCE_GT(attr.table_width, 0);
-    PADDLE_ENFORCE_GT(attr.index_height, 0);
-    PADDLE_ENFORCE_GT(attr.index_width, 0);
-    PADDLE_ENFORCE_GT(attr.out_width, 0);
+    CHECK_GT(attr.table_height, 0);
+    CHECK_GT(attr.table_width, 0);
+    CHECK_GT(attr.index_height, 0);
+    CHECK_GT(attr.index_width, 0);
+    CHECK_GT(attr.out_width, 0);
     return make_unique<EmbSeqPoolJitCode>(attr, CodeSize(attr));
   }
 };

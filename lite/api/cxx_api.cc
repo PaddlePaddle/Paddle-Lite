@@ -13,17 +13,29 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+
 #include <algorithm>
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
+
+std::vector<std::string> GetAllOps() {
+  const std::map<std::string, std::string> &op2path =
+      OpKernelInfoCollector::Global().GetOp2PathDict();
+  std::vector<std::string> res;
+  for (const auto &op : op2path) {
+    res.push_back(op.first);
+  }
+  return res;
+}
 
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
