@@ -70,8 +70,6 @@ class OpKernelInfoCollector {
 namespace paddle {
 namespace lite {
 
-const std::map<std::string, std::string>& GetOp2PathDict();
-
 class OpLiteFactory {
  public:
   // Register a function to create an op

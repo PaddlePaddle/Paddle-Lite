@@ -17,11 +17,5 @@
 #include <set>
 
 namespace paddle {
-namespace lite {
-
-const std::map<std::string, std::string> &GetOp2PathDict() {
-  return OpKernelInfoCollector::Global().GetOp2PathDict();
-}
-
-}  // namespace lite
+namespace lite {}  // namespace lite
 }  // namespace paddle
