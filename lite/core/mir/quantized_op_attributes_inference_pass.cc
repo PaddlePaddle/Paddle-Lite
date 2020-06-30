@@ -38,12 +38,12 @@ void QuantizedOpAttributesInferencePass::Apply(
     auto op_info = inst.op_info();
     auto op_type = op_info->Type();
 
-    // Check only if all of the inputs of the op have scale value
-    bool has_input_scale = true;
+    // Check if any of the inputs of the op have scale value
+    bool has_input_scale = false;
     for (auto in_var_node : op_node->inlinks) {
       CHECK(in_var_node->IsArg());
       auto in_var_node_name = in_var_node->arg()->name;
-      has_input_scale &= op_info->HasInputScale(in_var_node_name);
+      has_input_scale |= op_info->HasInputScale(in_var_node_name);
     }
     if (!has_input_scale) continue;
 
@@ -52,8 +52,8 @@ void QuantizedOpAttributesInferencePass::Apply(
     bool is_quantized = true;
     for (auto out_var_node : op_node->outlinks) {
       CHECK(out_var_node->IsArg());
-      bool found = false;
       float output_scale;
+      bool has_output_scale = false;
       auto out_var_node_name = out_var_node->arg()->name;
       for (auto out_op_node : out_var_node->outlinks) {
         CHECK(out_op_node->IsStmt());
@@ -61,14 +61,14 @@ void QuantizedOpAttributesInferencePass::Apply(
         auto out_op_info = out_inst.op_info();
         if (!out_op_info->HasInputScale(out_var_node_name)) continue;
         auto input_scale = out_op_info->GetInputScale<float>(out_var_node_name);
-        if (!found) {
-          found = true;
+        if (!has_output_scale) {
           output_scale = input_scale;
+          has_output_scale = true;
         } else {
           CHECK_EQ(output_scale, input_scale);
         }
       }
-      if (found) {
+      if (has_output_scale) {
         inst.mutable_op_info()->SetOutputScale(out_var_node_name, output_scale);
       } else if (op_info->HasAttr("out_threshold")) {
         // Only consider one output, there are only one out_threshold
