@@ -71,6 +71,9 @@ void ConcatCompute::Run() {
     auto* axis_tensor_data = axis_tensor->data<int>();
     axis = axis_tensor_data[0];
   }
+  if (axis < 0) {
+    axis += inputs[0]->dims().size();
+  }
 
   switch (inputs.front()->precision()) {
     case PRECISION(kFloat):
