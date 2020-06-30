@@ -20,8 +20,8 @@ limitations under the License. */
 #include "lite/backends/x86/cupti_lib_path.h"
 #include "lite/backends/x86/port.h"
 #include "lite/backends/x86/warpctc_lib_path.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/env.h"
-#include "lite/utils/paddle_enforce.h"
 
 // DEFINE_string(cudnn_dir,
 //               "",
@@ -178,7 +178,7 @@ auto error_msg =
 #endif  // !_WIN32
   if (throw_on_error) {
     CHECK(dso_handle != nullptr);
-    // PADDLE_ENFORCE(nullptr != dso_handle, error_msg, dlPath, errorno);
+    // CHECK(nullptr != dso_handle, error_msg, dlPath, errorno);
   } else if (nullptr == dso_handle) {
     // LOG(WARNING) << string::Sprintf(error_msg, dlPath, errorno);
   }

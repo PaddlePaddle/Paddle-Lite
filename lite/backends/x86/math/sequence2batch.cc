@@ -30,12 +30,10 @@ class CopyMatrixRowsFunctor<lite::TargetType::kX86, T> {
     const uint64_t* index = index_lod.data();
     const auto& src_dims = src.dims();
     const auto& dst_dims = dst->dims();
-    PADDLE_ENFORCE_EQ(
-        src_dims.size(), 2UL, "The src must be matrix with rank 2.");
-    PADDLE_ENFORCE_EQ(
-        dst_dims.size(), 2UL, "The dst must be matrix with rank 2.");
-    PADDLE_ENFORCE_EQ(
-        src_dims[1], dst_dims[1], "The width of src and dst must be same.");
+    CHECK_EQ(src_dims.size(), 2UL) << "The src must be matrix with rank 2.";
+    CHECK_EQ(dst_dims.size(), 2UL) << "The dst must be matrix with rank 2.";
+    CHECK_EQ(src_dims[1], dst_dims[1])
+        << "The width of src and dst must be same.";
     auto height = dst_dims[0];
     auto width = dst_dims[1];
     auto* src_data = src.data<T>();

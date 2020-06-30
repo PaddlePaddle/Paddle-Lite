@@ -22,7 +22,6 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/macro.h"
 #include "lite/utils/cp_logging.h"
-#include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
 namespace lite {
@@ -480,12 +479,12 @@ void EmbSeqPool(const T* table,
                 const int64_t* idx,
                 T* out,
                 const emb_seq_pool_attr_t* attr) {
-  PADDLE_ENFORCE_EQ(attr->table_width * attr->index_width, attr->out_width);
+  CHECK_EQ(attr->table_width * attr->index_width, attr->out_width);
 
   auto check_idx_value_valid = [&](int64_t i) {
-    PADDLE_ENFORCE_LT(
-        idx[i], attr->table_height, "idx value: %d, i: %d", idx[i], i);
-    PADDLE_ENFORCE_GE(idx[i], 0, "idx value: %d, i: %d", idx[i], i);
+    CHECK_LT(idx[i], attr->table_height) << "idx value: " << idx[i]
+                                         << " i: " << i;
+    CHECK_GE(idx[i], 0) << "idx value: " << idx[i] << " i: " << i;
   };
 
   for (int64_t w = 0; w != attr->index_width; ++w) {
@@ -527,12 +526,12 @@ void Sgd(const T* lr,
          const int64_t* rows,
          T* out,
          const lite::jit::sgd_attr_t* attr) {
-  PADDLE_ENFORCE_EQ(attr->param_width, attr->grad_width);
-  PADDLE_ENFORCE_LE(attr->selected_rows_size, attr->grad_height);
+  CHECK_EQ(attr->param_width, attr->grad_width);
+  CHECK_LE(attr->selected_rows_size, attr->grad_height);
   for (int64_t i = 0; i < attr->selected_rows_size; ++i) {
     auto h_idx = rows[i];
-    PADDLE_ENFORCE_LT(h_idx, attr->param_height);
-    PADDLE_ENFORCE_GE(h_idx, 0);
+    CHECK_LT(h_idx, attr->param_height);
+    CHECK_GE(h_idx, 0);
     for (int64_t j = 0; j < attr->grad_width; ++j) {
       out[h_idx * attr->grad_width + j] =
           param[h_idx * attr->grad_width + j] -
