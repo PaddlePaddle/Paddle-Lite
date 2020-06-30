@@ -13,6 +13,7 @@ nv_library(cuda_elementwise SRCS elementwise.cu DEPS ${cuda_static_deps})
 nv_library(cudnn_pool SRCS cudnn_pool.cc DEPS ${cuda_static_deps})
 nv_library(cuda_gemm SRCS gemm.cc  DEPS ${cuda_static_deps})
 nv_library(cuda_batched_gemm SRCS batched_gemm.cc DEPS ${cuda_static_deps})
+nv_library(cuda_sequence_padding SRCS sequence_padding.cu DEPS ${cuda_static_deps})
 
 set (
  math_cuda
@@ -25,6 +26,7 @@ set (
  cudnn_pool
  cuda_gemm
  cuda_batched_gemm
+ cuda_sequence_padding
 )
 
 set(math_cuda "${math_cuda}" CACHE GLOBAL "math cuda")
