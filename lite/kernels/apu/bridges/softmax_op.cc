@@ -49,10 +49,12 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   float out_scale = 1.0f;
   if (op_info->HasAttr("enable_int8")) {
     if (op_info->GetAttr<bool>("enable_int8")) {
-      if (op_info->HasAttr("input_scale"))
-        input_scale = op_info->GetAttr<float>("input_scale");
-      if (op_info->HasAttr("output_scale"))
-        out_scale = op_info->GetAttr<float>("output_scale");
+      auto x_name = op_info->Input("X").front();
+      auto out_name = op_info->Output("Out").front();
+      if (op_info->HasInputScale(x_name))
+        input_scale = op_info->GetInputScale<float>(x_name);
+      if (op_info->HasOutputScale(out_name))
+        out_scale = op_info->GetOutputScale<float>(out_name);
     } else {
       LOG(WARNING) << "Do not enable_int8";
       return FAILED;

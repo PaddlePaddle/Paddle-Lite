@@ -72,7 +72,6 @@ function CheckLibSizeDiff() {
 
     # step3: if diff_size > 10485, special approval is needed
     diff_size=$[$current_size - $develop_size]
-
     if [ -n "${echo_list}" ] && [ $diff_size -gt 10485 ];then
       echo "****************"
       echo -e "${echo_list[@]}"
