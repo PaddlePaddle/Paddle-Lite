@@ -1031,6 +1031,14 @@ struct SequenceExpandParam : ParamBase {
   int ref_level{-1};
 };
 
+struct SequencePadParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* PadValue{};
+  lite::Tensor* Out{};
+  lite::Tensor* Length{};
+  int padded_length{-1};
+};
+
 struct SequenceUnpadParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Length{};
