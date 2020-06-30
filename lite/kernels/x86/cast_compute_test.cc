@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/cast_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/cast_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -25,8 +27,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(cast_x86, retrive_op) {
-  auto cast =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("cast");
+  auto cast = KernelRegistry::Global().Create("cast");
   ASSERT_FALSE(cast.empty());
   ASSERT_TRUE(cast.front());
 }

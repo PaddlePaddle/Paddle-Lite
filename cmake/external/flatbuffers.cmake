@@ -22,9 +22,10 @@ if(CMAKE_INSTALL_LIBDIR MATCHES ".*lib64$")
   SET(LIBDIR "lib64")
 endif()
 
+SET(FLATBUFFERS_PREFIX_DIR ${THIRD_PARTY_PATH}/flatbuffers)
 SET(FLATBUFFERS_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/flatbuffers)
 SET(FLATBUFFERS_INSTALL_DIR ${THIRD_PARTY_PATH}/install/flatbuffers)
-SET(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_INSTALL_DIR}/include" CACHE PATH "flatbuffers include directory." FORCE)
+SET(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_SOURCES_DIR}/include" CACHE PATH "flatbuffers include directory." FORCE)
 IF(WIN32)
   set(FLATBUFFERS_LIBRARIES "${FLATBUFFERS_INSTALL_DIR}/${LIBDIR}/libflatbuffers.lib" CACHE FILEPATH "FLATBUFFERS_LIBRARIES" FORCE)
 ELSE(WIN32)
@@ -47,13 +48,15 @@ ExternalProject_Add(
     GIT_REPOSITORY  "https://github.com/google/flatbuffers.git"
     GIT_TAG         "v1.12.0"
     SOURCE_DIR      ${FLATBUFFERS_SOURCES_DIR}
-    PREFIX          ${FLATBUFFERS_INCLUDE_DIR}
+    PREFIX          ${FLATBUFFERS_PREFIX_DIR}
     UPDATE_COMMAND  ""
     CMAKE_ARGS      -DBUILD_STATIC_LIBS=ON
                     -DCMAKE_INSTALL_PREFIX=${FLATBUFFERS_INSTALL_DIR}
                     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                     -DBUILD_TESTING=OFF
                     -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
+                    -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
+                    -DFLATBUFFERS_BUILD_TESTS=OFF
                     ${CROSS_COMPILE_CMAKE_ARGS}
                     ${OPTIONAL_ARGS}
                     ${EXTERNAL_OPTIONAL_ARGS}
@@ -97,11 +100,10 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
             --cpp-ptr-type flatbuffers::unique_ptr # Used to test with C++98 STLs
             ${OPT}
             -I "${CMAKE_CURRENT_SOURCE_DIR}/tests/include_test"
-            -o "${SRC_FBS_DIR}"
+            -o "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS}"
     DEPENDS flatbuffers
     COMMENT "Run generation: '${GEN_HEADER}'")
-  include_directories(${FLATBUFFERS_INCLUDE_DIR})
   register_generated_output(${GEN_HEADER})
   add_custom_target(${TARGET} ALL DEPENDS ${GEN_HEADER})
 endfunction()
@@ -109,3 +111,6 @@ endfunction()
 set(FRAMEWORK_FBS_DIR "lite/model_parser/flatbuffers")
 set(FRAMEWORK_SCHEMA_PATH "${FRAMEWORK_FBS_DIR}/framework.fbs")
 compile_flatbuffers_schema_to_cpp_opt(framework_fbs_header ${FRAMEWORK_SCHEMA_PATH} "--no-includes;--gen-compare;--force-empty")
+include_directories(${FLATBUFFERS_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR})
+

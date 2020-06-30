@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/cuda/lookup_table_compute.h"
 #include <gtest/gtest.h>
+
 #include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/cuda/lookup_table_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -56,9 +58,7 @@ void LookupTableComputeRef(const operators::LookupTableParam& param) {
 }
 
 TEST(lookup_table_cuda, retrieve_op) {
-  auto lookup_table =
-      KernelRegistry::Global().Create<TARGET(kCUDA), PRECISION(kFloat)>(
-          "lookup_table");
+  auto lookup_table = KernelRegistry::Global().Create("lookup_table");
   ASSERT_FALSE(lookup_table.empty());
   ASSERT_TRUE(lookup_table.front());
 }

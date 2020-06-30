@@ -24,7 +24,6 @@
 #include "lite/model_parser/cpp/block_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
-#include "lite/utils/variant.h"
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -1345,6 +1344,15 @@ struct SequenceTopkAvgPoolingParam : ParamBase {
   std::vector<int> topks{};
 };
 
+/// --------------- topk_pooling operators ------------------
+struct TopkPoolingParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  int top_k{1};
+  int feat_map_num{1};
+};
+
 /// --------------- search_fc operators ------------------
 struct SearchFcParam : ParamBase {
   const lite::Tensor* X{};
@@ -1592,6 +1600,15 @@ struct RetinanetDetectionOutputParam : ParamBase {
 struct WhereIndexParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
+};
+
+struct ClipParam : ParamBase {
+  Tensor* x{};
+  Tensor* min_tensor{};
+  Tensor* max_tensor{};
+  Tensor* out{};
+  float min{};
+  float max{};
 };
 
 }  // namespace operators

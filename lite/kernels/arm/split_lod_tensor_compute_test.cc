@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/split_lod_tensor_compute.h"
 #include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/split_lod_tensor_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -26,9 +28,7 @@ namespace kernels {
 namespace arm {
 
 TEST(split_lod_tensor_arm, retrive_op) {
-  auto kernel =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "split_lod_tensor");
+  auto kernel = KernelRegistry::Global().Create("split_lod_tensor");
   ASSERT_FALSE(kernel.empty());
   ASSERT_TRUE(kernel.front());
 }

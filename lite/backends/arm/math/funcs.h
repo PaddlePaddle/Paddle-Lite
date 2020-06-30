@@ -25,6 +25,7 @@
 #include "lite/backends/arm/math/axpy.h"
 #include "lite/backends/arm/math/beam_search.h"
 #include "lite/backends/arm/math/box_coder.h"
+#include "lite/backends/arm/math/clip.h"
 #include "lite/backends/arm/math/col_im_transform.h"
 #include "lite/backends/arm/math/concat.h"
 #include "lite/backends/arm/math/conv_block_utils.h"

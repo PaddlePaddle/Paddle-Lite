@@ -15,8 +15,11 @@
 #include "lite/api/paddle_api.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
+
 DEFINE_string(model_dir, "", "");
 
 namespace paddle {

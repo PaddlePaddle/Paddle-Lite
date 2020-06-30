@@ -112,6 +112,7 @@ add_operator(crf_decoding_op_lite extra SRCS crf_decoding_op.cc DEPS ${op_DEPS})
 add_operator(ctc_align_op_lite extra SRCS ctc_align_op.cc DEPS ${op_DEPS})
 add_operator(max_pool_with_index_op extra SRCS max_pool_with_index_op.cc DEPS ${op_DEPS})
 add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc DEPS ${op_DEPS})
+add_operator(clip_op extra SRCS clip_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -147,6 +148,7 @@ add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
 add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_op.cc DEPS ${op_DEPS})
 add_operator(search_fc_op basic SRCS search_fc_op.cc DEPS ${op_DEPS})
 add_operator(lstm_op extra SRCS lstm_op.cc DEPS ${op_DEPS})
+add_operator(topk_pooling_op extra SRCS topk_pooling_op.cc DEPS ${op_DEPS})
 # for deformable-convNet
 add_operator(deformable_conv_op extra SRCS deformable_conv_op.cc DEPS ${op_DEPS})
 
