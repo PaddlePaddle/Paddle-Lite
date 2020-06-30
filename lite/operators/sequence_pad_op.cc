@@ -36,7 +36,7 @@ bool SequencePadOp::InferShapeImpl() const {
                              << x_dims.size();
   auto time_step_dims = x_dims.Slice(1, x_dims.size());
   auto pad_value_dims = param_.PadValue->dims();
-  CHECK_EQ(pad_value_dims == DDim({1}) || pad_value_dims == time_step_dims,
+  CHECK_EQ((pad_value_dims == DDim({1})) || (pad_value_dims == time_step_dims),
            true)
       << "The SequencePad OP Input(PadValue) must be a scalar or a tensor "
          "whiose shape equals to time steps in sequences";
