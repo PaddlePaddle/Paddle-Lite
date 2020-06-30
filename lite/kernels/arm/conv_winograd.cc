@@ -164,6 +164,67 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                   &ctx);
     }
   }
+  ReInitWhenNeeded();
+}
+
+template <PrecisionType OutType>
+void WinogradConv<PRECISION(kInt8), OutType>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  ctx.ExtendWorkspace(workspace_size_);
+  const auto* i_data = param.x->template data<int8_t>();
+  const auto* w_data = weights_.data<int16_t>();
+  const auto* b_data = param.bias ? bias_.data<float>() : nullptr;
+  // const float* i_data;
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  // now  always choose small
+  if (OutType == PRECISION(kInt8)) {
+    auto* o_data = param.output->template mutable_data<int8_t>();
+    lite::arm::math::conv_compute_2x2_3x3_int8<int8_t>(i_data,
+                                                       o_data,
+                                                       bs,
+                                                       oc,
+                                                       oh,
+                                                       ow,
+                                                       ic,
+                                                       ih,
+                                                       iw,
+                                                       w_data,
+                                                       b_data,
+                                                       w_scale_.data(),
+                                                       param,
+                                                       &ctx);
+  } else {
+    auto* o_data = param.output->template mutable_data<float>();
+    lite::arm::math::conv_compute_2x2_3x3_int8<float>(i_data,
+                                                      o_data,
+                                                      bs,
+                                                      oc,
+                                                      oh,
+                                                      ow,
+                                                      ic,
+                                                      ih,
+                                                      iw,
+                                                      w_data,
+                                                      b_data,
+                                                      w_scale_.data(),
+                                                      param,
+                                                      &ctx);
+  }
+#ifdef LITE_WITH_PROFILE
+  kernel_func_name_ = "conv_compute_2x2_3x3_int8";
+#endif
 }
 
 }  // namespace arm

@@ -44,6 +44,22 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   bool choose_small_{false};
   int wino_iw{8};
 };
+template <PrecisionType OutType>
+class WinogradConv<PRECISION(kInt8), OutType>
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
+ public:
+  WinogradConv() = default;
+  ~WinogradConv() {}
+  virtual void PrepareForRun();
+  virtual void ReInitWhenNeeded();
+  virtual void Run();
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForConvWino"};
+#endif
 
 }  // namespace arm
 }  // namespace kernels
