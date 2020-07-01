@@ -72,7 +72,7 @@ std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone(
   return nullptr;
 }
 
-std::string LightPredictorImpl::GetVersion() const { return lite::version(); }
+const std::string& LightPredictorImpl::GetVersion() const { return lite::version(); }
 
 std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
@@ -85,11 +85,11 @@ std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
       new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
 }
 
-std::vector<std::string> LightPredictorImpl::GetInputNames() {
+const std::vector<std::string>& LightPredictorImpl::GetInputNames() {
   return raw_predictor_->GetInputNames();
 }
 
-std::vector<std::string> LightPredictorImpl::GetOutputNames() {
+const std::vector<std::string>& LightPredictorImpl::GetOutputNames() {
   return raw_predictor_->GetOutputNames();
 }
 
