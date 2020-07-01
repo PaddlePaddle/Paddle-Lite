@@ -21,7 +21,9 @@ namespace lite {
 namespace npu {
 
 std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
-    const std::string& model_name, const std::vector<char>& model_buffer) {
+    const std::string& model_name,
+    std::vector<char>* model_buffer,
+    bool* model_comp) {
   // Create a HiAI model manager client to load the HiAI om model
   std::shared_ptr<hiai::AiModelMngerClient> model_client(
       new hiai::AiModelMngerClient());
@@ -29,10 +31,61 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
     LOG(WARNING) << "[NPU] AiModelMngerClient init failed!";
     return nullptr;
   }
+  // Check HiAI DDK version
+  const char* ddk_version = model_client->GetVersion();
+  if (ddk_version) {
+    LOG(INFO) << "[NPU] HiAI DDK version: " << ddk_version;
+  } else {
+    LOG(WARNING) << "[NPU] Unable to get HiAI DDK version!";
+  }
+  // Check model compatibility
   auto model_desc = std::make_shared<hiai::AiModelDescription>(
       model_name, freq_level(), framework_type(), model_type(), device_type());
-  model_desc->SetModelBuffer(reinterpret_cast<const void*>(model_buffer.data()),
-                             model_buffer.size());
+  model_desc->SetModelBuffer(
+      reinterpret_cast<const void*>(model_buffer->data()),
+      model_buffer->size());
+  if (model_client->CheckModelCompatibility(*model_desc, model_comp) !=
+      hiai::AI_SUCCESS) {
+    *model_comp = false;
+  }
+  // Rebuild and write the data of the compatible model to the model buffer
+  if (!*model_comp) {
+    std::shared_ptr<AiModelBuilder> model_builder =
+        std::make_shared<AiModelBuilder>(model_client);
+    MemBuffer* org_model_buffer = model_builder->InputMemBufferCreate(
+        reinterpret_cast<void*>(model_buffer->data()), model_buffer->size());
+    if (org_model_buffer) {
+      std::vector<MemBuffer*> org_model_buffers;
+      org_model_buffers.push_back(org_model_buffer);
+      MemBuffer* new_model_buffer =
+          model_builder->OutputMemBufferCreate(0, org_model_buffers);
+      if (new_model_buffer) {
+        uint32_t new_model_size = 0;
+        if (model_builder->BuildModel(org_model_buffers,
+                                      new_model_buffer,
+                                      new_model_size) == hiai::AI_SUCCESS) {
+          model_buffer->resize(new_model_buffer->GetMemBufferSize());
+          memcpy(reinterpret_cast<void*>(model_buffer->data()),
+                 new_model_buffer->GetMemBufferData(),
+                 new_model_buffer->GetMemBufferSize());
+          // Reset the model buffer
+          model_desc->SetModelBuffer(
+              reinterpret_cast<const void*>(model_buffer->data()),
+              model_buffer->size());
+          VLOG(3) << "[NPU] Rebuild the compatible model done.";
+        } else {
+          LOG(WARNING) << "[NPU] Rebuild the compatible model failed!";
+        }
+        model_builder->MemBufferDestroy(new_model_buffer);
+      } else {
+        LOG(WARNING) << "[NPU] OutputMemBufferCreate failed!";
+      }
+      model_builder->MemBufferDestroy(org_model_buffer);
+    } else {
+      LOG(WARNING) << "[NPU] InputMemBufferCreate failed!";
+    }
+  }
+  // Load the compatible model
   std::vector<std::shared_ptr<hiai::AiModelDescription>> model_descs;
   model_descs.push_back(model_desc);
   if (model_client->Load(model_descs) != hiai::AI_SUCCESS) {
@@ -71,44 +124,6 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
   ir_build.ReleaseModelBuff(om_buffer);
   VLOG(3) << "[NPU] Build model done.";
   return true;
-}
-
-std::shared_ptr<hiai::AiModelMngerClient> Device::LoadOfflineModel(
-          const std::string& model_name, const std::string& model_path) {
-  std::shared_ptr<hiai::AiModelMngerClient> model_client(
-      new hiai::AiModelMngerClient());
-  if (model_client->Init(nullptr) != hiai::AI_SUCCESS) {
-    LOG(WARNING) << "[NPU] AiModelMngerClient init failed!";
-    return nullptr;
-  }
-  std::shared_ptr<hiai::AiModelBuilder> model_builder = std::make_shared<hiai::AiModelBuilder>(model_client);
-  hiai::MemBuffer *model_buffer = model_builder->InputMemBufferCreate(model_path);
-  if (model_buffer == nullptr) {
-    LOG(WARNING) << "[NPU] Cannot find the model file!";
-    return nullptr;
-  }
-  auto model_desc = std::make_shared<hiai::AiModelDescription>(
-      model_name, freq_level(), framework_type(), model_type(), device_type());
-  model_desc->SetModelBuffer(model_buffer->GetMemBufferData(), model_buffer->GetMemBufferSize());
-  VLOG(3) << "[NPU] Get model IO Tensor：" << model_desc->GetName().c_str();
-
-  bool model_comp = false;
-  if (model_client->CheckModelCompatibility(*model_desc, model_comp) != hiai::AI_SUCCESS)
-  {
-    LOG(WARNING) << "[NPU] CheckModelCompatibility failed!s";
-    return nullptr;
-  }
-  VLOG(3) << "[NPU] CheckModelCompatibility result is：" << model_comp;
-
-  std::vector<std::shared_ptr<hiai::AiModelDescription>> model_descs;
-  model_descs.push_back(model_desc);
-  if (model_client->Load(model_descs) != hiai::AI_SUCCESS) {
-    LOG(WARNING) << "[NPU] AiModelMngerClient load offline model failed!";
-    return nullptr;
-  }
-  model_builder->MemBufferDestroy(model_buffer);
-  VLOG(3) << "[NPU] Load offline model done.";
-  return model_client;
 }
 
 }  // namespace npu

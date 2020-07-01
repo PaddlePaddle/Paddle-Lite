@@ -38,17 +38,17 @@ class Device {
   int model_type() { return model_type_; }
   int device_type() { return device_type_; }
 
-  // Load the HiAI om model from buffer, and create a HiAI model manager
-  // client(from HiAI Service) to run inference
-  std::shared_ptr<hiai::AiModelMngerClient> Load(
-      const std::string& model_name, const std::vector<char>& model_buffer);
-  // Build the HiAI IR graph to the HiAI om model
+  // Load the HiAI om model from buffer, rebuild the model if it's incompatible
+  // with the current device, then create a HiAI model manager client(from HiAI
+  // Server) to run inference
+  std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
+      const std::string& model_name,
+      std::vector<char>* model_buffer,
+      bool* model_comp);
+  // Build the HiAI om model from the HiAI IR graph
   bool Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
              std::vector<ge::Operator>& output_nodes,  // NOLINT
              std::vector<char>* model_buffer);
-  // Load offline cached model
-  std::shared_ptr<hiai::AiModelMngerClient>  LoadOfflineModel(
-    const std::string& model_name, const std::string& model_path);
 
  private:
   int freq_level_{3};

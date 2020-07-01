@@ -53,7 +53,7 @@ std::string RuntimeProgram::GenerateModelName(
   return md5(os.str());
 }
 
-// Serialize the generated model, the precisions and dimensions of the origin
+// Deserialize the generated model, the precisions and dimensions of the origin
 // output tensors of the subgraph op into files
 bool RuntimeProgram::LoadFromCacheFile(
     const std::vector<std::string>& input_names,
@@ -73,10 +73,20 @@ bool RuntimeProgram::LoadFromCacheFile(
     LOG(WARNING) << "[NPU] Open " << model_path << " for reading failed!";
     return false;
   }
-  model_client_ = lite::npu::Device::Global().Load(model_name_, model_buffer);
+  bool model_comp = false;
+  model_client_ =
+      lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
+  }
+  // Rewrite with the compatible model data if the cached
+  // model file is incompatible with the current device
+  if (!model_comp) {
+    VLOG(3) << "[NPU] Export the compatible model to " << model_path;
+    if (!WriteFile(model_path, model_buffer)) {
+      LOG(WARNING) << "[NPU] Open " << model_path << " for writting failed!";
+    }
   }
   // Deserialize the precisions and shapes of the origin output tensors from the
   // cached configuration file
@@ -152,7 +162,8 @@ bool RuntimeProgram::BuildGraphAndCacheToFile(
   if (IsFileExists(model_path)) {
     VLOG(3) << "[NPU] Offline model exists:" << model_path;
     // Load offline cached m
-    model_client_ = lite::npu::Device::Global().LoadOfflineModel(model_name_, model_path);
+    model_client_ =
+        lite::npu::Device::Global().LoadOfflineModel(model_name_, model_path);
     if (model_client_) {
       VLOG(3) << "[NPU] Load offline model succeed.";
       return true;
