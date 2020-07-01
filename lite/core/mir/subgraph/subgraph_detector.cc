@@ -463,7 +463,7 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     auto &any_inst = any_op_node->AsStmt();
     if (any_inst.op_info()->HasInputScale(var_node_name)) {
       input_data_scales.push_back(
-          any_inst.op_info()->GetInputScale<float>(var_node_name));
+          any_inst.op_info()->GetInputScale(var_node_name)[0]);
     }
   }
   for (auto &var_node : output_var_nodes) {
@@ -473,7 +473,7 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     auto &any_inst = any_op_node->AsStmt();
     if (any_inst.op_info()->HasOutputScale(var_node_name)) {
       output_data_scales.push_back(
-          any_inst.op_info()->GetOutputScale<float>(var_node_name));
+          any_inst.op_info()->GetOutputScale(var_node_name)[0]);
     }
   }
   if (input_data_scales.size() > 0) {
