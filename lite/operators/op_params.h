@@ -1045,6 +1045,14 @@ struct SequenceUnpadParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct SequenceMaskParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* MaxLenTensor{nullptr};
+  lite::Tensor* Y{};
+  int maxlen{-1};
+  int out_dtype;
+};
+
 struct SequenceExpandAsParam : ParamBase {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* y{nullptr};
