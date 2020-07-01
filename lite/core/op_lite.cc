@@ -22,7 +22,7 @@
 namespace paddle {
 namespace lite {
 
-std::string int2string(int index) {
+static std::string int2string(int index) {
   const int BUFFER_LENGTH = 30;
   char buffer[BUFFER_LENGTH];
   int num = snprintf(buffer, sizeof(buffer), "%d", index);
@@ -262,17 +262,6 @@ bool OpInfo::HasOutputScale(const std::string &output_name) const {
   }
 }
 
-template <>
-void OpInfo::SetInputScale(const std::string &input_name,
-                           const float &scale_value) {
-  std::string argname;
-  int index;
-  CHECK(GetInputArgname(input_name, &argname));
-  CHECK(GetInputIndex(input_name, &index));
-  SetAttr<float>(argname + int2string(index) + "_scale", scale_value);
-}
-
-template <>
 void OpInfo::SetInputScale(const std::string &input_name,
                            const std::vector<float> &scale_value) {
   std::string argname;
@@ -283,17 +272,6 @@ void OpInfo::SetInputScale(const std::string &input_name,
                               scale_value);
 }
 
-template <>
-void OpInfo::SetOutputScale(const std::string &output_name,
-                            const float &scale_value) {
-  std::string argname;
-  int index;
-  CHECK(GetOutputArgname(output_name, &argname));
-  CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<float>(argname + int2string(index) + "_scale", scale_value);
-}
-
-template <>
 void OpInfo::SetOutputScale(const std::string &output_name,
                             const std::vector<float> &scale_value) {
   std::string argname;
@@ -302,6 +280,23 @@ void OpInfo::SetOutputScale(const std::string &output_name,
   CHECK(GetOutputIndex(output_name, &index));
   SetAttr<std::vector<float>>(argname + int2string(index) + "_scale",
                               scale_value);
+}
+
+std::vector<float> OpInfo::GetInputScale(const std::string &input_name) const {
+  std::string argname;
+  int index;
+  CHECK(GetInputArgname(input_name, &argname));
+  CHECK(GetInputIndex(input_name, &index));
+  return GetAttr<std::vector<float>>(argname + int2string(index) + "_scale");
+}
+
+std::vector<float> OpInfo::GetOutputScale(
+    const std::string &output_name) const {
+  std::string argname;
+  int index;
+  CHECK(GetOutputArgname(output_name, &argname));
+  CHECK(GetOutputIndex(output_name, &index));
+  return GetAttr<std::vector<float>>(argname + int2string(index) + "_scale");
 }
 
 }  // namespace lite

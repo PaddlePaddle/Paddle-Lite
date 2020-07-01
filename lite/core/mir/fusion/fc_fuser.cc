@@ -74,22 +74,15 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   auto op_desc = *matched.at("mul")->stmt()->op_info();
 
   // Get the input scale from mul
-  float x_scale{};
+  std::vector<float> x_scale_vct;
   std::vector<float> y_scale_vct;
-  auto y_var_node = matched.at("W")->arg();
   auto input_x_name = op_desc.Input("X").front();
   auto input_y_name = op_desc.Input("Y").front();
   bool is_quantized_op = op_desc.HasInputScale(input_x_name) &&
                          op_desc.HasInputScale(input_y_name);
   if (is_quantized_op) {
-    x_scale = op_desc.GetInputScale<float>(input_x_name);
-    if (y_var_node->is_weight) {  // the scale of y is a vector
-      y_scale_vct =
-          op_desc.GetInputScale<std::vector<float>>(op_desc.Input("Y").front());
-    } else {
-      y_scale_vct.push_back(  // the scale of y is scalar
-          op_desc.GetInputScale<float>(op_desc.Input("Y").front()));
-    }
+    x_scale_vct = op_desc.GetInputScale(input_x_name);
+    y_scale_vct = op_desc.GetInputScale(op_desc.Input("Y").front());
   }
 
   op_desc.mutable_inputs()->clear();
@@ -108,12 +101,8 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
 
   // Set the input scale into fc
   if (is_quantized_op) {
-    op_desc.SetInputScale(matched.at("x")->arg()->name, x_scale);
-    if (y_var_node->is_weight) {
-      op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct);
-    } else {
-      op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct.front());
-    }
+    op_desc.SetInputScale(matched.at("x")->arg()->name, x_scale_vct);
+    op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct);
   }
 
   return op_desc;

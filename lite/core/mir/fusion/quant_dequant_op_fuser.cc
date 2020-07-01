@@ -64,7 +64,7 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
   for (auto* quantized_node : outlinks) {
     // save input scale in quantized op by input argname + index
     auto op_desc = *quantized_node->stmt()->mutable_op_info();
-    op_desc.SetInputScale(out_act_name, scale_value);
+    op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
@@ -150,7 +150,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
   std::vector<float> weight_scale;
-  int weight_scale_size;
+  int weight_scale_size = 0;
   if (quantized_op_type_ == "conv2d" ||
       quantized_op_type_ == "depthwise_conv2d") {
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
@@ -348,7 +348,7 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     // Save quantization info in op_info attr
     auto op_info = *quantized_node->stmt()->op_info();
     op_info.SetAttr<int>("bit_length", bit_length);
-    op_info.SetInputScale(output_act_name, scale_value);
+    op_info.SetInputScale(output_act_name, {scale_value});
 
     op_info.UpdateAllInputs(output_act_name, input_act_name);
     quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
