@@ -66,9 +66,13 @@ void SequenceMaskCompute<T, Ptype>::Run() {
   y->Resize(y_dim);
   const int count = y->numel();
   auto* dst_data = y->template mutable_data<float>(TARGET(kCUDA));
-  SequenceMaskKernel<
-      T><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, stream>>>(
-      dst_data, x_data, count, maxlen);
+  if (param.out_dtype == 5) {
+    SequenceMaskKernel<
+        float><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, stream>>>(
+        dst_data, x_data, count, maxlen);
+  } else {
+    LOG(FATAL) << "not supported out_dtype: " << param.out_dtype;
+  }
   CUDA_POST_KERNEL_CHECK;
 }
 
