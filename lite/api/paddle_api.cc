@@ -238,13 +238,10 @@ void CxxConfig::set_mlu_core_number(int core_number) {
 void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
   mlu_input_layout_ = layout;
 }
-void CxxConfig::set_mlu_use_first_conv(bool use_first_conv) {
-  mlu_use_first_conv_ = use_first_conv;
-}
-void CxxConfig::set_mlu_first_conv_mean(const std::vector<float> &mean) {
+void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
+                                        const std::vector<float> &std) {
+  mlu_use_first_conv_ = true;
   mlu_first_conv_mean_ = mean;
-}
-void CxxConfig::set_mlu_first_conv_std(const std::vector<float> &std) {
   mlu_first_conv_std_ = std;
 }
 lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
