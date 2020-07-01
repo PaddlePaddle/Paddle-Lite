@@ -60,7 +60,7 @@ void QuantizedOpAttributesInferencePass::Apply(
         auto& out_inst = out_op_node->AsStmt();
         auto out_op_info = out_inst.op_info();
         if (!out_op_info->HasInputScale(out_var_node_name)) continue;
-        auto input_scale = out_op_info->GetInputScale<float>(out_var_node_name);
+        auto input_scale = out_op_info->GetInputScale(out_var_node_name)[0];
         if (!found) {
           found = true;
           output_scale = input_scale;
@@ -69,14 +69,15 @@ void QuantizedOpAttributesInferencePass::Apply(
         }
       }
       if (found) {
-        inst.mutable_op_info()->SetOutputScale(out_var_node_name, output_scale);
+        inst.mutable_op_info()->SetOutputScale(out_var_node_name,
+                                               {output_scale});
       } else if (op_info->HasAttr("out_threshold")) {
         // Only consider one output, there are only one out_threshold
         int bit_length = op_info->GetAttr<int>("bit_length");
         int range = (1 << (bit_length - 1)) - 1;
         output_scale = op_info->GetAttr<float>("out_threshold");
         inst.mutable_op_info()->SetOutputScale(out_var_node_name,
-                                               output_scale / range);
+                                               {output_scale / range});
       } else {
         is_quantized = false;
       }
