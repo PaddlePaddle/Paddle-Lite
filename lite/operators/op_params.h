@@ -1338,6 +1338,8 @@ struct AssignValueParam : ParamBase {
   int dtype{};
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<int> bool_values{};
   lite::Tensor* Out{};
 };
 
