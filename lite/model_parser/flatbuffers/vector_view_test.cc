@@ -85,15 +85,15 @@ TEST(VectorView, Flatbuffers) {
   auto program = fbs::proto::GetProgramDesc(fbb.GetBufferPointer());
 
   // BlockDesc View
-  VectorView<proto::BlockDesc> block_view(program->blocks());
+  VectorView<proto::BlockDesc*> block_view(program->blocks());
   EXPECT_EQ(block_view.size(), static_cast<size_t>(2));
   EXPECT_EQ(block_view[0]->idx(), 0);
   EXPECT_EQ(block_view[1]->idx(), 1);
 
   // OpDesc & Attr View
-  VectorView<proto::OpDesc> op_view(block_view[0]->ops());
+  VectorView<proto::OpDesc*> op_view(block_view[0]->ops());
   EXPECT_EQ(op_view[0]->type()->str(), std::string("hello!"));
-  VectorView<proto::OpDesc_::Attr> attr_view(op_view[0]->attrs());
+  VectorView<proto::OpDesc_::Attr*> attr_view(op_view[0]->attrs());
 
   // int32_t View
   VectorView<int32_t> ints_view(attr_view[0]->ints());
@@ -105,6 +105,10 @@ TEST(VectorView, Flatbuffers) {
   }
   for (size_t i = 0; i < ints_view.size(); ++i) {
     EXPECT_EQ(ints_view[i], ints[i]);
+  }
+  std::vector<int32_t> ints_2(ints_view);
+  for (size_t i = 0; i < ints_2.size(); ++i) {
+    EXPECT_EQ(ints_2[i], ints[i]);
   }
 
   // String View
@@ -118,6 +122,10 @@ TEST(VectorView, Flatbuffers) {
   }
   for (size_t i = 0; i < strings_view.size(); ++i) {
     EXPECT_EQ(strings_view[i], strings[i]);
+  }
+  std::vector<std::string> string_2(strings_view);
+  for (size_t i = 0; i < string_2.size(); ++i) {
+    EXPECT_EQ(string_2[i], strings[i]);
   }
 }
 
