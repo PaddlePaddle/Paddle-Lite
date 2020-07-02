@@ -70,10 +70,26 @@ void GatherCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    gather, kARM, kAny, kNCHW, paddle::lite::kernels::arm::GatherCompute, def)
+REGISTER_LITE_KERNEL(gather,
+                     kARM,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::arm::GatherCompute,
+                     index_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(gather,
+                     kARM,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::arm::GatherCompute,
+                     index_int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

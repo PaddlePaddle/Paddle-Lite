@@ -300,6 +300,35 @@ void ElementwiseMaxActivationCompute::Run() {
   }
 }
 
+#if 1
+template <typename T, PrecisionType PType>
+void ElementwiseDivCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ElementwiseParam>();
+  auto* x_data = param.X->template data<T>();
+  auto* y_data = param.Y->template data<T>();
+  LOG(INFO) << "y_data:" << y_data;
+  auto* out_data = param.Out->template mutable_data<T>();
+  int axis = param.axis;
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int pre, n, post;
+  if (x_dims.size() < y_dims.size()) {
+    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  }
+  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+    LOG(INFO) << "y_dims:" << y_dims;
+    LOG(INFO) << "y_dims.production:" << y_dims.production();
+    for (size_t i = 0; i < y_dims.production(); ++i) {
+      LOG(INFO) << "y_data[" << i << "]:" << y_data[i];
+    }
+    lite::arm::math::elementwise_div_broadcast<T>(
+        x_data, y_data, out_data, pre, n, post);
+  } else {
+    lite::arm::math::elementwise_div<T>(
+        x_data, y_data, out_data, x_dims.production());
+  }
+}
+#else
 void ElementwiseDivCompute::Run() {
   auto& param = Param<operators::ElementwiseParam>();
   const float* x_data = param.X->data<float>();
@@ -320,6 +349,7 @@ void ElementwiseDivCompute::Run() {
         x_data, y_data, out_data, x_dims.production());
   }
 }
+#endif
 
 void ElementwiseDivActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();
@@ -488,15 +518,25 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(elementwise_div,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseDivCompute,
-                     def)
+using elementwise_div_fp32 =
+    paddle::lite::kernels::arm::ElementwiseDivCompute<float, PRECISION(kFloat)>;
+
+REGISTER_LITE_KERNEL(
+    elementwise_div, kARM, kFloat, kNCHW, elementwise_div_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_div_int64 =
+    paddle::lite::kernels::arm::ElementwiseDivCompute<int64_t,
+                                                      PRECISION(kInt64)>;
+
+REGISTER_LITE_KERNEL(
+    elementwise_div, kARM, kInt64, kNCHW, elementwise_div_int64, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

@@ -1255,6 +1255,19 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
 }
 
 template <>
+void elementwise_div<int64_t>(const int64_t* dinx,
+                              const int64_t* diny,
+                              int64_t* dout,
+                              int num) {
+  for (int i = 0; i < num; i++) {
+    *dout = *dinx / *diny;
+    dout++;
+    dinx++;
+    diny++;
+  }
+}
+
+template <>
 void elementwise_div<float>(const float* dinx,
                             const float* diny,
                             float* dout,
@@ -1307,6 +1320,28 @@ void elementwise_div<float>(const float* dinx,
 }
 
 template <>
+void elementwise_div_broadcast<int64_t>(const int64_t* dinx,
+                                        const int64_t* diny,
+                                        int64_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* din_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int p = 0; p < num; p++) {
+        *dout_ptr = *din_ptr / diny_data;
+        dout_ptr++;
+        din_ptr++;
+      }
+    }
+  }
+}
+
+template <>
 void elementwise_div_broadcast<float>(const float* dinx,
                                       const float* diny,
                                       float* dout,
@@ -1318,7 +1353,9 @@ void elementwise_div_broadcast<float>(const float* dinx,
     for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
+      LOG(INFO) << 1111;
       const float diny_data = diny[j];
+      LOG(INFO) << 1111;
       float* dout_ptr = dout + offset;
 
       int cnt = num >> 4;
