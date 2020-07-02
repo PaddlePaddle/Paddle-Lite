@@ -18,6 +18,7 @@
 #include <type_traits>
 #include <vector>
 #include "flatbuffers/flatbuffers.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +33,7 @@ struct ElementTraits {
 };
 
 template <typename T>
-struct ElementTraits<T,
+struct ElementTraits<T*,
                      typename std::enable_if<std::is_class<T>::value>::type> {
   typedef flatbuffers::Offset<T> element_type;
 };
@@ -76,6 +77,15 @@ class VectorView {
   typename Traits::const_iterator begin() const { return cvec_->begin(); }
   typename Traits::const_iterator end() const { return cvec_->end(); }
   size_t size() const { return cvec_->size(); }
+  operator std::vector<T>() {
+    VLOG(10) << "Copying elements out of VectorView will damage performance.";
+    std::vector<T> tmp;
+    tmp.reserve(cvec_->size());
+    for (auto val : *cvec_) {
+      tmp.push_back(val);
+    }
+    return tmp;
+  }
   ~VectorView() = default;
 
  private:
@@ -90,22 +100,22 @@ struct FBSStrIterator {
       VI;
 
   explicit FBSStrIterator(const VI& iter) { iter_ = iter; }
-  const VI& RawIter() const { return iter_; }
+  const VI& raw_iter() const { return iter_; }
 
   bool operator==(const FBSStrIterator& other) const {
-    return iter_ == other.RawIter();
+    return iter_ == other.raw_iter();
   }
 
   bool operator<(const FBSStrIterator& other) const {
-    return iter_ < other.RawIter();
+    return iter_ < other.raw_iter();
   }
 
   bool operator!=(const FBSStrIterator& other) const {
-    return iter_ != other.RawIter();
+    return iter_ != other.raw_iter();
   }
 
   ptrdiff_t operator-(const FBSStrIterator& other) const {
-    return iter_ - other.RawIter();
+    return iter_ - other.raw_iter();
   }
 
   std::string operator*() const { return iter_.operator*()->str(); }
@@ -144,6 +154,15 @@ class VectorView<std::string, Flatbuffers> {
   FBSStrIterator begin() const { return FBSStrIterator(cvec_->begin()); }
   FBSStrIterator end() const { return FBSStrIterator(cvec_->end()); }
   size_t size() const { return cvec_->size(); }
+  operator std::vector<std::string>() {
+    VLOG(10) << "Copying elements out of VectorView will damage performance.";
+    std::vector<std::string> tmp;
+    tmp.reserve(cvec_->size());
+    for (auto val : *cvec_) {
+      tmp.push_back(val->str());
+    }
+    return tmp;
+  }
   ~VectorView() = default;
 
  private:
