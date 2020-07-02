@@ -6,6 +6,7 @@ message(STATUS "compile with lite CUDA kernels")
 
 # basic kernels
 add_kernel(mul_compute_cuda CUDA basic SRCS mul_compute.cc DEPS ${lite_kernel_deps} ${math_cuda})
+add_kernel(fc_compute_cuda CUDA basic SRCS fc_compute.cu DEPS ${lite_kernel_deps} ${math_cuda})
 add_kernel(search_group_padding_compute_cuda CUDA basic SRCS search_group_padding_compute.cu DEPS ${lite_kernel_deps})
 add_kernel(io_copy_compute_cuda CUDA basic SRCS io_copy_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(leaky_relu_compute_cuda CUDA basic SRCS leaky_relu_compute.cu DEPS ${lite_kernel_deps})
@@ -65,7 +66,8 @@ nv_test(concat_compute_cuda_test SRCS concat_compute_test.cc DEPS concat_compute
 nv_test(elementwise_compute_cuda_test SRCS elementwise_compute_test.cc DEPS elementwise_compute_cuda)
 nv_test(softmax_compute_cuda_test SRCS softmax_compute_test.cc DEPS softmax_compute_cuda)
 #nv_test(layout_cuda_test SRCS layout_compute_test.cc DEPS layout_compute_cuda)
-nv_test(mul_compute_cuda_test SRCS mul_compute_test.cc DEPS mul_compute_cuda) 
+nv_test(mul_compute_cuda_test SRCS mul_compute_test.cc DEPS mul_compute_cuda)
+nv_test(fc_compute_cuda_test SRCS fc_compute_test.cc DEPS fc_compute_cuda)
 nv_test(dropout_compute_cuda_test SRCS dropout_compute_test.cc DEPS dropout_compute_cuda )
 nv_test(bilinear_interp_compute_cuda_test SRCS bilinear_interp_compute_test.cc DEPS bilinear_interp_compute_cuda)
 #nv_test(pool_compute_cuda_test SRCS pool_compute_test.cc DEPS pool_compute_cuda)
