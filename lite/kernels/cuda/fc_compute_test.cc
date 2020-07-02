@@ -35,7 +35,7 @@ class FcTest : public ::testing::Test {
         k(512),
         n(64),
         in_num_col_dims(1),
-        act_type(""),
+        act_type("relu"),
         x_shape({m, k}),
         w_shape({k, n}),
         b_shape({n}),

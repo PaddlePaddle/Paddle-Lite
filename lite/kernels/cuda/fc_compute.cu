@@ -68,7 +68,7 @@ __global__ void general_bias(const int num, const T* bias, T* data) {
 
   for (int i = threadIdx.x; i < num; i += blockDim.x) {
     T temp;
-#ifdef __CUDA_ARCH__ >= 350
+#if __CUDA_ARCH__ >= 350
     temp = __ldg(data + offset + i) + __ldg(bias + i);
 #else
     temp = data[offset + i] + bias[i];
@@ -83,7 +83,7 @@ __global__ void general_relu_bias(const int num, const T* bias, T* data) {
 
   for (int i = threadIdx.x; i < num; i += blockDim.x) {
     T temp;
-#ifdef __CUDA_ARCH__ >= 350
+#if __CUDA_ARCH__ >= 350
     temp = __ldg(data + offset + i) + __ldg(bias + i);
 #else
     temp = data[offset + i] + bias[i];
