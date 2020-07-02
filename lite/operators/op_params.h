@@ -1131,8 +1131,8 @@ struct VarConv2DParam : ParamBase {
   bool fuse_relu{false};
 
 #ifdef LITE_WITH_XPU
-  bool float_to_fix{false};
-  float w_max{0.0f};
+  bool __xpu__float_to_fix{false};  // Is W already converted to int16/int8
+  float __xpu__w_max{0.0f};         // Abs max in W
 #endif
 };
 
@@ -1384,10 +1384,11 @@ struct SearchFcParam : ParamBase {
   lite::Tensor* Out{};
   int out_size{};
 
-#ifdef LITE_WITH_XPU
   bool fuse_relu{false};
-  bool float_to_fix{false};
-  float w_max{0.0f};
+
+#ifdef LITE_WITH_XPU
+  bool __xpu__float_to_fix{false};  // Is W already converted to int16/int8
+  float __xpu__w_max{0.0f};         // Abs max in W
 #endif
 };
 /// --------------------- match_matrix_tensor operators --------------------
@@ -1399,11 +1400,11 @@ struct MatchMatrixTensorParam : ParamBase {
   lite::Tensor* tmp{};
 
   int dim_t;
+  bool fuse_relu{false};
 
 #ifdef LITE_WITH_XPU
-  bool fuse_relu{false};
-  bool float_to_fix{false};
-  float w_max{0.0f};
+  bool __xpu__float_to_fix{false};  // Is w already converted to int16/int8
+  float __xpu__w_max{0.0f};         // Abs max in w
 #endif
 };
 
@@ -1428,9 +1429,9 @@ struct SearchGrnnParam : ParamBase {
   lite::Tensor* layout_input{};
 
 #ifdef LITE_WITH_XPU
-  std::vector<float> wi_max;
-  std::vector<float> wh_max;
-  bool float_to_fix{false};
+  bool __xpu__float_to_fix{false};   // Is wi/wh already converted to int16/int8
+  std::vector<float> __xpu__wi_max;  // Abs max in wi
+  std::vector<float> __xpu__wh_max;  // Abs max in wh
 #endif
 };
 

@@ -50,8 +50,8 @@ class XPUMMDNNFloat2Fix {
             weight_on_host, weight_int16.get(), weight_len * sizeof(int16_t));
 
         auto update_op_info = *op_info;
-        update_op_info.SetAttr<bool>("float_to_fix", true);
-        update_op_info.SetAttr<float>("w_max", max_f);
+        update_op_info.SetAttr<bool>("__xpu__float_to_fix", true);
+        update_op_info.SetAttr<float>("__xpu__w_max", max_f);
         node->stmt()->ResetOp(update_op_info, graph->valid_places());
         VLOG(3) << "Float2Fix, op_type=" << op_type
                 << ", weight_name=" << weight_name;
@@ -77,8 +77,8 @@ class XPUMMDNNFloat2Fix {
                weight_len * sizeof(int16_t));
 
         auto update_op_info = *op_info;
-        update_op_info.SetAttr<bool>("float_to_fix", true);
-        update_op_info.SetAttr<float>("w_max", max_f);
+        update_op_info.SetAttr<bool>("__xpu__float_to_fix", true);
+        update_op_info.SetAttr<float>("__xpu__w_max", max_f);
         node->stmt()->ResetOp(update_op_info, graph->valid_places());
         VLOG(3) << "Float2Fix && Transposed, op_type=" << op_type
                 << ", weight_name=" << weight_name;
@@ -126,9 +126,9 @@ class XPUMMDNNFloat2Fix {
         memcpy(wh_on_host, wh_int16.get(), wh_len * sizeof(int16_t));
 
         auto update_op_info = *op_info;
-        update_op_info.SetAttr<bool>("float_to_fix", true);
-        update_op_info.SetAttr<std::vector<float>>("wi_max", wi_max);
-        update_op_info.SetAttr<std::vector<float>>("wh_max", wh_max);
+        update_op_info.SetAttr<bool>("__xpu__float_to_fix", true);
+        update_op_info.SetAttr<std::vector<float>>("__xpu__wi_max", wi_max);
+        update_op_info.SetAttr<std::vector<float>>("__xpu__wh_max", wh_max);
         node->stmt()->ResetOp(update_op_info, graph->valid_places());
         VLOG(3) << "Float2Fix, op_type=" << op_type << ", wi_name=" << wi_name
                 << ", wh_name=" << wh_name;

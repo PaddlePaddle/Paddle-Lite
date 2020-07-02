@@ -34,10 +34,10 @@ void SearchFcCompute::Run() {
   auto* w = param.W;
   auto* b = param.b;
   auto* top = param.Out;
-  float w_max = param.w_max;
+  float w_max = param.__xpu__w_max;
   int out_size = param.out_size;
   bool fuse_relu = param.fuse_relu;
-  bool float_to_fix = param.float_to_fix;
+  bool float_to_fix = param.__xpu__float_to_fix;
   CHECK(float_to_fix) << "W should be fixed point";
 
   int batch = bottom->dims()[0];

@@ -116,9 +116,9 @@ void SearchGrnnCompute::Run() {
   int cap_h = param.num_hidden;
   int cap_e = param.num_input;
   int cap_l = bottom->dims()[0];
-  auto wi_max = param.wi_max;
-  auto wh_max = param.wh_max;
-  bool float_to_fix = param.float_to_fix;
+  auto wi_max = param.__xpu__wi_max;
+  auto wh_max = param.__xpu__wh_max;
+  bool float_to_fix = param.__xpu__float_to_fix;
   CHECK(float_to_fix) << "W should be fixed point";
 
   int dim = 1;

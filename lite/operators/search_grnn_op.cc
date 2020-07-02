@@ -86,14 +86,14 @@ bool SearchGrnnOpLite::AttachImpl(const cpp::OpDesc& op_desc,
       scope->FindVar(layout_input)->GetMutable<lite::Tensor>();
 
 #ifdef LITE_WITH_XPU
-  if (op_desc.HasAttr("float_to_fix")) {
-    param_.float_to_fix = op_desc.GetAttr<bool>("float_to_fix");
+  if (op_desc.HasAttr("__xpu__float_to_fix")) {
+    param_.__xpu__float_to_fix = op_desc.GetAttr<bool>("__xpu__float_to_fix");
   }
-  if (op_desc.HasAttr("wi_max")) {
-    param_.wi_max = op_desc.GetAttr<std::vector<float>>("wi_max");
+  if (op_desc.HasAttr("__xpu__wi_max")) {
+    param_.__xpu__wi_max = op_desc.GetAttr<std::vector<float>>("__xpu__wi_max");
   }
-  if (op_desc.HasAttr("wh_max")) {
-    param_.wh_max = op_desc.GetAttr<std::vector<float>>("wh_max");
+  if (op_desc.HasAttr("__xpu__wh_max")) {
+    param_.__xpu__wh_max = op_desc.GetAttr<std::vector<float>>("__xpu__wh_max");
   }
 #endif
 

@@ -41,9 +41,9 @@ void MatchMatrixTensorCompute::Run() {
   auto* out = param.out;
   auto* tmp = param.tmp;
   int dim_t = param.dim_t;
-  float w_max = param.w_max;
+  float w_max = param.__xpu__w_max;
   bool fuse_relu = param.fuse_relu;
-  bool float_to_fix = param.float_to_fix;
+  bool float_to_fix = param.__xpu__float_to_fix;
   CHECK(float_to_fix) << "W should be fixed point";
 
   xdnn::Activation_t act = xdnn::Activation_t::LINEAR;

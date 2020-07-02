@@ -43,9 +43,9 @@ void VarConv2DCompute::Run() {
   int kernel_w = param.kernel_w;
   int stride_h = param.stride_h;
   int stride_w = param.stride_w;
-  float w_max = param.w_max;
+  float w_max = param.__xpu__w_max;
   bool fuse_relu = param.fuse_relu;
-  bool float_to_fix = param.float_to_fix;
+  bool float_to_fix = param.__xpu__float_to_fix;
   CHECK(float_to_fix) << "W should be fixed point";
 
   xdnn::Activation_t act = xdnn::Activation_t::LINEAR;
