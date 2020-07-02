@@ -44,20 +44,22 @@ struct Flatbuffers {};
 template <typename T, typename U>
 class VectorView;
 
-template <typename T>
+template <typename T, typename U = Standard>
 struct OpDataTypeTrait;
 
 #define ATTR_TYPE_TRAIT_IMPL(T, type__)             \
-  template <>                                       \
-  struct OpDataTypeTrait<type__> {                  \
+  template <typename U>                             \
+  struct OpDataTypeTrait<type__, U> {               \
     typedef type__ ET;                              \
+    typedef type__ RT;                              \
     static constexpr OpAttrType AT = OpAttrType::T; \
     static constexpr const char* ATN = #T;          \
   };
 #define ATTR_VECTOR_TYPE_TRAIT_IMPL(T, type__)      \
-  template <>                                       \
-  struct OpDataTypeTrait<std::vector<type__>> {     \
+  template <typename U>                             \
+  struct OpDataTypeTrait<std::vector<type__>, U> {  \
     typedef type__ ET;                              \
+    typedef VectorView<type__, U> RT;               \
     static constexpr OpAttrType AT = OpAttrType::T; \
     static constexpr const char* ATN = #T;          \
   };
@@ -69,10 +71,10 @@ ATTR_TYPE_TRAIT_IMPL(STRING, std::string);
 ATTR_TYPE_TRAIT_IMPL(BOOLEAN, bool);
 ATTR_TYPE_TRAIT_IMPL(LONG, int64_t);
 
-ATTR_VECTOR_TYPE_TRAIT_IMPL(INTS, std::vector<int32_t>);
-ATTR_VECTOR_TYPE_TRAIT_IMPL(FLOATS, std::vector<float>);
-ATTR_VECTOR_TYPE_TRAIT_IMPL(STRINGS, std::vector<std::string>);
-ATTR_VECTOR_TYPE_TRAIT_IMPL(LONGS, std::vector<int64_t>);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(INTS, int32_t);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(FLOATS, float);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(STRINGS, std::string);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(LONGS, int64_t);
 
 #undef ATTR_TYPE_TRAIT_IMPL
 #undef ATTR_VECTOR_TYPE_TRAIT_IMPL
