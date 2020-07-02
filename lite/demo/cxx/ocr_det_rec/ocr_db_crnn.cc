@@ -124,19 +124,13 @@ cv::Mat det_resize_img(const cv::Mat img,
   return resize_img;
 }
 
-void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
+void RunRecModel(std::shared_ptr<PaddlePredictor> predictor,
+                 std::vector<std::vector<std::vector<int>>> boxes,
                  cv::Mat img,
-                 std::string rec_model_path,
                  std::string dict_path,
                  std::string img_name,
                  std::string output_path,
                  float* rec_time) {
-  // Set MobileConfig
-  MobileConfig config;
-  config.set_model_from_file(rec_model_path);
-  std::shared_ptr<PaddlePredictor> predictor_crnn =
-      CreatePaddlePredictor<MobileConfig>(config);
-
   auto start = GetCurrentUS();
   cv::Mat srcimg;
   img.copyTo(srcimg);
@@ -162,8 +156,7 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
     resize_img = crnn_resize_img(crop_img, wh_ratio);
     resize_img.convertTo(resize_img, CV_32FC3, 1 / 255.f);
 
-    std::unique_ptr<Tensor> input_tensor0(
-        std::move(predictor_crnn->GetInput(0)));
+    std::unique_ptr<Tensor> input_tensor0(std::move(predictor->GetInput(0)));
     input_tensor0->Resize({1, 3, resize_img.rows, resize_img.cols});
     auto* data0 = input_tensor0->mutable_data<float>();
 
@@ -172,11 +165,11 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
         dimg, data0, resize_img.rows * resize_img.cols, mean, scale);
 
     // Run CRNN predictor
-    predictor_crnn->Run();
+    predictor->Run();
 
     // Get output and run postprocess
     std::unique_ptr<const Tensor> output_tensor0(
-        std::move(predictor_crnn->GetOutput(0)));
+        std::move(predictor->GetOutput(0)));
     auto* rec_idx = output_tensor0->data<int>();
     auto rec_idx_lod = output_tensor0->lod();
     auto shape_out = output_tensor0->shape();
@@ -198,7 +191,7 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
 
     // Get score
     std::unique_ptr<const Tensor> output_tensor1(
-        std::move(predictor_crnn->GetOutput(1)));
+        std::move(predictor->GetOutput(1)));
     auto* predict_batch = output_tensor1->data<float>();
     auto predict_shape = output_tensor1->shape();
 
@@ -232,18 +225,12 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
             << std::endl;
 }
 
-std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
-                                                       cv::Mat img,
-                                                       std::string img_name,
-                                                       std::string output_path,
-                                                       float* det_time) {
-  // Set MobileConfig
-  MobileConfig config;
-  config.set_model_from_file(model_file);
-
-  std::shared_ptr<PaddlePredictor> predictor =
-      CreatePaddlePredictor<MobileConfig>(config);
-
+std::vector<std::vector<std::vector<int>>> RunDetModel(
+    std::shared_ptr<PaddlePredictor> predictor,
+    cv::Mat img,
+    std::string img_name,
+    std::string output_path,
+    float* det_time) {
   auto start = GetCurrentUS();
   // Process img
   int max_side_len = 960;
@@ -332,11 +319,11 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
 }
 
 int main(int argc, char** argv) {
-  if (argc < 6) {
+  if (argc < 7) {
     std::cerr << "Input error." << std::endl;
     std::cerr << "Usage: " << argv[0] << " det_model_opt_path "
                                          "rec_model_opt_path dict_path "
-                                         "image_path output_path\n";
+                                         "image_path output_path repeats\n";
     exit(1);
   }
   std::string det_model_path = argv[1];
@@ -344,22 +331,37 @@ int main(int argc, char** argv) {
   std::string dict_path = argv[3];
   std::string img_path = argv[4];
   std::string output_path = argv[5];
+  int repeats = atoi(argv[6]);
   size_t pos = img_path.find_last_of("/");
   std::string img_name = img_path.substr(pos + 1);
 
+  // Create predictor
+  MobileConfig det_config;
+  det_config.set_model_from_file(det_model_path);
+  std::shared_ptr<PaddlePredictor> det_predictor =
+      CreatePaddlePredictor<MobileConfig>(det_config);
+  MobileConfig rec_config;
+  rec_config.set_model_from_file(rec_model_path);
+  std::shared_ptr<PaddlePredictor> rec_predictor =
+      CreatePaddlePredictor<MobileConfig>(rec_config);
+
   cv::Mat srcimg = cv::imread(img_path, cv::IMREAD_COLOR);
-  float det_time = 0;
-  float rec_time = 0;
-  auto boxes =
-      RunDetModel(det_model_path, srcimg, img_name, output_path, &det_time);
-  RunRecModel(boxes,
-              srcimg,
-              rec_model_path,
-              dict_path,
-              img_name,
-              output_path,
-              &rec_time);
-  std::cout << "It took " << det_time + rec_time << " ms" << std::endl;
+  float sum_time = 0;
+  for (int i = 0; i < repeats; i++) {
+    float det_time = 0;
+    float rec_time = 0;
+    auto boxes =
+        RunDetModel(det_predictor, srcimg, img_name, output_path, &det_time);
+    RunRecModel(rec_predictor,
+                boxes,
+                srcimg,
+                dict_path,
+                img_name,
+                output_path,
+                &rec_time);
+    sum_time = sum_time + det_time + rec_time;
+  }
+  std::cout << "Average time: " << sum_time / repeats << " ms" << std::endl;
 
   return 0;
 }
