@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include "lite/backends/x86/math/detail/activation_functions.h"
 #include "lite/core/context.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

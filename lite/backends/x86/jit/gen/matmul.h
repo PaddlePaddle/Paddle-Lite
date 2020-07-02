@@ -19,7 +19,7 @@
 #include <vector>
 #include "lite/backends/x86/jit/gen/jitcode.h"
 #include "lite/utils/cp_logging.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +32,7 @@ class MatMulJitCode : public JitCode {
                          size_t code_size = 256 * 1024,
                          void* code_ptr = nullptr)
       : JitCode(code_size, code_ptr), m_(attr.m), n_(attr.n), k_(attr.k) {
-    PADDLE_ENFORCE_EQ(m_, 1, "Only support m==1 yet");
+    CHECK_EQ(m_, 1) << "Only support m==1 yet";
     this->genCode();
   }
 

@@ -91,9 +91,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Add x tensor type
   CHECK(op_info->HasInputScale(x_name));
-  auto x_scale = op_info->GetInputScale<float>(x_name);
+  auto x_scale = op_info->GetInputScale(x_name)[0];
   CHECK(op_info->HasOutputScale(out_name));
-  auto out_scale = op_info->GetOutputScale<float>(out_name);
+  auto out_scale = op_info->GetOutputScale(out_name)[0];
 
   NeuronOperandType xType;
   xType.type = NEURON_TENSOR_QUANT8_ASYMM;

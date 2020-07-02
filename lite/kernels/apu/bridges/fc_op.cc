@@ -57,11 +57,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << " n: " << n;
 
   CHECK(op_info->HasInputScale(input_name));
-  auto input_scale = op_info->GetInputScale<float>(input_name);
+  auto input_scale = op_info->GetInputScale(input_name)[0];
   CHECK(op_info->HasInputScale(w_name));
-  auto w_scale = op_info->GetInputScale<std::vector<float>>(w_name);
+  auto w_scale = op_info->GetInputScale(w_name);
   CHECK(op_info->HasOutputScale(out_name));
-  auto out_scale = op_info->GetOutputScale<float>(out_name);
+  auto out_scale = op_info->GetOutputScale(out_name)[0];
 
   // Add input tensor type
   NeuronOperandType inType;

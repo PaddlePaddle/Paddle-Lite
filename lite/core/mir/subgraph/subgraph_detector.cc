@@ -478,11 +478,9 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     auto any_op_node = var_node->outlinks.front();
     CHECK(any_op_node->IsStmt());
     auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasInputScale(var_node_name) &&
-        !var_node->arg()->is_weight) {
+    if (any_inst.op_info()->HasInputScale(var_node_name)) {
       subgraph_op->mutable_op_info()->SetInputScale(
-          var_node_name,
-          any_inst.op_info()->GetInputScale<float>(var_node_name));
+          var_node_name, any_inst.op_info()->GetInputScale(var_node_name));
     }
   }
   for (auto &var_node : output_var_nodes) {
@@ -490,11 +488,9 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     auto any_op_node = var_node->inlinks.front();
     CHECK(any_op_node->IsStmt());
     auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasOutputScale(var_node_name) &&
-        !var_node->arg()->is_weight) {
+    if (any_inst.op_info()->HasOutputScale(var_node_name)) {
       subgraph_op->mutable_op_info()->SetOutputScale(
-          var_node_name,
-          any_inst.op_info()->GetOutputScale<float>(var_node_name));
+          var_node_name, any_inst.op_info()->GetOutputScale(var_node_name));
     }
   }
 

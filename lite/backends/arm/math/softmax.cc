@@ -531,7 +531,7 @@ void softmax_inner1_large_axis<float>(const float* din,
     }
     float32x2_t vhmax = vmax_f32(vget_high_f32(vmax), vget_low_f32(vmax));
     float max_data = std::max(vget_lane_f32(vhmax, 0), vget_lane_f32(vhmax, 1));
-    for (j = 4 * j; j < axis_size; ++j) {
+    for (j = 4 * nn; j < axis_size; ++j) {
       max_data = std::max(max_data, din_max_ptr[0]);
       din_max_ptr++;
     }
@@ -557,7 +557,7 @@ void softmax_inner1_large_axis<float>(const float* din,
     float32x2_t vhsum = vadd_f32(vget_high_f32(vsum), vget_low_f32(vsum));
     float sum_data = vget_lane_f32(vhsum, 0) + vget_lane_f32(vhsum, 1);
 
-    for (j = 4 * j; j < axis_size; ++j) {
+    for (j = 4 * nn; j < axis_size; ++j) {
       dout_sum_ptr[0] = expf(din_sum_ptr[0] - max_data);
       sum_data += dout_sum_ptr[0];
       din_sum_ptr++;

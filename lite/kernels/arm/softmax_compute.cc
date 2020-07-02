@@ -34,7 +34,7 @@ void SoftmaxCompute::Run() {
   int inner_num = x_dims.Slice(axis + 1, x_rank).production();
   int axis_size = x_dims[axis];
   if (inner_num == 1) {
-    if (axis_size >= 4) {
+    if (axis_size > 4) {
       lite::arm::math::softmax_inner1_large_axis(
           din, dout, outer_num, axis_size);
     } else {

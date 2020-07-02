@@ -98,11 +98,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       filter_dims);
 
   CHECK(op_info->HasInputScale(input_name));
-  auto input_scale = op_info->GetInputScale<float>(input_name);
+  auto input_scale = op_info->GetInputScale(input_name)[0];
   CHECK(op_info->HasInputScale(filter_name));
-  auto filter_scale = op_info->GetInputScale<std::vector<float>>(filter_name);
+  auto filter_scale = op_info->GetInputScale(filter_name);
   CHECK(op_info->HasOutputScale(output_name));
-  auto output_scale = op_info->GetOutputScale<float>(output_name);
+  auto output_scale = op_info->GetOutputScale(output_name)[0];
 
   VLOG(3) << "strides.size(): " << strides.size() << " ,groups: " << groups
           << " ,dilations: " << dilations[0] << ":" << dilations[1];

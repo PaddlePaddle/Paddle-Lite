@@ -358,6 +358,9 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
                                                       param,
                                                       &ctx);
   }
+#ifdef LITE_WITH_PROFILE
+  kernel_func_name_ = "conv_compute_2x2_3x3_int8";
+#endif
 }
 template class WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
 template class WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;

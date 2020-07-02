@@ -910,8 +910,8 @@ void TestKernelSgd() {
   const T lr = 0.1;
   auto UnDuplicatedRandomVec = [](
       int n, const int64_t lower, const int64_t upper) -> std::vector<int64_t> {
-    PADDLE_ENFORCE_LE(static_cast<size_t>(upper - lower), n - 1);
-    PADDLE_ENFORCE_GT(n, 0);
+    CHECK_LE(static_cast<size_t>(upper - lower), n - 1);
+    CHECK_GT(n, 0);
     std::vector<int64_t> all, out;
     for (int i = 0; i < n; ++i) {
       all.push_back(i);

@@ -78,7 +78,7 @@ static bool InferScale(Node* var_node, Node* op_node, float* scale) {
   auto op_type = op_info->Type();
   auto var_name = var_node->AsArg().name;
   if (op_info->HasInputScale(var_name)) {
-    *scale = op_info->GetInputScale<float>(var_name);
+    *scale = op_info->GetInputScale(var_name)[0];
     found = true;
   } else {
     // Obtain the output_scale from one of its previous Ops
@@ -88,7 +88,7 @@ static bool InferScale(Node* var_node, Node* op_node, float* scale) {
     auto prev_op_info = prev_inst.op_info();
     auto prev_op_type = prev_op_info->Type();
     if (prev_op_info->HasOutputScale(var_name)) {
-      *scale = prev_op_info->GetOutputScale<float>(var_name);
+      *scale = prev_op_info->GetOutputScale(var_name)[0];
       found = true;
     }
   }

@@ -52,7 +52,7 @@ void QuantizedOpAttributesInferencePass::Apply(
     bool is_quantized = true;
     for (auto out_var_node : op_node->outlinks) {
       CHECK(out_var_node->IsArg());
-      float output_scale;
+      std::vector<float> output_scale;
       bool has_output_scale = false;
       auto out_var_node_name = out_var_node->arg()->name;
       for (auto out_op_node : out_var_node->outlinks) {
@@ -60,12 +60,12 @@ void QuantizedOpAttributesInferencePass::Apply(
         auto& out_inst = out_op_node->AsStmt();
         auto out_op_info = out_inst.op_info();
         if (!out_op_info->HasInputScale(out_var_node_name)) continue;
-        auto input_scale = out_op_info->GetInputScale<float>(out_var_node_name);
+        auto input_scale = out_op_info->GetInputScale(out_var_node_name);
         if (!has_output_scale) {
           output_scale = input_scale;
           has_output_scale = true;
         } else {
-          CHECK_EQ(output_scale, input_scale);
+          CHECK_EQ(output_scale.size(), input_scale.size());
         }
       }
       if (has_output_scale) {
@@ -74,9 +74,9 @@ void QuantizedOpAttributesInferencePass::Apply(
         // Only consider one output, there are only one out_threshold
         int bit_length = op_info->GetAttr<int>("bit_length");
         int range = (1 << (bit_length - 1)) - 1;
-        output_scale = op_info->GetAttr<float>("out_threshold");
-        inst.mutable_op_info()->SetOutputScale(out_var_node_name,
-                                               output_scale / range);
+        output_scale = std::vector<float>{
+            op_info->GetAttr<float>("out_threshold") / range};
+        inst.mutable_op_info()->SetOutputScale(out_var_node_name, output_scale);
       } else {
         is_quantized = false;
       }
