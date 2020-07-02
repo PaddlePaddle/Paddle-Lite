@@ -21,36 +21,61 @@
 namespace paddle {
 namespace lite {
 
+// The AttrType is used to make the proto::AttrType portable.
+enum class OpAttrType {
+  INT = 0,
+  FLOAT = 1,
+  STRING = 2,
+  INTS = 3,
+  FLOATS = 4,
+  STRINGS = 5,
+  BOOLEAN = 6,
+  BOOLEANS = 7,
+  BLOCK = 8,
+  LONG = 9,
+  BLOCKS = 10,
+  LONGS = 11,
+  UNK,
+};
+
 struct Standard {};
 struct Flatbuffers {};
 
-template <OpAttrType Type, typename B = Standard>
-struct OpAttrTypeTrait;
+template <typename T, typename U>
+class VectorView;
 
 template <typename T>
 struct OpDataTypeTrait;
 
-#define TYPE_TRAIT_IMPL(T, type__)                  \
-  template <>                                       \
-  struct OpAttrTypeTrait<OpAttrType::T> {           \
-    typedef type__ DT;                              \
-  };                                                \
+#define ATTR_TYPE_TRAIT_IMPL(T, type__)             \
   template <>                                       \
   struct OpDataTypeTrait<type__> {                  \
+    typedef type__ ET;                              \
+    static constexpr OpAttrType AT = OpAttrType::T; \
+    static constexpr const char* ATN = #T;          \
+  };
+#define ATTR_VECTOR_TYPE_TRAIT_IMPL(T, type__)      \
+  template <>                                       \
+  struct OpDataTypeTrait<std::vector<type__>> {     \
+    typedef type__ ET;                              \
     static constexpr OpAttrType AT = OpAttrType::T; \
     static constexpr const char* ATN = #T;          \
   };
 
-TYPE_TRAIT_IMPL(INT, int32_t);
-TYPE_TRAIT_IMPL(FLOAT, float);
-TYPE_TRAIT_IMPL(STRING, std::string);
-TYPE_TRAIT_IMPL(BOOLEAN, bool);
-TYPE_TRAIT_IMPL(LONG, int64_t);
-TYPE_TRAIT_IMPL(INTS, std::vector<int>);
-TYPE_TRAIT_IMPL(FLOATS, std::vector<float>);
-TYPE_TRAIT_IMPL(STRINGS, std::vector<std::string>);
-TYPE_TRAIT_IMPL(LONGS, std::vector<int64_t>);
-#undef TYPE_TRAIT_IMPL
+ATTR_TYPE_TRAIT_IMPL(BLOCK, int16_t);
+ATTR_TYPE_TRAIT_IMPL(INT, int32_t);
+ATTR_TYPE_TRAIT_IMPL(FLOAT, float);
+ATTR_TYPE_TRAIT_IMPL(STRING, std::string);
+ATTR_TYPE_TRAIT_IMPL(BOOLEAN, bool);
+ATTR_TYPE_TRAIT_IMPL(LONG, int64_t);
+
+ATTR_VECTOR_TYPE_TRAIT_IMPL(INTS, std::vector<int32_t>);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(FLOATS, std::vector<float>);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(STRINGS, std::vector<std::string>);
+ATTR_VECTOR_TYPE_TRAIT_IMPL(LONGS, std::vector<int64_t>);
+
+#undef ATTR_TYPE_TRAIT_IMPL
+#undef ATTR_VECTOR_TYPE_TRAIT_IMPL
 
 }  // namespace lite
 }  // namespace paddle

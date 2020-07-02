@@ -15,27 +15,11 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "lite/model_parser/base/traits.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
-
-// The AttrType is used to make the proto::AttrType portable.
-enum class OpAttrType {
-  INT = 0,
-  FLOAT = 1,
-  STRING = 2,
-  INTS = 3,
-  FLOATS = 4,
-  STRINGS = 5,
-  BOOLEAN = 6,
-  BOOLEANS = 7,
-  BLOCK = 8,
-  LONG = 9,
-  BLOCKS = 10,
-  LONGS = 11,
-  UNK,
-};
 
 class OpDescReadAPI {
  public:
