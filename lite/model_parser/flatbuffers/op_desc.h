@@ -20,6 +20,7 @@
 
 #include "lite/model_parser/base/op_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/vector_view.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -116,10 +117,11 @@ class OpDesc : public OpDescReadAPI {
   }
 
   template <typename T>
-  T GetAttr(const std::string& name) const;
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
+      const std::string& name) const;
 
   template <typename T>
-  T GetAttr(size_t idx) const;
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(size_t idx) const;
 
   OpDesc() = delete;
 
