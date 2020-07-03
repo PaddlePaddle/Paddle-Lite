@@ -21,41 +21,39 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
 
-void getcontourarea(float** box, float unclip_ratio, float* distance);
+void GetContourArea(float** box, float unclip_ratio, float* distance);
 
-cv::RotatedRect unclip(float** box);
+cv::RotatedRect Unclip(float** box);
 
 float** Mat2Vec(cv::Mat mat);
 
-void quickSort(float** s, int l, int r);
+void QuickSort(float** s, int l, int r);
 
-void quickSort_vector(std::vector<std::vector<int>>* box,
-                      int l,
-                      int r,
-                      int axis);
+void QuickSortVector(std::vector<std::vector<int>>* box,
+                     int l,
+                     int r,
+                     int axis);
 
-std::vector<std::vector<int>> order_points_clockwise(
+std::vector<std::vector<int>> OrderPointsClockwise(
     std::vector<std::vector<int>> pts);
 
-float** get_mini_boxes(cv::RotatedRect box, float* ssid);
+float** GetMiniBoxes(cv::RotatedRect box, float* ssid);
 
 template <class T>
-T clamp(T x, T min, T max) {
+T Clamp(T x, T min, T max) {
   if (x > max) return max;
   if (x < min) return min;
   return x;
 }
-float clampf(float x, float min, float max);
 
-float box_score_fast(float** box_array, cv::Mat pred);
+float ClampFp32(float x, float min, float max);
 
-std::vector<std::vector<std::vector<int>>> boxes_from_bitmap(
+float BoxScoreFast(float** box_array, cv::Mat pred);
+
+std::vector<std::vector<std::vector<int>>> BoxesFromBitmap(
     const cv::Mat pred, const cv::Mat bitmap);
 
-int _max(int a, int b);
-int _min(int a, int b);
-
-std::vector<std::vector<std::vector<int>>> filter_tag_det_res(
+std::vector<std::vector<std::vector<int>>> FilterTagDetRes(
     std::vector<std::vector<std::vector<int>>> boxes,
     float ratio_h,
     float ratio_w,

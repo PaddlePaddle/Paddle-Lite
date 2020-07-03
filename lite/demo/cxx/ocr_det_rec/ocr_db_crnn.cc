@@ -142,7 +142,7 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
   img.copyTo(srcimg);
   cv::Mat crop_img;
   cv::Mat resize_img;
-  auto charactor_dict = read_dict(dict_path);
+  auto charactor_dict = ReadDict(dict_path);
   std::vector<float> mean = {0.5f, 0.5f, 0.5f};
   std::vector<float> scale = {1 / 0.5f, 1 / 0.5f, 1 / 0.5f};
 
@@ -155,11 +155,11 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
   int index = 0;
   for (int i = boxes.size() - 1; i >= 0; i--) {
     // Set input
-    crop_img = get_rotate_crop_image(srcimg, boxes[i]);
+    crop_img = GetRotateCropImage(srcimg, boxes[i]);
 
     float wh_ratio =
         static_cast<float>(crop_img.cols) / static_cast<float>(crop_img.rows);
-    resize_img = crnn_resize_img(crop_img, wh_ratio);
+    resize_img = CrnnResizeImg(crop_img, wh_ratio);
     resize_img.convertTo(resize_img, CV_32FC3, 1 / 255.f);
 
     std::unique_ptr<Tensor> input_tensor0(
@@ -214,7 +214,7 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
 
     for (int n = predict_lod[0][0]; n < predict_lod[0][1] - 1; n++) {
       argmax_idx =
-          static_cast<int>(argmax(&predict_batch[n * predict_shape[1]],
+          static_cast<int>(Argmax(&predict_batch[n * predict_shape[1]],
                                   &predict_batch[(n + 1) * predict_shape[1]]));
       max_value = static_cast<float>(
           *std::max_element(&predict_batch[n * predict_shape[1]],
@@ -301,9 +301,9 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
   const double maxvalue = 255;
   cv::Mat bit_map;
   cv::threshold(cbuf_map, bit_map, threshold, maxvalue, cv::THRESH_BINARY);
-  auto boxes = boxes_from_bitmap(pred_map, bit_map);
+  auto boxes = BoxesFromBitmap(pred_map, bit_map);
   std::vector<std::vector<std::vector<int>>> filter_boxes =
-      filter_tag_det_res(boxes, ratio_h, ratio_w, srcimg);
+      FilterTagDetRes(boxes, ratio_h, ratio_w, srcimg);
   auto end = GetCurrentUS();
   *det_time = (end - start) / 1000;
 

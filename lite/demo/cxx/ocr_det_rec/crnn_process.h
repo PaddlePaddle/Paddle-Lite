@@ -26,16 +26,15 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
 
-cv::Mat crnn_resize_norm_img(cv::Mat img, float wh_ratio);
+cv::Mat CrnnResizeNormImg(cv::Mat img, float wh_ratio);
 
-cv::Mat crnn_resize_img(cv::Mat img, float wh_ratio);
+cv::Mat CrnnResizeImg(cv::Mat img, float wh_ratio);
 
-std::vector<std::string> read_dict(std::string path);
+std::vector<std::string> ReadDict(std::string path);
 
-cv::Mat get_rotate_crop_image(cv::Mat srcimage,
-                              std::vector<std::vector<int>> box);
+cv::Mat GetRotateCropImage(cv::Mat srcimage, std::vector<std::vector<int>> box);
 
 template <class ForwardIterator>
-inline size_t argmax(ForwardIterator first, ForwardIterator last) {
+inline size_t Argmax(ForwardIterator first, ForwardIterator last) {
   return std::distance(first, std::max_element(first, last));
 }

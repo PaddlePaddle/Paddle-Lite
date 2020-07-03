@@ -22,7 +22,7 @@
 
 const std::vector<int> rec_image_shape{3, 32, 320};
 
-cv::Mat crnn_resize_norm_img(cv::Mat img, float wh_ratio) {
+cv::Mat CrnnResizeNormImg(cv::Mat img, float wh_ratio) {
   int imgC, imgH, imgW;
   imgC = rec_image_shape[0];
   imgW = rec_image_shape[2];
@@ -66,7 +66,7 @@ cv::Mat crnn_resize_norm_img(cv::Mat img, float wh_ratio) {
   return dist;
 }
 
-cv::Mat crnn_resize_img(cv::Mat img, float wh_ratio) {
+cv::Mat CrnnResizeImg(cv::Mat img, float wh_ratio) {
   int imgC, imgH, imgW;
   imgC = rec_image_shape[0];
   imgW = rec_image_shape[2];
@@ -87,7 +87,7 @@ cv::Mat crnn_resize_img(cv::Mat img, float wh_ratio) {
   return resize_img;
 }
 
-std::vector<std::string> read_dict(std::string path) {
+std::vector<std::string> ReadDict(std::string path) {
   std::ifstream ifs;
   std::vector<std::string> charactors(max_dict_length);
 
@@ -105,8 +105,8 @@ std::vector<std::string> read_dict(std::string path) {
   return charactors;
 }
 
-cv::Mat get_rotate_crop_image(cv::Mat srcimage,
-                              std::vector<std::vector<int>> box) {
+cv::Mat GetRotateCropImage(cv::Mat srcimage,
+                           std::vector<std::vector<int>> box) {
   cv::Mat image;
   srcimage.copyTo(image);
   std::vector<std::vector<int>> points = box;
