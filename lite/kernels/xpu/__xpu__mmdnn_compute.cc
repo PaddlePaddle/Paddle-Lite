@@ -23,16 +23,18 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void fill_max(float max, float* xpu_ptr) {
+namespace {
+
+void FillMax(float max, float* xpu_ptr) {
   float maxs[4] = {max, 0.0f, 0.0f, 0.0f};
   xpu_memcpy(
       xpu_ptr, maxs, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE);
 }
 
-void grnn_layout(int batch,
-                 const std::vector<int>& offset,
-                 std::vector<int>* new_offset_ptr,
-                 std::vector<int>* idx_sorted_ptr) {
+void GrnnLayout(int batch,
+                const std::vector<int>& offset,
+                std::vector<int>* new_offset_ptr,
+                std::vector<int>* idx_sorted_ptr) {
   auto& new_offset = *new_offset_ptr;
   auto& idx_sorted = *idx_sorted_ptr;
 
@@ -75,19 +77,21 @@ void grnn_layout(int batch,
   }
 }
 
-class id_info {
-  XPUScratchPadGuard l3_buffer_guard;
-  char* l3_buffer;
-  std::unique_ptr<char[]> cpu_buffer_guard;
-  char* cpu_buffer;
+}  // anonymous namespace
+
+class MMDNNIdInfo {
+  XPUScratchPadGuard l3_buffer_guard_;
+  char* l3_buffer_{nullptr};
+  std::unique_ptr<char[]> cpu_buffer_guard_;
+  char* cpu_buffer_{nullptr};
 
  public:
-  const int64_t* id0_64;
-  const int64_t* id1_64;
-  int64_t* lod_64;
-  int* lod_32;
-  int* new_offset_32;
-  int* idx_sorted_32;
+  const int64_t* id0_64{nullptr};
+  const int64_t* id1_64{nullptr};
+  int64_t* lod_64{nullptr};
+  int* lod_32{nullptr};
+  int* new_offset_32{nullptr};
+  int* idx_sorted_32{nullptr};
 
   std::vector<int> lod;
   std::vector<int> new_offset;
@@ -97,23 +101,23 @@ class id_info {
   int seqlen_sum;
   int seqlen_square_sum;
 
-  void init(int UB_batch, int UB_seqlen) {
-    int ub_lod_64_size = (UB_batch + 1) * sizeof(int64_t);
-    int ub_lod_32_size = (UB_batch + 1) * sizeof(int);
-    int ub_new_offset_32_size = (UB_seqlen + 1) * sizeof(int);
-    int ub_idx_sorted_32_size = (UB_batch + 1) * sizeof(int);
+  void Init(int upper_bound_batch, int upper_bound_seqlen) {
+    int ub_lod_64_size = (upper_bound_batch + 1) * sizeof(int64_t);
+    int ub_lod_32_size = (upper_bound_batch + 1) * sizeof(int);
+    int ub_new_offset_32_size = (upper_bound_seqlen + 1) * sizeof(int);
+    int ub_idx_sorted_32_size = (upper_bound_batch + 1) * sizeof(int);
     int total_size = ub_lod_64_size + ub_lod_32_size + ub_new_offset_32_size +
                      ub_idx_sorted_32_size;
 
     // TODO(miaotianxiang): use l3?
-    l3_buffer_guard = TargetWrapperXPU::MallocScratchPad(total_size, false);
-    l3_buffer = reinterpret_cast<char*>(l3_buffer_guard->addr_);
-    cpu_buffer_guard.reset(new char[total_size]);
-    cpu_buffer = cpu_buffer_guard.get();
+    l3_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(total_size, false);
+    l3_buffer_ = reinterpret_cast<char*>(l3_buffer_guard_->addr_);
+    cpu_buffer_guard_.reset(new char[total_size]);
+    cpu_buffer_ = cpu_buffer_guard_.get();
   }
 
-  void update(lite::Tensor* _id0, lite::Tensor* _id1) {
-    auto& id0_lod = _id0->lod()[0];
+  void Update(lite::Tensor* id0, lite::Tensor* id1) {
+    auto& id0_lod = id0->lod()[0];
     lod.clear();
     for (auto e : id0_lod) {
       lod.push_back(e);
@@ -129,185 +133,186 @@ class id_info {
       seqlen_sum = seqlen_sum + seqlen;
       seqlen_square_sum = seqlen_square_sum + seqlen * seqlen;
     }
-    grnn_layout(batch, lod, &new_offset, &idx_sorted);
+    GrnnLayout(batch, lod, &new_offset, &idx_sorted);
 
-    id0_64 = _id0->data<int64_t>();
-    id1_64 = _id1->data<int64_t>();
+    id0_64 = id0->data<int64_t>();
+    id1_64 = id1->data<int64_t>();
 
     int offset = 0;
-    lod_64 = reinterpret_cast<int64_t*>(l3_buffer + offset);
+    lod_64 = reinterpret_cast<int64_t*>(l3_buffer_ + offset);
     memcpy(
-        cpu_buffer + offset, id0_lod.data(), id0_lod.size() * sizeof(int64_t));
+        cpu_buffer_ + offset, id0_lod.data(), id0_lod.size() * sizeof(int64_t));
     offset += id0_lod.size() * sizeof(int64_t);
-    lod_32 = reinterpret_cast<int*>(l3_buffer + offset);
-    memcpy(cpu_buffer + offset, lod.data(), lod.size() * sizeof(int));
+    lod_32 = reinterpret_cast<int*>(l3_buffer_ + offset);
+    memcpy(cpu_buffer_ + offset, lod.data(), lod.size() * sizeof(int));
     offset += lod.size() * sizeof(int);
-    new_offset_32 = reinterpret_cast<int*>(l3_buffer + offset);
-    memcpy(cpu_buffer + offset,
+    new_offset_32 = reinterpret_cast<int*>(l3_buffer_ + offset);
+    memcpy(cpu_buffer_ + offset,
            new_offset.data(),
            new_offset.size() * sizeof(int));
     offset += new_offset.size() * sizeof(int);
-    idx_sorted_32 = reinterpret_cast<int*>(l3_buffer + offset);
-    memcpy(cpu_buffer + offset,
+    idx_sorted_32 = reinterpret_cast<int*>(l3_buffer_ + offset);
+    memcpy(cpu_buffer_ + offset,
            idx_sorted.data(),
            idx_sorted.size() * sizeof(int));
     offset += idx_sorted.size() * sizeof(int);
     xpu_memcpy(
-        l3_buffer, cpu_buffer, offset, XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+        l3_buffer_, cpu_buffer_, offset, XPUMemcpyKind::XPU_HOST_TO_DEVICE);
   }
 };
 
-class fc_op {
-  const int16_t* weight;
-  XPUScratchPadGuard weight_max_guard;
-  float* weight_max;
-  const float* bias;
-  XPUScratchPadGuard in_max_guard;
-  float* in_max;
-  int n;
-  int k;
-  xdnn::Activation_t::act_enum act_type;
-  XPUScratchPadGuard out_max_guard;
+class MMDNNFcOp {
+  const int16_t* weight_{nullptr};
+  XPUScratchPadGuard weight_max_guard_;
+  float* weight_max_{nullptr};
+  const float* bias_{nullptr};
+  XPUScratchPadGuard in_max_guard_;
+  float* in_max_{nullptr};
+  int n_;
+  int k_;
+  xdnn::Activation_t::act_enum act_type_;
+  XPUScratchPadGuard out_max_guard_;
 
  public:
-  float* out_max;
+  float* out_max{nullptr};
 
-  void init(const int16_t* _weight,
-            float _weight_max,
-            const float* _bias,
-            int _n,
-            int _k,
-            xdnn::Activation_t::act_enum _act_type) {
-    n = _n;
-    k = _k;
-    act_type = _act_type;
+  void Init(const int16_t* weight,
+            float weight_max,
+            const float* bias,
+            int n,
+            int k,
+            xdnn::Activation_t::act_enum act_type) {
+    n_ = n;
+    k_ = k;
+    act_type_ = act_type;
 
-    weight = _weight;
-    weight_max_guard =
+    weight_ = weight;
+    weight_max_guard_ =
         TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
-    weight_max = reinterpret_cast<float*>(weight_max_guard->addr_);
-    fill_max(_weight_max, weight_max);
+    weight_max_ = reinterpret_cast<float*>(weight_max_guard_->addr_);
+    FillMax(weight_max, weight_max_);
 
-    bias = _bias;
+    bias_ = bias;
 
-    in_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
-    out_max_guard =
+    in_max_guard_ =
         TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
-    in_max = reinterpret_cast<float*>(in_max_guard->addr_);
-    out_max = reinterpret_cast<float*>(in_max_guard->addr_);
+    out_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+    in_max_ = reinterpret_cast<float*>(in_max_guard_->addr_);
+    out_max = reinterpret_cast<float*>(in_max_guard_->addr_);
   }
 
-  void init(lite::Tensor* _weight,
-            float _weight_max,
-            lite::Tensor* _bias,
-            int _n,
-            int _k,
-            xdnn::Activation_t::act_enum _act_type) {
-    init(_weight->data<int16_t>(),
-         _weight_max,
-         _bias ? _bias->data<float>() : nullptr,
-         _n,
-         _k,
-         _act_type);
+  void Init(lite::Tensor* weight,
+            float weight_max,
+            lite::Tensor* bias,
+            int n,
+            int k,
+            xdnn::Activation_t::act_enum act_type) {
+    Init(weight->data<int16_t>(),
+         weight_max,
+         bias ? bias->data<float>() : nullptr,
+         n,
+         k,
+         act_type);
   }
 
-  void infer(xdnn::Context* ctx,
+  void Infer(xdnn::Context* ctx,
              const float* in,
              int m,
              float* out,
              const float* in_max_by_caller = nullptr) {
     if (in_max_by_caller == nullptr) {
-      xdnn::findmax<float>(ctx, in, m * k, in_max);
-      in_max_by_caller = in_max;
+      xdnn::findmax<float>(ctx, in, m * k_, in_max_);
+      in_max_by_caller = in_max_;
     }
     xdnn::gemm_int16_maxptr<float, int16_t, float>(ctx,
                                                    false,
                                                    true,
                                                    m,
-                                                   n,
-                                                   k,
+                                                   n_,
+                                                   k_,
                                                    1.0f,
                                                    in,
-                                                   k,
-                                                   weight,
-                                                   k,
+                                                   k_,
+                                                   weight_,
+                                                   k_,
                                                    0.0f,
                                                    out,
-                                                   n,
-                                                   bias,
-                                                   act_type,
+                                                   n_,
+                                                   bias_,
+                                                   act_type_,
                                                    in_max_by_caller,
-                                                   weight_max,
+                                                   weight_max_,
                                                    out_max);
   }
 };
 
-class grnn_op {
-  fc_op fc_e2h0;
-  fc_op fc_e2h1;
-  fc_op fc_e2h2;
-  const int16_t* dense_h2h;
-  float dense_h2h_max[3];
-  XPUScratchPadGuard input_max_guard;
-  float* input_max;
-  XPUScratchPadGuard hbm_buffer_guard;
-  float* hbm_buffer;
-  // require: cap_l * max(cap_e, cap_h) * 5
-  // seq2batch_out: [cap_l, cap_e]
-  // fc_e2h_out: [3, cap_l, cap_h]
-  // gru_out: [cap_l, cap_h]
-  int cap_e;
-  int cap_h;
-  int max_cap_l;
+class MMDNNGrnnOp {
+  MMDNNFcOp fc_e2h0_;
+  MMDNNFcOp fc_e2h1_;
+  MMDNNFcOp fc_e2h2_;
+  const int16_t* dense_h2h_{nullptr};
+  float dense_h2h_max_[3];
+  XPUScratchPadGuard input_max_guard_;
+  float* input_max_{nullptr};
+  XPUScratchPadGuard hbm_buffer_guard_;
+  float* hbm_buffer_{nullptr};
+  // require: cap_l * max(cap_e_, cap_h_) * 5
+  // seq2batch_out: [cap_l, cap_e_]
+  // fc_e2h_out: [3, cap_l, cap_h_]
+  // gru_out: [cap_l, cap_h_]
+  int cap_e_;
+  int cap_h_;
+  int max_cap_l_;
 
  public:
-  void init(lite::Tensor* _wh,
-            const std::vector<float>& _wh_maxs,
-            lite::Tensor* _wi,
-            const std::vector<float>& _wi_maxs,
-            int _cap_e,
-            int _cap_h,
-            int _max_cap_l) {
-    cap_e = _cap_e;
-    cap_h = _cap_h;
-    max_cap_l = _max_cap_l;
+  void Init(lite::Tensor* wh,
+            const std::vector<float>& wh_maxs,
+            lite::Tensor* wi,
+            const std::vector<float>& wi_maxs,
+            int cap_e,
+            int cap_h,
+            int max_cap_l) {
+    cap_e_ = cap_e;
+    cap_h_ = cap_h;
+    max_cap_l_ = max_cap_l;
 
     // weight
-    auto* dense_e2h = _wi->data<int16_t>();
-    fc_e2h0.init(dense_e2h,
-                 _wi_maxs[0],
-                 nullptr,
-                 cap_h,
-                 cap_e,
-                 xdnn::Activation_t::LINEAR);
-    fc_e2h1.init(dense_e2h + cap_e * cap_h,
-                 _wi_maxs[1],
-                 nullptr,
-                 cap_h,
-                 cap_e,
-                 xdnn::Activation_t::LINEAR);
-    fc_e2h2.init(dense_e2h + cap_e * cap_h * 2,
-                 _wi_maxs[2],
-                 nullptr,
-                 cap_h,
-                 cap_e,
-                 xdnn::Activation_t::LINEAR);
+    auto* dense_e2h = wi->data<int16_t>();
+    fc_e2h0_.Init(dense_e2h,
+                  wi_maxs[0],
+                  nullptr,
+                  cap_h_,
+                  cap_e_,
+                  xdnn::Activation_t::LINEAR);
+    fc_e2h1_.Init(dense_e2h + cap_e_ * cap_h_,
+                  wi_maxs[1],
+                  nullptr,
+                  cap_h_,
+                  cap_e_,
+                  xdnn::Activation_t::LINEAR);
+    fc_e2h2_.Init(dense_e2h + cap_e_ * cap_h_ * 2,
+                  wi_maxs[2],
+                  nullptr,
+                  cap_h_,
+                  cap_e_,
+                  xdnn::Activation_t::LINEAR);
 
-    dense_h2h = _wh->data<int16_t>();
-    dense_h2h_max[0] = _wh_maxs[0];
-    dense_h2h_max[1] = _wh_maxs[1];
-    dense_h2h_max[2] = _wh_maxs[2];
+    dense_h2h_ = wh->data<int16_t>();
+    dense_h2h_max_[0] = wh_maxs[0];
+    dense_h2h_max_[1] = wh_maxs[1];
+    dense_h2h_max_[2] = wh_maxs[2];
 
-    input_max_guard =
+    input_max_guard_ =
         TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
-    input_max = reinterpret_cast<float*>(input_max_guard->addr_);
-    hbm_buffer_guard = TargetWrapperXPU::MallocScratchPad(
-        5 * std::max(cap_e, cap_h) * max_cap_l * sizeof(float), false);
-    hbm_buffer = reinterpret_cast<float*>(hbm_buffer_guard->addr_);
+    input_max_ = reinterpret_cast<float*>(input_max_guard_->addr_);
+    hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
+        5 * std::max(cap_e_, cap_h_) * max_cap_l_ * sizeof(float), false);
+    hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
-  void infer(xdnn::Context* ctx,
-             const id_info& sentense,
+  void Infer(xdnn::Context* ctx,
+             const MMDNNIdInfo& sentense,
              const float* in,
              float* out,
              float* l3_buffer = nullptr,
@@ -316,10 +321,10 @@ class grnn_op {
     int cap_l = sentense.seqlen_sum;
     int max_width = sentense.seqlen_max;
 
-    int slot_size = cap_l * std::max(cap_e, cap_h);
-    float* seq2batch_out = hbm_buffer;
-    float* fc_e2h_out = hbm_buffer + 1 * slot_size;
-    float* gru_out = hbm_buffer + 4 * slot_size;
+    int slot_size = cap_l * std::max(cap_e_, cap_h_);
+    float* seq2batch_out = hbm_buffer_;
+    float* fc_e2h_out = hbm_buffer_ + 1 * slot_size;
+    float* gru_out = hbm_buffer_ + 4 * slot_size;
     if (l3_size > 0 && l3_size >= 5 * slot_size * sizeof(float)) {
       seq2batch_out = l3_buffer;
       fc_e2h_out = l3_buffer + 1 * slot_size;
@@ -329,36 +334,36 @@ class grnn_op {
     xdnn::search_seq2batch(ctx,
                            batch,
                            max_width,
-                           cap_e,
+                           cap_e_,
                            sentense.idx_sorted_32,
                            sentense.lod_32,
                            sentense.new_offset_32,
                            in,
                            seq2batch_out);
 
-    xdnn::findmax<float>(ctx, in, cap_l * cap_e, input_max);
-    fc_e2h0.infer(ctx, seq2batch_out, cap_l, fc_e2h_out, input_max);
-    fc_e2h1.infer(
-        ctx, seq2batch_out, cap_l, fc_e2h_out + cap_l * cap_h, input_max);
-    fc_e2h2.infer(
-        ctx, seq2batch_out, cap_l, fc_e2h_out + cap_l * cap_h * 2, input_max);
+    xdnn::findmax<float>(ctx, in, cap_l * cap_e_, input_max_);
+    fc_e2h0_.Infer(ctx, seq2batch_out, cap_l, fc_e2h_out, input_max_);
+    fc_e2h1_.Infer(
+        ctx, seq2batch_out, cap_l, fc_e2h_out + cap_l * cap_h_, input_max_);
+    fc_e2h2_.Infer(
+        ctx, seq2batch_out, cap_l, fc_e2h_out + cap_l * cap_h_ * 2, input_max_);
     xdnn::search_grnn<float, int16_t>(ctx,
                                       cap_l,
-                                      cap_h,
-                                      cap_e,
+                                      cap_h_,
+                                      cap_e_,
                                       max_width,
                                       sentense.new_offset_32,
                                       fc_e2h_out,
-                                      dense_h2h,
+                                      dense_h2h_,
                                       gru_out,
-                                      dense_h2h_max[0],
-                                      dense_h2h_max[1],
-                                      dense_h2h_max[2]);
+                                      dense_h2h_max_[0],
+                                      dense_h2h_max_[1],
+                                      dense_h2h_max_[2]);
 
     xdnn::search_batch2seq(ctx,
                            batch,
                            max_width,
-                           cap_h,
+                           cap_h_,
                            sentense.idx_sorted_32,
                            sentense.lod_32,
                            sentense.new_offset_32,
@@ -367,44 +372,46 @@ class grnn_op {
   }
 };
 
-class attention_op {
-  int dim;
-  float alpha0;
-  float alpha1;
-  fc_op seqfc;
-  XPUScratchPadGuard hbm_buffer_guard;
-  float* hbm_buffer;
-  // require: cap_l * dim + seqlen_square_sum
-  // seqfc_out: [cap_l, dim]
+class MMDNNAttentionOp {
+  int dim_;
+  float alpha0_;
+  float alpha1_;
+  MMDNNFcOp seqfc_;
+  XPUScratchPadGuard hbm_buffer_guard_;
+  float* hbm_buffer_{nullptr};
+  // require: cap_l * dim_ + seqlen_square_sum
+  // seqfc_out: [cap_l, dim_]
   // batchgemm0_out: [seqlen_square_sum]
   // seq_softmax_out: [seqlen_square_sum], reuse of batchgemm0_out
-  // batchgemm1_out: [cap_l, dim], reuse of seqfc_out
+  // batchgemm1_out: [cap_l, dim_], reuse of seqfc_out
 
  public:
-  void init(lite::Tensor* _att_fc_w,
-            float _att_fc_w_max,
-            lite::Tensor* _att_fc_b,
-            int _dim,
-            int UB_batch,
-            int UB_seqlen) {
-    dim = _dim;
-    alpha0 = 0.0883883461356163f;  // TODO(miaotianxiang):
-    alpha1 = 1.0f;
+  void Init(lite::Tensor* att_fc_w,
+            float att_fc_w_max,
+            lite::Tensor* att_fc_b,
+            int dim,
+            int upper_bound_batch,
+            int upper_bound_seqlen) {
+    dim_ = dim;
+    alpha0_ = 0.0883883461356163f;  // TODO(miaotianxiang):
+    alpha1_ = 1.0f;
 
-    seqfc.init(_att_fc_w,
-               _att_fc_w_max,
-               _att_fc_b,
-               dim,
-               dim,
-               xdnn::Activation_t::LINEAR);
-    hbm_buffer_guard = TargetWrapperXPU::MallocScratchPad(
-        (UB_batch * (UB_seqlen * dim + UB_seqlen * UB_seqlen)) * sizeof(float),
+    seqfc_.Init(att_fc_w,
+                att_fc_w_max,
+                att_fc_b,
+                dim_,
+                dim_,
+                xdnn::Activation_t::LINEAR);
+    hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch * (upper_bound_seqlen * dim_ +
+                              upper_bound_seqlen * upper_bound_seqlen)) *
+            sizeof(float),
         false);
-    hbm_buffer = reinterpret_cast<float*>(hbm_buffer_guard->addr_);
+    hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
-  void infer(xdnn::Context* ctx,
-             const id_info& sentense,
+  void Infer(xdnn::Context* ctx,
+             const MMDNNIdInfo& sentense,
              const float* input,
              float* pool_out,
              float* l3_buffer = nullptr,
@@ -414,27 +421,28 @@ class attention_op {
     int max_width = sentense.seqlen_max;
     int* lod_32 = sentense.lod_32;
 
-    float* seqfc_out = hbm_buffer;
-    float* batchgemm0_out = hbm_buffer + cap_l * dim;
+    float* seqfc_out = hbm_buffer_;
+    float* batchgemm0_out = hbm_buffer_ + cap_l * dim_;
     float* seq_softmax_out = batchgemm0_out;
     float* batchgemm1_out = seqfc_out;
     if (l3_size > 0 &&
-        l3_size >= (cap_l * dim + sentense.seqlen_square_sum) * sizeof(float)) {
+        l3_size >=
+            (cap_l * dim_ + sentense.seqlen_square_sum) * sizeof(float)) {
       seqfc_out = l3_buffer;
-      batchgemm0_out = l3_buffer + cap_l * dim;
+      batchgemm0_out = l3_buffer + cap_l * dim_;
       seq_softmax_out = batchgemm0_out;
       batchgemm1_out = seqfc_out;
     }
 
-    seqfc.infer(ctx, input, cap_l, seqfc_out);
+    seqfc_.Infer(ctx, input, cap_l, seqfc_out);
     xdnn::search_noaligned_mat_mul(ctx,
                                    0,
                                    1,
                                    batch,
                                    lod_32,
                                    max_width,
-                                   dim,
-                                   alpha0,
+                                   dim_,
+                                   alpha0_,
                                    input,
                                    seqfc_out,
                                    batchgemm0_out);
@@ -446,8 +454,8 @@ class attention_op {
                                    batch,
                                    lod_32,
                                    max_width,
-                                   dim,
-                                   alpha1,
+                                   dim_,
+                                   alpha1_,
                                    seq_softmax_out,
                                    input,
                                    batchgemm1_out);
@@ -455,105 +463,106 @@ class attention_op {
                                    xdnn::Pooling_t::MAX_WITHOUT_INDEX,
                                    batch,
                                    lod_32,
-                                   dim,
+                                   dim_,
                                    batchgemm1_out,
                                    nullptr,
                                    pool_out);
   }
 };
 
-class match_conv_topk {
-  std::vector<int> topks;
-  int dim_t;
-  int dim_in;
-  int out_channel;
+class MMDNNMatchConvTopk {
+  std::vector<int> topks_;
+  int dim_t_;
+  int dim_in_;
+  int out_channel_;
 
-  fc_op xw_fc;
-  const int16_t* conv_weight;
-  float conv_weight_max;
-  XPUScratchPadGuard hbm_buffer_guard;
-  float* hbm_buffer;
-  // xw_out: [sum(left_len), dim_t * dim_in]
-  // xwy_out: [sum(left_len *right_len) * dim_t]
-  // conv_out: [sum(left_len *right_len) * out_channel]
-  // seq_concat_out: [sum(left_len *right_len) * (dim_t + out_channel)]
+  MMDNNFcOp xw_fc_;
+  const int16_t* conv_weight_{nullptr};
+  float conv_weight_max_;
+  XPUScratchPadGuard hbm_buffer_guard_;
+  float* hbm_buffer_{nullptr};
+  // xw_out: [sum(left_len), dim_t_ * dim_in_]
+  // xwy_out: [sum(left_len * right_len) * dim_t_]
+  // conv_out: [sum(left_len * right_len) * out_channel_]
+  // seq_concat_out: [sum(left_len * right_len) * (dim_t_ + out_channel_)]
 
-  XPUScratchPadGuard left_lod_32_guard;
-  int* left_lod_32;
-  XPUScratchPadGuard right_lod_32_guard;
-  int* right_lod_32;
-  XPUScratchPadGuard match_lod_32_guard;
-  int* match_lod_32;
-  XPUScratchPadGuard conv_lod_32_guard;
-  int* conv_lod_32;
-  XPUScratchPadGuard topk_offset_32_guard;
-  int* topk_offset_32;
-  XPUScratchPadGuard topks_xpu_guard;
-  int* topks_xpu;
-  XPUScratchPadGuard useless_topk_pos_guard;
-  int* useless_topk_pos;
+  XPUScratchPadGuard left_lod_32_guard_;
+  int* left_lod_32_{nullptr};
+  XPUScratchPadGuard right_lod_32_guard_;
+  int* right_lod_32_{nullptr};
+  XPUScratchPadGuard match_lod_32_guard_;
+  int* match_lod_32_{nullptr};
+  XPUScratchPadGuard conv_lod_32_guard_;
+  int* conv_lod_32_{nullptr};
+  XPUScratchPadGuard topk_offset_32_guard_;
+  int* topk_offset_32_{nullptr};
+  XPUScratchPadGuard topks_xpu_guard_;
+  int* topks_xpu_{nullptr};
+  XPUScratchPadGuard useless_topk_pos_guard_;
+  int* useless_topk_pos_{nullptr};
 
  public:
-  float* seq_avg_topk_out;
+  float* seq_avg_topk_out{nullptr};
 
-  void init(lite::Tensor* _input_w,
-            float _input_w_max,
-            lite::Tensor* _conv_w,
-            float _conv_w_max,
-            int _dim_t,
-            int _dim_in,
-            int UB_batch,
-            int UB_seqlen,
-            const std::vector<int>& _topks) {
-    dim_t = _dim_t;
-    dim_in = _dim_in;
-    out_channel = 5;  // TODO(miaotianxiang):
-    topks = _topks;
+  void Init(lite::Tensor* input_w,
+            float input_w_max,
+            lite::Tensor* conv_w,
+            float conv_w_max,
+            int dim_t,
+            int dim_in,
+            int upper_bound_batch,
+            int upper_bound_seqlen,
+            const std::vector<int>& topks) {
+    dim_t_ = dim_t;
+    dim_in_ = dim_in;
+    out_channel_ = 5;  // TODO(miaotianxiang):
+    topks_ = topks;
 
-    xw_fc.init(_input_w,
-               _input_w_max,
-               nullptr,
-               dim_t * dim_in,
-               dim_in,
-               xdnn::Activation_t::LINEAR);
-    conv_weight = _conv_w->data<int16_t>();
-    conv_weight_max = _conv_w_max;
+    xw_fc_.Init(input_w,
+                input_w_max,
+                nullptr,
+                dim_t_ * dim_in_,
+                dim_in_,
+                xdnn::Activation_t::LINEAR);
+    conv_weight_ = conv_w->data<int16_t>();
+    conv_weight_max_ = conv_w_max;
 
-    hbm_buffer_guard = TargetWrapperXPU::MallocScratchPad(
-        (UB_batch * UB_seqlen * dim_t * dim_in +
-         UB_batch * UB_seqlen * UB_seqlen * (dim_t + out_channel) * 2) *
+    hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch * upper_bound_seqlen * dim_t_ * dim_in_ +
+         upper_bound_batch * upper_bound_seqlen * upper_bound_seqlen *
+             (dim_t_ + out_channel_) * 2) *
             sizeof(float),
         false);
-    hbm_buffer = reinterpret_cast<float*>(hbm_buffer_guard->addr_);
+    hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
 
-    left_lod_32_guard =
-        TargetWrapperXPU::MallocScratchPad((UB_batch + 1) * sizeof(int), false);
-    left_lod_32 = reinterpret_cast<int*>(left_lod_32_guard->addr_);
-    right_lod_32_guard =
-        TargetWrapperXPU::MallocScratchPad((UB_batch + 1) * sizeof(int), false);
-    right_lod_32 = reinterpret_cast<int*>(right_lod_32_guard->addr_);
-    match_lod_32_guard =
-        TargetWrapperXPU::MallocScratchPad((UB_batch + 1) * sizeof(int), false);
-    match_lod_32 = reinterpret_cast<int*>(match_lod_32_guard->addr_);
-    conv_lod_32_guard =
-        TargetWrapperXPU::MallocScratchPad((UB_batch + 1) * sizeof(int), false);
-    conv_lod_32 = reinterpret_cast<int*>(conv_lod_32_guard->addr_);
-    topk_offset_32_guard =
-        TargetWrapperXPU::MallocScratchPad((UB_batch + 1) * sizeof(int), false);
-    topk_offset_32 = reinterpret_cast<int*>(topk_offset_32_guard->addr_);
-    topks_xpu_guard =
-        TargetWrapperXPU::MallocScratchPad(topks.size() * sizeof(int), false);
-    topks_xpu = reinterpret_cast<int*>(topks_xpu_guard->addr_);
-    xpu_memcpy(topks_xpu,
-               topks.data(),
-               topks.size() * sizeof(int),
+    left_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch + 1) * sizeof(int), false);
+    left_lod_32_ = reinterpret_cast<int*>(left_lod_32_guard_->addr_);
+    right_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch + 1) * sizeof(int), false);
+    right_lod_32_ = reinterpret_cast<int*>(right_lod_32_guard_->addr_);
+    match_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch + 1) * sizeof(int), false);
+    match_lod_32_ = reinterpret_cast<int*>(match_lod_32_guard_->addr_);
+    conv_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch + 1) * sizeof(int), false);
+    conv_lod_32_ = reinterpret_cast<int*>(conv_lod_32_guard_->addr_);
+    topk_offset_32_guard_ = TargetWrapperXPU::MallocScratchPad(
+        (upper_bound_batch + 1) * sizeof(int), false);
+    topk_offset_32_ = reinterpret_cast<int*>(topk_offset_32_guard_->addr_);
+    topks_xpu_guard_ =
+        TargetWrapperXPU::MallocScratchPad(topks_.size() * sizeof(int), false);
+    topks_xpu_ = reinterpret_cast<int*>(topks_xpu_guard_->addr_);
+    xpu_memcpy(topks_xpu_,
+               topks_.data(),
+               topks_.size() * sizeof(int),
                XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-    useless_topk_pos_guard =
+    useless_topk_pos_guard_ =
         TargetWrapperXPU::MallocScratchPad(4 * sizeof(int), false);
-    useless_topk_pos = reinterpret_cast<int*>(useless_topk_pos_guard->addr_);
+    useless_topk_pos_ = reinterpret_cast<int*>(useless_topk_pos_guard_->addr_);
   }
 
-  void infer(xdnn::Context* ctx,
+  void Infer(xdnn::Context* ctx,
              lite::Tensor* left,
              lite::Tensor* right,
              lite::Tensor* out,
@@ -567,7 +576,7 @@ class match_conv_topk {
     for (auto e : left_lod) {
       left_lod_32_cpu.push_back(e);
     }
-    xpu_memcpy(left_lod_32,
+    xpu_memcpy(left_lod_32_,
                left_lod_32_cpu.data(),
                left_lod_32_cpu.size() * sizeof(int),
                XPUMemcpyKind::XPU_HOST_TO_DEVICE);
@@ -575,7 +584,7 @@ class match_conv_topk {
     for (auto e : right_lod) {
       right_lod_32_cpu.push_back(e);
     }
-    xpu_memcpy(right_lod_32,
+    xpu_memcpy(right_lod_32_,
                right_lod_32_cpu.data(),
                right_lod_32_cpu.size() * sizeof(int),
                XPUMemcpyKind::XPU_HOST_TO_DEVICE);
@@ -593,112 +602,112 @@ class match_conv_topk {
       int len_y = right_lod[i + 1] - right_lod[i];
       int imgsize = len_x * len_y;
       x_mul_y_sum = x_mul_y_sum + imgsize;
-      lod_match.push_back(lod_match.back() + imgsize * dim_t);
-      lod_conv.push_back(lod_conv.back() + imgsize * out_channel);
-      lod_topk.push_back(lod_topk.back() + imgsize * (dim_t + out_channel));
+      lod_match.push_back(lod_match.back() + imgsize * dim_t_);
+      lod_conv.push_back(lod_conv.back() + imgsize * out_channel_);
+      lod_topk.push_back(lod_topk.back() + imgsize * (dim_t_ + out_channel_));
 
       left_seqlen_max = std::max(left_seqlen_max, len_x);
       right_seqlen_max = std::max(right_seqlen_max, len_y);
       left_seqlen_sum += len_x;
       right_seqlen_sum += len_y;
     }
-    xpu_memcpy(match_lod_32,
+    xpu_memcpy(match_lod_32_,
                lod_match.data(),
                lod_match.size() * sizeof(int),
                XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-    xpu_memcpy(conv_lod_32,
+    xpu_memcpy(conv_lod_32_,
                lod_conv.data(),
                lod_conv.size() * sizeof(int),
                XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-    xpu_memcpy(topk_offset_32,
+    xpu_memcpy(topk_offset_32_,
                lod_topk.data(),
                lod_topk.size() * sizeof(int),
                XPUMemcpyKind::XPU_HOST_TO_DEVICE);
 
-    float* xwy_out = hbm_buffer;
-    float* conv_out = hbm_buffer + x_mul_y_sum * dim_t;
-    float* seq_concat_out = hbm_buffer + x_mul_y_sum * (dim_t + out_channel);
-    float* xw_out = hbm_buffer + x_mul_y_sum * (dim_t + out_channel) * 2;
-    int total_len = x_mul_y_sum * (dim_t + out_channel) * 2 +
-                    left_seqlen_sum * dim_t * dim_in;
+    float* xwy_out = hbm_buffer_;
+    float* conv_out = hbm_buffer_ + x_mul_y_sum * dim_t_;
+    float* seq_concat_out = hbm_buffer_ + x_mul_y_sum * (dim_t_ + out_channel_);
+    float* xw_out = hbm_buffer_ + x_mul_y_sum * (dim_t_ + out_channel_) * 2;
+    int total_len = x_mul_y_sum * (dim_t_ + out_channel_) * 2 +
+                    left_seqlen_sum * dim_t_ * dim_in_;
     if (l3_size > 0 && l3_size >= total_len * sizeof(float)) {
       xwy_out = l3_buffer;
-      conv_out = l3_buffer + x_mul_y_sum * dim_t;
-      seq_concat_out = l3_buffer + x_mul_y_sum * (dim_t + out_channel);
-      xw_out = l3_buffer + x_mul_y_sum * (dim_t + out_channel) * 2;
+      conv_out = l3_buffer + x_mul_y_sum * dim_t_;
+      seq_concat_out = l3_buffer + x_mul_y_sum * (dim_t_ + out_channel_);
+      xw_out = l3_buffer + x_mul_y_sum * (dim_t_ + out_channel_) * 2;
     }
     seq_avg_topk_out = out->mutable_data<float>(TARGET(kXPU));
 
     int max_width = std::max(left_seqlen_max, right_seqlen_max);
-    xw_fc.infer(ctx, left->data<float>(), left_seqlen_sum, xw_out);
+    xw_fc_.Infer(ctx, left->data<float>(), left_seqlen_sum, xw_out);
     xdnn::match_matrix_tensor(ctx,
                               batch,
                               xw_out,
                               right->data<float>(),
-                              left_lod_32,
-                              right_lod_32,
-                              dim_t,
-                              dim_in,
+                              left_lod_32_,
+                              right_lod_32_,
+                              dim_t_,
+                              dim_in_,
                               xwy_out,
-                              xw_fc.out_max,
+                              xw_fc_.out_max,
                               xdnn::Activation_t::RELU,
                               max_width);
     xdnn::search_varconv<float, int16_t>(
         ctx,
         batch,
-        dim_t,
-        out_channel,
+        dim_t_,
+        out_channel_,
         5,
         5,
         1,
         1,
         xwy_out,
-        conv_weight,
-        right_lod_32,
-        left_lod_32,
+        conv_weight_,
+        right_lod_32_,
+        left_lod_32_,
         conv_out,
-        conv_weight_max,
+        conv_weight_max_,
         xdnn::Activation_t::RELU);  // TODO(miaotianxiang):
     xdnn::sequence_concat(ctx,
                           xwy_out,
-                          match_lod_32,
+                          match_lod_32_,
                           conv_out,
-                          conv_lod_32,
+                          conv_lod_32_,
                           seq_concat_out,
                           batch);
     xdnn::sequence_topk_avg_pooling(ctx,
                                     seq_concat_out,
                                     seq_avg_topk_out,
-                                    useless_topk_pos,
+                                    useless_topk_pos_,
                                     batch,
-                                    dim_t + out_channel,
-                                    topk_offset_32,
-                                    left_lod_32,
-                                    right_lod_32,
-                                    topks_xpu,
-                                    topks.size());
+                                    dim_t_ + out_channel_,
+                                    topk_offset_32_,
+                                    left_lod_32_,
+                                    right_lod_32_,
+                                    topks_xpu_,
+                                    topks_.size());
   }
 };
 
-class bid_emb_grnn_att {
-  const float* table;
-  int table_len;
-  int emb_dim;
-  int cap_h;
-  grnn_op bi_fw;
-  grnn_op bi_rv;
-  attention_op att;
-  XPUScratchPadGuard hbm_buffer_guard;
-  float* hbm_buffer;
-  // require at least: 4 * cap_l * emb_dim
-  // emb_rv: [cap_l, emb_dim]
-  // grnn_fw: [cap_l, emb_dim]
-  // grnn_rv: [cap_l, emb_dim]
-  // grnn_rv_rv: [cap_l, emb_dim]
-  // concat_2in: [cap_l, 2 * emb_dim]
-  // L3.bi_fw: 5 * cap_l * emb_dim
-  // L3.bi_rv: 5 * cap_l * emb_dim
-  // L3.att:   cap_l * 2 * emb_dim + seqlen_square_sum
+class MMDNNBidEmbGrnnAtt {
+  const float* table_{nullptr};
+  int table_len_;
+  int emb_dim_;
+  int cap_h_;
+  MMDNNGrnnOp bi_fw_;
+  MMDNNGrnnOp bi_rv_;
+  MMDNNAttentionOp att_;
+  XPUScratchPadGuard hbm_buffer_guard_;
+  float* hbm_buffer_{nullptr};
+  // require at least: 4 * cap_l * emb_dim_
+  // emb_rv: [cap_l, emb_dim_]
+  // grnn_fw: [cap_l, emb_dim_]
+  // grnn_rv: [cap_l, emb_dim_]
+  // grnn_rv_rv: [cap_l, emb_dim_]
+  // concat_2in: [cap_l, 2 * emb_dim_]
+  // L3.bi_fw: 5 * cap_l * emb_dim_
+  // L3.bi_rv: 5 * cap_l * emb_dim_
+  // L3.att:   cap_l * 2 * emb_dim_ + seqlen_square_sum
 
   // execution-plan:
   // 1. bid_emb_ew,                   alloc(emb_rv)
@@ -721,47 +730,51 @@ class bid_emb_grnn_att {
   // [4, 5, ..., ?]:  L3.att
 
  public:
-  float* emb_fw;
-  float* concat_3in;
-  float* pool_fw;
-  float* pool_rv;
-  float* att_out;
+  float* emb_fw{nullptr};
+  float* concat_3in{nullptr};
+  float* pool_fw{nullptr};
+  float* pool_rv{nullptr};
+  float* att_out{nullptr};
 
-  void init(lite::Tensor* _table,
-            lite::Tensor* _fw_wh,
-            const std::vector<float>& _fw_wh_maxs,
-            lite::Tensor* _fw_wi,
-            const std::vector<float>& _fw_wi_maxs,
-            lite::Tensor* _rv_wh,
-            const std::vector<float>& _rv_wh_maxs,
-            lite::Tensor* _rv_wi,
-            const std::vector<float>& _rv_wi_maxs,
-            lite::Tensor* _att_fc_w,
-            float _att_fc_w_max,
-            lite::Tensor* _att_fc_b,
-            int UB_batch,
-            int UB_seqlen) {
-    table = _table->data<float>();
-    table_len = _table->dims()[0];
-    emb_dim = _table->dims()[1];
-    cap_h = emb_dim;
-    int max_cap_l = UB_batch * UB_seqlen;
+  void Init(lite::Tensor* table,
+            lite::Tensor* fw_wh,
+            const std::vector<float>& fw_wh_maxs,
+            lite::Tensor* fw_wi,
+            const std::vector<float>& fw_wi_maxs,
+            lite::Tensor* rv_wh,
+            const std::vector<float>& rv_wh_maxs,
+            lite::Tensor* rv_wi,
+            const std::vector<float>& rv_wi_maxs,
+            lite::Tensor* att_fc_w,
+            float att_fc_w_max,
+            lite::Tensor* att_fc_b,
+            int upper_bound_batch,
+            int upper_bound_seqlen) {
+    table_ = table->data<float>();
+    table_len_ = table->dims()[0];
+    emb_dim_ = table->dims()[1];
+    cap_h_ = emb_dim_;
+    int max_cap_l = upper_bound_batch * upper_bound_seqlen;
 
-    bi_fw.init(
-        _fw_wh, _fw_wh_maxs, _fw_wi, _fw_wi_maxs, emb_dim, cap_h, max_cap_l);
-    bi_rv.init(
-        _rv_wh, _rv_wh_maxs, _rv_wi, _rv_wi_maxs, emb_dim, cap_h, max_cap_l);
-    att.init(
-        _att_fc_w, _att_fc_w_max, _att_fc_b, 2 * cap_h, UB_batch, UB_seqlen);
+    bi_fw_.Init(
+        fw_wh, fw_wh_maxs, fw_wi, fw_wi_maxs, emb_dim_, cap_h_, max_cap_l);
+    bi_rv_.Init(
+        rv_wh, rv_wh_maxs, rv_wi, rv_wi_maxs, emb_dim_, cap_h_, max_cap_l);
+    att_.Init(att_fc_w,
+              att_fc_w_max,
+              att_fc_b,
+              2 * cap_h_,
+              upper_bound_batch,
+              upper_bound_seqlen);
 
-    hbm_buffer_guard = TargetWrapperXPU::MallocScratchPad(
-        4 * max_cap_l * cap_h * sizeof(float), false);
-    hbm_buffer = reinterpret_cast<float*>(hbm_buffer_guard->addr_);
+    hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
+        4 * max_cap_l * cap_h_ * sizeof(float), false);
+    hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
-  void infer(xdnn::Context* ctx,
+  void Infer(xdnn::Context* ctx,
              int batch,
-             const id_info& sentense,
+             const MMDNNIdInfo& sentense,
              lite::Tensor* grnn_fw_pool_out,
              lite::Tensor* grnn_rv_pool_out,
              lite::Tensor* att_pool_out,
@@ -770,13 +783,13 @@ class bid_emb_grnn_att {
              float* l3_buffer = nullptr,
              int l3_size = 0) {
     int cap_l = sentense.seqlen_sum;
-    int slot_len = cap_l * cap_h;
+    int slot_len = cap_l * cap_h_;
 
-    float* emb_rv = hbm_buffer;
-    float* grnn_fw = hbm_buffer + slot_len;
-    float* grnn_rv = hbm_buffer + slot_len;
-    float* grnn_rv_rv = hbm_buffer;
-    float* concat_2in = hbm_buffer + 2 * slot_len;
+    float* emb_rv = hbm_buffer_;
+    float* grnn_fw = hbm_buffer_ + slot_len;
+    float* grnn_rv = hbm_buffer_ + slot_len;
+    float* grnn_rv_rv = hbm_buffer_;
+    float* concat_2in = hbm_buffer_ + 2 * slot_len;
     if (l3_size > 0 && l3_size >= 4 * slot_len * sizeof(float)) {
       emb_rv = l3_buffer;
       grnn_fw = l3_buffer + slot_len;
@@ -794,83 +807,88 @@ class bid_emb_grnn_att {
                             sentense.lod_64,
                             sentense.id0_64,
                             sentense.id1_64,
-                            table,
-                            table_len,
-                            emb_dim,
+                            table_,
+                            table_len_,
+                            emb_dim_,
                             emb_fw,
                             emb_rv,
-                            table_len - 2,
+                            table_len_ - 2,
                             1);
-    bi_rv.infer(ctx,
-                sentense,
-                emb_rv,
-                grnn_rv,
-                l3_buffer + 2 * slot_len,
-                l3_size - 2 * slot_len * sizeof(float));
+    bi_rv_.Infer(ctx,
+                 sentense,
+                 emb_rv,
+                 grnn_rv,
+                 l3_buffer + 2 * slot_len,
+                 l3_size - 2 * slot_len * sizeof(float));
     xdnn::sequence_reverse(
-        ctx, batch, sentense.lod_32, cap_h, grnn_rv, grnn_rv_rv);
+        ctx, batch, sentense.lod_32, cap_h_, grnn_rv, grnn_rv_rv);
     xdnn::sequence_pooling_forward(ctx,
                                    xdnn::Pooling_t::LAST,
                                    batch,
                                    sentense.lod_32,
-                                   cap_h,
+                                   cap_h_,
                                    grnn_rv,
                                    nullptr,
                                    pool_rv);
 
-    bi_fw.infer(ctx,
-                sentense,
-                emb_fw,
-                grnn_fw,
-                l3_buffer + 2 * slot_len,
-                l3_size - 2 * slot_len * sizeof(float));
+    bi_fw_.Infer(ctx,
+                 sentense,
+                 emb_fw,
+                 grnn_fw,
+                 l3_buffer + 2 * slot_len,
+                 l3_size - 2 * slot_len * sizeof(float));
     xdnn::sequence_pooling_forward(ctx,
                                    xdnn::Pooling_t::LAST,
                                    batch,
                                    sentense.lod_32,
-                                   cap_h,
+                                   cap_h_,
                                    grnn_fw,
                                    nullptr,
                                    pool_fw);
-    const int concat_widths[] = {cap_h, cap_h, cap_h};
+    const int concat_widths[] = {cap_h_, cap_h_, cap_h_};
     const float* concat_ptrs[] = {emb_fw, grnn_fw, grnn_rv_rv};
     xdnn::concat<float>(
         ctx, cap_l, concat_widths + 1, 2, concat_ptrs + 1, concat_2in);
     xdnn::concat<float>(ctx, cap_l, concat_widths, 3, concat_ptrs, concat_3in);
-    att.infer(ctx,
-              sentense,
-              concat_2in,
-              att_out,
-              l3_buffer + 4 * slot_len,
-              l3_size - 4 * slot_len * sizeof(float));
+    att_.Infer(ctx,
+               sentense,
+               concat_2in,
+               att_out,
+               l3_buffer + 4 * slot_len,
+               l3_size - 4 * slot_len * sizeof(float));
   }
 };
 
-class emb_att {
-  const float* table;
-  int table_len;
-  int emb_dim;
-  attention_op att;
+class MMDNNEmbAtt {
+  const float* table_{nullptr};
+  int table_len_;
+  int emb_dim_;
+  MMDNNAttentionOp att_;
 
  public:
-  float* emb_fw;
-  float* att_out;
+  float* emb_fw{nullptr};
+  float* att_out{nullptr};
 
-  void init(lite::Tensor* _table,
-            lite::Tensor* _att_fc_w,
-            float _att_fc_w_max,
-            lite::Tensor* _att_fc_b,
-            int UB_batch,
-            int UB_seqlen) {
-    table = _table->data<float>();
-    table_len = _table->dims()[0];
-    emb_dim = _table->dims()[1];
-    att.init(_att_fc_w, _att_fc_w_max, _att_fc_b, emb_dim, UB_batch, UB_seqlen);
+  void Init(lite::Tensor* table,
+            lite::Tensor* att_fc_w,
+            float att_fc_w_max,
+            lite::Tensor* att_fc_b,
+            int upper_bound_batch,
+            int upper_bound_seqlen) {
+    table_ = table->data<float>();
+    table_len_ = table->dims()[0];
+    emb_dim_ = table->dims()[1];
+    att_.Init(att_fc_w,
+              att_fc_w_max,
+              att_fc_b,
+              emb_dim_,
+              upper_bound_batch,
+              upper_bound_seqlen);
   }
 
-  void infer(xdnn::Context* ctx,
+  void Infer(xdnn::Context* ctx,
              int batch,
-             const id_info& sentense,
+             const MMDNNIdInfo& sentense,
              lite::Tensor* att_pool_out,
              lite::Tensor* emb_fw_out,
              float* l3_buffer = nullptr,
@@ -879,55 +897,55 @@ class emb_att {
     att_out = att_pool_out->mutable_data<float>(TARGET(kXPU));
 
     int cap_l = sentense.lod.back();
-    const float* emb_tables[] = {table, table};
+    const float* emb_tables[] = {table_, table_};
     const int64_t* emb_indices[] = {sentense.id0_64, sentense.id1_64};
     xdnn::embedding_with_ewadd<float, int64_t, false, false>(ctx,
-                                                             emb_dim,
+                                                             emb_dim_,
                                                              cap_l,
                                                              2,
-                                                             table_len - 2,
+                                                             table_len_ - 2,
                                                              emb_tables,
                                                              emb_indices,
                                                              nullptr,
                                                              nullptr,
                                                              emb_fw);
-    att.infer(ctx, sentense, emb_fw, att_out, l3_buffer, l3_size);
+    att_.Infer(ctx, sentense, emb_fw, att_out, l3_buffer, l3_size);
   }
 };
 
-class merge_all {
-  grnn_op coverage_fw;
-  grnn_op coverage_rv;
-  int cap_e;
-  int cap_h;
+class MMDNNMergeAll {
+  MMDNNGrnnOp coverage_fw_;
+  MMDNNGrnnOp coverage_rv_;
+  int cap_e_;
+  int cap_h_;
 
   // TODO(miaotianxiang):
-  const int fc0_k = 1152;
-  const int fc0_n = 512;
-  const int fc1_k = 640;
-  const int fc1_n = 320;
-  const int fc2_k = 320;
-  const int fc2_n = 1;
-  fc_op fc0;
-  fc_op fc1;
-  fc_op fc2;
+  const int fc0_k_ = 1152;
+  const int fc0_n_ = 512;
+  const int fc1_k_ = 640;
+  const int fc1_n_ = 320;
+  const int fc2_k_ = 320;
+  const int fc2_n_ = 1;
+  MMDNNFcOp fc0_;
+  MMDNNFcOp fc1_;
+  MMDNNFcOp fc2_;
 
-  XPUScratchPadGuard hbm_buffer_guard;
-  float* hbm_buffer;
-  // topk_concat_out_fw:  [cap_l, cap_e] <= [cap_l, cap_h]
-  // topk_concat_out_rv:  [cap_l, cap_e] <= [cap_l, cap_h]
-  // grnn_fw:             [cap_l, cap_h]
-  // grnn_rv:             [cap_l, cap_h]
-  // pool_fw:             [batch, cap_h]
-  // pool_rv:             [batch, cap_h]
-  // fc0_in:              [batch, fc0_k]
-  // fc0_out:             [batch, fc0_n]
-  // fc1_in:              [batch, fc1_k]
-  // fc1_out:             [batch, fc1_n]
-  // fc2_out:             [batch, fc2_n]
+  XPUScratchPadGuard hbm_buffer_guard_;
+  float* hbm_buffer_{nullptr};
+  // topk_concat_out_fw:  [cap_l, cap_e_] <= [cap_l, cap_h_]
+  // topk_concat_out_rv:  [cap_l, cap_e_] <= [cap_l, cap_h_]
+  // grnn_fw:             [cap_l, cap_h_]
+  // grnn_rv:             [cap_l, cap_h_]
+  // pool_fw:             [batch, cap_h_]
+  // pool_rv:             [batch, cap_h_]
+  // fc0_in:              [batch, fc0_k_]
+  // fc0_out:             [batch, fc0_n_]
+  // fc1_in:              [batch, fc1_k_]
+  // fc1_out:             [batch, fc1_n_]
+  // fc2_out:             [batch, fc2_n_]
 
  public:
-  void init(lite::Tensor* grnn_fw_wh,
+  void Init(lite::Tensor* grnn_fw_wh,
             std::vector<float> grnn_fw_wh_maxs,
             lite::Tensor* grnn_fw_wi,
             std::vector<float> grnn_fw_wi_maxs,
@@ -944,41 +962,44 @@ class merge_all {
             lite::Tensor* fc2_w,
             float fc2_w_max,
             lite::Tensor* fc2_b,
-            int UB_batch,
-            int UB_seqlen) {
-    int max_cap_l = UB_batch * UB_seqlen;
-    cap_e = grnn_fw_wi->dims()[2];
-    cap_h = grnn_fw_wi->dims()[1];
+            int upper_bound_batch,
+            int upper_bound_seqlen) {
+    int max_cap_l = upper_bound_batch * upper_bound_seqlen;
+    cap_e_ = grnn_fw_wi->dims()[2];
+    cap_h_ = grnn_fw_wi->dims()[1];
 
-    coverage_fw.init(grnn_fw_wh,
-                     grnn_fw_wh_maxs,
-                     grnn_fw_wi,
-                     grnn_fw_wi_maxs,
-                     cap_e,
-                     cap_h,
-                     max_cap_l);
-    coverage_rv.init(grnn_rv_wh,
-                     grnn_rv_wh_maxs,
-                     grnn_rv_wi,
-                     grnn_rv_wi_maxs,
-                     cap_e,
-                     cap_h,
-                     max_cap_l);
+    coverage_fw_.Init(grnn_fw_wh,
+                      grnn_fw_wh_maxs,
+                      grnn_fw_wi,
+                      grnn_fw_wi_maxs,
+                      cap_e_,
+                      cap_h_,
+                      max_cap_l);
+    coverage_rv_.Init(grnn_rv_wh,
+                      grnn_rv_wh_maxs,
+                      grnn_rv_wi,
+                      grnn_rv_wi_maxs,
+                      cap_e_,
+                      cap_h_,
+                      max_cap_l);
 
-    fc0.init(fc0_w, fc0_w_max, fc0_b, fc0_n, fc0_k, xdnn::Activation_t::RELU);
-    fc1.init(fc1_w, fc1_w_max, fc1_b, fc1_n, fc1_k, xdnn::Activation_t::RELU);
-    fc2.init(fc2_w, fc2_w_max, fc2_b, fc2_n, fc2_k, xdnn::Activation_t::LINEAR);
+    fc0_.Init(
+        fc0_w, fc0_w_max, fc0_b, fc0_n_, fc0_k_, xdnn::Activation_t::RELU);
+    fc1_.Init(
+        fc1_w, fc1_w_max, fc1_b, fc1_n_, fc1_k_, xdnn::Activation_t::RELU);
+    fc2_.Init(
+        fc2_w, fc2_w_max, fc2_b, fc2_n_, fc2_k_, xdnn::Activation_t::LINEAR);
 
-    int hbm_total_len =
-        max_cap_l * cap_h * 4 +
-        UB_batch * (2 * cap_h + fc0_k + fc0_n + fc1_k + fc1_n + fc2_n);
-    hbm_buffer_guard = TargetWrapperXPU::MallocScratchPad(
+    int hbm_total_len = max_cap_l * cap_h_ * 4 +
+                        upper_bound_batch * (2 * cap_h_ + fc0_k_ + fc0_n_ +
+                                             fc1_k_ + fc1_n_ + fc2_n_);
+    hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
         hbm_total_len * sizeof(float), false);
-    hbm_buffer = reinterpret_cast<float*>(hbm_buffer_guard->addr_);
+    hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
-  void infer(xdnn::Context* ctx,
-             const id_info& sentense,
+  void Infer(xdnn::Context* ctx,
+             const MMDNNIdInfo& sentense,
              const std::vector<lite::Tensor*> concat_2in1_x,
              const std::vector<lite::Tensor*> concat_7in1_x,
              lite::Tensor* out,
@@ -987,23 +1008,23 @@ class merge_all {
     int batch = sentense.batch;
     int cap_l = sentense.seqlen_sum;
 
-    float* topk_concat_out_fw = hbm_buffer;
+    float* topk_concat_out_fw = hbm_buffer_;
     int hbm_total_len =
-        cap_l * cap_h * 4 +
-        batch * (2 * cap_h + fc0_k + fc0_n + fc1_k + fc1_n + fc2_n);
+        cap_l * cap_h_ * 4 +
+        batch * (2 * cap_h_ + fc0_k_ + fc0_n_ + fc1_k_ + fc1_n_ + fc2_n_);
     if (l3_size > 0 && l3_size >= hbm_total_len * sizeof(float)) {
       topk_concat_out_fw = l3_buffer;
     }
-    float* topk_concat_out_rv = topk_concat_out_fw + cap_l * cap_h;
-    float* grnn_fw = topk_concat_out_rv + cap_l * cap_h;
-    float* grnn_rv = grnn_fw + cap_l * cap_h;
-    float* pool_fw = grnn_rv + cap_l * cap_h;
-    float* pool_rv = pool_fw + batch * cap_h;
-    float* fc0_in = pool_fw + batch * cap_h * 2;
-    float* fc0_out = fc0_in + batch * fc0_k;
-    float* fc1_in = fc0_out + batch * fc0_n;
-    float* fc1_out = fc1_in + batch * fc1_k;
-    // float* fc2_out = fc1_out + batch * fc1_n;
+    float* topk_concat_out_rv = topk_concat_out_fw + cap_l * cap_h_;
+    float* grnn_fw = topk_concat_out_rv + cap_l * cap_h_;
+    float* grnn_rv = grnn_fw + cap_l * cap_h_;
+    float* pool_fw = grnn_rv + cap_l * cap_h_;
+    float* pool_rv = pool_fw + batch * cap_h_;
+    float* fc0_in = pool_fw + batch * cap_h_ * 2;
+    float* fc0_out = fc0_in + batch * fc0_k_;
+    float* fc1_in = fc0_out + batch * fc0_n_;
+    float* fc1_out = fc1_in + batch * fc1_k_;
+    // float* fc2_out = fc1_out + batch * fc1_n_;
     float* fc2_out = out->mutable_data<float>(TARGET(kXPU));
 
     const int concat_widths[] = {static_cast<int>(concat_2in1_x[0]->dims()[1]),
@@ -1015,26 +1036,26 @@ class merge_all {
     xdnn::sequence_reverse(ctx,
                            batch,
                            sentense.lod_32,
-                           cap_e,
+                           cap_e_,
                            topk_concat_out_fw,
                            topk_concat_out_rv);
-    coverage_fw.infer(ctx,
-                      sentense,
-                      topk_concat_out_fw,
-                      grnn_fw,
-                      l3_buffer + hbm_total_len,
-                      l3_size - hbm_total_len * sizeof(float));
-    coverage_rv.infer(ctx,
-                      sentense,
-                      topk_concat_out_rv,
-                      grnn_rv,
-                      l3_buffer + hbm_total_len,
-                      l3_size - hbm_total_len * sizeof(float));
+    coverage_fw_.Infer(ctx,
+                       sentense,
+                       topk_concat_out_fw,
+                       grnn_fw,
+                       l3_buffer + hbm_total_len,
+                       l3_size - hbm_total_len * sizeof(float));
+    coverage_rv_.Infer(ctx,
+                       sentense,
+                       topk_concat_out_rv,
+                       grnn_rv,
+                       l3_buffer + hbm_total_len,
+                       l3_size - hbm_total_len * sizeof(float));
     xdnn::sequence_pooling_forward(ctx,
                                    xdnn::Pooling_t::LAST,
                                    batch,
                                    sentense.lod_32,
-                                   cap_h,
+                                   cap_h_,
                                    grnn_fw,
                                    nullptr,
                                    pool_fw);
@@ -1042,7 +1063,7 @@ class merge_all {
                                    xdnn::Pooling_t::LAST,
                                    batch,
                                    sentense.lod_32,
-                                   cap_h,
+                                   cap_h_,
                                    grnn_rv,
                                    nullptr,
                                    pool_rv);
@@ -1065,16 +1086,16 @@ class merge_all {
         concat_7in1_x[5]->data<float>(),
         concat_7in1_x[6]->data<float>(),
     };
-    const int concat_widths_fc1[] = {cap_h, cap_h, fc0_n};
+    const int concat_widths_fc1[] = {cap_h_, cap_h_, fc0_n_};
     const float* concat_ptrs_fc1[] = {pool_fw, pool_rv, fc0_out};
 
     xdnn::concat<float>(
         ctx, batch, concat_widths_fc0, 7, concat_ptrs_fc0, fc0_in);
-    fc0.infer(ctx, fc0_in, batch, fc0_out);
+    fc0_.Infer(ctx, fc0_in, batch, fc0_out);
     xdnn::concat<float>(
         ctx, batch, concat_widths_fc1, 3, concat_ptrs_fc1, fc1_in);
-    fc1.infer(ctx, fc1_in, batch, fc1_out);
-    fc2.infer(ctx, fc1_out, batch, fc2_out);
+    fc1_.Infer(ctx, fc1_in, batch, fc1_out);
+    fc2_.Infer(ctx, fc1_out, batch, fc2_out);
   }
 };
 
@@ -1088,30 +1109,30 @@ class XPUMMDNNBidEmbGrnnAttCompute
   void Run() override;
 
  private:
-  id_info id;
-  bid_emb_grnn_att compound;
-  int UB_batch = 40;
-  int UB_seqlen = 512;
+  MMDNNIdInfo id_;
+  MMDNNBidEmbGrnnAtt compound_;
+  int upper_bound_batch_ = 40;
+  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMMDNNBidEmbGrnnAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id.init(UB_batch, UB_seqlen);
-  compound.init(param.emb_tbl,
-                param.grnn_fw_wh,
-                param.grnn_fw_wh_maxs,
-                param.grnn_fw_wi,
-                param.grnn_fw_wi_maxs,
-                param.grnn_rv_wh,
-                param.grnn_rv_wh_maxs,
-                param.grnn_rv_wi,
-                param.grnn_rv_wi_maxs,
-                param.att_fc_w,
-                param.att_fc_w_max,
-                param.att_fc_b,
-                UB_batch,
-                UB_seqlen);
+  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  compound_.Init(param.emb_tbl,
+                 param.grnn_fw_wh,
+                 param.grnn_fw_wh_maxs,
+                 param.grnn_fw_wi,
+                 param.grnn_fw_wi_maxs,
+                 param.grnn_rv_wh,
+                 param.grnn_rv_wh_maxs,
+                 param.grnn_rv_wi,
+                 param.grnn_rv_wi_maxs,
+                 param.att_fc_w,
+                 param.att_fc_w_max,
+                 param.att_fc_b,
+                 upper_bound_batch_,
+                 upper_bound_seqlen_);
 }
 
 void XPUMMDNNBidEmbGrnnAttCompute::Run() {
@@ -1121,19 +1142,19 @@ void XPUMMDNNBidEmbGrnnAttCompute::Run() {
   auto* xpu_ctx = ctx.GetRawContext();
 
   int batch = param.id0->lod()[0].size() - 1;
-  id.update(param.id0, param.id1);
-  compound.infer(ctx.GetRawContext(),
-                 batch,
-                 id,
-                 param.grnn_fw_pool_out,
-                 param.grnn_rv_pool_out,
-                 param.att_pool_out,
-                 param.concat_3in1_out,
-                 param.emb_fw_out,
-                 reinterpret_cast<float*>(
-                     reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                     xpu_ctx->used_l3_size),
-                 xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+  id_.Update(param.id0, param.id1);
+  compound_.Infer(ctx.GetRawContext(),
+                  batch,
+                  id_,
+                  param.grnn_fw_pool_out,
+                  param.grnn_rv_pool_out,
+                  param.att_pool_out,
+                  param.concat_3in1_out,
+                  param.emb_fw_out,
+                  reinterpret_cast<float*>(
+                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
+                      xpu_ctx->used_l3_size),
+                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
 class XPUMMDNNBidEmbAttCompute
@@ -1146,22 +1167,22 @@ class XPUMMDNNBidEmbAttCompute
   void Run() override;
 
  private:
-  id_info id;
-  emb_att compound;
-  int UB_batch = 40;
-  int UB_seqlen = 512;
+  MMDNNIdInfo id_;
+  MMDNNEmbAtt compound_;
+  int upper_bound_batch_ = 40;
+  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMMDNNBidEmbAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id.init(UB_batch, UB_seqlen);
-  compound.init(param.emb_tbl,
-                param.att_fc_w,
-                param.att_fc_w_max,
-                param.att_fc_b,
-                UB_batch,
-                UB_seqlen);
+  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  compound_.Init(param.emb_tbl,
+                 param.att_fc_w,
+                 param.att_fc_w_max,
+                 param.att_fc_b,
+                 upper_bound_batch_,
+                 upper_bound_seqlen_);
 }
 
 void XPUMMDNNBidEmbAttCompute::Run() {
@@ -1171,16 +1192,16 @@ void XPUMMDNNBidEmbAttCompute::Run() {
   auto* xpu_ctx = ctx.GetRawContext();
 
   int batch = param.id0->lod()[0].size() - 1;
-  id.update(param.id0, param.id1);
-  compound.infer(ctx.GetRawContext(),
-                 batch,
-                 id,
-                 param.att_pool_out,
-                 param.emb_fw_out,
-                 reinterpret_cast<float*>(
-                     reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                     xpu_ctx->used_l3_size),
-                 xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+  id_.Update(param.id0, param.id1);
+  compound_.Infer(ctx.GetRawContext(),
+                  batch,
+                  id_,
+                  param.att_pool_out,
+                  param.emb_fw_out,
+                  reinterpret_cast<float*>(
+                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
+                      xpu_ctx->used_l3_size),
+                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
 class XPUMMDNNMatchConvTopkCompute
@@ -1193,23 +1214,23 @@ class XPUMMDNNMatchConvTopkCompute
   void Run() override;
 
  private:
-  match_conv_topk compound;
-  int UB_batch = 40;
-  int UB_seqlen = 512;
+  MMDNNMatchConvTopk compound_;
+  int upper_bound_batch_ = 40;
+  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMMDNNMatchConvTopkCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  compound.init(param.input_w,
-                param.input_w_max,
-                param.conv_w,
-                param.conv_w_max,
-                param.dim_t,
-                param.input_w->dims()[0],
-                UB_batch,
-                UB_seqlen,
-                param.topks);
+  compound_.Init(param.input_w,
+                 param.input_w_max,
+                 param.conv_w,
+                 param.conv_w_max,
+                 param.dim_t,
+                 param.input_w->dims()[0],
+                 upper_bound_batch_,
+                 upper_bound_seqlen_,
+                 param.topks);
 }
 
 void XPUMMDNNMatchConvTopkCompute::Run() {
@@ -1218,14 +1239,14 @@ void XPUMMDNNMatchConvTopkCompute::Run() {
 
   auto* xpu_ctx = ctx.GetRawContext();
 
-  compound.infer(ctx.GetRawContext(),
-                 param.input_x,
-                 param.input_y,
-                 param.topk_out,
-                 reinterpret_cast<float*>(
-                     reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                     xpu_ctx->used_l3_size),
-                 xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+  compound_.Infer(ctx.GetRawContext(),
+                  param.input_x,
+                  param.input_y,
+                  param.topk_out,
+                  reinterpret_cast<float*>(
+                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
+                      xpu_ctx->used_l3_size),
+                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
 class XPUMMDNNMergeAllCompute
@@ -1238,35 +1259,35 @@ class XPUMMDNNMergeAllCompute
   void Run() override;
 
  private:
-  id_info id;
-  merge_all compound;
-  int UB_batch = 40;
-  int UB_seqlen = 512;
+  MMDNNIdInfo id_;
+  MMDNNMergeAll compound_;
+  int upper_bound_batch_ = 40;
+  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMMDNNMergeAllCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id.init(UB_batch, UB_seqlen);
-  compound.init(param.grnn_fw_wh,
-                param.grnn_fw_wh_maxs,
-                param.grnn_fw_wi,
-                param.grnn_fw_wi_maxs,
-                param.grnn_rv_wh,
-                param.grnn_rv_wh_maxs,
-                param.grnn_rv_wi,
-                param.grnn_rv_wi_maxs,
-                param.fc0_w,
-                param.fc0_w_max,
-                param.fc0_b,
-                param.fc1_w,
-                param.fc1_w_max,
-                param.fc1_b,
-                param.fc2_w,
-                param.fc2_w_max,
-                param.fc2_b,
-                UB_batch,
-                UB_seqlen);
+  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  compound_.Init(param.grnn_fw_wh,
+                 param.grnn_fw_wh_maxs,
+                 param.grnn_fw_wi,
+                 param.grnn_fw_wi_maxs,
+                 param.grnn_rv_wh,
+                 param.grnn_rv_wh_maxs,
+                 param.grnn_rv_wi,
+                 param.grnn_rv_wi_maxs,
+                 param.fc0_w,
+                 param.fc0_w_max,
+                 param.fc0_b,
+                 param.fc1_w,
+                 param.fc1_w_max,
+                 param.fc1_b,
+                 param.fc2_w,
+                 param.fc2_w_max,
+                 param.fc2_b,
+                 upper_bound_batch_,
+                 upper_bound_seqlen_);
 }
 
 void XPUMMDNNMergeAllCompute::Run() {
@@ -1275,16 +1296,16 @@ void XPUMMDNNMergeAllCompute::Run() {
 
   auto* xpu_ctx = ctx.GetRawContext();
 
-  id.update(param.concat_2in1_x[0], param.concat_2in1_x[1]);
-  compound.infer(ctx.GetRawContext(),
-                 id,
-                 param.concat_2in1_x,
-                 param.concat_7in1_x,
-                 param.out,
-                 reinterpret_cast<float*>(
-                     reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                     xpu_ctx->used_l3_size),
-                 xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+  id_.Update(param.concat_2in1_x[0], param.concat_2in1_x[1]);
+  compound_.Infer(ctx.GetRawContext(),
+                  id_,
+                  param.concat_2in1_x,
+                  param.concat_7in1_x,
+                  param.out,
+                  reinterpret_cast<float*>(
+                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
+                      xpu_ctx->used_l3_size),
+                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
 }  // namespace xpu

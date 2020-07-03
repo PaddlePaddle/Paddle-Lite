@@ -26,8 +26,8 @@ using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 struct XPUScratchPad {
   XPUScratchPad(void* addr, bool is_l3) : addr_(addr), is_l3_(is_l3) {}
 
-  void* addr_;
-  bool is_l3_;
+  void* addr_{nullptr};
+  bool is_l3_{false};
 };
 
 struct XPUScratchPadDeleter {

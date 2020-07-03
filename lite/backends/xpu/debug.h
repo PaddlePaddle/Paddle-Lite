@@ -26,11 +26,11 @@ namespace lite {
 namespace xpu {
 
 template <typename T>
-void dump_cpu_mem(const T* ptr,
-                  size_t len,
-                  const std::string& comment = "",
-                  size_t stride = 1,
-                  size_t item_per_line = 30) {
+void DumpCPUMem(const T* ptr,
+                size_t len,
+                const std::string& comment = "",
+                size_t stride = 1,
+                size_t item_per_line = 30) {
   size_t after_stride_len = (len + stride - 1) / stride;
   std::unique_ptr<T[]> after_stride(new T[after_stride_len]);
   for (size_t i = 0; i < after_stride_len; ++i) {
@@ -75,11 +75,11 @@ void dump_cpu_mem(const T* ptr,
 }
 
 template <typename T>
-void dump_xpu_mem(const T* ptr,
-                  size_t len,
-                  const std::string& comment = "",
-                  size_t stride = 1,
-                  size_t item_per_line = 30) {
+void DumpXPUMem(const T* ptr,
+                size_t len,
+                const std::string& comment = "",
+                size_t stride = 1,
+                size_t item_per_line = 30) {
   size_t after_stride_len = (len + stride - 1) / stride;
   std::unique_ptr<T[]> cpu_mem(new T[len]);
   xpu_memcpy(
