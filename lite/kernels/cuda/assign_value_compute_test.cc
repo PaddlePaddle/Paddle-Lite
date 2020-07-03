@@ -60,6 +60,8 @@ class AssignValueTest : public ::testing::Test {
   void device_init() {
     ctx.reset(new KernelContext);
     cudaStreamCreate(&stream);
+    auto& context = ctx->As<CUDAContext>();
+    context.SetExecStream(stream);
     param.shape = shape;
     param.dtype = dtype;
     param.fp32_values = fp32_values;
@@ -113,8 +115,6 @@ class AssignValueTest : public ::testing::Test {
 
 TEST_F(AssignValueTest, fp32) {
   float_data_init();
-  auto& context = ctx->As<CUDAContext>();
-  context.SetExecStream(stream);
   AssignValueCompute kernel;
   kernel.SetParam(param);
   kernel.SetContext(std::move(ctx));

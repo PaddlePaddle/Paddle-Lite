@@ -174,24 +174,9 @@ void Transpose<T>::transpose(T* dst,
   TransposeCUDAImpl<T>(src_dims, axes, src, dst, &Y_dims_, &strides_, stream);
 }
 
-// template <typename T>
-// void Transpose<T>::transpose(T* dst,
-//                             const T* src,
-//                             const std::vector<int>& src_dims,
-//                             const std::vector<int>& axes,
-//                             cudaStream_t* stream) {
-//  std::vector<int64_t> _src_dims(src_dims.size(), 0);
-//  std::transform(
-//      src_dims.begin(),
-//      src_dims.end(),
-//      _src_dims.begin(),
-//      [](int data) -> int64_t { return static_cast<int64_t>(data); });
-//  TransposeCUDAImpl<T>(_src_dims, axes, src, dst, &Y_dims_, &strides_,
-//  stream);
-//}
-
 template class Transpose<int8_t>;
 template class Transpose<float>;
+template class Transpose<half>;
 
 }  // namespace math
 }  // namespace cuda
