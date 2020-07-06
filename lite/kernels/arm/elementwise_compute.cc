@@ -300,7 +300,6 @@ void ElementwiseMaxActivationCompute::Run() {
   }
 }
 
-#if 1
 template <typename T, PrecisionType PType>
 void ElementwiseDivCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ElementwiseParam>();
@@ -328,28 +327,6 @@ void ElementwiseDivCompute<T, PType>::Run() {
         x_data, y_data, out_data, x_dims.production());
   }
 }
-#else
-void ElementwiseDivCompute::Run() {
-  auto& param = Param<operators::ElementwiseParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
-  int axis = param.axis;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-  if (x_dims.size() < y_dims.size()) {
-    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
-  }
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_div_broadcast(
-        x_data, y_data, out_data, pre, n, post);
-  } else {
-    lite::arm::math::elementwise_div(
-        x_data, y_data, out_data, x_dims.production());
-  }
-}
-#endif
 
 void ElementwiseDivActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();

@@ -1353,9 +1353,7 @@ void elementwise_div_broadcast<float>(const float* dinx,
     for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
-      LOG(INFO) << 1111;
       const float diny_data = diny[j];
-      LOG(INFO) << 1111;
       float* dout_ptr = dout + offset;
 
       int cnt = num >> 4;

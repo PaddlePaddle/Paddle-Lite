@@ -28,11 +28,6 @@ bool GatherOp::CheckShape() const {
 
 bool GatherOp::InferShapeImpl() const {
   auto index_dims = param_.Index->dims();
-
-  LOG(INFO) << "param_.X->dims():" << param_.X->dims();
-  LOG(INFO) << "param_.Index->dims():" << param_.Index->dims();
-  LOG(INFO) << "param_.Out->dims():" << param_.Out->dims();
-
   CHECK(index_dims.size() == 1 ||
         (index_dims.size() == 2 && index_dims[1] == 1))
       << "index dims unmatch";
