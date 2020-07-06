@@ -305,7 +305,6 @@ void ElementwiseDivCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ElementwiseParam>();
   auto* x_data = param.X->template data<T>();
   auto* y_data = param.Y->template data<T>();
-  LOG(INFO) << "y_data:" << y_data;
   auto* out_data = param.Out->template mutable_data<T>();
   int axis = param.axis;
   auto x_dims = param.X->dims();
@@ -315,11 +314,6 @@ void ElementwiseDivCompute<T, PType>::Run() {
     LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
   }
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    LOG(INFO) << "y_dims:" << y_dims;
-    LOG(INFO) << "y_dims.production:" << y_dims.production();
-    for (size_t i = 0; i < y_dims.production(); ++i) {
-      LOG(INFO) << "y_data[" << i << "]:" << y_data[i];
-    }
     lite::arm::math::elementwise_div_broadcast<T>(
         x_data, y_data, out_data, pre, n, post);
   } else {
