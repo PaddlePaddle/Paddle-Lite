@@ -12,15 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "db_post_process.h"  // NOLINT
+#include "post_process.h"  // NOLINT
 #include <algorithm>
 #include <utility>
-
-float ClampFp32(float x, float min, float max) {
-  if (x > max) return max;
-  if (x < min) return min;
-  return x;
-}
 
 void GetContourArea(float** box, float unclip_ratio, float* distance) {
   int pts_num = 4;
@@ -271,16 +265,16 @@ std::vector<std::vector<std::vector<int>>> BoxesFromBitmap(
 
     for (int num_pt = 0; num_pt < 4; num_pt++) {
       std::vector<int> a{
-          static_cast<int>(ClampFp32(
-              roundf(cliparray[num_pt][0] / static_cast<float>(width) *
-                     static_cast<float>(dest_width)),
-              0,
-              static_cast<float>(dest_width))),
-          static_cast<int>(ClampFp32(
-              roundf(cliparray[num_pt][1] / static_cast<float>(height) *
-                     static_cast<float>(dest_height)),
-              0,
-              static_cast<float>(dest_height)))};
+          static_cast<int>(
+              Clamp(roundf(cliparray[num_pt][0] / static_cast<float>(width) *
+                           static_cast<float>(dest_width)),
+                    0.f,
+                    static_cast<float>(dest_width))),
+          static_cast<int>(
+              Clamp(roundf(cliparray[num_pt][1] / static_cast<float>(height) *
+                           static_cast<float>(dest_height)),
+                    0.f,
+                    static_cast<float>(dest_height)))};
       intcliparray.push_back(a);
     }
     boxes.push_back(intcliparray);

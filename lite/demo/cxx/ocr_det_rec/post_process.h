@@ -39,14 +39,15 @@ std::vector<std::vector<int>> OrderPointsClockwise(
 
 float** GetMiniBoxes(cv::RotatedRect box, float* ssid);
 
-template <class T>
+template <typename T>
 T Clamp(T x, T min, T max) {
-  if (x > max) return max;
-  if (x < min) return min;
-  return x;
+  if (x > max)
+    return max;
+  else if (x < min)
+    return min;
+  else
+    return x;
 }
-
-float ClampFp32(float x, float min, float max);
 
 float BoxScoreFast(float** box_array, cv::Mat pred);
 
