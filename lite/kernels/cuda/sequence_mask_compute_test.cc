@@ -61,8 +61,8 @@ class SequenceMaskTest : public ::testing::Test {
     context.SetExecStream(stream_);
     param_.X = &X_gpu_;
     param_.Y = &Out_gpu_;
-    param_.maxlen_ = maxlen_;
-    param_.out_dtype_ = out_dtype_;
+    param_.maxlen = maxlen_;
+    param_.out_dtype = out_dtype_;
   }
 
   void InitFloatInput() {

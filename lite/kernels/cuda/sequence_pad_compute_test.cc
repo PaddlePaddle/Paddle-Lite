@@ -81,7 +81,7 @@ class SequencePadTest : public ::testing::Test {
     param_.PadValue = &PadValue_gpu_;
     param_.Length = &Length_gpu_;
     param_.Out = &Out_gpu_;
-    param_.padded_length_ = padded_length_;
+    param_.padded_length = padded_length_;
   }
 
   void InitFloatInput() {

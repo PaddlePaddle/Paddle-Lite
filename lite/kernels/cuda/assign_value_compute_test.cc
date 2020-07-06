@@ -62,12 +62,12 @@ class AssignValueTest : public ::testing::Test {
     cudaStreamCreate(&stream_);
     auto& context = ctx_->As<CUDAContext>();
     context.SetExecStream(stream_);
-    param_.shape_ = shape_;
-    param_.dtype_ = dtype_;
-    param_.fp32_values_ = fp32_values_;
-    param_.int32_values_ = int32_values_;
-    param_.int64_values_ = int64_values_;
-    param_.bool_values_ = bool_values_;
+    param_.shape = shape_;
+    param_.dtype = dtype_;
+    param_.fp32_values = fp32_values_;
+    param_.int32_values = int32_values_;
+    param_.int64_values = int64_values_;
+    param_.bool_values = bool_values_;
     param_.Out = &Out_gpu_;
   }
 

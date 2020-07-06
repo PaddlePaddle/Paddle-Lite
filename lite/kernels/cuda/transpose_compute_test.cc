@@ -257,14 +257,14 @@ class TransposeTest : public ::testing::Test {
     Out_cpu_.Resize(Out_ref_.dims());
     RunBaseLine(&X_ref_, &Out_ref_);
 
-    Initparam_AndContext();
+    InitParamAndContext();
   }
 
-  void Initparam_AndContext() {
+  void InitParamAndContext() {
     ctx_.reset(new KernelContext);
-    cudastream_Create(&stream_);
+    cudaStreamCreate(&stream_);
     auto& context = ctx_->As<CUDAContext>();
-    context.SetExecstream_(stream_);
+    context.SetExecStream(stream_);
     param_.x = &X_gpu_;
     param_.output = &Out_gpu_;
     param_.axis = axes_;
@@ -297,15 +297,15 @@ class TransposeTest : public ::testing::Test {
   lite::Tensor X_half_;
   lite::Tensor Out_cpu_;
 
-  operators::Transposeparam_ param_;
+  operators::TransposeParam param_;
   std::unique_ptr<KernelContext> ctx_;
-  cudastream__t stream_;
+  cudaStream_t stream_;
 };
 
 TEST_F(TransposeTest, fp32) {
   InitFloatInput();
   TransposeCompute<float, PRECISION(kFloat)> kernel;
-  kernel.Setparam_(param_);
+  kernel.SetParam(param_);
   kernel.SetContext(std::move(ctx_));
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -336,7 +336,7 @@ TEST_F(TransposeTest, fp32) {
 TEST_F(TransposeTest, TestFP16) {
   InitHalfInput();
   TransposeCompute<half, PRECISION(kFP16)> kernel;
-  kernel.Setparam_(param_);
+  kernel.SetParam(param_);
   kernel.SetContext(std::move(ctx_));
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
