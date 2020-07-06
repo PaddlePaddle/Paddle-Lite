@@ -72,7 +72,9 @@ std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone(
   return nullptr;
 }
 
-const std::string& LightPredictorImpl::GetVersion() const { return lite::version(); }
+const std::string& LightPredictorImpl::GetVersion() const {
+  return lite::version();
+}
 
 std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
