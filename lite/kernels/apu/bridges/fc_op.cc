@@ -31,6 +31,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[APU] Converting [" + op_type + "]";
 
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
+
+  // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
@@ -52,26 +56,12 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << " out_dims: " << out_dims << " m: " << m << " k: " << k
           << " n: " << n;
 
-  float input_scale = 1.0f;
-  float out_scale = 1.0f;
-  std::vector<float> w_scale;
-  if (op_info->HasAttr("enable_int8")) {
-    if (op_info->GetAttr<bool>("enable_int8")) {
-      auto input_name = op_info->Input("Input").front();
-      auto weight_name = op_info->Input("W").front();
-      auto out_name = op_info->Output("Out").front();
-      if (op_info->HasInputScale(input_name))
-        input_scale = op_info->GetInputScale<float>(input_name);
-      if (op_info->HasInputScale(weight_name))
-        w_scale = op_info->GetInputScale<std::vector<float>>(weight_name);
-      if (op_info->HasOutputScale(out_name))
-        out_scale = op_info->GetOutputScale<float>(out_name);
-    } else {
-      return FAILED;
-    }
-  } else {
-    return FAILED;
-  }
+  CHECK(op_info->HasInputScale(input_name));
+  auto input_scale = op_info->GetInputScale(input_name)[0];
+  CHECK(op_info->HasInputScale(w_name));
+  auto w_scale = op_info->GetInputScale(w_name);
+  CHECK(op_info->HasOutputScale(out_name));
+  auto out_scale = op_info->GetOutputScale(out_name)[0];
 
   // Add input tensor type
   NeuronOperandType inType;

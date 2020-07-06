@@ -50,9 +50,9 @@ void TestSequencePoolingSum(const paddle::framework::LoD& lod) {
   in_grad.mutable_data<T>(in_dims, context->GetPlace());
 
   // check tensor contruction result
-  PADDLE_ENFORCE_EQ(in_grad.dims().size(), out_grad.dims().size());
+  CHECK_EQ(in_grad.dims().size(), out_grad.dims().size());
   for (int64_t i = 1; i < out_grad.dims().size(); ++i) {
-    PADDLE_ENFORCE_EQ(in_grad.dims()[i], out_grad.dims()[i]);
+    CHECK_EQ(in_grad.dims()[i], out_grad.dims()[i]);
   }
 
   // call functor

@@ -17,7 +17,7 @@ limitations under the License. */
 #include <typeindex>
 #include "lite/core/framework.pb.h"
 #include "lite/fluid/float16.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -72,7 +72,7 @@ inline void VisitDataType(framework::proto::VarType::Type type,
 
   _ForEachDataType_(VisitDataTypeCallback);
 #undef VisitDataTypeCallback
-  PADDLE_THROW("Not supported %d", type);
+  LOG(FATAL) << "Not supported " << type;
 }
 
 extern std::string DataTypeToString(const framework::proto::VarType::Type type);

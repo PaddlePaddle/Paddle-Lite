@@ -1031,10 +1031,26 @@ struct SequenceExpandParam : ParamBase {
   int ref_level{-1};
 };
 
+struct SequencePadParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* PadValue{};
+  lite::Tensor* Out{};
+  lite::Tensor* Length{};
+  int padded_length{-1};
+};
+
 struct SequenceUnpadParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Length{};
   lite::Tensor* Out{};
+};
+
+struct SequenceMaskParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* MaxLenTensor{nullptr};
+  lite::Tensor* Y{};
+  int maxlen{-1};
+  int out_dtype;
 };
 
 struct SequenceExpandAsParam : ParamBase {
@@ -1330,6 +1346,8 @@ struct AssignValueParam : ParamBase {
   int dtype{};
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<int> bool_values{};
   lite::Tensor* Out{};
 };
 
