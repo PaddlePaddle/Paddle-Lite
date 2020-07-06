@@ -32,73 +32,73 @@ namespace cuda {
 class SequenceMaskTest : public ::testing::Test {
  protected:
   SequenceMaskTest()
-      : maxlen(4),
-        out_dtype(5),
-        x_data({3, 2, 1, 0}),
-        out_shape({static_cast<int64_t>(x_data.size()), maxlen}) {
-    X_ref.Resize(lite::DDim({static_cast<int64_t>(x_data.size())}));
-    X_gpu.Resize(X_ref.dims());
+      : maxlen_(4),
+        out_dtype_(5),
+        x_data_({3, 2, 1, 0}),
+        out_shape_({static_cast<int64_t>(x_data_.size()), maxlen_}) {
+    X_ref_.Resize(lite::DDim({static_cast<int64_t>(x_data_.size())}));
+    X_gpu_.Resize(X_ref_.dims());
 
-    auto* x_ref_data = X_ref.mutable_data<int64_t>();
+    auto* x_ref_data = X_ref_.mutable_data<int64_t>();
 
     // prepare input
-    for (size_t i = 0; i < x_data.size(); i++) {
-      x_ref_data[i] = x_data[i];
+    for (size_t i = 0; i < x_data_.size(); i++) {
+      x_ref_data[i] = x_data_[i];
     }
 
-    Out_ref.Resize(lite::DDim(out_shape));
-    Out_gpu.Resize(Out_ref.dims());
-    Out_cpu.Resize(Out_ref.dims());
-    cpu_base(&X_ref, &Out_ref);
+    Out_ref_.Resize(lite::DDim(out_shape_));
+    Out_gpu_.Resize(Out_ref_.dims());
+    Out_cpu_.Resize(Out_ref_.dims());
+    RunBaseLine(&X_ref_, &Out_ref_);
 
-    device_init();
+    InitParamAndContext();
   }
 
-  void device_init() {
-    ctx.reset(new KernelContext);
-    cudaStreamCreate(&stream);
-    auto& context = ctx->As<CUDAContext>();
-    context.SetExecStream(stream);
-    param.X = &X_gpu;
-    param.Y = &Out_gpu;
-    param.maxlen = maxlen;
-    param.out_dtype = out_dtype;
+  void InitParamAndContext() {
+    ctx_.reset(new KernelContext);
+    cudaStreamCreate(&stream_);
+    auto& context = ctx_->As<CUDAContext>();
+    context.SetExecStream(stream_);
+    param_.X = &X_gpu_;
+    param_.Y = &Out_gpu_;
+    param_.maxlen_ = maxlen_;
+    param_.out_dtype_ = out_dtype_;
   }
 
-  void float_data_init() {
-    X_gpu.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(X_ref.data<int64_t>(),
-                                                     X_gpu.dims());
+  void InitFloatInput() {
+    X_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(X_ref_.data<int64_t>(),
+                                                      X_gpu_.dims());
   }
 
-  void half_data_init() {}
+  void InitHalfInput() {}
 
-  void cpu_base(const lite::Tensor* X, lite::Tensor* Out) {
+  void RunBaseLine(const lite::Tensor* X, lite::Tensor* Out) {
     auto* out_data = Out->mutable_data<float>();
 
-    for (size_t i = 0; i < x_data.size(); ++i) {
-      for (int j = 0; j < maxlen; ++j) {
-        out_data[i * maxlen + j] = j < x_data[i] ? 1 : 0;
+    for (size_t i = 0; i < x_data_.size(); ++i) {
+      for (int j = 0; j < maxlen_; ++j) {
+        out_data[i * maxlen_ + j] = j < x_data_[i] ? 1 : 0;
       }
     }
   }
 
-  int maxlen, out_dtype;
-  std::vector<int64_t> x_data, out_shape;
+  int maxlen_, out_dtype_;
+  std::vector<int64_t> x_data_, out_shape_;
 
-  lite::Tensor X_ref, Out_ref;
-  lite::Tensor X_gpu, Out_gpu;
-  lite::Tensor Out_cpu;
+  lite::Tensor X_ref_, Out_ref_;
+  lite::Tensor X_gpu_, Out_gpu_;
+  lite::Tensor Out_cpu_;
 
-  operators::SequenceMaskParam param;
-  std::unique_ptr<KernelContext> ctx;
-  cudaStream_t stream;
+  operators::SequenceMaskParam param_;
+  std::unique_ptr<KernelContext> ctx_;
+  cudaStream_t stream_;
 };
 
 TEST_F(SequenceMaskTest, fp32) {
-  float_data_init();
+  InitFloatInput();
   SequenceMaskCompute<float, PRECISION(kFloat)> kernel;
-  kernel.SetParam(param);
-  kernel.SetContext(std::move(ctx));
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     kernel.Launch();
@@ -116,12 +116,12 @@ TEST_F(SequenceMaskTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu.mutable_data<float>(),
-                          Out_gpu.data<float>(),
-                          sizeof(float) * Out_gpu.numel(),
+  CopySync<TARGET(kCUDA)>(Out_cpu_.mutable_data<float>(),
+                          Out_gpu_.data<float>(),
+                          sizeof(float) * Out_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu.data<float>()[i], Out_ref.data<float>()[i], 1e-5);
+  for (int i = 0; i < Out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(Out_cpu_.data<float>()[i], Out_ref_.data<float>()[i], 1e-5);
   }
 }
 

@@ -43,7 +43,7 @@ void TransposeCompute<T, Ptype>::Run() {
   // NCHW -> NHWC
   if (axes.size() == 4 && axes[0] == 0 && axes[1] == 2 && axes[2] == 3 &&
       axes[3] == 1) {
-    trans.NCHW2NHWC(dims[0], dims[1], dims[2] * dims[3], in, out, &stream);
+    trans_.NCHW2NHWC(dims[0], dims[1], dims[2] * dims[3], in, out, &stream);
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
     return;
@@ -52,13 +52,13 @@ void TransposeCompute<T, Ptype>::Run() {
   // NHWC -> NCHW
   if (axes.size() == 4 && axes[0] == 0 && axes[1] == 3 && axes[2] == 1 &&
       axes[3] == 2) {
-    trans.NHWC2NCHW(dims[0], dims[3], dims[1] * dims[2], in, out, &stream);
+    trans_.NHWC2NCHW(dims[0], dims[3], dims[1] * dims[2], in, out, &stream);
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
     return;
   }
 
-  trans.transpose(out, in, dims, axes, &stream);
+  trans_.transpose(out, in, dims, axes, &stream);
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }

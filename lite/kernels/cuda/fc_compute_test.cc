@@ -67,12 +67,12 @@ class FcTest : public ::testing::Test {
     Out_ref.Resize(lite::DDim(out_shape));
     Out_cpu.Resize(Out_ref.dims());
     Out_gpu.Resize(Out_ref.dims());
-    fc_cpu_base(&X_ref, &W_ref, &b_ref, &Out_ref);
+    RunBaseLine(&X_ref, &W_ref, &b_ref, &Out_ref);
 
-    device_init();
+    InitParamAndContext();
   }
 
-  void device_init() {
+  void InitParamAndContext() {
     ctx.reset(new KernelContext);
     cudaStreamCreate(&stream);
     auto& context = ctx->As<CUDAContext>();
@@ -85,7 +85,7 @@ class FcTest : public ::testing::Test {
     param.output = &Out_gpu;
   }
 
-  void float_data_init() {
+  void InitFloatInput() {
     X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
                                                    X_gpu.dims());
     W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
@@ -94,7 +94,7 @@ class FcTest : public ::testing::Test {
                                                    b_gpu.dims());
   }
 
-  void half_data_init() {
+  void InitHalfInput() {
     X_half.Resize(lite::DDim(x_shape));
     auto x_half_data = X_half.mutable_data<half>();
     for (int64_t i = 0; i < X_half.numel(); i++) {
@@ -115,7 +115,7 @@ class FcTest : public ::testing::Test {
     b_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(b_half_data, b_gpu.dims());
   }
 
-  void fc_cpu_base(const lite::Tensor* X,
+  void RunBaseLine(const lite::Tensor* X,
                    const lite::Tensor* W,
                    const lite::Tensor* b,
                    lite::Tensor* Out) {
@@ -156,7 +156,7 @@ class FcTest : public ::testing::Test {
 };
 
 TEST_F(FcTest, TestFP32) {
-  float_data_init();
+  InitFloatInput();
   FcCompute<float, PRECISION(kFloat)> kernel;
   kernel.SetParam(param);
   kernel.SetContext(std::move(ctx));
