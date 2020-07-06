@@ -15,6 +15,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
+    target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files})
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry)
     target_link_libraries(paddle_full_api_shared framework_proto op_registry)
     if(LITE_WITH_X86)
