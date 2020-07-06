@@ -59,7 +59,14 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/baidu_xpu
   demo_guides/rockchip_npu
   demo_guides/mediatek_apu
-  
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 训练示例（预览）
+  :name: sec-train_demo_guides
+
+  demo_guides/cpp_train_demo
+
 .. toctree::
   :maxdepth: 1
   :caption: API文档

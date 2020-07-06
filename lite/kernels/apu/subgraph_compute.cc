@@ -153,18 +153,15 @@ int SubgraphEngine::LaunchDeviceProgram() {
   }
 
   // Set input buffer
-  Tensor input_temp;
   for (size_t i = 0; i < origin_itensors_.size(); i++) {
-    input_temp.Resize({origin_idims_[i]});
-    uint8_t* input_data = input_temp.mutable_data<uint8_t>();
-    memcpy(input_data,
-           origin_itensors_[i]->raw_data(),
-           origin_itensors_[i]->memory_size());
+    auto origin_data = origin_itensors_[i]->mutable_data<int8_t>();
+    auto converted_data = reinterpret_cast<uint8_t*>(origin_data);
     for (int j = 0; j < origin_itensors_[i]->data_size(); j++) {
-      input_data[j] += (uint8_t)128;
+      converted_data[j] =
+          static_cast<uint8_t>(static_cast<int16_t>(origin_data[j]) + 128);
     }
     NeuronExecution_setInput(
-        run, i, NULL, input_data, origin_itensors_[i]->memory_size());
+        run, i, NULL, converted_data, origin_itensors_[i]->memory_size());
   }
 
   // Set output buffer
@@ -184,10 +181,11 @@ int SubgraphEngine::LaunchDeviceProgram() {
   }
 
   for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    int8_t* output_data = origin_otensors_[i]->mutable_data<int8_t>();
-    VLOG(3) << "output size:" << origin_otensors_[i]->memory_size();
+    auto converted_data = origin_otensors_[i]->mutable_data<int8_t>();
+    auto origin_data = reinterpret_cast<uint8_t*>(converted_data);
     for (int j = 0; j < origin_otensors_[i]->data_size(); j++) {
-      output_data[j] -= (int8_t)128;
+      converted_data[j] =
+          static_cast<int8_t>(static_cast<int16_t>(origin_data[j]) - 128);
     }
   }
   NeuronExecution_free(run);
