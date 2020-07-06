@@ -307,7 +307,6 @@ void PoolCompute::Run() {
                                  use_quantizer,
                                  pooling_type);
 }
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
