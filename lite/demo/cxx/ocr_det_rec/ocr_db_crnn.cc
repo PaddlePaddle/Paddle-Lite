@@ -151,7 +151,7 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
   img.convertTo(img, CV_32FC3, 1.0 / 255.f);
 
   // Prepare input data from image
-  std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+  std::unique_ptr<Tensor> input_tensor = predictor->GetInput(0);
   input_tensor->Resize({1, 3, img.rows, img.cols});
   auto* input_data = input_tensor->mutable_data<float>();
 
@@ -164,8 +164,7 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
   predictor->Run();
 
   // Get output and post process
-  std::unique_ptr<const Tensor> output_tensor(
-      std::move(predictor->GetOutput(0)));
+  std::unique_ptr<const Tensor> output_tensor = predictor->GetOutput(0);
   auto* outptr = output_tensor->data<float>();
   auto shape_out = output_tensor->shape();
   int64_t out_numl = 1;
@@ -196,7 +195,7 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
   cv::threshold(cbuf_map, bit_map, threshold, maxvalue, cv::THRESH_BINARY);
   auto boxes = BoxesFromBitmap(pred_map, bit_map);
   std::vector<std::vector<std::vector<int>>> filter_boxes =
-      FilterTagDetRes(boxes, ratio_h, ratio_w, src_img);
+      FilterTagDetRes(boxes, ratio_h, ratio_w, src_img.cols, src_img.rows);
   auto end = GetCurrentUS();
   *det_time = (end - start) / 1000;
 

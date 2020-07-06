@@ -13,11 +13,20 @@
 // limitations under the License.
 
 #include "pre_process.h"  //NOLINT
+#include <time.h>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <string>
 
 #define MAX_DICT_LENGTH 6624
+
+double GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
 
 // fill tensor with mean and scale and trans
 // layout: nhwc -> nchw, neon speed up
@@ -71,6 +80,7 @@ cv::Mat DetResizeImg(const cv::Mat& img,
                      int max_size_len,
                      float* ratio_h,
                      float* ratio_w) {
+  const int len = 32;
   int w = img.cols;
   int h = img.rows;
   float ratio = 1.f;
@@ -83,21 +93,21 @@ cv::Mat DetResizeImg(const cv::Mat& img,
     }
   }
 
-  int resize_h = static_cast<int>(static_cast<float>(h) * ratio);
-  int resize_w = static_cast<int>(static_cast<float>(w) * ratio);
-  if (resize_h % 32 == 0) {
+  int resize_h = static_cast<int>(h * ratio);
+  int resize_w = static_cast<int>(w * ratio);
+  if (resize_h % len == 0) {
     resize_h = resize_h;
-  } else if (resize_h / 32 < 1) {
-    resize_h = 32;
+  } else if (resize_h / len < 1) {
+    resize_h = len;
   } else {
-    resize_h = (resize_h / 32 - 1) * 32;
+    resize_h = (resize_h / len - 1) * len;
   }
-  if (resize_w % 32 == 0) {
+  if (resize_w % len == 0) {
     resize_w = resize_w;
-  } else if (resize_w / 32 < 1) {
-    resize_w = 32;
+  } else if (resize_w / len < 1) {
+    resize_w = len;
   } else {
-    resize_w = (resize_w / 32 - 1) * 32;
+    resize_w = (resize_w / len - 1) * len;
   }
 
   cv::Mat resize_img;
@@ -108,9 +118,10 @@ cv::Mat DetResizeImg(const cv::Mat& img,
 }
 
 cv::Mat CrnnResizeImg(const cv::Mat& img, float wh_ratio) {
+  const int len = 32;
   const std::vector<int> rec_image_shape = {3, 32, 320};
   int img_height = rec_image_shape[1];
-  int img_width = static_cast<int>(32 * wh_ratio);
+  int img_width = static_cast<int>(len * wh_ratio);
   float ratio = static_cast<float>(img.cols) / static_cast<float>(img.rows);
 
   int resize_width = 0;
@@ -190,8 +201,9 @@ cv::Mat GetRotateCropImage(const cv::Mat& src_image,
                       cv::Size(img_crop_width, img_crop_height),
                       cv::BORDER_REPLICATE);
 
+  const float ratio = 1.5;
   if (static_cast<float>(dst_img.rows) >=
-      static_cast<float>(dst_img.cols) * 1.5) {
+      static_cast<float>(dst_img.cols) * ratio) {
     cv::Mat res_img = cv::Mat(dst_img.rows, dst_img.cols, dst_img.depth());
     cv::transpose(dst_img, res_img);
     cv::flip(res_img, res_img, 0);

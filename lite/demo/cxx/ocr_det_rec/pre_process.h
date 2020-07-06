@@ -14,9 +14,6 @@
 
 #pragma once
 
-#include <time.h>
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,15 +23,13 @@
 #include "opencv2/imgproc.hpp"
 
 template <class ForwardIterator>
-inline size_t Argmax(ForwardIterator first, ForwardIterator last) {
+size_t Argmax(ForwardIterator first, ForwardIterator last) {
   return std::distance(first, std::max_element(first, last));
 }
 
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
+double GetCurrentUS();
+
+std::vector<std::string> ReadDict(const std::string& path);
 
 void NeonMeanScale(const float* din,
                    float* dout,
@@ -49,7 +44,5 @@ cv::Mat DetResizeImg(const cv::Mat& img,
 
 cv::Mat CrnnResizeImg(const cv::Mat& img, float wh_ratio);
 
-std::vector<std::string> ReadDict(const std::string& path);
-
-cv::Mat GetRotateCropImage(const cv::Mat& srcimage,
+cv::Mat GetRotateCropImage(const cv::Mat& src_image,
                            const std::vector<std::vector<int>>& box);

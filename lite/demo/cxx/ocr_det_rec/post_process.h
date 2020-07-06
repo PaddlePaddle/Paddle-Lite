@@ -21,23 +21,8 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
 
-void GetContourArea(float** box, float unclip_ratio, float* distance);
-
-cv::RotatedRect Unclip(float** box);
-
-float** Mat2Vec(cv::Mat mat);
-
-void QuickSort(float** s, int l, int r);
-
-void QuickSortVector(std::vector<std::vector<int>>* box,
-                     int l,
-                     int r,
-                     int axis);
-
-std::vector<std::vector<int>> OrderPointsClockwise(
-    std::vector<std::vector<int>> pts);
-
-float** GetMiniBoxes(cv::RotatedRect box, float* ssid);
+using vector_3d_int = std::vector<std::vector<std::vector<int>>>;
+using vector_2d_fp = std::vector<std::vector<float>>;
 
 template <typename T>
 T Clamp(T x, T min, T max) {
@@ -49,13 +34,30 @@ T Clamp(T x, T min, T max) {
     return x;
 }
 
-float BoxScoreFast(float** box_array, cv::Mat pred);
+vector_2d_fp Mat2Vec(const cv::Mat& mat);
 
-std::vector<std::vector<std::vector<int>>> BoxesFromBitmap(
-    const cv::Mat pred, const cv::Mat bitmap);
+float GetContourArea(const vector_2d_fp& box, float unclip_ratio);
 
-std::vector<std::vector<std::vector<int>>> FilterTagDetRes(
-    std::vector<std::vector<std::vector<int>>> boxes,
-    float ratio_h,
-    float ratio_w,
-    cv::Mat srcimg);
+cv::RotatedRect Unclip(const vector_2d_fp& box);
+
+void QuickSort(vector_2d_fp* input, int left, int right);
+
+void QuickSort(std::vector<std::vector<int>>* box,
+               int left,
+               int right,
+               int axis);
+
+std::vector<std::vector<int>> OrderPointsClockwise(
+    std::vector<std::vector<int>> pts);
+
+vector_2d_fp GetMiniBoxes(const cv::RotatedRect& box);
+
+float BoxScoreFast(const vector_2d_fp& box_array, const cv::Mat& pred);
+
+vector_3d_int BoxesFromBitmap(const cv::Mat& pred, const cv::Mat& bitmap);
+
+vector_3d_int FilterTagDetRes(vector_3d_int boxes,
+                              float ratio_h,
+                              float ratio_w,
+                              int img_width,
+                              int img_height);

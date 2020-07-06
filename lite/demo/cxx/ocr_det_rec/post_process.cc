@@ -16,28 +16,25 @@
 #include <algorithm>
 #include <utility>
 
-void GetContourArea(float** box, float unclip_ratio, float* distance) {
+float GetContourArea(const vector_2d_fp& box, float unclip_ratio) {
   int pts_num = 4;
   float area = 0.0f;
   float dist = 0.0f;
   for (int i = 0; i < pts_num; i++) {
-    area += box[i][0] * box[(i + 1) % pts_num][1] -
-            box[i][1] * box[(i + 1) % pts_num][0];
+    area += box[i][0] * box[(i + 1) % pts_num][1];
+    area -= box[i][1] * box[(i + 1) % pts_num][0];
     dist += sqrtf((box[i][0] - box[(i + 1) % pts_num][0]) *
                       (box[i][0] - box[(i + 1) % pts_num][0]) +
                   (box[i][1] - box[(i + 1) % pts_num][1]) *
                       (box[i][1] - box[(i + 1) % pts_num][1]));
   }
-  area = fabs(static_cast<float>(area / 2.0));
-
-  *distance = area * unclip_ratio / dist;
+  area = fabs(area / 2.0f);
+  return area * unclip_ratio / dist;
 }
 
-cv::RotatedRect Unclip(float** box) {
+cv::RotatedRect Unclip(const vector_2d_fp& box) {
   float unclip_ratio = 2.0;
-  float distance = 1.0;
-
-  GetContourArea(box, unclip_ratio, &distance);
+  float distance = GetContourArea(box, unclip_ratio);
 
   ClipperLib::ClipperOffset offset;
   ClipperLib::Path p;
@@ -54,123 +51,126 @@ cv::RotatedRect Unclip(float** box) {
   ClipperLib::Paths soln;
   offset.Execute(soln, distance);
   std::vector<cv::Point2f> points;
-
   for (int j = 0; j < soln.size(); j++) {
     for (int i = 0; i < soln[soln.size() - 1].size(); i++) {
       points.emplace_back(soln[j][i].X, soln[j][i].Y);
     }
   }
   cv::RotatedRect res = cv::minAreaRect(points);
-
   return res;
 }
 
-float** Mat2Vec(cv::Mat mat) {
+vector_2d_fp Mat2Vec(const cv::Mat& mat) {
   auto** array = new float*[mat.rows];
-  for (int i = 0; i < mat.rows; ++i) {
-    array[i] = new float[mat.cols];
-  }
+  vector_2d_fp out(mat.rows, std::vector<float>(mat.cols));
   for (int i = 0; i < mat.rows; ++i) {
     for (int j = 0; j < mat.cols; ++j) {
-      array[i][j] = mat.at<float>(i, j);
+      out[i][j] = mat.at<float>(i, j);
     }
   }
-  return array;
+  return out;
 }
 
-void QuickSort(float** s, int l, int r) {
-  if (l < r) {
-    int i = l, j = r;
-    float x = s[l][0];
-    float* xp = s[l];
+void QuickSort(vector_2d_fp* input_ptr, int left, int right) {
+  vector_2d_fp& input_data = *input_ptr;
+  if (left < right) {
+    int i = left, j = right;
+    float x = input_data[left][0];
+    std::vector<float> tmp = input_data[left];
     while (i < j) {
-      while (i < j && s[j][0] >= x) j--;
-      if (i < j) std::swap(s[i++], s[j]);
-      while (i < j && s[i][0] < x) i++;
-      if (i < j) std::swap(s[j--], s[i]);
+      while (i < j && input_data[j][0] >= x) {
+        j--;
+      }
+      if (i < j) {
+        std::swap(input_data[i++], input_data[j]);
+      }
+      while (i < j && input_data[i][0] < x) {
+        i++;
+      }
+      if (i < j) {
+        std::swap(input_data[j--], input_data[i]);
+      }
     }
-    s[i] = xp;
-    QuickSort(s, l, i - 1);
-    QuickSort(s, i + 1, r);
+    input_data[i] = tmp;
+    QuickSort(input_ptr, left, i - 1);
+    QuickSort(input_ptr, i + 1, right);
   }
 }
 
-void QuickSortVector(std::vector<std::vector<int>>* box,
-                     int l,
-                     int r,
-                     int axis) {
+void QuickSort(std::vector<std::vector<int>>* box_ptr, int l, int r, int axis) {
+  std::vector<std::vector<int>>& box = *box_ptr;
   if (l < r) {
     int i = l, j = r;
-    int x = (*box)[l][axis];
-    std::vector<int> xp((*box)[l]);
+    int x = box[l][axis];
+    std::vector<int> xp(box[l]);
     while (i < j) {
-      while (i < j && (*box)[j][axis] >= x) j--;
-      if (i < j) std::swap((*box)[i++], (*box)[j]);
-      while (i < j && (*box)[i][axis] < x) i++;
-      if (i < j) std::swap((*box)[j--], (*box)[i]);
+      while (i < j && box[j][axis] >= x) {
+        j--;
+      }
+      if (i < j) {
+        std::swap(box[i++], box[j]);
+      }
+      while (i < j && box[i][axis] < x) {
+        i++;
+      }
+      if (i < j) {
+        std::swap(box[j--], box[i]);
+      }
     }
-    (*box)[i] = xp;
-    QuickSortVector(box, l, i - 1, axis);
-    QuickSortVector(box, i + 1, r, axis);
+    box[i] = xp;
+    QuickSort(box_ptr, l, i - 1, axis);
+    QuickSort(box_ptr, i + 1, r, axis);
   }
 }
 
 std::vector<std::vector<int>> OrderPointsClockwise(
-    std::vector<std::vector<int>> pts) {
-  std::vector<std::vector<int>> box = pts;
-  QuickSortVector(&box, 0, static_cast<int>(box.size() - 1), 0);
+    std::vector<std::vector<int>> box) {
+  QuickSort(&box, 0, static_cast<int>(box.size() - 1), 0);
   std::vector<std::vector<int>> leftmost = {box[0], box[1]};
   std::vector<std::vector<int>> rightmost = {box[2], box[3]};
 
-  if (leftmost[0][1] > leftmost[1][1]) std::swap(leftmost[0], leftmost[1]);
+  if (leftmost[0][1] > leftmost[1][1]) {
+    std::swap(leftmost[0], leftmost[1]);
+  }
+  if (rightmost[0][1] > rightmost[1][1]) {
+    std::swap(rightmost[0], rightmost[1]);
+  }
 
-  if (rightmost[0][1] > rightmost[1][1]) std::swap(rightmost[0], rightmost[1]);
-
-  std::vector<std::vector<int>> rect = {
+  std::vector<std::vector<int>> res = {
       leftmost[0], rightmost[0], rightmost[1], leftmost[1]};
-  return rect;
+  return res;
 }
 
-float** GetMiniBoxes(cv::RotatedRect box, float* ssid) {
-  *ssid = box.size.width >= box.size.height ? box.size.height : box.size.width;
-
+vector_2d_fp GetMiniBoxes(const cv::RotatedRect& box) {
   cv::Mat points;
   cv::boxPoints(box, points);
-  // sorted box points
-  auto array = Mat2Vec(points);
-  QuickSort(array, 0, 3);
+  vector_2d_fp points_vct = Mat2Vec(points);
+  QuickSort(&points_vct, 0, 3);
 
-  float *idx1 = array[0], *idx2 = array[1], *idx3 = array[2], *idx4 = array[3];
-  if (array[3][1] <= array[2][1]) {
-    idx2 = array[3];
-    idx3 = array[2];
+  vector_2d_fp res = points_vct;
+  if (points_vct[3][1] <= points_vct[2][1]) {
+    res[1] = points_vct[3];
+    res[2] = points_vct[2];
   } else {
-    idx2 = array[2];
-    idx3 = array[3];
+    res[1] = points_vct[2];
+    res[2] = points_vct[3];
   }
-  if (array[1][1] <= array[0][1]) {
-    idx1 = array[1];
-    idx4 = array[0];
+  if (points_vct[1][1] <= points_vct[0][1]) {
+    res[0] = points_vct[1];
+    res[3] = points_vct[0];
   } else {
-    idx1 = array[0];
-    idx4 = array[1];
+    res[0] = points_vct[0];
+    res[3] = points_vct[1];
   }
-
-  array[0] = idx1;
-  array[1] = idx2;
-  array[2] = idx3;
-  array[3] = idx4;
-
-  return array;
+  return res;
 }
 
-float BoxScoreFast(float** box_array, cv::Mat pred) {
-  auto array = box_array;
+float BoxScoreFast(const vector_2d_fp& box, const cv::Mat& pred) {
   int width = pred.cols;
   int height = pred.rows;
 
-  float box_x[4] = {array[0][0], array[1][0], array[2][0], array[3][0]};
-  float box_y[4] = {array[0][1], array[1][1], array[2][1], array[3][1]};
+  float box_x[4] = {box[0][0], box[1][0], box[2][0], box[3][0]};
+  float box_y[4] = {box[0][1], box[1][1], box[2][1], box[3][1]};
 
   int xmin = Clamp(
       static_cast<int>(std::floorf(*(std::min_element(box_x, box_x + 4)))),
@@ -189,130 +189,106 @@ float BoxScoreFast(float** box_array, cv::Mat pred) {
             0,
             height - 1);
 
-  cv::Mat mask;
-  mask = cv::Mat::zeros(ymax - ymin + 1, xmax - xmin + 1, CV_8UC1);
+  cv::Mat mask = cv::Mat::zeros(ymax - ymin + 1, xmax - xmin + 1, CV_8UC1);
 
   cv::Point root_point[4];
-  root_point[0] = cv::Point(static_cast<int>(array[0][0]) - xmin,
-                            static_cast<int>(array[0][1]) - ymin);
-  root_point[1] = cv::Point(static_cast<int>(array[1][0]) - xmin,
-                            static_cast<int>(array[1][1]) - ymin);
-  root_point[2] = cv::Point(static_cast<int>(array[2][0]) - xmin,
-                            static_cast<int>(array[2][1]) - ymin);
-  root_point[3] = cv::Point(static_cast<int>(array[3][0]) - xmin,
-                            static_cast<int>(array[3][1]) - ymin);
+  root_point[0] = cv::Point(static_cast<int>(box[0][0]) - xmin,
+                            static_cast<int>(box[0][1]) - ymin);
+  root_point[1] = cv::Point(static_cast<int>(box[1][0]) - xmin,
+                            static_cast<int>(box[1][1]) - ymin);
+  root_point[2] = cv::Point(static_cast<int>(box[2][0]) - xmin,
+                            static_cast<int>(box[2][1]) - ymin);
+  root_point[3] = cv::Point(static_cast<int>(box[3][0]) - xmin,
+                            static_cast<int>(box[3][1]) - ymin);
   const cv::Point* ppt[1] = {root_point};
   int npt[] = {4};
   cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(1));
 
-  cv::Mat croppedImg;
-  pred(cv::Rect(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1))
-      .copyTo(croppedImg);
-
-  auto score = cv::mean(croppedImg, mask)[0];
+  cv::Rect cropped_rect =
+      cv::Rect(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
+  cv::Mat cropped_img;
+  pred(cropped_rect).copyTo(cropped_img);
+  float score = cv::mean(cropped_img, mask)[0];
   return score;
 }
 
-std::vector<std::vector<std::vector<int>>> BoxesFromBitmap(
-    const cv::Mat pred, const cv::Mat bitmap) {
+vector_3d_int BoxesFromBitmap(const cv::Mat& pred, const cv::Mat& bitmap) {
   const int min_size = 3;
   const int max_candidates = 1000;
   const float box_thresh = 0.5;
+  float src_width = static_cast<float>(bitmap.cols);
+  float src_height = static_cast<float>(bitmap.rows);
+  float dest_width = static_cast<float>(pred.cols);
+  float dest_height = static_cast<float>(pred.rows);
 
-  int width = bitmap.cols;
-  int height = bitmap.rows;
-
+  vector_3d_int boxes;
   std::vector<std::vector<cv::Point>> contours;
   std::vector<cv::Vec4i> hierarchy;
-
   cv::findContours(
       bitmap, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
-
   int num_contours =
       contours.size() >= max_candidates ? max_candidates : contours.size();
 
-  std::vector<std::vector<std::vector<int>>> boxes;
-
   for (int i = 0; i < num_contours; i++) {
-    float ssid;
     cv::RotatedRect box = cv::minAreaRect(contours[i]);
-    auto array = GetMiniBoxes(box, &ssid);
-
-    auto box_for_unclip = array;
-    // end get_mini_box
-
-    if (ssid < min_size) {
+    if (std::min(box.size.height, box.size.width) < min_size) {
+      continue;
+    }
+    vector_2d_fp min_box = GetMiniBoxes(box);
+    float score = BoxScoreFast(min_box, pred);
+    if (score < box_thresh) {
       continue;
     }
 
-    float score;
-    score = BoxScoreFast(array, pred);
-    // end BoxScoreFast
-    if (score < box_thresh) continue;
-
-    // start for unclip
-    cv::RotatedRect points = Unclip(box_for_unclip);
-    // end for unclip
-
-    cv::RotatedRect clipbox = points;
-    auto cliparray = GetMiniBoxes(clipbox, &ssid);
-
-    if (ssid < min_size + 2) continue;
-
-    int dest_width = pred.cols;
-    int dest_height = pred.rows;
-    std::vector<std::vector<int>> intcliparray;
-
-    for (int num_pt = 0; num_pt < 4; num_pt++) {
-      std::vector<int> a{
-          static_cast<int>(
-              Clamp(roundf(cliparray[num_pt][0] / static_cast<float>(width) *
-                           static_cast<float>(dest_width)),
-                    0.f,
-                    static_cast<float>(dest_width))),
-          static_cast<int>(
-              Clamp(roundf(cliparray[num_pt][1] / static_cast<float>(height) *
-                           static_cast<float>(dest_height)),
-                    0.f,
-                    static_cast<float>(dest_height)))};
-      intcliparray.push_back(a);
+    cv::RotatedRect clip_box = Unclip(min_box);
+    if (std::min(clip_box.size.height, clip_box.size.width) < min_size + 2) {
+      continue;
     }
-    boxes.push_back(intcliparray);
-  }  // end for
+    auto clip_min_box = GetMiniBoxes(clip_box);
+
+    std::vector<std::vector<int>> clip_points;
+    for (int num_pt = 0; num_pt < 4; num_pt++) {
+      float x = Clamp(roundf(clip_min_box[num_pt][0] / src_width * dest_width),
+                      0.f,
+                      dest_width);
+      float y =
+          Clamp(roundf(clip_min_box[num_pt][1] / src_height * dest_height),
+                0.f,
+                dest_height);
+      clip_points.push_back({static_cast<int>(x), static_cast<int>(y)});
+    }
+    boxes.push_back(clip_points);
+  }
   return boxes;
 }
 
-std::vector<std::vector<std::vector<int>>> FilterTagDetRes(
-    std::vector<std::vector<std::vector<int>>> boxes,
-    float ratio_h,
-    float ratio_w,
-    cv::Mat srcimg) {
-  int oriimg_h = srcimg.rows;
-  int oriimg_w = srcimg.cols;
-
-  std::vector<std::vector<std::vector<int>>> root_points;
-  for (int n = 0; n < boxes.size(); n++) {
+vector_3d_int FilterTagDetRes(vector_3d_int boxes,
+                              float ratio_h,
+                              float ratio_w,
+                              int img_width,
+                              int img_height) {
+  vector_3d_int root_points;
+  for (size_t n = 0; n < boxes.size(); n++) {
     boxes[n] = OrderPointsClockwise(boxes[n]);
-    for (int m = 0; m < boxes[0].size(); m++) {
-      boxes[n][m][0] /= ratio_w;
-      boxes[n][m][1] /= ratio_h;
-
-      boxes[n][m][0] =
-          static_cast<int>(std::min(std::max(boxes[n][m][0], 0), oriimg_w - 1));
-      boxes[n][m][1] =
-          static_cast<int>(std::min(std::max(boxes[n][m][1], 0), oriimg_h - 1));
+    for (size_t m = 0; m < boxes[0].size(); m++) {
+      boxes[n][m][0] = static_cast<int>(boxes[n][m][0] / ratio_w);
+      boxes[n][m][0] = std::min(std::max(boxes[n][m][0], 0), img_width - 1);
+      boxes[n][m][1] = static_cast<int>(boxes[n][m][1] / ratio_h);
+      boxes[n][m][1] = std::min(std::max(boxes[n][m][1], 0), img_height - 1);
     }
   }
 
-  for (int n = 0; n < boxes.size(); n++) {
-    int rect_width, rect_height;
-    rect_width =
+  const int rect_wh_threshold = 10;
+  for (size_t n = 0; n < boxes.size(); n++) {
+    int rect_width =
         static_cast<int>(sqrt(pow(boxes[n][0][0] - boxes[n][1][0], 2) +
                               pow(boxes[n][0][1] - boxes[n][1][1], 2)));
-    rect_height =
+    int rect_height =
         static_cast<int>(sqrt(pow(boxes[n][0][0] - boxes[n][3][0], 2) +
                               pow(boxes[n][0][1] - boxes[n][3][1], 2)));
-    if (rect_width <= 10 || rect_height <= 10) continue;
+    if (rect_width <= rect_wh_threshold || rect_height <= rect_wh_threshold) {
+      continue;
+    }
     root_points.push_back(boxes[n]);
   }
   return root_points;
