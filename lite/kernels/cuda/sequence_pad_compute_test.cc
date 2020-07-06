@@ -42,32 +42,32 @@ class SequencePadTest : public ::testing::Test {
         out_shape_({static_cast<int64_t>(x_lod_[0].size() - 1),
                     padded_length_,
                     features_}) {
-    X_ref_.Resize(lite::DDim(x_shape_));
-    X_ref_.set_lod(x_lod_);
-    X_gpu_.Resize(X_ref_.dims());
+    x_ref_.Resize(lite::DDim(x_shape_));
+    x_ref_.set_lod(x_lod_);
+    x_gpu_.Resize(x_ref_.dims());
 
-    PadValue_ref_.Resize(lite::DDim(pad_value_shape_));
-    PadValue_gpu_.Resize(PadValue_ref_.dims());
+    pad_value_ref_.Resize(lite::DDim(pad_value_shape_));
+    pad_value_gpu_.Resize(pad_value_ref_.dims());
 
-    Length_ref_.Resize(
+    length_ref_.Resize(
         lite::DDim({static_cast<int64_t>(x_lod_[0].size() - 1)}));
-    Length_gpu_.Resize(Length_ref_.dims());
+    length_gpu_.Resize(length_ref_.dims());
 
-    auto x_ref_data = X_ref_.mutable_data<float>();
-    auto pad_value_ref_data = PadValue_ref_.mutable_data<float>();
+    auto x_ref_data = x_ref_.mutable_data<float>();
+    auto pad_value_ref_data = pad_value_ref_.mutable_data<float>();
 
     // prepare input
-    for (int64_t i = 0; i < X_ref_.numel(); i++) {
+    for (int64_t i = 0; i < x_ref_.numel(); i++) {
       x_ref_data[i] = static_cast<float>(i);
     }
-    for (int64_t i = 0; i < PadValue_ref_.numel(); i++) {
+    for (int64_t i = 0; i < pad_value_ref_.numel(); i++) {
       pad_value_ref_data[i] = static_cast<float>(i);
     }
 
-    Out_ref_.Resize(lite::DDim(out_shape_));
-    Out_gpu_.Resize(Out_ref_.dims());
-    Out_cpu_.Resize(Out_ref_.dims());
-    RunBaseLine(&X_ref_, &PadValue_ref_, &Out_ref_, &Length_ref_);
+    out_ref_.Resize(lite::DDim(out_shape_));
+    out_gpu_.Resize(out_ref_.dims());
+    out_cpu_.Resize(out_ref_.dims());
+    RunBaseLine(&x_ref_, &pad_value_ref_, &out_ref_, &length_ref_);
 
     InitParamAndContext();
   }
@@ -77,29 +77,29 @@ class SequencePadTest : public ::testing::Test {
     cudaStreamCreate(&stream_);
     auto& context = ctx_->As<CUDAContext>();
     context.SetExecStream(stream_);
-    param_.X = &X_gpu_;
-    param_.PadValue = &PadValue_gpu_;
-    param_.Length = &Length_gpu_;
-    param_.Out = &Out_gpu_;
+    param_.X = &x_gpu_;
+    param_.PadValue = &pad_value_gpu_;
+    param_.Length = &length_gpu_;
+    param_.Out = &out_gpu_;
     param_.padded_length = padded_length_;
   }
 
   void InitFloatInput() {
-    X_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref_.data<float>(),
-                                                    X_gpu_.dims());
-    X_gpu_.set_lod(X_ref_.lod());
-    PadValue_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(
-        PadValue_ref_.data<float>(), PadValue_gpu_.dims());
+    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+                                                    x_gpu_.dims());
+    x_gpu_.set_lod(x_ref_.lod());
+    pad_value_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(
+        pad_value_ref_.data<float>(), pad_value_gpu_.dims());
   }
 
   void InitHalfInput() {}
 
-  void RunBaseLine(const lite::Tensor* X,
-                   const lite::Tensor* PadValue,
-                   lite::Tensor* Out,
-                   lite::Tensor* Length) {
-    auto* length_data = Length->mutable_data<int64_t>();
-    auto* out_data = Out->mutable_data<float>();
+  void RunBaseLine(const lite::Tensor* x,
+                   const lite::Tensor* pad_value,
+                   lite::Tensor* out,
+                   lite::Tensor* length) {
+    auto* length_data = length->mutable_data<int64_t>();
+    auto* out_data = out->mutable_data<float>();
     length_data[0] = 2;
     length_data[1] = 3;
 
@@ -117,9 +117,9 @@ class SequencePadTest : public ::testing::Test {
   LoD x_lod_;
   std::vector<int64_t> x_shape_, pad_value_shape_, out_shape_;
 
-  lite::Tensor X_ref_, PadValue_ref_, Out_ref_, Length_ref_;
-  lite::Tensor X_gpu_, PadValue_gpu_, Out_gpu_, Length_gpu_;
-  lite::Tensor Out_cpu_, Length_cpu_;
+  lite::Tensor x_ref_, pad_value_ref_, out_ref_, length_ref_;
+  lite::Tensor x_gpu_, pad_value_gpu_, out_gpu_, length_gpu_;
+  lite::Tensor out_cpu_, length_cpu_;
 
   operators::SequencePadParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -148,20 +148,20 @@ TEST_F(SequencePadTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu_.mutable_data<float>(),
-                          Out_gpu_.data<float>(),
-                          sizeof(float) * Out_gpu_.numel(),
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
                           IoDirection::DtoH);
-  CopySync<TARGET(kCUDA)>(Length_cpu_.mutable_data<int64_t>(),
-                          Length_gpu_.data<int64_t>(),
-                          sizeof(int64_t) * Length_gpu_.numel(),
+  CopySync<TARGET(kCUDA)>(length_cpu_.mutable_data<int64_t>(),
+                          length_gpu_.data<int64_t>(),
+                          sizeof(int64_t) * length_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu_.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu_.data<float>()[i], Out_ref_.data<float>()[i], 1e-5);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
   }
-  for (int i = 0; i < Length_gpu_.numel(); ++i) {
+  for (int i = 0; i < length_gpu_.numel(); ++i) {
     EXPECT_NEAR(
-        Length_cpu_.data<int64_t>()[i], Length_ref_.data<int64_t>()[i], 1e-5);
+        length_cpu_.data<int64_t>()[i], length_ref_.data<int64_t>()[i], 1e-5);
   }
 }
 

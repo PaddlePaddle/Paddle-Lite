@@ -36,20 +36,20 @@ class SequenceMaskTest : public ::testing::Test {
         out_dtype_(5),
         x_data_({3, 2, 1, 0}),
         out_shape_({static_cast<int64_t>(x_data_.size()), maxlen_}) {
-    X_ref_.Resize(lite::DDim({static_cast<int64_t>(x_data_.size())}));
-    X_gpu_.Resize(X_ref_.dims());
+    x_ref_.Resize(lite::DDim({static_cast<int64_t>(x_data_.size())}));
+    x_gpu_.Resize(x_ref_.dims());
 
-    auto* x_ref_data = X_ref_.mutable_data<int64_t>();
+    auto* x_ref_data = x_ref_.mutable_data<int64_t>();
 
     // prepare input
     for (size_t i = 0; i < x_data_.size(); i++) {
       x_ref_data[i] = x_data_[i];
     }
 
-    Out_ref_.Resize(lite::DDim(out_shape_));
-    Out_gpu_.Resize(Out_ref_.dims());
-    Out_cpu_.Resize(Out_ref_.dims());
-    RunBaseLine(&X_ref_, &Out_ref_);
+    out_ref_.Resize(lite::DDim(out_shape_));
+    out_gpu_.Resize(out_ref_.dims());
+    out_cpu_.Resize(out_ref_.dims());
+    RunBaseLine(&x_ref_, &out_ref_);
 
     InitParamAndContext();
   }
@@ -59,21 +59,21 @@ class SequenceMaskTest : public ::testing::Test {
     cudaStreamCreate(&stream_);
     auto& context = ctx_->As<CUDAContext>();
     context.SetExecStream(stream_);
-    param_.X = &X_gpu_;
-    param_.Y = &Out_gpu_;
+    param_.X = &x_gpu_;
+    param_.Y = &out_gpu_;
     param_.maxlen = maxlen_;
     param_.out_dtype = out_dtype_;
   }
 
   void InitFloatInput() {
-    X_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(X_ref_.data<int64_t>(),
-                                                      X_gpu_.dims());
+    x_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(x_ref_.data<int64_t>(),
+                                                      x_gpu_.dims());
   }
 
   void InitHalfInput() {}
 
-  void RunBaseLine(const lite::Tensor* X, lite::Tensor* Out) {
-    auto* out_data = Out->mutable_data<float>();
+  void RunBaseLine(const lite::Tensor* x, lite::Tensor* out) {
+    auto* out_data = out->mutable_data<float>();
 
     for (size_t i = 0; i < x_data_.size(); ++i) {
       for (int j = 0; j < maxlen_; ++j) {
@@ -85,9 +85,9 @@ class SequenceMaskTest : public ::testing::Test {
   int maxlen_, out_dtype_;
   std::vector<int64_t> x_data_, out_shape_;
 
-  lite::Tensor X_ref_, Out_ref_;
-  lite::Tensor X_gpu_, Out_gpu_;
-  lite::Tensor Out_cpu_;
+  lite::Tensor x_ref_, out_ref_;
+  lite::Tensor x_gpu_, out_gpu_;
+  lite::Tensor out_cpu_;
 
   operators::SequenceMaskParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -116,12 +116,12 @@ TEST_F(SequenceMaskTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu_.mutable_data<float>(),
-                          Out_gpu_.data<float>(),
-                          sizeof(float) * Out_gpu_.numel(),
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu_.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu_.data<float>()[i], Out_ref_.data<float>()[i], 1e-5);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
   }
 }
 

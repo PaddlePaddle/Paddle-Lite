@@ -48,11 +48,11 @@ class AssignValueTest : public ::testing::Test {
     }
     std::vector<int64_t> out_shape(shape_.size(), 0);
     for (size_t i = 0; i < shape_.size(); ++i) out_shape[i] = shape_[i];
-    Out_ref_.Resize(lite::DDim(out_shape));
-    Out_gpu_.Resize(Out_ref_.dims());
-    Out_cpu_.Resize(Out_ref_.dims());
+    out_ref_.Resize(lite::DDim(out_shape));
+    out_gpu_.Resize(out_ref_.dims());
+    out_cpu_.Resize(out_ref_.dims());
 
-    RunBaseLine(&Out_ref_);
+    RunBaseLine(&out_ref_);
 
     InitParamAndContext();
   }
@@ -68,29 +68,29 @@ class AssignValueTest : public ::testing::Test {
     param_.int32_values = int32_values_;
     param_.int64_values = int64_values_;
     param_.bool_values = bool_values_;
-    param_.Out = &Out_gpu_;
+    param_.Out = &out_gpu_;
   }
 
   void InitFloatInput() {}
 
   void InitHalfInput() {}
 
-  void RunBaseLine(lite::Tensor* Out) {
+  void RunBaseLine(lite::Tensor* out) {
     if (dtype_ == static_cast<int>(lite::core::FluidType::INT32)) {
       for (size_t i = 0; i < int32_values_.size(); ++i) {
-        Out->mutable_data<int>()[i] = int32_values_[i];
+        out->mutable_data<int>()[i] = int32_values_[i];
       }
     } else if (dtype_ == static_cast<int>(lite::core::FluidType::FP32)) {
       for (size_t i = 0; i < fp32_values_.size(); ++i) {
-        Out->mutable_data<float>()[i] = fp32_values_[i];
+        out->mutable_data<float>()[i] = fp32_values_[i];
       }
     } else if (dtype_ == static_cast<int>(lite::core::FluidType::INT64)) {
       for (size_t i = 0; i < int64_values_.size(); ++i) {
-        Out->mutable_data<int64_t>()[i] = int64_values_[i];
+        out->mutable_data<int64_t>()[i] = int64_values_[i];
       }
     } else if (dtype_ == static_cast<bool>(lite::core::FluidType::BOOL)) {
       for (size_t i = 0; i < bool_values_.size(); ++i) {
-        Out->mutable_data<bool>()[i] = bool_values_[i];
+        out->mutable_data<bool>()[i] = bool_values_[i];
       }
     } else {
       LOG(FATAL) << "Unsupported dtype_ for assign_value_op:" << dtype_;
@@ -104,9 +104,9 @@ class AssignValueTest : public ::testing::Test {
   std::vector<int64_t> int64_values_;
   std::vector<int> bool_values_;
 
-  lite::Tensor Out_ref_;
-  lite::Tensor Out_gpu_;
-  lite::Tensor Out_cpu_;
+  lite::Tensor out_ref_;
+  lite::Tensor out_gpu_;
+  lite::Tensor out_cpu_;
 
   operators::AssignValueParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -135,12 +135,12 @@ TEST_F(AssignValueTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu_.mutable_data<float>(),
-                          Out_gpu_.data<float>(),
-                          sizeof(float) * Out_gpu_.numel(),
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu_.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu_.data<float>()[i], Out_ref_.data<float>()[i], 1e-5);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
   }
 }
 

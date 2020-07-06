@@ -242,20 +242,20 @@ class TransposeTest : public ::testing::Test {
         axes_({1, 2, 0}),
         x_shape_({C_, H_, W_}),
         out_shape_({H_, W_, C_}) {
-    X_ref_.Resize(lite::DDim(x_shape_));
-    X_gpu_.Resize(X_ref_.dims());
+    x_ref_.Resize(lite::DDim(x_shape_));
+    x_gpu_.Resize(x_ref_.dims());
 
-    auto X_ref__data = X_ref_.mutable_data<float>();
+    auto X_ref__data = x_ref_.mutable_data<float>();
 
     // prepare input
-    for (int64_t i = 0; i < X_ref_.numel(); i++) {
+    for (int64_t i = 0; i < x_ref_.numel(); i++) {
       X_ref__data[i] = static_cast<float>(i);
     }
 
-    Out_ref_.Resize(lite::DDim(out_shape_));
-    Out_gpu_.Resize(Out_ref_.dims());
-    Out_cpu_.Resize(Out_ref_.dims());
-    RunBaseLine(&X_ref_, &Out_ref_);
+    out_ref_.Resize(lite::DDim(out_shape_));
+    out_gpu_.Resize(out_ref_.dims());
+    out_cpu_.Resize(out_ref_.dims());
+    RunBaseLine(&x_ref_, &out_ref_);
 
     InitParamAndContext();
   }
@@ -265,37 +265,37 @@ class TransposeTest : public ::testing::Test {
     cudaStreamCreate(&stream_);
     auto& context = ctx_->As<CUDAContext>();
     context.SetExecStream(stream_);
-    param_.x = &X_gpu_;
-    param_.output = &Out_gpu_;
+    param_.x = &x_gpu_;
+    param_.output = &out_gpu_;
     param_.axis = axes_;
   }
 
   void InitFloatInput() {
-    X_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref_.data<float>(),
-                                                    X_gpu_.dims());
+    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+                                                    x_gpu_.dims());
   }
 
   void InitHalfInput() {
-    X_half_.Resize(lite::DDim(X_ref_.dims()));
-    auto X_half__data = X_half_.mutable_data<half>();
-    for (int64_t i = 0; i < X_half_.numel(); i++) {
-      X_half__data[i] = half(lite::float16(X_ref_.data<float>()[i]));
+    x_half_.Resize(lite::DDim(x_ref_.dims()));
+    auto X_half__data = x_half_.mutable_data<half>();
+    for (int64_t i = 0; i < x_half_.numel(); i++) {
+      X_half__data[i] = half(lite::float16(x_ref_.data<float>()[i]));
     }
-    X_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(X_half__data, X_gpu_.dims());
+    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(X_half__data, x_gpu_.dims());
   }
 
-  void RunBaseLine(const lite::Tensor* X, lite::Tensor* Out) {
-    TransBaseLine(X, Out, axes_);
+  void RunBaseLine(const lite::Tensor* x, lite::Tensor* out) {
+    TransBaseLine(x, out, axes_);
   }
 
   int C_, H_, W_;
   std::vector<int> axes_;
   std::vector<int64_t> x_shape_, out_shape_;
 
-  lite::Tensor X_ref_, Out_ref_;
-  lite::Tensor X_gpu_, Out_gpu_;
-  lite::Tensor X_half_;
-  lite::Tensor Out_cpu_;
+  lite::Tensor x_ref_, out_ref_;
+  lite::Tensor x_gpu_, out_gpu_;
+  lite::Tensor x_half_;
+  lite::Tensor out_cpu_;
 
   operators::TransposeParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -324,12 +324,12 @@ TEST_F(TransposeTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu_.mutable_data<float>(),
-                          Out_gpu_.data<float>(),
-                          sizeof(float) * Out_gpu_.numel(),
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu_.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu_.data<float>()[i], Out_ref_.data<float>()[i], 1e-5);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
   }
 }
 
@@ -355,16 +355,16 @@ TEST_F(TransposeTest, TestFP16) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  const half* Out_gpu__data = Out_gpu_.data<half>();
-  half* Out_cpu__data = Out_cpu_.mutable_data<half>();
+  const half* Out_gpu__data = out_gpu_.data<half>();
+  half* Out_cpu__data = out_cpu_.mutable_data<half>();
   CopySync<TARGET(kCUDA)>(Out_cpu__data,
                           Out_gpu__data,
-                          sizeof(half) * Out_gpu_.numel(),
+                          sizeof(half) * out_gpu_.numel(),
                           IoDirection::DtoH);
 
-  for (int i = 0; i < Out_cpu_.numel(); ++i) {
+  for (int i = 0; i < out_cpu_.numel(); ++i) {
     float res = static_cast<float>(lite::float16(Out_cpu__data[i]));
-    float ref = Out_ref_.data<float>()[i];
+    float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }
 }
