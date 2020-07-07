@@ -44,6 +44,26 @@ __global__ void AddBiasV2(const int num, const T* bias, T* data, int K) {
   }
 }
 
+template <>
+__global__ void AddBiasV2(const int num,
+                          const half2* bias,
+                          half2* data,
+                          int K) {
+  CUDA_KERNEL_LOOP(index, num) {
+    int bias_idx = index % K;
+    const half2 bias_ptr = bias[bias_idx];
+    const half2 in_ptr = data[index];
+#if __CUDA_ARCH__ >= 530
+    data[index] = __hadd2(in_ptr, bias_ptr);
+#else
+    half2 packed_val;
+    packed_val.x = __hadd(in_ptr.x, bias_ptr.x);
+    packed_val.y = __hadd(in_ptr.y, bias_ptr.y);
+    data[index] = packed_val;
+#endif
+  }
+}
+
 template <typename T>
 __global__ void AddBiasReluV2(const int num, const T* bias, T* data, int K) {
   CUDA_KERNEL_LOOP(index, num) {
@@ -66,14 +86,15 @@ __global__ void AddBiasReluV2(const int num,
     int bias_idx = index % K;
     const half2 bias_ptr = bias[bias_idx];
     const half2 in_ptr = data[index];
-#ifdef __CUDA_ARCH__ >= 530
+#if __CUDA_ARCH__ >= 530
     data[index] = __hmul2(__hgt2(in_ptr + bias_ptr, __float2half2_rn(0.f)),
                           in_ptr + bias_ptr);
 #else
-    const float2 val = __half22float2(bias_ptr + in_ptr);
-    data[index] =
-        __floats2half2_rn(val.x > 0.0f ? static_cast<float>(val.x) : 0.0f,
-                          val.y > 0.0f ? static_cast<float>(val.y) : 0.0f);
+    const float2 bias = __half22float2(bias_ptr);
+    const float2 in = __half22float2(in_ptr);
+    data[index] = __floats2half2_rn(
+        bias.x + in.x > 0.0f ? static_cast<float>(bias.x + in.x) : 0.0f,
+        bias.y + in.y > 0.0f ? static_cast<float>(bias.y + in.y) : 0.0f);
 #endif
   }
 }
@@ -123,6 +144,21 @@ __global__ void AddBias(const int num, const T* bias, T* data) {
   }
 }
 
+template <>
+__global__ void AddBias(const int num, const half* bias, half* data) {
+  int offset = blockIdx.x * num;
+
+  for (int i = threadIdx.x; i < num; i += blockDim.x) {
+    half temp;
+#if __CUDA_ARCH__ >= 350
+    temp = __hadd(__ldg(data + offset + i), __ldg(bias + i));
+#else
+    temp = __hadd(data[offset + i], bias[i]);
+#endif
+    data[offset + i] = temp;
+  }
+}
+
 template <typename T>
 __global__ void AddBiasRelu(const int num, const T* bias, T* data) {
   int offset = blockIdx.x * num;
@@ -145,9 +181,9 @@ __global__ void AddBiasRelu<half>(const int num, const half* bias, half* data) {
   for (int i = threadIdx.x; i < num; i += blockDim.x) {
     half temp;
 #if __CUDA_ARCH__ >= 350
-    temp = __ldg(data + offset + i) + __ldg(bias + i);
+    temp = __hadd(__ldg(data + offset + i), __ldg(bias + i));
 #else
-    temp = data[offset + i] + bias[i];
+    temp = __hadd(data[offset + i], bias[i]);
 #endif
 
 #if __CUDA_ARCH__ >= 530
