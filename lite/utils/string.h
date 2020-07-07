@@ -60,6 +60,13 @@ static std::string to_string(const T& v) {
   return ss.str();
 }
 
+static std::string to_string(int index) {
+  const int BUFFER_LENGTH = 15;
+  char buffer[BUFFER_LENGTH];
+  snprintf(buffer, sizeof(buffer), "%d", index);
+  return std::string(buffer);
+}
+
 template <typename T>
 std::string Join(const std::vector<T>& vec, const std::string& delim) {
   if (vec.empty()) return "";
