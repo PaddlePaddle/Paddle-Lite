@@ -16,7 +16,6 @@
 
 #include <string>
 #include <vector>
-#include "lite/model_parser/base/op_desc.h"
 
 namespace paddle {
 namespace lite {
