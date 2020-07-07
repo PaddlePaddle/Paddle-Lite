@@ -14,16 +14,17 @@
 
 #pragma once
 #include <vector>
-#include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/cpp/var_desc.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
+#include "lite/model_parser/general/op_desc.h"
+#include "lite/model_parser/general/var_desc.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace general {
 
 /*
- * The cpp::BlockDesc is the internal representation for Op. All the internal
+ * The general::BlockDesc is the internal representation for Op. All the
+ * internal
  * imprementation should use it, not the pb::BlockDesc.
  */
 class BlockDesc : public BlockDescAPI {
@@ -82,6 +83,6 @@ class BlockDesc : public BlockDescAPI {
   int32_t forward_block_idx_;
 };
 
-}  // namespace cpp
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

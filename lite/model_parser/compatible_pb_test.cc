@@ -14,10 +14,7 @@
 
 #include "lite/model_parser/compatible_pb.h"
 #include <gtest/gtest.h>
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/cpp/program_desc.h"
-#include "lite/model_parser/cpp/var_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"

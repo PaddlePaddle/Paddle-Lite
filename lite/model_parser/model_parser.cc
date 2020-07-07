@@ -21,7 +21,7 @@
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
 #include "lite/core/version.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"

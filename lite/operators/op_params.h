@@ -21,8 +21,8 @@
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/utils/all.h"
 /*
  * This file contains all the argument parameter data structure for operators.

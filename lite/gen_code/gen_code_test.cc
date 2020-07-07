@@ -25,7 +25,7 @@
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/model_parser/compatible_pb.h"
-#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/model_parser.h"
 #include "lite/model_parser/pb/program_desc.h"
 

@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #include "lite/core/framework.pb.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
