@@ -113,7 +113,7 @@ class VectorView<std::string, Flatbuffers> {
   }
   size_t size() const { return cvec_->size(); }
   operator std::vector<std::string>() {
-    VLOG(10) << "Copying elements out of VectorView will damage performance.";
+    VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<std::string> tmp;
     tmp.reserve(cvec_->size());
     for (auto val : *cvec_) {

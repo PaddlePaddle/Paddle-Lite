@@ -42,6 +42,16 @@ struct VectorTraits<T, Standard> {
 
 }  // namespace vector_view
 
+// In the process of optimizing the performance of model loading, we found
+// that it was necessary to reduce the copying and construction of STL
+// containers. So use VectorView to simulate the operation of STL containers
+// without copying, such as iteration and subscripting.
+//
+// Currently, VectorView is applicable to STL vector and Flatbuffers Vector.
+// We used the template Traits to unify the behavior of the two, and provided
+// an implicit conversion operator from VectorView to STL vector. Please use
+// implicit conversion with caution because it will bring significant overhead.
+
 template <typename T, typename U = Flatbuffers>
 class VectorView {
  public:
@@ -56,7 +66,7 @@ class VectorView {
   typename Traits::const_iterator end() const { return cvec_->end(); }
   size_t size() const { return cvec_->size(); }
   operator std::vector<T>() {
-    VLOG(10) << "Copying elements out of VectorView will damage performance.";
+    VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<T> tmp;
     tmp.reserve(cvec_->size());
     for (auto val : *cvec_) {
