@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "lite/kernels/cuda/fc_compute.h"
 
 #include <string>
 
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/cuda/fc_compute.h"
 
 namespace paddle {
 namespace lite {
