@@ -18,7 +18,7 @@
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher.h"
-#include "lite/model_parser/cpp/var_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
 namespace lite {

@@ -15,14 +15,14 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace general {
 
 /*
- * The cpp::VarDesc is the internal representation for Op. All the internal
+ * The general::VarDesc is the internal representation for Op. All the internal
  * imprementation should use it, not the pb::VarDesc.
  */
 class VarDesc : public VarDescAPI {
@@ -59,6 +59,6 @@ class VarDesc : public VarDescAPI {
   std::vector<int64_t> shape_;
 };
 
-}  // namespace cpp
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle
