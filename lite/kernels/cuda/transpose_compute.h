@@ -30,7 +30,7 @@ class TransposeCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~TransposeCompute() = default;
 
  private:
-  lite::cuda::math::Transpose<Dtype> trans;
+  lite::cuda::math::Transpose<Dtype> trans_;
 };
 
 }  // namespace cuda

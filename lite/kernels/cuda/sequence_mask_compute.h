@@ -28,11 +28,6 @@ class SequenceMaskCompute : public KernelLite<TARGET(kCUDA), Ptype> {
 
   void Run() override;
   virtual ~SequenceMaskCompute() = default;
-
-  //  private:
-  //   lite::Tensor seq_offsets_;
-  //   std::vector<int64_t> seq_len_;
-  //   std::vector<size_t> seq_offsets_vec_;
 };
 
 }  // namespace cuda

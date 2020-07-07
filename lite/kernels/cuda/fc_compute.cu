@@ -33,7 +33,7 @@ struct FcTypeTraits<float> {
 };
 
 template <typename T>
-__global__ void bias_v4(const int num, const T* bias, T* data, int K) {
+__global__ void AddBiasV4(const int num, const T* bias, T* data, int K) {
   CUDA_KERNEL_LOOP(index, num) {
     int bias_idx = index % K;
     const T bias_ptr = bias[bias_idx];
@@ -48,7 +48,7 @@ __global__ void bias_v4(const int num, const T* bias, T* data, int K) {
 }
 
 template <typename T>
-__global__ void bias_relu_v4(const int num, const T* bias, T* data, int K) {
+__global__ void AddBiasReluV4(const int num, const T* bias, T* data, int K) {
   CUDA_KERNEL_LOOP(index, num) {
     int bias_idx = index % K;
     const T bias_ptr = bias[bias_idx];
@@ -63,7 +63,7 @@ __global__ void bias_relu_v4(const int num, const T* bias, T* data, int K) {
 }
 
 template <typename T>
-__global__ void general_bias(const int num, const T* bias, T* data) {
+__global__ void AddBias(const int num, const T* bias, T* data) {
   int offset = blockIdx.x * num;
 
   for (int i = threadIdx.x; i < num; i += blockDim.x) {
@@ -78,7 +78,7 @@ __global__ void general_bias(const int num, const T* bias, T* data) {
 }
 
 template <typename T>
-__global__ void general_relu_bias(const int num, const T* bias, T* data) {
+__global__ void AddBiasRelu(const int num, const T* bias, T* data) {
   int offset = blockIdx.x * num;
 
   for (int i = threadIdx.x; i < num; i += blockDim.x) {
@@ -140,10 +140,10 @@ void FcCompute<T, PType>::Run() {
     const auto* bias_ptr_v4 = reinterpret_cast<const trans_type*>(b_data);
     auto* data_ptr_v4 = reinterpret_cast<trans_type*>(out_data);
     if (activation_type == "relu") {
-      bias_relu_v4<trans_type><<<blocks, threads, 0, stream>>>(
+      AddBiasReluV4<trans_type><<<blocks, threads, 0, stream>>>(
           num, bias_ptr_v4, data_ptr_v4, N / 4);
     } else if (activation_type == "") {
-      bias_v4<trans_type><<<blocks, threads, 0, stream>>>(
+      AddBiasV4<trans_type><<<blocks, threads, 0, stream>>>(
           num, bias_ptr_v4, data_ptr_v4, N / 4);
     } else {
       LOG(FATAL) << "not supported activation type: " << activation_type;
@@ -152,9 +152,9 @@ void FcCompute<T, PType>::Run() {
     const int threads = 256;
     const int blocks = M;
     if (activation_type == "relu") {
-      general_relu_bias<T><<<blocks, threads, 0, stream>>>(N, b_data, out_data);
+      AddBiasRelu<T><<<blocks, threads, 0, stream>>>(N, b_data, out_data);
     } else if (activation_type == "") {
-      general_bias<T><<<blocks, threads, 0, stream>>>(N, b_data, out_data);
+      AddBias<T><<<blocks, threads, 0, stream>>>(N, b_data, out_data);
     } else {
       LOG(FATAL) << "not supported activation type: " << activation_type;
     }

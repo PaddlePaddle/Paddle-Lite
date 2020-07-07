@@ -23,7 +23,7 @@
 
 #include "lite/api/test_helper.h"
 #include "lite/backends/cuda/cuda_utils.h"
-// #include "lite/utils/float16.h"
+#include "lite/utils/float16.h"
 
 namespace paddle {
 namespace lite {
@@ -33,66 +33,66 @@ namespace cuda {
 class SequenceUnpadTest : public ::testing::Test {
  protected:
   SequenceUnpadTest()
-      : batch(5),
-        features(2),
-        padded_length(3),
-        out_lod({{0, 2, 5}}),
-        x_shape({static_cast<int64_t>(out_lod[0].size() - 1),
-                 padded_length,
-                 features}),
-        out_shape({batch, features}) {
-    X_ref.Resize(lite::DDim(x_shape));
-    X_gpu.Resize(X_ref.dims());
+      : batch_(5),
+        features_(2),
+        padded_length_(3),
+        out_lod_({{0, 2, 5}}),
+        x_shape_({static_cast<int64_t>(out_lod_[0].size() - 1),
+                  padded_length_,
+                  features_}),
+        out_shape_({batch_, features_}) {
+    x_ref_.Resize(lite::DDim(x_shape_));
+    x_gpu_.Resize(x_ref_.dims());
 
-    Length_ref.Resize(
-        lite::DDim({static_cast<int64_t>(out_lod[0].size() - 1)}));
-    Length_gpu.Resize(Length_ref.dims());
+    length_ref_.Resize(
+        lite::DDim({static_cast<int64_t>(out_lod_[0].size() - 1)}));
+    length_gpu_.Resize(length_ref_.dims());
 
-    auto* x_ref_data = X_ref.mutable_data<float>();
-    auto* length_ref_data = Length_ref.mutable_data<int64_t>();
+    auto* x_ref_data = x_ref_.mutable_data<float>();
+    auto* length_ref_data = length_ref_.mutable_data<int64_t>();
 
     // prepare input
-    for (int64_t i = 0; i < X_ref.numel(); i++) {
+    for (int64_t i = 0; i < x_ref_.numel(); i++) {
       x_ref_data[i] = static_cast<float>(i);
     }
-    for (size_t i = 0; i < out_lod[0].size() - 1; ++i) {
-      length_ref_data[i] = out_lod[0][i + 1] - out_lod[0][i];
+    for (size_t i = 0; i < out_lod_[0].size() - 1; ++i) {
+      length_ref_data[i] = out_lod_[0][i + 1] - out_lod_[0][i];
     }
 
-    Out_ref.Resize(lite::DDim(out_shape));
-    Out_ref.set_lod(out_lod);
-    Out_gpu.Resize(Out_ref.dims());
-    Out_gpu.set_lod(Out_ref.lod());
-    Out_cpu.Resize(Out_ref.dims());
-    Out_cpu.set_lod(Out_ref.lod());
+    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.set_lod(out_lod_);
+    out_gpu_.Resize(out_ref_.dims());
+    out_gpu_.set_lod(out_ref_.lod());
+    out_cpu_.Resize(out_ref_.dims());
+    out_cpu_.set_lod(out_ref_.lod());
 
-    cpu_base(&X_ref, &Length_ref, &Out_ref);
+    RunBaseLine(&x_ref_, &length_ref_, &out_ref_);
 
-    device_init();
+    InitParamAndContext();
   }
 
-  void device_init() {
-    ctx.reset(new KernelContext);
-    cudaStreamCreate(&stream);
-    auto& context = ctx->As<CUDAContext>();
-    context.SetExecStream(stream);
-    param.X = &X_gpu;
-    param.Length = &Length_gpu;
-    param.Out = &Out_gpu;
+  void InitParamAndContext() {
+    ctx_.reset(new KernelContext);
+    cudaStreamCreate(&stream_);
+    auto& context = ctx_->As<CUDAContext>();
+    context.SetExecStream(stream_);
+    param_.X = &x_gpu_;
+    param_.Length = &length_gpu_;
+    param_.Out = &out_gpu_;
   }
 
-  void float_data_init() {
-    X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
-                                                   X_gpu.dims());
-    Length_gpu.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(
-        Length_ref.data<int64_t>(), Length_gpu.dims());
+  void InitFloatInput() {
+    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+                                                    x_gpu_.dims());
+    length_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(
+        length_ref_.data<int64_t>(), length_gpu_.dims());
   }
 
-  void half_data_init() {}
+  void InitHalfInput() {}
 
-  void cpu_base(const lite::Tensor* X,
-                const lite::Tensor* Length,
-                lite::Tensor* Out) {
+  void RunBaseLine(const lite::Tensor* X,
+                   const lite::Tensor* Length,
+                   lite::Tensor* Out) {
     auto* out_data = Out->mutable_data<float>();
 
     for (size_t i = 0; i < 4; ++i) {
@@ -103,24 +103,24 @@ class SequenceUnpadTest : public ::testing::Test {
     }
   }
 
-  int batch, features, padded_length;
-  LoD out_lod;
-  std::vector<int64_t> x_shape, out_shape;
+  int batch_, features_, padded_length_;
+  LoD out_lod_;
+  std::vector<int64_t> x_shape_, out_shape_;
 
-  lite::Tensor X_ref, Out_ref, Length_ref;
-  lite::Tensor X_gpu, Out_gpu, Length_gpu;
-  lite::Tensor Out_cpu, Length_cpu;
+  lite::Tensor x_ref_, out_ref_, length_ref_;
+  lite::Tensor x_gpu_, out_gpu_, length_gpu_;
+  lite::Tensor out_cpu_, length_cpu_;
 
-  operators::SequencePadParam param;
-  std::unique_ptr<KernelContext> ctx;
-  cudaStream_t stream;
+  operators::SequencePadParam param_;
+  std::unique_ptr<KernelContext> ctx_;
+  cudaStream_t stream_;
 };
 
 TEST_F(SequenceUnpadTest, fp32) {
-  float_data_init();
+  InitFloatInput();
   SequenceUnpadCompute<float, PRECISION(kFloat)> kernel;
-  kernel.SetParam(param);
-  kernel.SetContext(std::move(ctx));
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     kernel.Launch();
@@ -138,12 +138,12 @@ TEST_F(SequenceUnpadTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu.mutable_data<float>(),
-                          Out_gpu.data<float>(),
-                          sizeof(float) * Out_gpu.numel(),
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu.data<float>()[i], Out_ref.data<float>()[i], 1e-5);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
   }
 }
 
