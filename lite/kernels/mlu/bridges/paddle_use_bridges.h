@@ -15,6 +15,7 @@
 #pragma once
 
 USE_SUBGRAPH_BRIDGE(relu, kMLU);
+USE_SUBGRAPH_BRIDGE(relu6, kMLU)
 USE_SUBGRAPH_BRIDGE(conv2d, kMLU);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kMLU);
 USE_SUBGRAPH_BRIDGE(elementwise_add, kMLU);
@@ -26,3 +27,7 @@ USE_SUBGRAPH_BRIDGE(nearest_interp, kMLU);
 USE_SUBGRAPH_BRIDGE(leaky_relu, kMLU);
 USE_SUBGRAPH_BRIDGE(concat, kMLU);
 USE_SUBGRAPH_BRIDGE(scale, kMLU);
+USE_SUBGRAPH_BRIDGE(sigmoid, kMLU);
+USE_SUBGRAPH_BRIDGE(elementwise_mul, kMLU);
+USE_SUBGRAPH_BRIDGE(cast, kMLU);
+USE_SUBGRAPH_BRIDGE(layout, kMLU);

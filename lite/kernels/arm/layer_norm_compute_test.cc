@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/layer_norm_compute.h"
 #include <gtest/gtest.h>
+
 #include <cmath>
 #include <limits>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/layer_norm_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -181,9 +183,7 @@ TEST(layer_norm_arm, compute) {
 }
 
 TEST(layer_norm, retrive_op) {
-  auto layer_norm =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "layer_norm");
+  auto layer_norm = KernelRegistry::Global().Create("layer_norm");
   ASSERT_FALSE(layer_norm.empty());
   ASSERT_TRUE(layer_norm.front());
 }

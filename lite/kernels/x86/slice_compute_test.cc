@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/slice_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/slice_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -79,8 +82,7 @@ static void slice_ref(const float* input,
 }
 
 TEST(slice_x86, retrive_op) {
-  auto slice =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("slice");
+  auto slice = KernelRegistry::Global().Create("slice");
   ASSERT_FALSE(slice.empty());
   ASSERT_TRUE(slice.front());
 }

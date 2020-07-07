@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/reshape_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/reshape_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -26,9 +29,7 @@ namespace x86 {
 
 // reshape
 TEST(reshape_x86, retrive_op) {
-  auto reshape =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "reshape");
+  auto reshape = KernelRegistry::Global().Create("reshape");
   ASSERT_FALSE(reshape.empty());
   ASSERT_TRUE(reshape.front());
 }
@@ -86,9 +87,7 @@ TEST(reshape_x86, run_test) {
 
 // reshape2
 TEST(reshape2_x86, retrive_op) {
-  auto reshape2 =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "reshape2");
+  auto reshape2 = KernelRegistry::Global().Create("reshape2");
   ASSERT_FALSE(reshape2.empty());
   ASSERT_TRUE(reshape2.front());
 }

@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/dropout_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/dropout_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -26,9 +28,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(dropout_x86, retrive_op) {
-  auto dropout =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "dropout");
+  auto dropout = KernelRegistry::Global().Create("dropout");
   ASSERT_FALSE(dropout.empty());
   ASSERT_TRUE(dropout.front());
 }

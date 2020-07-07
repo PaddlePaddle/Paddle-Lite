@@ -41,8 +41,8 @@ class SGDCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto *param_out = &sgd_param.ParamOut->raw_tensor();
 
     auto sz = param_out->numel();
-    PADDLE_ENFORCE_EQ(param->numel(), sz);
-    PADDLE_ENFORCE_EQ(grad->numel(), sz);
+    CHECK_EQ(param->numel(), sz);
+    CHECK_EQ(grad->numel(), sz);
 
     paddle::operators::jit::sgd_attr_t attr(1, sz, 1, sz, 1);
     const T *lr = learning_rate->template data<T>();

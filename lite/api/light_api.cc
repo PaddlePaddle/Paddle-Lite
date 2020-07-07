@@ -15,8 +15,6 @@
 #include "lite/api/light_api.h"
 #include <algorithm>
 #include <map>
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
 
 namespace paddle {
 namespace lite {

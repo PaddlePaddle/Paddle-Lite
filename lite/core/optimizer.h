@@ -108,9 +108,13 @@ class Optimizer {
            "bm_subgraph_pass",
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
+           "mlu_subgraph_pass",
            "static_kernel_pick_pass",  // pick original kernel from graph
+
            "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
+
+           "mlu_postprocess_pass",
            // info(target/precision/layout/device)
            // using kernel info
            "argument_type_display_pass",  // debug pass: show arg-type-node's
@@ -140,12 +144,8 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
-           "mlu_subgraph_pass",
-
            "runtime_context_assign_pass",
            "argument_type_display_pass",
-
-           "mlu_postprocess_pass",
 
            "memory_optimize_pass"}};
 

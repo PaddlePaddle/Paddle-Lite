@@ -36,8 +36,14 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFloat)>,
     def_kFloat)
-    .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kMLU))})
-    .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kMLU))})
+    .BindInput("Inputs",
+               {LiteType::GetTensorTy(TARGET(kMLU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Outputs",
+                {LiteType::GetTensorTy(TARGET(kMLU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -47,6 +53,12 @@ REGISTER_LITE_KERNEL(
     kNHWC,
     paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFP16)>,
     def_FP16)
-    .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kMLU))})
-    .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kMLU))})
+    .BindInput("Inputs",
+               {LiteType::GetTensorTy(TARGET(kMLU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Outputs",
+                {LiteType::GetTensorTy(TARGET(kMLU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();

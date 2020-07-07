@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+
+#include <utility>
+
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
@@ -20,6 +23,10 @@
 
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
+#endif
+
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/target_wrapper.h"
 #endif
 
 namespace paddle {
@@ -98,6 +105,13 @@ void Tensor::CopyFromCpu(const T *src_data) {
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
+  } else if (type == TargetType::kMLU) {
+#ifdef LITE_WITH_MLU
+    lite::TargetWrapperMlu::MemcpySync(
+        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+#else
+    LOG(FATAL) << "Please compile the lib with MLU.";
+#endif
   } else {
     LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM, kCUDA";
   }
@@ -118,6 +132,13 @@ void Tensor::CopyToCpu(T *data) const {
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
+  } else if (type == TargetType::kMLU) {
+#ifdef LITE_WITH_MLU
+    lite::TargetWrapperMlu::MemcpySync(
+        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
+#else
+    LOG(FATAL) << "Please compile the lib with MLU.";
+#endif
   } else {
     LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM, kCUDA";
   }
@@ -137,6 +158,11 @@ template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
+
+template void Tensor::CopyFromCpu<int, TargetType::kMLU>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kMLU>(const int64_t *);
+template void Tensor::CopyFromCpu<float, TargetType::kMLU>(const float *);
+template void Tensor::CopyFromCpu<int8_t, TargetType::kMLU>(const int8_t *);
 
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
@@ -228,13 +254,9 @@ void CxxConfig::set_mlu_core_number(int core_number) {
 void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
   mlu_input_layout_ = layout;
 }
-void CxxConfig::set_mlu_use_first_conv(bool use_first_conv) {
-  mlu_use_first_conv_ = use_first_conv;
-}
-void CxxConfig::set_mlu_first_conv_mean(const std::vector<float> &mean) {
+void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
+                                        const std::vector<float> &std) {
   mlu_first_conv_mean_ = mean;
-}
-void CxxConfig::set_mlu_first_conv_std(const std::vector<float> &std) {
   mlu_first_conv_std_ = std;
 }
 lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
@@ -242,12 +264,9 @@ lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
 }
 int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
 DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
-bool CxxConfig::mlu_use_first_conv() const { return mlu_use_first_conv_; }
-const std::vector<float> &CxxConfig::mlu_first_conv_mean() const {
-  return mlu_first_conv_mean_;
-}
-const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
-  return mlu_first_conv_std_;
+std::pair<std::vector<float>, std::vector<float>>
+CxxConfig::mlu_firstconv_param() const {
+  return std::make_pair(mlu_first_conv_mean_, mlu_first_conv_std_);
 }
 #endif
 

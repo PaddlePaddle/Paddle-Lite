@@ -119,7 +119,7 @@ void DeserializeFromStream(
     // the 1st field, unit32_t version for SelectedRows
     uint32_t version;
     is.read(reinterpret_cast<char*>(&version), sizeof(version));
-    PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
+    CHECK_EQ(version, 0U) << "Only version 0 is supported";
   }
   {
     // the 2st field, rows information
@@ -163,24 +163,22 @@ int64_t SelectedRows::AutoGrownIndex(int64_t key,
   if (iter == id_to_index_.end()) {
     rwlock_->UNLock();
     if (!auto_grown) {
-      PADDLE_THROW("key %ld not found", key);
+      LOG(FATAL) << "key " << key << " not found";
     }
     rwlock_->WRLock();
     auto map_size = id_to_index_.size();
     auto vector_size = rows_.size();
     if (map_size != vector_size) {
       rwlock_->UNLock();
-      PADDLE_THROW(
-          "id_to_index_ size %lu should have the same size with rows_ %lu",
-          map_size,
-          vector_size);
+      LOG(FATAL) << "id_to_index_ size " << map_size
+                 << " should have the same size with rows_ " << vector_size;
     }
     auto write_iter = id_to_index_.find(key);
     if (write_iter == id_to_index_.end()) {
       int row_num = rows_.size();
       if (row_num == value_->dims()[0]) {
         rwlock_->UNLock();
-        PADDLE_THROW("selected rows is full, then length exceed %d", row_num);
+        LOG(FATAL) << "selected rows is full, then length exceed " << row_num;
       }
       // key logic to put a key into id_to_index_
       rows_.push_back(key);
@@ -213,16 +211,14 @@ void SelectedRows::Get(const lite::Tensor& ids,
                        lite::Tensor* value,
                        bool auto_grown,
                        bool is_test) {
-  PADDLE_ENFORCE(value->IsInitialized(),
-                 "The value tensor should be initialized.");
+  CHECK(value->IsInitialized()) << "The value tensor should be initialized.";
   if (ids.numel() == 0) {
     VLOG(3) << "keys is empty, please check data!";
   } else {
     int64_t value_width = value_->numel() / value_->dims()[0];
-    PADDLE_ENFORCE_EQ(value_width,
-                      value->numel() / value->dims()[0],
-                      "output tensor should have the same shape with table "
-                      "except the dims[0].");
+    CHECK_EQ(value_width, value->numel() / value->dims()[0])
+        << "output tensor should have the same shape with table "
+           "except the dims[0].";
     for (int i = 0; i < ids.numel(); ++i) {
       auto id = ids.data<int64_t>()[i];
       int64_t index = AutoGrownIndex(id, auto_grown, is_test);

@@ -2,7 +2,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
-endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+endif()
 
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
@@ -15,8 +15,8 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
-    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto)
-    target_link_libraries(paddle_full_api_shared framework_proto)
+    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry)
+    target_link_libraries(paddle_full_api_shared framework_proto op_registry)
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)

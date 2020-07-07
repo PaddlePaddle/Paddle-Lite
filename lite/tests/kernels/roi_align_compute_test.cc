@@ -106,13 +106,11 @@ class RoiAlignComputeTester : public arena::TestCase {
     }
     LOG(INFO) << "Read rois  data. " << datas[0] << " " << datas.back();
     reader.close();
-    SetCommonTensor(rois_, dims, datas.data());
 
-    auto rois_tensor = baseline_scope()->FindMutableTensor(rois_);
     std::vector<uint64_t> lod0({0, 152, 304});
     LoD lod;
     lod.push_back(lod0);
-    rois_tensor->set_lod(lod);
+    SetCommonTensor(rois_, dims, datas.data(), lod);
   }
 };
 

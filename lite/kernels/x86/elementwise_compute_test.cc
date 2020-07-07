@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/elementwise_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/elementwise_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -26,9 +28,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(elementwise_add_x86, retrive_op) {
-  auto elementwise_add =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "elementwise_add");
+  auto elementwise_add = KernelRegistry::Global().Create("elementwise_add");
   ASSERT_FALSE(elementwise_add.empty());
   ASSERT_TRUE(elementwise_add.front());
 }

@@ -64,13 +64,7 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
   for (auto* quantized_node : outlinks) {
     // save input scale in quantized op by input argname + index
     auto op_desc = *quantized_node->stmt()->mutable_op_info();
-    std::string argname;
-    int index;
-    op_desc.GetInputArgname(out_act_name, &argname);
-    op_desc.GetInputIndex(out_act_name, &index);
-    op_desc.SetAttr<float>(argname + std::to_string(index) + "_input_scale",
-                           scale_value);
-    op_desc.SetAttr<float>("input_scale", scale_value);  // save it for now
+    op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
@@ -135,6 +129,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* quantized_op = matched.at("quantized_op");
   auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
+  auto weight_name = quantized_op_weight->arg()->name;
 
   // obtain weight_scale from max_range
   auto* scope = quantized_op->stmt()->op()->scope();
@@ -150,12 +145,12 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   //        = max(abs(weight)) / range
 
   // set op desc
-  cpp::OpDesc op_desc = *quantized_op->stmt()->op_info();
+  auto op_desc = *quantized_op->stmt()->op_info();
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
   std::vector<float> weight_scale;
-  int weight_scale_size;
+  int weight_scale_size = 0;
   if (quantized_op_type_ == "conv2d" ||
       quantized_op_type_ == "depthwise_conv2d") {
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
@@ -173,7 +168,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     weight_scale.push_back(whole_weight_scale);
   }
   op_desc.SetAttr("enable_int8", true);
-  op_desc.SetAttr("weight_scale", weight_scale);
+  op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
   Tensor temp_tensor;
@@ -246,6 +241,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto* dequant_op_channel_scale = matched.at("dequant_op_channel_scale");
   auto* dequant_op = matched.at("dequant_op");
   auto* dequant_op_out = matched.at("dequant_op_out");
+  auto weight_name = quantized_op_weight->arg()->name;
 
   // obtain input weight_scale from fake_dequant op
   auto* scope = quantized_op->stmt()->op()->scope();
@@ -265,7 +261,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
 
   // set op desc
-  cpp::OpDesc op_desc = *quantized_op->stmt()->op_info();
+  auto op_desc = *quantized_op->stmt()->op_info();
   if (quantized_op_type_ == "conv2d" ||
       quantized_op_type_ == "depthwise_conv2d") {
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
@@ -275,7 +271,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
   op_desc.SetAttr("enable_int8", true);
-  op_desc.SetAttr("weight_scale", weight_scale);
+  op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
@@ -352,22 +348,7 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     // Save quantization info in op_info attr
     auto op_info = *quantized_node->stmt()->op_info();
     op_info.SetAttr<int>("bit_length", bit_length);
-
-    std::string argname;
-    int index;
-    op_info.GetInputArgname(output_act_name, &argname);
-    op_info.GetInputIndex(output_act_name, &index);
-    op_info.SetAttr<float>(argname + std::to_string(index) + "_input_scale",
-                           scale_value);
-    std::string op_type = op_info.Type();
-    // Analyse the weight scale or input scale.
-    if (((op_type == "conv2d" || op_type == "depthwise_conv2d") &&
-         argname == "Input") ||
-        ((op_type == "mul" || op_type == "matmul") && argname == "Y")) {
-      op_info.SetAttr<float>("weight_scale", scale_value);
-    } else {
-      op_info.SetAttr<float>("input_scale", scale_value);
-    }
+    op_info.SetInputScale(output_act_name, {scale_value});
 
     op_info.UpdateAllInputs(output_act_name, input_act_name);
     quantized_node->stmt()->ResetOp(op_info, graph->valid_places());

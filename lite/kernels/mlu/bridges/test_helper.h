@@ -58,7 +58,8 @@ void FillTensor(Tensor* x,
 
 void LaunchOp(const std::shared_ptr<lite::OpLite> op,
               const std::vector<std::string>& input_var_names,
-              const std::vector<std::string>& output_var_names);
+              const std::vector<std::string>& output_var_names,
+              cnmlDataOrder_t order = CNML_NHWC);
 
 }  // namespace mlu
 }  // namespace subgraph
