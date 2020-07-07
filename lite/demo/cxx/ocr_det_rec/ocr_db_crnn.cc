@@ -25,12 +25,12 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
-void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
-                 cv::Mat img,
-                 std::string rec_model_path,
-                 std::string dict_path,
-                 std::string img_name,
-                 std::string output_path,
+void RunRecModel(const vector_3d_int& boxes,
+                 const cv::Mat& input_img,
+                 const std::string& rec_model_path,
+                 const std::string& dict_path,
+                 const std::string& img_name,
+                 const std::string& output_path,
                  float* rec_time) {
   // Create predictor
   MobileConfig config;
@@ -41,17 +41,18 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
   // Load dict
   auto charactor_dict = ReadDict(dict_path);
 
-  img_name = img_name.substr(0, img_name.find_last_of("."));
-  std::string save_output_path = output_path + "/result_" + img_name + ".txt";
+  std::string img_name_sub = img_name.substr(0, img_name.find_last_of("."));
+  std::string save_output_path =
+      output_path + "/result_" + img_name_sub + ".txt";
   std::ofstream ofs(save_output_path, std::ios::out);
   if (!ofs.is_open()) {
     std::cerr << "Open output file error:" << save_output_path << std::endl;
   }
 
-  cv::Mat src_img;
-  cv::Mat crop_img;
-  cv::Mat resize_img;
-  img.copyTo(src_img);
+  cv::Mat img;
+  cv::Mat croped_img;
+  cv::Mat resized_img;
+  input_img.copyTo(img);
   std::vector<float> mean = {0.5f, 0.5f, 0.5f};
   std::vector<float> scale = {1 / 0.5f, 1 / 0.5f, 1 / 0.5f};
   auto start = GetCurrentUS();
@@ -59,18 +60,18 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
 
   for (int i = boxes.size() - 1; i >= 0; i--) {
     // Set input
-    crop_img = GetRotateCropImage(src_img, boxes[i]);
-    float wh_ratio =
-        static_cast<float>(crop_img.cols) / static_cast<float>(crop_img.rows);
-    resize_img = CrnnResizeImg(crop_img, wh_ratio);
-    resize_img.convertTo(resize_img, CV_32FC3, 1 / 255.f);
-    const float* img_data = reinterpret_cast<const float*>(resize_img.data);
+    croped_img = GetRotateCropImage(img, boxes[i]);
+    float wh_ratio = static_cast<float>(croped_img.cols) /
+                     static_cast<float>(croped_img.rows);
+    resized_img = CrnnResizeImg(croped_img, wh_ratio);
+    resized_img.convertTo(resized_img, CV_32FC3, 1 / 255.f);
+    const float* img_data = reinterpret_cast<const float*>(resized_img.data);
 
     std::unique_ptr<Tensor> input_tensor = predictor_crnn->GetInput(0);
-    input_tensor->Resize({1, 3, resize_img.rows, resize_img.cols});
+    input_tensor->Resize({1, 3, resized_img.rows, resized_img.cols});
     auto* input_data = input_tensor->mutable_data<float>();
     NeonMeanScale(
-        img_data, input_data, resize_img.rows * resize_img.cols, mean, scale);
+        img_data, input_data, resized_img.rows * resized_img.cols, mean, scale);
 
     // Run CRNN predictor
     predictor_crnn->Run();
@@ -128,11 +129,12 @@ void RunRecModel(std::vector<std::vector<std::vector<int>>> boxes,
             << std::endl;
 }
 
-std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
-                                                       cv::Mat img,
-                                                       std::string img_name,
-                                                       std::string output_path,
-                                                       float* det_time) {
+void RunDetModel(const std::string& model_file,
+                 const cv::Mat& input_img,
+                 const std::string& img_name,
+                 const std::string& output_path,
+                 float* det_time,
+                 vector_3d_int* out_box_ptr) {
   // Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_file);
@@ -145,8 +147,8 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
   float ratio_h{};
   float ratio_w{};
 
-  cv::Mat src_img;
-  img.copyTo(src_img);
+  cv::Mat img;
+  input_img.copyTo(img);
   img = DetResizeImg(img, max_side_len, &ratio_h, &ratio_w);
   img.convertTo(img, CV_32FC3, 1.0 / 255.f);
 
@@ -165,21 +167,23 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
 
   // Get output and post process
   std::unique_ptr<const Tensor> output_tensor = predictor->GetOutput(0);
-  auto* outptr = output_tensor->data<float>();
+  auto* out_data = output_tensor->data<float>();
   auto shape_out = output_tensor->shape();
   int64_t out_numl = 1;
   for (auto i : shape_out) {
     out_numl *= i;
   }
 
-  float pred[shape_out[2]][shape_out[3]];
-  unsigned char cbuf[shape_out[2]][shape_out[3]];
-  for (int i = 0; i < static_cast<int>(shape_out[2] * shape_out[3]); i++) {
-    pred[static_cast<int>(i / static_cast<int>(shape_out[3]))]
-        [static_cast<int>(i % shape_out[3])] = static_cast<float>(outptr[i]);
-    cbuf[static_cast<int>(i / static_cast<int>(shape_out[3]))]
-        [static_cast<int>(i % shape_out[3])] =
-            static_cast<unsigned char>((outptr[i]) * 255);
+  int64_t rows = shape_out[2];
+  int64_t cols = shape_out[3];
+  unsigned char cbuf[rows][cols];
+  float pred[rows][cols];
+  for (int64_t i = 0; i < rows; i++) {
+    for (int64_t j = 0; j < cols; j++) {
+      int64_t num = i * cols + j;
+      cbuf[i][j] = static_cast<unsigned char>(out_data[num] * 255);
+      pred[i][j] = out_data[num];
+    }
   }
 
   cv::Mat cbuf_map(shape_out[2],
@@ -193,25 +197,27 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
   const double maxvalue = 255;
   cv::Mat bit_map;
   cv::threshold(cbuf_map, bit_map, threshold, maxvalue, cv::THRESH_BINARY);
-  auto boxes = BoxesFromBitmap(pred_map, bit_map);
-  std::vector<std::vector<std::vector<int>>> filter_boxes =
-      FilterTagDetRes(boxes, ratio_h, ratio_w, src_img.cols, src_img.rows);
+  auto all_boxes = BoxesFromBitmap(pred_map, bit_map);
+  vector_3d_int& out_box = *out_box_ptr;
+  out_box = FilterTagDetRes(
+      all_boxes, ratio_h, ratio_w, input_img.cols, input_img.rows);
+
   auto end = GetCurrentUS();
   *det_time = (end - start) / 1000;
 
   // Visualization
-  cv::Point rook_points[filter_boxes.size()][4];
-  for (int n = 0; n < filter_boxes.size(); n++) {
-    for (int m = 0; m < filter_boxes[0].size(); m++) {
-      rook_points[n][m] = cv::Point(static_cast<int>(filter_boxes[n][m][0]),
-                                    static_cast<int>(filter_boxes[n][m][1]));
+  cv::Point rook_points[out_box.size()][4];
+  for (int n = 0; n < out_box.size(); n++) {
+    for (int m = 0; m < out_box[0].size(); m++) {
+      rook_points[n][m] = cv::Point(static_cast<int>(out_box[n][m][0]),
+                                    static_cast<int>(out_box[n][m][1]));
     }
   }
 
   cv::Mat img_vis;
-  src_img.copyTo(img_vis);
-  for (int n = 0; n < boxes.size(); n++) {
-    const cv::Point* ppt[1] = {rook_points[n]};
+  input_img.copyTo(img_vis);
+  for (int n = 0; n < all_boxes.size(); n++) {
+    cv::Point* ppt[] = {rook_points[n]};
     int npt[] = {4};
     cv::polylines(img_vis, ppt, npt, 1, 1, CV_RGB(0, 255, 0), 2, 8, 0);
   }
@@ -220,7 +226,6 @@ std::vector<std::vector<std::vector<int>>> RunDetModel(std::string model_file,
 
   std::cout << "Finish detection, the result saved in " + img_save_path
             << std::endl;
-  return filter_boxes;
 }
 
 int main(int argc, char** argv) {
@@ -241,8 +246,9 @@ int main(int argc, char** argv) {
   cv::Mat src_img = cv::imread(img_path, cv::IMREAD_COLOR);
   float det_time = 0;
   float rec_time = 0;
-  auto boxes =
-      RunDetModel(det_model_path, src_img, img_name, output_path, &det_time);
+  std::vector<std::vector<std::vector<int>>> boxes;
+  RunDetModel(
+      det_model_path, src_img, img_name, output_path, &det_time, &boxes);
   RunRecModel(boxes,
               src_img,
               rec_model_path,

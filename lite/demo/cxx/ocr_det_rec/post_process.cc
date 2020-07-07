@@ -61,7 +61,6 @@ cv::RotatedRect Unclip(const vector_2d_fp& box) {
 }
 
 vector_2d_fp Mat2Vec(const cv::Mat& mat) {
-  auto** array = new float*[mat.rows];
   vector_2d_fp out(mat.rows, std::vector<float>(mat.cols));
   for (int i = 0; i < mat.rows; ++i) {
     for (int j = 0; j < mat.cols; ++j) {
