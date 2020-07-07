@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,38 +30,38 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[MLU] Converting " + op_type + "...";
 
-  auto x_var_name = op_info->Input("X");
+  auto x_var_name = op_info->Input("X").front();
   auto out_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
-  auto param_axis = op_info->GetAttr<int>("axis");
+  auto in_dtype = op_info->GetAttr<int>("in_dtype");
+  auto out_dtype = op_info->GetAttr<int>("out_dtype");
 
-  std::vector<cnmlTensor_t> input_tensor;
-  for (auto x_name : x_var_name) {
-    CHECK(graph->HasNode(x_name));
-    input_tensor.push_back(graph->GetNode(x_name)->mlu_tensor());
+  CHECK(graph->HasNode(x_var_name));
+  auto x_tensor = graph->GetNode(x_var_name);
+
+  cnmlDataType_t out_type;
+  cnmlCastType_t cast_type;
+  if (in_dtype == 4 && out_dtype == 5) {
+    cast_type = CNML_CAST_FLOAT16_TO_FLOAT32;
+    out_type = CNML_DATA_FLOAT32;
+  } else if (in_dtype == 5 && out_dtype == 4) {
+    cast_type = CNML_CAST_FLOAT32_TO_FLOAT16;
+    out_type = CNML_DATA_FLOAT16;
+  } else {
+    CHECK(0) << "Unsupported cast type";
   }
 
-  auto dims = output_dims.size();
-  int axis = (param_axis < 0) ? (param_axis + dims) : param_axis;
-  CHECK_LT(axis, dims) << "Unsupport dims in mlu concat";
-  // value of nhwc2nchw_axis is index of nhwc
-  // order of nhwc2nchw_axis is nchw
-  int nhwc_axis = GetAxisNHWC2NCHW<int>(dims)[axis];
-
   auto output_tensor = graph->AddNode(
-      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
+      out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, out_type);
 
-  cnmlBaseOp_t concat_op;
-  cnmlTensor_t outputs = output_tensor->mlu_tensor();
-  CNML_CALL(cnmlCreateNdConcatOp(&concat_op,
-                                 nhwc_axis,
-                                 input_tensor.data(),
-                                 x_var_name.size(),
-                                 &outputs,
-                                 1));
-  graph->FuseOp(concat_op);
-  CNML_CALL(cnmlDestroyBaseOp(&concat_op));
+  cnmlBaseOp_t cast_op;
+  CNML_CALL(cnmlCreateCastOp(&cast_op,
+                             cast_type,
+                             x_tensor->mlu_tensor(),
+                             output_tensor->mlu_tensor()));
+  graph->FuseOp(cast_op);
+  CNML_CALL(cnmlDestroyBaseOp(&cast_op));
   return SUCCESS;
 }
 
@@ -70,6 +70,6 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(concat,
+REGISTER_SUBGRAPH_BRIDGE(cast,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ConcatConverter);
+                         paddle::lite::subgraph::mlu::CastConverter);

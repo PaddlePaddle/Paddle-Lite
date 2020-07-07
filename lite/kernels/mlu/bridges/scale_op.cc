@@ -61,6 +61,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                               alpha_tensor->mlu_tensor(),
                               beta_tensor->mlu_tensor()));
   graph->FuseOp(scale_op);
+  CNML_CALL(cnmlDestroyBaseOp(&scale_op));
   return SUCCESS;
 }
 

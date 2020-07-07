@@ -4,7 +4,7 @@ set -ex
 # global variables with default value
 NEUWARE_HOME="${NEUWARE_HOME}"
 TARGET_NAME="all"    # default target
-BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
+BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF
 
 function print_usage {
@@ -28,16 +28,13 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 readonly workspace=$(pwd)
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party ]; then
         rm -rf $workspace/third-party
-
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
-            wget $THIRDPARTY_TAR
-        fi
-        tar xzf third-party-05b862.tar.gz
-    else
-        git submodule update --init --recursive
     fi
+    if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        wget $THIRDPARTY_TAR
+    fi
+    tar xvf third-party-05b862.tar.gz
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
