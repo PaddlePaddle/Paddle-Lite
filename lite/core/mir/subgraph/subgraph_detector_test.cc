@@ -20,7 +20,7 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/program.h"
-#include "lite/model_parser/cpp/program_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/model_parser.h"
 
 DEFINE_string(model_dir, "", "model_dir");

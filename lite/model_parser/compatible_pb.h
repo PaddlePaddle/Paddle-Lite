@@ -21,10 +21,7 @@
  * lite::pb::XXDesc/lite::naive_buffer::XXDesc.
  */
 
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/cpp/program_desc.h"
-#include "lite/model_parser/cpp/var_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
 namespace lite {
