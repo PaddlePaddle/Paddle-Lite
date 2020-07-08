@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include <math.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
