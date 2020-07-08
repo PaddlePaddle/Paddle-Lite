@@ -20,8 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import sys
-sys.path.append('../../python/lib')
 
 from paddlelite.lite import *
 
@@ -33,7 +31,7 @@ parser.add_argument(
 def RunModel(args):
     # 1. Set config information
     config = MobileConfig()
-    config.set_model_dir(args.model_dir)
+    config.set_model_from_file(args.model_dir)
 
     # 2. Create paddle predictor
     predictor = create_paddle_predictor(config)

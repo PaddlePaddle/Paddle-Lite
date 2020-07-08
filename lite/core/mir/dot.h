@@ -19,8 +19,8 @@
  */
 #pragma once
 
+#include <map>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/replace_stl/stream.h"
@@ -157,7 +157,7 @@ class Dot {
   }
 
  private:
-  std::unordered_map<std::string, Node> nodes_;
+  std::map<std::string, Node> nodes_;
   std::vector<Edge> edges_;
   std::vector<Attr> attrs_;
 };

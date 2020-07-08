@@ -55,20 +55,6 @@ class DeviceInfo {
   int Setup();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
-#ifdef LITE_WITH_MLU
-  void SetMLURunMode(lite_api::MLUCoreVersion core_version,
-                     int core_number,
-                     bool use_first_conv,
-                     const std::vector<float>& mean_vec,
-                     const std::vector<float>& std_vec,
-                     DataLayoutType input_layout);
-  cnmlCoreVersion_t MLUCoreVersion();
-  int MLUCoreNumber();
-  bool UseFirstConv();
-  const std::vector<float>& MeanVec() const;
-  const std::vector<float>& StdVec() const;
-  DataLayoutType InputLayout() const;
-#endif
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
 
@@ -119,15 +105,6 @@ class DeviceInfo {
   static thread_local std::vector<int> active_ids_;
   static thread_local TensorLite workspace_;
   static thread_local int64_t count_;
-
-#ifdef LITE_WITH_MLU
-  static thread_local cnmlCoreVersion_t mlu_core_version_;
-  static thread_local int mlu_core_number_;
-  static thread_local bool use_first_conv_;
-  static thread_local std::vector<float> mean_vec_;
-  static thread_local std::vector<float> std_vec_;
-  static thread_local DataLayoutType input_layout_;
-#endif
 
   void SetDotInfo(int argc, ...);
   void SetFP16Info(int argc, ...);
@@ -220,6 +197,49 @@ class Device<TARGET(kMLU)> {
 
 template class Env<TARGET(kMLU)>;
 #endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_BM
+template <>
+class Device<TARGET(kBM)> {
+ public:
+  Device(int dev_id, int max_stream = 1)
+      : idx_(dev_id), max_stream_(max_stream) {}
+  void Init();
+
+  int id() { return idx_; }
+  int max_stream() { return 1; }
+  std::string name() { return "BM"; }
+  float max_memory() { return 16; }
+  int core_num();
+  void SetId(int idx);
+
+  int sm_version() { return 0; }
+  bool has_fp16() { return false; }
+  bool has_int8() { return false; }
+  bool has_hmma() { return false; }
+  bool has_imma() { return false; }
+  int runtime_version() { return 0; }
+
+ private:
+  void CreateQueue() {}
+  void GetInfo() {}
+
+ private:
+  int idx_{0};
+  int max_stream_{1};
+  std::string device_name_;
+  float max_memory_;
+
+  int sm_version_;
+  bool has_fp16_;
+  bool has_int8_;
+  bool has_hmma_;
+  bool has_imma_;
+  int runtime_version_;
+};
+
+template class Env<TARGET(kBM)>;
+#endif
 
 #ifdef LITE_WITH_CUDA
 template <>

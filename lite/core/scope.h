@@ -14,19 +14,24 @@
 
 #pragma once
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/variable.h"
+#include "lite/fluid/rw_lock.h"
 
 namespace paddle {
 namespace lite {
 
 class Scope final {
  public:
-  Scope() {}
+  Scope() {
+    kids_lock_ = new lite::fluid::RWLock;
+    vars_lock_ = new lite::fluid::RWLock;
+    rwlock_.reset(new lite::fluid::RWLock);
+  }
   // delete below two functions to allow pybind to recognise it cannot make a
   // copy
   // link:
@@ -39,12 +44,16 @@ class Scope final {
 
   Variable* Var(const std::string& name);
 
+  Variable* LocalVar(const std::string& name);
+
   Variable* FindVar(const std::string& name) const;
 
   Variable* FindLocalVar(const std::string& name) const;
 
   const Scope* parent() const { return parent_; }
 
+  // Get attribute params stored in parent scopes.
+  std::vector<std::string> AttributeVarNames() const;
   // Following the legacy scope interface.
   std::vector<std::string> LocalVarNames() const;
 
@@ -53,26 +62,46 @@ class Scope final {
   // Create a Tensor variable. This will create a new Variable called `name`.
   Tensor* NewTensor(const std::string& name) {
     auto* var = Var(name);
-    return var->GetMutable<TensorLite>();
+    return var->GetMutable<Tensor>();
   }
 
   const Tensor* FindTensor(const std::string& name) {
     auto* var = FindVar(name);
     if (!var) return nullptr;
-    return &var->Get<TensorLite>();
+    return &var->Get<Tensor>();
   }
 
   Tensor* FindMutableTensor(const std::string& name) {
     auto* var = FindVar(name);
     if (!var) return nullptr;
-    return var->GetMutable<TensorLite>();
+    return var->GetMutable<Tensor>();
+  }
+
+  std::vector<Tensor>* NewTensorList(const std::string& name) {
+    auto* var = Var(name);
+    return var->GetMutable<std::vector<Tensor>>();
+  }
+
+  const std::vector<Tensor>* FindTensorList(const std::string& name) {
+    auto* var = FindVar(name);
+    if (!var) return nullptr;
+    return &var->Get<std::vector<Tensor>>();
+  }
+
+  std::vector<Tensor>* FindMutableTensorList(const std::string& name) {
+    auto* var = FindVar(name);
+    if (!var) return nullptr;
+    return var->GetMutable<std::vector<Tensor>>();
   }
 
  private:
   // Scope in `kids_` are owned by this class.
   mutable std::list<Scope*> kids_;
   const Scope* parent_{nullptr};
-  std::unordered_map<std::string, std::unique_ptr<Variable>> vars_;
+  std::map<std::string, std::unique_ptr<Variable>> vars_;
+  lite::fluid::RWLock* kids_lock_{nullptr};
+  lite::fluid::RWLock* vars_lock_{nullptr};
+  std::unique_ptr<lite::fluid::RWLock> rwlock_{nullptr};
 };
 
 }  // namespace lite

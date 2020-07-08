@@ -30,8 +30,7 @@ void Registry::Insert(const std::string& op_type,
   int key = static_cast<int>(target);
   auto it = map_.find(key);
   if (it == map_.end()) {
-    map_.insert(
-        std::make_pair(key, std::unordered_map<std::string, cvt_func_type>()));
+    map_.insert(std::make_pair(key, std::map<std::string, cvt_func_type>()));
   }
   map_.at(key).insert(std::make_pair(op_type, cvt_func_name));
 }

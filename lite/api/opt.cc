@@ -55,7 +55,7 @@ DEFINE_string(model_file, "", "model file path of the combined-param model");
 DEFINE_string(param_file, "", "param file path of the combined-param model");
 DEFINE_string(
     optimize_out_type,
-    "protobuf",
+    "naive_buffer",
     "store type of the output optimized model. protobuf/naive_buffer");
 DEFINE_bool(display_kernels, false, "Display kernel information");
 DEFINE_bool(record_tailoring_info,
@@ -92,6 +92,10 @@ std::vector<Place> ParserValidPlaces() {
           Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
           Place{TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kARM), PRECISION(kAny), DATALAYOUT(kNCHW)});
     } else if (target_repr == "opencl") {
       valid_places.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
@@ -207,7 +211,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
   }
   std::cout << std::setiosflags(std::ios::internal);
   std::cout << std::setw(maximum_optype_length) << "OP_name";
-  for (int i = 0; i < targets.size(); i++) {
+  for (size_t i = 0; i < targets.size(); i++) {
     std::cout << std::setw(10) << targets[i].substr(1);
   }
   std::cout << std::endl;
@@ -215,7 +219,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
       std::cout << std::setw(maximum_optype_length) << it->first;
       auto ops_valid_places = it->second;
-      for (int i = 0; i < targets.size(); i++) {
+      for (size_t i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
@@ -235,7 +239,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
       }
       // Print OP info.
       auto ops_valid_places = supported_ops.at(*op);
-      for (int i = 0; i < targets.size(); i++) {
+      for (size_t i = 0; i < targets.size(); i++) {
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
@@ -288,11 +292,11 @@ void ParseInputCommand() {
     auto valid_places = paddle::lite_api::ParserValidPlaces();
     // get valid_targets string
     std::vector<TargetType> target_types = {};
-    for (int i = 0; i < valid_places.size(); i++) {
+    for (size_t i = 0; i < valid_places.size(); i++) {
       target_types.push_back(valid_places[i].target);
     }
     std::string targets_str = TargetToStr(target_types[0]);
-    for (int i = 1; i < target_types.size(); i++) {
+    for (size_t i = 1; i < target_types.size(); i++) {
       targets_str = targets_str + TargetToStr(target_types[i]);
     }
 
@@ -301,7 +305,7 @@ void ParseInputCommand() {
     target_types.push_back(TARGET(kUnk));
 
     std::set<std::string> valid_ops;
-    for (int i = 0; i < target_types.size(); i++) {
+    for (size_t i = 0; i < target_types.size(); i++) {
       auto ops = supported_ops_target[static_cast<int>(target_types[i])];
       valid_ops.insert(ops.begin(), ops.end());
     }
@@ -318,7 +322,7 @@ void CheckIfModelSupported() {
   auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
   valid_ops.insert(
       valid_ops.end(), valid_unktype_ops.begin(), valid_unktype_ops.end());
-  for (int i = 0; i < valid_places.size(); i++) {
+  for (size_t i = 0; i < valid_places.size(); i++) {
     auto target = valid_places[i].target;
     auto ops = supported_ops_target[static_cast<int>(target)];
     valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
@@ -340,7 +344,7 @@ void CheckIfModelSupported() {
 
   std::set<std::string> unsupported_ops;
   std::set<std::string> input_model_ops;
-  for (int index = 0; index < cpp_prog.BlocksSize(); index++) {
+  for (size_t index = 0; index < cpp_prog.BlocksSize(); index++) {
     auto current_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(index);
     for (size_t i = 0; i < current_block->OpsSize(); ++i) {
       auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
@@ -364,13 +368,13 @@ void CheckIfModelSupported() {
       unsupported_ops_str = unsupported_ops_str + ", " + *op_str;
     }
     std::vector<TargetType> targets = {};
-    for (int i = 0; i < valid_places.size(); i++) {
+    for (size_t i = 0; i < valid_places.size(); i++) {
       targets.push_back(valid_places[i].target);
     }
-    std::sort(targets.begin(), targets.end());
+    std::stable_sort(targets.begin(), targets.end());
     targets.erase(unique(targets.begin(), targets.end()), targets.end());
     std::string targets_str = TargetToStr(targets[0]);
-    for (int i = 1; i < targets.size(); i++) {
+    for (size_t i = 1; i < targets.size(); i++) {
       targets_str = targets_str + "," + TargetToStr(targets[i]);
     }
 

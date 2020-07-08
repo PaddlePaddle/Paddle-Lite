@@ -22,6 +22,12 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
+
+#undef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -50,6 +56,14 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         kernel_func_name_, "image/pool_kernel.cl", build_options_, time_stamp_);
   }
 
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.x->dims();
@@ -60,7 +74,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     std::vector<int> strides = param.strides;
     std::vector<int> ksize = param.ksize;
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_pooling: " << global_pooling;
     VLOG(4) << "pooling_type: " << pooling_type;
     VLOG(4) << "paddings : " << paddings[0] << "  " << paddings[1] << "  "
@@ -75,7 +89,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       }
     }
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
             << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
     VLOG(4) << "out_dims : [" << out_dims.size() << "]" << out_dims[0] << "  "
@@ -103,7 +117,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     //    VLOG(4) << "x_image" << x_img;
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 #endif
@@ -119,7 +133,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int w = out_dims[3];
     int nh = out_dims[0] * out_dims[2];
     auto global_work_size = cl::NDRange(c_block, w, nh);
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size : [" << 3 << "]" << c_block << "  " << w
             << "  " << nh << "  ";
 #endif
@@ -150,13 +164,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
     CL_CHECK_FATAL(status);
 
-    status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-        kernel,
-        cl::NullRange,
-        global_work_size,
-        cl::NullRange,
-        nullptr,
-        nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -186,3 +200,4 @@ REGISTER_LITE_KERNEL(pool2d,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+#define LITE_WITH_LOG

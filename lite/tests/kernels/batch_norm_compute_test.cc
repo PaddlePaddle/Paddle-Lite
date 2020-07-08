@@ -157,7 +157,7 @@ TEST(BatchNorm, precision) {
   LOG(INFO) << "test BatchNorm op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);

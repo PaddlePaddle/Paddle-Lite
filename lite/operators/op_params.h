@@ -21,10 +21,9 @@
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/utils/all.h"
-#include "lite/utils/variant.h"
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -244,6 +243,9 @@ struct ScaleParam : ParamBase {
   float scale{1.};
   float bias{};
   bool bias_after_scale{true};
+  std::string activation_type{""};
+  bool fuse_relu{false};
+  float alpha{6.};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -355,6 +357,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0};
   float hard_swish_scale{6.0};
   float hard_swish_offset{3.0};
+  // thresholded_relu
+  float relu_threshold{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -374,17 +378,17 @@ struct ConvParam : ParamBase {
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
   /* dilations type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
@@ -468,10 +472,10 @@ struct PoolParam : ParamBase {
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
@@ -1027,10 +1031,26 @@ struct SequenceExpandParam : ParamBase {
   int ref_level{-1};
 };
 
+struct SequencePadParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* PadValue{};
+  lite::Tensor* Out{};
+  lite::Tensor* Length{};
+  int padded_length{-1};
+};
+
 struct SequenceUnpadParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Length{};
   lite::Tensor* Out{};
+};
+
+struct SequenceMaskParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* MaxLenTensor{nullptr};
+  lite::Tensor* Y{};
+  int maxlen{-1};
+  int out_dtype;
 };
 
 struct SequenceExpandAsParam : ParamBase {
@@ -1158,6 +1178,13 @@ struct AffineChannelParam : ParamBase {
   const lite::Tensor* Scale{};
   const lite::Tensor* Bias{};
   std::string data_layout{"NCHW"};  // optional string from: NHWC, NCHW.
+  lite::Tensor* Out{};
+};
+
+struct AffineGridParam : ParamBase {
+  const lite::Tensor* X{};  // Theta:shape {?, 2, 3}
+  std::vector<int> output_shape;
+  const lite::Tensor* OutputShape;
   lite::Tensor* Out{};
 };
 
@@ -1319,6 +1346,8 @@ struct AssignValueParam : ParamBase {
   int dtype{};
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<int> bool_values{};
   lite::Tensor* Out{};
 };
 
@@ -1331,6 +1360,15 @@ struct SequenceTopkAvgPoolingParam : ParamBase {
   lite::Tensor* pos{};
   int channel_num{};
   std::vector<int> topks{};
+};
+
+/// --------------- topk_pooling operators ------------------
+struct TopkPoolingParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  int top_k{1};
+  int feat_map_num{1};
 };
 
 /// --------------- search_fc operators ------------------
@@ -1426,6 +1464,19 @@ struct InstanceNormParam : ParamBase {
   lite::Tensor* saved_variance{};
   float epsilon;
 };
+/// --------------------- group_norm operators --------------------
+struct GroupNormParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* bias{};
+  lite::Tensor* scale{};
+  lite::Tensor* saved_mean{};
+  lite::Tensor* saved_variance{};
+  float epsilon;
+  int groups;
+  int channels;
+};
+
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
@@ -1489,6 +1540,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int head_num{};
   int size_per_head{};
   std::string act_type{};
+  std::string precision{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
@@ -1509,6 +1561,72 @@ struct XPUFcParam : ParamBase {
   float w_max{0.0f};
   bool transpose_w{true};
   std::string activation_type{""};
+};
+
+// For DeformableConvolution op
+struct DeformableConvParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* offset{};
+  lite::Tensor* mask{};
+  lite::Tensor* output{};
+  int deformable_groups{1};
+  int im2col_step{1};
+  bool modulated{true};  // True-v2 False-v1
+  std::string data_format{"Anylayout"};
+  // convolution parameter
+  ConvParam conv_param;
+  // support var_length or not
+  bool var_length{false};
+  // only used in conv_transpose.
+  std::vector<int> output_size;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
+struct PixelShuffleParam : ParamBase {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* output{nullptr};
+  int upscale_factor{1};
+};
+
+struct RetinanetDetectionOutputParam : ParamBase {
+  std::vector<Tensor*> bboxes{};
+  std::vector<Tensor*> scores{};
+  std::vector<Tensor*> anchors{};
+  Tensor* im_info{};
+  Tensor* out{};
+  float score_threshold{};
+  int nms_top_k{};
+  float nms_threshold{};
+  float nms_eta{};
+  int keep_top_k{};
+};
+
+struct WhereIndexParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
+struct ClipParam : ParamBase {
+  Tensor* x{};
+  Tensor* min_tensor{};
+  Tensor* max_tensor{};
+  Tensor* out{};
+  float min{};
+  float max{};
 };
 
 }  // namespace operators

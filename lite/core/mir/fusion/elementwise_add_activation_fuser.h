@@ -23,15 +23,23 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class ElementwiseAddActivationFuser : public FuseBase {
+// Detect elementwise and activation ops, and then merge into
+// fusion_eltsiwise_act op.
+// Example:
+//  elementwise_add + relu fuse.
+//    fusion::ElementwiseActivationFuser fuser("elementwise_add", "relu");
+//    fuser(graph.get());
+class ElementwiseActivationFuser : public FuseBase {
  public:
-  explicit ElementwiseAddActivationFuser(const std::string& act_type)
-      : act_type_(act_type) {}
+  explicit ElementwiseActivationFuser(const std::string& eltwise_type,
+                                      const std::string& act_type)
+      : eltwise_type_(eltwise_type), act_type_(act_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  std::string eltwise_type_;
   std::string act_type_;
 };
 

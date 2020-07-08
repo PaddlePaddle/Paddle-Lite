@@ -14,7 +14,7 @@
 
 #include "lite/core/mir/fusion/conv_bn_fuser.h"
 #include <memory>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace paddle {
@@ -103,9 +103,12 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   std::string conv_weight_name = matched.at("conv_weight")->arg()->name;
   auto conv_weight_t =
       scope->FindVar(conv_weight_name)->GetMutable<lite::Tensor>();
+  auto groups = conv_op_desc->GetAttr<int>("groups");
+  bool depthwise = false;
   if (conv_type_ == "conv2d_transpose") {
+    depthwise = (conv_weight_t->dims()[0] == conv_weight_t->dims()[1] * groups);
     CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
-             static_cast<size_t>(conv_weight_t->dims()[1]))
+             static_cast<size_t>(conv_weight_t->dims()[1] * groups))
         << "The BN bias's size should be equal to the size of the first "
         << "dim size of the conv weights";
   } else {
@@ -153,13 +156,13 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   //       little difference for int8
   ///////////////////////////////////////////////////////////////////////////////
   if (enable_int8) {
-    PADDLE_ENFORCE(conv_op_desc->HasAttr("weight_scale"),
-                   "INT8 mode: Conv should has weight_scale attr");
+    std::string weight_name = conv_op_desc->Input("Filter").front();
+    CHECK(conv_op_desc->HasInputScale(weight_name))
+        << "INT8 mode: Conv should has weight_scale attr";
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
-    auto weight_scale =
-        conv_op_desc->GetAttr<std::vector<float>>("weight_scale");
-    if (conv_type_ == "conv2d_transpose") {
+    auto weight_scale = conv_op_desc->GetInputScale(weight_name);
+    if (conv_type_ == "conv2d_transpose" && !depthwise) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
@@ -185,7 +188,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         }
       }
     }
-    conv_op_desc->SetAttr("weight_scale", weight_scale);
+    conv_op_desc->SetInputScale(weight_name, weight_scale);
   } else if (is_weight_quantization) {
     std::string scale_name = conv_weight_name + "_quant_scale";
     if (conv_op_desc->HasAttr(scale_name)) {
@@ -199,7 +202,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   } else {
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
-    if (conv_type_ == "conv2d_transpose") {
+    if (conv_type_ == "conv2d_transpose" && !depthwise) {
       int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
                    conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];

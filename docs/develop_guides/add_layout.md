@@ -165,9 +165,7 @@ std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
 // 该文件第2处
 // 找到文件中的下面的函数
 KernelRegistry::KernelRegistry()
-    : registries_(static_cast<int>(TARGET(NUM)) *
-                  static_cast<int>(PRECISION(NUM)) *
-                  static_cast<int>(DATALAYOUT(NUM)))
+    : registries_() {
 
 // 在该函数中加入新增Layout的下面内容
   INIT_FOR(kOpenCL, kFP16, kNCHW);

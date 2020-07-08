@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/fluid/lod.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -46,15 +46,14 @@ inline static void CheckDims(const lite::DDim& seq_tensor_dims,
                              int64_t padded_seq_len,
                              int64_t step_width,
                              const PadLayout& layout) {
-  PADDLE_ENFORCE_EQ(static_cast<size_t>(seq_tensor_dims[0]),
-                    seq_offset.back(),
-                    "Value of 1st dimension of the sequence tensor should be "
-                    "equal to sum of lengths of all sequences.");
+  CHECK_EQ(static_cast<size_t>(seq_tensor_dims[0]), seq_offset.back())
+      << "Value of 1st dimension of the sequence tensor should be "
+         "equal to sum of lengths of all sequences.";
 
-  PADDLE_ENFORCE(seq_tensor_dims.size() + 1 == pad_tensor_dims.size() ||
-                     seq_tensor_dims.size() == pad_tensor_dims.size(),
-                 "pad_tensor's rank should be 1 greater than seq_tensor's "
-                 "rank, or be equal with it.");
+  CHECK(seq_tensor_dims.size() + 1 == pad_tensor_dims.size() ||
+        seq_tensor_dims.size() == pad_tensor_dims.size())
+      << "pad_tensor's rank should be 1 greater than seq_tensor's "
+         "rank, or be equal with it.";
 }
 
 /*

@@ -20,11 +20,14 @@ namespace lite {
 namespace subgraph {
 namespace bm {
 
+pthread_mutex_t Graph::mutex_compiler_ = PTHREAD_MUTEX_INITIALIZER;
+
 void Graph::AddNode(const std::string& name) {
   nodes_.insert(std::make_pair(name, name));
 }
 
 void Graph::CreateCompilerHandle() {
+  pthread_mutex_lock(&mutex_compiler_);
 #ifdef BM1682
   compiler_handle_ = create_bmcompiler("BM1682");
 #else
@@ -32,6 +35,8 @@ void Graph::CreateCompilerHandle() {
 #endif
   CHECK(compiler_handle_ != nullptr);
 }
+
+void Graph::UnlockCompilerMutex() { pthread_mutex_unlock(&mutex_compiler_); }
 
 }  // namespace bm
 }  // namespace subgraph

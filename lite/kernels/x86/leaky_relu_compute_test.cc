@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <vector>
+
 #include "lite/core/op_registry.h"
 #include "lite/kernels/x86/activation_compute.h"
 
@@ -24,9 +26,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(leaky_relu_x86, retrive_op) {
-  auto leaky_relu =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "leaky_relu");
+  auto leaky_relu = KernelRegistry::Global().Create("leaky_relu");
   ASSERT_FALSE(leaky_relu.empty());
   ASSERT_TRUE(leaky_relu.front());
 }
@@ -61,18 +61,18 @@ TEST(leaky_relu_x86, run_test) {
   leaky_relu.SetParam(param);
   leaky_relu.Run();
 
-  std::vector<float> ref_data({-0.025,
-                               -0.02083333,
-                               -0.01666667,
-                               -0.0125,
-                               -0.00833333,
-                               -0.00416667,
-                               0.,
-                               0.08333334,
-                               0.16666667,
-                               0.25,
-                               0.33333334,
-                               0.41666666});
+  std::vector<float> ref_data({-0.025f,
+                               -0.02083333f,
+                               -0.01666667f,
+                               -0.0125f,
+                               -0.00833333f,
+                               -0.00416667f,
+                               0.f,
+                               0.08333334f,
+                               0.16666667f,
+                               0.25f,
+                               0.33333334f,
+                               0.41666666f});
   for (int i = 0; i < out.dims().production(); i++) {
     EXPECT_NEAR(out_data[i], ref_data[i], 1e-05);
   }

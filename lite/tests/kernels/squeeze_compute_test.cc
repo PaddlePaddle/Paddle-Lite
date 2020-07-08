@@ -47,7 +47,7 @@ class SqueezeComputeTester : public arena::TestCase {
     bool should_squeeze[9] = {false};
 
     if (num_squeeze_dims == 0) {
-      for (int idx = 0; idx < in_dims.size(); ++idx) {
+      for (size_t idx = 0; idx < in_dims.size(); ++idx) {
         if (in_dims[idx] == 1) {
           should_squeeze[idx] = true;
           ++cnt_squeezed_dims;
@@ -71,7 +71,7 @@ class SqueezeComputeTester : public arena::TestCase {
     }
 
     std::vector<int64_t> output_shape(in_dims.size() - cnt_squeezed_dims, 0);
-    for (int in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
+    for (size_t in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
       if (!should_squeeze[in_idx]) {
         output_shape[out_idx++] = in_dims[in_idx];
       }
@@ -123,7 +123,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     CHECK(out);
     auto* xshape = scope->NewTensor(xshape_);
     CHECK(xshape);
-    std::vector<int64_t> xshape_sp(dims_.size() + 1, 1);
+    std::vector<int64_t> xshape_sp(dims_.size() + 1, 0);
     for (size_t i = 0; i < dims_.size(); ++i) {
       xshape_sp[i + 1] = dims_[i];
     }
@@ -135,7 +135,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     bool should_squeeze[9] = {false};
 
     if (num_squeeze_dims == 0) {
-      for (int idx = 0; idx < in_dims.size(); ++idx) {
+      for (size_t idx = 0; idx < in_dims.size(); ++idx) {
         if (in_dims[idx] == 1) {
           should_squeeze[idx] = true;
           ++cnt_squeezed_dims;
@@ -159,7 +159,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     }
 
     std::vector<int64_t> output_shape(in_dims.size() - cnt_squeezed_dims, 0);
-    for (int in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
+    for (size_t in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
       if (!should_squeeze[in_idx]) {
         output_shape[out_idx++] = in_dims[in_idx];
       }
@@ -169,9 +169,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
 
     auto* input_data = input->data<float>();
     auto* out_data = out->mutable_data<float>();
-    auto* xshape_data = xshape->mutable_data<float>();
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
-    memcpy(xshape_data, input_data, sizeof(float) * dims_.production());
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -221,7 +219,7 @@ void test_squeeze2(Place place) {
             std::unique_ptr<arena::TestCase> tester(new Squeeze2ComputeTester(
                 place, "def", axes, DDim({N, C, H, W})));
             arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
+            arena.TestPrecision({"XShape"});
           }
         }
       }
@@ -230,23 +228,17 @@ void test_squeeze2(Place place) {
 }
 
 TEST(squeeze, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
   test_squeeze(place);
-#endif
 }
 
 TEST(squeeze2, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
   test_squeeze2(place);
-#endif
 }
 
 }  // namespace lite

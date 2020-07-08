@@ -21,58 +21,6 @@ namespace lite {
 namespace subgraph {
 namespace apu {
 
-// typedef to the build functions pointer signatures
-typedef int (*Neuron_getVersion)(uint32_t* version);
-typedef int (*NeuronModel_create)(NeuronModel** model);
-typedef void (*NeuronModel_free)(NeuronModel* model);
-typedef int (*NeuronModel_finish)(NeuronModel* model);
-typedef int (*NeuronModel_addOperand)(NeuronModel* model,
-                                      const NeuronOperandType* type);
-typedef int (*NeuronModel_setOperandValue)(NeuronModel* model,
-                                           int32_t index,
-                                           const void* buffer,
-                                           size_t length);
-typedef int (*NeuronModel_addOperation)(NeuronModel* model,
-                                        NeuronOperationType type,
-                                        uint32_t inputCount,
-                                        const uint32_t* inputs,
-                                        uint32_t outputCount,
-                                        const uint32_t* outputs);
-typedef int (*NeuronModel_identifyInputsAndOutputs)(NeuronModel* model,
-                                                    uint32_t inputCount,
-                                                    const uint32_t* inputs,
-                                                    uint32_t outputCount,
-                                                    const uint32_t* outputs);
-typedef int (*NeuronModel_setOperandSymmPerChannelQuantParams)(
-    NeuronModel* model,
-    int32_t index,
-    const NeuronSymmPerChannelQuantParams* channelQuant);
-typedef int (*NeuronExecution_create)(NeuronCompilation* compilation,
-                                      NeuronExecution** execution);
-typedef void (*NeuronExecution_free)(NeuronExecution* execution);
-typedef int (*NeuronExecution_setInput)(NeuronExecution* execution,
-                                        int32_t index,
-                                        const NeuronOperandType* type,
-                                        const void* buffer,
-                                        size_t length);
-typedef int (*NeuronExecution_setOutput)(NeuronExecution* execution,
-                                         int32_t index,
-                                         const NeuronOperandType* type,
-                                         void* buffer,
-                                         size_t length);
-typedef int (*NeuronExecution_compute)(NeuronExecution* execution);
-
-void* LoadFunc(void* libHandle, const char* name) {
-  CHECK(libHandle != nullptr);
-  CHECK(name != nullptr);
-  void* fn = dlsym(libHandle, name);
-  if (fn == nullptr) {
-    LOG(WARNING) << "Unable to open Neuron Runtime function [" << name
-                 << "] Because " << dlerror();
-  }
-  return fn;
-}
-
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
                  const std::string& argname) {
@@ -102,11 +50,6 @@ void insert_transpose_node(void* ctx,
   int neuron_errCode;
   auto graph = static_cast<Graph*>(ctx);
   auto model = graph->model();
-  auto libHandle = graph->libHandle();
-  LOAD_FUNCTIONS(libHandle, NeuronModel_addOperand, neuron_model_addOperand)
-  LOAD_FUNCTIONS(
-      libHandle, NeuronModel_setOperandValue, neuron_model_setOperandValue)
-  LOAD_FUNCTIONS(libHandle, NeuronModel_addOperation, neuron_model_addOperation)
 
   // Add input
   NeuronOperandType inType;
@@ -121,7 +64,7 @@ void insert_transpose_node(void* ctx,
     VLOG(3) << "Has " << input_name;
     input_node = graph->Get(input_name);
   } else {
-    neuron_errCode = (*neuron_model_addOperand)(model, &inType);  // input
+    neuron_errCode = NeuronModel_addOperand(model, &inType);  // input
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(WARNING) << "Insert transpose op fail!";
       return;
@@ -137,7 +80,7 @@ void insert_transpose_node(void* ctx,
   uint32_t dims_perms[1] = {4};
   permsType.dimensions = dims_perms;
 
-  neuron_errCode = (*neuron_model_addOperand)(model, &permsType);  // perm
+  neuron_errCode = NeuronModel_addOperand(model, &permsType);  // perm
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Insert transpose op fail!";
     return;
@@ -148,7 +91,7 @@ void insert_transpose_node(void* ctx,
   VLOG(3) << "axis :" << axis[0] << ":" << axis[1] << ":" << axis[2] << ":"
           << axis[3];
   //  &axis[0], sizeof(int32_t) * axis.size());
-  neuron_errCode = (*neuron_model_setOperandValue)(
+  neuron_errCode = NeuronModel_setOperandValue(
       model, perms_node->index(), &axis[0], sizeof(int32_t) * axis.size());
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Insert transpose op fail!";
@@ -163,7 +106,7 @@ void insert_transpose_node(void* ctx,
   outType.dimensionCount = output_shape.size();
   outType.dimensions = &output_shape[0];
 
-  (*neuron_model_addOperand)(model, &outType);  // output
+  NeuronModel_addOperand(model, &outType);  // output
   std::shared_ptr<Node> output_node = nullptr;
   output_node = graph->Add(output_name, output_shape);
 
@@ -172,12 +115,12 @@ void insert_transpose_node(void* ctx,
 
   std::vector<uint32_t> addOutIndex = {output_node->index()};
 
-  neuron_errCode = (*neuron_model_addOperation)(model,
-                                                NEURON_TRANSPOSE,
-                                                addInIndex.size(),
-                                                &addInIndex[0],
-                                                addOutIndex.size(),
-                                                &addOutIndex[0]);
+  neuron_errCode = NeuronModel_addOperation(model,
+                                            NEURON_TRANSPOSE,
+                                            addInIndex.size(),
+                                            &addInIndex[0],
+                                            addOutIndex.size(),
+                                            &addOutIndex[0]);
 
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Insert transpose op fail!";

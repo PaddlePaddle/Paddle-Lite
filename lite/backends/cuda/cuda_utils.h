@@ -17,6 +17,7 @@
 #include <cublas_api.h>
 #include <cublas_v2.h>
 #include <cuda.h>
+#include <cuda_fp16.h>
 #include <cudnn.h>
 #include "lite/utils/cp_logging.h"
 
@@ -39,6 +40,8 @@
     CHECK(e == cudaSuccess || e == cudaErrorCudartUnloading) \
         << "CUDA: " << cudaGetErrorString(e);                \
   }
+
+#define CUDA_POST_KERNEL_CHECK CUDA_CALL(cudaPeekAtLastError())
 
 #define CUBLAS_CALL(func)                                        \
   {                                                              \
@@ -64,6 +67,9 @@ inline int CUDA_GET_BLOCKS(const int N) {
 inline int CUDA_GET_BLOCKS(const int N, const int base) {
   return (N + base - 1) / base;
 }
+#define CUDA_KERNEL_LOOP(i, n)                                 \
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
+       i += blockDim.x * gridDim.x)
 
 namespace paddle {
 namespace lite {
@@ -123,6 +129,10 @@ static const char* CudnnGetErrorInfo(cudnnStatus_t status) {
       return "CUDNN_STATUS_RUNTIME_IN_PROGRESS";
     case CUDNN_STATUS_RUNTIME_FP_OVERFLOW:
       return "CUDNN_STATUS_RUNTIME_FP_OVERFLOW";
+#endif
+#if CUDNN_VERSION_MIN(8, 0, 0)
+    case CUDNN_STATUS_VERSION_MISMATCH:
+      return "CUDNN_STATUS_VERSION_MISMATCH";
 #endif
   }
   return "Unknown cudnn status";

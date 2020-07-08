@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/arena/framework.h"
+#include <set>
 #include "lite/core/context.h"
 #include "lite/operators/subgraph_op.h"
 
@@ -22,7 +23,14 @@ namespace arena {
 
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
-  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU)) {
+  static const std::set<TargetType> subgraph_op_supported_targets(
+      {TARGET(kNPU), TARGET(kXPU)});
+  bool enable_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
+                            subgraph_op_supported_targets.end();
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  enable_subgraph_op = false;  // Use XPU kernel directly if XTCL is disabled.
+#endif
+  if (enable_subgraph_op) {
     // Create a new block desc to wrap the original op desc
     int sub_block_idx = 0;
     auto sub_block_desc = new cpp::BlockDesc();
@@ -47,7 +55,7 @@ void TestCase::CreateInstruction() {
     op = LiteOpRegistry::Global().Create(op_desc().Type());
   }
   CHECK(op) << "no op for " << op_desc().Type();
-  op->Attach(*op_desc_, inst_scope_);
+  op->Attach(*op_desc_, inst_scope_.get());
   auto kernels = op->CreateKernels({place_});
   // filter out the target kernel
   CHECK(!kernels.empty()) << "No kernel found for place "
@@ -72,53 +80,35 @@ void TestCase::CreateInstruction() {
 void TestCase::PrepareInputsForInstruction() {
   for (auto& arg : op_desc().InputArgumentNames()) {
     for (auto& var : op_desc().Input(arg)) {
-      std::string kernel_key = instruction_->kernel()->key_with_alias();
-      const auto* param_type = ParamTypeRegistry::Global().RetrieveInArgument(
-          place_, kernel_key, arg);
-
-      const Type* inst_type = nullptr;
-      if (param_type->type->IsTensor()) {
-        inst_type = Type::GetTensorTy(TARGET(kHost));
-      } else if (param_type->type->IsTensorList()) {
-        inst_type = Type::GetTensorListTy(TARGET(kHost));
-      } else {
-        LOG(FATAL) << "unsupported param_type";
-      }
-
-      CHECK(scope_->FindVar(var));
-      if (!TargetCompatibleTo(*inst_type, *param_type->type)) {
-        /// Create a tensor or tensor_array in the instruction's scope,
-        /// alloc memory and then copy data there.
-        if (param_type->type->IsTensor()) {
-          const auto* shared_tensor = scope_->FindTensor(var);
-          auto* target_tensor = inst_scope_->NewTensor(var);
-          CHECK(!shared_tensor->dims().empty()) << "shared_tensor is empty yet";
-          target_tensor->Resize(shared_tensor->dims());
-          TargetCopy(param_type->type->target(),
-                     target_tensor->mutable_data(param_type->type->target(),
-                                                 shared_tensor->memory_size()),
-                     shared_tensor->raw_data(),
-                     shared_tensor->memory_size());
-        } else if (param_type->type->IsTensorList()) {
-          const auto* shared_tensor_array =
-              scope_->FindVar(var)->GetMutable<std::vector<Tensor>>();
-          auto* target_tensor_array =
-              inst_scope_->Var(var)->GetMutable<std::vector<Tensor>>();
-          CHECK(!shared_tensor_array->empty())
-              << "shared_tensor_array is empty yet";
-          target_tensor_array->resize(shared_tensor_array->size());
-          for (size_t i = 0; i < shared_tensor_array->size(); i++) {
-            target_tensor_array->at(i).Resize(
-                shared_tensor_array->at(i).dims());
-            TargetCopy(param_type->type->target(),
-                       target_tensor_array->at(i).mutable_data(
-                           param_type->type->target(),
-                           shared_tensor_array->at(i).memory_size()),
-                       shared_tensor_array->at(i).raw_data(),
-                       shared_tensor_array->at(i).memory_size());
-          }
-        } else {
-          LOG(FATAL) << "not support";
+      const auto* type = instruction_->kernel()->GetInputDeclType(arg);
+      CHECK(base_scope_->FindVar(var));
+      /// Create a tensor or tensor_array in the instruction's scope,
+      /// alloc memory and then copy data there.
+      if (type->IsTensor() &&
+          !TargetCompatibleTo(*Type::GetTensorTy(TARGET(kHost)), *type)) {
+        const auto* base_tensor = base_scope_->FindTensor(var);
+        auto* inst_tensor = inst_scope_->FindMutableTensor(var);
+        CHECK(!base_tensor->dims().empty())
+            << "The dims of input tensor is empty yet";
+        TargetCopy(type->target(),
+                   inst_tensor->mutable_data(type->target(),
+                                             base_tensor->memory_size()),
+                   base_tensor->raw_data(),
+                   base_tensor->memory_size());
+      } else if (type->IsTensorList() &&
+                 !TargetCompatibleTo(*Type::GetTensorListTy(TARGET(kHost)),
+                                     *type)) {
+        const auto* base_tensor_list = base_scope_->FindTensorList(var);
+        auto* inst_tensor_list = inst_scope_->FindMutableTensorList(var);
+        CHECK_EQ(base_tensor_list->size(), inst_tensor_list->size());
+        for (size_t i = 0; i < base_tensor_list->size(); i++) {
+          CHECK(!base_tensor_list->at(i).dims().empty())
+              << "The dims of input tensor[" << i << "] is empty yet";
+          TargetCopy(type->target(),
+                     inst_tensor_list->at(i).mutable_data(
+                         type->target(), base_tensor_list->at(i).memory_size()),
+                     inst_tensor_list->at(i).raw_data(),
+                     inst_tensor_list->at(i).memory_size());
         }
       }
     }
@@ -126,78 +116,88 @@ void TestCase::PrepareInputsForInstruction() {
 }
 
 template <typename T>
-bool TestCase::CheckTensorPrecision(const Tensor* a_tensor,
-                                    const Tensor* b_tensor,
+bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
+                                    const Tensor* base_tensor,
                                     float abs_error) {
-  CHECK(a_tensor);
-  CHECK(b_tensor);
+  CHECK(inst_tensor);
+  CHECK(base_tensor);
 
-  CHECK(ShapeEquals(a_tensor->dims(), b_tensor->dims()));
+  CHECK(ShapeEquals(inst_tensor->dims(), base_tensor->dims()));
 
-  CHECK(a_tensor->lod() == b_tensor->lod()) << "lod not match";
+  CHECK(inst_tensor->lod() == base_tensor->lod()) << "lod not match";
 
   // The baseline should output in host devices.
-  CHECK(b_tensor->target() == TARGET(kHost) ||
-        b_tensor->target() == TARGET(kX86) ||
-        b_tensor->target() == TARGET(kARM));
-
-  const T* a_data{};
-  switch (a_tensor->target()) {
+  CHECK(base_tensor->target() == TARGET(kHost) ||
+        base_tensor->target() == TARGET(kX86) ||
+        base_tensor->target() == TARGET(kARM));
+  const T* inst_data{};
+  Tensor inst_host_tensor;
+  inst_host_tensor.Resize(inst_tensor->dims());
+  switch (inst_tensor->target()) {
     case TARGET(kX86):
     case TARGET(kHost):
     case TARGET(kARM):
-      a_data = static_cast<const T*>(a_tensor->raw_data());
+      inst_data = static_cast<const T*>(inst_tensor->raw_data());
       break;
+#ifdef LITE_WITH_XPU
+    case TARGET(kXPU):
+      CopySync<TARGET(kXPU)>(inst_host_tensor.mutable_data<T>(),
+                             inst_tensor->raw_data(),
+                             sizeof(T) * inst_tensor->dims().production(),
+                             IoDirection::DtoH);
+      inst_data = inst_host_tensor.data<T>();
+      break;
+#endif
 
     default:
       // Before compare, need to copy data from `target` device to host.
       LOG(FATAL) << "Not supported";
   }
 
-  CHECK(a_data);
+  CHECK(inst_data);
 
-  const T* b_data = static_cast<const T*>(b_tensor->raw_data());
+  const T* base_data = static_cast<const T*>(base_tensor->raw_data());
 
   bool success = true;
-  for (int i = 0; i < a_tensor->dims().production(); i++) {
-    EXPECT_NEAR(a_data[i], b_data[i], abs_error);
-    if (fabsf(a_data[i] - b_data[i]) > abs_error) {
+  for (int i = 0; i < inst_tensor->dims().production(); i++) {
+    EXPECT_NEAR(inst_data[i], base_data[i], abs_error);
+    if (fabsf(inst_data[i] - base_data[i]) > abs_error) {
       success = false;
     }
   }
   return success;
 }
 
-bool TestCase::CheckPrecision(const Tensor* a_tensor,
-                              const Tensor* b_tensor,
+bool TestCase::CheckPrecision(const Tensor* inst_tensor,
+                              const Tensor* base_tensor,
                               float abs_error,
                               PrecisionType precision_type) {
   PrecisionType precision_type_t = precision_type;
   if (precision_type == PRECISION(kAny)) {
-    precision_type_t = b_tensor->precision();
+    precision_type_t = base_tensor->precision();
   }
-  CHECK(precision_type_t == b_tensor->precision())
+  CHECK(precision_type_t == base_tensor->precision())
       << "arg precision type and base tensor precision type are not matched! "
          "arg precision type is: "
       << PrecisionToStr(precision_type) << ", base tensor precision type is: "
-      << PrecisionToStr(b_tensor->precision());
-  CHECK(a_tensor->precision() == b_tensor->precision())
+      << PrecisionToStr(base_tensor->precision());
+  CHECK(inst_tensor->precision() == base_tensor->precision())
       << "real tensor precision type and base tensor precision type are not "
          "matched! real tensor precision type is: "
-      << PrecisionToStr(a_tensor->precision())
+      << PrecisionToStr(inst_tensor->precision())
       << ", base tensor precision type is: "
-      << PrecisionToStr(b_tensor->precision());
+      << PrecisionToStr(base_tensor->precision());
   switch (precision_type_t) {
     case PRECISION(kFloat):
-      return CheckTensorPrecision<float>(a_tensor, b_tensor, abs_error);
+      return CheckTensorPrecision<float>(inst_tensor, base_tensor, abs_error);
     case PRECISION(kInt8):
-      return CheckTensorPrecision<int8_t>(a_tensor, b_tensor, abs_error);
+      return CheckTensorPrecision<int8_t>(inst_tensor, base_tensor, abs_error);
     case PRECISION(kInt32):
-      return CheckTensorPrecision<int32_t>(a_tensor, b_tensor, abs_error);
+      return CheckTensorPrecision<int32_t>(inst_tensor, base_tensor, abs_error);
     case PRECISION(kInt64):
-      return CheckTensorPrecision<int64_t>(a_tensor, b_tensor, abs_error);
+      return CheckTensorPrecision<int64_t>(inst_tensor, base_tensor, abs_error);
     case PRECISION(kBool):
-      return CheckTensorPrecision<bool>(a_tensor, b_tensor, abs_error);
+      return CheckTensorPrecision<bool>(inst_tensor, base_tensor, abs_error);
     default:
       LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type);
       return false;
@@ -209,24 +209,24 @@ bool TestCase::CheckPrecision(const std::string& var_name,
                               PrecisionType precision_type) {
   bool success = true;
   if (inst_scope_->FindVar(var_name)->IsType<Tensor>()) {
-    auto a_tensor = inst_scope_->FindTensor(var_name);
-    auto b_tensor = base_scope_->FindTensor(var_name);
-    success = success &&
-              CheckPrecision(a_tensor, b_tensor, abs_error, precision_type);
+    auto inst_tensor = inst_scope_->FindTensor(var_name);
+    auto base_tensor = base_scope_->FindTensor(var_name);
+    success =
+        success &&
+        CheckPrecision(inst_tensor, base_tensor, abs_error, precision_type);
   } else if (inst_scope_->FindVar(var_name)->IsType<std::vector<Tensor>>()) {
-    auto a_tensor_array =
-        inst_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
-    auto b_tensor_array =
-        base_scope_->FindVar(var_name)->GetMutable<std::vector<Tensor>>();
-    CHECK_EQ(a_tensor_array->size(), b_tensor_array->size());
-    for (size_t i = 0; i < a_tensor_array->size(); i++) {
-      Tensor* a_tensor = &(a_tensor_array->at(i));
-      Tensor* b_tensor = &(b_tensor_array->at(i));
-      if (a_tensor->dims().size() == 0 && b_tensor->dims().size() == 0) {
+    auto inst_tensor_list = inst_scope_->FindMutableTensorList(var_name);
+    auto base_tensor_list = base_scope_->FindMutableTensorList(var_name);
+    CHECK_EQ(inst_tensor_list->size(), base_tensor_list->size());
+    for (size_t i = 0; i < inst_tensor_list->size(); i++) {
+      Tensor* inst_tensor = &(inst_tensor_list->at(i));
+      Tensor* base_tensor = &(base_tensor_list->at(i));
+      if (inst_tensor->dims().size() == 0 && base_tensor->dims().size() == 0) {
         continue;
       }
-      success = success &&
-                CheckPrecision(a_tensor, b_tensor, abs_error, precision_type);
+      success =
+          success &&
+          CheckPrecision(inst_tensor, base_tensor, abs_error, precision_type);
     }
   } else {
     LOG(FATAL) << "unsupported var type";

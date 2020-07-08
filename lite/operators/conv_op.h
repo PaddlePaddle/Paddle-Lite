@@ -22,6 +22,9 @@
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/api/paddle_place.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -35,6 +38,29 @@ class ConvOpLite : public OpLite {
 
   bool CheckShape() const override;
   bool InferShapeImpl() const override;
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+    auto filter_dims = param_.filter->dims();
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->filter_shape = ch->DimToStr(filter_dims);
+    ch->remark =
+        std::to_string(filter_dims[2]) + "x" + std::to_string(filter_dims[3]) +
+        "p" + std::to_string((*param_.paddings)[0]) + "s" +
+        std::to_string(param_.strides[0]) + "g" +
+        std::to_string(param_.groups) + "d" +
+        std::to_string((*param_.dilations)[0]) + (param_.bias ? "Bias" : "") +
+        ActivationTypeToStr(param_.activation_param.active_type);
+    // MACs = 2.f * kw * kh * batchsize * out_c * out_h * out_w * in_c / group
+    // GMACs = 1e-9f * MACs
+    // GMACPS = 1e-6f * MACs / predict_ms
+    ch->macs = 2.f * filter_dims[2] * filter_dims[3] *
+               output_dims.production() * input_dims[1] / param_.groups;
+  }
+#endif
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
@@ -104,15 +130,18 @@ class ConvOpLite : public OpLite {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
     // For Int8
-    if (op_desc.HasAttr("enable_int8")) {
-      param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
-      if (op_desc.HasAttr("input_scale"))
-        param_.input_scale = op_desc.GetAttr<float>("input_scale");
-      if (op_desc.HasAttr("weight_scale"))
-        param_.weight_scale =
-            op_desc.GetAttr<std::vector<float>>("weight_scale");
-      if (op_desc.HasAttr("output_scale")) {
-        param_.output_scale = op_desc.GetAttr<float>("output_scale");
+    const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
+    if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
+      param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+      auto input_name = op_info->Input("Input").front();
+      auto filter_name = op_info->Input("Filter").front();
+      auto output_name = op_info->Output("Output").front();
+      if (op_info->HasInputScale(input_name))
+        param_.input_scale = op_info->GetInputScale(input_name)[0];
+      if (op_info->HasInputScale(filter_name))
+        param_.weight_scale = op_info->GetInputScale(filter_name);
+      if (op_info->HasOutputScale(output_name)) {
+        param_.output_scale = op_info->GetOutputScale(output_name)[0];
       }
     }
 

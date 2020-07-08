@@ -14,11 +14,11 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
-#include "NeuronAdapter.h"  // NOLINT
+#include "lite/backends/apu/neuron_adapter.h"
 
 namespace paddle {
 namespace lite {
@@ -32,7 +32,7 @@ class Device {
   }
   Device() {}
 
-  NeuronCompilation* Build(void* libHandle, NeuronModel* model);
+  NeuronCompilation* Build(NeuronModel* model);
 };
 
 }  // namespace apu

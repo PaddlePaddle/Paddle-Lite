@@ -95,6 +95,8 @@ int Engine::Build() {
   return build_device_program_status_;
 }
 
+void Engine::InitDeviceTensor() { return; }
+
 bool Engine::InputShapeChanged() {
   for (size_t i = 0; i < origin_itensors_.size(); i++) {
     if (origin_itensors_[i]->dims() != origin_idims_[i]) {
@@ -110,6 +112,7 @@ int Engine::Launch() {
       CHECK_REBUILD_WHEN_SHAPE_CHANGED(build_device_program_status_) &&
       InputShapeChanged()) {
     Build();
+    InitDeviceTensor();
   }
   if (CHECK_FAILED(build_device_program_status_)) {
     LaunchOriginProgram();

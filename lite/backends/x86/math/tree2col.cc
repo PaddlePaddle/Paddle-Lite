@@ -23,7 +23,7 @@ namespace math {
 std::vector<TreeNode> Tree2ColUtil::construct_patch(
     size_t root, int max_depth, const std::vector<std::vector<int>> &tr) {
   std::stack<TreeNode, std::deque<TreeNode>> stack;
-  std::unordered_map<int, bool> visited;
+  std::map<int, bool> visited;
   std::vector<TreeNode> patch;
 
   stack.push(TreeNode(root, 1, 1, 0));
@@ -55,7 +55,7 @@ void Tree2ColUtil::construct_tree(const lite::Tensor &EdgeSet,
                                   std::vector<std::vector<int>> *tr,
                                   size_t *node_count) {
   auto edge_set_dims = EdgeSet.dims();
-  PADDLE_ENFORCE_EQ(edge_set_dims[1], 2);
+  CHECK_EQ(edge_set_dims[1], 2);
   int64_t edge_count = EdgeSet.numel();
 
   const int *edge_data = EdgeSet.data<int>();

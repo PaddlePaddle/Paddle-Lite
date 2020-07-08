@@ -13,11 +13,9 @@ Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量�
 
 opt的详细介绍，请您参考 [模型优化方法](model_optimize_tool) 。
 
-使用opt，您只需编译后在开发机上执行以下代码：
+下载opt工具后执行以下代码：
 
 ``` shell
-$ cd <PaddleLite_base_path>
-$ cd build.opt/lite/api/
 $ ./opt \
     --model_dir=<model_param_dir> \
     --model_file=<model_path> \
@@ -51,4 +49,4 @@ $ ./opt \
 
 ## 五. 测试工具
 
-为了使您更好的了解并使用Lite框架，我们向有进一步使用需求的用户开放了 [Debug工具](debug#debug) 和 [Profile工具](debug#profiler)。Lite Model Debug Tool可以用来查找Lite框架与PaddlePaddle框架在执行预测时模型中的对应变量值是否有差异，进一步快速定位问题Op，方便复现与排查问题。Profile Monitor Tool可以帮助您了解每个Op的执行时间消耗，其会自动统计Op执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](debug) 了解更多内容。
+为了使您更好的了解并使用Lite框架，我们向有进一步使用需求的用户开放了 [Debug工具](debug) 和 [Profile工具](debug)。Lite Model Debug Tool可以用来查找Lite框架与PaddlePaddle框架在执行预测时模型中的对应变量值是否有差异，进一步快速定位问题Op，方便复现与排查问题。Profile Monitor Tool可以帮助您了解每个Op的执行时间消耗，其会自动统计Op执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](debug) 了解更多内容。

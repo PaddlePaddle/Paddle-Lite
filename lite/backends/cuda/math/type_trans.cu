@@ -97,6 +97,56 @@ void fp32_to_int8_nhwc(int num,
   }
 }
 
+__global__ void Fp32ToFp16Kernel(const int num,
+                                 const float* input,
+                                 half* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+    output[index] = __float2half(input[index]);
+  }
+}
+
+void fp32_to_fp16(int num, const float* din, half* dout, cudaStream_t stream) {
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  Fp32ToFp16Kernel<<<blocks, threads, 0, stream>>>(num, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
+void fp32_to_fp16(int num, const float* din, half* dout) {
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  Fp32ToFp16Kernel<<<blocks, threads>>>(num, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
+__global__ void Fp16ToFp32Kernel(const int num,
+                                 const half* input,
+                                 float* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+    output[index] = __half2float(input[index]);
+  }
+}
+
+void fp16_to_fp32(int num, const half* din, float* dout, cudaStream_t stream) {
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  Fp16ToFp32Kernel<<<blocks, threads, 0, stream>>>(num, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
+void fp16_to_fp32(int num, const half* din, float* dout) {
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  Fp16ToFp32Kernel<<<blocks, threads>>>(num, din, dout);
+  cudaError_t error = cudaGetLastError();
+  CHECK(error == cudaSuccess) << cudaGetErrorString(error);
+}
+
 }  // namespace math
 }  // namespace cuda
 }  // namespace lite

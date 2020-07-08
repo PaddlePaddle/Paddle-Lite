@@ -21,6 +21,7 @@
 #define PADDLE_LITE_API_H_
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "paddle_place.h"  // NOLINT
 
@@ -79,6 +80,8 @@ class LITE_API PaddlePredictor {
 
   virtual void Run() = 0;
   virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
+  virtual std::shared_ptr<PaddlePredictor> Clone(
+      const std::vector<std::string>& var_names) = 0;
 
   virtual std::string GetVersion() const = 0;
 
@@ -86,6 +89,8 @@ class LITE_API PaddlePredictor {
   virtual std::vector<std::string> GetInputNames() = 0;
   // Get output names
   virtual std::vector<std::string> GetOutputNames() = 0;
+  // Get output names
+  virtual std::vector<std::string> GetParamNames();
 
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
@@ -93,6 +98,9 @@ class LITE_API PaddlePredictor {
   /// Get a readonly tensor, return null if no one called `name` exists.
   virtual std::unique_ptr<const Tensor> GetTensor(
       const std::string& name) const = 0;
+  /// Get a mutable tensor, return null if on one called `name` exists
+  /// internal infereces API, not recommanded.
+  virtual std::unique_ptr<Tensor> GetMutableTensor(const std::string& name);
 
   /// Persist the optimized model to disk. This API is only supported by
   /// CxxConfig, and the persisted model can be reused for MobileConfig.
@@ -113,18 +121,27 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
+  // to save subgraph model for npu/xpu/...
+  std::string subgraph_model_cache_dir_{""};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
   // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
   const std::string& model_dir() const { return model_dir_; }
-  // set Power_mode
-  void set_power_mode(PowerMode mode);
-  PowerMode power_mode() const { return mode_; }
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const { return mode_; }
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  const std::string& subgraph_model_cache_dir() const {
+    return subgraph_model_cache_dir_;
+  }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
@@ -132,6 +149,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<Place> valid_places_;
   std::string model_file_;
   std::string param_file_;
+  std::vector<std::string> passes_internal_{};
   bool model_from_memory_{false};
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
@@ -143,9 +161,8 @@ class LITE_API CxxConfig : public ConfigBase {
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
   DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
-  bool mlu_use_first_conv_{false};
-  std::vector<float> mlu_first_conv_mean_;
-  std::vector<float> mlu_first_conv_std_;
+  std::vector<float> mlu_first_conv_mean_{};
+  std::vector<float> mlu_first_conv_std_{};
 #endif
 
  public:
@@ -160,7 +177,16 @@ class LITE_API CxxConfig : public ConfigBase {
     param_file_ = std::string(param_buffer, param_buffer + param_buffer_size);
     model_from_memory_ = true;
   }
-
+  // internal inference to choose passes for model optimizing,
+  // it's designed for internal developer and not recommanded
+  // for comman users.
+  void set_passes_internal(
+      const std::vector<std::string>& passes_internal = {}) {
+    passes_internal_ = passes_internal;
+  }
+  const std::vector<std::string>& get_passes_internal() const {
+    return passes_internal_;
+  }
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
@@ -176,7 +202,7 @@ class LITE_API CxxConfig : public ConfigBase {
 #endif
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
-  int multi_stream() const { return multi_stream_; }
+  bool multi_stream() const { return multi_stream_; }
 #endif
 
 #ifdef LITE_WITH_MLU
@@ -184,24 +210,22 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
   // set MLU core number, which is used when compiling MLU kernels
   void set_mlu_core_number(int core_number);
-  // set MLU input layout. User can specify layout of input data to be NHWC,
-  // default is NCHW
-  void set_mlu_input_layout(DataLayoutType layout);
   // whether use MLU's first conv kernel. First conv is a special kernel
   // provided by MLU, its input is uint8, and also needs two 3-dimentional
   // vectors which save all inputs' mean and std values
-  void set_mlu_use_first_conv(bool use_first_conv);
-  // set the 3-dimentional mean vector used by MLU's first conv
-  void set_mlu_first_conv_mean(const std::vector<float>& mean);
-  // set the 3-dimentional std vector used by MLU's first conv
-  void set_mlu_first_conv_std(const std::vector<float>& std);
+  // set the 3-dimentional mean vector and 3-dimentional std vector used by
+  // MLU's first conv
+  void set_mlu_firstconv_param(const std::vector<float>& mean,
+                               const std::vector<float>& std);
+  // set MLU input layout. User can specify layout of input data to be NHWC,
+  // default is NCHW
+  void set_mlu_input_layout(DataLayoutType layout);
 
   lite_api::MLUCoreVersion mlu_core_version() const;
   int mlu_core_number() const;
   DataLayoutType mlu_input_layout() const;
-  bool mlu_use_first_conv() const;
-  const std::vector<float>& mlu_first_conv_mean() const;
-  const std::vector<float>& mlu_first_conv_std() const;
+  // std::pair<mean, std>
+  std::pair<std::vector<float>, std::vector<float>> mlu_firstconv_param() const;
 #endif
 
   // XPU only, set the size of the workspace memory from L3 cache for the
@@ -211,6 +235,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+  void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

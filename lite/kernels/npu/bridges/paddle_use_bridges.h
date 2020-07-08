@@ -25,6 +25,7 @@ USE_SUBGRAPH_BRIDGE(hard_sigmoid, kNPU);
 USE_SUBGRAPH_BRIDGE(log, kNPU);
 USE_SUBGRAPH_BRIDGE(sqrt, kNPU);
 USE_SUBGRAPH_BRIDGE(square, kNPU);
+USE_SUBGRAPH_BRIDGE(thresholded_relu, kNPU);
 
 USE_SUBGRAPH_BRIDGE(batch_norm, kNPU);
 USE_SUBGRAPH_BRIDGE(less_than, kNPU);
@@ -38,12 +39,13 @@ USE_SUBGRAPH_BRIDGE(elementwise_add, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_sub, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_mul, kNPU);
 USE_SUBGRAPH_BRIDGE(elementwise_div, kNPU);
+USE_SUBGRAPH_BRIDGE(expand, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation, kNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNPU);
-USE_SUBGRAPH_BRIDGE(fill_constant, kNPU)
-USE_SUBGRAPH_BRIDGE(fill_constant_batch_size_like, kNPU)
+// USE_SUBGRAPH_BRIDGE(fill_constant, kNPU)
+// USE_SUBGRAPH_BRIDGE(fill_constant_batch_size_like, kNPU)
 
 // USE_SUBGRAPH_BRIDGE(gather, kNPU);
 // USE_SUBGRAPH_BRIDGE(lookup_table, kNPU);

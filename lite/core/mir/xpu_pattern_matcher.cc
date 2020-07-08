@@ -78,7 +78,7 @@ void XPUPatternMatcher::ValidateByNodeRole(
                      subgraphs->end(),
                      [](const XPUPatternMatcher::subgraph_t &subgraph) -> bool {
                        // Collect the inlinks and outlinks.
-                       std::unordered_set<Node *> ios;
+                       std::set<Node *> ios;
                        for (auto &item : subgraph) {
                          ios.insert(item.second);
                        }
@@ -96,7 +96,7 @@ void XPUPatternMatcher::ValidateByNodeRole(
       subgraphs->end());
 
   for (auto &subgraph : *subgraphs) {
-    std::unordered_set<Node *> ios;
+    std::set<Node *> ios;
     for (auto &item : subgraph) {
       ios.insert(item.second);
     }
@@ -113,7 +113,7 @@ void XPUPatternMatcher::ValidateByNodeRole(
 }
 
 struct HitGroup {
-  std::unordered_map<PMNode *, Node *> roles;
+  std::map<PMNode *, Node *> roles;
 
   bool Match(Node *node, PMNode *pat) {
     if (nodes_.count(node)) {
@@ -131,7 +131,7 @@ struct HitGroup {
   }
 
  private:
-  std::unordered_set<Node *> nodes_;
+  std::set<Node *> nodes_;
 };
 
 // Tell whether Node a links to b.
@@ -222,12 +222,13 @@ void XPUPatternMatcher::UniquePatterns(
   if (subgraphs->empty()) return;
   std::vector<PatternMatcher::subgraph_t> result;
 
-  std::unordered_set<size_t> set;
+  std::set<size_t> set;
   std::hash<std::string> hasher;
   for (auto &g : *subgraphs) {
     // Sort the items in the sub-graph, and transform to a string key.
     std::vector<std::pair<PMNode *, Node *>> sorted_keys(g.begin(), g.end());
-    std::sort(sorted_keys.begin(), sorted_keys.end(), GraphItemLessThan());
+    std::stable_sort(
+        sorted_keys.begin(), sorted_keys.end(), GraphItemLessThan());
     STL::stringstream ss;
     for (auto &item : sorted_keys) {
       ss << reinterpret_cast<size_t>(item.first) << ":"
@@ -245,7 +246,7 @@ void XPUPatternMatcher::UniquePatterns(
 void XPUPatternMatcher::RemoveOverlappedMatch(
     std::vector<subgraph_t> *subgraphs) {
   std::vector<subgraph_t> result;
-  std::unordered_set<Node *> node_set;
+  std::set<Node *> node_set;
 
   for (const auto &subgraph : *subgraphs) {
     bool valid = true;

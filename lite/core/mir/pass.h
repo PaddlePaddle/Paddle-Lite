@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "lite/core/mir/node.h"
@@ -97,13 +97,12 @@ class Pass {
   // explicitly declared.
   // Bind kernels. All kernels bound at runtime must be registered.
   void BindKernels(
-      const std::unordered_map<std::string, std::set<lite_api::Place>>&
-          kernels) {
+      const std::map<std::string, std::set<lite_api::Place>>& kernels) {
     bound_kernels_ = kernels;
   }
   // Get all bound kernels.
-  const std::unordered_map<std::string, std::set<lite_api::Place>>&
-  GetBoundKernels() const {
+  const std::map<std::string, std::set<lite_api::Place>>& GetBoundKernels()
+      const {
     return bound_kernels_;
   }
   // Add one kernel to the bound kernels.
@@ -150,9 +149,8 @@ class Pass {
   std::string doc_;
   std::set<TargetType> bound_targets_;
   std::set<TargetType> excluded_targets_;
-  std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_;
-  std::unordered_map<std::string, variant<Node, std::vector<Node*>>>
-      pass_attrs_;
+  std::map<std::string, std::set<lite_api::Place>> bound_kernels_;
+  std::map<std::string, variant<Node, std::vector<Node*>>> pass_attrs_;
 };
 
 // Different kinds.

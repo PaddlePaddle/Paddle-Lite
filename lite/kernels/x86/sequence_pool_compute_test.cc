@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/sequence_pool_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/sequence_pool_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
 
 TEST(sequence_pool_x86, retrive_op) {
-  auto sequence_pool =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "sequence_pool");
+  auto sequence_pool = KernelRegistry::Global().Create("sequence_pool");
   ASSERT_FALSE(sequence_pool.empty());
   ASSERT_TRUE(sequence_pool.front());
 }
@@ -74,7 +75,7 @@ TEST(sequence_pool_x86, run_test) {
   sequence_pool.Run();
 
   std::vector<float> ref_results = {
-      39.6, 40.7, 41.8, 42.9, 44, 45.1, 46.2, 47.3};
+      39.6f, 40.7f, 41.8f, 42.9f, 44.f, 45.1f, 46.2f, 47.3f};
   for (int i = 0; i < out.dims().production(); i++) {
     EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }

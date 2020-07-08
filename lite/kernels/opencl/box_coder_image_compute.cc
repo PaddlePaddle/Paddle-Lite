@@ -23,6 +23,10 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/logging.h"
 #include "lite/utils/replace_stl/stream.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -61,7 +65,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->proposals->mutable_data<half_t, cl::Image2D>(
             image_shape["width"], image_shape["height"]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "boxcoder input shape:  ";
 
 #endif
@@ -93,7 +97,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
 
       int out_C = new_dims[1];
       int out_H = new_dims[2];
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
       VLOG(4) << "output shape: " << out_dims[0] << ", " << out_dims[1] << ", "
               << out_dims[2] << ", " << out_dims[3];
@@ -121,22 +125,30 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
           cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                       static_cast<cl::size_type>(default_work_size[2])};
 
-      status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
-          cl::NullRange,
-          global_work_size,
-          cl::NullRange,
-          nullptr,
-          nullptr);
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
       CL_CHECK_FATAL(status);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
               << global_work_size[1];
 #endif
     }
   }
   std::string doc() { return "Boxcoder using cl::Image, kFP16"; }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
   param_t* boxcoder_param_{nullptr};
   std::string kernel_func_name_{};

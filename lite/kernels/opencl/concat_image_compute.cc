@@ -19,6 +19,10 @@
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/replace_stl/stream.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -125,7 +129,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     int arg_idx = 0;
     int width = inputs[0]->dims()[inputs[0]->dims().size() - 1];
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << "concat input shape:  ";
     for (size_t i = 0; i < inputs.size(); i++) {
       VLOG(4) << "inputs [" << i << "]"
@@ -149,7 +153,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                                                x_dims[x_dims.size() - 1]),
                     static_cast<cl::size_type>(image_shape["height"])};
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
     VLOG(4) << TargetToStr(param.output->target());
     VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
             << image_shape["height"];
@@ -204,7 +208,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         image_shape = InitImageDimInfoWith(in_dims);
         auto* x_buf = inputs[i]->data<half_t, cl::Image2D>();
         int in_w = in_dims[in_dims.size() - 1];
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
         VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
                 << image_shape["height"];
 #endif
@@ -245,6 +249,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   }
 
   std::string doc() { return "Concat using cl::Image, kFP16"; }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
   int axis_size_ = 1;
   int axis_ = 1;

@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
 #include "lite/kernels/x86/activation_compute.cc"
 
@@ -26,8 +28,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(gelu_x86, retrive_op) {
-  auto gelu =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("gelu");
+  auto gelu = KernelRegistry::Global().Create("gelu");
   ASSERT_FALSE(gelu.empty());
   ASSERT_TRUE(gelu.front());
 }
@@ -66,18 +67,18 @@ TEST(gelu_x86, run_test) {
   gelu.Run();
 
   LOG(INFO) << "output: ";
-  std::vector<float> ref_data{0.,
-                              -0.169484,
-                              1.512321,
-                              -0.019674,
-                              3.197801,
-                              -0.000126719,
-                              4.8,
-                              -0.,
-                              6.4000001,
-                              -0.,
-                              8.,
-                              -0.};
+  std::vector<float> ref_data{0.f,
+                              -0.169484f,
+                              1.512321f,
+                              -0.019674f,
+                              3.197801f,
+                              -0.000126719f,
+                              4.8f,
+                              -0.f,
+                              6.4000001f,
+                              -0.f,
+                              8.f,
+                              -0.f};
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
     EXPECT_NEAR(out_data[i], ref_data[i], 1e-5);

@@ -33,16 +33,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   auto scope = op->scope();
   int neuron_errCode;
-
   VLOG(3) << "[APU] Converting [" << op_type << "]";
-  auto libHandle = graph->libHandle();
-  LOAD_FUNCTIONS(libHandle, NeuronModel_addOperand, neuron_model_addOperand)
-  LOAD_FUNCTIONS(
-      libHandle, NeuronModel_setOperandValue, neuron_model_setOperandValue)
-  LOAD_FUNCTIONS(libHandle, NeuronModel_addOperation, neuron_model_addOperation)
-  LOAD_FUNCTIONS(libHandle,
-                 NeuronModel_setOperandSymmPerChannelQuantParams,
-                 neuron_model_setOperandSymmPerChannelQuantParams)
+
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
@@ -103,30 +97,18 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
-  float input_scale;
-  float output_scale;
-  std::vector<float> weight_scale;
-  if (op_info->HasAttr("enable_int8")) {
-    if (op_info->GetAttr<bool>("enable_int8")) {
-      if (op_info->HasAttr("input_scale"))
-        input_scale = op_info->GetAttr<float>("input_scale");
-      if (op_info->HasAttr("weight_scale"))
-        weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
-      if (op_info->HasAttr("output_scale"))
-        output_scale = op_info->GetAttr<float>("output_scale");
-      VLOG(3) << "has output scale:" << output_scale;
-    } else {
-      return FAILED;
-    }
-  } else {
-    return FAILED;
-  }
+  CHECK(op_info->HasInputScale(input_name));
+  auto input_scale = op_info->GetInputScale(input_name)[0];
+  CHECK(op_info->HasInputScale(filter_name));
+  auto filter_scale = op_info->GetInputScale(filter_name);
+  CHECK(op_info->HasOutputScale(output_name));
+  auto output_scale = op_info->GetOutputScale(output_name)[0];
 
   VLOG(3) << "strides.size(): " << strides.size() << " ,groups: " << groups
           << " ,dilations: " << dilations[0] << ":" << dilations[1];
   VLOG(3) << "with_act: " << with_act << " ,act_type:" << act_type;
   VLOG(3) << "input_dims: " << input_dims << " ,output_dims: " << output_dims
-          << " ,weight_scale size: " << weight_scale.size();
+          << " ,filter_scale size: " << filter_scale.size();
   VLOG(3) << "filter_dims: " << filter_dims
           << " ,memory_size: " << filter->memory_size()
           << " ,data_size: " << filter->data_size();
@@ -167,7 +149,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_node = graph->Get(input_name);
       if (input_node == nullptr) return subgraph::FAILED;
     } else {
-      (*neuron_model_addOperand)(model, &inType);  // input
+      NeuronModel_addOperand(model, &inType);  // input
       input_node = graph->Add(input_name, dims_in);
     }
   }
@@ -225,10 +207,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronOperandType filterType;
   NeuronOperandType channelFilterType;
   NeuronSymmPerChannelQuantParams symmPerChannelQuantParams;
-  if (1 == weight_scale.size()) {
+  if (1 == filter_scale.size()) {
     // Per layer type
     filterType.type = NEURON_TENSOR_QUANT8_ASYMM;
-    filterType.scale = weight_scale[0];
+    filterType.scale = filter_scale[0];
     filterType.zeroPoint = 128;
     filterType.dimensionCount = filter_dims.size();
     filterType.dimensions = &dims_filter[0];
@@ -246,34 +228,34 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       symmPerChannelQuantParams.channelDim = 3;
     else
       symmPerChannelQuantParams.channelDim = 0;
-    symmPerChannelQuantParams.scaleCount = weight_scale.size();
-    symmPerChannelQuantParams.scales = weight_scale.data();
+    symmPerChannelQuantParams.scaleCount = filter_scale.size();
+    symmPerChannelQuantParams.scales = filter_scale.data();
     biasType.scale = 0;
   }
 
   std::shared_ptr<Node> filter_node = nullptr;
-  if (1 == weight_scale.size()) {
-    (*neuron_model_addOperand)(model, &filterType);  // 1: filter
+  if (1 == filter_scale.size()) {
+    NeuronModel_addOperand(model, &filterType);  // 1: filter
     filter_node = graph->Add(filter_name, dims_filter);
-    VLOG(3) << "filter node idx: " << filter_node->index() << "w_scale[0]"
-            << weight_scale[0] << ": filterType: " << filterType.dimensions[0]
+    VLOG(3) << "filter node idx: " << filter_node->index() << "filter_scale[0]"
+            << filter_scale[0] << ": filterType: " << filterType.dimensions[0]
             << ":" << filterType.dimensions[1] << ":"
             << filterType.dimensions[2] << ":" << filterType.dimensions[3];
     memcpy(filter->mutable_data<int8_t>(),
            transpose_filter.mutable_data<uint8_t>(),
            filter->memory_size());
-    neuron_errCode = (*neuron_model_setOperandValue)(
+    neuron_errCode = NeuronModel_setOperandValue(
         model, filter_node->index(), filter->raw_data(), filter->memory_size());
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(WARNING) << "Set filter operand value fail:" << neuron_errCode;
       return subgraph::FAILED;
     }
   } else {
-    (*neuron_model_addOperand)(model, &channelFilterType);  // 1: filter
+    NeuronModel_addOperand(model, &channelFilterType);  // 1: filter
     filter_node = graph->Add(filter_name, dims_filter);
     VLOG(3) << "chennel filter node idx: " << filter_node->index()
-            << " ,scale_count:" << weight_scale.size()
-            << " weight_scale[0]:" << weight_scale.data()[0]
+            << " ,scale_count:" << filter_scale.size()
+            << " filter_scale[0]:" << filter_scale.data()[0]
             << " ,channelFilterType: " << channelFilterType.dimensions[0] << ":"
             << channelFilterType.dimensions[1] << ":"
             << channelFilterType.dimensions[2] << ":"
@@ -281,13 +263,13 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     memcpy(filter->mutable_data<int8_t>(),
            transpose_filter.mutable_data<uint8_t>(),
            filter->memory_size());
-    neuron_errCode = (*neuron_model_setOperandValue)(
+    neuron_errCode = NeuronModel_setOperandValue(
         model, filter_node->index(), filter->raw_data(), filter->memory_size());
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(WARNING) << "Set filter operand value fail:" << neuron_errCode;
       return subgraph::FAILED;
     }
-    neuron_errCode = (*neuron_model_setOperandSymmPerChannelQuantParams)(
+    neuron_errCode = NeuronModel_setOperandSymmPerChannelQuantParams(
         model, filter_node->index(), &symmPerChannelQuantParams);
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(WARNING) << "Set per channel filter params fail:" << neuron_errCode;
@@ -307,7 +289,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> bias_node = nullptr;
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
-    auto bias_type = kernel->GetInputDeclType("Bias");
     auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
 
@@ -315,7 +296,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     for (int i = 0; i < bias_dims.size(); i++)
       dims_bias.push_back(bias_dims[i]);
     biasType.dimensions = &dims_bias[0];
-    (*neuron_model_addOperand)(model, &biasType);  // 2: bias
+    NeuronModel_addOperand(model, &biasType);  // 2: bias
     bias_node = graph->Add(bias_name, dims_bias);
     VLOG(3) << "node idx" << bias_node->index() << ": Bias name: " << bias_name
             << " ,bias scale: " << biasType.scale
@@ -324,7 +305,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     biasType.dimensionCount = 1;
     dims_bias = {(uint32_t)output_dims[1]};
     biasType.dimensions = &dims_bias[0];
-    (*neuron_model_addOperand)(model, &biasType);  // 2: bias
+    NeuronModel_addOperand(model, &biasType);  // 2: bias
     bias_node = graph->Add(filter_name + "_default_bias", dims_bias);
     VLOG(3) << "node idx" << bias_node->index() << ": Bias name: default_bias "
             << " ,bias scale: " << biasType.scale
@@ -337,46 +318,43 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<uint32_t> dims_int32 = {1};
 
   std::shared_ptr<Node> paddingL_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 3: padding left
+  NeuronModel_addOperand(model, &int32Type);  // 3: padding left
   paddingL_node = graph->Add(filter_name + "_padding_left", dims_int32);
 
   std::shared_ptr<Node> paddingR_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 4: padding right
+  NeuronModel_addOperand(model, &int32Type);  // 4: padding right
   paddingR_node = graph->Add(filter_name + "_padding_right", dims_int32);
 
   std::shared_ptr<Node> paddingT_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 5: padding top
+  NeuronModel_addOperand(model, &int32Type);  // 5: padding top
   paddingT_node = graph->Add(filter_name + "_padding_top", dims_int32);
 
   std::shared_ptr<Node> paddingB_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 6: padding bottom
+  NeuronModel_addOperand(model, &int32Type);  // 6: padding bottom
   paddingB_node = graph->Add(filter_name + "_padding_bottom", dims_int32);
 
   std::shared_ptr<Node> strideW_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 7: stride width
+  NeuronModel_addOperand(model, &int32Type);  // 7: stride width
   strideW_node = graph->Add(filter_name + "_stride_width", dims_int32);
 
   std::shared_ptr<Node> strideH_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 8: stride height
+  NeuronModel_addOperand(model, &int32Type);  // 8: stride height
   strideH_node = graph->Add(filter_name + "_stride_height", dims_int32);
 
   std::shared_ptr<Node> dm_node = nullptr;
   if (is_depthwise_mode) {
-    (*neuron_model_addOperand)(model, &int32Type);  // 9: depthwise multiplier
+    NeuronModel_addOperand(model, &int32Type);  // 9: depthwise multiplier
     dm_node = graph->Add(filter_name + "_dm", dims_int32);
   }
 
   std::shared_ptr<Node> fuse_node = nullptr;
-  (*neuron_model_addOperand)(model, &int32Type);  // 9/10: fuse
+  NeuronModel_addOperand(model, &int32Type);  // 9/10: fuse
   fuse_node = graph->Add(filter_name + "_fuse", dims_int32);
 
   // Add output tensor type
   NeuronOperandType outType;
   outType.type = NEURON_TENSOR_QUANT8_ASYMM;
-  if (graph->IsOutput(output_name))
-    outType.scale = output_scale / 127;
-  else
-    outType.scale = output_scale;
+  outType.scale = output_scale;
   outType.zeroPoint = 128;
   outType.dimensionCount = output_dims.size();
   std::vector<uint32_t> dims_out = {(uint32_t)output_dims[0],
@@ -390,10 +368,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     // add output operand
     if (graph->IsOutput(output_name)) {
-      (*neuron_model_addOperand)(model, &outType);  // output
+      NeuronModel_addOperand(model, &outType);  // output
       output_node = graph->Add("transpose_" + output_name, dims_out);
     } else {
-      (*neuron_model_addOperand)(model, &outType);  // output
+      NeuronModel_addOperand(model, &outType);  // output
       output_node = graph->Add(output_name, dims_out);
     }
   }
@@ -410,12 +388,12 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     int32_t* int32_bias_data =
         reinterpret_cast<int32_t*>(bias->mutable_data<float>());
     float2int32(
-        bias->data<float>(), input_scale, weight_scale, int32_bias_data);
+        bias->data<float>(), input_scale, filter_scale, int32_bias_data);
 
     VLOG(3) << "int32_bias_data: " << int32_bias_data[0] << " : "
             << int32_bias_data[1] << " : " << int32_bias_data[2] << " : "
             << int32_bias_data[3];
-    neuron_errCode = (*neuron_model_setOperandValue)(
+    neuron_errCode = NeuronModel_setOperandValue(
         model, bias_node->index(), bias->raw_data(), bias->memory_size());
   } else {
     auto int32_bias = std::make_shared<Tensor>();
@@ -423,10 +401,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     int32_bias->mutable_data<int32_t>();
     VLOG(3) << "bais_default: " << int32_bias->memory_size();
     memset(int32_bias->mutable_data<int32_t>(), 0, int32_bias->memory_size());
-    neuron_errCode = (*neuron_model_setOperandValue)(model,
-                                                     bias_node->index(),
-                                                     int32_bias->raw_data(),
-                                                     int32_bias->memory_size());
+    neuron_errCode = NeuronModel_setOperandValue(model,
+                                                 bias_node->index(),
+                                                 int32_bias->raw_data(),
+                                                 int32_bias->memory_size());
     bias_node->set_data(int32_bias);
   }
   if (NEURON_NO_ERROR != neuron_errCode) {
@@ -439,16 +417,16 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Add padding value
   int32_t padding_val[1];
   padding_val[0] = paddings[2];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingL_node->index(), padding_val, sizeof(int32_t) * 1);
   padding_val[0] = paddings[3];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingR_node->index(), padding_val, sizeof(int32_t) * 1);
   padding_val[0] = paddings[0];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingT_node->index(), padding_val, sizeof(int32_t) * 1);
   padding_val[0] = paddings[1];
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, paddingB_node->index(), padding_val, sizeof(int32_t) * 1);
 
   VLOG(3) << " stride width:" << strides[1] << " height:" << strides[0];
@@ -456,10 +434,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Add Stride
   int32_t stride_val[1];
   stride_val[0] = strides[1];  // width
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, strideW_node->index(), stride_val, sizeof(int32_t) * 1);
   stride_val[0] = strides[0];  // height
-  (*neuron_model_setOperandValue)(
+  NeuronModel_setOperandValue(
       model, strideH_node->index(), stride_val, sizeof(int32_t) * 1);
 
   // Add fuse
@@ -478,12 +456,12 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (is_depthwise_mode) {
     int32_t dm = oc / ic;
-    (*neuron_model_setOperandValue)(
+    NeuronModel_setOperandValue(
         model, dm_node->index(), &dm, sizeof(int32_t) * 1);
     VLOG(3) << "depthwise multiplier:" << dm;
 
     // Depthwise conv
-    (*neuron_model_setOperandValue)(
+    NeuronModel_setOperandValue(
         model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
     std::vector<uint32_t> addInIndex = {
         input_node->index(),     // 0: input
@@ -499,14 +477,14 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         fuse_node->index()};     // 10 : fuse
 
     std::vector<uint32_t> addOutIndex = {output_node->index()};
-    neuron_errCode = (*neuron_model_addOperation)(model,
-                                                  NEURON_DEPTHWISE_CONV_2D,
-                                                  addInIndex.size(),
-                                                  &addInIndex[0],
-                                                  addOutIndex.size(),
-                                                  &addOutIndex[0]);
+    neuron_errCode = NeuronModel_addOperation(model,
+                                              NEURON_DEPTHWISE_CONV_2D,
+                                              addInIndex.size(),
+                                              &addInIndex[0],
+                                              addOutIndex.size(),
+                                              &addOutIndex[0]);
   } else {
-    (*neuron_model_setOperandValue)(
+    NeuronModel_setOperandValue(
         model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
     std::vector<uint32_t> addInIndex = {
         input_node->index(),     // 0: input
@@ -521,12 +499,12 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         fuse_node->index()};     // 9: fuse
 
     std::vector<uint32_t> addOutIndex = {output_node->index()};
-    neuron_errCode = (*neuron_model_addOperation)(model,
-                                                  NEURON_CONV_2D,
-                                                  addInIndex.size(),
-                                                  &addInIndex[0],
-                                                  addOutIndex.size(),
-                                                  &addOutIndex[0]);
+    neuron_errCode = NeuronModel_addOperation(model,
+                                              NEURON_CONV_2D,
+                                              addInIndex.size(),
+                                              &addInIndex[0],
+                                              addOutIndex.size(),
+                                              &addOutIndex[0]);
   }
 
   if (NEURON_NO_ERROR != neuron_errCode) {

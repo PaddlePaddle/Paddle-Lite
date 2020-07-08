@@ -223,7 +223,7 @@ class ReduceMeanComputeTester : public arena::TestCase {
       }
     }
 
-    sort(dim_.begin(), dim_.end());
+    std::stable_sort(dim_.begin(), dim_.end());
     if (dim_.size() == 0) {
       reduce_all_ = true;
     }

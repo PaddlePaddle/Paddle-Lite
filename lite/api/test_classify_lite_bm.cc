@@ -15,6 +15,7 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <fstream>
+#include <thread>  //NOLINT
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -30,14 +31,18 @@ DEFINE_string(input_img_txt_path,
 namespace paddle {
 namespace lite {
 
-void TestModel(const std::vector<Place>& valid_places) {
+const int g_batch_size = 1;
+const int g_thread_num = 1;
+
+void instance_run() {
   lite::Predictor predictor;
   std::vector<std::string> passes;
+  std::vector<Place> valid_places({Place{TARGET(kBM), PRECISION(kFloat)},
+                                   Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places, passes);
-
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(
-      std::vector<DDim::value_type>({1, 3, FLAGS_im_height, FLAGS_im_width})));
+  input_tensor->Resize(DDim(std::vector<DDim::value_type>(
+      {g_batch_size, 3, FLAGS_im_height, FLAGS_im_width})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   if (FLAGS_input_img_txt_path.empty()) {
@@ -45,12 +50,15 @@ void TestModel(const std::vector<Place>& valid_places) {
       data[i] = 1;
     }
   } else {
-    std::fstream fs(FLAGS_input_img_txt_path, std::ios::in);
-    if (!fs.is_open()) {
-      LOG(FATAL) << "open input_img_txt error.";
-    }
-    for (int i = 0; i < item_size; i++) {
-      fs >> data[i];
+    for (int j = 0; j < g_batch_size; j++) {
+      std::fstream fs(FLAGS_input_img_txt_path, std::ios::in);
+      if (!fs.is_open()) {
+        LOG(FATAL) << "open input_img_txt error.";
+      }
+      for (int i = 0; i < item_size / g_batch_size; i++) {
+        fs >> data[i];
+      }
+      data += j * item_size / g_batch_size;
     }
   }
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -72,11 +80,22 @@ void TestModel(const std::vector<Place>& valid_places) {
   FILE* fp = fopen("result.txt", "wb");
   for (int i = 0; i < out.size(); i++) {
     auto* out_data = out[i]->data<float>();
+    LOG(INFO) << out[i]->numel();
     for (int j = 0; j < out[i]->numel(); j++) {
       fprintf(fp, "%f\n", out_data[j]);
     }
   }
   fclose(fp);
+}
+
+void TestModel(const std::vector<Place>& valid_places) {
+  std::vector<std::unique_ptr<std::thread>> instances_vec;
+  for (int i = 0; i < g_thread_num; ++i) {
+    instances_vec.emplace_back(new std::thread(&instance_run));
+  }
+  for (int i = 0; i < g_thread_num; ++i) {
+    instances_vec[i]->join();
+  }
 }
 
 TEST(Classify, test_bm) {

@@ -14,12 +14,12 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
-#include "NeuronAdapter.h"
+#include "lite/backends/apu/neuron_adapter.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 
@@ -64,9 +64,6 @@ class Graph {
   void set_model(NeuronModel* model) { model_ = model; }
   NeuronModel* model() { return model_; }
 
-  void set_libHandle(void* libHandle) { libHandle_ = libHandle; }
-  void* libHandle() { return libHandle_; }
-
   void set_input_names(const std::vector<std::string> input_names) {
     input_names_ = input_names;
   }
@@ -99,9 +96,8 @@ class Graph {
   }
 
  private:
-  void* libHandle_;
   NeuronModel* model_;
-  std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
+  std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
   int32_t operandIdx_ = 0;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;

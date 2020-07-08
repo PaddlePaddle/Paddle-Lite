@@ -86,8 +86,8 @@ class ElementwiseMaxActivationCompute
   virtual ~ElementwiseMaxActivationCompute() = default;
 };
 
-class ElementwiseDivCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ElementwiseDivCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
@@ -101,6 +101,22 @@ class ElementwiseDivActivationCompute
 
   virtual ~ElementwiseDivActivationCompute() = default;
 };
+
+template <typename T, PrecisionType PType>
+class ElementwiseModCompute : public KernelLite<TARGET(kARM), PType> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseModCompute() = default;
+};
+
+// class ElementwiseModActivationCompute
+//     : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+//  public:
+//   void Run() override;
+
+//   virtual ~ElementwiseModActivationCompute() = default;
+// };
 
 }  // namespace arm
 }  // namespace kernels

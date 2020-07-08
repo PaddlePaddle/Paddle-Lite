@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/softmax_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/softmax_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -25,9 +27,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(softmax_x86, retrive_op) {
-  auto softmax =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "softmax");
+  auto softmax = KernelRegistry::Global().Create("softmax");
   ASSERT_FALSE(softmax.empty());
   ASSERT_TRUE(softmax.front());
 }
@@ -66,11 +66,11 @@ TEST(softmax_x86, run_test) {
   softmax.Run();
 
   std::vector<float> ref_results = {
-      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
-      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
-      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
-      0.0900306, 0.244728, 0.665241, 0.0900306, 0.244728, 0.665241,
-      0.0900306, 0.244728, 0.665241};
+      0.0900306f, 0.244728f, 0.665241f, 0.0900306f, 0.244728f, 0.665241f,
+      0.0900306f, 0.244728f, 0.665241f, 0.0900306f, 0.244728f, 0.665241f,
+      0.0900306f, 0.244728f, 0.665241f, 0.0900306f, 0.244728f, 0.665241f,
+      0.0900306f, 0.244728f, 0.665241f, 0.0900306f, 0.244728f, 0.665241f,
+      0.0900306f, 0.244728f, 0.665241f};
   for (int i = 0; i < out.dims().production(); i++) {
     EXPECT_NEAR(out_data[i], ref_results[i], 1e-3);
   }

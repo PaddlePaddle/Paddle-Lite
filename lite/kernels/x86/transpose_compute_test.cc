@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/transpose_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/transpose_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -25,9 +28,7 @@ namespace x86 {
 
 // transpose
 TEST(transpose_x86, retrive_op) {
-  auto transpose =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "transpose");
+  auto transpose = KernelRegistry::Global().Create("transpose");
   ASSERT_FALSE(transpose.empty());
   ASSERT_TRUE(transpose.front());
 }
@@ -75,9 +76,7 @@ TEST(transpose_x86, run_test) {
 
 // transpose2
 TEST(transpose2_x86, retrive_op) {
-  auto transpose2 =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "transpose2");
+  auto transpose2 = KernelRegistry::Global().Create("transpose2");
   ASSERT_FALSE(transpose2.empty());
   ASSERT_TRUE(transpose2.front());
 }

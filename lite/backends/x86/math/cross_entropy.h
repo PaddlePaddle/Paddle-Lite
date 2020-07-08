@@ -27,7 +27,7 @@ namespace math {
 template <typename T>
 struct TolerableValue {
   HOSTDEVICE T operator()(const T& x) const {
-    PADDLE_ENFORCE(static_cast<bool>(std::is_floating_point<T>::value));
+    CHECK(static_cast<bool>(std::is_floating_point<T>::value));
     const T kApproInf = 1e20;
 
     if (x == INFINITY) return kApproInf;

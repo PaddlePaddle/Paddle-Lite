@@ -35,9 +35,15 @@ class SubgraphEngine : public subgraph::Engine {
                  cpp::BlockDesc *block_desc,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names,
-                 Scope *scope)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {}
+                 Scope *scope,
+                 std::string model_cache_dir = "")
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         block_desc,
+                         input_names,
+                         output_names,
+                         scope,
+                         model_cache_dir) {}
 
   struct device_program_t {
     explicit device_program_t(std::shared_ptr<hiai::AiModelMngerClient> _client)
@@ -49,10 +55,16 @@ class SubgraphEngine : public subgraph::Engine {
     std::vector<hiai::TensorDimension> device_odims{};
   };
 
+  int Build() override;
+
  protected:
   int BuildDeviceProgram() override;
   int LaunchDeviceProgram() override;
+
+  void InitDeviceTensor() override;
   bool InputShapeChanged() override;
+
+  std::string GenerateModelCacheName() const;
 
   std::string model_name_{"model.om"};
   std::vector<std::vector<int64_t>> inputs_shape_{};

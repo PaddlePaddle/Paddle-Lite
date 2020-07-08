@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/core/framework.pb.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -84,7 +84,7 @@ class VarDesc : public VarDescAPI {
 
   std::vector<std::vector<int64_t>> GetShapes() const;
 
-  void SetDataType(framework::proto::VarType::Type data_type);
+  void SetDataType(VarDescAPI::VarDataType data_type);
 
   void SetDataTypes(
       const std::vector<framework::proto::VarType::Type> &multiple_data_type);

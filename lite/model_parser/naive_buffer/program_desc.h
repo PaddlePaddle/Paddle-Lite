@@ -15,7 +15,7 @@
 #pragma once
 
 #include <vector>
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
@@ -44,6 +44,11 @@ class ProgramDesc : public ProgramDescAPI {
 
   template <typename T>
   T *GetBlock(int32_t idx);
+
+  template <typename T>
+  T const *GetBlock(int32_t idx) const {
+    return GetBlock<T>(idx);
+  }
 
   template <typename T>
   T *AddBlock();

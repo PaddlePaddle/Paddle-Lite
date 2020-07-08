@@ -1,5 +1,5 @@
 
-# 预测库编译
+# 源码编译方法
 
 PaddleLite已经提供官方Release预测库下载，请参考[文档](release_lib)。
 
@@ -10,11 +10,12 @@ PaddleLite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`�
 
 ## 一、环境准备
 
-目前支持三种编译的环境：
+目前支持四种编译的环境：
 
 1. Docker 容器环境，
 2. Linux（推荐 Ubuntu 16.04）环境，
-3. Mac OS 环境。
+3. Mac OS 环境，
+4. [Windows 环境](../demo_guides/x86.html#windows)
 
 ### 1、 Docker开发环境
 
@@ -156,7 +157,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 ###### 编译环境要求
 
-- gcc、g++、git、make、wget、python
+- gcc、g++、git、make、wget、python、pip、python-dev、patchelf
 - cmake（建议使用3.10或以上版本）
 
 ###### 具体步骤
@@ -167,7 +168,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 # 1. Install basic software
 apt update
 apt-get install -y --no-install-recomends \
-  gcc g++ make wget python unzip
+  gcc g++ make wget python unzip patchelf python-dev
 
 # 2. install cmake 3.10 or above
 wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz
@@ -236,175 +237,38 @@ brew cask install java
 
 ## 二、编译PaddleLite
 
-**注：编译OpenCL、华为NPU、FPGA、CUDA、X86预测库、CV模块，见进阶使用指南的对应章节。**
+`develop分支`和`release/v2.6.0`之后版本的源码编译请参考以下说明，release/v2.3之前版本（包括v2.3）源码编译请参考[release/v2.3源码编译方法](./Compile/v2.3_compile)。
 
-### 下载代码
+### Android 预测库编译方法
 
-```shell
-git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-cd Paddle-Lite
-git checkout <release-version-tag>
-```
+Paddle-Lite支持在 “Docker 环境、Linux 环境、Mac 环境” 源码编译Android 预测库
 
-### 编译模式与参数
-
-编译脚本`./lite/tools/build.sh`，支持三种编译模式：
-
-| 编译模式 | 介绍 | 适用对象 |
-|:-------:|-----|:-------:|
-| tiny_publish | 编译移动端部署库，无第三方库依赖 | 用户 |
-| full_publish | 编译移动端部署库，有第三方依赖如protobuf、glags等，含有可将模型转换为无需protobuf依赖的naive buffer格式的工具，供tiny_publish库使用 | 用户 |
-| test | 编译指定`arm_os`、`arm_abi`下的移动端单元测试 | 框架开发者 |
-
-编译脚本`./lite/tools/build.sh`，追加参数说明：
-
-|   参数     |     介绍     |     值     |
-|-----------|-------------|-------------|
-| --arm_os   |必选，选择安装平台     | `android`、`ios`、`ios64`、`armlinux` |
-| --arm_abi  |必选，选择编译的arm版本，其中`armv7hf`为ARMLinux编译时选用| `armv8`、`armv7`、`armv7hf`(仅`armlinux`支持) |
-| --arm_lang |arm_os=android时必选，选择编译器 | `gcc`、`clang`(`clang`当前暂不支持) |
-| --android_stl |arm_os=android时必选，选择静态链接STL或动态链接STL | `c++_static`、`c++_shared`|
-| --build_java | 可选，是否编译java预测库（默认为ON） | `ON`、`OFF` |
-| --build_extra | 可选，是否编译全量预测库（默认为OFF）。详情可参考[预测库说明](./library.html)。 | `ON`、`OFF` |
-| target |必选，选择编译模式，`tiny_publish`为编译移动端部署库、`full_publish`为带依赖的移动端部署库、`test`为移动端单元测试、`ios`为编译ios端`tiny_publish` | `tiny_publish`、`full_publish`、`test`、 `ios` |
-
-### 编译代码
-
-**<font color="orange" >注意</font>**<font color="orange" >：非开发者建议在编译前使用</font>[**“加速第三方依赖库的下载”**](#id22)<font color="orange" >的方法，加速工程中第三方依赖库的下载与编译。 </font>
-
-#### 编译`tiny publish`动态库
-
-##### Android
-```shell
-./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --build_extra=OFF \
-  --arm_lang=gcc \
-  --android_stl=c++_static \
-  tiny_publish
-```
-##### IOS
-```shell
-./lite/tools/build.sh \
-  --arm_os=ios64 \
-  --arm_abi=armv8 \
-  --build_extra=OFF \
-  ios
-```
-**注意：mac环境编译IOS 时，cmake版本需要高于cmake 3.15；mac环境上编译Android时，cmake版本需要设置为cmake 3.10。**
-
-ios tiny publish支持的编译选项：
-
-* `--arm_os`: 可选ios或者ios64
-* `--arm_abi`: 可选armv7和armv8（**注意**：当`arm_os=ios`时只能选择`arm_abi=armv7`，当`arm_os=ios64`时只能选择`arm_abi=armv8`）
-* 如果mac编译过程中报错："Invalid CMAKE_DEVELOPER_ROOT: does not exist", 运行：
-```shell
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-```
-##### ARMLinux
-```shell
-./lite/tools/build.sh \
-  --build_extra=OFF \
-  --arm_os=armlinux \
-  --arm_abi=armv7hf \
-  --arm_lang=gcc \
-  tiny_publish
-```
-- `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
-  
-#### 编译`full publish`动态库
-
-##### Android
-```shell
-./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --build_extra=OFF \
-  --arm_lang=gcc \
-  --android_stl=c++_static \
-  full_publish
-```
-##### ARMLinux
-```shell
-./lite/tools/build.sh \
-  --arm_os=armlinux \
-  --arm_abi=armv7hf \
-  --arm_lang=gcc \
-  --build_extra=OFF \
-  full_publish
-```
-- `--arm_abi`: 树莓派3b使用armv7hf，RK3399使用armv8
-  
-### 编译结果说明
-
-**编译最终产物位置**在 `build.lite.xxx.xxx.xxx` 下的 `inference_lite_lib.xxx.xxx` ，如 Android 下 ARMv8 的产物位于`inference_lite_lib.android.armv8`：
-
-![](https://user-images.githubusercontent.com/45189361/65375706-204e8780-dccb-11e9-9816-ab4563ce0963.png)
-
-**目录内容**（可能）如下：
-
-**Full_publish编译结果:**
-
-![](https://user-images.githubusercontent.com/45189361/65375704-19c01000-dccb-11e9-9650-6856c7a5bf82.png)
-
-**Tiny_publish结果:**
-
-![](https://user-images.githubusercontent.com/45189361/65375726-3bb99280-dccb-11e9-9903-8ce255371905.png)
-
-**IOS编译结果:**
-
-![](https://user-images.githubusercontent.com/45189361/65375726-3bb99280-dccb-11e9-9903-8ce255371905.png)
+**编译方法参见**：[Android预测库编译方法](./Compile/Android)
 
 
+### iOS 预测库编译方法
 
-**具体内容**说明：
+Paddle-Lite只支持在 “Mac 环境” 源码编译iOS 预测库
 
-1、 `bin`文件夹：可执行工具文件 `paddle_code_generator`、`test_model_bin`
+**编译方法参见**：[iOS预测库编译方法](./Compile/iOS)
 
-2、 `cxx`文件夹：包含c++的库文件与相应的头文件
 
-- `include`  : 头文件
-- `lib` : 库文件
-  - 打包的静态库文件：
-    - `libpaddle_api_full_bundled.a`  ：包含 full_api 和 light_api 功能的静态库
-    - `libpaddle_api_light_bundled.a` ：只包含 light_api 功能的静态库
-  - 打包的动态态库文件：
-    - `libpaddle_full_api_shared.so` ：包含 full_api 和 light_api 功能的动态库
-    - `libpaddle_light_api_shared.so`：只包含 light_api 功能的动态库
+### Linux 预测库编译方法
 
-3、 `demo`文件夹：示例 demo ，包含 C++ demo 和  Java demo。
+**编译方法参见**：[Linux预测库编译方法](./Compile/Linux)
 
-- `cxx`   ： C++示例 demo
-  - `mobile_full` :  full_api 的使用示例
-  - `mobile_light` : light_api的使用示例
-- `java`  ：Java 示例 demo
-  - `android`  : Java的 Android 示例
-
-4、 `java` 文件夹：包含 Jni 的动态库文件与相应的 Jar 包
-
-- `jar` :  `PaddlePredictor.jar`
-- `so`  : Jni动态链接库  `libpaddle_lite_jni.so`
-
-5、 `third_party` 文件夹：第三方库文件`gflags`
-
-**注意：**
-
-1、 只有当`--arm_os=android` 时才会编译出：
-
-- Java库文件与示例：`Java`和`demo/java`
-
-- 动态库文件:`libpaddle_full_api_shared.so`,`libpaddle_light_api_shared.so`
-
-2、 `tiny_publish`编译结果不包括 C++ demo和 C++ 静态库，但提供 C++ 的 light_api 动态库、 Jni 动态库和Java demo
 
 ### 加速第三方依赖库的下载
 
-移动端相关编译所需的第三方库均位于 `<PaddleLite>/third-party` 目录下，默认编译过程中，会利用`git submodule update --init --recursive`链上相关的第三方依赖的仓库。
+如出现源码编译耗时过长，一般是第三方库下载过慢或失败导致：
 
-为加速`full_publish`、`test`编译模式中对`protobuf`等第三方依赖的下载，`build.sh` 和 `ci_build.sh`支持了从国内 CDN 下载第三方依赖的压缩包。
+- 移动端相关编译所需的第三方库均位于 `<PaddleLite>/third-party` 目录下，默认编译过程中，会利用`git submodule update --init --recursive`链上相关的第三方依赖的仓库。
 
-使用方法：`git clone`完`Paddle-Lite`仓库代码后，手动删除本地仓库根目录下的`third-party`目录：
+- 为加速`full_publish`、`test`编译模式中对`protobuf`等第三方依赖的下载，`build.sh` 和 `ci_build.sh`支持了从国内 CDN 下载第三方依赖的压缩包。
+
+可使用本节方法加速第三方库下载过程，以加速编译：
+
+- **加速方法**：`git clone`完`Paddle-Lite`仓库代码后，手动删除本地仓库根目录下的`third-party`目录：
 
 ```shell
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
@@ -413,4 +277,4 @@ cd Paddle-Lite
 rm -rf third-party
 ```
 
-之后再根据本文档，进行后续编译时，便会忽略第三方依赖对应的`submodule`，改为下载第三方压缩包。
+之后再根据本文档，进行后续编译时，便会忽略第三方依赖对应的`submodule`，改为直接下载第三方压缩包。

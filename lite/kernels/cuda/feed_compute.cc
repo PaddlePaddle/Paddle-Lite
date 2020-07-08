@@ -49,6 +49,9 @@ typedef paddle::lite::kernels::cuda::FeedCompute<float, PRECISION(kFloat)>
 typedef paddle::lite::kernels::cuda::FeedCompute<int64_t, PRECISION(kInt64)>
     FeedInt64;
 
+typedef paddle::lite::kernels::cuda::FeedCompute<int32_t, PRECISION(kInt32)>
+    FeedInt32;
+
 REGISTER_LITE_KERNEL(feed, kCUDA, kFloat, kNCHW, FeedFp32, nchw)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -90,5 +93,27 @@ REGISTER_LITE_KERNEL(feed, kCUDA, kInt64, kNHWC, FeedInt64, nhwc)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kInt64),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(feed, kCUDA, kInt32, kNCHW, FeedInt32, nchw)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(feed, kCUDA, kInt32, kNHWC, FeedInt32, nhwc)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kCUDA),
+                                       PRECISION(kInt32),
                                        DATALAYOUT(kNHWC))})
     .Finalize();

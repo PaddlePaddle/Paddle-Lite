@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include <set>
 #include <string>
-#include <unordered_set>
 #include "lite/api/paddle_place.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 
 namespace paddle {
 namespace lite {
@@ -31,7 +31,7 @@ class CompatibleChecker {
 
   bool operator()(const lite_api::Place& place) {
     bool status = true;
-    const std::unordered_set<std::string>& ops_type = OpsType(&program_);
+    const std::set<std::string>& ops_type = OpsType(&program_);
     if (ops_type.empty()) {
       VLOG(3) << "You are checking the compatibility of an empty program.";
     }
@@ -44,7 +44,7 @@ class CompatibleChecker {
   }
 
  private:
-  std::unordered_set<std::string> OpsType(T* program);
+  std::set<std::string> OpsType(T* program);
   bool CheckKernelVersion(const std::string& type,
                           const lite_api::Place& place);
   T program_;

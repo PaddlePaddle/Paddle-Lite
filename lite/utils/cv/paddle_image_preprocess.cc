@@ -14,6 +14,7 @@
 
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include <math.h>
+#include <string.h>
 #include <algorithm>
 #include <climits>
 #include "lite/utils/cv/image2tensor.h"
@@ -157,6 +158,61 @@ __attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
                     this->transParam_.oh,
                     means,
                     scales);
+}
+
+__attribute__((visibility("default"))) void ImagePreprocess::imageCrop(
+    const uint8_t* src,
+    uint8_t* dst,
+    ImageFormat srcFormat,
+    int srcw,
+    int srch,
+    int left_x,
+    int left_y,
+    int dstw,
+    int dsth) {
+  if (dsth > srch || dstw > srcw) {
+    printf("output size(%d, %d) must be less than input size(%d, %d) \n",
+           dsth,
+           dstw,
+           srch,
+           srcw);
+    return;
+  }
+  if (left_x > srcw || left_x < 0 || left_y > srch || left_y < 0) {
+    printf("left point (%d, %d) should be valid \n", left_x, left_y);
+    return;
+  }
+  if (left_x + dstw > srcw || left_y + dsth > srch) {
+    printf("left point (%d, %d) and output size(%d, %d) should be valid \n",
+           left_x,
+           left_y,
+           dstw,
+           dsth);
+    return;
+  }
+  int stride = 1;
+  if (srcFormat == GRAY) {
+    stride = 1;
+  } else if (srcFormat == BGR || srcFormat == RGB) {
+    stride = 3;
+  } else if (srcFormat == BGRA || srcFormat == RGBA) {
+    stride = 4;
+  } else {
+    printf("this srcFormat: %d does not support! \n", srcFormat);
+    return;
+  }
+  if (dsth == srch && dstw == srcw) {
+    memcpy(dst, src, sizeof(uint8_t) * srch * srcw * stride);
+    return;
+  }
+  const uint8_t* in_ptr = src + left_x * srcw * stride + left_y * stride;
+  uint8_t* out_ptr = dst;
+  for (int row = 0; row < dsth; row++) {
+    const uint8_t* din_ptr = in_ptr + row * srcw * stride;
+    for (int col = 0; col < dstw * stride; col++) {
+      *out_ptr++ = *din_ptr++;
+    }
+  }
 }
 
 }  // namespace cv

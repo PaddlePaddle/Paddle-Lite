@@ -14,15 +14,21 @@
 
 #pragma once
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
-#include "lite/model_parser/cpp/program_desc.h"
+#include "lite/model_parser/cpp_desc.h"
+#ifdef LITE_WITH_PROFILE
+#include "lite/core/profile/profiler.h"
+#endif
+#ifdef LITE_WITH_NVTX
+#include "lite/backends/cuda/nvtx_wrapper.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -38,11 +44,12 @@ struct Program {
   explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
   Program(const cpp::ProgramDesc& desc,
           const std::shared_ptr<Scope>& root,
-          const std::vector<Place>& valid_places)
+          const std::vector<Place>& valid_places,
+          const std::vector<std::string>& var_names = {})
       : scope_(root), valid_places_(valid_places), desc_(desc) {
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
-    PrepareWorkspace(desc);
+    PrepareWorkspace(desc, var_names);
     VLOG(4) << "build desc";
     Build(desc);
     VLOG(4) << "build desc finished";
@@ -64,7 +71,9 @@ struct Program {
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
-  const std::unordered_map<std::string, PrecisionType>& var_data_type() const {
+  cpp::ProgramDesc* program_desc() { return &desc_; }
+
+  const std::map<std::string, PrecisionType>& var_data_type() const {
     return var_data_type_;
   }
 
@@ -72,10 +81,11 @@ struct Program {
   // Build from a program and scope.
   void Build(const cpp::ProgramDesc& program);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program);
+  void PrepareWorkspace(const cpp::ProgramDesc& program,
+                        const std::vector<std::string>& var_names = {});
 
  private:
-  std::unordered_map<std::string, PrecisionType> var_data_type_;
+  std::map<std::string, PrecisionType> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
   std::list<std::shared_ptr<OpLite>> ops_;
@@ -125,12 +135,21 @@ struct Instruction {
     profiler_ = profiler;
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
       profile::OpCharacter ch;
+      ch.op_lite = static_cast<void*>(const_cast<paddle::lite::OpLite*>(op()));
       ch.target = kernel()->target();
       ch.op_type = op_->Type();
       ch.kernel_name = kernel()->name();
+      ch.kernel_attr = kernel()->name().substr(ch.op_type.size() + 1,
+                                               kernel()->name().size());
+      // append `ch.kernel_func_name` in StopTiming
       profile_id_ = profiler->NewTimer(ch);
       kernel_->SetProfiler(profiler_, profile_id_);
     }
+  }
+
+  void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
+    auto* op_lite = static_cast<paddle::lite::OpLite*>(ch->op_lite);
+    op_lite->GetOpRuntimeInfo(ch);
   }
 #endif
 
@@ -144,6 +163,7 @@ struct Instruction {
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_;
   int profile_id_{-1};
+  bool first_epoch_for_profiler_{true};
 #endif  // LITE_WITH_PROFILE
 };
 
@@ -159,6 +179,15 @@ class LITE_API RuntimeProgram {
     }
 #ifdef LITE_WITH_PROFILE
     set_profiler();
+#endif
+#ifdef LITE_WITH_NVTX
+    const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+    for (auto& inst : instructions_) {
+      NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
+      register_layer_names_.push_back(annotator.RegisterString(
+          const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
+    }
+    register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
   }
   ~RuntimeProgram() {
@@ -198,6 +227,9 @@ class LITE_API RuntimeProgram {
       i->set_profiler(&profiler_);
     }
   }
+#endif
+#ifdef LITE_WITH_NVTX
+  std::vector<nvtxStringHandle_t> register_layer_names_;
 #endif
 };
 

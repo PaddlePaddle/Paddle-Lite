@@ -43,6 +43,12 @@ void pool_ref(const std::shared_ptr<operators::PoolOpLite> op) {
   std::string pooling_type = op_info->GetAttr<std::string>("pooling_type");
   bool global_pooling = op_info->GetAttr<bool>("global_pooling");
 
+  if (pooling_type == "max") {
+    for (int i = 0; i < out_dims.production(); ++i) {
+      dst_ptr[i] = -65504.f;
+    }
+  }
+
   int in_n = in_dims[0];
   int in_c = in_dims[1];
   int in_h = in_dims[2];
@@ -203,62 +209,46 @@ void test_pool(int bs,
 }
 
 TEST(MLUBridges, pool) {
-  // for (auto pooling_type : {"max", "avg"}) {
-  //   for (auto ceil_mode : {true, false}) {
-  //     for (auto global_pooling : {/*true, */ false}) {
-  //       for (auto exclusive : {true /*, false*/}) {
-  //         for (auto ksize : {2, 3}) {
-  //           for (auto stride : {1, 2}) {
-  //             for (auto padding : {0, 1}) {
-  //               for (auto bs : {1, 3}) {
-  //                 for (auto ic : {1, 3}) {
-  //                   for (auto ih : {3, 7}) {
-  //                     for (auto iw : {3, 7}) {
-  //                       test_pool(bs,
-  //                                 ic,
-  //                                 ih,
-  //                                 iw,
-  //                                 pooling_type,
-  //                                 ceil_mode,
-  //                                 global_pooling,
-  //                                 exclusive,
-  //                                 ksize,
-  //                                 stride,
-  //                                 padding);
-  //                     }
-  //                   }
-  //                 }
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
   for (auto pooling_type : {"max", "avg"}) {
     for (auto ceil_mode : {true, false}) {
-      bool global_pooling = false;
-      bool exclusive = true;
-      int ksize = 2;
-      int stride = 1;
-      int padding = 0;
-      int bs = 6;
-      int ic = 6;
-      int ih = 6;
-      int iw = 6;
-      test_pool(bs,
-                ic,
-                ih,
-                iw,
-                pooling_type,
-                ceil_mode,
-                global_pooling,
-                exclusive,
-                ksize,
-                stride,
-                padding);
+      for (auto global_pooling : {true, false}) {
+        for (auto exclusive : {true /*, false*/}) {
+          for (auto ksize : {2, 3}) {
+            for (auto stride : {1, 2}) {
+              for (auto padding : {0, 1}) {
+                for (auto bs : {1, 3}) {
+                  for (auto ic : {1, 3}) {
+                    for (auto ih : {3, 7}) {
+                      for (auto iw : {3, 7}) {
+                        LOG(INFO)
+                            << "shape: " << bs << ',' << ic << ',' << ih << ','
+                            << iw << '\t' << "pooling type: " << pooling_type
+                            << '\t' << "ceil model: " << ceil_mode << '\t'
+                            << "global_pooling: " << global_pooling << '\t'
+                            << "exclusive: " << exclusive << '\t'
+                            << "ksize: " << ksize << '\t'
+                            << "stride: " << stride << '\t'
+                            << "padding: " << padding;
+                        test_pool(bs,
+                                  ic,
+                                  ih,
+                                  iw,
+                                  pooling_type,
+                                  ceil_mode,
+                                  global_pooling,
+                                  exclusive,
+                                  ksize,
+                                  stride,
+                                  padding);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

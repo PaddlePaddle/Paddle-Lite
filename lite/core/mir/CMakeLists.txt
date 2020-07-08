@@ -21,6 +21,7 @@ lite_cc_library(mir_passes
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
+      fusion/scale_activation_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
@@ -28,6 +29,7 @@ lite_cc_library(mir_passes
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
+      elimination/remove_tf_redundant_ops_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       type_target_cast_pass.cc

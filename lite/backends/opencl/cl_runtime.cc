@@ -129,6 +129,26 @@ bool CLRuntime::InitializePlatform() {
   return true;
 }
 
+GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
+  const std::string kMALI_PATTERN_STR = "Mali";
+  const std::string kADRENO_PATTERN_STR = "QUALCOMM Adreno(TM)";
+  const std::string kPOWERVR_PATTERN_STR = "PowerVR";
+
+  if (device_name == kADRENO_PATTERN_STR) {
+    LOG(INFO) << "adreno gpu";
+    return GpuType::QUALCOMM_ADRENO;
+  } else if (device_name.find(kMALI_PATTERN_STR) != std::string::npos) {
+    LOG(INFO) << "mali gpu";
+    return GpuType::ARM_MALI;
+  } else if (device_name.find(kPOWERVR_PATTERN_STR) != std::string::npos) {
+    LOG(INFO) << "powerVR gpu";
+    return GpuType::IMAGINATION_POWERVR;
+  } else {
+    LOG(INFO) << "others gpu";
+    return GpuType::UNKNOWN;
+  }
+}
+
 bool CLRuntime::InitializeDevice() {
   // ===================== BASIC =====================
   // CL_DEVICE_TYPE_GPU
@@ -148,6 +168,7 @@ bool CLRuntime::InitializeDevice() {
 
   auto device_name = device_->getInfo<CL_DEVICE_NAME>();
   LOG(INFO) << "Using device: " << device_name;
+  gpu_type_ = ParseGpuTypeFromDeviceName(device_name);
 
   cl_device_type device_type = device_->getInfo<CL_DEVICE_TYPE>();
   auto device_type_to_str = [](cl_device_type t) -> std::string {
@@ -170,6 +191,9 @@ bool CLRuntime::InitializeDevice() {
     }
     return t_str;
   };
+  const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "device_version:" << device_version;
+
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
 
@@ -294,6 +318,77 @@ std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
   }
   InitializeDevice();
   return device_info_;
+}
+
+GpuType& CLRuntime::GetGpuType() { return gpu_type_; }
+
+void CLRuntime::GetAdrenoContextProperties(
+    std::vector<cl_context_properties>* properties,
+    GPUPerfMode gpu_perf_mode,
+    GPUPriorityLevel gpu_priority_level) {
+  CHECK(properties) << "cl_context_properties is nullptr";
+  properties->reserve(5);
+  switch (gpu_perf_mode) {
+    case GPUPerfMode::PERF_LOW:
+      LOG(INFO) << "GPUPerfMode::PERF_LOW";
+      properties->push_back(CL_CONTEXT_PERF_MODE_QCOM);
+      properties->push_back(CL_PERF_MODE_LOW_QCOM);
+      break;
+    case GPUPerfMode::PERF_NORMAL:
+      LOG(INFO) << "GPUPerfMode::PERF_NORMAL";
+      properties->push_back(CL_CONTEXT_PERF_MODE_QCOM);
+      properties->push_back(CL_PERF_MODE_NORMAL_QCOM);
+      break;
+    case GPUPerfMode::PERF_HIGH:
+      LOG(INFO) << "GPUPerfMode::PERF_HIGH";
+      properties->push_back(CL_CONTEXT_PERF_MODE_QCOM);
+      properties->push_back(CL_PERF_MODE_HIGH_QCOM);
+      break;
+    default:
+      break;
+  }
+  switch (gpu_priority_level) {
+    case GPUPriorityLevel::PRIORITY_LOW:
+      LOG(INFO) << "GPUPriorityLevel::PRIORITY_LOW";
+      properties->push_back(CL_CONTEXT_PRIORITY_LEVEL_QCOM);
+      properties->push_back(CL_PRIORITY_HINT_LOW_QCOM);
+      break;
+    case GPUPriorityLevel::PRIORITY_NORMAL:
+      LOG(INFO) << "GPUPriorityLevel::PRIORITY_NORMAL";
+      properties->push_back(CL_CONTEXT_PRIORITY_LEVEL_QCOM);
+      properties->push_back(CL_PRIORITY_HINT_NORMAL_QCOM);
+      break;
+    case GPUPriorityLevel::PRIORITY_HIGH:
+      LOG(INFO) << "GPUPriorityLevel::PRIORITY_HIGH";
+      properties->push_back(CL_CONTEXT_PRIORITY_LEVEL_QCOM);
+      properties->push_back(CL_PRIORITY_HINT_HIGH_QCOM);
+      break;
+    default:
+      break;
+  }
+  // The properties list should be terminated with 0
+  properties->push_back(0);
+}
+
+double CLRuntime::GetCommandTime(const cl::Event& event) {
+  command_queue().finish();
+  auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+  auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+  return (stop_nanos - start_nanos) / 1000000.0;
+}
+
+double CLRuntime::GetQueuedTime(const cl::Event& event) {
+  command_queue().finish();
+  return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
+          event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
+         1000000.0;
+}
+
+double CLRuntime::GetSubmitTime(const cl::Event& event) {
+  command_queue().finish();
+  return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
+          event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
+         1000000.0;
 }
 
 }  // namespace lite

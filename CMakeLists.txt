@@ -97,7 +97,8 @@ lite_option(LITE_WITH_FPGA   "Enable FPGA support in lite" OFF)
 lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
-lite_option(LITE_SHUTDOWN_LOG "Shutdown log system or not." OFF)
+lite_option(LITE_WITH_LOG "Enable log printing or not." ON)
+lite_option(LITE_WITH_NVTX "Enable nvtx or not, please enable LITE_WITH_CUDA first." OFF)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 # publish options
@@ -105,7 +106,8 @@ lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kerne
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 # cv build options
 lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF)
-lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." ON)
+lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." OFF)
+lite_option(CUDA_WITH_FP16 "Compile with cuda half support" OFF)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
@@ -167,6 +169,7 @@ if(LITE_WITH_RKNPU)
    include(device/rknpu)
 endif()
 
+include(external/flatbuffers)
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -221,6 +224,7 @@ endif()
 if(LITE_WITH_MLU)
     include(mlu)
 endif()
+include(coveralls)
 
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package

@@ -321,7 +321,7 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
     return scores_data[i] > scores_data[j];
   };
   if (pre_nms_top_n <= 0 || pre_nms_top_n >= scores_slice.numel()) {
-    std::sort(index, index + scores_slice.numel(), compare_func);
+    std::stable_sort(index, index + scores_slice.numel(), compare_func);
   } else {
     std::nth_element(index,
                      index + pre_nms_top_n,

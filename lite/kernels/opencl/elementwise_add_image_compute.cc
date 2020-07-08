@@ -18,6 +18,8 @@
 #include "lite/core/op_registry.h"
 #include "lite/utils/replace_stl/stream.h"
 
+#undef LITE_WITH_LOG
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -83,7 +85,7 @@ void ElementwiseAddImageCompute::ReInitWhenNeeded() {
 void ElementwiseAddImageCompute::GetGlobalWorkSize() {
   global_work_size_ = cl::NDRange{static_cast<cl::size_type>(x_img_shape_[0]),
                                   static_cast<cl::size_type>(x_img_shape_[1])};
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "global_work_size:[2D]:" << x_img_shape_[0] << " "
           << x_img_shape_[1];
 #endif
@@ -102,7 +104,7 @@ void ElementwiseAddImageCompute::Run() {
   auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape_[0],
                                                          out_img_shape_[1]);
 
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
   VLOG(4) << "x->target():" << TargetToStr(x->target());
   VLOG(4) << "y->target():" << TargetToStr(y->target());
   VLOG(4) << "out->target():" << TargetToStr(out->target());
@@ -129,7 +131,7 @@ void ElementwiseAddImageCompute::Run() {
   } else if (y_dims.size() == 1) {
     if (axis == x_dims.size() - 1 || axis == x_dims.size() - 3) {
       const int tensor_w = x_dims[x_dims.size() - 1];
-#ifndef LITE_SHUTDOWN_LOG
+#ifdef LITE_WITH_LOG
       VLOG(4) << "tensor_w:" << tensor_w;
 #endif
       status = kernel.setArg(0, *x_img);
@@ -154,13 +156,13 @@ void ElementwiseAddImageCompute::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
 
-  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-      kernel,
-      cl::NullRange,
-      global_work_size_,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  status = EnqueueNDRangeKernel(context,
+                                kernel,
+                                cl::NullRange,
+                                global_work_size_,
+                                cl::NullRange,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
 }
 
@@ -196,3 +198,5 @@ REGISTER_LITE_KERNEL(elementwise_add,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+
+#define LITE_WITH_LOG

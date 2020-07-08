@@ -24,9 +24,9 @@ namespace lite_api {
 size_t Place::hash() const {
   std::hash<int> h;
   size_t hash = h(static_cast<int>(target));
-  hash = lite::hash_combine(hash, static_cast<int>(precision));
-  hash = lite::hash_combine(hash, static_cast<int>(layout));
-  hash = lite::hash_combine(hash, static_cast<int>(device));
+  lite::CombineHash(static_cast<int64_t>(precision), &hash);
+  lite::CombineHash(static_cast<int64_t>(layout), &hash);
+  lite::CombineHash(static_cast<int64_t>(device), &hash);
   return hash;
 }
 
@@ -54,7 +54,8 @@ const std::string& ActivationTypeToStr(ActivationType act) {
                                            "Sigmoid",
                                            "Tanh",
                                            "Swish",
-                                           "Exp"};
+                                           "Exp",
+                                           "ThresholdedRelu"};
   auto x = static_cast<int>(act);
   CHECK_LT(x, static_cast<int>(ActivationType::NUM));
   return act2string[x];
@@ -161,6 +162,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kBM),
                                                TARGET(kMLU),
                                                TARGET(kAPU),
+                                               TARGET(kRKNPU),
                                                TARGET(kFPGA)});
   if (target == TARGET(kAny)) {
     return valid_set;

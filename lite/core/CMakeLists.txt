@@ -121,7 +121,7 @@ lite_cc_library(kernel SRCS kernel.cc
         PROFILE_DEPS lite_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
-  cpp_op_desc tensor
+  cpp_op_desc tensor utils
   )
 
 add_dependencies(kernel kernel_list_h)
@@ -132,7 +132,8 @@ lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
 lite_cc_library(program SRCS program.cc
     DEPS op kernel model_parser ${ops} ${cpp_wrapper}
-    PROFILE_DEPS lite_profiler)
+    PROFILE_DEPS lite_profiler
+    CUDA_DEPS nvtx_wrapper)
 
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)

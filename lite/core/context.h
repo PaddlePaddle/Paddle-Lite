@@ -19,13 +19,13 @@
 #include "lite/backends/cuda/context.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_MLU
 #include <cnml.h>
 #include <cnrt.h>
+#include <mutex>  // NOLINT
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
 #ifdef LITE_WITH_XPU
@@ -77,14 +77,22 @@ class Context<TargetType::kHost> {
 template <>
 class Context<TargetType::kNPU> {
  public:
-  Context() {}
-  explicit Context(const NPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(NPUContext* ctx) {}
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+
+  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir() {
+    return subgraph_model_cache_dir_;
+  }
+
+ private:
+  static std::string subgraph_model_cache_dir_;
 };
 #endif
 
@@ -92,8 +100,6 @@ class Context<TargetType::kNPU> {
 template <>
 class Context<TargetType::kAPU> {
  public:
-  Context() {}
-  explicit Context(const APUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(APUContext* ctx) {}
@@ -107,12 +113,8 @@ class Context<TargetType::kAPU> {
 template <>
 class Context<TargetType::kBM> {
  public:
-  Context() {}
-  explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() { Init(0); }
-
-  void Init(int dev_id) { TargetWrapperBM::SetDevice(dev_id); }
+  void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
   void CopySharedTo(BMContext* ctx) {}
   void* GetHandle() { return TargetWrapperBM::GetHandle(); }
 
@@ -124,8 +126,6 @@ class Context<TargetType::kBM> {
 template <>
 class Context<TargetType::kRKNPU> {
  public:
-  Context() {}
-  explicit Context(const RKNPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(RKNPUContext* ctx) {}
@@ -139,9 +139,6 @@ class Context<TargetType::kRKNPU> {
 template <>
 class Context<TargetType::kXPU> {
  public:
-  Context() {}
-  explicit Context(const XPUContext& ctx);
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
@@ -180,6 +177,9 @@ class Context<TargetType::kXPU> {
 
   std::string name() const { return "XPUContext"; }
 
+ public:
+  static std::string _multi_encoder_precision;  // NOLINT
+
  private:
   static thread_local xdnn::Context* _tls_raw_ctx;
   static int _workspace_l3_size_per_thread;
@@ -190,11 +190,6 @@ class Context<TargetType::kXPU> {
 template <>
 class Context<TargetType::kARM> {
  public:
-  Context() {}
-  explicit Context(const ARMContext& ctx);
-
-  ARMContext& operator=(const ARMContext& ctx) {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { DeviceInfo::Init(); }
 
@@ -236,7 +231,6 @@ class Context<TargetType::kARM> {
 template <>
 class Context<TargetType::kFPGA> {
  public:
-  Context() {}
   void InitOnce() {}
 
   FPGAContext& operator=(const FPGAContext& ctx) {}
@@ -256,11 +250,11 @@ class Context<TargetType::kMLU> {
   void InitOnce() {}
 
   MLUContext& operator=(const MLUContext& ctx) {
-    this->Init(ctx.device_id_, ctx.exec_queue_id_, ctx.io_queue_id_);
+    this->Init(ctx.device_id_, ctx.exec_queue_id_);
     return *this;
   }
 
-  void Init(int dev_id, int exec_queue_id = 0, int io_queue_id = 0) {
+  void Init(int dev_id, int exec_queue_id = 0) {
     CHECK_GT(devs.size(), 0UL)
         << "Env is not initialized or current target is not exit!";
     if (dev_id >= static_cast<int>(devs.size())) {
@@ -271,21 +265,19 @@ class Context<TargetType::kMLU> {
       device_id_ = dev_id;
     }
     SetMluDevice(device_id_);
-    if (io_queue_id >= devs[dev_id].max_queue()) {
-      LOG(WARNING) << "data queue index exceeds the maximum queue number, "
-                      "set to default qeueu(0)!";
-      io_queue_id = 0;
-    }
-    if (exec_queue_id >= devs[dev_id].max_queue()) {
-      LOG(WARNING) << "exec queue index exceeds the maximum queue number, "
-                      "set to default qeueu(0)!";
-      exec_queue_id = 0;
-    }
-    io_queue_ = devs[dev_id].io_queues()[io_queue_id];
-    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id];
 
-    exec_queue_id_ = exec_queue_id;
-    io_queue_id_ = io_queue_id;
+    // get queue id from map
+    std::unique_lock<std::mutex> lk(map_mutex_);
+    if (queue_id_map_.find(exec_queue_id) == queue_id_map_.end()) {
+      queue_id_map_[exec_queue_id] =
+          next_queue_id_++ % devs[dev_id].max_queue();
+    }
+    exec_queue_id_ = queue_id_map_[exec_queue_id];
+    VLOG(4) << "pick mlu queue id: " << exec_queue_id_;
+    lk.unlock();
+
+    io_queue_ = devs[dev_id].io_queues()[exec_queue_id_];
+    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id_];
   }
 
   void CopySharedTo(MLUContext* ctx) { ctx->forward_param_ = forward_param_; }
@@ -297,10 +289,12 @@ class Context<TargetType::kMLU> {
   void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
 
   cnmlCoreVersion_t MLUCoreVersion() {
-    return DeviceInfo::Global().MLUCoreVersion();
+    return paddle::lite::TargetWrapperMlu::MLUCoreVersion();
   }
 
-  int MLUCoreNumber() { return DeviceInfo::Global().MLUCoreNumber(); }
+  int MLUCoreNumber() {
+    return paddle::lite::TargetWrapperMlu::MLUCoreNumber();
+  }
 
   u32_t affinity() { return affinity_; }
 
@@ -311,10 +305,12 @@ class Context<TargetType::kMLU> {
   std::string name() const { return "MLUContext"; }
 
  private:
+  static int next_queue_id_;
+  static std::map<int, int> queue_id_map_;
+  static std::mutex map_mutex_;
   int device_id_;
   // overall information
   int exec_queue_id_;
-  int io_queue_id_;
   cnrtQueue_t io_queue_;
   cnrtQueue_t exec_queue_;
 
@@ -330,8 +326,6 @@ class Context<TargetType::kMLU> {
 template <>
 class Context<TargetType::kX86> {
  public:
-  Context() {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
@@ -464,7 +458,7 @@ class ContextScheduler {
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
         auto& context = ctx->As<MLUContext>();
-        context.Init(dev_id);
+        context.Init(dev_id, exec_stream_id);
         kernel_contexts_[TargetType::kMLU].As<MLUContext>().CopySharedTo(
             &context);
         LOG(INFO) << "New Context for MLU";

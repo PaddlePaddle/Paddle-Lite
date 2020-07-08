@@ -69,8 +69,8 @@ class SeqPoolCreator : public JitCodeCreator<seq_pool_attr_t> {
   }
   std::unique_ptr<GenBase> CreateJitCode(
       const seq_pool_attr_t& attr) const override {
-    PADDLE_ENFORCE_GT(attr.w, 0);
-    PADDLE_ENFORCE_GT(attr.h, 0);
+    CHECK_GT(attr.w, 0);
+    CHECK_GT(attr.h, 0);
     return make_unique<SeqPoolJitCode>(attr, CodeSize(attr));
   }
 };

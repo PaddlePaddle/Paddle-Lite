@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/stack_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/stack_compute.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -25,8 +28,7 @@ namespace x86 {
 
 // stack
 TEST(stack_x86, retrive_op) {
-  auto stack =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("stack");
+  auto stack = KernelRegistry::Global().Create("stack");
   ASSERT_FALSE(stack.empty());
   ASSERT_TRUE(stack.front());
 }
