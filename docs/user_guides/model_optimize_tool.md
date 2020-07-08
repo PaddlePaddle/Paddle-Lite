@@ -21,11 +21,11 @@ pip install paddlelite
 - 方法二: 下载opt可执行文件
 从[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)，选择当前预测库对应版本的`opt`转化工具
 
-本文提供`release/v2.6`和`release/v2.2.0`版本的优化工具下载
+本文提供`release/v2.6.1`和`release/v2.2.0`版本的优化工具下载
 
 |版本 | Linux | MacOS|
 |---|---|---|
-| `release/v2.3`| [opt](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt) | [opt_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/opt_mac) |
+| `release/v2.6.1` | [opt](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/opt/opt) | [opt_mac](https://paddlelite-data.bj.bcebos.com/Release/2.6.1/opt/opt_mac) |
 |`release/v2.2.0`  | [model_optimize_tool](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool) | [model_optimize_tool_mac](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/model_optimize_tool_mac) |
 
 - 方法三: 源码编译opt
