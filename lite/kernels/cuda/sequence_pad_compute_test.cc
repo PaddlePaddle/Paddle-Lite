@@ -52,11 +52,11 @@ class SequencePadTest : public ::testing::Test {
     length_ref_.Resize(
         lite::DDim({static_cast<int64_t>(x_lod_[0].size() - 1)}));
     length_gpu_.Resize(length_ref_.dims());
+    length_cpu_.Resize(length_ref_.dims());
 
     auto x_ref_data = x_ref_.mutable_data<float>();
     auto pad_value_ref_data = pad_value_ref_.mutable_data<float>();
 
-    // prepare input
     for (int64_t i = 0; i < x_ref_.numel(); i++) {
       x_ref_data[i] = static_cast<float>(i);
     }
@@ -92,7 +92,23 @@ class SequencePadTest : public ::testing::Test {
         pad_value_ref_.data<float>(), pad_value_gpu_.dims());
   }
 
-  void InitHalfInput() {}
+  void InitHalfInput() {
+    x_half_.Resize(lite::DDim(x_shape_));
+    auto x_half_data = x_half_.mutable_data<half>();
+    for (int64_t i = 0; i < x_half_.numel(); i++) {
+      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+    }
+    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.set_lod(x_ref_.lod());
+    pad_value_half_.Resize(pad_value_ref_.dims());
+    auto pad_value_half_data = pad_value_half_.mutable_data<half>();
+    for (int64_t i = 0; i < pad_value_half_.numel(); i++) {
+      pad_value_half_data[i] =
+          half(lite::float16(pad_value_ref_.data<float>()[i]));
+    }
+    pad_value_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(
+        pad_value_half_data, pad_value_gpu_.dims());
+  }
 
   void RunBaseLine(const lite::Tensor* x,
                    const lite::Tensor* pad_value,
@@ -119,6 +135,7 @@ class SequencePadTest : public ::testing::Test {
 
   lite::Tensor x_ref_, pad_value_ref_, out_ref_, length_ref_;
   lite::Tensor x_gpu_, pad_value_gpu_, out_gpu_, length_gpu_;
+  lite::Tensor x_half_, pad_value_half_;
   lite::Tensor out_cpu_, length_cpu_;
 
   operators::SequencePadParam param_;
@@ -158,6 +175,51 @@ TEST_F(SequencePadTest, fp32) {
                           IoDirection::DtoH);
   for (int i = 0; i < out_gpu_.numel(); ++i) {
     EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
+  }
+  for (int i = 0; i < length_gpu_.numel(); ++i) {
+    EXPECT_NEAR(
+        length_cpu_.data<int64_t>()[i], length_ref_.data<int64_t>()[i], 1e-5);
+  }
+}
+
+TEST_F(SequencePadTest, TestFP16) {
+  InitHalfInput();
+  SequencePadCompute<half, PRECISION(kFP16)> kernel;
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    kernel.Launch();
+    cudaDeviceSynchronize();
+  }
+
+  auto start = GetCurrentUS();
+  kernel.PrepareForRun();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    kernel.Run();
+  }
+  cudaDeviceSynchronize();
+  auto duration = (GetCurrentUS() - start) / 1000.0;
+  LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
+            << ", repeats: " << FLAGS_repeats << ", spend "
+            << duration / FLAGS_repeats << " ms in average.";
+
+  const half* out_gpu_data = out_gpu_.data<half>();
+  half* out_cpu_data = out_cpu_.mutable_data<half>();
+  const int64_t* length_gpu_data = length_gpu_.data<int64_t>();
+  int64_t* length_cpu_data = length_cpu_.mutable_data<int64_t>();
+  CopySync<TARGET(kCUDA)>(out_cpu_data,
+                          out_gpu_data,
+                          sizeof(half) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+  CopySync<TARGET(kCUDA)>(length_cpu_data,
+                          length_gpu_data,
+                          sizeof(int64_t) * length_gpu_.numel(),
+                          IoDirection::DtoH);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }
   for (int i = 0; i < length_gpu_.numel(); ++i) {
     EXPECT_NEAR(

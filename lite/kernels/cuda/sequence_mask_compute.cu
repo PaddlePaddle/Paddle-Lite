@@ -57,18 +57,18 @@ void SequenceMaskCompute<T, Ptype>::Run() {
   }
 
   if (maxlen < 0) {
-    maxlen =
-        thrust::reduce(x_data, x_data + x->numel(), 0, thrust::maximum<T>());
+    maxlen = thrust::reduce(
+        x_data, x_data + x->numel(), 0, thrust::maximum<int64_t>());
   }
 
   auto y_dim = x->dims().Vectorize();
   y_dim.push_back(maxlen);
   y->Resize(y_dim);
   const int count = y->numel();
-  auto* dst_data = y->template mutable_data<float>(TARGET(kCUDA));
+  auto* dst_data = y->template mutable_data<T>(TARGET(kCUDA));
   if (param.out_dtype == 5) {
     SequenceMaskKernel<
-        float><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, stream>>>(
+        T><<<CUDA_GET_BLOCKS(count), CUDA_NUM_THREADS, 0, stream>>>(
         dst_data, x_data, count, maxlen);
   } else {
     LOG(FATAL) << "not supported out_dtype: " << param.out_dtype;
@@ -84,8 +84,19 @@ void SequenceMaskCompute<T, Ptype>::Run() {
 using SeqMaskFp32 =
     paddle::lite::kernels::cuda::SequenceMaskCompute<float, PRECISION(kFloat)>;
 
+using SeqMaskFp16 =
+    paddle::lite::kernels::cuda::SequenceMaskCompute<half, PRECISION(kFP16)>;
+
 REGISTER_LITE_KERNEL(sequence_mask, kCUDA, kFloat, kNCHW, SeqMaskFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
-    .BindInput("MaxLenTensor", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("MaxLenTensor",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt32))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(sequence_mask, kCUDA, kFP16, kNCHW, SeqMaskFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
+    .BindInput("MaxLenTensor",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();
