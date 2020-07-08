@@ -405,7 +405,9 @@ void fc_gemm_4x4(__global const CL_DTYPE* a,
     } else {
         for (int cidx = col; cidx < N; ++cidx) {
             for (int ridx = row; ridx < M; ++ridx) {
-                CL_COMPUTE_DTYPE a0, b0, c0 = bias ? bias[cidx] : 0;
+                CL_COMPUTE_DTYPE a0 = 0;
+                CL_COMPUTE_DTYPE b0 = 0;
+                CL_COMPUTE_DTYPE c0 = bias ? bias[cidx] : 0;
                 for (int p = 0; p < K; ++p) {
                     a0 = *(a + ridx * K + p);
                     b0 = *(b + p * N + cidx),

@@ -126,9 +126,11 @@ TEST(fc, compute) {
         out.Resize(out_dim);
         out_ref.Resize(out_dim);
 
+        VLOG(2) << "out.dims():" << out.dims() << ", out_dim:" << out_dim;
+
         auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-        auto* w_data = w.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-        auto* bias_data = bias.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        auto* w_data = w.mutable_data<float>();
+        auto* bias_data = bias.mutable_data<float>();
         auto* out_data = out.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
         std::default_random_engine engine;
@@ -148,17 +150,15 @@ TEST(fc, compute) {
         }
         for (size_t i = 0; i < w_dim.production(); ++i) {
           w_source[i] = static_cast<int>(dist(engine));
+          w_data[i] = w_source[i];
         }
         for (size_t i = 0; i < bias_dim.production(); ++i) {
           bias_source[i] = 10;  // static_cast<int>(dist(engine));
+          bias_data[i] = 10;
         }
 
         TargetWrapperCL::MemcpySync(
             x_data, x_source.data(), x_size, IoDirection::HtoD);
-        TargetWrapperCL::MemcpySync(
-            w_data, w_source.data(), w_size, IoDirection::HtoD);
-        TargetWrapperCL::MemcpySync(
-            bias_data, bias_source.data(), bias_size, IoDirection::HtoD);
 
         // run opencl kernel
         kernel->Launch();
@@ -186,8 +186,10 @@ TEST(fc, compute) {
 #endif
 
         std::vector<float> out_data_from_gpu(out_dim.production());
-        TargetWrapperCL::MemcpySync(
-            out_data_from_gpu.data(), out_data, bias_size, IoDirection::DtoH);
+        TargetWrapperCL::MemcpySync(out_data_from_gpu.data(),
+                                    out_data,
+                                    out_data_from_gpu.size() * sizeof(float),
+                                    IoDirection::DtoH);
 
         // run cpu ref
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
