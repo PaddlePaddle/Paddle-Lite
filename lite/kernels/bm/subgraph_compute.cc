@@ -55,7 +55,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   }
   std::string net_name = "bmnetc_f32umodel";
   __bmcompile_opt(
-      graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 1);
+      graph.GetCompilerHandle(), const_cast<char*>(net_name.c_str()), 2);
   void* bmodel_data = nullptr;
   unsigned int data_size = 0;
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
