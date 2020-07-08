@@ -17,8 +17,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "lite/api/lite_api_test_helper.h"
-#include "lite/api/paddle_use_kernels.h"	
-#include "lite/api/paddle_use_ops.h"	
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
