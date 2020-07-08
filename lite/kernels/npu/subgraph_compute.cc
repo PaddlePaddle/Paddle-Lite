@@ -51,7 +51,7 @@ std::string DeviceProgram::GenerateModelName(
   for (auto output_name : output_names) {
     os << output_name;
   }
-  return md5(os.str());
+  return MD5(os.str());
 }
 
 // Deserialize the generated model, the precisions and dimensions of the origin

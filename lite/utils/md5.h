@@ -18,7 +18,7 @@
 namespace paddle {
 namespace lite {
 
-std::string md5(std::string message) {
+std::string MD5(std::string message) {
   const uint32_t shiftAmounts[] = {
       7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
       5, 9,  14, 20, 5, 9,  14, 20, 5, 9,  14, 20, 5, 9,  14, 20,
