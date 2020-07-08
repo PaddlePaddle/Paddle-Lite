@@ -20,9 +20,9 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUMMDNNBidEmbGrnnAttOp::CheckShape() const { return true; }
+bool XPUMmdnnBidEmbGrnnAttOp::CheckShape() const { return true; }
 
-bool XPUMMDNNBidEmbGrnnAttOp::InferShapeImpl() const {
+bool XPUMmdnnBidEmbGrnnAttOp::InferShapeImpl() const {
   auto& id_dims = param_.id0->dims();
   auto& id_lod = param_.id0->lod()[0];
   auto& emb_tbl_dims = param_.emb_tbl->dims();
@@ -41,7 +41,7 @@ bool XPUMMDNNBidEmbGrnnAttOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUMMDNNBidEmbGrnnAttOp::AttachImpl(const cpp::OpDesc& op_desc,
+bool XPUMmdnnBidEmbGrnnAttOp::AttachImpl(const cpp::OpDesc& op_desc,
                                          lite::Scope* scope) {
   param_.id0 =
       scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite::Tensor>();
@@ -88,9 +88,9 @@ bool XPUMMDNNBidEmbGrnnAttOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
-bool XPUMMDNNBidEmbAttOp::CheckShape() const { return true; }
+bool XPUMmdnnBidEmbAttOp::CheckShape() const { return true; }
 
-bool XPUMMDNNBidEmbAttOp::InferShapeImpl() const {
+bool XPUMmdnnBidEmbAttOp::InferShapeImpl() const {
   auto& id_dims = param_.id0->dims();
   auto& id_lod = param_.id0->lod()[0];
   auto& emb_tbl_dims = param_.emb_tbl->dims();
@@ -101,7 +101,7 @@ bool XPUMMDNNBidEmbAttOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUMMDNNBidEmbAttOp::AttachImpl(const cpp::OpDesc& op_desc,
+bool XPUMmdnnBidEmbAttOp::AttachImpl(const cpp::OpDesc& op_desc,
                                      lite::Scope* scope) {
   param_.id0 =
       scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite::Tensor>();
@@ -123,9 +123,9 @@ bool XPUMMDNNBidEmbAttOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
-bool XPUMMDNNMatchConvTopkOp::CheckShape() const { return true; }
+bool XPUMmdnnMatchConvTopkOp::CheckShape() const { return true; }
 
-bool XPUMMDNNMatchConvTopkOp::InferShapeImpl() const {
+bool XPUMmdnnMatchConvTopkOp::InferShapeImpl() const {
   int channel_num = param_.channel_num;
   std::vector<int> topks = param_.topks;
   auto row_dim = param_.input_x->dims();
@@ -140,7 +140,7 @@ bool XPUMMDNNMatchConvTopkOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUMMDNNMatchConvTopkOp::AttachImpl(const cpp::OpDesc& op_desc,
+bool XPUMmdnnMatchConvTopkOp::AttachImpl(const cpp::OpDesc& op_desc,
                                          lite::Scope* scope) {
   param_.input_x = scope->FindVar(op_desc.Input("input_x").front())
                        ->GetMutable<lite::Tensor>();
@@ -162,9 +162,9 @@ bool XPUMMDNNMatchConvTopkOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
-bool XPUMMDNNMergeAllOp::CheckShape() const { return true; }
+bool XPUMmdnnMergeAllOp::CheckShape() const { return true; }
 
-bool XPUMMDNNMergeAllOp::InferShapeImpl() const {
+bool XPUMmdnnMergeAllOp::InferShapeImpl() const {
   int64_t dim0 = param_.concat_7in1_x[0]->dims()[0];
   int64_t dim1 = param_.fc2_w->dims()[0];
   std::vector<int64_t> vec_out_shape;
@@ -175,7 +175,7 @@ bool XPUMMDNNMergeAllOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUMMDNNMergeAllOp::AttachImpl(const cpp::OpDesc& op_desc,
+bool XPUMmdnnMergeAllOp::AttachImpl(const cpp::OpDesc& op_desc,
                                     lite::Scope* scope) {
   param_.concat_7in1_x.clear();
   for (auto& name : op_desc.Input("concat_7in1_x")) {
@@ -230,10 +230,10 @@ bool XPUMMDNNMergeAllOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__mmdnn_bid_emb_grnn_att,
-                 paddle::lite::operators::XPUMMDNNBidEmbGrnnAttOp);
+                 paddle::lite::operators::XPUMmdnnBidEmbGrnnAttOp);
 REGISTER_LITE_OP(__xpu__mmdnn_bid_emb_att,
-                 paddle::lite::operators::XPUMMDNNBidEmbAttOp);
+                 paddle::lite::operators::XPUMmdnnBidEmbAttOp);
 REGISTER_LITE_OP(__xpu__mmdnn_match_conv_topk,
-                 paddle::lite::operators::XPUMMDNNMatchConvTopkOp);
+                 paddle::lite::operators::XPUMmdnnMatchConvTopkOp);
 REGISTER_LITE_OP(__xpu__mmdnn_merge_all,
-                 paddle::lite::operators::XPUMMDNNMergeAllOp);
+                 paddle::lite::operators::XPUMmdnnMergeAllOp);

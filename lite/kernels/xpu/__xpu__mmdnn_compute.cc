@@ -1099,10 +1099,10 @@ class MMDNNMergeAll {
   }
 };
 
-class XPUMMDNNBidEmbGrnnAttCompute
+class XPUMmdnnBidEmbGrnnAttCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUMMDNNBidEmbGrnnAttParam;
+  using param_t = operators::XPUMmdnnBidEmbGrnnAttParam;
 
   void PrepareForRun() override;
 
@@ -1115,7 +1115,7 @@ class XPUMMDNNBidEmbGrnnAttCompute
   int upper_bound_seqlen_ = 512;
 };
 
-void XPUMMDNNBidEmbGrnnAttCompute::PrepareForRun() {
+void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   id_.Init(upper_bound_batch_, upper_bound_seqlen_);
@@ -1135,7 +1135,7 @@ void XPUMMDNNBidEmbGrnnAttCompute::PrepareForRun() {
                  upper_bound_seqlen_);
 }
 
-void XPUMMDNNBidEmbGrnnAttCompute::Run() {
+void XPUMmdnnBidEmbGrnnAttCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -1157,10 +1157,10 @@ void XPUMMDNNBidEmbGrnnAttCompute::Run() {
                   xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
-class XPUMMDNNBidEmbAttCompute
+class XPUMmdnnBidEmbAttCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUMMDNNBidEmbAttParam;
+  using param_t = operators::XPUMmdnnBidEmbAttParam;
 
   void PrepareForRun() override;
 
@@ -1173,7 +1173,7 @@ class XPUMMDNNBidEmbAttCompute
   int upper_bound_seqlen_ = 512;
 };
 
-void XPUMMDNNBidEmbAttCompute::PrepareForRun() {
+void XPUMmdnnBidEmbAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   id_.Init(upper_bound_batch_, upper_bound_seqlen_);
@@ -1185,7 +1185,7 @@ void XPUMMDNNBidEmbAttCompute::PrepareForRun() {
                  upper_bound_seqlen_);
 }
 
-void XPUMMDNNBidEmbAttCompute::Run() {
+void XPUMmdnnBidEmbAttCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -1204,10 +1204,10 @@ void XPUMMDNNBidEmbAttCompute::Run() {
                   xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
-class XPUMMDNNMatchConvTopkCompute
+class XPUMmdnnMatchConvTopkCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUMMDNNMatchConvTopkParam;
+  using param_t = operators::XPUMmdnnMatchConvTopkParam;
 
   void PrepareForRun() override;
 
@@ -1219,7 +1219,7 @@ class XPUMMDNNMatchConvTopkCompute
   int upper_bound_seqlen_ = 512;
 };
 
-void XPUMMDNNMatchConvTopkCompute::PrepareForRun() {
+void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   compound_.Init(param.input_w,
@@ -1233,7 +1233,7 @@ void XPUMMDNNMatchConvTopkCompute::PrepareForRun() {
                  param.topks);
 }
 
-void XPUMMDNNMatchConvTopkCompute::Run() {
+void XPUMmdnnMatchConvTopkCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -1249,10 +1249,10 @@ void XPUMMDNNMatchConvTopkCompute::Run() {
                   xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
-class XPUMMDNNMergeAllCompute
+class XPUMmdnnMergeAllCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUMMDNNMergeAllParam;
+  using param_t = operators::XPUMmdnnMergeAllParam;
 
   void PrepareForRun() override;
 
@@ -1265,7 +1265,7 @@ class XPUMMDNNMergeAllCompute
   int upper_bound_seqlen_ = 512;
 };
 
-void XPUMMDNNMergeAllCompute::PrepareForRun() {
+void XPUMmdnnMergeAllCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   id_.Init(upper_bound_batch_, upper_bound_seqlen_);
@@ -1290,7 +1290,7 @@ void XPUMMDNNMergeAllCompute::PrepareForRun() {
                  upper_bound_seqlen_);
 }
 
-void XPUMMDNNMergeAllCompute::Run() {
+void XPUMmdnnMergeAllCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -1317,7 +1317,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMMDNNBidEmbGrnnAttCompute,
+                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute,
                      def)
     .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -1339,7 +1339,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_att,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMMDNNBidEmbAttCompute,
+                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbAttCompute,
                      def)
     .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -1355,7 +1355,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_match_conv_topk,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMMDNNMatchConvTopkCompute,
+                     paddle::lite::kernels::xpu::XPUMmdnnMatchConvTopkCompute,
                      def)
     .BindInput("input_x", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("input_y", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -1368,7 +1368,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_merge_all,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMMDNNMergeAllCompute,
+                     paddle::lite::kernels::xpu::XPUMmdnnMergeAllCompute,
                      def)
     .BindInput("concat_7in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("concat_2in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})

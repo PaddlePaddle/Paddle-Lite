@@ -1597,7 +1597,7 @@ struct XPUResNetCbamParam : ParamBase {
   float pool_p{1.0f};
 };
 
-struct XPUMMDNNSearchAttentionParam : ParamBase {
+struct XPUMmdnnSearchAttentionParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* W{};
   lite::Tensor* b{};
@@ -1610,7 +1610,7 @@ struct XPUMMDNNSearchAttentionParam : ParamBase {
   float mask{1.0f};
 };
 
-struct XPUMMDNNBidEmbGrnnAttParam : ParamBase {
+struct XPUMmdnnBidEmbGrnnAttParam : ParamBase {
   lite::Tensor* id0{};
   lite::Tensor* id1{};
   lite::Tensor* emb_tbl{};
@@ -1634,7 +1634,7 @@ struct XPUMMDNNBidEmbGrnnAttParam : ParamBase {
   lite::Tensor* emb_fw_out{};        // 5
 };
 
-struct XPUMMDNNBidEmbAttParam : ParamBase {
+struct XPUMmdnnBidEmbAttParam : ParamBase {
   lite::Tensor* id0{};
   lite::Tensor* id1{};
   lite::Tensor* emb_tbl{};
@@ -1647,7 +1647,7 @@ struct XPUMMDNNBidEmbAttParam : ParamBase {
   lite::Tensor* emb_fw_out{};    // 2
 };
 
-struct XPUMMDNNMatchConvTopkParam : ParamBase {
+struct XPUMmdnnMatchConvTopkParam : ParamBase {
   lite::Tensor* input_x{};
   lite::Tensor* input_y{};
   lite::Tensor* input_w{};
@@ -1662,7 +1662,7 @@ struct XPUMMDNNMatchConvTopkParam : ParamBase {
   lite::Tensor* topk_out{};
 };
 
-struct XPUMMDNNMergeAllParam : ParamBase {
+struct XPUMmdnnMergeAllParam : ParamBase {
   std::vector<lite::Tensor*> concat_7in1_x;
   std::vector<lite::Tensor*> concat_2in1_x;
   lite::Tensor* grnn_fw_wh{};

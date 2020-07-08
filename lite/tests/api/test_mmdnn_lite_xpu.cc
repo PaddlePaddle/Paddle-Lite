@@ -43,7 +43,7 @@ std::vector<uint64_t> input4_lod = {0};
 std::vector<int64_t> input5;
 std::vector<uint64_t> input5_lod = {0};
 
-void parse_input() {
+void ParseInput() {
   std::string raw_input =
       "0 1;145 10251 839 3719 428 52;1050488 1050488 911898 3719 760166 "
       "760166;3719 428 52 18 1102 10327 252 20 153 2897 1146 70 156 6 145 "
@@ -123,10 +123,10 @@ void parse_input() {
   return;
 }
 
-class mmdnn_reader {
-  std::ifstream inF;
-  std::vector<std::string> string_split(const std::string& in,
-                                        const std::string& delim) {
+class MmdnnReader {
+  std::ifstream ifs;
+  std::vector<std::string> StringSplit(const std::string& in,
+                                       const std::string& delim) {
     std::vector<std::string> ret;
     if (in == "") {
       return ret;
@@ -151,9 +151,9 @@ class mmdnn_reader {
   std::vector<int64_t> data[6];
   std::vector<uint64_t> lod[6];
 
-  void init(std::string file_name) { inF.open(file_name); }
+  void Init(std::string file_name) { ifs.open(file_name); }
 
-  int read(int maxline) {
+  int Read(int maxline) {
     for (int i = 0; i < 6; i++) {
       data[i].clear();
     }
@@ -163,10 +163,10 @@ class mmdnn_reader {
     }
     std::string line;
     int cnt = 0;
-    while (cnt < maxline && getline(inF, line)) {
-      std::vector<std::string> split1 = string_split(line, ";");
+    while (cnt < maxline && getline(ifs, line)) {
+      std::vector<std::string> split1 = StringSplit(line, ";");
       for (int i = 1; i < 7; i++) {
-        std::vector<std::string> split2 = string_split(split1[i], " ");
+        std::vector<std::string> split2 = StringSplit(split1[i], " ");
         if (split2.size() == 0) {
           split2.push_back("1280000");
         }
@@ -196,14 +196,14 @@ TEST(MMDNN, test_mmdnn_lite_xpu) {
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   if (FLAGS_perf) {
-    mmdnn_reader reader;
-    reader.init(FLAGS_perf_input);
+    MmdnnReader reader;
+    reader.Init(FLAGS_perf_input);
     int UB_batch = 40;  //  upper bound of batch
     int iter = 0;
     double tsc_sum = 0;
 
     while (true) {
-      int batch = reader.read(UB_batch);
+      int batch = reader.Read(UB_batch);
       if (batch <= 0) {
         break;
       }
@@ -232,7 +232,7 @@ TEST(MMDNN, test_mmdnn_lite_xpu) {
     return;
   }
 
-  parse_input();
+  ParseInput();
 
   {
     std::vector<int64_t> input0_shape{(int64_t)input0.size(), 1};

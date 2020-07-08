@@ -21,11 +21,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUMMDNNSearchAttentionOp : public OpLite {
+class XPUMmdnnSearchAttentionOp : public OpLite {
  public:
-  XPUMMDNNSearchAttentionOp() {}
+  XPUMmdnnSearchAttentionOp() {}
 
-  explicit XPUMMDNNSearchAttentionOp(const std::string &op_type)
+  explicit XPUMmdnnSearchAttentionOp(const std::string &op_type)
       : OpLite(op_type) {}
 
   bool CheckShape() const override;
@@ -37,11 +37,11 @@ class XPUMMDNNSearchAttentionOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override {
-    return "XPUMMDNNSearchAttentionOp";
+    return "XPUMmdnnSearchAttentionOp";
   }
 
  private:
-  mutable XPUMMDNNSearchAttentionParam param_;
+  mutable XPUMmdnnSearchAttentionParam param_;
 };
 
 }  // namespace operators

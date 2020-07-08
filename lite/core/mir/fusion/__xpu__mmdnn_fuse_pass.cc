@@ -23,7 +23,7 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class XPUMMDNNFloat2Fix {
+class XPUMmdnnFloat2Fix {
  public:
   void operator()(SSAGraph* graph) {
     for (auto* node : graph->StmtTopologicalOrder()) {
@@ -137,7 +137,7 @@ class XPUMMDNNFloat2Fix {
   }
 };
 
-class XPUMMDNNSearchAttentionFuser : public FuseBase {
+class XPUMmdnnSearchAttentionFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* input = VarNode("input")->AsInput();
@@ -326,7 +326,7 @@ class XPUMMDNNSearchAttentionFuser : public FuseBase {
   }
 };
 
-class XPUMMDNNMatchConvTopkFuser : public FuseBase {
+class XPUMmdnnMatchConvTopkFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* input_x = VarNode("input_x")
@@ -452,7 +452,7 @@ class XPUMMDNNMatchConvTopkFuser : public FuseBase {
   }
 };
 
-class XPUMMDNNBidSeqRevEmbEltwiseFuser : public FuseBase {
+class XPUMmdnnBidSeqRevEmbEltwiseFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* input0 = VarNode("input0")->AsInput();
@@ -527,7 +527,7 @@ class XPUMMDNNBidSeqRevEmbEltwiseFuser : public FuseBase {
   }
 };
 
-class XPUMMDNNBidEmbAttFuser : public FuseBase {
+class XPUMmdnnBidEmbAttFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* input0 = VarNode("input0")->AsInput();
@@ -624,7 +624,7 @@ class XPUMMDNNBidEmbAttFuser : public FuseBase {
   }
 };
 
-class XPUMMDNNBidEmbGrnnAttFuser : public FuseBase {
+class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* input0 = VarNode("input0")->AsInput();
@@ -866,7 +866,7 @@ class XPUMMDNNBidEmbGrnnAttFuser : public FuseBase {
   }
 };
 
-class XPUMMDNNMergeAllFuser : public FuseBase {
+class XPUMmdnnMergeAllFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* concat_7in1_input0 = VarNode("concat_7in1_input0")
@@ -1147,25 +1147,25 @@ class XPUMMDNNMergeAllFuser : public FuseBase {
 
 }  // namespace fusion
 
-class XPUMMDNNFusePass : public ProgramPass {
+class XPUMmdnnFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
 
-    fusion::XPUMMDNNFloat2Fix float_2_fix;
+    fusion::XPUMmdnnFloat2Fix float_2_fix;
     float_2_fix(graph.get());
-    fusion::XPUMMDNNSearchAttentionFuser search_att_fuser;
+    fusion::XPUMmdnnSearchAttentionFuser search_att_fuser;
     search_att_fuser(graph.get());
-    fusion::XPUMMDNNMatchConvTopkFuser match_conv_topk_fuser;
+    fusion::XPUMmdnnMatchConvTopkFuser match_conv_topk_fuser;
     match_conv_topk_fuser(graph.get());
 
-    fusion::XPUMMDNNBidSeqRevEmbEltwiseFuser bi_seq_rev_emb_eltwise_fuser;
+    fusion::XPUMmdnnBidSeqRevEmbEltwiseFuser bi_seq_rev_emb_eltwise_fuser;
     bi_seq_rev_emb_eltwise_fuser(graph.get());
-    fusion::XPUMMDNNBidEmbGrnnAttFuser bid_emb_grnn_att_fuser;
+    fusion::XPUMmdnnBidEmbGrnnAttFuser bid_emb_grnn_att_fuser;
     bid_emb_grnn_att_fuser(graph.get());
-    fusion::XPUMMDNNBidEmbAttFuser bid_emb_att_fuser;
+    fusion::XPUMmdnnBidEmbAttFuser bid_emb_att_fuser;
     bid_emb_att_fuser(graph.get());
-    fusion::XPUMMDNNMergeAllFuser merge_all_fuser;
+    fusion::XPUMmdnnMergeAllFuser merge_all_fuser;
     merge_all_fuser(graph.get());
   }
 };
@@ -1174,7 +1174,7 @@ class XPUMMDNNFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__mmdnn_fuse_pass, paddle::lite::mir::XPUMMDNNFusePass)
+REGISTER_MIR_PASS(__xpu__mmdnn_fuse_pass, paddle::lite::mir::XPUMmdnnFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__mmdnn_search_attention")
     .BindKernel("__xpu__mmdnn_bid_emb_grnn_att")

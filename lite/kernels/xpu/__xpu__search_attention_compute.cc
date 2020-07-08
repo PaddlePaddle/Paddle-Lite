@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void XPUMMDNNSearchAttentionCompute::PrepareForRun() {
+void XPUMmdnnSearchAttentionCompute::PrepareForRun() {
   offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
   pad_begin_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
   w_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
@@ -34,7 +34,7 @@ void XPUMMDNNSearchAttentionCompute::PrepareForRun() {
   pad_begin_cpu.reset(new int[64]);
 }
 
-void XPUMMDNNSearchAttentionCompute::Run() {
+void XPUMmdnnSearchAttentionCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
@@ -210,7 +210,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_search_attention,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMMDNNSearchAttentionCompute,
+                     paddle::lite::kernels::xpu::XPUMmdnnSearchAttentionCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})

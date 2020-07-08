@@ -23,10 +23,10 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUMMDNNSearchAttentionCompute
+class XPUMmdnnSearchAttentionCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUMMDNNSearchAttentionParam;
+  using param_t = operators::XPUMmdnnSearchAttentionParam;
 
   void PrepareForRun() override;
 

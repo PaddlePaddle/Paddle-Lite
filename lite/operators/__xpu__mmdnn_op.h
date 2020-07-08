@@ -20,11 +20,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUMMDNNBidEmbGrnnAttOp : public OpLite {
+class XPUMmdnnBidEmbGrnnAttOp : public OpLite {
  public:
-  XPUMMDNNBidEmbGrnnAttOp() {}
+  XPUMmdnnBidEmbGrnnAttOp() {}
 
-  explicit XPUMMDNNBidEmbGrnnAttOp(const std::string &op_type)
+  explicit XPUMmdnnBidEmbGrnnAttOp(const std::string &op_type)
       : OpLite(op_type) {}
 
   bool CheckShape() const override;
@@ -35,17 +35,17 @@ class XPUMMDNNBidEmbGrnnAttOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUMMDNNBidEmbGrnnAttOp"; }
+  std::string DebugString() const override { return "XPUMmdnnBidEmbGrnnAttOp"; }
 
  private:
-  mutable XPUMMDNNBidEmbGrnnAttParam param_;
+  mutable XPUMmdnnBidEmbGrnnAttParam param_;
 };
 
-class XPUMMDNNBidEmbAttOp : public OpLite {
+class XPUMmdnnBidEmbAttOp : public OpLite {
  public:
-  XPUMMDNNBidEmbAttOp() {}
+  XPUMmdnnBidEmbAttOp() {}
 
-  explicit XPUMMDNNBidEmbAttOp(const std::string &op_type) : OpLite(op_type) {}
+  explicit XPUMmdnnBidEmbAttOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -55,17 +55,17 @@ class XPUMMDNNBidEmbAttOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUMMDNNBidEmbAttOp"; }
+  std::string DebugString() const override { return "XPUMmdnnBidEmbAttOp"; }
 
  private:
-  mutable XPUMMDNNBidEmbAttParam param_;
+  mutable XPUMmdnnBidEmbAttParam param_;
 };
 
-class XPUMMDNNMatchConvTopkOp : public OpLite {
+class XPUMmdnnMatchConvTopkOp : public OpLite {
  public:
-  XPUMMDNNMatchConvTopkOp() {}
+  XPUMmdnnMatchConvTopkOp() {}
 
-  explicit XPUMMDNNMatchConvTopkOp(const std::string &op_type)
+  explicit XPUMmdnnMatchConvTopkOp(const std::string &op_type)
       : OpLite(op_type) {}
 
   bool CheckShape() const override;
@@ -76,17 +76,17 @@ class XPUMMDNNMatchConvTopkOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUMMDNNMatchConvTopkOp"; }
+  std::string DebugString() const override { return "XPUMmdnnMatchConvTopkOp"; }
 
  private:
-  mutable XPUMMDNNMatchConvTopkParam param_;
+  mutable XPUMmdnnMatchConvTopkParam param_;
 };
 
-class XPUMMDNNMergeAllOp : public OpLite {
+class XPUMmdnnMergeAllOp : public OpLite {
  public:
-  XPUMMDNNMergeAllOp() {}
+  XPUMmdnnMergeAllOp() {}
 
-  explicit XPUMMDNNMergeAllOp(const std::string &op_type) : OpLite(op_type) {}
+  explicit XPUMmdnnMergeAllOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -96,10 +96,10 @@ class XPUMMDNNMergeAllOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUMMDNNMergeAllOp"; }
+  std::string DebugString() const override { return "XPUMmdnnMergeAllOp"; }
 
  private:
-  mutable XPUMMDNNMergeAllParam param_;
+  mutable XPUMmdnnMergeAllParam param_;
 };
 
 }  // namespace operators
