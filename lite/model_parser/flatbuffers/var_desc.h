@@ -25,7 +25,7 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class VarDesc : public VarDescReadAPI {
+class VarDesc : public VarDescAPI {
  public:
   explicit VarDesc(proto::VarDesc* desc) : desc_(desc) {}
 
