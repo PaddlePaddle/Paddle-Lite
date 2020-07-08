@@ -76,6 +76,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                         static_cast<const char*>(output_var_name.c_str()),
                         0,
                         0,
+                        0,
+                        0,
                         type);
   }
   graph->AddNode(output_var_name);
