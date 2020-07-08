@@ -15,55 +15,11 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "lite/model_parser/base/traits.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
-
-// The AttrType is used to make the proto::AttrType portable.
-enum class OpAttrType {
-  INT = 0,
-  FLOAT = 1,
-  STRING = 2,
-  INTS = 3,
-  FLOATS = 4,
-  STRINGS = 5,
-  BOOLEAN = 6,
-  BOOLEANS = 7,
-  BLOCK = 8,
-  LONG = 9,
-  BLOCKS = 10,
-  LONGS = 11,
-  UNK,
-};
-
-template <OpAttrType Type>
-struct OpAttrTypeTrait;
-
-template <typename T>
-struct OpDataTypeTrait;
-
-#define TYPE_TRAIT_IMPL(T, type__)                  \
-  template <>                                       \
-  struct OpAttrTypeTrait<OpAttrType::T> {           \
-    typedef type__ DT;                              \
-  };                                                \
-  template <>                                       \
-  struct OpDataTypeTrait<type__> {                  \
-    static constexpr OpAttrType AT = OpAttrType::T; \
-    static constexpr const char* ATN = #T;          \
-  };
-
-TYPE_TRAIT_IMPL(INT, int32_t);
-TYPE_TRAIT_IMPL(FLOAT, float);
-TYPE_TRAIT_IMPL(STRING, std::string);
-TYPE_TRAIT_IMPL(BOOLEAN, bool);
-TYPE_TRAIT_IMPL(LONG, int64_t);
-TYPE_TRAIT_IMPL(INTS, std::vector<int>);
-TYPE_TRAIT_IMPL(FLOATS, std::vector<float>);
-TYPE_TRAIT_IMPL(STRINGS, std::vector<std::string>);
-TYPE_TRAIT_IMPL(LONGS, std::vector<int64_t>);
-#undef TYPE_TRAIT_IMPL
 
 class OpDescReadAPI {
  public:
