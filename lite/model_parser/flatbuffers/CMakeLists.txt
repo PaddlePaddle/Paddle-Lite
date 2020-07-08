@@ -11,4 +11,6 @@ lite_fbs_library(fbs_block_desc SRCS block_desc.cc FBS_DEPS framework_fbs_header
 lite_fbs_library(fbs_program_desc SRCS program_desc.cc FBS_DEPS framework_fbs_header)
 
 lite_cc_test(test_vector_view SRCS vector_view_test.cc)
-add_dependencies(test_vector_view framework_fbs_header)
+if (TARGET test_vector_view)
+  add_dependencies(test_vector_view framework_fbs_header)
+endif()
