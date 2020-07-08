@@ -56,6 +56,39 @@ class TargetWrapper<TARGET(kXPU)> {
                          IoDirection dir);
 
   static XPUScratchPadGuard MallocScratchPad(size_t size, bool use_l3 = true);
+
+  static xdnn::Context* GetRawContext() {
+    if (tls_raw_ctx_ == nullptr) {
+      tls_raw_ctx_ = xdnn::create_context();
+      CHECK(tls_raw_ctx_);
+      int r = xdnn::set_workspace_l3_size(tls_raw_ctx_,
+                                          workspace_l3_size_per_thread);
+      if (r != 0) {
+        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
+                     << ", workspace_l3_size_per_thread = "
+                     << workspace_l3_size_per_thread;
+      }
+    }
+    return tls_raw_ctx_;
+  }
+
+  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
+  // thread
+  static void SetDev(int dev_no = 0) {
+    const char* dev_env = getenv("LITE_XPU_DEV");
+    if (dev_env) {
+      xpu_set_device(atoi(dev_env));
+      return;
+    }
+
+    xpu_set_device(dev_no);
+  }
+
+  static std::string multi_encoder_precision;  // NOLINT
+  static int workspace_l3_size_per_thread;
+
+ private:
+  static thread_local xdnn::Context* tls_raw_ctx_;
 };
 
 }  // namespace lite
