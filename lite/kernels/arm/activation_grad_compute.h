@@ -31,6 +31,24 @@ class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~SquareGradCompute() = default;
 };
 
+class ReluGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationGradParam;
+
+  void Run() override;
+
+  virtual ~ReluGradCompute() = default;
+};
+
+class TanhGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationGradParam;
+
+  void Run() override;
+
+  virtual ~TanhGradCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
