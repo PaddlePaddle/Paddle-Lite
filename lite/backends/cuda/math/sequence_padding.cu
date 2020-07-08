@@ -134,8 +134,26 @@ template void SequencePadding(float* pad_data,
                               int step_width,
                               cudaStream_t* stream);
 
+template void SequencePadding(half* pad_data,
+                              const half* seq_data,
+                              const half* pad_value_data,
+                              bool is_constant_pad,
+                              const size_t* seq_offsets_data,
+                              int seq_num,
+                              int pad_seq_len,
+                              int step_width,
+                              cudaStream_t* stream);
+
 template void SequenceUnpadding(float* seq_data,
                                 const float* pad_data,
+                                const size_t* seq_offsets_data,
+                                int seq_num,
+                                int pad_seq_len,
+                                int step_width,
+                                cudaStream_t* stream);
+
+template void SequenceUnpadding(half* seq_data,
+                                const half* pad_data,
                                 const size_t* seq_offsets_data,
                                 int seq_num,
                                 int pad_seq_len,
