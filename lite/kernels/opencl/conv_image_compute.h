@@ -56,6 +56,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
  private:
+  void PrintConvInfo();
   void Conv2d1x1opt(bool is_turn = false);
   void Conv2d3x3(bool is_turn = false);
   void Conv2d3x3opt(bool is_turn = false);
@@ -66,6 +67,8 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d3x3s1(bool is_turn = false);
   void DepthwiseConv2d3x3(bool is_turn = false);
   void DepthwiseConv2d(bool is_turn = false);
+
+  param_t* conv_param_{nullptr};
 
   kernel_t impl_;
   std::vector<std::string> kernel_func_names_{};
@@ -79,13 +82,64 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::unique_ptr<Tensor> tensor_hold_bias_image_{nullptr};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+
+  // opencl kernel args
   int c_blk_ = 1;
   int w_blk_ = 1;
   int nh_blk_ = 1;
 
+  const cl::Image2D* input_image_p_{nullptr};
+  const cl::Image2D* filter_image_p_{nullptr};
+  const cl::Image2D* bias_image_p_{nullptr};
+  const cl::Image2D* output_image_p_{nullptr};
+
+  int stride_h_{-1};
+  int stride_w_{-1};
+
+  int dilation_h_{-1};
+  int dilation_w_{-1};
+
+  int pad_up_{-1};
+  int pad_down_{-1};
+  int pad_left_{-1};
+  int pad_right_{-1};
+
+  int offset_{-1};
+  int groups_{-1};
+  bool relu_fused_{false};
+  bool has_bias_{false};
+
+  int input_tensor_n_{-1};
+  int input_tensor_c_{-1};
+  int input_tensor_h_{-1};
+  int input_tensor_w_{-1};
+  int input_image_h_{-1};
+  int input_image_w_{-1};
+
+  int output_tensor_n_{-1};
+  int output_tensor_c_{-1};
+  int output_tensor_h_{-1};
+  int output_tensor_w_{-1};
+  int output_image_h_{-1};
+  int output_image_w_{-1};
+
+  int filter_tensor_n_{-1};
+  int filter_tensor_c_{-1};
+  int filter_tensor_h_{-1};
+  int filter_tensor_w_{-1};
+  int filter_image_h_{-1};
+  int filter_image_w_{-1};
+
+  int bias_image_h_{-1};
+  int bias_image_w_{-1};
+
   int default_c_blk_ = 1;
   int default_w_blk_ = 1;
   int default_nh_blk_ = 1;
+  // =================
+
+  DDim last_input_dims_;
+  bool is_first_epoch_for_run_{true};
 
   cl::Kernel kernel_;
   cl::NDRange local_work_size_ = cl::NDRange{
