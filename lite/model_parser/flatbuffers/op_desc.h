@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -83,7 +84,7 @@ class OpDesc : public OpDescAPI {
   }
 
   bool HasAttr(const std::string& name) const override {
-    return desc_->attrs()->LookupByKey(name.c_str()) == nullptr;
+    return desc_->attrs()->LookupByKey(name.c_str()) != nullptr;
   }
 
   size_t AttrsSize() const { return desc_->attrs()->size(); }
@@ -127,6 +128,71 @@ class OpDesc : public OpDescAPI {
 
  private:
   proto::OpDesc* desc_;
+
+  // To reduce overhead, we expect to use namespace aliasing to make cpp::Desc
+  // and flatbuffers::Desc replace each other. However, there is no direct
+  // inheritance relationship between the two data types, and the read-only
+  // version of flatbuffers lacks some write implementations. Therefore, at
+  // present, we are temporarily providing a default interface that triggers
+  // execution-time errors to avoid type ambiguity and compile-time errors
+  // caused by different building options.
+
+ public:
+  bool HasInput(const std::string& param) const {
+    return desc_->inputs()->LookupByKey(param.c_str()) != nullptr;
+  }
+
+  const std::map<std::string, std::vector<std::string>>& inputs() const {
+    NotImplemented();
+    return inputs_;
+  }
+  const std::map<std::string, std::vector<std::string>>& outputs() const {
+    NotImplemented();
+    return outputs_;
+  }
+  std::map<std::string, std::vector<std::string>>* mutable_inputs() {
+    NotImplemented();
+    return &inputs_;
+  }
+  std::map<std::string, std::vector<std::string>>* mutable_outputs() {
+    NotImplemented();
+    return &outputs_;
+  }
+
+  std::vector<std::string> input_vars() const {
+    NotImplemented();
+    return std::vector<std::string>();
+  }
+
+  std::vector<std::string> output_vars() const {
+    NotImplemented();
+    return std::vector<std::string>();
+  }
+
+  bool HasOutput(const std::string& param) const {
+    NotImplemented();
+    return false;
+  }
+
+  const std::map<std::string, Any>& attrs() const {
+    NotImplemented();
+    return attrs_;
+  }
+  const std::map<std::string, AttrType>& attr_types() const {
+    NotImplemented();
+    return attr_types_;
+  }
+
+ private:
+  void NotImplemented() const {
+    LOG(FATAL) << "The additional interfaces of OpDesc is temporarily "
+                  "unavailable in read-only mode.";
+  }
+  std::string type_;
+  std::map<std::string, std::vector<std::string>> inputs_;
+  std::map<std::string, std::vector<std::string>> outputs_;
+  std::map<std::string, Any> attrs_;
+  std::map<std::string, AttrType> attr_types_;
 };
 
 }  // namespace fbs

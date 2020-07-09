@@ -189,7 +189,7 @@ void OpLite::AttachOutput(const cpp::OpDesc &op_desc,
 
 bool OpInfo::GetInputArgname(const std::string &value_name,
                              std::string *out) const {
-  for (auto &item : inputs_) {
+  for (auto &item : inputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), value_name);
     if (it != item.second.end()) {
       *out = item.first;
@@ -201,7 +201,7 @@ bool OpInfo::GetInputArgname(const std::string &value_name,
 
 bool OpInfo::GetOutputArgname(const std::string &value_name,
                               std::string *out) const {
-  for (auto &item : outputs_) {
+  for (auto &item : outputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), value_name);
     if (it != item.second.end()) {
       *out = item.first;
@@ -212,7 +212,7 @@ bool OpInfo::GetOutputArgname(const std::string &value_name,
 }
 
 bool OpInfo::GetInputIndex(const std::string &input_name, int *out) const {
-  for (auto &item : inputs_) {
+  for (auto &item : inputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), input_name);
     if (it != item.second.end()) {
       *out = it - item.second.begin();
@@ -223,7 +223,7 @@ bool OpInfo::GetInputIndex(const std::string &input_name, int *out) const {
 }
 
 bool OpInfo::GetOutputIndex(const std::string &output_name, int *out) const {
-  for (auto &item : outputs_) {
+  for (auto &item : outputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), output_name);
     if (it != item.second.end()) {
       *out = it - item.second.begin();
