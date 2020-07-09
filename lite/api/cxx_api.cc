@@ -28,13 +28,7 @@ namespace paddle {
 namespace lite {
 
 std::vector<std::string> GetAllOps() {
-  const std::map<std::string, std::string> &op2path =
-      OpKernelInfoCollector::Global().GetOp2PathDict();
-  std::vector<std::string> res;
-  for (const auto &op : op2path) {
-    res.push_back(op.first);
-  }
-  return res;
+  return OpLiteFactory::Global().GetAllOps();
 }
 
 void Predictor::SaveModel(const std::string &dir,
