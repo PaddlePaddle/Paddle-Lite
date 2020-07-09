@@ -27,7 +27,7 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class OpDesc : public OpDescReadAPI {
+class OpDesc : public OpDescAPI {
  public:
   explicit OpDesc(proto::OpDesc* desc) : desc_(desc) { CHECK(desc_); }
 

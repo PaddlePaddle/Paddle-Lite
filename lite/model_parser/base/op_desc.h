@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include "lite/model_parser/base/traits.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -61,16 +62,25 @@ class OpDescReadAPI {
 
 class OpDescWriteAPI {
  public:
-  virtual void SetType(const std::string& type) = 0;
+  virtual void SetType(const std::string& type) { NotImplemented(); }
   virtual void SetInput(const std::string& param,
-                        const std::vector<std::string>& args) = 0;
+                        const std::vector<std::string>& args) {
+    NotImplemented();
+  }
   virtual void SetOutput(const std::string& param,
-                         const std::vector<std::string>& args) = 0;
+                         const std::vector<std::string>& args) {
+    NotImplemented();
+  }
 
   template <typename T>
   void SetAttr(const std::string& name, const T& v);
 
   virtual ~OpDescWriteAPI() = default;
+
+ private:
+  void NotImplemented() {
+    LOG(FATAL) << "OpDescWriteAPI is not available in model read-only mode.";
+  }
 };
 
 // The reading and writing of the model are one-time and separate.
