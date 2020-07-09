@@ -34,7 +34,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -59,6 +59,7 @@ DEFINE_bool(flag_bias, true, "with bias");
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ConvParam ConvParam;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 using paddle::lite::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
@@ -165,7 +166,18 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
     param_fp32_out.bias->CopyDataFrom(*param_int8_out.bias);
     bias_fp32.CopyDataFrom(*param_int8_out.bias);
   }
-
+  if (flag_relu) {
+    ActivationParam act_param;
+    act_param.has_active = true;
+    act_param.active_type = (paddle::lite_api::ActivationType)
+        flag_relu;  // 1-relu, 2-relu6, 4-leakyrelu
+    if (flag_relu) {
+      param_fp32_out.fuse_relu = true;
+      param_int8_out.fuse_relu = true;
+    }
+    param_fp32_out.activation_param = act_param;
+    param_int8_out.activation_param = act_param;
+  }
   std::vector<float> scale_in{1.f / 127};
   std::vector<float> scale_out{weight_dim.count(1, 4) / 127.f};
   std::vector<float> scale_w(weight_dim[0], 1.f / 127);
@@ -579,6 +591,9 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                       for (auto& h : {1, 7, 17, 33}) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
+                    }
+                    if (cin == 1 && cout == 1) {
+                      continue;
                     }
                     test_conv_int8(dims,
                                    weights_dim,
