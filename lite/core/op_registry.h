@@ -97,6 +97,14 @@ class OpLiteFactory {
     return ss.str();
   }
 
+  std::vector<std::string> GetAllOps() const {
+    std::vector<std::string> res;
+    for (const auto& op : op_registry_) {
+      res.push_back(op.first);
+    }
+    return res;
+  }
+
  protected:
   std::map<std::string, std::function<std::shared_ptr<OpLite>()>> op_registry_;
 };
