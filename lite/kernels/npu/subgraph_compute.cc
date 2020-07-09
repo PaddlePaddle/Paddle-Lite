@@ -166,7 +166,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   }
   // Load the HiAI om model and create a HiAI model manager client(from HiAI
   // Service) to run inference.
-  bool model_comp = false;
+  bool model_comp = true;
   model_client_ =
       lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
@@ -338,6 +338,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
     auto device_program = std::make_shared<DeviceProgram>();
     // Obtain the model cache dir from the NPU Context of the subgraph op
     auto model_cache_dir = ctx_->As<NPUContext>().SubgraphModelCacheDir();
+    VLOG(3) << "[NPU] Getting subgraph model_cache_dir is: " << model_cache_dir;
     // Check and load if the cached model and configuration file exists
     if (model_cache_dir.empty() ||
         !device_program->LoadFromCacheFile(

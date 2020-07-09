@@ -27,7 +27,7 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
   // Create a HiAI model manager client to load the HiAI om model
   auto model_client = std::make_shared<hiai::AiModelMngerClient>();
   if (model_client->Init(nullptr) != hiai::AI_SUCCESS) {
-    LOG(WARNING) << "[NPU] AiModelMngerClient init failed!";
+    LOG(WARNING) << "[NPU] Init hiai model client failed!";
     return nullptr;
   }
   // Check HiAI DDK version
@@ -43,9 +43,16 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
   model_desc->SetModelBuffer(
       reinterpret_cast<const void*>(model_buffer->data()),
       model_buffer->size());
-  if (model_client->CheckModelCompatibility(*model_desc, *model_comp) !=
-      hiai::AI_SUCCESS) {
+  if (!*model_comp &&
+      model_client->CheckModelCompatibility(*model_desc, *model_comp) !=
+          hiai::AI_SUCCESS) {
     *model_comp = false;
+    VLOG(3) << "[NPU] model is NOT compatiblitiable, setting model_comp to "
+            << *model_comp;
+  } else {
+    *model_comp = true;
+    VLOG(3) << "[NPU] model is compatiblitiable, setting model_comp to "
+            << *model_comp;
   }
   // Rebuild and write the data of the compatible model to the model buffer
   if (!*model_comp) {
@@ -56,17 +63,21 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
     if (org_model_buffer) {
       std::vector<hiai::MemBuffer*> org_model_buffers;
       org_model_buffers.push_back(org_model_buffer);
-      hiai::MemBuffer* new_model_buffer =
-          model_builder->OutputMemBufferCreate(0, org_model_buffers);
+      hiai::MemBuffer* new_model_buffer = model_builder->OutputMemBufferCreate(
+          framework_type(), org_model_buffers);
+      // VLOG(3) << "[NPU] new model buffer memeory size is " <<
+      // new_model_buffer->GetMemBufferSize();
       if (new_model_buffer) {
         uint32_t new_model_size = 0;
         if (model_builder->BuildModel(org_model_buffers,
                                       new_model_buffer,
                                       new_model_size) == hiai::AI_SUCCESS) {
-          model_buffer->resize(new_model_buffer->GetMemBufferSize());
+          // need to change to new_model_size as GetMemBufferSize is not
+          // correct.
+          model_buffer->resize(new_model_size);
           memcpy(reinterpret_cast<void*>(model_buffer->data()),
                  new_model_buffer->GetMemBufferData(),
-                 new_model_buffer->GetMemBufferSize());
+                 new_model_size);
           // Reset the model buffer
           model_desc->SetModelBuffer(
               reinterpret_cast<const void*>(model_buffer->data()),
