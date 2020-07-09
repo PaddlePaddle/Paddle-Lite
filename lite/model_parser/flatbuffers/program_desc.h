@@ -23,7 +23,7 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class ProgramDesc : public ProgramDescReadAPI {
+class ProgramDesc : public ProgramDescAPI {
  public:
   explicit ProgramDesc(proto::ProgramDesc *desc) : desc_(desc) { CHECK(desc); }
 
