@@ -22,7 +22,7 @@ namespace arm {
 
 void SquareGradCompute::Run() {
   auto& param = this->Param<param_t>();
-  CHECK_OR_FALSE(param.X);
+  CHECK(param.X);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
@@ -38,7 +38,7 @@ void SquareGradCompute::Run() {
 
 void ReluGradCompute::Run() {
   auto& param = this->Param<param_t>();
-  CHECK_OR_FALSE(param.X);
+  CHECK(param.X);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
@@ -54,14 +54,14 @@ void ReluGradCompute::Run() {
 
 void TanhGradCompute::Run() {
   auto& param = this->Param<param_t>();
-  CHECK_OR_FALSE(param.Out);
+  CHECK(param.Out);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
 
-  auto our_data = param.Out->data<float>();
+  auto out_data = param.Out->data<float>();
   auto x_grad_data = param.X_grad->mutable_data<float>();
-  lite::arm::math::act_tanh_grad<float>(x_data,
+  lite::arm::math::act_tanh_grad<float>(out_data,
                                         out_grad_data,
                                         x_grad_data,
                                         out_grad_dims.production(),
