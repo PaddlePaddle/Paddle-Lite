@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/activation_grad_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/host/activation_grad_compute.h"
+// #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -29,11 +29,9 @@ void SquareGradCompute::Run() {
 
   auto x_data = param.X->data<float>();
   auto x_grad_data = param.X_grad->mutable_data<float>();
-  lite::arm::math::act_square_grad<float>(x_data,
-                                          out_grad_data,
-                                          x_grad_data,
-                                          out_grad_dims.production(),
-                                          ctx.threads());
+  for (int i = 0; i < out_grad_dims.production(); i++) {
+    x_grad_data[i] = out_grad_data[i] * 2.0 * x_data[i];
+  }
 }
 
 void ReluGradCompute::Run() {
@@ -45,11 +43,9 @@ void ReluGradCompute::Run() {
 
   auto x_data = param.X->data<float>();
   auto x_grad_data = param.X_grad->mutable_data<float>();
-  lite::arm::math::act_relu_grad<float>(x_data,
-                                        out_grad_data,
-                                        x_grad_data,
-                                        out_grad_dims.production(),
-                                        ctx.threads());
+  for (int i = 0; i < out_grad_dims.production(); i++) {
+    x_grad_data[i] = x_data[i] > 0 ? out_grad_data[i] : 0.0;
+  }
 }
 
 void TanhGradCompute::Run() {
@@ -61,11 +57,10 @@ void TanhGradCompute::Run() {
 
   auto out_data = param.Out->data<float>();
   auto x_grad_data = param.X_grad->mutable_data<float>();
-  lite::arm::math::act_tanh_grad<float>(out_data,
-                                        out_grad_data,
-                                        x_grad_data,
-                                        out_grad_dims.production(),
-                                        ctx.threads());
+  for (int i = 0; i < out_grad_dims.production(); i++) {
+    x_grad_data[i] = out_grad_data[i] *
+                     (static_cast<float>(1.0) - out_data[i] * out_data[i]);
+  }
 }
 
 }  // namespace arm
@@ -74,34 +69,34 @@ void TanhGradCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(square_grad,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::SquareGradCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(relu_grad,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::SquareGradCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(tanh_grad,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::SquareGradCompute,
                      def)
-    .BindInput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
