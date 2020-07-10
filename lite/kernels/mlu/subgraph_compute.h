@@ -62,6 +62,29 @@ class SubgraphEngine : public subgraph::Engine {
     }
   }
 
+  bool InputShapeChanged() {
+    std::vector<std::vector<int64_t>> new_shape;
+    // used in batch changable situation
+    std::vector<std::vector<int64_t>> all_shape;
+    for (auto origin_itensor : origin_itensors_) {
+      if (!disable_batch_size_changeable_) {
+        auto iv = origin_itensor->dims().Vectorize();
+        all_shape.push_back(iv);
+        iv.erase(iv.begin());
+        new_shape.push_back(iv);
+      } else {
+        new_shape.push_back(origin_itensor->dims().Vectorize());
+      }
+    }
+    inputs_shape_ = new_shape;
+    all_inputs_shape_ = all_shape;
+    if (shape_graph_map_.count(inputs_shape_) > 0) {
+      return false;
+    }
+    VLOG(3) << "MLU graph input shape changed" << std::endl;
+    return true;
+  }
+
   inline cnmlDataType_t PrecisionToDatatype(PrecisionType data_type) {
     switch (data_type) {
       case paddle::lite_api::PrecisionType::kFP16:
@@ -79,6 +102,9 @@ class SubgraphEngine : public subgraph::Engine {
 
  protected:
   bool BuildDeviceProgram() override {
+    if (origin_program_.empty()) {
+      BuildOriginProgram();
+    }
     if (!error_compile_batch_size_changeable_ &&
         !disable_batch_size_changeable_) {
       int status = BuildDeviceProgramImpl();
@@ -195,9 +221,6 @@ class SubgraphEngine : public subgraph::Engine {
     shape_graph_map_[new_shape] = graph;
     if (GetBoolFromEnv("PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL")) {
       graph->GenOfflineModel(GetOfflineModName());
-    }
-    if (subgraph::CHECK_FAILED(status)) {
-      return false;
     }
     return true;
   }

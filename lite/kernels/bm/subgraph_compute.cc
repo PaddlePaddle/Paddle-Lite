@@ -54,6 +54,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
@@ -135,9 +138,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
                             *p_mem,
                             net_info_->output_dtypes[i],
                             stage.output_shapes[i]);
-  }
-  if (subgraph::CHECK_FAILED(status)) {
-    return false;
   }
   return true;
 }

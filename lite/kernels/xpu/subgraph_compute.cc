@@ -53,6 +53,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
   // IR graph
   subgraph::xpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
@@ -185,9 +188,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
         static_cast<const int64_t*>(origin_odims_[i].data().data()));
     device_otensors_[i].strides = nullptr;
     device_otensors_[i].byte_offset = 0;
-  }
-  if (subgraph::CHECK_FAILED(status)) {
-    return false;
   }
   return true;
 }

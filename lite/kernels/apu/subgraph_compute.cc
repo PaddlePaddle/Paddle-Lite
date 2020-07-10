@@ -46,6 +46,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
 
   // Convert all of ops and their input vars and weights and added into the APU
   // NIR graph
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   const auto& bridges = subgraph::Registry::Instance();
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
@@ -133,10 +136,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
   VLOG(3) << "[APU] APU DLA model created, Build cost "
           << GetCurrentUS() - start_time << " us";
-
-  if (subgraph::CHECK_FAILED(status)) {
-    return false;
-  }
   return true;
 }
 

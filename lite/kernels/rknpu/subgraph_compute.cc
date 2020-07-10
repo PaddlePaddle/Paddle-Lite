@@ -55,6 +55,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
   // RKNPU IR graph
   subgraph::rknpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
@@ -184,9 +187,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
-  }
-  if (subgraph::CHECK_FAILED(status)) {
-    return false;
   }
   return true;
 }
