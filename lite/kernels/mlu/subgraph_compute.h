@@ -62,55 +62,6 @@ class SubgraphEngine : public subgraph::Engine {
     }
   }
 
-  int Build() {
-    // In order to attach all of the ops of the block desc, we need to build
-    // the original program firstly.
-    BuildOriginProgram();
-    // Run InferShape() of all of ops, and convert Paddle ops to MLU IR graph
-    build_device_program_status_ = BuildDeviceProgram();
-    return build_device_program_status_;
-  }
-
-  int Launch() {
-    // Rebuild device program when the shapes of input tensors have been
-    // changed.
-    if (subgraph::CHECK_SUCCESS(build_device_program_status_) &&
-        subgraph::CHECK_REBUILD_WHEN_SHAPE_CHANGED(
-            build_device_program_status_) &&
-        InputShapeChanged()) {
-      Build();
-    }
-    if (subgraph::CHECK_FAILED(build_device_program_status_)) {
-      LaunchOriginProgram();
-    } else {
-      LaunchDeviceProgram();
-    }
-    return 0;
-  }
-
-  bool InputShapeChanged() {
-    std::vector<std::vector<int64_t>> new_shape;
-    // used in batch changable situation
-    std::vector<std::vector<int64_t>> all_shape;
-    for (auto origin_itensor : origin_itensors_) {
-      if (!disable_batch_size_changeable_) {
-        auto iv = origin_itensor->dims().Vectorize();
-        all_shape.push_back(iv);
-        iv.erase(iv.begin());
-        new_shape.push_back(iv);
-      } else {
-        new_shape.push_back(origin_itensor->dims().Vectorize());
-      }
-    }
-    inputs_shape_ = new_shape;
-    all_inputs_shape_ = all_shape;
-    if (shape_graph_map_.count(inputs_shape_) > 0) {
-      return false;
-    }
-    VLOG(3) << "MLU graph input shape changed" << std::endl;
-    return true;
-  }
-
   inline cnmlDataType_t PrecisionToDatatype(PrecisionType data_type) {
     switch (data_type) {
       case paddle::lite_api::PrecisionType::kFP16:
@@ -127,7 +78,7 @@ class SubgraphEngine : public subgraph::Engine {
   }
 
  protected:
-  int BuildDeviceProgram() override {
+  bool BuildDeviceProgram() override {
     if (!error_compile_batch_size_changeable_ &&
         !disable_batch_size_changeable_) {
       int status = BuildDeviceProgramImpl();
@@ -142,7 +93,7 @@ class SubgraphEngine : public subgraph::Engine {
     return BuildDeviceProgramImpl();
   }
 
-  int BuildDeviceProgramImpl() {
+  bool BuildDeviceProgramImpl() {
     int status = 0;
     auto graph = std::make_shared<paddle::lite::subgraph::mlu::Graph>();
     graph->SetFPType(fp_type_);
@@ -197,13 +148,16 @@ class SubgraphEngine : public subgraph::Engine {
         status |= subgraph::FAILED;
         VLOG(4) << "[MLU] found unsupported batch_size changeable op type: "
                 << op_type;
-        return status;
+        if (subgraph::CHECK_FAILED(status)) {
+          return false;
+        }
+        return true;
       }
       op->CheckShape();
       const_cast<OpLite*>(op)->InferShape();
       if (!bridges.Exists(op_type, TARGET(kMLU))) {
         LOG(INFO) << "MLU bridges doesn't support op_type: " << op_type;
-        return subgraph::FAILED;
+        return false;
       }
       auto kernel = inst.kernel();
       status |= bridges.Select(op_type, TARGET(kMLU))(
@@ -211,7 +165,7 @@ class SubgraphEngine : public subgraph::Engine {
           const_cast<OpLite*>(op),
           const_cast<KernelBase*>(kernel));
       if (subgraph::CHECK_FAILED(status)) {
-        return subgraph::FAILED;
+        return false;
       }
     }
     // Obtain the output nodes of the MLU IR graph and build the graph to MLU
@@ -242,7 +196,10 @@ class SubgraphEngine : public subgraph::Engine {
     if (GetBoolFromEnv("PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL")) {
       graph->GenOfflineModel(GetOfflineModName());
     }
-    return status;
+    if (subgraph::CHECK_FAILED(status)) {
+      return false;
+    }
+    return true;
   }
 
   std::string TrimStrings(const std::string& origin_str) {
@@ -329,7 +286,7 @@ class SubgraphEngine : public subgraph::Engine {
     }
   }
 
-  int LaunchDeviceProgram() override {
+  bool LaunchDeviceProgram() override {
     // prepare input and output memory
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto exec_queue = mlu_context.exec_queue();
@@ -453,7 +410,7 @@ class SubgraphEngine : public subgraph::Engine {
       // =========== DUMP END ================
     }
 
-    return 0;
+    return true;
   }
 
   paddle::lite_api::PrecisionType fp_type_;
@@ -501,12 +458,11 @@ class SubgraphCompute
                                                 param.scope,
                                                 this->precision()));
     CHECK(engine_);
-    engine_->Build();
   }
 
   void Run() override {
     CHECK(engine_);
-    engine_->Launch();
+    engine_->Run();
   }
 
   virtual ~SubgraphCompute() = default;

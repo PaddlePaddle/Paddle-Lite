@@ -28,7 +28,27 @@ namespace lite {
 namespace kernels {
 namespace bm {
 
-int SubgraphEngine::BuildDeviceProgram() {
+bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
+  // Obtain the origin input tensors, and create the origin output
+  // tensors(Don't try to access them before launch the device program or the
+  // origin program)
+  PrepareWorkspaceForOriginProgram();
+  // Create the device input and output tensors, but don't initialize them
+  // with the dimensions
+  device_inputs_.resize(input_names_.size());
+  for (int i = 0; i < input_names_.size(); i++) {
+    device_inputs_[i].reset(new hiai::AiTensor);
+    CHECK(device_inputs_[i]);
+  }
+  device_outputs_.resize(output_names_.size());
+  for (int i = 0; i < output_names_.size(); i++) {
+    device_outputs_[i].reset(new hiai::AiTensor);
+    CHECK(device_outputs_[i]);
+  }
+  return true;
+}
+
+bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   subgraph::bm::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
@@ -42,7 +62,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     std::string op_type = op->op_info()->Type();
     LOG(INFO) << op_type;
     if (!bridges.Exists(op_type, TARGET(kBM))) {
-      return subgraph::FAILED;
+      return false;
     }
     auto kernel = inst.kernel();
     status |=
@@ -50,7 +70,7 @@ int SubgraphEngine::BuildDeviceProgram() {
                                              const_cast<OpLite*>(op),
                                              const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
-      return subgraph::FAILED;
+      return false;
     }
   }
   std::string net_name = "bmnetc_f32umodel";
@@ -63,7 +83,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   graph.UnlockCompilerMutex();
   bmrt_hd_ = bmrt_create(bm_hd_);
   if (false == bmrt_load_bmodel_data(bmrt_hd_, bmodel_data, data_size)) {
-    return subgraph::FAILED;
+    return false;
   }
   bmrt_get_network_names(bmrt_hd_, &net_names_);
   net_info_ = bmrt_get_network_info(bmrt_hd_, net_names_[0]);
@@ -116,10 +136,13 @@ int SubgraphEngine::BuildDeviceProgram() {
                             net_info_->output_dtypes[i],
                             stage.output_shapes[i]);
   }
-  return status;
+  if (subgraph::CHECK_FAILED(status)) {
+    return false;
+  }
+  return true;
 }
 
-int SubgraphEngine::LaunchDeviceProgram() {
+bool SubgraphEngine::LaunchDeviceProgram() {
   for (size_t i = 0; i < device_inputs_.size(); i++) {
     bm_memcpy_s2d(bm_hd_,
                   device_inputs_[i].device_mem,
@@ -143,7 +166,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
       out_index++;
     }
   }
-  return 0;
+  return true;
 }
 
 void SubgraphCompute::PrepareForRun() {
@@ -155,12 +178,11 @@ void SubgraphCompute::PrepareForRun() {
                                    param.output_data_names,
                                    param.scope));
   CHECK(engine_);
-  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
   CHECK(engine_);
-  engine_->Launch();
+  engine_->Run();
 }
 
 }  // namespace bm
