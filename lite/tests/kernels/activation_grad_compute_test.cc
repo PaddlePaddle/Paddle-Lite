@@ -20,7 +20,6 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
 
 using param_t = operators::ActivationParam;
 using grad_param_t = operators::ActivationGradParam;
@@ -147,8 +146,11 @@ class ActivationGradTester {
 
 void TestSquareGrad(DDim dims) {
   LOG(INFO) << "Test Square grad";
-  std::unique_ptr<ActivationGradTester<SquareCompute, SquareGradCompute>>
-      tester(new ActivationGradTester<SquareCompute, SquareGradCompute>(dims));
+  std::unique_ptr<
+      ActivationGradTester<arm::SquareCompute, host::SquareGradCompute>>
+      tester(
+          new ActivationGradTester<arm::SquareCompute, host::SquareGradCompute>(
+              dims));
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;
@@ -157,8 +159,9 @@ void TestSquareGrad(DDim dims) {
 
 void TestReluGrad(DDim dims) {
   LOG(INFO) << "Test Relu grad";
-  std::unique_ptr<ActivationGradTester<ReluCompute, ReluGradCompute>> tester(
-      new ActivationGradTester<ReluCompute, ReluGradCompute>(dims));
+  std::unique_ptr<ActivationGradTester<arm::ReluCompute, host::ReluGradCompute>>
+      tester(new ActivationGradTester<arm::ReluCompute, host::ReluGradCompute>(
+          dims));
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;
@@ -167,15 +170,16 @@ void TestReluGrad(DDim dims) {
 
 void TestTanhGrad(DDim dims) {
   LOG(INFO) << "Test Tanh grad";
-  std::unique_ptr<ActivationGradTester<TanhCompute, TanhGradCompute>> tester(
-      new ActivationGradTester<TanhCompute, TanhGradCompute>(dims));
+  std::unique_ptr<ActivationGradTester<arm::TanhCompute, host::TanhGradCompute>>
+      tester(new ActivationGradTester<arm::TanhCompute, host::TanhGradCompute>(
+          dims));
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;
   tester->check_grad(delta, max_grad_delta);
 }
 
-TEST(activation_grad_arm, compute) {
+TEST(activation_grad_host, compute) {
   DeviceInfo::Init();
   for (auto n : {2, 1}) {
     for (auto c : {2, 9}) {
@@ -190,7 +194,6 @@ TEST(activation_grad_arm, compute) {
   }
 }
 
-}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

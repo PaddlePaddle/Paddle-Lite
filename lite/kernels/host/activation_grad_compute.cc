@@ -13,17 +13,15 @@
 // limitations under the License.
 
 #include "lite/kernels/host/activation_grad_compute.h"
-// #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void SquareGradCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
-  auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
 
@@ -37,7 +35,6 @@ void SquareGradCompute::Run() {
 void ReluGradCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
-  auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
 
@@ -51,7 +48,6 @@ void ReluGradCompute::Run() {
 void TanhGradCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.Out);
-  auto& ctx = this->ctx_->template As<ARMContext>();
   auto out_grad_dims = param.Out_grad->dims();
   auto out_grad_data = param.Out_grad->data<float>();
 
@@ -63,7 +59,7 @@ void TanhGradCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
@@ -72,7 +68,7 @@ REGISTER_LITE_KERNEL(square_grad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SquareGradCompute,
+                     paddle::lite::kernels::host::SquareGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -83,7 +79,7 @@ REGISTER_LITE_KERNEL(relu_grad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SquareGradCompute,
+                     paddle::lite::kernels::host::SquareGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -94,7 +90,7 @@ REGISTER_LITE_KERNEL(tanh_grad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SquareGradCompute,
+                     paddle::lite::kernels::host::SquareGradCompute,
                      def)
     .BindInput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})

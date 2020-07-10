@@ -20,9 +20,9 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SquareGradCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationGradParam;
 
@@ -31,7 +31,7 @@ class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~SquareGradCompute() = default;
 };
 
-class ReluGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ReluGradCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationGradParam;
 
@@ -40,7 +40,7 @@ class ReluGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~ReluGradCompute() = default;
 };
 
-class TanhGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class TanhGradCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationGradParam;
 
@@ -49,7 +49,7 @@ class TanhGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~TanhGradCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
