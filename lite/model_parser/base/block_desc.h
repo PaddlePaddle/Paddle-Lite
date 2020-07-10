@@ -62,7 +62,7 @@ class BlockDescWriteAPI {
   virtual ~BlockDescWriteAPI() = default;
 
  private:
-  void NotImplemented() {
+  void NotImplemented() const {
     LOG(FATAL) << "BlockDescWriteAPI is not available in model read-only mode.";
   }
 };

@@ -65,7 +65,7 @@ class VectorView {
   typename Traits::const_iterator begin() const { return cvec_->begin(); }
   typename Traits::const_iterator end() const { return cvec_->end(); }
   size_t size() const { return cvec_->size(); }
-  operator std::vector<T>() {
+  operator std::vector<T>() const {
     VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<T> tmp;
     tmp.reserve(cvec_->size());

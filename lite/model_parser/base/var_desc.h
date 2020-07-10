@@ -70,7 +70,7 @@ class VarDescWriteAPI {
   virtual ~VarDescWriteAPI() = default;
 
  private:
-  void NotImplemented() {
+  void NotImplemented() const {
     LOG(FATAL) << "VarDescWriteAPI is not available in model read-only mode.";
   }
 };
