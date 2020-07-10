@@ -27,7 +27,7 @@ namespace fbs {
 
 class VarDesc : public VarDescAPI {
  public:
-  explicit VarDesc(proto::VarDesc* desc) : desc_(desc) {}
+  explicit VarDesc(proto::VarDesc const* desc) : desc_(desc) {}
 
   std::string Name() const override { return desc_->name()->str(); }
 
@@ -51,7 +51,7 @@ class VarDesc : public VarDescAPI {
   VarDesc() = delete;
 
  private:
-  proto::VarDesc* desc_;
+  proto::VarDesc const* desc_;
 
   // To reduce overhead, we expect to use namespace aliasing to make cpp::Desc
   // and flatbuffers::Desc replace each other. However, there is no direct

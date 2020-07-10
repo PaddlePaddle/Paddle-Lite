@@ -40,11 +40,6 @@ class ProgramDesc : public ProgramDescAPI {
   std::vector<BlockDesc>& GetBlocks() { return blocks_; }
 
   template <typename T>
-  T const* GetBlock(int32_t idx) const {
-    return GetBlock<T>(idx);
-  }
-
-  template <typename T>
   T* AddBlock();
 
   // Just return default versoin

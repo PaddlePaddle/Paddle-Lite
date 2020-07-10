@@ -12,17 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/program_desc.h"
+#include "lite/model_parser/flatbuffers/io.h"
+#include <memory>
+#include <utility>
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 
-template <>
-proto::BlockDesc const* ProgramDesc::GetBlock<proto::BlockDesc>(
-    int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return desc_->blocks()->Get(idx);
+void LoadModel(const std::string& path, ProgramDesc* prog) {
+  std::ifstream infile;
+  infile.open(path, std::ios::binary | std::ios::in);
+  infile.seekg(0, std::ios::end);
+  int length = infile.tellg();
+  infile.seekg(0, std::ios::beg);
+  char* buff = new char[length];
+  std::unique_ptr<char[]> buf(buff);
+  infile.read(buf.get(), length);
+  infile.close();
+  prog->Init(std::move(buf));
 }
 
 }  // namespace fbs

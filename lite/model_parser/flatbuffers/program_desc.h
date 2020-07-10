@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include "lite/model_parser/base/program_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 #include "lite/utils/all.h"
@@ -26,17 +27,20 @@ namespace fbs {
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
-  explicit ProgramDesc(proto::ProgramDesc *desc) : desc_(desc) { CHECK(desc); }
+  explicit ProgramDesc(std::unique_ptr<const char[]> buf) {
+    Init(std::move(buf));
+  }
+
+  void Init(std::unique_ptr<const char[]> buf) {
+    CHECK(buf.get() != nullptr);
+    buf_ = std::move(buf);
+    desc_ = proto::GetProgramDesc(buf_.get());
+  }
 
   size_t BlocksSize() const override { return desc_->blocks()->size(); }
 
   template <typename T>
-  T *GetBlock(int32_t idx);
-
-  template <typename T>
-  T const *GetBlock(int32_t idx) const {
-    return GetBlock<T>(idx);
-  }
+  T const* GetBlock(int32_t idx) const;
 
   bool HasVersion() const override { return desc_->version() != nullptr; }
 
@@ -46,7 +50,12 @@ class ProgramDesc : public ProgramDescAPI {
   }
 
  private:
-  proto::ProgramDesc *desc_;  // not_own
+  proto::ProgramDesc const* desc_;
+  std::unique_ptr<const char[]> buf_;
+
+ private:
+  ProgramDesc& operator=(const ProgramDesc&) = delete;
+  ProgramDesc(const ProgramDesc&) = delete;
 };
 
 }  // namespace fbs

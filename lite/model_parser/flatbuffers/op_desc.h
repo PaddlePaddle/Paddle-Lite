@@ -127,7 +127,7 @@ class OpDesc : public OpDescAPI {
   OpDesc() = delete;
 
  private:
-  proto::OpDesc* desc_;
+  proto::OpDesc const* desc_;
 
   // To reduce overhead, we expect to use namespace aliasing to make cpp::Desc
   // and flatbuffers::Desc replace each other. However, there is no direct
