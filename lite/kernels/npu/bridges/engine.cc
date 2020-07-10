@@ -15,6 +15,7 @@
 #include "lite/kernels/npu/bridges/engine.h"
 #include <sys/time.h>
 #include <time.h>
+#include <algorithm>
 #include <utility>
 #include "lite/kernels/npu/bridges/registry.h"
 
@@ -22,11 +23,50 @@ namespace paddle {
 namespace lite {
 namespace subgraph {
 
-int Engine::BuildDeviceProgram() { return FAILED; }
+Engine::Engine(KernelContext *ctx,
+               int block_idx,
+               cpp::BlockDesc *block_desc,
+               const std::vector<std::string> &input_names,
+               const std::vector<std::string> &output_names,
+               lite::Scope *scope)
+    : ctx_(ctx), block_idx_(block_idx), block_desc_(block_desc), scope_(scope) {
+  input_names_ = input_names;
+  output_names_ = output_names;
+  // Sort the name of input and output tensors, it's convenient for us to get
+  // the info of input and output tensors in the same order from the device
+  // program, because the result of subgraph division may be different but right
+  // at each call of the subgraph pass.
+  std::stable_sort(input_names_.begin(), input_names_.end());
+  std::stable_sort(output_names_.begin(), output_names_.end());
+}
 
-int Engine::LaunchDeviceProgram() { return 0; }
+bool Engine::Run() {
+  if (is_first_epoch_) {
+    PrepareWorkspaceForDeviceProgram();
+    is_first_epoch_ = false;
+  }
+  if (InputShapeChanged()) {
+    BuildDeviceProgram();
+  }
+  return LaunchDeviceProgram();
+}
 
-int Engine::BuildOriginProgram() {
+bool Engine::PrepareWorkspaceForOriginProgram() {
+  origin_idims_.resize(input_names_.size());
+  origin_itensors_.resize(input_names_.size());
+  for (int i = 0; i < input_names_.size(); i++) {
+    origin_itensors_[i] = scope_->FindMutableTensor(input_names_[i]);
+    CHECK(origin_itensors_[i]);
+  }
+  origin_otensors_.resize(output_names_.size());
+  for (int i = 0; i < output_names_.size(); i++) {
+    origin_otensors_[i] = scope_->FindMutableTensor(output_names_[i]);
+    CHECK(origin_otensors_[i]);
+  }
+  return true;
+}
+
+bool Engine::BuildOriginProgram() {
   // TODO(hong19860320) The block_desc need to be divided into subgraphs during
   // the exection time. But only see them as a subgraph now.
   origin_program_.clear();
@@ -34,11 +74,14 @@ int Engine::BuildOriginProgram() {
     auto op_desc = block_desc_->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
+    // Create op and pick up the best kernel
     auto op = LiteOpRegistry::Global().Create(op_desc->Type());
+    CHECK(op) << "no Op found for " << op_type;
     op->Attach(*op_desc, scope_);
     std::unique_ptr<KernelBase> picked_kernel;
     if (op_desc->HasAttr(kKernelTypeAttr)) {
-      // Create op and pick up kernel according to the kKernelTypeAttr attribute
+      // Create op and pick up the best kernel according to the
+      // kKernelTypeAttr attribute
       auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
       std::string alias;
       Place place;
@@ -48,12 +91,14 @@ int Engine::BuildOriginProgram() {
       auto kernels = op->CreateKernels({place});
       CHECK_GT(kernels.size(), 0u) << "No kernels found for " << op_type;
       auto it = std::find_if(
-          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
+          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase> &it) {
             return it->alias() == alias;
           });
       CHECK(it != kernels.end());
       picked_kernel = std::move(*it);
     } else {
+      // TODO(hong19860320) add kernel picking according to the type of input
+      // and output tensors
       VLOG(3) << "The attr '" << kKernelTypeAttr
               << "' not found, pick the first kernel for " << op_type;
       std::vector<std::unique_ptr<KernelBase>> kernels;
@@ -74,49 +119,41 @@ int Engine::BuildOriginProgram() {
     }
     origin_program_.emplace_back(std::move(op), std::move(picked_kernel));
   }
-  return 0;
+  CHECK(!origin_program_.empty()) << "no instructions";
+  return true;
 }
 
-int Engine::LaunchOriginProgram() {
-  for (auto& inst : origin_program_) {
-    auto op_type = inst.op()->op_info()->Type();
-    if (op_type == "feed" || op_type == "fetch") continue;
-    inst.Run();
+bool Engine::LaunchOriginProgram() {
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
   }
-  return 0;
-}
-
-int Engine::Build() {
-  // In order to attach all of the ops of the block desc, we need to build the
-  // original program firstly.
-  BuildOriginProgram();
-  // Run InferShape() of all of ops, and convert Paddle ops to NPU/XPU IR graph
-  build_device_program_status_ = BuildDeviceProgram();
-  return build_device_program_status_;
-}
-
-bool Engine::InputShapeChanged() {
-  for (size_t i = 0; i < origin_itensors_.size(); i++) {
-    if (origin_itensors_[i]->dims() != origin_idims_[i]) {
-      return true;
+  if (!origin_program_.empty()) {
+    for (auto &inst : origin_program_) {
+      auto op_type = inst.op()->op_info()->Type();
+      if (op_type == "feed" || op_type == "fetch") continue;
+      inst.Run();
     }
+    return true;
   }
   return false;
 }
 
-int Engine::Launch() {
-  // Rebuild device program when the shapes of input tensors have been changed.
-  if (CHECK_SUCCESS(build_device_program_status_) &&
-      CHECK_REBUILD_WHEN_SHAPE_CHANGED(build_device_program_status_) &&
-      InputShapeChanged()) {
-    Build();
+bool Engine::PrepareWorkspaceForDeviceProgram() {
+  return PrepareWorkspaceForOriginProgram();
+}
+
+bool Engine::BuildDeviceProgram() { return BuildOriginProgram(); }
+
+bool Engine::LaunchDeviceProgram() { return LaunchOriginProgram(); }
+
+bool Engine::InputShapeChanged() {
+  bool changed = false;
+  for (size_t i = 0; i < origin_itensors_.size(); i++) {
+    auto origin_idim = origin_itensors_[i]->dims().Vectorize();
+    changed |= origin_idim != origin_idims_[i];
+    origin_idims_[i] = origin_idim;
   }
-  if (CHECK_FAILED(build_device_program_status_)) {
-    LaunchOriginProgram();
-  } else {
-    LaunchDeviceProgram();
-  }
-  return 0;
+  return changed;
 }
 
 }  // namespace subgraph

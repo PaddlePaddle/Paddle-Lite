@@ -117,3 +117,6 @@ metal/paddle-mobile-demo/paddle-mobile-demo/Resources/models
 metal/MobileNetDemo/MobileNetDemo/Resources
 
 build*
+
+# hiai libs
+ai_ddk_lib*
