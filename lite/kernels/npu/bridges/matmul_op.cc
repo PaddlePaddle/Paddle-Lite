@@ -94,10 +94,10 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     matmul_node = graph->Add<ge::op::BatchMatMul>(out_name);
     auto matmul_op = matmul_node->data<ge::op::BatchMatMul>();
-    matmul_op->set_input_x(*x_node->data());
-    matmul_op->set_input_y(*y_node->data());
-    matmul_op->set_attr_adj_x(transpose_x);
-    matmul_op->set_attr_adj_y(transpose_y);
+    matmul_op->set_input_x1(*x_node->data());
+    matmul_op->set_input_x2(*y_node->data());
+    matmul_op->set_attr_adj_x1(transpose_x);
+    matmul_op->set_attr_adj_x2(transpose_y);
   }
 
   if (fabs(alpha - 1.f) > 1e-6f) {
