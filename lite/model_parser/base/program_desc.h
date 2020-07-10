@@ -45,7 +45,7 @@ class ProgramDescWriteAPI {
   virtual ~ProgramDescWriteAPI() = default;
 
  private:
-  void NotImplemented() {
+  void NotImplemented() const {
     LOG(FATAL)
         << "ProgramDescWriteAPI is not available in model read-only mode.";
   }

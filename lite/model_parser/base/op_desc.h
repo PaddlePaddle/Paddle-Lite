@@ -78,7 +78,7 @@ class OpDescWriteAPI {
   virtual ~OpDescWriteAPI() = default;
 
  private:
-  void NotImplemented() {
+  void NotImplemented() const {
     LOG(FATAL) << "OpDescWriteAPI is not available in model read-only mode.";
   }
 };
