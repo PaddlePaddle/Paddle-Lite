@@ -70,19 +70,28 @@ function CheckLibSizeDiff() {
     diff_size=$[$current_size - $develop_size]
     if [ $diff_size -gt 10485 ]; then
         echo_line="Your PR has increased basic inference lib for $diff_size Byte, exceeding maximum requirement of  10485 Byte (0.01M). You need Superjomn's (Yunchunwei) approval or you can contact DannyIsFunny(HuZhiqiang).\n"
-        check_approval 1 $Superjomn
+        echo "****************"
+        echo -e "${echo_list[@]}"
+        echo "There is an approved errors."
+        echo "****************"
+        exit 1
     fi
-
-    if [ -n "${echo_list}" ];then
-      echo "****************"
-      echo -e "${echo_list[@]}"
-      echo "There are ${failed_num} approved errors."
-      echo "****************"
-    fi
- 
-    if [ -n "${echo_list}" ]; then
-      exit 1
-    fi
+#  Todo: Code below should be applied later.
+#    if [ $diff_size -gt 10485 ]; then
+#        echo_line="Your PR has increased basic inference lib for $diff_size Byte, exceeding maximum requirement of  10485 Byte (0.01M). You need Superjomn's (Yunchunwei) approval or you can contact DannyIsFunny(HuZhiqiang).\n"
+#        check_approval 1 $Superjomn
+#    fi
+#
+#    if [ -n "${echo_list}" ];then
+#      echo "****************"
+#      echo -e "${echo_list[@]}"
+#      echo "There are ${failed_num} approved errors."
+#      echo "****************"
+#    fi
+#
+#    if [ -n "${echo_list}" ]; then
+#      exit 1
+#    fi
 }
 
 ####################################################################################################

@@ -106,7 +106,8 @@ lite_option(LITE_BUILD_EXTRA "Enable extra algorithm support in Lite, both kerne
 lite_option(LITE_BUILD_TAILOR "Enable tailoring library according to model" OFF)
 # cv build options
 lite_option(LITE_WITH_CV  "Enable build cv image in lite" OFF)
-lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." ON)
+lite_option(LITE_WITH_STATIC_CUDA  "Statically link cuda libraries." OFF)
+lite_option(CUDA_WITH_FP16 "Compile with cuda half support" OFF)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.

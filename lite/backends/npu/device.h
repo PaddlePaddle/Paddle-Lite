@@ -38,14 +38,18 @@ class Device {
   int model_type() { return model_type_; }
   int device_type() { return device_type_; }
 
+  // Load the HiAI om model from buffer, rebuild the model if it's incompatible
+  // with the current device, then create a HiAI model manager client(from HiAI
+  // Server) to run inference
+  std::shared_ptr<hiai::AiModelMngerClient> Load(
+      const std::string& model_name,
+      std::vector<char>* model_buffer,
+      bool* model_comp);
   // Build the HiAI IR graph to om model, return HiAI model manager client to
   // load om model and run inference.
-  std::shared_ptr<hiai::AiModelMngerClient> Build(
-      const std::string model_name,             // NOLINT
-      std::vector<ge::Operator>& input_nodes,   // NOLINT
-      std::vector<ge::Operator>& output_nodes,  // NOLINT
-      const std::string model_cache_name        // NOLINT
-      );                                        // NOLINT
+  bool Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
+             std::vector<ge::Operator>& output_nodes,  // NOLINT
+             std::vector<char>* model_buffer);
 
  private:
   int freq_level_{3};

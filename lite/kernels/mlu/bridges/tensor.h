@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <fstream>
+#include <string>
 #include <vector>
 #include "lite/kernels/mlu/bridges/utility.h"
 
@@ -33,13 +35,15 @@ class MLUTensor {
 
   MLUTensor(const std::vector<int64_t>& shape,
             cnmlTensorType_t tensor_type = CNML_TENSOR,
-            cnmlDataOrder_t data_order = CNML_NCHW,
-            cnmlDataType_t mlu_dtype = CNML_DATA_FLOAT32);
+            cnmlDataOrder_t shape_order = CNML_NCHW,
+            cnmlDataType_t mlu_dtype = CNML_DATA_FLOAT32,
+            cnmlDataOrder_t data_order = CNML_NHWC);
 
   void remember(const std::vector<int>& shape,
                 cnmlTensorType_t tensor_type,
                 cnmlDataType_t mlu_dtype,
-                cnmlDataOrder_t shape_order);
+                cnmlDataOrder_t shape_order,
+                cnmlDataOrder_t data_order);
   void Create();
   cnmlTensor_t mlu_tensor();
   void* mlu_data() {
@@ -47,14 +51,21 @@ class MLUTensor {
     return mlu_ptr_;
   }
 
+  cnmlDataType_t dtype() { return mlu_dtype_; }
   void set_mlu_dtype(cnmlDataType_t type) { mlu_dtype_ = type; }
 
+  const std::vector<int64_t>& get_origin_shape() const { return origin_shape_; }
+
   ~MLUTensor();
+
+  void ToFile(std::string file_name);
+  cnmlDataOrder_t dorder() { return data_order_; }
 
  private:
   cnmlTensor_t mlu_tensor_;
 
   std::vector<int> shape_;
+  std::vector<int64_t> origin_shape_;
   cnmlTensorType_t tensor_type_;
   cnmlDataType_t mlu_dtype_;
   int dim_{0};

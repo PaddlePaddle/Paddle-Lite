@@ -18,17 +18,10 @@
 #include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
-
-std::string int2string(int index) {
-  const int BUFFER_LENGTH = 30;
-  char buffer[BUFFER_LENGTH];
-  int num = snprintf(buffer, sizeof(buffer), "%d", index);
-  CHECK(num > 0 && num < sizeof(buffer));
-  return std::string(buffer);
-}
 
 bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
@@ -196,7 +189,7 @@ void OpLite::AttachOutput(const cpp::OpDesc &op_desc,
 
 bool OpInfo::GetInputArgname(const std::string &value_name,
                              std::string *out) const {
-  for (auto &item : inputs_) {
+  for (auto &item : inputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), value_name);
     if (it != item.second.end()) {
       *out = item.first;
@@ -208,7 +201,7 @@ bool OpInfo::GetInputArgname(const std::string &value_name,
 
 bool OpInfo::GetOutputArgname(const std::string &value_name,
                               std::string *out) const {
-  for (auto &item : outputs_) {
+  for (auto &item : outputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), value_name);
     if (it != item.second.end()) {
       *out = item.first;
@@ -219,7 +212,7 @@ bool OpInfo::GetOutputArgname(const std::string &value_name,
 }
 
 bool OpInfo::GetInputIndex(const std::string &input_name, int *out) const {
-  for (auto &item : inputs_) {
+  for (auto &item : inputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), input_name);
     if (it != item.second.end()) {
       *out = it - item.second.begin();
@@ -230,7 +223,7 @@ bool OpInfo::GetInputIndex(const std::string &input_name, int *out) const {
 }
 
 bool OpInfo::GetOutputIndex(const std::string &output_name, int *out) const {
-  for (auto &item : outputs_) {
+  for (auto &item : outputs()) {
     auto it = std::find(item.second.begin(), item.second.end(), output_name);
     if (it != item.second.end()) {
       *out = it - item.second.begin();
@@ -245,7 +238,7 @@ bool OpInfo::HasInputScale(const std::string &input_name) const {
   int index;
   if (GetInputArgname(input_name, &argname) &&
       GetInputIndex(input_name, &index)) {
-    return HasAttr(argname + int2string(index) + "_scale");
+    return HasAttr(argname + to_string(index) + "_scale");
   } else {
     return false;
   }
@@ -256,52 +249,51 @@ bool OpInfo::HasOutputScale(const std::string &output_name) const {
   int index;
   if (GetOutputArgname(output_name, &argname) &&
       GetOutputIndex(output_name, &index)) {
-    return HasAttr(argname + int2string(index) + "_scale");
+    return HasAttr(argname + to_string(index) + "_scale");
   } else {
     return false;
   }
 }
 
-template <>
-void OpInfo::SetInputScale(const std::string &input_name,
-                           const float &scale_value) {
-  std::string argname;
-  int index;
-  CHECK(GetInputArgname(input_name, &argname));
-  CHECK(GetInputIndex(input_name, &index));
-  SetAttr<float>(argname + int2string(index) + "_scale", scale_value);
-}
-
-template <>
 void OpInfo::SetInputScale(const std::string &input_name,
                            const std::vector<float> &scale_value) {
   std::string argname;
   int index;
   CHECK(GetInputArgname(input_name, &argname));
   CHECK(GetInputIndex(input_name, &index));
-  SetAttr<std::vector<float>>(argname + int2string(index) + "_scale",
+  CHECK(scale_value.size() > 0)
+      << "Error in SetInputScale: the scales should not be empty";
+  SetAttr<std::vector<float>>(argname + to_string(index) + "_scale",
                               scale_value);
 }
 
-template <>
-void OpInfo::SetOutputScale(const std::string &output_name,
-                            const float &scale_value) {
-  std::string argname;
-  int index;
-  CHECK(GetOutputArgname(output_name, &argname));
-  CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<float>(argname + int2string(index) + "_scale", scale_value);
-}
-
-template <>
 void OpInfo::SetOutputScale(const std::string &output_name,
                             const std::vector<float> &scale_value) {
   std::string argname;
   int index;
   CHECK(GetOutputArgname(output_name, &argname));
   CHECK(GetOutputIndex(output_name, &index));
-  SetAttr<std::vector<float>>(argname + int2string(index) + "_scale",
+  CHECK(scale_value.size() > 0)
+      << "Error in SetOutputScale: the scales should not be empty";
+  SetAttr<std::vector<float>>(argname + to_string(index) + "_scale",
                               scale_value);
+}
+
+std::vector<float> OpInfo::GetInputScale(const std::string &input_name) const {
+  std::string argname;
+  int index;
+  CHECK(GetInputArgname(input_name, &argname));
+  CHECK(GetInputIndex(input_name, &index));
+  return GetAttr<std::vector<float>>(argname + to_string(index) + "_scale");
+}
+
+std::vector<float> OpInfo::GetOutputScale(
+    const std::string &output_name) const {
+  std::string argname;
+  int index;
+  CHECK(GetOutputArgname(output_name, &argname));
+  CHECK(GetOutputIndex(output_name, &index));
+  return GetAttr<std::vector<float>>(argname + to_string(index) + "_scale");
 }
 
 }  // namespace lite

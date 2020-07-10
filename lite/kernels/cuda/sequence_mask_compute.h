@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,36 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/cpp/block_desc.h"
+#pragma once
+#include <vector>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace kernels {
+namespace cuda {
 
-template <>
-VarDesc* BlockDesc::GetVar<VarDesc>(int32_t idx) {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return &vars_[idx];
-}
+template <typename T, PrecisionType Ptype>
+class SequenceMaskCompute : public KernelLite<TARGET(kCUDA), Ptype> {
+ public:
+  using param_t = operators::SequenceMaskParam;
 
-template <>
-VarDesc* BlockDesc::AddVar<VarDesc>() {
-  vars_.emplace_back();
-  return &vars_.back();
-}
+  void Run() override;
+  virtual ~SequenceMaskCompute() = default;
+};
 
-template <>
-OpDesc* BlockDesc::GetOp<OpDesc>(int32_t idx) {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
-  return &ops_[idx];
-}
-
-template <>
-OpDesc* BlockDesc::AddOp<OpDesc>() {
-  ops_.emplace_back();
-  return &ops_.back();
-}
-
-}  // namespace cpp
+}  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

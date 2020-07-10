@@ -35,6 +35,19 @@ class CalibComputeFp32ToInt8
 };
 
 template <DataLayoutType DLType>
+class CalibComputeInt64ToInt32
+    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt64ToInt32() override{};
+
+ private:
+};
+
+template <DataLayoutType DLType>
 class CalibComputeInt8ToFp32
     : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
  public:

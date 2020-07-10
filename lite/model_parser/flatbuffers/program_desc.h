@@ -23,8 +23,9 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class ProgramDesc : public ProgramDescReadAPI {
+class ProgramDesc : public ProgramDescAPI {
  public:
+  ProgramDesc() = default;
   explicit ProgramDesc(proto::ProgramDesc *desc) : desc_(desc) { CHECK(desc); }
 
   size_t BlocksSize() const override { return desc_->blocks()->size(); }

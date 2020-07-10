@@ -22,7 +22,7 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class BlockDesc : public BlockDescReadAPI {
+class BlockDesc : public BlockDescAPI {
  public:
   explicit BlockDesc(proto::BlockDesc* desc) : desc_(desc) { CHECK(desc_); }
 

@@ -34,6 +34,17 @@ void CalibComputeFp32ToInt8<DLType>::Run() {
 }
 
 template <DataLayoutType DLType>
+void CalibComputeInt64ToInt32<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<int64_t>();
+  std::vector<float> scale = {param.scale};
+  auto* dout = param.output->template mutable_data<int32_t>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = din[i];
+  }
+}
+
+template <DataLayoutType DLType>
 void CalibComputeInt8ToFp32<DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<signed char>();
@@ -106,6 +117,23 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt64,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
+    int64_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
     kInt8,
@@ -160,4 +188,21 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kARM),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once,
+    kARM,
+    kInt64,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
+    int64_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();

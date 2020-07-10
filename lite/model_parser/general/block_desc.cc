@@ -12,24 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/cpp/program_desc.h"
+#include "lite/model_parser/general/block_desc.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace general {
 
 template <>
-BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
+VarDesc* BlockDesc::GetVar<VarDesc>(int32_t idx) {
+  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  return &vars_[idx];
 }
 
 template <>
-BlockDesc* ProgramDesc::AddBlock<BlockDesc>() {
-  blocks_.emplace_back();
-  return &blocks_.back();
+VarDesc* BlockDesc::AddVar<VarDesc>() {
+  vars_.emplace_back();
+  return &vars_.back();
 }
 
-}  // namespace cpp
+template <>
+OpDesc* BlockDesc::GetOp<OpDesc>(int32_t idx) {
+  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  return &ops_[idx];
+}
+
+template <>
+OpDesc* BlockDesc::AddOp<OpDesc>() {
+  ops_.emplace_back();
+  return &ops_.back();
+}
+
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

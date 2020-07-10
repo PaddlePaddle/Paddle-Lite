@@ -33,91 +33,91 @@ namespace cuda {
 
 class AssignValueTest : public ::testing::Test {
  protected:
-  AssignValueTest() : dtype(5), shape({1}) {
-    int num =
-        std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
-    fp32_values.resize(num);
-    int32_values.resize(num);
-    int64_values.resize(num);
-    bool_values.resize(num);
+  AssignValueTest() : dtype_(5), shape_({1}) {
+    int num = std::accumulate(
+        shape_.begin(), shape_.end(), 1, std::multiplies<int>());
+    fp32_values_.resize(num);
+    int32_values_.resize(num);
+    int64_values_.resize(num);
+    bool_values_.resize(num);
     for (int i = 0; i < num; ++i) {
-      fp32_values[i] = i + 5;
-      int32_values[i] = i;
-      int64_values[i] = i;
-      bool_values[i] = i;
+      fp32_values_[i] = i + 5;
+      int32_values_[i] = i;
+      int64_values_[i] = i;
+      bool_values_[i] = i;
     }
-    std::vector<int64_t> out_shape(shape.size(), 0);
-    for (size_t i = 0; i < shape.size(); ++i) out_shape[i] = shape[i];
-    Out_ref.Resize(lite::DDim(out_shape));
-    Out_gpu.Resize(Out_ref.dims());
-    Out_cpu.Resize(Out_ref.dims());
+    std::vector<int64_t> out_shape(shape_.size(), 0);
+    for (size_t i = 0; i < shape_.size(); ++i) out_shape[i] = shape_[i];
+    out_ref_.Resize(lite::DDim(out_shape));
+    out_gpu_.Resize(out_ref_.dims());
+    out_cpu_.Resize(out_ref_.dims());
 
-    cpu_base(&Out_ref);
+    RunBaseLine(&out_ref_);
 
-    device_init();
+    InitParamAndContext();
   }
 
-  void device_init() {
-    ctx.reset(new KernelContext);
-    cudaStreamCreate(&stream);
-    param.shape = shape;
-    param.dtype = dtype;
-    param.fp32_values = fp32_values;
-    param.int32_values = int32_values;
-    param.int64_values = int64_values;
-    param.bool_values = bool_values;
-    param.Out = &Out_gpu;
+  void InitParamAndContext() {
+    ctx_.reset(new KernelContext);
+    cudaStreamCreate(&stream_);
+    auto& context = ctx_->As<CUDAContext>();
+    context.SetExecStream(stream_);
+    param_.shape = shape_;
+    param_.dtype = dtype_;
+    param_.fp32_values = fp32_values_;
+    param_.int32_values = int32_values_;
+    param_.int64_values = int64_values_;
+    param_.bool_values = bool_values_;
+    param_.Out = &out_gpu_;
   }
 
-  void float_data_init() {}
+  void InitFloatInput() {}
 
-  void half_data_init() {}
+  void InitHalfInput() {}
 
-  void cpu_base(lite::Tensor* Out) {
-    if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
-      for (size_t i = 0; i < int32_values.size(); ++i) {
-        Out->mutable_data<int>()[i] = int32_values[i];
+  void RunBaseLine(lite::Tensor* out) {
+    if (dtype_ == static_cast<int>(lite::core::FluidType::INT32)) {
+      for (size_t i = 0; i < int32_values_.size(); ++i) {
+        out->mutable_data<int>()[i] = int32_values_[i];
       }
-    } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
-      for (size_t i = 0; i < fp32_values.size(); ++i) {
-        Out->mutable_data<float>()[i] = fp32_values[i];
+    } else if (dtype_ == static_cast<int>(lite::core::FluidType::FP32)) {
+      for (size_t i = 0; i < fp32_values_.size(); ++i) {
+        out->mutable_data<float>()[i] = fp32_values_[i];
       }
-    } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
-      for (size_t i = 0; i < int64_values.size(); ++i) {
-        Out->mutable_data<int64_t>()[i] = int64_values[i];
+    } else if (dtype_ == static_cast<int>(lite::core::FluidType::INT64)) {
+      for (size_t i = 0; i < int64_values_.size(); ++i) {
+        out->mutable_data<int64_t>()[i] = int64_values_[i];
       }
-    } else if (dtype == static_cast<bool>(lite::core::FluidType::BOOL)) {
-      for (size_t i = 0; i < bool_values.size(); ++i) {
-        Out->mutable_data<bool>()[i] = bool_values[i];
+    } else if (dtype_ == static_cast<bool>(lite::core::FluidType::BOOL)) {
+      for (size_t i = 0; i < bool_values_.size(); ++i) {
+        out->mutable_data<bool>()[i] = bool_values_[i];
       }
     } else {
-      LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
+      LOG(FATAL) << "Unsupported dtype_ for assign_value_op:" << dtype_;
     }
   }
 
-  int dtype;
-  std::vector<int> shape;
-  std::vector<float> fp32_values;
-  std::vector<int> int32_values;
-  std::vector<int64_t> int64_values;
-  std::vector<int> bool_values;
+  int dtype_;
+  std::vector<int> shape_;
+  std::vector<float> fp32_values_;
+  std::vector<int> int32_values_;
+  std::vector<int64_t> int64_values_;
+  std::vector<int> bool_values_;
 
-  lite::Tensor Out_ref;
-  lite::Tensor Out_gpu;
-  lite::Tensor Out_cpu;
+  lite::Tensor out_ref_;
+  lite::Tensor out_gpu_;
+  lite::Tensor out_cpu_;
 
-  operators::AssignValueParam param;
-  std::unique_ptr<KernelContext> ctx;
-  cudaStream_t stream;
+  operators::AssignValueParam param_;
+  std::unique_ptr<KernelContext> ctx_;
+  cudaStream_t stream_;
 };
 
 TEST_F(AssignValueTest, fp32) {
-  float_data_init();
-  auto& context = ctx->As<CUDAContext>();
-  context.SetExecStream(stream);
+  InitFloatInput();
   AssignValueCompute kernel;
-  kernel.SetParam(param);
-  kernel.SetContext(std::move(ctx));
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     kernel.Launch();
@@ -135,12 +135,12 @@ TEST_F(AssignValueTest, fp32) {
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 
-  CopySync<TARGET(kCUDA)>(Out_cpu.mutable_data<float>(),
-                          Out_gpu.data<float>(),
-                          sizeof(float) * Out_gpu.numel(),
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
                           IoDirection::DtoH);
-  for (int i = 0; i < Out_gpu.numel(); ++i) {
-    EXPECT_NEAR(Out_cpu.data<float>()[i], Out_ref.data<float>()[i], 1e-5);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
   }
 }
 

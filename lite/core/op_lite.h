@@ -24,13 +24,11 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/scope.h"
-#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
-
-std::string int2string(int index);
 
 // For registry factory.
 struct Registry {
@@ -231,6 +229,22 @@ class OpInfo : public cpp::OpDesc {
     return OutputArgumentNames();
   }
 
+  void UpdateAllInputs(const std::string &from, const std::string &to) {
+    for (auto &item : *mutable_inputs()) {
+      for (auto &var : item.second) {
+        if (var == from) var = to;
+      }
+    }
+  }
+
+  void UpdateAllOutputs(const std::string &from, const std::string &to) {
+    for (auto &item : *mutable_outputs()) {
+      for (auto &var : item.second) {
+        if (var == from) var = to;
+      }
+    }
+  }
+
   bool GetInputArgname(const std::string &value_name, std::string *out) const;
   bool GetOutputArgname(const std::string &value_name, std::string *out) const;
 
@@ -240,44 +254,16 @@ class OpInfo : public cpp::OpDesc {
   bool HasInputScale(const std::string &input_name) const;
   bool HasOutputScale(const std::string &output_name) const;
 
-  template <typename T>
-  void SetInputScale(const std::string &input_name, const T &scale_value);
-  template <typename T>
-  void SetOutputScale(const std::string &output_name, const T &scale_value);
+  void SetInputScale(const std::string &input_name,
+                     const std::vector<float> &scale_value);
+  void SetOutputScale(const std::string &output_name,
+                      const std::vector<float> &scale_value);
 
-  template <typename T>
-  T GetInputScale(const std::string &input_name) const {
-    std::string argname;
-    int index;
-    CHECK(GetInputArgname(input_name, &argname));
-    CHECK(GetInputIndex(input_name, &index));
-    return GetAttr<T>(argname + int2string(index) + "_scale");
-  }
-
-  template <typename T>
-  T GetOutputScale(const std::string &output_name) const {
-    std::string argname;
-    int index;
-    CHECK(GetOutputArgname(output_name, &argname));
-    CHECK(GetOutputIndex(output_name, &index));
-    return GetAttr<T>(argname + int2string(index) + "_scale");
-  }
-
-  void UpdateAllInputs(const std::string &from, const std::string &to) {
-    for (auto &item : inputs_) {
-      for (auto &var : item.second) {
-        if (var == from) var = to;
-      }
-    }
-  }
-
-  void UpdateAllOutputs(const std::string &from, const std::string &to) {
-    for (auto &item : outputs_) {
-      for (auto &var : item.second) {
-        if (var == from) var = to;
-      }
-    }
-  }
+  // For conv2d, depthwise_conv2d and mul, the scale of weight are a vector.
+  // Otherwise, all input and output scales are scalar, but we save these
+  // as vecotr.
+  std::vector<float> GetInputScale(const std::string &input_name) const;
+  std::vector<float> GetOutputScale(const std::string &output_name) const;
 };
 
 }  // namespace lite

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/general/op_desc.h"
 #include <set>
 #include <utility>
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace general {
 
 std::vector<std::string> OpDesc::OutputArgumentNames() const {
   std::vector<std::string> res;
@@ -69,6 +69,6 @@ bool OpDesc::HasOutput(const std::string& param) const {
   return it != outputs_.end();
 }
 
-}  // namespace cpp
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

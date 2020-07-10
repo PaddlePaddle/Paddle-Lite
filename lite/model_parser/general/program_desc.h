@@ -14,15 +14,16 @@
 
 #pragma once
 #include <vector>
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
+#include "lite/model_parser/general/block_desc.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace general {
 
 /*
- * The cpp::ProgramDesc is the internal representation for Op. All the internal
+ * The general::ProgramDesc is the internal representation for Op. All the
+ * internal
  * imprementation should use it, not the pb::ProgramDesc.
  */
 class ProgramDesc : public ProgramDescAPI {
@@ -59,6 +60,6 @@ class ProgramDesc : public ProgramDescAPI {
   std::vector<BlockDesc> blocks_;
 };
 
-}  // namespace cpp
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

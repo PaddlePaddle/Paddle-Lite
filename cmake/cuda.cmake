@@ -2,6 +2,10 @@ if(NOT LITE_WITH_CUDA)
     return()
 endif()
 
+if(WITH_CUDA_FP16)
+  add_definitions("-DCUDA_WITH_FP16")
+endif()
+
 set(paddle_known_gpu_archs "30 35 50 52 60 61 70")
 set(paddle_known_gpu_archs7 "30 35 50 52")
 set(paddle_known_gpu_archs8 "30 35 50 52 53 60 61 62")
@@ -165,6 +169,10 @@ elseif (${CUDA_VERSION} LESS 11.0) # CUDA 10.x
   list(APPEND CUDA_NVCC_FLAGS "-D_MWAITXINTRIN_H_INCLUDED")
   list(APPEND CUDA_NVCC_FLAGS "-D__STRICT_ANSI__")
   add_definitions("-DPADDLE_CUDA_BINVER=\"100\"")
+endif()
+
+if (CUDA_WITH_FP16)
+  STRING(REGEX REPLACE "30|35|50|52" "" paddle_known_gpu_archs ${paddle_known_gpu_archs})
 endif()
 
 include_directories(${CUDA_INCLUDE_DIRS})

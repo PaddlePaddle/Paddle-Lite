@@ -17,6 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #ifdef LITE_WITH_PROFILE
+#include <string>
 #include "lite/core/profile/profiler.h"
 #endif
 
@@ -56,8 +57,9 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
-    impl_->SetProfileRuntimeKernelInfo(ch);
+    ch->kernel_func_name = kernel_func_name_;
   }
+  std::string kernel_func_name_{"NotImplForDeformableConv"};
 #endif
 
   ~DeformableConvCompute() = default;

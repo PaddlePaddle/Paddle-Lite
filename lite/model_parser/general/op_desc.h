@@ -17,16 +17,16 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/utils/any.h"
 #include "lite/utils/varient.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace general {
 
 /*
- * The cpp::OpDesc is the internal representation for Op. All the internal
+ * The general::OpDesc is the internal representation for Op. All the internal
  * imprementation should use it, not the pb::OpDesc.
  */
 class OpDesc : public OpDescAPI {
@@ -131,6 +131,6 @@ class OpDesc : public OpDescAPI {
   }
 };
 
-}  // namespace cpp
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

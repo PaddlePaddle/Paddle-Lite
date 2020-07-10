@@ -20,9 +20,9 @@
 #include "lite/core/program.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/compatible_pb.h"
-#include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/utils/all.h"
 
