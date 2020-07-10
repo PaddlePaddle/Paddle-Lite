@@ -370,7 +370,7 @@ function make_x86 {
   cmake ..  -DWITH_MKL=ON       \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
-            -DLITE_WITH_PROFILE=OFF \
+            -DLITE_WITH_PROFILE=ON \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
