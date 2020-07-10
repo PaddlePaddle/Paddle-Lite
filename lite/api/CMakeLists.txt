@@ -362,6 +362,9 @@ endif()
 
 if (LITE_WITH_PYTHON)
     add_subdirectory(python)
+    # add library for opt_base
+    lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
+    add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
@@ -369,9 +372,6 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 
-# add library for opt_base
-lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
-add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
