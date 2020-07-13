@@ -12,20 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/context.h"
+#pragma once
+
+#include <memory>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace xpu {
 
-#ifdef LITE_WITH_NPU
-std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
-#endif
+class SequenceArithmeticCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::SequenceArithmeticParam;
 
-#ifdef LITE_WITH_MLU
-int Context<TargetType::kMLU>::next_queue_id_{0};
-std::map<int, int> Context<TargetType::kMLU>::queue_id_map_;
-std::mutex Context<TargetType::kMLU>::map_mutex_;
-#endif
+  void Run() override;
+};
 
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

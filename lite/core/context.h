@@ -144,45 +144,12 @@ class Context<TargetType::kXPU> {
 
   void CopySharedTo(XPUContext* ctx) {}
 
+  // TODO(miaotianxiang): remove this
   static xdnn::Context* GetRawContext() {
-    if (_tls_raw_ctx == nullptr) {
-      _tls_raw_ctx = xdnn::create_context();
-      CHECK(_tls_raw_ctx);
-      int r = xdnn::set_workspace_l3_size(_tls_raw_ctx,
-                                          _workspace_l3_size_per_thread);
-      if (r != 0) {
-        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
-                     << ", _workspace_l3_size_per_thread = "
-                     << _workspace_l3_size_per_thread;
-      }
-    }
-    return _tls_raw_ctx;
-  }
-
-  static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
-    _workspace_l3_size_per_thread = l3_size;
-  }
-
-  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
-  // thread
-  static void SetDev(int dev_no = 0) {
-    const char* dev_env = getenv("LITE_XPU_DEV");
-    if (dev_env) {
-      xpu_set_device(atoi(dev_env));
-      return;
-    }
-
-    xpu_set_device(dev_no);
+    return TargetWrapperXPU::GetRawContext();
   }
 
   std::string name() const { return "XPUContext"; }
-
- public:
-  static std::string _multi_encoder_precision;  // NOLINT
-
- private:
-  static thread_local xdnn::Context* _tls_raw_ctx;
-  static int _workspace_l3_size_per_thread;
 };
 #endif
 

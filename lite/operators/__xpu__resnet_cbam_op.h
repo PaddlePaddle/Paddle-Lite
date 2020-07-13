@@ -12,20 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/context.h"
+#pragma once
+
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
+namespace operators {
 
-#ifdef LITE_WITH_NPU
-std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
-#endif
+class XPUResNetCbamOp : public OpLite {
+ public:
+  XPUResNetCbamOp() {}
+  explicit XPUResNetCbamOp(const std::string &op_type) : OpLite(op_type) {}
 
-#ifdef LITE_WITH_MLU
-int Context<TargetType::kMLU>::next_queue_id_{0};
-std::map<int, int> Context<TargetType::kMLU>::queue_id_map_;
-std::mutex Context<TargetType::kMLU>::map_mutex_;
-#endif
+  bool CheckShape() const override;
 
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "ResNetCbam"; }
+
+ private:
+  mutable XPUResNetCbamParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

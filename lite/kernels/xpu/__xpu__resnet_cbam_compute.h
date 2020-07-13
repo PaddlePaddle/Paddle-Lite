@@ -12,20 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/context.h"
+#pragma once
+
+#include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace xpu {
 
-#ifdef LITE_WITH_NPU
-std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
-#endif
+class XPUResNetCbamCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::XPUResNetCbamParam;
 
-#ifdef LITE_WITH_MLU
-int Context<TargetType::kMLU>::next_queue_id_{0};
-std::map<int, int> Context<TargetType::kMLU>::queue_id_map_;
-std::mutex Context<TargetType::kMLU>::map_mutex_;
-#endif
+  virtual void PrepareForRun();
 
+  virtual void Run();
+
+ private:
+  std::vector<const int16_t *> arg_filter_;
+  std::vector<const float *> arg_max_filter_;
+  std::vector<const float *> arg_bias_;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
