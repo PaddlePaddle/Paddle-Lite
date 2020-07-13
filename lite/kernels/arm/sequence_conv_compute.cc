@@ -112,7 +112,7 @@ void SequenceConvCompute::Run() {
                                          sub_col_data,
                                          kernel_size * hidden_dim,
                                          input_row_end - input_row_begin);
-#endif  
+#endif
     }
   }
 
