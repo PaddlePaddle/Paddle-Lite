@@ -46,34 +46,8 @@ class SubgraphEngine : public subgraph::Engine {
     graph_.SetFPType(type);
   }
 
-  int Build() {
-    // In order to attach all of the ops of the block desc, we need to build
-    // the original program firstly.
-    BuildOriginProgram();
-    // Run InferShape() of all of ops, and convert Paddle ops to MLU IR graph
-    build_device_program_status_ = BuildDeviceProgram();
-    return build_device_program_status_;
-  }
-
-  int Launch() {
-    // Rebuild device program when the shapes of input tensors have been
-    // changed.
-    if (subgraph::CHECK_SUCCESS(build_device_program_status_) &&
-        subgraph::CHECK_REBUILD_WHEN_SHAPE_CHANGED(
-            build_device_program_status_) &&
-        InputShapeChanged()) {
-      Build();
-    }
-    if (subgraph::CHECK_FAILED(build_device_program_status_)) {
-      LaunchOriginProgram();
-    } else {
-      LaunchDeviceProgram();
-    }
-    return 0;
-  }
-
  protected:
-  int BuildDeviceProgram() override {
+  bool BuildDeviceProgram() override {
     int status = 0;
     // Convert all of input data vars and added into the MLU IR graph
     for (auto& input_name : input_names_) {
@@ -94,6 +68,9 @@ class SubgraphEngine : public subgraph::Engine {
     LOG(INFO) << "START TO CONVERT ";
     // Convert all of ops and its weights and added into the MLU IR graph
     const auto& bridges = subgraph::Registry::Instance();
+    if (origin_program_.empty()) {
+      BuildOriginProgram();
+    }
     for (auto& inst : origin_program_) {
       auto op = inst.op();
       CHECK(op);
@@ -102,7 +79,7 @@ class SubgraphEngine : public subgraph::Engine {
       const_cast<OpLite*>(op)->InferShape();
       if (!bridges.Exists(op_type, TARGET(kMLU))) {
         LOG(INFO) << "MLU bridges doesn't support op_type: " << op_type;
-        return subgraph::FAILED;
+        return false;
       }
       auto kernel = inst.kernel();
       status |= bridges.Select(op_type, TARGET(kMLU))(
@@ -110,7 +87,7 @@ class SubgraphEngine : public subgraph::Engine {
           const_cast<OpLite*>(op),
           const_cast<KernelBase*>(kernel));
       if (subgraph::CHECK_FAILED(status)) {
-        return subgraph::FAILED;
+        return false;
       }
     }
     // Obtain the output nodes of the MLU IR graph and build the graph to MLU
@@ -138,10 +115,10 @@ class SubgraphEngine : public subgraph::Engine {
     auto core_version = mlu_context.MLUCoreVersion();
     auto core_number = mlu_context.MLUCoreNumber();
     graph_.Compile(core_version, core_number);
-    return status;
+    return true;
   }
 
-  int LaunchDeviceProgram() override {
+  bool LaunchDeviceProgram() override {
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto exec_queue = mlu_context.exec_queue();
     u32_t affinity = mlu_context.affinity();
@@ -151,7 +128,7 @@ class SubgraphEngine : public subgraph::Engine {
     forward_param.affinity = &affinity;
     forward_param.end = CNRT_PARAM_END;
     graph_.Compute(forward_param, exec_queue);
-    return 0;
+    return true;
   }
 
   paddle::lite::subgraph::mlu::Graph graph_;
@@ -174,12 +151,11 @@ class SubgraphCompute
                                                 param.scope,
                                                 this->precision()));
     CHECK(engine_);
-    engine_->Build();
   }
 
   void Run() override {
     CHECK(engine_);
-    engine_->Launch();
+    engine_->Run();
   }
 
   virtual ~SubgraphCompute() = default;
