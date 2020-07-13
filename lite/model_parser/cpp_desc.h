@@ -12,8 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/vector_view.h"
+#pragma once
+
+#include "lite/model_parser/general/block_desc.h"
+#include "lite/model_parser/general/op_desc.h"
+#include "lite/model_parser/general/program_desc.h"
+#include "lite/model_parser/general/var_desc.h"
 
 namespace paddle {
-namespace lite {}  // namespace lite
-}  // namespace paddle
+namespace lite {
+namespace cpp = general;
+}
+}

@@ -120,5 +120,40 @@ static std::vector<std::string> ListDir(const std::string& path,
   return paths;
 }
 
+static bool ReadFile(const std::string& filename, std::vector<char>* contents) {
+  FILE* fp = fopen(filename.c_str(), "rb");
+  if (!fp) return false;
+  fseek(fp, 0, SEEK_END);
+  size_t size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  contents->clear();
+  contents->resize(size);
+  size_t offset = 0;
+  char* ptr = reinterpret_cast<char*>(&(contents->at(0)));
+  while (offset < size) {
+    size_t already_read = fread(ptr, 1, size - offset, fp);
+    offset += already_read;
+    ptr += already_read;
+  }
+  fclose(fp);
+  return true;
+}
+
+static bool WriteFile(const std::string& filename,
+                      const std::vector<char>& contents) {
+  FILE* fp = fopen(filename.c_str(), "wb");
+  if (!fp) return false;
+  size_t size = contents.size();
+  size_t offset = 0;
+  const char* ptr = reinterpret_cast<const char*>(&(contents.at(0)));
+  while (offset < size) {
+    size_t already_written = fwrite(ptr, 1, size - offset, fp);
+    offset += already_written;
+    ptr += already_written;
+  }
+  fclose(fp);
+  return true;
+}
+
 }  // namespace lite
 }  // namespace paddle

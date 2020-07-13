@@ -74,8 +74,19 @@ void SequenceUnpadCompute<T, Ptype>::Run() {
 using SeqUnadFp32 =
     paddle::lite::kernels::cuda::SequenceUnpadCompute<float, PRECISION(kFloat)>;
 
+using SeqUnadFp16 =
+    paddle::lite::kernels::cuda::SequenceUnpadCompute<half, PRECISION(kFP16)>;
+
 REGISTER_LITE_KERNEL(sequence_unpad, kCUDA, kFloat, kNCHW, SeqUnadFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindInput("Length", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Length",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(sequence_unpad, kCUDA, kFP16, kNCHW, SeqUnadFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("Length",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();

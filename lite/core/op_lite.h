@@ -24,7 +24,7 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/scope.h"
-#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {
@@ -230,7 +230,7 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {
-    for (auto &item : inputs_) {
+    for (auto &item : *mutable_inputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }
@@ -238,7 +238,7 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllOutputs(const std::string &from, const std::string &to) {
-    for (auto &item : outputs_) {
+    for (auto &item : *mutable_outputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }

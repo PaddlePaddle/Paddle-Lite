@@ -31,8 +31,8 @@ namespace cuda {
 class FcTest : public ::testing::Test {
  protected:
   FcTest()
-      : m_(128),
-        k_(512),
+      : m_(8),
+        k_(16),
         n_(64),
         in_num_col_dims_(1),
         act_type_("relu"),
@@ -186,6 +186,42 @@ TEST_F(FcTest, TestFP32) {
     float res = out_cpu_.data<float>()[i];
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / ref, 0.f, 1e-5);
+  }
+}
+
+TEST_F(FcTest, TestFP16) {
+  InitHalfInput();
+  FcCompute<half, PRECISION(kFP16)> kernel;
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    kernel.Launch();
+    cudaDeviceSynchronize();
+  }
+
+  auto start = GetCurrentUS();
+  kernel.PrepareForRun();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    kernel.Run();
+  }
+  cudaDeviceSynchronize();
+  auto duration = (GetCurrentUS() - start) / 1000.0;
+  LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
+            << ", repeats: " << FLAGS_repeats << ", spend "
+            << duration / FLAGS_repeats << " ms in average.";
+
+  const half* out_gpu_data = out_gpu_.data<half>();
+  half* out_cpu_data = out_cpu_.mutable_data<half>();
+  CopySync<TARGET(kCUDA)>(out_cpu_data,
+                          out_gpu_data,
+                          sizeof(half) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 2e-2);
   }
 }
 
