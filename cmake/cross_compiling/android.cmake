@@ -35,7 +35,11 @@ endif()
 if(NOT DEFINED ANDROID_API_LEVEL)
     set(ANDROID_API_LEVEL "23")
     if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
-        set(ANDROID_API_LEVEL "22")
+        if(LITE_WITH_NPU AND NOT LITE_ON_TINY_PUBLISH)
+            set(ANDROID_API_LEVEL "24") # HIAI DDK depends on android-24
+        else()
+            set(ANDROID_API_LEVEL "22")
+        endif()
     endif()
 endif()
 

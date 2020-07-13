@@ -74,7 +74,7 @@ class ConvOpLite : public OpLite {
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.groups = op_desc.GetAttr<int>("groups");
     auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
     param_.dilations = std::make_shared<std::vector<int>>(dilations);
@@ -130,15 +130,18 @@ class ConvOpLite : public OpLite {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
     // For Int8
-    if (op_desc.HasAttr("enable_int8")) {
-      param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
-      if (op_desc.HasAttr("input_scale"))
-        param_.input_scale = op_desc.GetAttr<float>("input_scale");
-      if (op_desc.HasAttr("weight_scale"))
-        param_.weight_scale =
-            op_desc.GetAttr<std::vector<float>>("weight_scale");
-      if (op_desc.HasAttr("output_scale")) {
-        param_.output_scale = op_desc.GetAttr<float>("output_scale");
+    const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
+    if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
+      param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+      auto input_name = op_info->Input("Input").front();
+      auto filter_name = op_info->Input("Filter").front();
+      auto output_name = op_info->Output("Output").front();
+      if (op_info->HasInputScale(input_name))
+        param_.input_scale = op_info->GetInputScale(input_name)[0];
+      if (op_info->HasInputScale(filter_name))
+        param_.weight_scale = op_info->GetInputScale(filter_name);
+      if (op_info->HasOutputScale(output_name)) {
+        param_.output_scale = op_info->GetOutputScale(output_name)[0];
       }
     }
 

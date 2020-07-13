@@ -41,6 +41,8 @@
         << "CUDA: " << cudaGetErrorString(e);                \
   }
 
+#define CUDA_POST_KERNEL_CHECK CUDA_CALL(cudaPeekAtLastError())
+
 #define CUBLAS_CALL(func)                                        \
   {                                                              \
     auto e = (func);                                             \

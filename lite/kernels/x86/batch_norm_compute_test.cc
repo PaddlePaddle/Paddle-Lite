@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/batch_norm_compute.h"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/batch_norm_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -26,9 +28,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(batch_norm_x86, retrive_op) {
-  auto batch_norm =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "batch_norm");
+  auto batch_norm = KernelRegistry::Global().Create("batch_norm");
   ASSERT_FALSE(batch_norm.empty());
   ASSERT_TRUE(batch_norm.front());
 }

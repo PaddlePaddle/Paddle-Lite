@@ -12,36 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/cpp/block_desc.h"
+#pragma once
+#include <string>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace cpp {
+namespace operators {
 
-template <>
-VarDesc* BlockDesc::GetVar<VarDesc>(int32_t idx) {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return &vars_[idx];
-}
+class ClipOpLite : public OpLite {
+ public:
+  ClipOpLite() {}
 
-template <>
-VarDesc* BlockDesc::AddVar<VarDesc>() {
-  vars_.emplace_back();
-  return &vars_.back();
-}
+  explicit ClipOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-template <>
-OpDesc* BlockDesc::GetOp<OpDesc>(int32_t idx) {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
-  return &ops_[idx];
-}
+  bool CheckShape() const override;
 
-template <>
-OpDesc* BlockDesc::AddOp<OpDesc>() {
-  ops_.emplace_back();
-  return &ops_.back();
-}
+  bool InferShapeImpl() const override;
 
-}  // namespace cpp
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "clip"; }
+
+ private:
+  mutable ClipParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

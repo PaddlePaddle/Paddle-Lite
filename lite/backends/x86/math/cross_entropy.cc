@@ -57,7 +57,7 @@ class CrossEntropyFunctor<lite::TargetType::kX86, T> {
       for (int i = 0; i < batch_size; ++i) {
         for (int j = 0; j < num_remain; j++) {
           int lbl = label_data[i * num_remain + j];
-          PADDLE_ENFORCE((lbl >= 0 && lbl < axis_dim) || lbl == ignore_index);
+          CHECK((lbl >= 0 && lbl < axis_dim) || lbl == ignore_index);
           int index = i * num_classes + lbl * num_remain + j;
           int loss_idx = i * num_remain + j;
           loss_data[loss_idx] =

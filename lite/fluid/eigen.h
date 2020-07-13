@@ -17,7 +17,7 @@ limitations under the License. */
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/fluid/float16.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 #include "unsupported/Eigen/CXX11/Tensor"
 
 namespace paddle {
@@ -30,7 +30,7 @@ struct EigenDim {
   using Type = Eigen::DSizes<Eigen::DenseIndex, D>;
 
   static Type From(const lite::DDim& dims) {
-    PADDLE_ENFORCE_EQ(dims.size(), D, "D must match DDim::size");
+    CHECK_EQ(dims.size(), D) << "D must match DDim::size";
     Type ret;
     for (size_t d = 0; d < dims.size(); d++) {
       ret[d] = dims[d];
@@ -39,7 +39,7 @@ struct EigenDim {
   }
 
   static Type From(const DDim::value_type length) {
-    PADDLE_ENFORCE_EQ(D, 1, "D must be 1.");
+    CHECK_EQ(D, 1) << "D must be 1.";
     Type ret;
     ret[0] = length;
     return ret;
@@ -84,16 +84,16 @@ struct EigenMatrix : public EigenTensor<T, 2, MajorType, IndexType> {
   static typename EigenMatrix::Type Reshape(Tensor& tensor,  // NOLINT
                                             int num_col_dims) {
     int rank = tensor.dims().size();
-    PADDLE_ENFORCE(num_col_dims > 0 && num_col_dims < rank,
-                   "`num_col_dims` must be between (0, rank_of_tensor).");
+    CHECK(num_col_dims > 0 && num_col_dims < rank)
+        << "`num_col_dims` must be between (0, rank_of_tensor).";
     return EigenMatrix::From(tensor, tensor.dims().Flatten2D(num_col_dims));
   }
 
   static typename EigenMatrix::ConstType Reshape(const Tensor& tensor,
                                                  int num_col_dims) {
     int rank = tensor.dims().size();
-    PADDLE_ENFORCE(num_col_dims > 0 && num_col_dims < rank,
-                   "`num_col_dims` must be between (0, rank_of_tensor).");
+    CHECK(num_col_dims > 0 && num_col_dims < rank)
+        << "`num_col_dims` must be between (0, rank_of_tensor).";
     return EigenMatrix::From(tensor, tensor.dims().Flatten2D(num_col_dims));
   }
 };

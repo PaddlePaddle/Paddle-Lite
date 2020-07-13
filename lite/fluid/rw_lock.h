@@ -20,7 +20,7 @@ limitations under the License. */
 #include <mutex>  // NOLINT
 #endif            // !_WIN32
 
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -33,17 +33,15 @@ struct RWLock {
   ~RWLock() { pthread_rwlock_destroy(&lock_); }
 
   inline void RDLock() {
-    PADDLE_ENFORCE_EQ(
-        pthread_rwlock_rdlock(&lock_), 0, "acquire read lock failed");
+    CHECK_EQ(pthread_rwlock_rdlock(&lock_), 0) << "acquire read lock failed";
   }
 
   inline void WRLock() {
-    PADDLE_ENFORCE_EQ(
-        pthread_rwlock_wrlock(&lock_), 0, "acquire write lock failed");
+    CHECK_EQ(pthread_rwlock_wrlock(&lock_), 0) << "acquire write lock failed";
   }
 
   inline void UNLock() {
-    PADDLE_ENFORCE_EQ(pthread_rwlock_unlock(&lock_), 0, "unlock failed");
+    CHECK_EQ(pthread_rwlock_unlock(&lock_), 0) << "unlock failed";
   }
 
  private:

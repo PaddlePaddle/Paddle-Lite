@@ -16,7 +16,7 @@ limitations under the License. */
 #include <math.h>
 #include <string>
 #include "lite/backends/x86/cpu_info.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -46,8 +46,6 @@ inline ActivationType GetActivationType(const std::string &type) {
     return ActivationType::kIdentity;
   }
   LOG(ERROR) << "Not support type " << type;
-  // PADDLE_ENFORCE(false, "Not support type %s", type);
-  // PADDLE_THROW("Not support type %s.", type);
   return ActivationType();
 }
 

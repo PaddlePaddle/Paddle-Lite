@@ -60,6 +60,38 @@ static std::string to_string(const T& v) {
   return ss.str();
 }
 
+static std::string to_string(int index) {
+  const int BUFFER_LENGTH = 15;
+  char buffer[BUFFER_LENGTH];
+  snprintf(buffer, sizeof(buffer), "%d", index);
+  return std::string(buffer);
+}
+
+template <typename T = std::string>
+static T parse_string(const std::string& v) {
+  return v;
+}
+
+template <>
+int32_t parse_string<int32_t>(const std::string& v) {
+  return std::stoi(v);
+}
+
+template <>
+int64_t parse_string<int64_t>(const std::string& v) {
+  return std::stoll(v);
+}
+
+template <>
+float parse_string<float>(const std::string& v) {
+  return std::stof(v);
+}
+
+template <>
+double parse_string<double>(const std::string& v) {
+  return std::stod(v);
+}
+
 template <typename T>
 std::string Join(const std::vector<T>& vec, const std::string& delim) {
   if (vec.empty()) return "";
@@ -84,19 +116,20 @@ static std::string Repr(const std::vector<std::string>& v) {
   return "{" + Join(tmp, ",") + "}";
 }
 
-static std::vector<std::string> Split(const std::string& original,
-                                      const std::string& separator) {
-  std::vector<std::string> results;
+template <class T = std::string>
+static std::vector<T> Split(const std::string& original,
+                            const std::string& separator) {
+  std::vector<T> results;
   std::string::size_type pos1, pos2;
   pos2 = original.find(separator);
   pos1 = 0;
   while (std::string::npos != pos2) {
-    results.push_back(original.substr(pos1, pos2 - pos1));
+    results.push_back(parse_string<T>(original.substr(pos1, pos2 - pos1)));
     pos1 = pos2 + separator.size();
     pos2 = original.find(separator, pos1);
   }
   if (pos1 != original.length()) {
-    results.push_back(original.substr(pos1));
+    results.push_back(parse_string<T>(original.substr(pos1)));
   }
   return results;
 }

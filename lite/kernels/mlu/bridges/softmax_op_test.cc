@@ -93,7 +93,7 @@ void test_softmax(const std::vector<int64_t>& input_shape, int axis) {
   opdesc.SetOutput("Out", {out_var_name});
   opdesc.SetAttr("axis", axis);
 
-  // create and convert op to NPU model, then run it on NPU
+  // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::SoftmaxOp>(opdesc, &scope);
   // execute reference implementation and save to output tensor
   softmax_ref<float>(op);

@@ -28,7 +28,7 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-/* image kernel*/
+
 void ConvImageCompute::PrepareForRun() {
   const auto& param = this->Param<param_t>();
   auto x_dims = param.x->dims();

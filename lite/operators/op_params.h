@@ -21,10 +21,9 @@
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/utils/all.h"
-#include "lite/utils/variant.h"
 /*
  * This file contains all the argument parameter data structure for operators.
  */
@@ -1032,10 +1031,26 @@ struct SequenceExpandParam : ParamBase {
   int ref_level{-1};
 };
 
+struct SequencePadParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* PadValue{};
+  lite::Tensor* Out{};
+  lite::Tensor* Length{};
+  int padded_length{-1};
+};
+
 struct SequenceUnpadParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Length{};
   lite::Tensor* Out{};
+};
+
+struct SequenceMaskParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* MaxLenTensor{nullptr};
+  lite::Tensor* Y{};
+  int maxlen{-1};
+  int out_dtype;
 };
 
 struct SequenceExpandAsParam : ParamBase {
@@ -1331,6 +1346,8 @@ struct AssignValueParam : ParamBase {
   int dtype{};
   std::vector<float> fp32_values{};
   std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<int> bool_values{};
   lite::Tensor* Out{};
 };
 
@@ -1343,6 +1360,15 @@ struct SequenceTopkAvgPoolingParam : ParamBase {
   lite::Tensor* pos{};
   int channel_num{};
   std::vector<int> topks{};
+};
+
+/// --------------- topk_pooling operators ------------------
+struct TopkPoolingParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  int top_k{1};
+  int feat_map_num{1};
 };
 
 /// --------------- search_fc operators ------------------
@@ -1592,6 +1618,15 @@ struct RetinanetDetectionOutputParam : ParamBase {
 struct WhereIndexParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
+};
+
+struct ClipParam : ParamBase {
+  Tensor* x{};
+  Tensor* min_tensor{};
+  Tensor* max_tensor{};
+  Tensor* out{};
+  float min{};
+  float max{};
 };
 
 }  // namespace operators
