@@ -41,7 +41,7 @@ class Device {
   // Load the HiAI om model from buffer, rebuild the model if it's incompatible
   // with the current device, then create a HiAI model manager client(from HiAI
   // Server) to run inference
-  std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
+  std::shared_ptr<hiai::AiModelMngerClient> Load(
       const std::string& model_name,
       std::vector<char>* model_buffer,
       bool* model_comp);

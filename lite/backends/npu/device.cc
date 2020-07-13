@@ -44,20 +44,19 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
   model_desc->SetModelBuffer(
       reinterpret_cast<const void*>(model_buffer->data()),
       model_buffer->size());
-  if (model_client->CheckModelCompatibility(*model_desc, model_comp) !=
+  if (model_client->CheckModelCompatibility(*model_desc, *model_comp) !=
       hiai::AI_SUCCESS) {
     *model_comp = false;
   }
   // Rebuild and write the data of the compatible model to the model buffer
   if (!*model_comp) {
-    std::shared_ptr<AiModelBuilder> model_builder =
-        std::make_shared<AiModelBuilder>(model_client);
-    MemBuffer* org_model_buffer = model_builder->InputMemBufferCreate(
+    auto model_builder = std::make_shared<hiai::AiModelBuilder>(model_client);
+    hiai::MemBuffer* org_model_buffer = model_builder->InputMemBufferCreate(
         reinterpret_cast<void*>(model_buffer->data()), model_buffer->size());
     if (org_model_buffer) {
-      std::vector<MemBuffer*> org_model_buffers;
+      std::vector<hiai::MemBuffer*> org_model_buffers;
       org_model_buffers.push_back(org_model_buffer);
-      MemBuffer* new_model_buffer =
+      hiai::MemBuffer* new_model_buffer =
           model_builder->OutputMemBufferCreate(0, org_model_buffers);
       if (new_model_buffer) {
         uint32_t new_model_size = 0;

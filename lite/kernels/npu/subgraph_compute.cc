@@ -158,17 +158,6 @@ bool RuntimeProgram::BuildGraphAndCacheToFile(
     CHECK(graph.Has(output_names[i]));
     device_onodes.push_back(*graph.Get(output_names[i])->data());
   }
-  auto model_path = model_cache_dir + "/" + model_name_ + ".om";
-  if (IsFileExists(model_path)) {
-    VLOG(3) << "[NPU] Offline model exists:" << model_path;
-    // Load offline cached m
-    model_client_ =
-        lite::npu::Device::Global().LoadOfflineModel(model_name_, model_path);
-    if (model_client_) {
-      VLOG(3) << "[NPU] Load offline model succeed.";
-      return true;
-    }
-  }
   // Build the HiAI IR graph to the HiAI om model
   std::vector<char> model_buffer;
   if (!lite::npu::Device::Global().Build(
@@ -178,11 +167,15 @@ bool RuntimeProgram::BuildGraphAndCacheToFile(
   }
   // Load the HiAI om model and create a HiAI model manager client(from HiAI
   // Service) to run inference.
-  model_client_ = lite::npu::Device::Global().Load(model_name_, model_buffer);
+  bool model_comp = false;
+  model_client_ =
+      lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
   }
+  // Do not check model compatibility because it assume that the cached om model
+  // is always compatible with the current device
   // Update the precison and dimensions of the origin output tensors
   CHECK_EQ(origin_otensors.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
