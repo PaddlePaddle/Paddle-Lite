@@ -33,42 +33,33 @@ class Engine {
          cpp::BlockDesc *block_desc,
          const std::vector<std::string> &input_names,
          const std::vector<std::string> &output_names,
-         lite::Scope *scope)
-      : ctx_(ctx),
-        block_idx_(block_idx),
-        block_desc_(block_desc),
-        input_names_(input_names),
-        output_names_(output_names),
-        scope_(scope) {}
+         lite::Scope *scope);
   virtual ~Engine() = default;
 
-  virtual int Build();
-  virtual int Launch();
+  virtual bool Run();
 
  private:
   Engine(const Engine &) = delete;
 
  protected:
-  virtual int BuildDeviceProgram();
-  virtual int LaunchDeviceProgram();
+  virtual bool PrepareWorkspaceForOriginProgram();
+  virtual bool BuildOriginProgram();
+  virtual bool LaunchOriginProgram();
 
-  virtual int BuildOriginProgram();
-  virtual int LaunchOriginProgram();
+  virtual bool PrepareWorkspaceForDeviceProgram();
+  virtual bool BuildDeviceProgram();
+  virtual bool LaunchDeviceProgram();
 
   virtual bool InputShapeChanged();
 
   KernelContext *ctx_{nullptr};
-  int block_idx_;
-  cpp::BlockDesc *block_desc_;
+  int block_idx_{-1};
+  cpp::BlockDesc *block_desc_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   Scope *scope_{nullptr};
-  // SUCCESS: device program build successed. FAILED: device program build
-  // failed. REBUILD_WHEN_SHAPE_CHANGED: device program build successed but need
-  // to rebuild when input shape changed.
-  int build_device_program_status_{0};
-  std::vector<DDim> origin_idims_;
-  std::vector<DDim> origin_odims_;
+  bool is_first_epoch_{true};
+  std::vector<std::vector<int64_t>> origin_idims_;
   std::vector<Tensor *> origin_itensors_;
   std::vector<Tensor *> origin_otensors_;
   std::vector<Instruction> origin_program_;
