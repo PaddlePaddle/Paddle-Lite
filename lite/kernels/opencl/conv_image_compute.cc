@@ -28,32 +28,15 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-/* image kernel*/
+
 void ConvImageCompute::PrepareForRun() {
-  conv_param_ = param_.get_mutable<param_t>();
-  auto x_dims = conv_param_->x->dims();
-  input_tensor_n_ = x_dims[0];
-  input_tensor_c_ = x_dims[1];
-  input_tensor_h_ = x_dims[2];
-  input_tensor_w_ = x_dims[3];
-  auto x_image_shape = InitImageDimInfoWith(x_dims);
-  input_image_h_ = x_image_shape["height"];
-  input_image_w_ = x_image_shape["width"];
+  ReInitWhenNeeded();
 
   auto filter_dims = conv_param_->filter->dims();
   filter_tensor_n_ = filter_dims[0];
   filter_tensor_c_ = filter_dims[1];
   filter_tensor_h_ = filter_dims[2];
   filter_tensor_w_ = filter_dims[3];
-
-  auto output_dims = conv_param_->output->dims();
-  output_tensor_n_ = output_dims[0];
-  output_tensor_c_ = output_dims[1];
-  output_tensor_h_ = output_dims[2];
-  output_tensor_w_ = output_dims[3];
-  auto output_image_shape = InitImageDimInfoWith(output_dims);
-  output_image_h_ = output_image_shape["height"];
-  output_image_w_ = output_image_shape["width"];
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
@@ -88,42 +71,29 @@ void ConvImageCompute::PrepareForRun() {
           << " stride_w_:" << stride_w_ << " pad_left_:" << pad_left_
           << " pad_up_:" << pad_up_ << " filter_tensor_h_:" << filter_tensor_h_
           << " filter_tensor_h_:" << filter_tensor_h_;
-  VLOG(3) << "x_dims:" << x_dims[0] << " " << x_dims[1] << " " << x_dims[2]
-          << " " << x_dims[3];
+  VLOG(3) << "input_tensor_nchw:" << input_tensor_n_ << " " << input_tensor_c_
+          << " " << input_tensor_h_ << " " << input_tensor_w_;
   VLOG(3) << "dialtion:" << dilation_h_ << " " << dilation_w_;
-  VLOG(3) << "output_dims:" << output_dims[0] << " " << output_dims[1] << " "
-          << output_dims[2] << " " << output_dims[3];
-  VLOG(3) << "filter_dims:" << filter_dims[0] << " " << filter_dims[1] << " "
-          << filter_dims[2] << " " << filter_dims[3];
+  VLOG(3) << "output_dims:" << output_tensor_n_ << " " << output_tensor_c_
+          << " " << output_tensor_h_ << " " << output_tensor_w_;
+  VLOG(3) << "filter_dims:" << filter_tensor_n_ << " " << filter_tensor_c_
+          << " " << filter_tensor_h_ << " " << filter_tensor_w_;
   VLOG(3) << "pad_equal:" << pad_equal;
   VLOG(3) << "stride_equal:" << stride_equal;
   VLOG(3) << "dilation_equal:" << dilation_equal;
   VLOG(3) << "padding :" << pad_up_ << " " << pad_down_ << " " << pad_left_
           << " " << pad_right_;
   CHECK(pad_equal && stride_equal && dilation_equal);
+  CHECK_GE(conv_param_->dilations->size(), 2);
+  CHECK(dilation_h_ == dilation_w_);
+  CHECK_GE(conv_param_->paddings->size(), 2);
+  CHECK(pad_left_ == pad_up_);
+  CHECK_GE(conv_param_->strides.size(), 2);
+  CHECK(stride_h_ == stride_w_);
 
   if (!is_mali) {
-    use_turn_ = false;
+    use_tune_ = false;
   }
-  // general gws..
-  auto out_image_shape = InitImageDimInfoWith(output_dims);
-
-  const std::vector<size_t>& default_work_size =
-      DefaultWorkSize(output_dims,
-                      DDim(std::vector<DDim::value_type>{
-                          static_cast<int64_t>(out_image_shape["width"]),
-                          static_cast<int64_t>(out_image_shape["height"])}));
-
-  default_c_blk_ = default_work_size[0];
-  default_w_blk_ = default_work_size[1];
-  default_nh_blk_ = default_work_size[2];
-  c_blk_ = default_c_blk_;
-  w_blk_ = default_w_blk_;
-  nh_blk_ = default_nh_blk_;
-
-  global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                  static_cast<size_t>(w_blk_),
-                                  static_cast<size_t>(nh_blk_)};
 
   /*********************************************
    * Upload filter, bias to opencl device
@@ -134,13 +104,6 @@ void ConvImageCompute::PrepareForRun() {
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
 
   if (filter_tensor_h_ == 1 && filter_tensor_h_ == 1) {
-    // conv2d_1x1
-    // if (param.x->dims()[1] % 4 == 0) {
-    //   kernel_func_names_.push_back("conv2d_1x1_simple");
-    // } else {
-    //   kernel_func_names_.push_back("conv2d_1x1_opt");
-    // }
-
     if (input_tensor_c_ % 4 == 0) {
       kernel_func_names_.push_back("conv2d_1x1_simple");
     } else {
@@ -161,55 +124,17 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_w_, filter_image_h_, filter_image_data);
 
     impl_ = &ConvImageCompute::Conv2d1x1opt;
-    {
-      // calc 1x1 gws
-      w_blk_ = maptofactor(default_w_blk_, 4);
-      c_blk_ = default_c_blk_;
-      nh_blk_ = default_nh_blk_;
-      global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                      static_cast<size_t>(w_blk_),
-                                      static_cast<size_t>(nh_blk_)};
-    }
 #define DEPTH_CONV_USE_SPL
 #ifdef DEPTH_CONV_USE_SPL
   } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_ &&
-             filter_tensor_h_ == 3 && filter_tensor_h_ == 3 && groups_ > 1) {
+             filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
     if (stride_h_ == 1 && dilation_h_ == 1) {
       kernel_func_names_.push_back("depth_conv2d_3x3s1");
       impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
-      {
-        // depthwise spl gws s1
-        int c_block = (output_tensor_c_ + 3) / 4;
-        int w = output_tensor_w_;
-        int nh = output_tensor_n_ * output_tensor_h_;
-        int w_blk_size = 2;
-        int w_blk = (w + w_blk_size - 1) / w_blk_size;
-
-        c_blk_ = c_block;
-        w_blk_ = w_blk;
-        nh_blk_ = nh;
-        global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                        static_cast<size_t>(w_blk_),
-                                        static_cast<size_t>(nh_blk_)};
-      }
     } else {
       kernel_func_names_.push_back("depth_conv2d_3x3");
       impl_ = &ConvImageCompute::DepthwiseConv2d3x3;
-      {
-        // depthwise spl gws
-        int c_block = (output_tensor_c_ + 3) / 4;
-        int w = output_tensor_w_;
-        int nh = output_tensor_n_ * output_tensor_h_;
-
-        c_blk_ = c_block;
-        w_blk_ = w;
-        nh_blk_ = nh;
-
-        global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                        static_cast<size_t>(w_blk_),
-                                        static_cast<size_t>(nh_blk_)};
-      }
     }
     kernel_func_paths_.push_back("image/depthwise_conv2d_kernel.cl");
 
@@ -252,7 +177,7 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_w_, filter_image_h_, filter_image_data);
 
     impl_ = &ConvImageCompute::DepthwiseConv2d;
-  } else if (filter_tensor_h_ == 3 && filter_tensor_h_ == 3) {
+  } else if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3) {
 // #define CONV3x3OPT_FALL_BACK
 #ifndef CONV3x3OPT_FALL_BACK
     // conv2d_3x3
@@ -274,22 +199,6 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_w_, filter_image_h_, filter_image_data);
 
     impl_ = &ConvImageCompute::Conv2d3x3opt;
-
-    {
-      int w_blk_size = 5;
-      int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
-
-      int h_blk_size = 1;
-      int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
-
-      c_blk_ = default_c_blk_;
-      w_blk_ = w_blk;
-      nh_blk_ = h_blk;
-
-      global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                      static_cast<size_t>(w_blk_),
-                                      static_cast<size_t>(nh_blk_)};
-    }
 #else
     kernel_func_names_.push_back("conv2d_3x3");
     kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
@@ -308,10 +217,9 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_w_, filter_image_h_, filter_image_data);
 
     impl_ = &ConvImageCompute::Conv2d3x3;
-
 #endif
 #undef CONV3x3OPT_FALL_BACK
-  } else if (filter_tensor_h_ == 5 && filter_tensor_h_ == 5) {
+  } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
     // conv2d_5x5
@@ -353,24 +261,9 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_w_, filter_image_h_, filter_image_data);
 
     impl_ = &ConvImageCompute::Conv2d5x5opt;
-    {
-      int w_blk_size = 5;
-      int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
-
-      int h_blk_size = 1;
-      int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
-
-      c_blk_ = default_c_blk_;
-      w_blk_ = w_blk;
-      nh_blk_ = h_blk;
-
-      global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                      static_cast<size_t>(w_blk_),
-                                      static_cast<size_t>(nh_blk_)};
-    }
 #endif
 #undef CONV_5x5_OPT
-  } else if (filter_tensor_h_ == 7 && filter_tensor_h_ == 7) {
+  } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7) {
 #define CONV_7x7_OPT
 #ifndef CONV_7x7_OPT
     // conv2d_7x7
@@ -412,21 +305,6 @@ void ConvImageCompute::PrepareForRun() {
         filter_image_w_, filter_image_h_, filter_image_data);
 
     impl_ = &ConvImageCompute::Conv2d7x7opt;
-    {
-      int w_blk_size = 5;
-      int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
-
-      int h_blk_size = 1;
-      int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
-
-      c_blk_ = default_c_blk_;
-      w_blk_ = w_blk;
-      nh_blk_ = h_blk;
-
-      global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                      static_cast<size_t>(w_blk_),
-                                      static_cast<size_t>(nh_blk_)};
-    }
 #endif
 #undef CONV_7x7_OPT
   } else {
@@ -456,6 +334,7 @@ void ConvImageCompute::PrepareForRun() {
                  << static_cast<int>(conv_param_->activation_param.active_type);
     }
   }
+  GetGlobalWorkSize();
 
   // bias options
   const bool is_element_wise_bias =
@@ -482,13 +361,19 @@ void ConvImageCompute::PrepareForRun() {
     this->bias_gpu_image_->mutable_data<half_t, cl::Image2D>(
         bias_image_dims[0], bias_image_dims[1], bias_image_data);
     // convert cpu buffer bias --> gpu image --- end ----
+  } else {
+    bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+    CLImageConverterFolder bias_converter;
+    tensor_hold_bias_image_->Resize({1, 1, 1, 4});
+    half_t* bias_image_data = tensor_hold_bias_image_->mutable_data<half_t>();
+    this->bias_gpu_image_->mutable_data<half_t, cl::Image2D>(
+        1, 1, bias_image_data);
   }
 
-  // define image pointer
+  // define image pointer for filter, bias
   input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
   filter_image_p_ = filter_gpu_image_->data<half_t, cl::Image2D>();
-  bias_image_p_ =
-      has_bias_ ? bias_gpu_image_->data<half_t, cl::Image2D>() : nullptr;
+  bias_image_p_ = bias_gpu_image_->data<half_t, cl::Image2D>();
   output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
       output_image_w_, output_image_h_);
 
@@ -517,55 +402,55 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(4) << "max_work_group_size: " << max_work_group_size;
 
   if (max_work_group_size > 0 && use_lws_) {
-    double min_turn_time = DBL_MAX;
+    double min_tune_time = DBL_MAX;
     cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
         global_work_size_, max_work_group_size);
     VLOG(3) << "origin  :local_work_size_ : " << best_local_work_size[0] << " "
             << best_local_work_size[1] << " " << best_local_work_size[2];
     cl::NDRange last_local_work_size = cl::NDRange{
         static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
-    if (use_turn_) {
+    if (use_tune_) {
       for (size_t i = 1; i < 15; i++) {
-        if (filter_tensor_h_ == 1 && filter_tensor_h_ == 1) {
+        if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
           // todo use diff logics
-          local_work_size_ = context.cl_context()->LocalWorkSizeTurn(
+          local_work_size_ = context.cl_context()->LocalWorkSizeTune(
               global_work_size_, max_work_group_size, i);
         } else {
-          local_work_size_ = context.cl_context()->LocalWorkSizeTurn(
+          local_work_size_ = context.cl_context()->LocalWorkSizeTune(
               global_work_size_, max_work_group_size, i);
         }
         if (last_local_work_size[0] == local_work_size_[0] &&
             last_local_work_size[1] == local_work_size_[1] &&
             last_local_work_size[2] == local_work_size_[2]) {
-          // skiped turned lws
+          // skiped tuneed lws
           continue;
         }
-        auto turn_time = this->Turn(10);
-        if (min_turn_time > turn_time) {
-          min_turn_time = turn_time;
+        auto tune_time = this->Tune(10);
+        if (min_tune_time > tune_time) {
+          min_tune_time = tune_time;
           best_local_work_size = local_work_size_;
         }
         last_local_work_size = local_work_size_;
       }
       // reverse
       for (size_t i = 1; i < 15; i++) {
-        if (filter_tensor_h_ == 1 && filter_tensor_h_ == 1) {
+        if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
           // todo use diff logics
-          local_work_size_ = context.cl_context()->LocalWorkSizeTurnReverse(
+          local_work_size_ = context.cl_context()->LocalWorkSizeTuneReverse(
               global_work_size_, max_work_group_size, i);
         } else {
-          local_work_size_ = context.cl_context()->LocalWorkSizeTurnReverse(
+          local_work_size_ = context.cl_context()->LocalWorkSizeTuneReverse(
               global_work_size_, max_work_group_size, i);
         }
         if (last_local_work_size[0] == local_work_size_[0] &&
             last_local_work_size[1] == local_work_size_[1] &&
             last_local_work_size[2] == local_work_size_[2]) {
-          // skiped turned lws
+          // skiped tuneed lws
           continue;
         }
-        auto turn_time = this->Turn(10);
-        if (min_turn_time > turn_time) {
-          min_turn_time = turn_time;
+        auto tune_time = this->Tune(10);
+        if (min_tune_time > tune_time) {
+          min_tune_time = tune_time;
           best_local_work_size = local_work_size_;
         }
         last_local_work_size = local_work_size_;
@@ -579,248 +464,314 @@ void ConvImageCompute::PrepareForRun() {
   }
 }
 
-void ConvImageCompute::Conv2d1x1opt(bool is_turn) {
-  auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
+void ConvImageCompute::ReInitWhenNeeded() {
+  conv_param_ = param_.get_mutable<param_t>();
+  auto x_dims = conv_param_->x->dims();
+  LOG(INFO) << "is_first_epoch_for_run_:" << is_first_epoch_for_run_
+            << ", last_input_dims_:" << last_input_dims_
+            << ", x_dims:" << x_dims;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
+  if (is_first_epoch_for_run_ || last_input_dims_ != x_dims) {
     is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+    last_input_dims_ = x_dims;
+
+    input_tensor_n_ = x_dims[0];
+    input_tensor_c_ = x_dims[1];
+    input_tensor_h_ = x_dims[2];
+    input_tensor_w_ = x_dims[3];
+    auto x_image_shape = InitImageDimInfoWith(x_dims);
+    input_image_h_ = x_image_shape["height"];
+    input_image_w_ = x_image_shape["width"];
+
+    auto output_dims = conv_param_->output->dims();
+    output_tensor_n_ = output_dims[0];
+    output_tensor_c_ = output_dims[1];
+    output_tensor_h_ = output_dims[2];
+    output_tensor_w_ = output_dims[3];
+    auto output_image_shape = InitImageDimInfoWith(output_dims);
+    output_image_h_ = output_image_shape["height"];
+    output_image_w_ = output_image_shape["width"];
+
+    auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-
-// TODO(ysh329): update output, input
-
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ conv2d_1x1 params ============";
-#endif
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
     CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
-  }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, offset_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(
-      ++arg_idx,
-      /*input_c_block*/ static_cast<int>(input_image_w_ / input_tensor_w_));
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, default_w_blk_);
-  CL_CHECK_FATAL(status);
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                local_work_size_,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-  if (is_turn) {
-    CLRuntime::Global()->command_queue().finish();
-  }
-}
-
-void ConvImageCompute::Conv2d3x3(bool is_turn) {
-  auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
-
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
-
-    // group
-    groups_ = conv_param_->groups;
-    if (filter_tensor_n_ == output_tensor_c_ &&
-        filter_tensor_c_ == input_tensor_c_) {
-      groups_ = 1;
-    } else if (!(filter_tensor_n_ == input_tensor_c_ &&
-                 filter_tensor_c_ == 1)) {
-      groups_ = input_tensor_c_ / filter_tensor_c_;
-    }
-    /* TODO(ysh329): mobile has no case below
-       else {
-        LOG(FATAL) << "Not support conv3x3 case with"
-                   << " input_dims:" << input_dims << " output_dims:" <<
-      output_dims
-                   << " filter_dims:" << filter_dims;
+    CHECK_GE(conv_param_->output->dims().size(), 4);
+    if (kernel_func_names_.size() > 0 &&
+        kernel_func_names_[0] == "conv2d_3x3") {
+      groups_ = conv_param_->groups;
+      if (filter_tensor_n_ == output_tensor_c_ &&
+          filter_tensor_c_ == input_tensor_c_) {
+        groups_ = 1;
+      } else if (!(filter_tensor_n_ == input_tensor_c_ &&
+                   filter_tensor_c_ == 1)) {
+        groups_ = input_tensor_c_ / filter_tensor_c_;
       }
-    */
+    }
 
-    CHECK(context.cl_context() != nullptr);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
+    // define image pointer for input, output
+    input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+    output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+        output_image_w_, output_image_h_);
+
+    GetGlobalWorkSize();
   }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
-#endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(
-      ++arg_idx,
-      /*input_c_block*/ static_cast<int>(input_image_w_ / input_tensor_w_));
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, groups_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_c_);
-  CL_CHECK_FATAL(status);
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                cl::NullRange,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
 }
 
-void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
+void ConvImageCompute::GetGlobalWorkSize() {
+  if (kernel_func_names_.size() <= 0) return;
+  // general input_c_block
+  input_c_block_ = static_cast<int>(input_image_w_ / input_tensor_w_);
+
+  // general gws
+  auto output_dims = conv_param_->output->dims();
+  const std::vector<size_t>& default_work_size =
+      DefaultWorkSize(output_dims,
+                      DDim(std::vector<DDim::value_type>{
+                          static_cast<int64_t>(output_image_w_),
+                          static_cast<int64_t>(output_image_h_)}));
+  default_c_blk_ = default_work_size[0];
+  default_w_blk_ = default_work_size[1];
+  default_nh_blk_ = default_work_size[2];
+  c_blk_ = default_c_blk_;
+  w_blk_ = default_w_blk_;
+  nh_blk_ = default_nh_blk_;
+  global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                  static_cast<size_t>(w_blk_),
+                                  static_cast<size_t>(nh_blk_)};
+
+  if (kernel_func_names_[0] == "conv2d_1x1_simple" ||
+      kernel_func_names_[0] == "conv2d_1x1_opt") {
+    w_blk_ = maptofactor(default_w_blk_, 4);
+    c_blk_ = default_c_blk_;
+    nh_blk_ = default_nh_blk_;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+
+  } else if (kernel_func_names_[0] == "depth_conv2d_3x3s1") {
+    // depthwise spl gws s1
+    int c_block = (output_tensor_c_ + 3) / 4;
+    int w = output_tensor_w_;
+    int nh = output_tensor_n_ * output_tensor_h_;
+    int w_blk_size = 2;
+    int w_blk = (w + w_blk_size - 1) / w_blk_size;
+
+    c_blk_ = c_block;
+    w_blk_ = w_blk;
+    nh_blk_ = nh;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+  } else if (kernel_func_names_[0] == "depth_conv2d_3x3") {
+    // depthwise spl gws
+    int c_block = (output_tensor_c_ + 3) / 4;
+    int w = output_tensor_w_;
+    int nh = output_tensor_n_ * output_tensor_h_;
+
+    c_blk_ = c_block;
+    w_blk_ = w;
+    nh_blk_ = nh;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+    input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
+  } else if (kernel_func_names_[0] == "conv2d_3x3_multi_batch" ||
+             kernel_func_names_[0] == "conv2d_3x3_opt") {
+    int w_blk_size = 5;
+    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
+
+    int h_blk_size = 1;
+    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
+
+    c_blk_ = default_c_blk_;
+    w_blk_ = w_blk;
+    nh_blk_ = h_blk;
+
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+  } else if (kernel_func_names_[0] == "conv2d_5x5_multi_batch" ||
+             kernel_func_names_[0] == "conv2d_5x5_opt") {
+    int w_blk_size = 5;
+    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
+
+    int h_blk_size = 1;
+    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
+
+    c_blk_ = default_c_blk_;
+    w_blk_ = w_blk;
+    nh_blk_ = h_blk;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+  } else if (kernel_func_names_[0] == "conv2d_7x7_multi_batch" ||
+             kernel_func_names_[0] == "conv2d_7x7_opt") {
+    int w_blk_size = 5;
+    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
+
+    int h_blk_size = 1;
+    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
+
+    c_blk_ = default_c_blk_;
+    w_blk_ = w_blk;
+    nh_blk_ = h_blk;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+  }
+}
+
+void ConvImageCompute::Conv2d1x1opt(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
   auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, default_w_blk_);
+  CL_CHECK_FATAL(status_);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ conv2d params ============";
-    PrintConvInfo();
-#endif
-
-    // TODO(ysh329): update output, input
-    CHECK_EQ(input_tensor_n_, output_tensor_n_);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 local_work_size_,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
+  if (enable_tune) {
+    CLRuntime::Global()->command_queue().finish();
   }
+}
 
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
+void ConvImageCompute::Conv2d3x3(bool enable_tune) {
 #ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
+  PrintConvInfo();
 #endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
+  auto& context = ctx_->As<OpenCLContext>();
 
-  status = kernel.setArg(++arg_idx, pad_left_);
-  CL_CHECK_FATAL(status);
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, filter_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(17, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(18, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(19, groups_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(20, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
 
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_n_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 cl::NullRange,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
+}
+
+void ConvImageCompute::Conv2d3x3opt(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
+  auto& context = ctx_->As<OpenCLContext>();
+
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, pad_left_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_tensor_n_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
 #ifdef LITE_WITH_LOG
   //  VLOG(4) << "out_image: " << out_image;
@@ -828,563 +779,379 @@ void ConvImageCompute::Conv2d3x3opt(bool is_turn) {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 #endif
 
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                local_work_size_,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-  if (is_turn) {
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 local_work_size_,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::Conv2d5x5(bool is_turn) {
+void ConvImageCompute::Conv2d5x5(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
   auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ conv2d params ============";
-    PrintConvInfo();
-#endif
-
-    CHECK(context.cl_context() != nullptr);
-    CHECK_EQ(input_tensor_n_, output_tensor_n_);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
-  }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
-#endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(
-      ++arg_idx,
-      /*input_c_block*/ static_cast<int>(input_image_w_ / input_tensor_w_));
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-#ifdef LITE_WITH_LOG
-  //  VLOG(4) << "out_image: " << out_image;
-  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
-          << global_work_size_[1] << "," << global_work_size_[2] << "}";
-#endif
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                cl::NullRange,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-  if (is_turn) {
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 cl::NullRange,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::Conv2d5x5opt(bool is_turn) {
-  auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
-
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
-
+void ConvImageCompute::Conv2d5x5opt(bool enable_tune) {
 #ifdef LITE_WITH_LOG
-    VLOG(4) << "============ conv2d params ============";
-    PrintConvInfo();
+  PrintConvInfo();
 #endif
+  auto& context = ctx_->As<OpenCLContext>();
 
-    CHECK(context.cl_context() != nullptr);
-    CHECK_EQ(input_tensor_n_, output_tensor_n_);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
-  }
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, pad_left_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_tensor_n_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, pad_left_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_n_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                local_work_size_,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-  if (is_turn) {
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 local_work_size_,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::Conv2d7x7(bool is_turn) {
+void ConvImageCompute::Conv2d7x7(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
   auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ conv2d params ============";
-    PrintConvInfo();
-#endif
-
-    CHECK(context.cl_context() != nullptr);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
-  }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
-#endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(
-      ++arg_idx,
-      /*input_c_block*/ static_cast<int>(input_image_w_ / input_tensor_w_));
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-#ifdef LITE_WITH_LOG
-  //  VLOG(4) << "out_image: " << out_image;
-  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
-          << global_work_size_[1] << "," << global_work_size_[2] << "}";
-#endif
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                cl::NullRange,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-
-  if (is_turn) {
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 cl::NullRange,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::Conv2d7x7opt(bool is_turn) {
-  auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
-
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
-
+void ConvImageCompute::Conv2d7x7opt(bool enable_tune) {
 #ifdef LITE_WITH_LOG
-    VLOG(4) << "============ conv2d 7x7 params ============";
-    PrintConvInfo();
+  PrintConvInfo();
 #endif
+  auto& context = ctx_->As<OpenCLContext>();
 
-    CHECK(context.cl_context() != nullptr);
-    CHECK_EQ(input_tensor_n_, output_tensor_n_);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
-  }
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, pad_left_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_tensor_n_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 local_work_size_,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
 
-  status = kernel.setArg(++arg_idx, pad_left_);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_n_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                local_work_size_,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-
-  if (is_turn) {
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::DepthwiseConv2d3x3s1(bool is_turn) {
+void ConvImageCompute::DepthwiseConv2d3x3s1(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
   auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, pad_left_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ DepthwiseConv2d3x3s1 params ============";
-    PrintConvInfo();
-#endif
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 local_work_size_,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
 
-    CHECK(context.cl_context() != nullptr);
-  }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
-#endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, pad_left_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_c_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                local_work_size_,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-
-  if (is_turn) {
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::DepthwiseConv2d3x3(bool is_turn) {
+void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
   auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ DepthwiseConv2d3x3 params ============";
-    PrintConvInfo();
-#endif
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 cl::NullRange,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
 
-    CHECK(context.cl_context() != nullptr);
-  }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
-#endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, offset_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(
-      ++arg_idx,
-      /*input_c_block*/ static_cast<const int>((input_tensor_c_ + 3) / 4));
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                cl::NullRange,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
-
-  if (is_turn) {
+  if (enable_tune) {
     CLRuntime::Global()->command_queue().finish();
   }
 }
 
-void ConvImageCompute::DepthwiseConv2d(bool is_turn) {
+void ConvImageCompute::DepthwiseConv2d(bool enable_tune) {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
   auto& context = ctx_->As<OpenCLContext>();
-  auto kernel = kernel_;
-  cl_int status;
 
-  if (is_first_epoch_for_run_ || conv_param_->x->dims() != last_input_dims_) {
-    is_first_epoch_for_run_ = false;
-    last_input_dims_ = conv_param_->x->dims();
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
 
-    CHECK(context.cl_context() != nullptr);
-    const bool is_element_wise_bias =
-        has_bias_ && conv_param_->output->dims() == conv_param_->bias->dims();
+  status_ = EnqueueNDRangeKernel(context,
+                                 kernel_,
+                                 cl::NullRange,
+                                 global_work_size_,
+                                 cl::NullRange,
+                                 nullptr,
+                                 event_);
+  CL_CHECK_FATAL(status_);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "============ depthwise conv2d params ============";
-    PrintConvInfo();
-#endif
-    CHECK(context.cl_context() != nullptr);
-    CHECK_EQ(input_tensor_n_, output_tensor_n_);
-    CHECK_GE(conv_param_->dilations->size(), 2);
-    CHECK(dilation_h_ == dilation_w_);
-    CHECK_GE(conv_param_->x->dims().size(), 4);
-    CHECK_GE(conv_param_->paddings->size(), 2);
-    CHECK(pad_left_ == pad_up_);
-    CHECK_GE(conv_param_->strides.size(), 2);
-    CHECK(stride_h_ == stride_w_);
+  if (enable_tune) {
+    CLRuntime::Global()->command_queue().finish();
   }
-
-  int arg_idx = 0;
-  status = kernel.setArg(arg_idx, c_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, w_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, nh_blk_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *input_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, *filter_image_p_);
-  CL_CHECK_FATAL(status);
-  if (has_bias_) {
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "set bias_image: ";
-#endif
-    status = kernel.setArg(++arg_idx, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-  }
-  status = kernel.setArg(++arg_idx, *output_image_p_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, stride_h_);
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, offset_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(
-      ++arg_idx,
-      /*input_c_block*/ static_cast<int>(input_image_w_ / input_tensor_w_));
-  CL_CHECK_FATAL(status);
-
-  status = kernel.setArg(++arg_idx, dilation_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, input_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, output_tensor_h_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_tensor_w_);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(++arg_idx, filter_tensor_h_);
-  CL_CHECK_FATAL(status);
-
-#ifdef LITE_WITH_LOG
-  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
-          << global_work_size_[1] << "," << global_work_size_[2] << "}";
-#endif
-
-  status = EnqueueNDRangeKernel(context,
-                                kernel,
-                                cl::NullRange,
-                                global_work_size_,
-                                cl::NullRange,
-                                nullptr,
-                                event_);
-  CL_CHECK_FATAL(status);
 }
 
 void ConvImageCompute::Run() { (this->*impl_)(false); }
@@ -1407,9 +1174,11 @@ void ConvImageCompute::PrintConvInfo() {
   VLOG(4) << "offset: ";
   VLOG(4) << "dilations.size : " << conv_param_->dilations->size();
   VLOG(4) << "dilations: " << dilation_h_ << ", " << dilation_w_;
+  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
+          << global_work_size_[1] << "," << global_work_size_[2] << "}";
 }
 
-double ConvImageCompute::Turn(int times) {
+double ConvImageCompute::Tune(int times) {
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);

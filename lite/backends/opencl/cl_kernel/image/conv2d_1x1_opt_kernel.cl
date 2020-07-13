@@ -6,9 +6,7 @@ __kernel void conv2d_1x1_opt(
     __private const int global_size_dim2,
     __read_only image2d_t input_image,
     __read_only image2d_t filter,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
     __read_only image2d_t bias,
-#endif
 #ifdef BATCH_NORM
     __read_only image2d_t new_scale,
     __read_only image2d_t new_biase,
@@ -284,9 +282,7 @@ __kernel void conv2d_1x1_simple(
     __private const int global_size_dim2,
     __read_only image2d_t input_image,
     __read_only image2d_t filter,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
     __read_only image2d_t bias,
-#endif
 #ifdef BATCH_NORM
     __read_only image2d_t new_scale,
     __read_only image2d_t new_biase,

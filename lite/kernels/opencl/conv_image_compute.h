@@ -33,6 +33,7 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
+
 class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
                                            PRECISION(kFP16),
                                            DATALAYOUT(kImageDefault)> {
@@ -42,8 +43,11 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override;
 
+  void ReInitWhenNeeded() override;
+
   void Run() override;
-  double Turn(int times = 5);
+
+  double Tune(int times = 5);
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -57,16 +61,17 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 
  private:
   void PrintConvInfo();
-  void Conv2d1x1opt(bool is_turn = false);
-  void Conv2d3x3(bool is_turn = false);
-  void Conv2d3x3opt(bool is_turn = false);
-  void Conv2d5x5(bool is_turn = false);
-  void Conv2d5x5opt(bool is_turn = false);
-  void Conv2d7x7(bool is_turn = false);
-  void Conv2d7x7opt(bool is_turn = false);
-  void DepthwiseConv2d3x3s1(bool is_turn = false);
-  void DepthwiseConv2d3x3(bool is_turn = false);
-  void DepthwiseConv2d(bool is_turn = false);
+  void GetGlobalWorkSize();
+  void Conv2d1x1opt(bool enable_tune = false);
+  void Conv2d3x3(bool enable_tune = false);
+  void Conv2d3x3opt(bool enable_tune = false);
+  void Conv2d5x5(bool enable_tune = false);
+  void Conv2d5x5opt(bool enable_tune = false);
+  void Conv2d7x7(bool enable_tune = false);
+  void Conv2d7x7opt(bool enable_tune = false);
+  void DepthwiseConv2d3x3s1(bool enable_tune = false);
+  void DepthwiseConv2d3x3(bool enable_tune = false);
+  void DepthwiseConv2d(bool enable_tune = false);
 
   param_t* conv_param_{nullptr};
 
@@ -115,6 +120,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int input_tensor_w_{-1};
   int input_image_h_{-1};
   int input_image_w_{-1};
+  int input_c_block_{-1};
 
   int output_tensor_n_{-1};
   int output_tensor_c_{-1};
@@ -138,14 +144,15 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int default_nh_blk_ = 1;
   // =================
 
-  DDim last_input_dims_;
+  DDim last_input_dims_{};
   bool is_first_epoch_for_run_{true};
 
   cl::Kernel kernel_;
+  cl_int status_;
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
-  bool use_turn_{false};
+  bool use_tune_{false};
 };
 
 }  // namespace opencl
