@@ -17,8 +17,8 @@ limitations under the License. */
 #include <cstddef>
 #include <string>
 #include <vector>
-#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -108,13 +108,12 @@ void SequenceConvCompute::Run() {
                             kernel_size * hidden_dim,
                             input_row_end - input_row_begin);
 #else
-      paddle::lite::arm::math::transpose(
-          tmp_data,
-          sub_col_data,
-          kernel_size * hidden_dim,
-          input_row_end - input_row_begin);
-#endif    
-      }
+      paddle::lite::arm::math::transpose(tmp_data,
+                                         sub_col_data,
+                                         kernel_size * hidden_dim,
+                                         input_row_end - input_row_begin);
+#endif  
+    }
   }
 
   // SGDMM C := alpha * A * B + beta * C
