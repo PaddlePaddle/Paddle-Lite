@@ -157,7 +157,7 @@ void slice_compute(const lite::Tensor* in,
     }
   }
 
-  out->mutable_data<float>(lite::TargetType::kX86);
+  out->mutable_data<float>();
 
   auto new_out_dims = out->dims();
   auto offsets = Eigen::array<int, D>();

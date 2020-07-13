@@ -24,6 +24,9 @@
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif
 
 #ifdef LITE_WITH_MLU
 #include "lite/backends/mlu/target_wrapper.h"
@@ -272,7 +275,7 @@ CxxConfig::mlu_firstconv_param() const {
 
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
-  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
+  lite::TargetWrapperXPU::workspace_l3_size_per_thread = l3_size;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
@@ -282,7 +285,7 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
-  lite::Context<TargetType::kXPU>::SetDev(dev_no);
+  lite::TargetWrapperXPU::SetDev(dev_no);
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
@@ -291,7 +294,7 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 
 void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
-  lite::Context<TargetType::kXPU>::_multi_encoder_precision = precision;
+  lite::TargetWrapperXPU::multi_encoder_precision = precision;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
