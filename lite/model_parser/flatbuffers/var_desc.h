@@ -48,6 +48,12 @@ class VarDesc : public VarDescAPI {
     return dims_vec;
   }
 
+  VarDescAPI::Type GetDataType() const {
+    CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
+    return static_cast<VarDescAPI::Type>(
+        desc_->type()->lod_tensor()->tensor()->data_type());
+  }
+
   VarDesc() = delete;
 
  private:
@@ -62,10 +68,6 @@ class VarDesc : public VarDescAPI {
   // caused by different building options.
 
  public:
-  VarDescAPI::Type GetDataType() const {
-    NotImplemented();
-    return data_type_;
-  }
   void SetDataType(Type data_type) { NotImplemented(); }
   void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
 
@@ -74,7 +76,6 @@ class VarDesc : public VarDescAPI {
     LOG(FATAL) << "The additional interfaces of VarDesc is temporarily "
                   "unavailable in read-only mode.";
   }
-  Type data_type_;
   std::vector<int64_t> shape_;
 };
 

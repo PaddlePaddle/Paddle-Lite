@@ -95,7 +95,7 @@ class OpDesc : public OpDescAPI {
 
   OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
     const auto& attr = desc_->attrs()->LookupByKey(name.c_str());
-    CHECK(attr);
+    CHECK(attr) << "Can not find attr: " << name;
     return static_cast<OpDescAPI::AttrType>(attr->type());
   }
 

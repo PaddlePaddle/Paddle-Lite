@@ -57,6 +57,7 @@ class VectorView {
  public:
   typedef vector_view::VectorTraits<T, U> Traits;
   explicit VectorView(typename Traits::vector_type const* cvec) {
+    CHECK(cvec);
     cvec_ = cvec;
   }
   typename Traits::subscript_return_type operator[](size_t i) const {
