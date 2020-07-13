@@ -46,7 +46,7 @@ void seq_pool_sum<float>(const float* din,
       memcpy(dout_ptr, din_ptr, width * sizeof(float));
       din_ptr += width;
       height = height - 1;
-#if 0      
+#if 0
       for (int h = 0; h < height; h++) {
         for (int w = 0; w < width; ++w) {
           dout_ptr[w] += din_ptr[w];
