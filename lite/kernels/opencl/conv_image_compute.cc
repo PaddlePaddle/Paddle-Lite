@@ -467,9 +467,11 @@ void ConvImageCompute::PrepareForRun() {
 void ConvImageCompute::ReInitWhenNeeded() {
   conv_param_ = param_.get_mutable<param_t>();
   auto x_dims = conv_param_->x->dims();
+#ifdef LITE_WITH_LOG
   LOG(INFO) << "is_first_epoch_for_run_:" << is_first_epoch_for_run_
             << ", last_input_dims_:" << last_input_dims_
             << ", x_dims:" << x_dims;
+#endif
 
   if (is_first_epoch_for_run_ || last_input_dims_ != x_dims) {
     is_first_epoch_for_run_ = false;
