@@ -30,7 +30,7 @@ namespace fbs {
 
 class OpDesc : public OpDescAPI {
  public:
-  explicit OpDesc(proto::OpDesc* desc) : desc_(desc) { CHECK(desc_); }
+  explicit OpDesc(proto::OpDesc const* desc) : desc_(desc) { CHECK(desc_); }
 
   std::string Type() const override { return desc_->type()->str(); }
 

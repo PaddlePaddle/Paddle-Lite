@@ -25,6 +25,12 @@ proto::BlockDesc const* ProgramDesc::GetBlock<proto::BlockDesc>(
   return desc_->blocks()->Get(idx);
 }
 
+template <>
+BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
+  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  return &blocks_[idx];
+}
+
 }  // namespace fbs
 }  // namespace lite
 }  // namespace paddle

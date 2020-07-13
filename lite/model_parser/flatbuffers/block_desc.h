@@ -14,8 +14,11 @@
 
 #pragma once
 
+#include <vector>
 #include "lite/model_parser/base/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/op_desc.h"
+#include "lite/model_parser/flatbuffers/var_desc.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -24,7 +27,17 @@ namespace fbs {
 
 class BlockDesc : public BlockDescAPI {
  public:
-  explicit BlockDesc(proto::BlockDesc* desc) : desc_(desc) { CHECK(desc_); }
+  explicit BlockDesc(proto::BlockDesc const* desc) : desc_(desc) {
+    CHECK(desc_);
+    vars_.reserve(VarsSize());
+    ops_.reserve(OpsSize());
+    for (size_t idx = 0; idx < VarsSize(); ++idx) {
+      vars_.push_back(VarDesc(desc_->vars()->Get(idx)));
+    }
+    for (size_t idx = 0; idx < OpsSize(); ++idx) {
+      ops_.push_back(OpDesc(desc_->ops()->Get(idx)));
+    }
+  }
 
   int32_t Idx() const override { return desc_->idx(); }
 
@@ -52,6 +65,8 @@ class BlockDesc : public BlockDescAPI {
 
  private:
   proto::BlockDesc const* desc_;  // not_own
+  std::vector<VarDesc> vars_;
+  std::vector<OpDesc> ops_;
 };
 
 }  // namespace fbs

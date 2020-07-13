@@ -16,7 +16,9 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 #include "lite/model_parser/base/program_desc.h"
+#include "lite/model_parser/flatbuffers/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 #include "lite/utils/all.h"
 
@@ -31,13 +33,17 @@ class ProgramDesc : public ProgramDescAPI {
     Init(std::move(buf));
   }
 
+  size_t BlocksSize() const override { return desc_->blocks()->size(); }
+
   void Init(std::unique_ptr<const char[]> buf) {
     CHECK(buf.get() != nullptr);
     buf_ = std::move(buf);
     desc_ = proto::GetProgramDesc(buf_.get());
+    blocks_.reserve(BlocksSize());
+    for (size_t idx = 0; idx < BlocksSize(); ++idx) {
+      blocks_.push_back(BlockDesc(desc_->blocks()->Get(idx)));
+    }
   }
-
-  size_t BlocksSize() const override { return desc_->blocks()->size(); }
 
   template <typename T>
   T const* GetBlock(int32_t idx) const;
@@ -49,9 +55,14 @@ class ProgramDesc : public ProgramDescAPI {
     return desc_->version()->version();
   }
 
+  proto::ProgramDesc const* raw_desc() const { return desc_; }
+
+  const void* raw_buf() const { return buf_.get(); }
+
  private:
   proto::ProgramDesc const* desc_;
   std::unique_ptr<const char[]> buf_;
+  std::vector<BlockDesc> blocks_;
 
  private:
   ProgramDesc& operator=(const ProgramDesc&) = delete;

@@ -30,6 +30,18 @@ proto::OpDesc const* BlockDesc::GetOp<proto::OpDesc>(int32_t idx) const {
   return desc_->ops()->Get(idx);
 }
 
+template <>
+VarDesc const* BlockDesc::GetVar<VarDesc>(int32_t idx) const {
+  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  return &vars_[idx];
+}
+
+template <>
+OpDesc const* BlockDesc::GetOp<OpDesc>(int32_t idx) const {
+  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  return &ops_[idx];
+}
+
 }  // namespace fbs
 }  // namespace lite
 }  // namespace paddle
