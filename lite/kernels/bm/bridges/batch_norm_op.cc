@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include <math.h>
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -64,10 +65,16 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto* bias_data = bias->mutable_data<float>();
   auto* mean_data = mean->mutable_data<float>();
   auto* variance_data = variance->mutable_data<float>();
+
+  float* new_bias = static_cast<float*>(malloc(bias->memory_size()));
+  float* new_scale = static_cast<float*>(malloc(scale->memory_size()));
+  CHECK(new_bias != nullptr);
+  CHECK(new_scale != nullptr);
+
   for (int c = 0; c < channel_size; c++) {
     float inv_scale = 1.f / (std::sqrt(variance_data[c] + epsilon));
-    bias_data[c] = bias_data[c] - inv_scale * scale_data[c] * mean_data[c];
-    scale_data[c] = inv_scale * scale_data[c];
+    new_bias[c] = bias_data[c] - inv_scale * scale_data[c] * mean_data[c];
+    new_scale[c] = inv_scale * scale_data[c];
   }
 
   const int input_num = 1;
@@ -86,11 +93,13 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                   output_dims.size(),
                   static_cast<const char*>(output_var_name.c_str()),
                   static_cast<const char*>(unique_op_name.c_str()),
-                  static_cast<const float*>(scale->mutable_data<float>()),
-                  static_cast<const float*>(bias->mutable_data<float>()),
+                  static_cast<const float*>(new_scale),
+                  static_cast<const float*>(new_bias),
                   1,
                   1,
                   1);
+  free(new_scale);
+  free(new_bias);
   delete[] shape;
   delete[] name;
   delete[] dim;
