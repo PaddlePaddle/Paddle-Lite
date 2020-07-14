@@ -48,6 +48,12 @@ class BlockDesc : public BlockDescAPI {
   template <typename T>
   T const* GetVar(int32_t idx) const;
 
+  template <typename T>
+  T* GetVar(int32_t idx) {
+    NotImplemented();
+    return nullptr;
+  }
+
   size_t OpsSize() const override {
     CHECK(desc_);
     CHECK(desc_->ops());
@@ -57,16 +63,30 @@ class BlockDesc : public BlockDescAPI {
   template <typename T>
   T const* GetOp(int32_t idx) const;
 
+  template <typename T>
+  T* GetOp(int32_t idx) {
+    NotImplemented();
+    return nullptr;
+  }
+
+  const std::vector<VarDesc>& GetVars() const { return vars_; }
+
   int32_t ForwardBlockIdx() const override {
     return desc_->forward_block_idx();
   }
 
-  BlockDesc() = delete;
+  BlockDesc() { NotImplemented(); }
 
  private:
   proto::BlockDesc const* desc_;  // not_own
   std::vector<VarDesc> vars_;
   std::vector<OpDesc> ops_;
+
+ private:
+  void NotImplemented() const {
+    LOG(FATAL) << "The additional interfaces of BlockDesc is temporarily "
+                  "unavailable in read-only mode.";
+  }
 };
 
 }  // namespace fbs

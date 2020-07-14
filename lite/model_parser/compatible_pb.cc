@@ -277,7 +277,7 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   template <>                                                            \
   void TransformProgramDescCppToAny<NT::T>(const cpp::T &cpp_desc,       \
                                            NT::T *any_desc) {            \
-    auto &desc = const_cast<cpp::T &>(cpp_desc);                         \
+    auto &desc = cpp_desc;                                               \
     if (desc.HasVersion()) {                                             \
       any_desc->SetVersion(desc.Version());                              \
     }                                                                    \

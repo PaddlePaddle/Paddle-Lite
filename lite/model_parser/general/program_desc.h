@@ -30,12 +30,22 @@ class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
 
+  void CopyFrom(const ProgramDesc& other) {
+    version_ = other.Version();
+    blocks_ = other.blocks();
+  }
+
+  const std::vector<BlockDesc>& blocks() const { return blocks_; }
+
   size_t BlocksSize() const override { return blocks_.size(); }
 
   void ClearBlocks() override { blocks_.clear(); }
 
   template <typename T>
   T* GetBlock(int32_t idx);
+
+  template <typename T>
+  T const* GetBlock(int32_t idx) const;
 
   std::vector<BlockDesc>& GetBlocks() { return blocks_; }
 

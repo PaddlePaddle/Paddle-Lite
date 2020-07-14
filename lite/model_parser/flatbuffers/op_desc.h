@@ -124,8 +124,6 @@ class OpDesc : public OpDescAPI {
   template <typename T>
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(size_t idx) const;
 
-  OpDesc() = delete;
-
  private:
   proto::OpDesc const* desc_;
 
@@ -138,6 +136,7 @@ class OpDesc : public OpDescAPI {
   // caused by different building options.
 
  public:
+  OpDesc() { NotImplemented(); }
   bool HasInput(const std::string& param) const {
     return desc_->inputs()->LookupByKey(param.c_str()) != nullptr;
   }

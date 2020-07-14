@@ -54,8 +54,6 @@ class VarDesc : public VarDescAPI {
         desc_->type()->lod_tensor()->tensor()->data_type());
   }
 
-  VarDesc() = delete;
-
  private:
   proto::VarDesc const* desc_;
 
@@ -68,6 +66,7 @@ class VarDesc : public VarDescAPI {
   // caused by different building options.
 
  public:
+  VarDesc() { NotImplemented(); }
   void SetDataType(Type data_type) { NotImplemented(); }
   void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
 

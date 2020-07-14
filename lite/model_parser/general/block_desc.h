@@ -46,6 +46,9 @@ class BlockDesc : public BlockDescAPI {
   template <typename T>
   T* GetVar(int32_t idx);
 
+  template <typename T>
+  T const* GetVar(int32_t idx) const;
+
   std::vector<VarDesc>& GetVars() { return vars_; }
 
   template <typename T>
@@ -57,6 +60,9 @@ class BlockDesc : public BlockDescAPI {
 
   template <typename T>
   T* GetOp(int32_t idx);
+
+  template <typename T>
+  T const* GetOp(int32_t idx) const;
 
   template <typename T>
   T* AddOp();

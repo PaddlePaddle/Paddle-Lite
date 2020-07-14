@@ -45,8 +45,23 @@ class ProgramDesc : public ProgramDescAPI {
     }
   }
 
+  void CopyFrom(const ProgramDesc& other) {
+    size_t length = strlen(static_cast<const char*>(other.raw_buf()));
+    std::unique_ptr<char[]> buf(new char[length]);
+    memcpy(buf.get(), other.raw_buf(), length);
+    Init(std::move(buf));
+  }
+
   template <typename T>
   T const* GetBlock(int32_t idx) const;
+
+  template <typename T>
+  T* GetBlock(int32_t idx) {
+    NotImplemented();
+    return nullptr;
+  }
+
+  const std::vector<BlockDesc>& GetBlocks() const { return blocks_; }
 
   bool HasVersion() const override { return desc_->version() != nullptr; }
 
@@ -67,6 +82,10 @@ class ProgramDesc : public ProgramDescAPI {
  private:
   ProgramDesc& operator=(const ProgramDesc&) = delete;
   ProgramDesc(const ProgramDesc&) = delete;
+  void NotImplemented() const {
+    LOG(FATAL) << "The additional interfaces of ProgramDesc is temporarily "
+                  "unavailable in read-only mode.";
+  }
 };
 
 }  // namespace fbs

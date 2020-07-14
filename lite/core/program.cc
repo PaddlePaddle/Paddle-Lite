@@ -195,7 +195,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 
   // Create operators.
-  auto program = prog;
+  auto& program = prog;
   CHECK(program.BlocksSize());
   auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block.OpsSize(); ++i) {
@@ -262,7 +262,7 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
     }
   };
 
-  auto program = prog;
+  auto& program = prog;
   CHECK(program.BlocksSize());
   for (size_t b = 0; b < program.BlocksSize(); ++b) {
     auto& main_block = *program.GetBlock<cpp::BlockDesc>(b);
