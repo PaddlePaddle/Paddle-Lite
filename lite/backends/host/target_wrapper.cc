@@ -30,7 +30,6 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
                                     (~(MALLOC_ALIGN - 1)));
   static_cast<void**>(r)[-1] = p;
-  memset(r, 0, size);
   return r;
 }
 void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
