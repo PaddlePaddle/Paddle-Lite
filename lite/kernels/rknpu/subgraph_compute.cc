@@ -28,13 +28,36 @@ namespace lite {
 namespace kernels {
 namespace rknpu {
 
-int SubgraphEngine::BuildDeviceProgram() {
+bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
+  // Obtain the origin input tensors, and create the origin output
+  // tensors(Don't try to access them before launch the device program or the
+  // origin program)
+  PrepareWorkspaceForOriginProgram();
+  // Create the device input and output tensors, but don't initialize them
+  // with the dimensions
+  device_itensors_.resize(input_names_.size());
+  for (int i = 0; i < input_names_.size(); i++) {
+    device_itensors_[i].reset(new hiai::AiTensor);
+    CHECK(device_itensors_[i]);
+  }
+  device_otensors_.resize(output_names_.size());
+  for (int i = 0; i < output_names_.size(); i++) {
+    device_otensors_[i].reset(new hiai::AiTensor);
+    CHECK(device_otensors_[i]);
+  }
+  return true;
+}
+
+bool SubgraphEngine::BuildDeviceProgram() {
   LOG(INFO) << "[RKNPU]:BuildDeviceProgram";
   int status = 0;
   // Convert all of ops and their input vars and weights and added into the NPU
   // RKNPU IR graph
   subgraph::rknpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
@@ -42,13 +65,13 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->InferShape();
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kRKNPU))) {
-      return subgraph::FAILED;
+      return false;
     }
     auto kernel = inst.kernel();
     status |= bridges.Select(op_type, TARGET(kRKNPU))(
         reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
-      return subgraph::FAILED;
+      return false;
     }
   }
   // Collect the valid input and output nodes in the RKNPU IR graph and update
@@ -91,7 +114,7 @@ int SubgraphEngine::BuildDeviceProgram() {
       model_name_, graph.GetHandle(), device_itensors_, device_otensors_);
   if (device_program_ == nullptr) {
     LOG(WARNING) << "[RKNPU] Build model failed!";
-    return subgraph::FAILED;
+    return false;
   }
 
   // input
@@ -165,10 +188,10 @@ int SubgraphEngine::BuildDeviceProgram() {
         break;
     }
   }
-  return status;
+  return true;
 }
 
-int SubgraphEngine::LaunchDeviceProgram() {
+bool SubgraphEngine::LaunchDeviceProgram() {
   LOG(INFO) << "[RKNPU]:LaunchDeviceProgram";
   std::vector<rk::nn::InputInfo> inputs;
   std::vector<rk::nn::OutputInfo> outputs;
@@ -195,7 +218,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
   device_program_->SetInputs(inputs);
   device_program_->Run();
   device_program_->GetOutputs(outputs);
-  return 0;
+  return true;
 }
 
 void SubgraphCompute::PrepareForRun() {
@@ -208,13 +231,12 @@ void SubgraphCompute::PrepareForRun() {
                                    param.output_data_names,
                                    param.scope));
   CHECK(engine_);
-  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
   LOG(INFO) << "[RKNPU]:Run";
   CHECK(engine_);
-  engine_->Launch();
+  engine_->Run();
 }
 
 }  // namespace rknpu
