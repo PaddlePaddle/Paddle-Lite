@@ -63,9 +63,14 @@ class CLContext {
 
   cl::NDRange LocalWorkSize(cl::NDRange global_work_size, size_t max_work_size);
 
-  cl::NDRange LocalWorkSizeTurn(cl::NDRange global_work_size,
+  cl::NDRange LocalWorkSizeTune(cl::NDRange global_work_size,
                                 size_t max_work_size,
                                 int divitor = 2);
+
+  cl::NDRange LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
+                                       size_t max_work_size,
+                                       int divitor = 2);
+  bool IsArmMali();
   //  cl::NDRange LocalWorkSizeConv1x1(cl::NDRange global_work_size,
   //                                   size_t max_work_size);
 
