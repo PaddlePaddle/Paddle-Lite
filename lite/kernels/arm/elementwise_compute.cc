@@ -202,17 +202,13 @@ void ElementwiseMulCompute<T, PType>::Run() {
   }
 }
 
-template <>
-void ElementwiseMulCompute<int64_t, PRECISION(kInt64)>::Run() {
-  auto& param = this->template Param<operators::ElementwiseParam>();
-  lite::arm::math::elementwise_compute_basic<int64_t>(param, "mul", "");
-}
-
-void ElementwiseMulActivationCompute::Run() {
-  auto& param = Param<operators::FusionElementwiseActivationParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
+template <typename T, PrecisionType PType>
+void ElementwiseMulActivationCompute<T, PType>::Run() {
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
+  auto* x_data = param.X->template data<T>();
+  auto* y_data = param.Y->template data<T>();
+  auto* out_data = param.Out->template mutable_data<T>();
   int axis = param.axis;
   std::string act_type = param.act_type;
   auto x_dims = param.X->dims();
@@ -221,21 +217,21 @@ void ElementwiseMulActivationCompute::Run() {
   if (x_dims.size() < y_dims.size() &&
       is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
-      lite::arm::math::elementwise_mul_relu_broadcast<float>(
+      lite::arm::math::elementwise_mul_relu_broadcast<T>(
           y_data, x_data, out_data, pre, n, post);
     } else {
       LOG(FATAL) << "unsupported Activation type: " << act_type;
     }
   } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     if (act_type == "relu") {
-      lite::arm::math::elementwise_mul_relu_broadcast(
+      lite::arm::math::elementwise_mul_relu_broadcast<T>(
           x_data, y_data, out_data, pre, n, post);
     } else {
       LOG(FATAL) << "unsupported Activation type: " << act_type;
     }
   } else {
     if (act_type == "relu") {
-      lite::arm::math::elementwise_mul_relu(
+      lite::arm::math::elementwise_mul_relu<T>(
           x_data, y_data, out_data, x_dims.production());
     } else {
       LOG(FATAL) << "unsupported Activation type: " << act_type;
@@ -454,16 +450,30 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_mul_activation,
-    kARM,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::arm::ElementwiseMulActivationCompute,
-    def)
+using fusion_elementwise_mul_activation_float = paddle::lite::kernels::arm::
+    ElementwiseMulActivationCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_mul_activation,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     fusion_elementwise_mul_activation_float,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using fusion_elementwise_mul_activation_int64 = paddle::lite::kernels::arm::
+    ElementwiseMulActivationCompute<int64_t, PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_mul_activation,
+                     kARM,
+                     kInt64,
+                     kNCHW,
+                     fusion_elementwise_mul_activation_int64,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_max,

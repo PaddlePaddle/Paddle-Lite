@@ -437,13 +437,13 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
                        &local_var_nodes,
                        &unused_var_nodes);
   // A simplified model without the original weight/local/unused nodes on the
-  // subgraph ops will be saved only if 'SUBGRAPH_DISABLE_ONLINE_MODE' is set to
-  // true and Predictor->Run(...), Predictor->Save(...) is called.
+  // subgraph ops will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to
+  // true(default) and Predictor->Run(...), Predictor->Save(...) is called.
   std::set<Node *> input_var_nodes(idata_var_nodes.begin(),
                                    idata_var_nodes.end());
   std::set<Node *> output_var_nodes(odata_var_nodes.begin(),
                                     odata_var_nodes.end());
-  if (!GetBoolFromEnv(SUBGRAPH_DISABLE_ONLINE_MODE)) {
+  if (GetBoolFromEnv(SUBGRAPH_ONLINE_MODE, true)) {
     input_var_nodes.insert(weight_var_nodes.begin(), weight_var_nodes.end());
     output_var_nodes.insert(local_var_nodes.begin(), local_var_nodes.end());
     output_var_nodes.insert(unused_var_nodes.begin(), unused_var_nodes.end());

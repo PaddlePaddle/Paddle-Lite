@@ -1753,6 +1753,22 @@ struct ClipParam : ParamBase {
   float max{};
 };
 
+struct PrintParam : ParamBase {
+  const lite::Tensor* in{};
+  lite::Tensor* out{};
+  std::string name;
+  int first_n{-1};
+  std::string message;
+  int summarize{20};
+  bool print_tensor_name{true};
+  bool print_tensor_type{true};
+  bool print_tensor_shape{true};
+  bool print_tensor_lod{true};
+  bool print_tensor_layout{true};
+  std::string print_phase;
+  bool is_forward{true};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

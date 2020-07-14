@@ -17,6 +17,8 @@ WITH_JAVA=ON
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
 WITH_LOG=ON
+# controls whether to throw the exception when error occurs, default is OFF 
+WITH_EXCEPTION=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -145,6 +147,7 @@ function make_tiny_publish_so {
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
@@ -194,6 +197,7 @@ function make_full_publish_so {
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
@@ -237,6 +241,7 @@ function print_usage {
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
+    echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
@@ -317,6 +322,18 @@ function main {
             # ON or OFF, default ON
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
+            --with_exception=*)
+                WITH_EXCEPTION="${i#*=}"
+                if [[ $WITH_EXCEPTION == "ON" && $ARCH == "armv7" && $TOOLCHAIN != "clang" ]]; then
+                     set +x
+                     echo
+                     echo -e "Error: only clang provide C++ exception handling support for 32-bit ARM."
+                     echo
+                     exit 1
+                fi
                 shift
                 ;;
             # compiling lib which can operate on opencl and cpu.

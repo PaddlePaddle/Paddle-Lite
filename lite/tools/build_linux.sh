@@ -17,6 +17,8 @@ PY_VERSION=""
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
 WITH_LOG=ON
+# controls whether to throw the exception when error occurs, default is OFF 
+WITH_EXCEPTION=OFF
 # options of striping lib according to input model.
 WITH_STRIP=OFF
 OPTMODEL_DIR=""
@@ -60,6 +62,7 @@ function init_cmake_mutable_options {
                         -DPY_VERSION=$PY_VERSION \
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
+                        -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
@@ -210,6 +213,7 @@ function print_usage {
     echo -e "|     --python_version: (2.7|3.5|3.7); controls python version to compile whl, default is None                                                         |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
+    echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                                            |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
     echo -e "|     ./lite/tools/build_linux.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                                |"
@@ -277,6 +281,11 @@ function main {
             # ON or OFF, default ON
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
+            --with_exception=*)
+                WITH_EXCEPTION="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
