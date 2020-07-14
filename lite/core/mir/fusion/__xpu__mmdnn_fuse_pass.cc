@@ -418,10 +418,11 @@ class XPUMmdnnMatchConvTopkFuser : public FuseBase {
 
     auto* match_op_info = matched.at("match_matrix_tensor")->stmt()->op_info();
     op_desc.SetAttr<float>("input_w_max",
-                           match_op_info->GetAttr<float>("w_max"));
+                           match_op_info->GetAttr<float>("__xpu__w_max"));
     op_desc.SetAttr<int>("dim_t", match_op_info->GetAttr<int>("dim_t"));
     auto* conv_op_info = matched.at("conv")->stmt()->op_info();
-    op_desc.SetAttr<float>("conv_w_max", conv_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("conv_w_max",
+                           conv_op_info->GetAttr<float>("__xpu__w_max"));
     auto* topk_op_info = matched.at("topk")->stmt()->op_info();
     op_desc.SetAttr<std::vector<int>>(
         "topks", topk_op_info->GetAttr<std::vector<int>>("topks"));
@@ -818,17 +819,17 @@ class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
     auto* grnn_fw_op_info = matched.at("grnn_left")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wh_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wi_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* grnn_rv_op_info = matched.at("grnn_right")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wh_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wi_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* att_fc_op_info = matched.at("att_2in1")->stmt()->op_info();
     op_desc.SetAttr<float>("att_fc_w_max",
                            att_fc_op_info->GetAttr<float>("W_max"));
@@ -1093,23 +1094,26 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     auto* grnn_fw_op_info = matched.at("grnn_fw")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wh_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wi_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* grnn_rv_op_info = matched.at("grnn_rv")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wh_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wi_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* fc0_op_info = matched.at("search_fc0")->stmt()->op_info();
-    op_desc.SetAttr<float>("fc0_w_max", fc0_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("fc0_w_max",
+                           fc0_op_info->GetAttr<float>("__xpu__w_max"));
     auto* fc1_op_info = matched.at("search_fc1")->stmt()->op_info();
-    op_desc.SetAttr<float>("fc1_w_max", fc1_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("fc1_w_max",
+                           fc1_op_info->GetAttr<float>("__xpu__w_max"));
     auto* fc2_op_info = matched.at("search_fc2")->stmt()->op_info();
-    op_desc.SetAttr<float>("fc2_w_max", fc2_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("fc2_w_max",
+                           fc2_op_info->GetAttr<float>("__xpu__w_max"));
 
     auto* new_stmt = matched.at("concat_7in1")->stmt();
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
