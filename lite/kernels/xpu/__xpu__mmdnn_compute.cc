@@ -510,12 +510,13 @@ class MMDNNMatchConvTopk {
             float conv_w_max,
             int dim_t,
             int dim_in,
+            int out_channel,
             int upper_bound_batch,
             int upper_bound_seqlen,
             const std::vector<int>& topks) {
     dim_t_ = dim_t;
     dim_in_ = dim_in;
-    out_channel_ = 5;  // TODO(miaotianxiang):
+    out_channel_ = out_channel;
     topks_ = topks;
 
     xw_fc_.Init(input_w,
@@ -990,7 +991,7 @@ class MMDNNMergeAll {
     fc2_.Init(
         fc2_w, fc2_w_max, fc2_b, fc2_n_, fc2_k_, xdnn::Activation_t::LINEAR);
 
-    int hbm_total_len = max_cap_l * cap_h_ * 4 +
+    int hbm_total_len = max_cap_l * cap_e_ * 2 + max_cap_l * cap_h_ * 2 +
                         upper_bound_batch * (2 * cap_h_ + fc0_k_ + fc0_n_ +
                                              fc1_k_ + fc1_n_ + fc2_n_);
     hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
@@ -1000,7 +1001,7 @@ class MMDNNMergeAll {
 
   void Infer(xdnn::Context* ctx,
              const MMDNNIdInfo& sentense,
-             const std::vector<lite::Tensor*> concat_2in1_x,
+             const std::vector<lite::Tensor*> concat_topk_x,
              const std::vector<lite::Tensor*> concat_7in1_x,
              lite::Tensor* out,
              float* l3_buffer = nullptr,
@@ -1010,13 +1011,13 @@ class MMDNNMergeAll {
 
     float* topk_concat_out_fw = hbm_buffer_;
     int hbm_total_len =
-        cap_l * cap_h_ * 4 +
+        cap_l * cap_e_ * 2 + cap_l * cap_h_ * 2 +
         batch * (2 * cap_h_ + fc0_k_ + fc0_n_ + fc1_k_ + fc1_n_ + fc2_n_);
     if (l3_size > 0 && l3_size >= hbm_total_len * sizeof(float)) {
       topk_concat_out_fw = l3_buffer;
     }
-    float* topk_concat_out_rv = topk_concat_out_fw + cap_l * cap_h_;
-    float* grnn_fw = topk_concat_out_rv + cap_l * cap_h_;
+    float* topk_concat_out_rv = topk_concat_out_fw + cap_l * cap_e_;
+    float* grnn_fw = topk_concat_out_rv + cap_l * cap_e_;
     float* grnn_rv = grnn_fw + cap_l * cap_h_;
     float* pool_fw = grnn_rv + cap_l * cap_h_;
     float* pool_rv = pool_fw + batch * cap_h_;
@@ -1027,12 +1028,18 @@ class MMDNNMergeAll {
     // float* fc2_out = fc1_out + batch * fc1_n_;
     float* fc2_out = out->mutable_data<float>(TARGET(kXPU));
 
-    const int concat_widths[] = {static_cast<int>(concat_2in1_x[0]->dims()[1]),
-                                 static_cast<int>(concat_2in1_x[1]->dims()[1])};
-    const float* concat_ptrs[] = {concat_2in1_x[0]->data<float>(),
-                                  concat_2in1_x[1]->data<float>()};
-    xdnn::concat<float>(
-        ctx, cap_l, concat_widths, 2, concat_ptrs, topk_concat_out_fw);
+    std::vector<int> concat_widths;
+    std::vector<const float*> concat_ptrs;
+    for (const auto* t : concat_topk_x) {
+      concat_widths.push_back(static_cast<int>(t->dims()[1]));
+      concat_ptrs.push_back(t->data<float>());
+    }
+    xdnn::concat<float>(ctx,
+                        cap_l,
+                        concat_widths.data(),
+                        concat_widths.size(),
+                        concat_ptrs.data(),
+                        topk_concat_out_fw);
     xdnn::sequence_reverse(ctx,
                            batch,
                            sentense.lod_32,
@@ -1157,6 +1164,78 @@ void XPUMmdnnBidEmbGrnnAttCompute::Run() {
                   xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
+class XPUMmdnnBidEmbGrnnAttCompute2
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::XPUMmdnnBidEmbGrnnAttParam2;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+ private:
+  MMDNNIdInfo id_;
+  MMDNNBidEmbGrnnAtt compound_;
+  int upper_bound_batch_ = 40;
+  int upper_bound_seqlen_ = 512;
+};
+
+void XPUMmdnnBidEmbGrnnAttCompute2::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  compound_.Init(param.emb_tbl,
+                 param.grnn_fw_wh,
+                 param.grnn_fw_wh_maxs,
+                 param.grnn_fw_wi,
+                 param.grnn_fw_wi_maxs,
+                 param.grnn_rv_wh,
+                 param.grnn_rv_wh_maxs,
+                 param.grnn_rv_wi,
+                 param.grnn_rv_wi_maxs,
+                 param.att_fc_w,
+                 param.att_fc_w_max,
+                 param.att_fc_b,
+                 upper_bound_batch_,
+                 upper_bound_seqlen_);
+}
+
+void XPUMmdnnBidEmbGrnnAttCompute2::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  auto* xpu_ctx = ctx.GetRawContext();
+
+  int batch = param.id0->lod()[0].size() - 1;
+  id_.Update(param.id0, param.id1);
+  compound_.Infer(ctx.GetRawContext(),
+                  batch,
+                  id_,
+                  param.grnn_fw_pool_out,
+                  param.grnn_rv_pool_out,
+                  param.att_pool_out,
+                  param.concat_3in1_out,
+                  param.emb_fw_out,
+                  reinterpret_cast<float*>(
+                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
+                      xpu_ctx->used_l3_size),
+                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+
+  int num = param.id0->numel();
+  int embed_dim = param.emb_tbl->dims()[1];
+
+  // TODO(miaotianxiang):
+  int r = xdnn::embedding<float, int64_t>(
+      ctx.GetRawContext(),                               /* context */
+      num,                                               /* num */
+      param.id0->data<int64_t>(),                        /* indices */
+      embed_dim,                                         /* embed_dim */
+      param.emb_tbl->data<float>(),                      /* table */
+      param.emb0_out->mutable_data<float>(TARGET(kXPU)), /* top */
+      128000 /* padding_idx */);
+  CHECK_EQ(r, 0);
+}
+
 class XPUMmdnnBidEmbAttCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
@@ -1228,6 +1307,7 @@ void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
                  param.conv_w_max,
                  param.dim_t,
                  param.input_w->dims()[0],
+                 param.output_channel,
                  upper_bound_batch_,
                  upper_bound_seqlen_,
                  param.topks);
@@ -1296,10 +1376,10 @@ void XPUMmdnnMergeAllCompute::Run() {
 
   auto* xpu_ctx = ctx.GetRawContext();
 
-  id_.Update(param.concat_2in1_x[0], param.concat_2in1_x[1]);
+  id_.Update(param.concat_topk_x[0], param.concat_topk_x[1]);
   compound_.Infer(ctx.GetRawContext(),
                   id_,
-                  param.concat_2in1_x,
+                  param.concat_topk_x,
                   param.concat_7in1_x,
                   param.out,
                   reinterpret_cast<float*>(
@@ -1328,6 +1408,29 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att,
     .BindInput("grnn_rv_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("att_fc_w", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("att_fc_b", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("grnn_fw_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("grnn_rv_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("att_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("concat_3in1_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("emb_fw_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute2,
+                     def)
+    .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("emb_tbl", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_fw_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_fw_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_rv_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_rv_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("att_fc_w", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("att_fc_b", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("emb0_out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("grnn_fw_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("grnn_rv_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("att_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -1371,7 +1474,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_merge_all,
                      paddle::lite::kernels::xpu::XPUMmdnnMergeAllCompute,
                      def)
     .BindInput("concat_7in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("concat_2in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("concat_topk_x", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("grnn_fw_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("grnn_fw_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("grnn_rv_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
