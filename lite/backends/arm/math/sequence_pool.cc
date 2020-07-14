@@ -54,8 +54,8 @@ void seq_pool_sum<float>(const float* din,
         din_ptr += width;
       }
 #else
-      int cnt_w = height >> 2;
-      int remain_w = height & 3;
+      int cnt_w = width >> 2;
+      int remain_w = width & 3;
       int cnt_h = height >> 2;
       int remain_h = height & 3;
       int stride = width << 2;
@@ -211,8 +211,8 @@ void seq_pool_max<float>(const float* din,
           din_ptr += width;
         }
 #else
-        int cnt_w = height >> 2;
-        int remain_w = height & 3;
+        int cnt_w = width >> 2;
+        int remain_w = width & 3;
         int cnt_h = height >> 2;
         int remain_h = height & 3;
         int stride = width << 2;
