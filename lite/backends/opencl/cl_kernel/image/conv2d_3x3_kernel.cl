@@ -19,9 +19,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                          __private const int global_size_dim2,
                          __read_only image2d_t input_image,
                          __read_only image2d_t filter,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
                          __read_only image2d_t bias,
-#endif
                          __write_only image2d_t output_image,
                          __private const int stride,
                          __private const int offset,
