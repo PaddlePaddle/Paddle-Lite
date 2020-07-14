@@ -147,8 +147,8 @@ void transpose(const Dtype* din, Dtype* dout, int m, int n) {
   int remain_n = n & 3;
   int cnt_m = m >> 2;
   int remain_m = m & 3;
-  int nn_num = n << 2; // n * 4
-  int mm_num = m << 2; // m * 4
+  int nn_num = n << 2;  // n * 4
+  int mm_num = m << 2;  // m * 4
   for (int x = 0; x < cnt_n; x++) {
     const Dtype* din_ptr0 = din + x * mm_num;
     const Dtype* din_ptr1 = din_ptr0 + m;
@@ -156,7 +156,7 @@ void transpose(const Dtype* din, Dtype* dout, int m, int n) {
     const Dtype* din_ptr3 = din_ptr2 + m;
     Dtype* dout_ptr0 = dout + x * 4;
     for (int y = 0; y < cnt_m; y++) {
-      float32x4_t din0 = vld1q_f32(din_ptr0); // a00 a01 a02 a03
+      float32x4_t din0 = vld1q_f32(din_ptr0);  // a00 a01 a02 a03
       float32x4_t din1 = vld1q_f32(din_ptr1);
       float32x4_t din2 = vld1q_f32(din_ptr2);
       float32x4_t din3 = vld1q_f32(din_ptr3);
@@ -164,16 +164,16 @@ void transpose(const Dtype* din, Dtype* dout, int m, int n) {
       Dtype* dout_ptr1 = dout_ptr0 + n;
       Dtype* dout_ptr2 = dout_ptr1 + n;
       Dtype* dout_ptr3 = dout_ptr2 + n;
-      float32x4x2_t tmp0 = vtrnq_f32(din0, din1); // a00 b00 a02 b02
-      //float32x4_t tmp1 = vtrn2q_f32(din0, din1); // a01 b01 a03 b03
-      float32x4x2_t tmp2 = vtrnq_f32(din2, din3); // c00 d00 c02 d02
-     // float32x4_t tmp3 = vtrn2q_f32(din2, din3); // c01 d01 c03 d03
+      // a00 b00 a02 b02 a01 b01 a03 b03
+      float32x4x2_t tmp0 = vtrnq_f32(din0, din1);
+      // c00 d00 c02 d02 c01 d01 c03 d03
+      float32x4x2_t tmp2 = vtrnq_f32(din2, din3);
       din_ptr0 += 4;
       din_ptr1 += 4;
-      float32x4x2_t tmp00 = vtrnq_f32(tmp0.val[0], tmp2.val[0]); // a00 b00 c00 d00
-     // float32x4_t tmp01 = vtrn2q_f32(tmp0, tmp2); // a02 b02 c02 d02
-      float32x4x2_t tmp02 = vtrnq_f32(tmp0.val[1], tmp2.val[1]); // a01 b01 c01 d01
-     // float32x4_t tmp03 = vtrn2q_f32(tmp1, tmp3); // a03 b03 c03 d03
+      // a00 b00 c00 d00 a02 b02 c02 d02
+      float32x4x2_t tmp00 = vtrnq_f32(tmp0.val[0], tmp2.val[0]);
+      // a01 b01 c01 d01 a03 b03 c03 d03
+      float32x4x2_t tmp02 = vtrnq_f32(tmp0.val[1], tmp2.val[1]);
       din_ptr2 += 4;
       din_ptr3 += 4;
       vst1q_f32(dout_ptr0, tmp00.val[0]);
@@ -193,7 +193,7 @@ void transpose(const Dtype* din, Dtype* dout, int m, int n) {
   for (int x = 0; x < remain_n; x++) {
     Dtype* dout_ptr0 = dout + x * 4;
     for (int y = 0; y < cnt_m; y++) {
-      float32x4_t din0 = vld1q_f32(din_ptr0); // a00 a01 a02 a03
+      float32x4_t din0 = vld1q_f32(din_ptr0);
       dout_ptr0 += nn_num;
       Dtype* dout_ptr1 = dout_ptr0 + n;
       Dtype* dout_ptr2 = dout_ptr1 + n;
