@@ -155,7 +155,7 @@ TEST(Subgraph, detect_simple_model) {
   feed_var->Resize({1, 4});
   auto fc1_out = AddFCDesc(block_desc, scope, {"feed_var"}, {4, 5});
   auto fc2_out = AddFCDesc(block_desc, scope, fc1_out, {5, 2});
-  Program program(program_desc, scope, valid_places);
+  Program program(&program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
   // Apply subgraph detector and check results
@@ -204,7 +204,7 @@ TEST(Subgraph, detect_custom_model) {
       Place{TARGET(kXPU), PRECISION(kFloat)},
 #endif
   });
-  Program program(program_desc, scope, valid_places);
+  Program program(&program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
   // Apply subgraph detector and check results
