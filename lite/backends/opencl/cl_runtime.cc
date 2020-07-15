@@ -317,6 +317,8 @@ std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
   return device_info_;
 }
 
+GpuType& CLRuntime::GetGpuType() { return gpu_type_; }
+
 void CLRuntime::GetAdrenoContextProperties(
     std::vector<cl_context_properties>* properties,
     GPUPerfMode gpu_perf_mode,
