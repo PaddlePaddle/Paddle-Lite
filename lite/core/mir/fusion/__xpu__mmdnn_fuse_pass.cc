@@ -326,6 +326,28 @@ class XPUMmdnnSearchAttentionFuser : public FuseBase {
   }
 };
 
+// 4 inputs
+// ========
+//
+// input_x
+// input_y
+// topk_row
+// topk_col
+//
+// input_x ------- match_matrix_tensor ------- input_y
+//                           |
+//                          relu
+//                 ________/    \________
+//                 |                    |
+//            var_conv_2d               |
+//                 |                    |
+//                relu                  |
+//                 |_______      _______|
+//                         \    /
+//                   sequence_concat
+//                           |
+// topk_row ---- sequence_topk_avg_pooling ----- topk_col
+//
 class XPUMmdnnMatchConvTopkFuser : public FuseBase {
  public:
   void BuildPattern() override {
@@ -454,6 +476,26 @@ class XPUMmdnnMatchConvTopkFuser : public FuseBase {
   }
 };
 
+// 2 inputs
+// ========
+//
+// input_x
+// input_y
+//
+// input_x ------- match_matrix_tensor ------- input_y
+//    |                      |                    |
+//    |                     relu                  |
+//    |            ________/    \________         |
+//    |            |                    |         |
+//    |       var_conv_2d               |         |
+//    |            |                    |         |
+//    |           relu                  |         |
+//    |            |_______      _______|         |
+//    |                    \    /                 |
+//    |              sequence_concat              |
+//    |                      |                    |
+//    |--------- sequence_topk_avg_pooling -------|
+//
 class XPUMmdnnMatchConvTopkFuser2 : public FuseBase {
  public:
   void BuildPattern() override {
@@ -749,6 +791,15 @@ class XPUMmdnnBidEmbAttFuser : public FuseBase {
   }
 };
 
+// 5 outputs
+// =========
+//
+// eltwise01_out
+// seq_pool_right_out
+// seq_pool_left_out
+// seq_pool_2in1_out
+// concat_3in1_out
+//
 class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
  public:
   void BuildPattern() override {
@@ -991,6 +1042,16 @@ class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
   }
 };
 
+// 6 outputs
+// =========
+//
+// emb0_out
+// eltwise01_out
+// seq_pool_right_out
+// seq_pool_left_out
+// seq_pool_2in1_out
+// concat_3in1_out
+//
 class XPUMmdnnBidEmbGrnnAttFuser2 : public FuseBase {
  public:
   void BuildPattern() override {
