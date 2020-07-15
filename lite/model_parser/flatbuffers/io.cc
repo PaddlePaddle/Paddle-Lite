@@ -12,34 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/block_desc.h"
+#include "lite/model_parser/flatbuffers/io.h"
+#include <memory>
+#include <utility>
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 
-template <>
-proto::VarDesc const* BlockDesc::GetVar<proto::VarDesc>(int32_t idx) const {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return desc_->vars()->Get(idx);
-}
-
-template <>
-proto::OpDesc const* BlockDesc::GetOp<proto::OpDesc>(int32_t idx) const {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
-  return desc_->ops()->Get(idx);
-}
-
-template <>
-VarDesc const* BlockDesc::GetVar<VarDesc>(int32_t idx) const {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return &vars_[idx];
-}
-
-template <>
-OpDesc const* BlockDesc::GetOp<OpDesc>(int32_t idx) const {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
-  return &ops_[idx];
+void LoadModel(const std::string& path, ProgramDesc* prog) {
+  FILE* file = fopen(path.c_str(), "rb");
+  fseek(file, 0, SEEK_END);
+  int64_t size = ftell(file);
+  rewind(file);
+  char* data = new char[size];
+  size = fread(data, 1, size, file);
+  fclose(file);
+  std::unique_ptr<char[]> buf(data);
+  prog->Init(std::move(buf));
 }
 
 }  // namespace fbs
