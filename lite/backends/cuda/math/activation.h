@@ -33,15 +33,6 @@ enum ActivationType {
 
 ActivationType GetActiveType(const std::string& act);
 
-template <typename Dtype>
-inline __device__ Dtype Sigmoid(const Dtype a);
-
-template <typename Dtype>
-inline __device__ Dtype ReLU(const Dtype a);
-
-template <typename Dtype>
-inline __device__ Dtype Tanh(const Dtype a);
-
 // fp32 and half
 template <typename T>
 void relu(int num, const T* din, T* dout, float alpha, cudaStream_t stream);

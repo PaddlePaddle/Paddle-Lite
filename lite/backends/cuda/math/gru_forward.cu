@@ -27,14 +27,15 @@ namespace math {
  * threads(frame_per_block, batch_per_block)
  * grid(frame_blocks, batch_blocks)
  */
-template <bool is_batch, typename T>
+template <typename T>
 __global__ void GruForwardResetOutput(
     T* gate_value,
     T* reset_output_value,
     T* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate) {
+    lite::cuda::math::ActivationType active_gate,
+    bool is_batch) {
   const int frame_idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (frame_idx >= frame_size) return;
 
@@ -79,7 +80,7 @@ __global__ void GruForwardResetOutput(
  * threads(frame_per_block, batch_per_block)
  * grid(frame_blocks, batch_blocks)
  */
-template <bool is_batch, typename T>
+template <typename T>
 __global__ void GruForwardFinalOutput(
     T* gate_value,
     T* prev_output_value,
@@ -87,7 +88,8 @@ __global__ void GruForwardFinalOutput(
     int frame_size,
     int batch_size,
     lite::cuda::math::ActivationType active_node,
-    bool origin_mode) {
+    bool origin_mode,
+    bool is_batch) {
   const int frame_idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (frame_idx >= frame_size) return;
   int batch_idx = 0;
@@ -130,67 +132,41 @@ __global__ void GruForwardFinalOutput(
   output_value[frame_idx] = output;
 }
 
-template __global__ void GruForwardFinalOutput<false, float>(
+template __global__ void GruForwardFinalOutput<float>(
     float* gate_value,
     float* prev_output_value,
     float* output_value,
     int frame_size,
     int batch_size,
     lite::cuda::math::ActivationType active_node,
-    bool origin_mode);
-template __global__ void GruForwardFinalOutput<true, float>(
-    float* gate_value,
-    float* prev_output_value,
-    float* output_value,
-    int frame_size,
-    int batch_size,
-    lite::cuda::math::ActivationType active_node,
-    bool origin_mode);
-template __global__ void GruForwardFinalOutput<false, half>(
+    bool origin_mode,
+    bool is_batch);
+template __global__ void GruForwardFinalOutput<half>(
     half* gate_value,
     half* prev_output_value,
     half* output_value,
     int frame_size,
     int batch_size,
     lite::cuda::math::ActivationType active_node,
-    bool origin_mode);
-template __global__ void GruForwardFinalOutput<true, half>(
-    half* gate_value,
-    half* prev_output_value,
-    half* output_value,
-    int frame_size,
-    int batch_size,
-    lite::cuda::math::ActivationType active_node,
-    bool origin_mode);
+    bool origin_mode,
+    bool is_batch);
 
-template __global__ void GruForwardResetOutput<false, float>(
+template __global__ void GruForwardResetOutput<float>(
     float* gate_value,
     float* reset_output_value,
     float* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate);
-template __global__ void GruForwardResetOutput<true, float>(
-    float* gate_value,
-    float* reset_output_value,
-    float* prev_output_value,
-    int frame_size,
-    int batch_size,
-    lite::cuda::math::ActivationType active_gate);
-template __global__ void GruForwardResetOutput<false, half>(
+    lite::cuda::math::ActivationType active_gate,
+    bool is_batch);
+template __global__ void GruForwardResetOutput<half>(
     half* gate_value,
     half* reset_output_value,
     half* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate);
-template __global__ void GruForwardResetOutput<true, half>(
-    half* gate_value,
-    half* reset_output_value,
-    half* prev_output_value,
-    int frame_size,
-    int batch_size,
-    lite::cuda::math::ActivationType active_gate);
+    lite::cuda::math::ActivationType active_gate,
+    bool is_batch);
 
 }  // namespace math
 }  // namespace cuda

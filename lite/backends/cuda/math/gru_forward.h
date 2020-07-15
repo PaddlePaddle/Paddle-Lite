@@ -79,16 +79,17 @@ inline __device__ half Tanh(const half a) {
 #endif
 }
 
-template <bool is_batch, typename T>
+template <typename T>
 __global__ void GruForwardResetOutput(
     T* gate_value,
     T* reset_output_value,
     T* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate);
+    lite::cuda::math::ActivationType active_gate,
+    bool is_batch);
 
-template <bool is_batch, typename T>
+template <typename T>
 __global__ void GruForwardFinalOutput(
     T* gate_value,
     T* prev_output_value,
@@ -96,7 +97,8 @@ __global__ void GruForwardFinalOutput(
     int frame_size,
     int batch_size,
     lite::cuda::math::ActivationType active_node,
-    bool origin_mode);
+    bool origin_mode,
+    bool is_batch);
 
 /*
  * threads(tile_size, 1)

@@ -135,27 +135,15 @@ struct GRUUnitFunctor {
     }
     CUDA_POST_KERNEL_CHECK;
 
-    if (batch_size == 1) {
-      lite::cuda::math::GruForwardResetOutput<
-          false,
-          T><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.reset_output_value,
-          value.prev_out_value,
-          frame_size,
-          batch_size,
-          active_gate);
-    } else {
-      lite::cuda::math::GruForwardResetOutput<
-          true,
-          T><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.reset_output_value,
-          value.prev_out_value,
-          frame_size,
-          batch_size,
-          active_gate);
-    }
+    lite::cuda::math::GruForwardResetOutput<
+        T><<<grids, threads, 0, context->exec_stream()>>>(
+        value.gate_value,
+        value.reset_output_value,
+        value.prev_out_value,
+        frame_size,
+        batch_size,
+        active_gate,
+        batch_size == 1);
     CUDA_POST_KERNEL_CHECK;
 
     if (value.prev_out_value) {
@@ -177,29 +165,15 @@ struct GRUUnitFunctor {
     }
     CUDA_POST_KERNEL_CHECK;
 
-    if (batch_size == 1) {
-      lite::cuda::math::GruForwardFinalOutput<
-          false,
-          T><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.prev_out_value,
-          value.output_value,
-          frame_size,
-          batch_size,
-          active_node,
-          origin_mode);
-    } else {
-      lite::cuda::math::GruForwardFinalOutput<
-          true,
-          T><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.prev_out_value,
-          value.output_value,
-          frame_size,
-          batch_size,
-          active_node,
-          origin_mode);
-    }
+    lite::cuda::math::GruForwardFinalOutput<
+        T><<<grids, threads, 0, context->exec_stream()>>>(value.gate_value,
+                                                          value.prev_out_value,
+                                                          value.output_value,
+                                                          frame_size,
+                                                          batch_size,
+                                                          active_node,
+                                                          origin_mode,
+                                                          batch_size == 1);
     CUDA_POST_KERNEL_CHECK;
   }
 };
@@ -246,27 +220,15 @@ struct GRUUnitFunctor<half> {
     }
     CUDA_POST_KERNEL_CHECK;
 
-    if (batch_size == 1) {
-      lite::cuda::math::GruForwardResetOutput<
-          false,
-          half><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.reset_output_value,
-          value.prev_out_value,
-          frame_size,
-          batch_size,
-          active_gate);
-    } else {
-      lite::cuda::math::GruForwardResetOutput<
-          true,
-          half><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.reset_output_value,
-          value.prev_out_value,
-          frame_size,
-          batch_size,
-          active_gate);
-    }
+    lite::cuda::math::GruForwardResetOutput<
+        half><<<grids, threads, 0, context->exec_stream()>>>(
+        value.gate_value,
+        value.reset_output_value,
+        value.prev_out_value,
+        frame_size,
+        batch_size,
+        active_gate,
+        batch_size == 1);
     CUDA_POST_KERNEL_CHECK;
 
     if (value.prev_out_value) {
@@ -288,29 +250,16 @@ struct GRUUnitFunctor<half> {
     }
     CUDA_POST_KERNEL_CHECK;
 
-    if (batch_size == 1) {
-      lite::cuda::math::GruForwardFinalOutput<
-          false,
-          half><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.prev_out_value,
-          value.output_value,
-          frame_size,
-          batch_size,
-          active_node,
-          origin_mode);
-    } else {
-      lite::cuda::math::GruForwardFinalOutput<
-          true,
-          half><<<grids, threads, 0, context->exec_stream()>>>(
-          value.gate_value,
-          value.prev_out_value,
-          value.output_value,
-          frame_size,
-          batch_size,
-          active_node,
-          origin_mode);
-    }
+    lite::cuda::math::GruForwardFinalOutput<
+        half><<<grids, threads, 0, context->exec_stream()>>>(
+        value.gate_value,
+        value.prev_out_value,
+        value.output_value,
+        frame_size,
+        batch_size,
+        active_node,
+        origin_mode,
+        batch_size == 1);
     CUDA_POST_KERNEL_CHECK;
   }
 };
@@ -431,10 +380,19 @@ REGISTER_LITE_KERNEL(gru, kCUDA, kFloat, kNCHW, GRUFp32, def)
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(fc, kCUDA, kFP16, kNCHW, GRUFp16, def)
+REGISTER_LITE_KERNEL(gru, kCUDA, kFP16, kNCHW, GRUFp16, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("H0", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("Weight",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("BatchGate",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("BatchResetHiddenPrev",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("BatchHidden",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("Hidden",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();

@@ -39,7 +39,6 @@ class GRUOpLite : public OpLite {
 
  private:
   mutable GRUParam param_;
-  std::vector<int> vec;
 };
 
 }  // namespace operators
