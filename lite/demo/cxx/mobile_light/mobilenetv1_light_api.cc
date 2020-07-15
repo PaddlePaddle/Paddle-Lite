@@ -76,25 +76,26 @@ void RunModel(std::string model_dir,
               size_t print_output_elem,
               size_t power_mode) {
   // 1. Set MobileConfig
-  bool is_opencl_valid = ::is_opencl_valid();
-  std::cout << "is_opencl_valid:" << is_opencl_valid << std::endl;
   MobileConfig config;
   config.set_model_from_file(model_dir);
+
   // NOTE: Use android gpu with opencl, you should ensure:
   //  first, [compile **cpu+opencl** paddlelite
-  //  lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
+  //    lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
   //  second, [convert and use opencl nb
-  //  model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
-  /* Uncomment code below to enable OpenCL
-  bool is_opencl_valid = config.is_opencl_valid();
-  std::cout << "is_opencl_valid:" << is_opencl_valid << std::endl;
-  if (is_opencl_valid) {
+  //    model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
+  //
+  /*  Uncomment code below to enable OpenCL
+  bool is_opencl_backend_valid = ::IsOpenCLBackendValid();
+  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid <<
+  std::endl;
+  if (is_opencl_backend_valid) {
     // give opencl nb model dir
-    config.set_model_from_file(opencl_nb_model_dir);
+    config.set_model_from_file(model_dir);
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);
-    // you can give backup cpu model instead
+    // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }
   */

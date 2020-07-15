@@ -17,12 +17,13 @@ Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环
 
 #### 针对 Lite 用户的编译命令(无单元测试,有编译产物,适用于benchmark)
 
-- `with_opencl`: `[ON | OFF]`，编译OpenCL必选；
+- `opencl`：命令末尾必须要带上`opencl`；
 - `arm_abi`: `[armv7 | armv8]`；
-- `toolchain`: `[gcc | clang]`；
-- `build_extra`: `[OFF | ON]`，编译全量op和kernel，包含控制流NLP相关的op和kernel体积会大，编译时间长；
+- `arm_os`: `[android]`；
+- `arm_lang`: `[clang | gcc]`；
+- `build_extra`: `[OFF | ON]`，编译全量op和kernel，包含控制流NLP相关的op和kernel体积会大；
 - `build_cv`: `[OFF | ON]`，编译arm cpu neon实现的的cv预处理模块；
-- `android_stl`: `[c++_shared | c++_static | gnu_static | gnu_shared]`，paddlelite的库以何种方式链接`android_stl`，选择`c++_shared`得到的动态库体积更小，但使用时候记得上传paddlelite所编译版本（armv7或armv8）一致的`libc++_shared.so`。默认使用`c++_static`。
+- `android_stl`: `[c++_static | c++_shared]`，paddlelite的库以何种方式链接`android_stl`。若选择`c++_shared`，使用时候记得上传paddlelite所编译版本（armv7或armv8）一致的`libc++_shared.so`。默认使用`c++_static`。
 
 ```bash
 ######################################
@@ -36,14 +37,29 @@ export NDK_ROOT=/opt/android-ndk-r17c
 rm ./lite/api/paddle_use_kernels.h
 rm ./lite/api/paddle_use_ops.h
 
-# 设置编译参数并开始编译
-./lite/tools/build_android.sh \
-  --arch=armv7 \
-  --toolchain=clang \
-  --with_cv=OFF \
+# 设置编译参数并开始编译android-armv7-cpu+gpu+cv+extra
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv7 \
+  --arm_lang=clang \
+  --android_stl=c++_static \
+  --build_extra=ON \
+  --build_cv=ON \
   --with_log=OFF \
-  --with_extra=OFF \
-  --with_opencl=ON
+  opencl
+
+
+# 设置编译参数并开始编译android-armv8-cpu+gpu+cv+extra
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv8 \
+  --arm_lang=clang \
+  --android_stl=c++_static \
+  --build_extra=ON \
+  --build_cv=ON \
+  --with_log=OFF \
+  opencl
+
 
 # 注：编译帮助请执行: ./lite/tools/build_android.sh help
 ```
