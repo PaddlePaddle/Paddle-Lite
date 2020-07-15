@@ -340,7 +340,7 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &desc,
                         Place{TARGET(kARM), PRECISION(kInt8)});
   }
 
-  Program program(*desc.get(), scope_, inner_places);
+  Program program(desc.get(), scope_, inner_places);
   valid_places_ = inner_places;
 
   core::KernelPickFactor factor;

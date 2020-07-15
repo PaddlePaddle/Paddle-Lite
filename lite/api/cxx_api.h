@@ -57,7 +57,7 @@ class LITE_API Predictor {
             const std::vector<Place>& valid_places,
             const std::vector<std::string>& var_names = {})
       : program_desc_(desc), scope_(root) {
-    Program program(*desc.get(), scope_, valid_places, var_names);
+    Program program(desc.get(), scope_, valid_places, var_names);
     optimizer_ = Optimizer(std::move(program), valid_places);
     exec_scope_ = optimizer_.exec_scope();
     valid_places_ = valid_places;
@@ -123,10 +123,10 @@ class LITE_API Predictor {
   // get input by name.
   lite::Tensor* GetInputByName(const std::string& name);
   // get inputnames and get outputnames.
-  std::vector<std::string> GetInputNames();
-  std::vector<std::string> GetOutputNames();
+  const std::vector<std::string>& GetInputNames();
+  const std::vector<std::string>& GetOutputNames();
   // get param names
-  std::vector<std::string> GetParamNames();
+  const std::vector<std::string>& GetParamNames();
 
   void PrepareFeedFetch();
 

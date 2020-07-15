@@ -100,15 +100,15 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 }
 
-std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
+const std::vector<std::string> &CxxPaddleApiImpl::GetInputNames() {
   return raw_predictor_->GetInputNames();
 }
 
-std::vector<std::string> CxxPaddleApiImpl::GetParamNames() {
+const std::vector<std::string> &CxxPaddleApiImpl::GetParamNames() {
   return raw_predictor_->GetParamNames();
 }
 
-std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
+const std::vector<std::string> &CxxPaddleApiImpl::GetOutputNames() {
   return raw_predictor_->GetOutputNames();
 }
 
@@ -136,7 +136,7 @@ std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone(
   return predictor;
 }
 
-std::string CxxPaddleApiImpl::GetVersion() const { return version(); }
+const std::string &CxxPaddleApiImpl::GetVersion() const { return version(); }
 
 std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
     const std::string &name) const {
