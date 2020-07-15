@@ -171,7 +171,9 @@ void LightPredictor::BuildRuntimeProgram(cpp::ProgramDesc* prog) {
 #else
     (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
 #endif
+#ifdef LITE_WITH_ARM
     op->DeleteOpInfo();
+#endif
     insts.emplace_back(op, std::move(*it));
   }
   program_.reset(new RuntimeProgram(std::move(insts)));
