@@ -21,15 +21,14 @@ namespace lite {
 namespace fbs {
 
 void LoadModel(const std::string& path, ProgramDesc* prog) {
-  std::ifstream infile;
-  infile.open(path, std::ios::binary | std::ios::in);
-  infile.seekg(0, std::ios::end);
-  int length = infile.tellg();
-  infile.seekg(0, std::ios::beg);
-  char* buff = new char[length];
-  std::unique_ptr<char[]> buf(buff);
-  infile.read(buf.get(), length);
-  infile.close();
+  FILE* file = fopen(path.c_str(), "rb");
+  fseek(file, 0, SEEK_END);
+  int64_t size = ftell(file);
+  rewind(file);
+  char* data = new char[size];
+  size = fread(data, 1, size, file);
+  fclose(file);
+  std::unique_ptr<char[]> buf(data);
   prog->Init(std::move(buf));
 }
 
