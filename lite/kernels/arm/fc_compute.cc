@@ -88,7 +88,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   auto i_data = param.input->data<float>();
   auto o_data = param.output->mutable_data<float>();
-  auto w_data = flag_gemm_ ? param.w->data<float>() : weights_.data<float>();
+  auto w_data = param.w->data<float>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
