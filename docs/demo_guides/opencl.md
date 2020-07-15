@@ -222,7 +222,7 @@ adb shell "export GLOG_v=4; \
 
 ## 3. 如何在Code中使用
 
-即编译产物`demo/cxx/mobile_light`目录下的代码，在线版参考GitHub仓库[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc);
+即编译产物`demo/cxx/mobile_light`目录下的代码，在线版参考GitHub仓库[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)，其中也包括判断当前设备是否支持OpenCL的方法;
 
 注：这里给出的链接会跳转到线上最新develop分支的代码，很可能与您本地的代码存在差异，建议参考自己本地位于`lite/demo/cxx/`目录的代码，查看如何使用。
 
