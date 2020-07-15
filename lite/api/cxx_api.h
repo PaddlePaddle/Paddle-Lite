@@ -126,7 +126,7 @@ class LITE_API Predictor {
   const std::vector<std::string>& GetInputNames();
   const std::vector<std::string>& GetOutputNames();
   // get param names
-  const std::vector<std::string>& GetParamNames();
+  std::vector<std::string> GetParamNames();
 
   void PrepareFeedFetch();
 
@@ -194,13 +194,13 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::shared_ptr<lite_api::PaddlePredictor> Clone(
       const std::vector<std::string>& var_names) override;
 
-  const std::string& GetVersion() const override;
+  std::string GetVersion() const override;
 
   // get inputs names and get outputs names
   const std::vector<std::string>& GetInputNames() override;
   const std::vector<std::string>& GetOutputNames() override;
   // get param names
-  const std::vector<std::string>& GetParamNames() override;
+  std::vector<std::string> GetParamNames() override;
 
   // get tensor according to tensor's name
   std::unique_ptr<const lite_api::Tensor> GetTensor(

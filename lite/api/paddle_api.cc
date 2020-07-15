@@ -203,7 +203,7 @@ std::unique_ptr<Tensor> PaddlePredictor::GetMutableTensor(
   return nullptr;
 }
 
-const std::vector<std::string> &PaddlePredictor::GetParamNames() {
+std::vector<std::string> PaddlePredictor::GetParamNames() {
   std::vector<std::string> null_result = {};
   LOG(FATAL)
       << "The GetParamNames API is only supported by CxxConfig predictor.";

@@ -162,7 +162,7 @@ const std::vector<std::string> &Predictor::GetOutputNames() {
 }
 
 // get param names
-const std::vector<std::string> &Predictor::GetParamNames() {
+std::vector<std::string> Predictor::GetParamNames() {
   return exec_scope_->AttributeVarNames();
 }
 

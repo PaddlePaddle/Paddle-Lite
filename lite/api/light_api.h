@@ -118,7 +118,7 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
   std::shared_ptr<lite_api::PaddlePredictor> Clone(
       const std::vector<std::string>& var_names) override;
-  const std::string& GetVersion() const override;
+  std::string GetVersion() const override;
   const std::vector<std::string>& GetInputNames() override;
   const std::vector<std::string>& GetOutputNames() override;
 
