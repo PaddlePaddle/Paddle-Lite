@@ -31,20 +31,52 @@ namespace cuda {
 namespace math {
 
 template <typename Dtype>
-static inline __device__ Dtype Sigmoid(const Dtype a) {
+inline __device__ Dtype Sigmoid(const Dtype a) {
   return static_cast<Dtype>(1.0) / (static_cast<Dtype>(1.0) + expf(-a));
 }
 
-template <typename Dtype>
-static inline __device__ Dtype ReLU(const Dtype a) {
-  return a > static_cast<Dtype>(0.f) ? a : static_cast<Dtype>(0.f);
+template <>
+inline __device__ half Sigmoid(const half a) {
+#if __CUDA_ARCH__ >= 530
+  const half tmp = __float2half(1.0f);
+  return __hdiv(tmp, __hadd(tmp, hexp(__hmul(__float2half(-1.f), a))));
+#else
+  return __float2half(1.0f / (expf(__half2float(a) * -1) + 1.0f));
+#endif
 }
 
 template <typename Dtype>
-static inline __device__ Dtype Tanh(const Dtype a) {
+inline __device__ Dtype ReLU(const Dtype a) {
+  return a > static_cast<Dtype>(0.f) ? a : static_cast<Dtype>(0.f);
+}
+
+template <>
+inline __device__ half ReLU(const half a) {
+  const half tmp = __float2half(0.f);
+#if __CUDA_ARCH__ >= 530
+  return __hgt(a, tmp) ? a : tmp;
+#else
+  return __float2half(__half2float(a) > 0.f ? __half2float(a) : 0.f);
+#endif
+}
+
+template <typename Dtype>
+inline __device__ Dtype Tanh(const Dtype a) {
   Dtype tmp = static_cast<Dtype>(-2.0) * a;
   return (static_cast<Dtype>(2.0) / (static_cast<Dtype>(1.0) + expf(tmp))) -
          static_cast<Dtype>(1.0);
+}
+
+template <>
+inline __device__ half Tanh(const half a) {
+#if __CUDA_ARCH__ >= 530
+  half tmp = __float2half(1.0f);
+  half numerator = __hmul(__float2half(-2.0f), a);
+  return __hsub(__hdiv(__float2half(2.0f), __hadd(tmp, hexp(numerator))), tmp);
+#else
+  float tmp = -2.0f * __half2float(a);
+  return __float2half(2.0f / (1.0f + expf(tmp)) - 1.0f);
+#endif
 }
 
 template <bool is_batch, typename T>
