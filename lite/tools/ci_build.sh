@@ -13,7 +13,7 @@ readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DW
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$PWD
 
-NUM_CORES_FOR_COMPILE=30 #${LITE_BUILD_THREADS:-8}
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 
 # global variables
 #whether to use emulator as adb devices,when USE_ADB_EMULATOR=ON we use emulator, else we will use connected mobile phone as adb devices.
@@ -21,8 +21,8 @@ USE_ADB_EMULATOR=ON
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
