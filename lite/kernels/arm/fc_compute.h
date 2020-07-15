@@ -106,7 +106,9 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
         m_, param.weight_scale, param.bias != nullptr);
     if (!flag_trans_weights_ && !flag_gemm_) {
       flag_trans_weights_ = true;
-      fc_trans_weights<PType>(*param.w, &weights_);
+      Tensor tmp_tensor;
+      fc_trans_weights<PType>(*param.w, &tmp_tensor);
+      param.w->CopyDataFrom(tmp_tensor);
     }
   }
 
@@ -117,7 +119,6 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
 
  private:
   DDim last_shape_;
-  Tensor weights_;
   Tensor bias_;
   bool flag_trans_weights_{false};
   bool flag_trans_bias_{false};
