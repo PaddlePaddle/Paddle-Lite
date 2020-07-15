@@ -29,8 +29,21 @@
 #include "lite/backends/mlu/target_wrapper.h"
 #endif
 
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_runtime.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
+
+bool is_opencl_valid() {
+  bool opencl_valid = false;
+#ifdef LITE_WITH_OPENCL
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
+#endif
+  LOG(INFO) << "opencl_valid:" << opencl_valid;
+  return opencl_valid;
+}
 
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 
@@ -319,6 +332,13 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
   model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
   param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
   model_from_memory_ = true;
+}
+bool MobileConfig::is_opencl_valid() {
+  bool opencl_valid = false;
+#ifdef LITE_WITH_OPENCL
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
+#endif
+  return opencl_valid;
 }
 
 }  // namespace lite_api

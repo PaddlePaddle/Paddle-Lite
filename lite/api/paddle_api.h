@@ -33,6 +33,8 @@ using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
+LITE_API bool is_opencl_valid();
+
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
@@ -260,6 +262,9 @@ class LITE_API MobileConfig : public ConfigBase {
   void set_model_from_buffer(const std::string& x);
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
+
+  // return true if current device supports OpenCL model
+  bool is_opencl_valid();
 
   // return model_from_memory_, which indicates whether to load model from
   // memory buffer.
