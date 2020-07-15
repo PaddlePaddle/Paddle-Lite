@@ -20,9 +20,7 @@ __kernel void depth_conv2d_3x3(
     __private const int global_size_dim2,
     __read_only image2d_t input,
     __read_only image2d_t filter,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
     __read_only image2d_t bias,
-#endif
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
@@ -249,9 +247,7 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
                                  __private const int ou_nh,
                                  __read_only image2d_t input,
                                  __read_only image2d_t filter,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
                                  __read_only image2d_t bias,
-#endif
                                  __write_only image2d_t output_image,
                                  __private const int stride,
                                  __private const int pad,

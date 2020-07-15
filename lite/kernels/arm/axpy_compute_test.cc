@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/axpy_compute.h"
 #include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/axpy_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -61,8 +63,7 @@ void axpy_compute_ref(const operators::AxpyParam& param) {
 }
 
 TEST(axpy_arm, retrive_op) {
-  auto axpy =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("axpy");
+  auto axpy = KernelRegistry::Global().Create("axpy");
   ASSERT_FALSE(axpy.empty());
   ASSERT_TRUE(axpy.front());
 }

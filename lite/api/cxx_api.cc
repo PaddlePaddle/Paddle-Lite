@@ -13,17 +13,23 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+
 #include <algorithm>
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
+
+std::vector<std::string> GetAllOps() {
+  return OpLiteFactory::Global().GetAllOps();
+}
 
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
@@ -326,10 +332,8 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &desc,
     }
   }
   if (is_quantized_model) {
-#ifdef LITE_WITH_ARM
     inner_places.insert(inner_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
-#endif
   }
 
   Program program(*desc.get(), scope_, inner_places);

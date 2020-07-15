@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/match_matrix_tensor_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/match_matrix_tensor_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -25,9 +27,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(match_matrix_tensor_x86, retrive_op) {
-  auto kernel =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "match_matrix_tensor");
+  auto kernel = KernelRegistry::Global().Create("match_matrix_tensor");
   ASSERT_FALSE(kernel.empty());
   ASSERT_TRUE(kernel.front());
 }

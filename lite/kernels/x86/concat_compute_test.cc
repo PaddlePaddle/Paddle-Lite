@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/concat_compute.h"
 #include <gtest/gtest.h>
+
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/concat_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -23,9 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(concat_x86, retrive_op) {
-  auto concat =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "concat");
+  auto concat = KernelRegistry::Global().Create("concat");
   ASSERT_FALSE(concat.empty());
   ASSERT_TRUE(concat.front());
 }

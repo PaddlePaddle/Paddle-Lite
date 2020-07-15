@@ -52,12 +52,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   if (!status_is_cloned_) {
 #ifdef LITE_WITH_MLU
     Env<TARGET(kMLU)>::Init();
-    lite::DeviceInfo::Global().SetMLURunMode(config.mlu_core_version(),
-                                             config.mlu_core_number(),
-                                             config.mlu_use_first_conv(),
-                                             config.mlu_first_conv_mean(),
-                                             config.mlu_first_conv_std(),
-                                             config.mlu_input_layout());
+    lite::TargetWrapperMlu::SetMLURunMode(config.mlu_core_version(),
+                                          config.mlu_core_number(),
+                                          config.mlu_input_layout(),
+                                          config.mlu_firstconv_param());
 #endif  // LITE_WITH_MLU
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");
@@ -75,6 +73,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
   mode_ = config.power_mode();
   threads_ = config.threads();
+#ifdef LITE_WITH_NPU
+  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
+      config.subgraph_model_cache_dir());
+#endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
   int num_threads = config.x86_math_library_num_threads();

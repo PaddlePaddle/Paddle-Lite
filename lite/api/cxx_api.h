@@ -41,6 +41,8 @@ static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
     ".tailored_kernels_source_list";
 static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 
+std::vector<std::string> GetAllOps();
+
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */

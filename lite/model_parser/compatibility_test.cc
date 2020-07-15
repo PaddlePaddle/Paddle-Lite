@@ -17,10 +17,7 @@
 #include "lite/api/paddle_lite_factory_helper.h"
 
 #include "lite/model_parser/compatible_pb.h"
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/cpp/program_desc.h"
-#include "lite/model_parser/cpp/var_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 
 USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 

@@ -14,7 +14,7 @@
 
 #include "lite/backends/x86/jit/kernel_key.h"
 #include <xxhash.h>  // XXH64: 13.8 GB/s
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

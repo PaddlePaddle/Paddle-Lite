@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/pool_compute.h"
 #include <gtest/gtest.h>
+
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/pool_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -341,8 +343,7 @@ TEST(pool_arm, compute) {
 }
 
 TEST(pool_arm, retrive_op) {
-  auto pool = KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-      "pool2d");
+  auto pool = KernelRegistry::Global().Create("pool2d");
   ASSERT_FALSE(pool.empty());
   ASSERT_TRUE(pool.front());
 }

@@ -55,7 +55,7 @@ void Tree2ColUtil::construct_tree(const lite::Tensor &EdgeSet,
                                   std::vector<std::vector<int>> *tr,
                                   size_t *node_count) {
   auto edge_set_dims = EdgeSet.dims();
-  PADDLE_ENFORCE_EQ(edge_set_dims[1], 2);
+  CHECK_EQ(edge_set_dims[1], 2);
   int64_t edge_count = EdgeSet.numel();
 
   const int *edge_data = EdgeSet.data<int>();

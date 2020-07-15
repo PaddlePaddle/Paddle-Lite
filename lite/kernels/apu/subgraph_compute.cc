@@ -28,7 +28,7 @@ namespace lite {
 namespace kernels {
 namespace apu {
 
-int SubgraphEngine::BuildDeviceProgram() {
+bool SubgraphEngine::BuildDeviceProgram() {
   unsigned int version;
   Neuron_getVersion(&version);
   VLOG(3) << "Neuron Adapter version: " << version;
@@ -38,7 +38,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   int neuron_errCode = NeuronModel_create(&model_);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Fail to create model";
-    return subgraph::FAILED;
+    return false;
   }
   graph.set_model(model_);
   graph.set_input_names(input_names_);
@@ -46,6 +46,9 @@ int SubgraphEngine::BuildDeviceProgram() {
 
   // Convert all of ops and their input vars and weights and added into the APU
   // NIR graph
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   const auto& bridges = subgraph::Registry::Instance();
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
@@ -54,7 +57,7 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->InferShape();
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kAPU))) {
-      return subgraph::FAILED;
+      return false;
     }
 
     auto kernel = inst.kernel();
@@ -63,7 +66,7 @@ int SubgraphEngine::BuildDeviceProgram() {
                                               const_cast<OpLite*>(op),
                                               const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
-      return subgraph::FAILED;
+      return false;
     }
   }
 
@@ -84,7 +87,7 @@ int SubgraphEngine::BuildDeviceProgram() {
       VLOG(3) << "input idx: " << graph.Get(input_names_[i])->index();
     } else {
       LOG(WARNING) << "Fail to find input: " << input_names_[i];
-      return subgraph::FAILED;
+      return false;
     }
   }
 
@@ -105,7 +108,7 @@ int SubgraphEngine::BuildDeviceProgram() {
       VLOG(3) << "output idx: " << graph.Get(output_names_[i])->index();
     } else {
       LOG(WARNING) << "Fail to find output: " << output_names_[i];
-      return subgraph::FAILED;
+      return false;
     }
   }
 
@@ -116,7 +119,7 @@ int SubgraphEngine::BuildDeviceProgram() {
   neuron_errCode = NeuronModel_finish(model_);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Fail to create NIR model:" << neuron_errCode;
-    return subgraph::FAILED;
+    return false;
   }
   VLOG(3) << "[APU] APU NIR model created!";
 
@@ -129,15 +132,14 @@ int SubgraphEngine::BuildDeviceProgram() {
   compilation_ = lite::apu::Device::Global().Build(model_);
   if (compilation_ == nullptr) {
     LOG(WARNING) << "[APU] Build APU DLA model failed!";
-    return subgraph::FAILED;
+    return false;
   }
   VLOG(3) << "[APU] APU DLA model created, Build cost "
           << GetCurrentUS() - start_time << " us";
-
-  return status;
+  return true;
 }
 
-int SubgraphEngine::LaunchDeviceProgram() {
+bool SubgraphEngine::LaunchDeviceProgram() {
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
@@ -149,22 +151,19 @@ int SubgraphEngine::LaunchDeviceProgram() {
   int neuron_errCode = NeuronExecution_create(compilation_, &run);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "[APU] Build APU runtime failed!";
-    return subgraph::FAILED;
+    return false;
   }
 
   // Set input buffer
-  Tensor input_temp;
   for (size_t i = 0; i < origin_itensors_.size(); i++) {
-    input_temp.Resize({origin_idims_[i]});
-    uint8_t* input_data = input_temp.mutable_data<uint8_t>();
-    memcpy(input_data,
-           origin_itensors_[i]->raw_data(),
-           origin_itensors_[i]->memory_size());
+    auto origin_data = origin_itensors_[i]->mutable_data<int8_t>();
+    auto converted_data = reinterpret_cast<uint8_t*>(origin_data);
     for (int j = 0; j < origin_itensors_[i]->data_size(); j++) {
-      input_data[j] += (uint8_t)128;
+      converted_data[j] =
+          static_cast<uint8_t>(static_cast<int16_t>(origin_data[j]) + 128);
     }
     NeuronExecution_setInput(
-        run, i, NULL, input_data, origin_itensors_[i]->memory_size());
+        run, i, NULL, converted_data, origin_itensors_[i]->memory_size());
   }
 
   // Set output buffer
@@ -180,19 +179,20 @@ int SubgraphEngine::LaunchDeviceProgram() {
   neuron_errCode = NeuronExecution_compute(run);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Fail to run execution!" << neuron_errCode;
-    return subgraph::FAILED;
+    return false;
   }
 
   for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    int8_t* output_data = origin_otensors_[i]->mutable_data<int8_t>();
-    VLOG(3) << "output size:" << origin_otensors_[i]->memory_size();
+    auto converted_data = origin_otensors_[i]->mutable_data<int8_t>();
+    auto origin_data = reinterpret_cast<uint8_t*>(converted_data);
     for (int j = 0; j < origin_otensors_[i]->data_size(); j++) {
-      output_data[j] -= (int8_t)128;
+      converted_data[j] =
+          static_cast<int8_t>(static_cast<int16_t>(origin_data[j]) - 128);
     }
   }
   NeuronExecution_free(run);
   VLOG(3) << "[APU] Process cost " << GetCurrentUS() - start_time << " us";
-  return 0;
+  return true;
 }
 
 SubgraphEngine::~SubgraphEngine() {
@@ -213,12 +213,11 @@ void SubgraphCompute::PrepareForRun() {
                                    param.output_data_names,
                                    param.scope));
   CHECK(engine_);
-  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
   CHECK(engine_);
-  engine_->Launch();
+  engine_->Run();
 }
 
 }  // namespace apu

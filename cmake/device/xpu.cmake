@@ -39,7 +39,7 @@ else()
 endif()
 
 find_library(XPU_SDK_XPU_RT_FILE NAMES xpurt
-  PATHS ${XPU_SDK_ROOT}/XTDK/shlib
+  PATHS ${XPU_SDK_ROOT}/XTDK/runtime/shlib ${XPU_SDK_ROOT}/XTDK/shlib # libxpurt.so may have been moved to XTDK/runtime/shlib
   NO_DEFAULT_PATH)
 
 if(NOT XPU_SDK_XPU_RT_FILE)

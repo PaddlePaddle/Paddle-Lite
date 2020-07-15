@@ -27,12 +27,35 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-int SubgraphEngine::BuildDeviceProgram() {
+bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
+  // Obtain the origin input tensors, and create the origin output
+  // tensors(Don't try to access them before launch the device program or the
+  // origin program)
+  PrepareWorkspaceForOriginProgram();
+  // Create the device input and output tensors, but don't initialize them
+  // with the dimensions
+  device_itensors_.resize(input_names_.size());
+  for (int i = 0; i < input_names_.size(); i++) {
+    device_itensors_[i].reset(new hiai::AiTensor);
+    CHECK(device_itensors_[i]);
+  }
+  device_otensors_.resize(output_names_.size());
+  for (int i = 0; i < output_names_.size(); i++) {
+    device_otensors_[i].reset(new hiai::AiTensor);
+    CHECK(device_otensors_[i]);
+  }
+  return true;
+}
+
+bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   // Convert all of ops and their input vars and weights and added into the XPU
   // IR graph
   subgraph::xpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
+  if (origin_program_.empty()) {
+    BuildOriginProgram();
+  }
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
@@ -40,13 +63,13 @@ int SubgraphEngine::BuildDeviceProgram() {
     op->InferShape();
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kXPU))) {
-      return subgraph::FAILED;
+      return false;
     }
     auto kernel = inst.kernel();
     status |= bridges.Select(op_type, TARGET(kXPU))(
         reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
-      return subgraph::FAILED;
+      return false;
     }
   }
   // Obtain the output nodes of the XPU IR graph and build the graph to the XPU
@@ -86,7 +109,7 @@ int SubgraphEngine::BuildDeviceProgram() {
       &graph.builder_, &graph.params_, &device_onodes);
   if (device_program_ == nullptr) {
     LOG(WARNING) << "[XPU] Build model failed!";
-    return subgraph::FAILED;
+    return false;
   }
 
   // Query and check the dimensions of input and output tensors
@@ -166,10 +189,10 @@ int SubgraphEngine::BuildDeviceProgram() {
     device_otensors_[i].strides = nullptr;
     device_otensors_[i].byte_offset = 0;
   }
-  return status;
+  return true;
 }
 
-int SubgraphEngine::LaunchDeviceProgram() {
+bool SubgraphEngine::LaunchDeviceProgram() {
   for (size_t i = 0; i < device_itensors_.size(); i++) {
     // Update the data pointer of DLTensor to track the origin input tensors
     device_itensors_[i].data =
@@ -191,7 +214,7 @@ int SubgraphEngine::LaunchDeviceProgram() {
         const_cast<void*>(origin_otensors_[i]->raw_data());
     device_program_->CopyOutputTo(i, &device_otensors_[i]);
   }
-  return 0;
+  return true;
 }
 
 void SubgraphCompute::PrepareForRun() {
@@ -203,12 +226,11 @@ void SubgraphCompute::PrepareForRun() {
                                    param.output_data_names,
                                    param.scope));
   CHECK(engine_);
-  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
   CHECK(engine_);
-  engine_->Launch();
+  engine_->Run();
 }
 
 }  // namespace xpu
