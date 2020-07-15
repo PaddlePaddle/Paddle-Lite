@@ -35,6 +35,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int neuron_errCode;
   VLOG(3) << "[APU] Converting [" << op_type << "]";
 
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
+
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindMutableTensor(input_name);
@@ -94,30 +97,18 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
-  float input_scale;
-  float output_scale;
-  std::vector<float> weight_scale;
-  if (op_info->HasAttr("enable_int8")) {
-    if (op_info->GetAttr<bool>("enable_int8")) {
-      if (op_info->HasAttr("input_scale"))
-        input_scale = op_info->GetAttr<float>("input_scale");
-      if (op_info->HasAttr("weight_scale"))
-        weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
-      if (op_info->HasAttr("output_scale"))
-        output_scale = op_info->GetAttr<float>("output_scale");
-      VLOG(3) << "has output scale:" << output_scale;
-    } else {
-      return FAILED;
-    }
-  } else {
-    return FAILED;
-  }
+  CHECK(op_info->HasInputScale(input_name));
+  auto input_scale = op_info->GetInputScale(input_name)[0];
+  CHECK(op_info->HasInputScale(filter_name));
+  auto filter_scale = op_info->GetInputScale(filter_name);
+  CHECK(op_info->HasOutputScale(output_name));
+  auto output_scale = op_info->GetOutputScale(output_name)[0];
 
   VLOG(3) << "strides.size(): " << strides.size() << " ,groups: " << groups
           << " ,dilations: " << dilations[0] << ":" << dilations[1];
   VLOG(3) << "with_act: " << with_act << " ,act_type:" << act_type;
   VLOG(3) << "input_dims: " << input_dims << " ,output_dims: " << output_dims
-          << " ,weight_scale size: " << weight_scale.size();
+          << " ,filter_scale size: " << filter_scale.size();
   VLOG(3) << "filter_dims: " << filter_dims
           << " ,memory_size: " << filter->memory_size()
           << " ,data_size: " << filter->data_size();
@@ -216,10 +207,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronOperandType filterType;
   NeuronOperandType channelFilterType;
   NeuronSymmPerChannelQuantParams symmPerChannelQuantParams;
-  if (1 == weight_scale.size()) {
+  if (1 == filter_scale.size()) {
     // Per layer type
     filterType.type = NEURON_TENSOR_QUANT8_ASYMM;
-    filterType.scale = weight_scale[0];
+    filterType.scale = filter_scale[0];
     filterType.zeroPoint = 128;
     filterType.dimensionCount = filter_dims.size();
     filterType.dimensions = &dims_filter[0];
@@ -237,17 +228,17 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       symmPerChannelQuantParams.channelDim = 3;
     else
       symmPerChannelQuantParams.channelDim = 0;
-    symmPerChannelQuantParams.scaleCount = weight_scale.size();
-    symmPerChannelQuantParams.scales = weight_scale.data();
+    symmPerChannelQuantParams.scaleCount = filter_scale.size();
+    symmPerChannelQuantParams.scales = filter_scale.data();
     biasType.scale = 0;
   }
 
   std::shared_ptr<Node> filter_node = nullptr;
-  if (1 == weight_scale.size()) {
+  if (1 == filter_scale.size()) {
     NeuronModel_addOperand(model, &filterType);  // 1: filter
     filter_node = graph->Add(filter_name, dims_filter);
-    VLOG(3) << "filter node idx: " << filter_node->index() << "w_scale[0]"
-            << weight_scale[0] << ": filterType: " << filterType.dimensions[0]
+    VLOG(3) << "filter node idx: " << filter_node->index() << "filter_scale[0]"
+            << filter_scale[0] << ": filterType: " << filterType.dimensions[0]
             << ":" << filterType.dimensions[1] << ":"
             << filterType.dimensions[2] << ":" << filterType.dimensions[3];
     memcpy(filter->mutable_data<int8_t>(),
@@ -263,8 +254,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     NeuronModel_addOperand(model, &channelFilterType);  // 1: filter
     filter_node = graph->Add(filter_name, dims_filter);
     VLOG(3) << "chennel filter node idx: " << filter_node->index()
-            << " ,scale_count:" << weight_scale.size()
-            << " weight_scale[0]:" << weight_scale.data()[0]
+            << " ,scale_count:" << filter_scale.size()
+            << " filter_scale[0]:" << filter_scale.data()[0]
             << " ,channelFilterType: " << channelFilterType.dimensions[0] << ":"
             << channelFilterType.dimensions[1] << ":"
             << channelFilterType.dimensions[2] << ":"
@@ -298,7 +289,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> bias_node = nullptr;
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
-    auto bias_type = kernel->GetInputDeclType("Bias");
     auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
 
@@ -364,10 +354,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Add output tensor type
   NeuronOperandType outType;
   outType.type = NEURON_TENSOR_QUANT8_ASYMM;
-  if (graph->IsOutput(output_name))
-    outType.scale = output_scale / 127;
-  else
-    outType.scale = output_scale;
+  outType.scale = output_scale;
   outType.zeroPoint = 128;
   outType.dimensionCount = output_dims.size();
   std::vector<uint32_t> dims_out = {(uint32_t)output_dims[0],
@@ -401,7 +388,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     int32_t* int32_bias_data =
         reinterpret_cast<int32_t*>(bias->mutable_data<float>());
     float2int32(
-        bias->data<float>(), input_scale, weight_scale, int32_bias_data);
+        bias->data<float>(), input_scale, filter_scale, int32_bias_data);
 
     VLOG(3) << "int32_bias_data: " << int32_bias_data[0] << " : "
             << int32_bias_data[1] << " : " << int32_bias_data[2] << " : "

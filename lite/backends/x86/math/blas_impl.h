@@ -287,22 +287,22 @@ struct CBlas<double> {
 
 template <>
 struct CBlas<lite::fluid::float16> {
-  static void GEMM(...) { PADDLE_THROW("float16 GEMM not supported on CPU"); }
+  static void GEMM(...) { LOG(FATAL) << "float16 GEMM not supported on CPU"; }
   static void SMM_GEMM(...) {
-    PADDLE_THROW("float16 SMM_GEMM not supported on CPU");
+    LOG(FATAL) << "float16 SMM_GEMM not supported on CPU";
   }
-  static void VMUL(...) { PADDLE_THROW("float16 VMUL not supported on CPU"); }
-  static void VEXP(...) { PADDLE_THROW("float16 VEXP not supported on CPU"); }
+  static void VMUL(...) { LOG(FATAL) << "float16 VMUL not supported on CPU"; }
+  static void VEXP(...) { LOG(FATAL) << "float16 VEXP not supported on CPU"; }
   static void VSQUARE(...) {
-    PADDLE_THROW("float16 VSQUARE not supported on CPU");
+    LOG(FATAL) << "float16 VSQUARE not supported on CPU";
   }
-  static void VPOW(...) { PADDLE_THROW("float16 VPOW not supported on CPU"); }
-  static void DOT(...) { PADDLE_THROW("float16 DOT not supported on CPU"); };
-  static void SCAL(...) { PADDLE_THROW("float16 SCAL not supported on CPU"); };
-  static void ASUM(...) { PADDLE_THROW("float16 ASUM not supported on CPU"); };
+  static void VPOW(...) { LOG(FATAL) << "float16 VPOW not supported on CPU"; }
+  static void DOT(...) { LOG(FATAL) << "float16 DOT not supported on CPU"; };
+  static void SCAL(...) { LOG(FATAL) << "float16 SCAL not supported on CPU"; };
+  static void ASUM(...) { LOG(FATAL) << "float16 ASUM not supported on CPU"; };
 #ifdef PADDLE_WITH_MKLML
   static void GEMM_BATCH(...) {
-    PADDLE_THROW("float16 GEMM_BATCH not supported on CPU");
+    LOG(FATAL) << "float16 GEMM_BATCH not supported on CPU";
   }
 #endif
 };
@@ -461,11 +461,11 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
   auto dim_a = mat_a.dims();
   auto dim_b = mat_b.dims();
   auto dim_out = mat_out->dims();
-  PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
-                 "The input and output of matmul be matrix");
-  // PADDLE_ENFORCE(
-  //    mat_a.target() == mat_b.target() && mat_a.target() == mat_out->target(),
-  //    "The targets of matrices must be same");
+  CHECK(dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2)
+      << "The input and output of matmul be matrix";
+  // CHECK(
+  //    mat_a.target() == mat_b.target() && mat_a.target() == mat_out->target())
+  //    << "The targets of matrices must be same";
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -746,7 +746,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
                           T alpha,
                           lite::Tensor *mat_out,
                           T beta) const {
-  PADDLE_ENFORCE_EQ(dim_a.width_, dim_b.height_);
+  CHECK_EQ(dim_a.width_, dim_b.height_);
   CBLAS_TRANSPOSE transA = !dim_a.trans_ ? CblasNoTrans : CblasTrans;
   CBLAS_TRANSPOSE transB = !dim_b.trans_ ? CblasNoTrans : CblasTrans;
   if (dim_a.batch_size_ == 0 && dim_b.batch_size_ == 0) {
@@ -761,8 +761,8 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
                            beta,
                            mat_out->template mutable_data<T>());
   } else {
-    PADDLE_ENFORCE(dim_a.batch_size_ == dim_b.batch_size_ ||
-                   dim_a.batch_size_ == 0 || dim_b.batch_size_ == 0);
+    CHECK(dim_a.batch_size_ == dim_b.batch_size_ || dim_a.batch_size_ == 0 ||
+          dim_b.batch_size_ == 0);
     this->template BatchedGEMM<T>(
         transA,
         transB,

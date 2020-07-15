@@ -273,7 +273,7 @@ TEST(math_funciton, set_constant) {
   auto* ctx = new paddle::platform::CPUDeviceContext();
   paddle::operators::math::set_constant(*ctx, &t, 10);
   for (int64_t i = 0; i < t.numel(); ++i) {
-    PADDLE_ENFORCE_EQ(10, t.data<int>()[i]);
+    CHECK_EQ(10, t.data<int>()[i]);
   }
   delete ctx;
 }

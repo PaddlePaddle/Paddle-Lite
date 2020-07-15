@@ -79,6 +79,8 @@ class MLUPostprocessPass : public ProgramPass {
                             const Type** arg_type,
                             SSAGraph* graph);
 
+  void ModifyInputOutputDataType(SSAGraph* graph);
+
   void ModifyLayout(SSAGraph* graph);
 
   bool NeedInsert(Node* node, const Type* inst_type);
@@ -86,12 +88,14 @@ class MLUPostprocessPass : public ProgramPass {
   void InsertBefore(SSAGraph* graph,
                     Node* head_node,
                     Node* inst_node,
-                    const Type* type);
+                    const Type* type,
+                    bool use_mlu_cast);
 
   void InsertAfter(SSAGraph* graph,
                    Node* tail_node,
                    Node* inst_node,
-                   const Type* type);
+                   const Type* type,
+                   bool use_mlu_cast);
 
   Node* InsertCastBefore(const std::string& op_type,
                          const std::string& cast_arg_name,
@@ -114,6 +118,8 @@ class MLUPostprocessPass : public ProgramPass {
   bool IsFirstConvNode(Node* arg_node);
 
   bool IsFirstConvInSubgraph(Node* arg_node, Node* inst);
+
+  void AdjustSubgraph(Node* subgraph_node, const Type* op_type);
 
  private:
   std::set<std::string> first_conv_nodes_;

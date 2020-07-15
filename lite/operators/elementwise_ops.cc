@@ -145,6 +145,7 @@ REGISTER_LITE_OP(elementwise_mul, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_max, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_div, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_mod, paddle::lite::operators::ElementwiseOp);
+REGISTER_LITE_OP(elementwise_pow, paddle::lite::operators::ElementwiseOp);
 
 // #ifdef LITE_WITH_TRAIN
 // REGISTER_LITE_OP(elementwise_sub_grad,

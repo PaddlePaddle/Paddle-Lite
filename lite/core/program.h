@@ -22,7 +22,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
-#include "lite/model_parser/cpp/program_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif

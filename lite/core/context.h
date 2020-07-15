@@ -25,6 +25,7 @@
 #ifdef LITE_WITH_MLU
 #include <cnml.h>
 #include <cnrt.h>
+#include <mutex>  // NOLINT
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
 #ifdef LITE_WITH_XPU
@@ -143,45 +144,12 @@ class Context<TargetType::kXPU> {
 
   void CopySharedTo(XPUContext* ctx) {}
 
+  // TODO(miaotianxiang): remove this
   static xdnn::Context* GetRawContext() {
-    if (_tls_raw_ctx == nullptr) {
-      _tls_raw_ctx = xdnn::create_context();
-      CHECK(_tls_raw_ctx);
-      int r = xdnn::set_workspace_l3_size(_tls_raw_ctx,
-                                          _workspace_l3_size_per_thread);
-      if (r != 0) {
-        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
-                     << ", _workspace_l3_size_per_thread = "
-                     << _workspace_l3_size_per_thread;
-      }
-    }
-    return _tls_raw_ctx;
-  }
-
-  static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
-    _workspace_l3_size_per_thread = l3_size;
-  }
-
-  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
-  // thread
-  static void SetDev(int dev_no = 0) {
-    const char* dev_env = getenv("LITE_XPU_DEV");
-    if (dev_env) {
-      xpu_set_device(atoi(dev_env));
-      return;
-    }
-
-    xpu_set_device(dev_no);
+    return TargetWrapperXPU::GetRawContext();
   }
 
   std::string name() const { return "XPUContext"; }
-
- public:
-  static std::string _multi_encoder_precision;  // NOLINT
-
- private:
-  static thread_local xdnn::Context* _tls_raw_ctx;
-  static int _workspace_l3_size_per_thread;
 };
 #endif
 
@@ -249,11 +217,11 @@ class Context<TargetType::kMLU> {
   void InitOnce() {}
 
   MLUContext& operator=(const MLUContext& ctx) {
-    this->Init(ctx.device_id_, ctx.exec_queue_id_, ctx.io_queue_id_);
+    this->Init(ctx.device_id_, ctx.exec_queue_id_);
     return *this;
   }
 
-  void Init(int dev_id, int exec_queue_id = 0, int io_queue_id = 0) {
+  void Init(int dev_id, int exec_queue_id = 0) {
     CHECK_GT(devs.size(), 0UL)
         << "Env is not initialized or current target is not exit!";
     if (dev_id >= static_cast<int>(devs.size())) {
@@ -264,21 +232,19 @@ class Context<TargetType::kMLU> {
       device_id_ = dev_id;
     }
     SetMluDevice(device_id_);
-    if (io_queue_id >= devs[dev_id].max_queue()) {
-      LOG(WARNING) << "data queue index exceeds the maximum queue number, "
-                      "set to default qeueu(0)!";
-      io_queue_id = 0;
-    }
-    if (exec_queue_id >= devs[dev_id].max_queue()) {
-      LOG(WARNING) << "exec queue index exceeds the maximum queue number, "
-                      "set to default qeueu(0)!";
-      exec_queue_id = 0;
-    }
-    io_queue_ = devs[dev_id].io_queues()[io_queue_id];
-    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id];
 
-    exec_queue_id_ = exec_queue_id;
-    io_queue_id_ = io_queue_id;
+    // get queue id from map
+    std::unique_lock<std::mutex> lk(map_mutex_);
+    if (queue_id_map_.find(exec_queue_id) == queue_id_map_.end()) {
+      queue_id_map_[exec_queue_id] =
+          next_queue_id_++ % devs[dev_id].max_queue();
+    }
+    exec_queue_id_ = queue_id_map_[exec_queue_id];
+    VLOG(4) << "pick mlu queue id: " << exec_queue_id_;
+    lk.unlock();
+
+    io_queue_ = devs[dev_id].io_queues()[exec_queue_id_];
+    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id_];
   }
 
   void CopySharedTo(MLUContext* ctx) { ctx->forward_param_ = forward_param_; }
@@ -290,10 +256,12 @@ class Context<TargetType::kMLU> {
   void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
 
   cnmlCoreVersion_t MLUCoreVersion() {
-    return DeviceInfo::Global().MLUCoreVersion();
+    return paddle::lite::TargetWrapperMlu::MLUCoreVersion();
   }
 
-  int MLUCoreNumber() { return DeviceInfo::Global().MLUCoreNumber(); }
+  int MLUCoreNumber() {
+    return paddle::lite::TargetWrapperMlu::MLUCoreNumber();
+  }
 
   u32_t affinity() { return affinity_; }
 
@@ -304,10 +272,12 @@ class Context<TargetType::kMLU> {
   std::string name() const { return "MLUContext"; }
 
  private:
+  static int next_queue_id_;
+  static std::map<int, int> queue_id_map_;
+  static std::mutex map_mutex_;
   int device_id_;
   // overall information
   int exec_queue_id_;
-  int io_queue_id_;
   cnrtQueue_t io_queue_;
   cnrtQueue_t exec_queue_;
 
@@ -455,7 +425,7 @@ class ContextScheduler {
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
         auto& context = ctx->As<MLUContext>();
-        context.Init(dev_id);
+        context.Init(dev_id, exec_stream_id);
         kernel_contexts_[TargetType::kMLU].As<MLUContext>().CopySharedTo(
             &context);
         LOG(INFO) << "New Context for MLU";

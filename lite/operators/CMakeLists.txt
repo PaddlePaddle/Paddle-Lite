@@ -77,6 +77,8 @@ add_operator(reduce_max_op_lite extra SRCS reduce_max_op.cc DEPS ${op_DEPS})
 add_operator(shape_op_lite extra SRCS shape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_expand_op_lite extra SRCS sequence_expand_op.cc DEPS ${op_DEPS})
 add_operator(sequence_unpad_op_lite extra SRCS sequence_unpad_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pad_op_lite extra SRCS sequence_pad_op.cc DEPS ${op_DEPS})
+add_operator(sequence_mask_op_lite extra SRCS sequence_mask_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
@@ -166,6 +168,9 @@ add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS}
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__resnet_cbam_op extra SRCS __xpu__resnet_cbam_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__search_attention_op extra SRCS __xpu__search_attention_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc

@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "graph/op/all_ops.h"
+#include "graph/compatible/all_ops.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 

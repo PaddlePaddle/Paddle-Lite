@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class TransposeCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename Dtype, PrecisionType Ptype>
+class TransposeCompute : public KernelLite<TARGET(kCUDA), Ptype> {
  public:
   using param_t = operators::TransposeParam;
 
@@ -29,7 +30,7 @@ class TransposeCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~TransposeCompute() = default;
 
  private:
-  lite::cuda::math::Transpose<float> trans;
+  lite::cuda::math::Transpose<Dtype> trans_;
 };
 
 }  // namespace cuda

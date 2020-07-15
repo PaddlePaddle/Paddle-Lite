@@ -94,6 +94,8 @@ class Optimizer {
 #endif
            "identity_dropout_eliminate_pass",
            "__xpu__resnet_fuse_pass",
+           "__xpu__resnet_cbam_fuse_pass",
+           "__xpu__mmdnn_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
            "__xpu__embedding_with_eltwise_add_fuse_pass",
            "__xpu__fc_fuse_pass",
@@ -108,9 +110,13 @@ class Optimizer {
            "bm_subgraph_pass",
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
+           "mlu_subgraph_pass",
            "static_kernel_pick_pass",  // pick original kernel from graph
+
            "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
+
+           "mlu_postprocess_pass",
            // info(target/precision/layout/device)
            // using kernel info
            "argument_type_display_pass",  // debug pass: show arg-type-node's
@@ -140,12 +146,8 @@ class Optimizer {
            "variable_place_inference_pass",  //
            "argument_type_display_pass",
 
-           "mlu_subgraph_pass",
-
            "runtime_context_assign_pass",
            "argument_type_display_pass",
-
-           "mlu_postprocess_pass",
 
            "memory_optimize_pass"}};
 
