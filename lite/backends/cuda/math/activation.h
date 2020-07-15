@@ -17,10 +17,30 @@
 #include <cuda_runtime.h>
 #include <string>
 
+#include "lite/utils/cp_logging.h"
+
 namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
+
+enum ActivationType {
+  kSigmoid,
+  kReLU,
+  kTanh,
+  kIdentity,
+};
+
+ActivationType GetActiveType(const std::string& act);
+
+template <typename Dtype>
+inline __device__ Dtype Sigmoid(const Dtype a);
+
+template <typename Dtype>
+inline __device__ Dtype ReLU(const Dtype a);
+
+template <typename Dtype>
+inline __device__ Dtype Tanh(const Dtype a);
 
 // fp32 and half
 template <typename T>

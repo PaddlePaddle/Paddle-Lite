@@ -13,35 +13,27 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
+
+#include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace cuda {
+namespace math {
 
-class GRUOpLite : public OpLite {
- public:
-  GRUOpLite() {}
-  explicit GRUOpLite(const std::string &op_type) : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "GRU"; }
-
- private:
-  mutable GRUParam param_;
-  std::vector<int> vec;
+template <typename T>
+struct RowwiseAdd {
+  void operator()(const T* input,
+                  const T* bias,
+                  T* output,
+                  const int width,
+                  const int count,
+                  const cudaStream_t& stream);
 };
 
-}  // namespace operators
+}  // namespace math
+}  // namespace cuda
 }  // namespace lite
 }  // namespace paddle
