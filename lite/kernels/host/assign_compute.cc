@@ -40,12 +40,8 @@ void AssignCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(assign,
-                     kHost,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::host::AssignCompute,
-                     def_tensor)
+REGISTER_LITE_KERNEL(
+    assign, kHost, kAny, kAny, paddle::lite::kernels::host::AssignCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -61,7 +57,7 @@ REGISTER_LITE_KERNEL(assign,
                      kAny,
                      kAny,
                      paddle::lite::kernels::host::AssignCompute,
-                     def_array)
+                     def_tensor_array)
     .BindInput("X",
                {LiteType::GetTensorListTy(TARGET(kHost),
                                           PRECISION(kAny),
