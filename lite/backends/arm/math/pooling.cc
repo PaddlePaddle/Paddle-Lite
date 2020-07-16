@@ -2044,7 +2044,7 @@ void pooling3x3s1p0_avg(const float* din,
               } else {
                 if (pad_bottom > 1) {
                   coef_h = 1.f / 3;
-                } else if (pad_bottom = 1) {
+                } else if (pad_bottom == 1) {
                   coef_h = 0.5f;
                 } else {
                   coef_h = 1.f;

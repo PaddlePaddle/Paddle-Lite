@@ -142,7 +142,7 @@ static bool conv_trans_weights_numc(const dtype* din,
 template <typename Dtype>
 void transpose(const Dtype* din, Dtype* dout, int m, int n) {
   // nxm == mxn
-  // 4x4 分块处理
+  // 4x4
   int cnt_n = n >> 2;
   int remain_n = n & 3;
   int cnt_m = m >> 2;
