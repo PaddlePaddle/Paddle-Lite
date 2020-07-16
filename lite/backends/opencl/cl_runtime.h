@@ -70,11 +70,11 @@ class CLRuntime {
   static CLRuntime* Global();
 
   bool OpenCLAvaliableForDevice() {
-    bool opencl_lib_found = paddle::lite::CLWrapper::Global()->openclLibFound();
+    bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
     LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
     if (opencl_lib_found == false) return false;
 
-    bool dlsym_success = paddle::lite::CLWrapper::Global()->dlsymSuccess();
+    bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
     LOG(INFO) << "dlsym_success:" << dlsym_success;
     if (opencl_lib_found == false) return false;
 

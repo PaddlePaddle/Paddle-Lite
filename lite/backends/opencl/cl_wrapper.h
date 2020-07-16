@@ -508,9 +508,9 @@ class CLWrapper final {
     return clEnqueueCopyImage_;
   }
 
-  bool openclLibFound() { return opencl_lib_found_; }
+  bool OpenclLibFound() { return opencl_lib_found_; }
 
-  bool dlsymSuccess() { return dlsym_success_; }
+  bool DlsymSuccess() { return dlsym_success_; }
 
  private:
   CLWrapper();
