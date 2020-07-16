@@ -36,7 +36,7 @@
 namespace paddle {
 namespace lite_api {
 
-bool is_opencl_valid() {
+bool IsOpenCLBackendValid() {
   bool opencl_valid = false;
 #ifdef LITE_WITH_OPENCL
   opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
@@ -332,13 +332,6 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
   model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
   param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
   model_from_memory_ = true;
-}
-bool MobileConfig::is_opencl_valid() {
-  bool opencl_valid = false;
-#ifdef LITE_WITH_OPENCL
-  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
-#endif
-  return opencl_valid;
 }
 
 }  // namespace lite_api
