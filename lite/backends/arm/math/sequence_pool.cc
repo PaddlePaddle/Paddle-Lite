@@ -46,15 +46,6 @@ void seq_pool_sum<float>(const float* din,
       memcpy(dout_ptr, din_ptr, width * sizeof(float));
       din_ptr += width;
       height = height - 1;
-#if 0
->>>>>>> 0e9dfda066fee168c3b72065c47e79fe705dd720
-      for (int h = 0; h < height; h++) {
-        for (int w = 0; w < width; ++w) {
-          dout_ptr[w] += din_ptr[w];
-        }
-        din_ptr += width;
-      }
-#else
       int cnt_w = width >> 2;
       int remain_w = width & 3;
       int cnt_h = height >> 2;
@@ -110,7 +101,6 @@ void seq_pool_sum<float>(const float* din,
         }
         dout_ptr++;
       }
-#endif
     }
   }
 }
@@ -204,14 +194,6 @@ void seq_pool_max<float>(const float* din,
         memcpy(dout_ptr, din_ptr, width * sizeof(float));
         din_ptr += width;
         height = height - 1;
-#if 0
-        for (int h = 0; h < rheight; h++) {
-          for (int w = 0; w < width; w++) {
-            dout_ptr[w] = std::max(dout_ptr[w], din_ptr[w]);
-          }
-          din_ptr += width;
-        }
-#else
         int cnt_w = width >> 2;
         int remain_w = width & 3;
         int cnt_h = height >> 2;
@@ -268,7 +250,6 @@ void seq_pool_max<float>(const float* din,
           }
           dout_ptr++;
         }
-#endif
       }
     }
   }
