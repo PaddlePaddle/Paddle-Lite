@@ -25,7 +25,6 @@ class ExpandAsComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string x_ = "X";
   std::string out_ = "Out";
-  // std::vector<int> expand_times_;
   std::string target_ = "Target";
   DDim dims_;
   DDim target_dims_;
@@ -98,9 +97,6 @@ class ExpandAsComputeTester : public arena::TestCase {
 };
 
 void test_expand_as_3dim(Place place, float abs_error) {
-  // for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1}),
-  //                                      std::vector<int>({2, 2, 2}),
-  //                                      std::vector<int>({3, 1, 2})}) {
   for (int C : {3}) {
     for (int H : {2}) {
       for (int W : {4}) {
@@ -111,13 +107,9 @@ void test_expand_as_3dim(Place place, float abs_error) {
       }
     }
   }
-  //}
 }
 
 void test_expand_as_4dim(Place place, float abs_error) {
-  // for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1, 4}),
-  //                                      std::vector<int>({2, 2, 2, 2}),
-  //                                      std::vector<int>({3, 1, 2, 1})}) {
   for (int N : {2}) {
     for (int C : {3}) {
       for (int H : {2}) {
@@ -133,7 +125,6 @@ void test_expand_as_4dim(Place place, float abs_error) {
       }
     }
   }
-  //}
 }
 
 TEST(ExpandAs, precision) {

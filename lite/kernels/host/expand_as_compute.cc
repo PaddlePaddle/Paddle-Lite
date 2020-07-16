@@ -39,17 +39,17 @@ void ExpandAsCompute<T, PType>::Run() {
   DDim in_shape = x->dims();
 
   int inner_num = 1;
-  int i = dims - 1;
-  int outer_num = in_shape.count(0, i);
-  inner_num *= in_shape[i];
+  int pos = dims - 1;
+  int outer_num = in_shape.count(0, pos);
+  inner_num *= in_shape[pos];
   for (int j = 0; j < outer_num; ++j) {
-    for (int k = 0; k < expand_times[i]; ++k) {
-      memcpy(dst + (j * expand_times[i] + k) * inner_num,
+    for (int k = 0; k < expand_times[pos]; ++k) {
+      memcpy(dst + (j * expand_times[pos] + k) * inner_num,
              src + j * inner_num,
              sizeof(T) * inner_num);
     }
   }
-  inner_num *= expand_times[i];
+  inner_num *= expand_times[pos];
   for (int i = dims - 2; i >= 0; --i) {
     int outer_num = in_shape.count(0, i);
     inner_num *= in_shape[i];
