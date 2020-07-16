@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/elimination/remove_tf_redundant_ops_pass.h"
-#include <set>
+#include <unordered_set>
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass.h"
 #include "lite/core/mir/pass_registry.h"
@@ -86,7 +86,7 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
     IR_NODE_LINK_TO(softmax_node->outlinks.front(), fetch_node);
 
     // collect nodes to safe remove
-    std::set<const Node*> nodes_to_remove;
+    std::unordered_set<const Node*> nodes_to_remove;
     auto remove_inst_node_and_out_args_node = [&](Node* n) {
       nodes_to_remove.insert(n);
       for (auto& out : n->outlinks) {
@@ -218,7 +218,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
     IR_NODE_LINK_TO(out_arg_node, next_inst_node_of_reshape2_out);
 
     // collect nodes to safe remove
-    std::set<const Node*> nodes_to_remove;
+    std::unordered_set<const Node*> nodes_to_remove;
     auto remove_inst_node_and_out_args_node = [&](Node* n) {
       nodes_to_remove.insert(n);
       for (auto& out : n->outlinks) {
