@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "lite/utils/cp_logging.h"
+
 namespace paddle {
 namespace lite {
 
@@ -34,13 +36,22 @@ class ProgramDescReadAPI {
 
 class ProgramDescWriteAPI {
  public:
-  virtual void ClearBlocks() = 0;
-  virtual void SetVersion(int64_t version) = 0;
+  virtual void ClearBlocks() { NotImplemented(); }
+  virtual void SetVersion(int64_t version) { NotImplemented(); }
 
   template <typename T>
-  T* AddBlock();
+  T* AddBlock() {
+    NotImplemented();
+    return nullptr;
+  }
 
   virtual ~ProgramDescWriteAPI() = default;
+
+ private:
+  void NotImplemented() const {
+    LOG(FATAL)
+        << "ProgramDescWriteAPI is not available in model read-only mode.";
+  }
 };
 
 // The reading and writing of the model are one-time and separate.

@@ -120,3 +120,6 @@ metal/MobileNetDemo/MobileNetDemo/Resources
 lite/model_parser/flatbuffers/framework_generated.h
 
 build*
+
+# hiai libs
+ai_ddk_lib*

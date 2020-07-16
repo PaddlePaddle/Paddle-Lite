@@ -269,6 +269,7 @@ function main {
     if [ -z "$1" ]; then
         # compiling result contains light_api lib only, recommanded.
         make_tiny_publish_so $ARCH $TOOLCHAIN $ANDROID_STL
+        exit 0
     fi
 
     # Parse command line.
@@ -358,6 +359,7 @@ function main {
     done
     # compiling result contains light_api lib only, recommanded.
     make_tiny_publish_so
+    exit 0
 }
 
 main $@

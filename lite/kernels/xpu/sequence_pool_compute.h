@@ -13,25 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
+
+#include <memory>
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class XPUSequencePoolCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ActivationGradParam;
+  using param_t = operators::SequencePoolParam;
+
+  void PrepareForRun() override;
 
   void Run() override;
 
-  virtual ~SquareGradCompute() = default;
+ private:
+  XPUScratchPadGuard lod_xpu_guard_;
+
+  std::unique_ptr<int[]> lod_cpu;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

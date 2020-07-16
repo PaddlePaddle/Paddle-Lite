@@ -25,9 +25,9 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class VarDesc : public VarDescReadAPI {
+class VarDesc : public VarDescAPI {
  public:
-  explicit VarDesc(proto::VarDesc* desc) : desc_(desc) {}
+  explicit VarDesc(proto::VarDesc const* desc) : desc_(desc) {}
 
   std::string Name() const override { return desc_->name()->str(); }
 
@@ -48,10 +48,34 @@ class VarDesc : public VarDescReadAPI {
     return dims_vec;
   }
 
-  VarDesc() = delete;
+  VarDescAPI::Type GetDataType() const {
+    CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
+    return static_cast<VarDescAPI::Type>(
+        desc_->type()->lod_tensor()->tensor()->data_type());
+  }
 
  private:
-  proto::VarDesc* desc_;
+  proto::VarDesc const* desc_;
+
+  // To reduce overhead, we expect to use namespace aliasing to make cpp::Desc
+  // and flatbuffers::Desc replace each other. However, there is no direct
+  // inheritance relationship between the two data types, and the read-only
+  // version of flatbuffers lacks some write implementations. Therefore, at
+  // present, we are temporarily providing a default interface that triggers
+  // execution-time errors to avoid type ambiguity and compile-time errors
+  // caused by different building options.
+
+ public:
+  VarDesc() { NotImplemented(); }
+  void SetDataType(Type data_type) { NotImplemented(); }
+  void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
+
+ private:
+  void NotImplemented() const {
+    LOG(FATAL) << "The additional interfaces of VarDesc is temporarily "
+                  "unavailable in read-only mode.";
+  }
+  std::vector<int64_t> shape_;
 };
 
 }  // namespace fbs

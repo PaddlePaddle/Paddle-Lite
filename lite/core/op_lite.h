@@ -230,7 +230,7 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {
-    for (auto &item : inputs_) {
+    for (auto &item : *mutable_inputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }
@@ -238,7 +238,7 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllOutputs(const std::string &from, const std::string &to) {
-    for (auto &item : outputs_) {
+    for (auto &item : *mutable_outputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }

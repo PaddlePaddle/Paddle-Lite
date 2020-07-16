@@ -44,8 +44,9 @@ class SubgraphEngine : public subgraph::Engine {
             ctx, block_idx, block_desc, input_names, output_names, scope) {}
 
  protected:
-  int BuildDeviceProgram() override;
-  int LaunchDeviceProgram() override;
+  bool PrepareWorkspaceForDeviceProgram() override;
+  bool BuildDeviceProgram() override;
+  bool LaunchDeviceProgram() override;
 
  private:
   void *bmrt_hd_;

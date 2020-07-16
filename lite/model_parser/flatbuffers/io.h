@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/vector_view.h"
+#pragma once
+
+#include <string>
+#include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
-namespace lite {}  // namespace lite
+namespace lite {
+namespace fbs {
+
+void LoadModel(const std::string& path, ProgramDesc* prog);
+
+}  // namespace fbs
+}  // namespace lite
 }  // namespace paddle
