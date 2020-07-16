@@ -180,90 +180,6 @@ struct GRUUnitFunctor {
 
 template struct GRUUnitFunctor<float>;
 
-template <>
-struct GRUUnitFunctor<half> {
-  static void compute(GRUMetaValue<half> value,
-                      int frame_size,
-                      int batch_size,
-                      const lite::cuda::math::ActivationType& active_node,
-                      const lite::cuda::math::ActivationType& active_gate,
-                      bool origin_mode,
-                      lite::cuda::math::Gemm<half, half>* blas,
-                      CUDAContext* context) {
-    dim3 threads, grids;
-    if (batch_size == 1) {
-      int frame_per_block = frame_size <= 1024 ? frame_size : 1024;
-      int frame_blocks = (frame_size + 1024 - 1) / 1024;
-      threads = dim3(frame_per_block, 1);
-      grids = dim3(frame_blocks, 1);
-    } else {
-      threads = dim3(32, 32);
-      grids = dim3((frame_size + 32 - 1) / 32, (batch_size + 32 - 1) / 32);
-    }
-
-    if (value.prev_out_value) {
-      CHECK(blas->init(false,
-                       false,
-                       batch_size,
-                       frame_size * 2,
-                       frame_size,
-                       frame_size,
-                       frame_size * 2,
-                       frame_size * 3,
-                       context));
-      blas->run(1.0f,
-                1.0f,
-                value.prev_out_value,
-                value.gate_weight,
-                value.gate_value,
-                context);
-    }
-    CUDA_POST_KERNEL_CHECK;
-
-    lite::cuda::math::GruForwardResetOutput<
-        half><<<grids, threads, 0, context->exec_stream()>>>(
-        value.gate_value,
-        value.reset_output_value,
-        value.prev_out_value,
-        frame_size,
-        batch_size,
-        active_gate,
-        batch_size == 1);
-    CUDA_POST_KERNEL_CHECK;
-
-    if (value.prev_out_value) {
-      CHECK(blas->init(false,
-                       false,
-                       batch_size,
-                       frame_size,
-                       frame_size,
-                       frame_size,
-                       frame_size,
-                       frame_size * 3,
-                       context));
-      blas->run(1.0f,
-                1.0f,
-                value.reset_output_value,
-                value.state_weight,
-                value.gate_value + frame_size * 2,
-                context);
-    }
-    CUDA_POST_KERNEL_CHECK;
-
-    lite::cuda::math::GruForwardFinalOutput<
-        half><<<grids, threads, 0, context->exec_stream()>>>(
-        value.gate_value,
-        value.prev_out_value,
-        value.output_value,
-        frame_size,
-        batch_size,
-        active_node,
-        origin_mode,
-        batch_size == 1);
-    CUDA_POST_KERNEL_CHECK;
-  }
-};
-
 template <typename T, PrecisionType PType>
 void GRUCompute<T, PType>::PrepareForRun() {
   gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
@@ -367,8 +283,6 @@ void GRUCompute<T, PType>::Run() {
 using GRUFp32 =
     paddle::lite::kernels::cuda::GRUCompute<float, PRECISION(kFloat)>;
 
-using GRUFp16 = paddle::lite::kernels::cuda::GRUCompute<half, PRECISION(kFP16)>;
-
 REGISTER_LITE_KERNEL(gru, kCUDA, kFloat, kNCHW, GRUFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -378,21 +292,4 @@ REGISTER_LITE_KERNEL(gru, kCUDA, kFloat, kNCHW, GRUFp32, def)
     .BindOutput("BatchResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("BatchHidden", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(gru, kCUDA, kFP16, kNCHW, GRUFp16, def)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindInput("H0", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindInput("Weight",
-               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindOutput("BatchGate",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindOutput("BatchResetHiddenPrev",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindOutput("BatchHidden",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
-    .BindOutput("Hidden",
-                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();

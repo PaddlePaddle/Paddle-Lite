@@ -154,29 +154,6 @@ TEST_F(GRUTest, TestFP32) {
             << duration / FLAGS_repeats << " ms in average.";
 }
 
-TEST_F(GRUTest, TestFP16) {
-  InitHalfInput();
-  GRUCompute<half, PRECISION(kFP16)> kernel;
-  kernel.SetParam(param_);
-  kernel.SetContext(std::move(ctx_));
-
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    kernel.Launch();
-    cudaDeviceSynchronize();
-  }
-
-  auto start = GetCurrentUS();
-  kernel.PrepareForRun();
-  for (int i = 0; i < FLAGS_repeats; ++i) {
-    kernel.Run();
-  }
-  cudaDeviceSynchronize();
-  auto duration = (GetCurrentUS() - start) / 1000.0;
-  LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
-            << ", repeats: " << FLAGS_repeats << ", spend "
-            << duration / FLAGS_repeats << " ms in average.";
-}
-
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
