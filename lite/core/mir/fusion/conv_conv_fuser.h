@@ -43,6 +43,21 @@ class ConvConvFuser : public FuseBase {
                         int num, int ic, int ih, int iw, int oc) {
     // input conv_weight0_t weights conv_weight1_t
     // output weight_tensor
+    auto in_dims = weight0_tensor->dims();
+    auto weight_dims = weight1_tensor->dims();
+    const float* din = weight0_tensor->data<float>();
+    const float* weights = weight1_tensor->data<float>();
+    int num = in_dims[0];
+    int ic = in_dims[1];
+    int ih = in_dims[2];
+    int iw = in_dims[3];
+    int oc = weight_dims[0];
+    int kh = weight_dims[2];
+    int kw = weight_dims[3];
+    int oh = ih;
+    int ow = iw;
+    // ksize = 1
+    int ksize = kw * kh;
     int in_size = ih * iw;
     int in_channel_size = ic * in_size;
     // out = w1[j, i, ih, iw] * w2[k, j, kw, kh]

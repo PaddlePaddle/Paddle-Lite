@@ -60,7 +60,7 @@ void ConvConvFuser::BuildPattern() {
   // bool ksize_eq = (wei_dim0[2] == wei_dim0[3]) && (wei_dim1[2] == wei_dim1[3]);
   // bool ksize1 = (wei_dim0[2] = 1  || wei_dim0[2]==3);
   // bool ksize2 = wei_dim1[2] == 1;
-  // //  only support conv + 1x1s1p0
+  // //  only support 1x1/3x3 + 1x1
   // if (!(size && ksize_eq && ksize1 && ksize2)){
   //     return;
   // }
