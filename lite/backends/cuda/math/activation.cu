@@ -21,6 +21,20 @@ namespace lite {
 namespace cuda {
 namespace math {
 
+ActivationType GetActiveType(const std::string& act) {
+  if (act == "sigmoid") {
+    return kSigmoid;
+  } else if (act == "relu") {
+    return kReLU;
+  } else if (act == "tanh") {
+    return kTanh;
+  } else if (act == "identify") {
+    return kIdentity;
+  } else {
+    LOG(FATAL) << "not supported activation: " << act;
+  }
+}
+
 template <typename T>
 __global__ void relu_kernel(const int num,
                             const float alpha,

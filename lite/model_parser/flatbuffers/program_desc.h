@@ -15,7 +15,10 @@
 #pragma once
 
 #include <memory>
+#include <utility>
+#include <vector>
 #include "lite/model_parser/base/program_desc.h"
+#include "lite/model_parser/flatbuffers/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 #include "lite/utils/all.h"
 
@@ -26,17 +29,39 @@ namespace fbs {
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
-  explicit ProgramDesc(proto::ProgramDesc *desc) : desc_(desc) { CHECK(desc); }
+  explicit ProgramDesc(std::unique_ptr<const char[]> buf) {
+    Init(std::move(buf));
+  }
 
   size_t BlocksSize() const override { return desc_->blocks()->size(); }
 
-  template <typename T>
-  T *GetBlock(int32_t idx);
+  void Init(std::unique_ptr<const char[]> buf) {
+    CHECK(buf.get() != nullptr);
+    buf_ = std::move(buf);
+    desc_ = proto::GetProgramDesc(buf_.get());
+    blocks_.reserve(BlocksSize());
+    for (size_t idx = 0; idx < BlocksSize(); ++idx) {
+      blocks_.push_back(BlockDesc(desc_->blocks()->Get(idx)));
+    }
+  }
+
+  void CopyFrom(const ProgramDesc& other) {
+    size_t length = strlen(static_cast<const char*>(other.raw_buf()));
+    std::unique_ptr<char[]> buf(new char[length]);
+    memcpy(buf.get(), other.raw_buf(), length);
+    Init(std::move(buf));
+  }
 
   template <typename T>
-  T const *GetBlock(int32_t idx) const {
-    return GetBlock<T>(idx);
+  T const* GetBlock(int32_t idx) const;
+
+  template <typename T>
+  T* GetBlock(int32_t idx) {
+    NotImplemented();
+    return nullptr;
   }
+
+  const std::vector<BlockDesc>& GetBlocks() const { return blocks_; }
 
   bool HasVersion() const override { return desc_->version() != nullptr; }
 
@@ -45,8 +70,22 @@ class ProgramDesc : public ProgramDescAPI {
     return desc_->version()->version();
   }
 
+  proto::ProgramDesc const* raw_desc() const { return desc_; }
+
+  const void* raw_buf() const { return buf_.get(); }
+
  private:
-  proto::ProgramDesc *desc_;  // not_own
+  proto::ProgramDesc const* desc_;
+  std::unique_ptr<const char[]> buf_;
+  std::vector<BlockDesc> blocks_;
+
+ private:
+  ProgramDesc& operator=(const ProgramDesc&) = delete;
+  ProgramDesc(const ProgramDesc&) = delete;
+  void NotImplemented() const {
+    LOG(FATAL) << "The additional interfaces of ProgramDesc is temporarily "
+                  "unavailable in read-only mode.";
+  }
 };
 
 }  // namespace fbs

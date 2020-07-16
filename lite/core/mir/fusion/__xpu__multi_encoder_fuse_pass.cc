@@ -639,20 +639,21 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::set<int> fc_int31_ids;
 #ifdef LITE_WITH_XPU
     // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
-    // access Context<kXPU>::_multi_encoder_precision, but this static member
-    // variable in class specialization defined in lite/core/context.cc
-    // is only compiled iff LITE_WITH_XPU==ON. To suppress linkage error, we use
+    // access TargetWrapperXPU::multi_encoder_precision, but this static member
+    // variable in class specialization defined in
+    // lite/backends/xpu/target_wrapper.cc is only compiled iff
+    // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::Context<TargetType::kXPU>::_multi_encoder_precision == "int31") {
+        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
       fc_int31_ids = {0, 1, 2, 3, 4, 5};
       VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
-              << "lite::Context<>::_multi_encoder_precision="
-              << lite::Context<TargetType::kXPU>::_multi_encoder_precision;
+              << "lite::TargetWrapperXPU::multi_encoder_precision="
+              << lite::TargetWrapperXPU::multi_encoder_precision;
     } else {
       VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
-              << "lite::Context<>::_multi_encoder_precision="
-              << lite::Context<TargetType::kXPU>::_multi_encoder_precision;
+              << "lite::TargetWrapperXPU::multi_encoder_precision="
+              << lite::TargetWrapperXPU::multi_encoder_precision;
     }
 #endif
 

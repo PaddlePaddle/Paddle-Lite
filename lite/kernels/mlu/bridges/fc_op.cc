@@ -68,7 +68,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto w_tensor = graph->AddNode(
       w_var_name, cnml_w_shape, CNML_FILTER, CNML_NCHW, graph->FPType());
 
-  auto input_scale = op_info->GetAttr<float>("input_scale");
+  auto input_scale = op_info->GetInputScale(x_var_name)[0];
 
   auto output_tensor = graph->AddNode(output_var_name,
                                       output->dims().Vectorize(),
@@ -101,7 +101,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                             bias_tensor ? bias_tensor->mlu_tensor() : nullptr));
   graph->SetComputingDataType(
       fc_op, graph->GetNode(x_var_name)->mlu_tensor(), 1 / input_scale);
-  auto weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
+  auto weight_scale = op_info->GetInputScale(w_var_name);
 
   // LOG(INFO) << "W precision " << int(w->precision());
   if (w->precision() == PrecisionType::kUnk ||

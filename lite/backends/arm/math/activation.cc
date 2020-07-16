@@ -763,24 +763,6 @@ void act_thresholded_relu<float>(
   }
 }
 
-#ifdef LITE_WITH_TRAIN
-template <>
-void act_square_grad(const float* din,
-                     const float* dout_grad,
-                     float* din_grad,
-                     int size,
-                     int threads) {
-  const float* ptr_out_grad = dout_grad;
-  float* ptr_in_grad = din_grad;
-  for (int i = 0; i < size; ++i) {
-    ptr_in_grad[0] = ptr_out_grad[0] * 2.0 * din[0];
-    ptr_out_grad++;
-    ptr_in_grad++;
-    din++;
-  }
-}
-#endif
-
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

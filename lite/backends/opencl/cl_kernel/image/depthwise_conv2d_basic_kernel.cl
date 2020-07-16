@@ -19,9 +19,7 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
                            __private const int global_size_dim2,
                            __read_only image2d_t input,
                            __read_only image2d_t filter,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
                            __read_only image2d_t bias,
-#endif
 #ifdef BATCH_NORM
                            __read_only image2d_t new_scale,
                            __read_only image2d_t new_biase,

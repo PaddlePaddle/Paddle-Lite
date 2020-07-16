@@ -215,18 +215,6 @@ class ElementwiseAddGradTester {
     fill_data_rand(y.data(), -1.f, 1.f, y_dims_.production());
     this->run_forward(&param_, &kernel_, x, y, out.data());
 
-    for (int i = 0; i < x_dims_.production(); i++) {
-      LOG(INFO) << "x_" << i << ": " << x[i];
-    }
-
-    for (int i = 0; i < y_dims_.production(); i++) {
-      LOG(INFO) << "y_" << i << ": " << y[i];
-    }
-
-    for (int i = 0; i < out_dims_.production(); i++) {
-      LOG(INFO) << "out_" << i << ": " << out[i];
-    }
-
     // backward
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(x_dims_.production());
@@ -241,14 +229,6 @@ class ElementwiseAddGradTester {
                        out_grad,
                        x_grad.data(),
                        y_grad.data());
-
-    for (int i = 0; i < x_grad.size(); i++) {
-      LOG(INFO) << "x_grad_" << i << ": " << x_grad[i];
-    }
-
-    for (int i = 0; i < y_grad.size(); i++) {
-      LOG(INFO) << "y_grad_" << i << ": " << y_grad[i];
-    }
 
     // get numeric gradient
     std::vector<float> x_delta(x_dims_.production());
@@ -443,18 +423,6 @@ class ElementwiseSubGradTester {
     fill_data_rand(y.data(), -1.f, 1.f, y_dims_.production());
     this->run_forward(&param_, &kernel_, x, y, out.data());
 
-    for (int i = 0; i < x_dims_.production(); i++) {
-      LOG(INFO) << "x_" << i << ": " << x[i];
-    }
-
-    for (int i = 0; i < y_dims_.production(); i++) {
-      LOG(INFO) << "y_" << i << ": " << y[i];
-    }
-
-    for (int i = 0; i < out_dims_.production(); i++) {
-      LOG(INFO) << "out_" << i << ": " << out[i];
-    }
-
     // backward
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(x_dims_.production());
@@ -469,14 +437,6 @@ class ElementwiseSubGradTester {
                        out_grad,
                        x_grad.data(),
                        y_grad.data());
-
-    for (int i = 0; i < x_grad.size(); i++) {
-      LOG(INFO) << "x_grad_" << i << ": " << x_grad[i];
-    }
-
-    for (int i = 0; i < y_grad.size(); i++) {
-      LOG(INFO) << "y_grad_" << i << ": " << y_grad[i];
-    }
 
     // get numeric gradient
     std::vector<float> x_delta(x_dims_.production());
