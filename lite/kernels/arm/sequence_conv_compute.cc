@@ -103,10 +103,19 @@ void SequenceConvCompute::Run() {
           1,
           1,  // stride_h, stride_w, dilation_h, dilation_w
           tmp_data);
-      local_naive_transpose(tmp_data,
-                            sub_col_data,
-                            kernel_size * hidden_dim,
-                            input_row_end - input_row_begin);
+      int cols = kernel_size * hidden_dim;
+      int rows = input_row_end - input_row_begin;
+      if (cols % 4 == 0 && rows % 4 == 0) {
+        paddle::lite::arm::math::local_transpose(tmp_data,
+                                                 sub_col_data,
+                                                 cols,
+                                                 rows);
+      } else {
+        local_naive_transpose(tmp_data,
+                              sub_col_data,
+                              cols,
+                              rows);
+      }
     }
   }
 

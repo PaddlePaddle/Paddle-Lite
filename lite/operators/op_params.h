@@ -1129,6 +1129,11 @@ struct VarConv2DParam : ParamBase {
   int kernel_w;
 
   bool fuse_relu{false};
+
+#ifdef LITE_WITH_XPU
+  bool __xpu__float_to_fix{false};  // Is W already converted to int16/int8
+  float __xpu__w_max{0.0f};         // Abs max in W
+#endif
 };
 
 /// ----------------------- shape operators ----------------------
@@ -1378,6 +1383,13 @@ struct SearchFcParam : ParamBase {
   const lite::Tensor* b{};
   lite::Tensor* Out{};
   int out_size{};
+
+  bool fuse_relu{false};
+
+#ifdef LITE_WITH_XPU
+  bool __xpu__float_to_fix{false};  // Is W already converted to int16/int8
+  float __xpu__w_max{0.0f};         // Abs max in W
+#endif
 };
 /// --------------------- match_matrix_tensor operators --------------------
 struct MatchMatrixTensorParam : ParamBase {
@@ -1388,6 +1400,12 @@ struct MatchMatrixTensorParam : ParamBase {
   lite::Tensor* tmp{};
 
   int dim_t;
+  bool fuse_relu{false};
+
+#ifdef LITE_WITH_XPU
+  bool __xpu__float_to_fix{false};  // Is w already converted to int16/int8
+  float __xpu__w_max{0.0f};         // Abs max in w
+#endif
 };
 
 /// --------------------- search_seq_depadding operators --------------------
@@ -1409,6 +1427,12 @@ struct SearchGrnnParam : ParamBase {
   lite::Tensor* tmp_buffer{};
   lite::Tensor* idx_sorted_by_width{};
   lite::Tensor* layout_input{};
+
+#ifdef LITE_WITH_XPU
+  bool __xpu__float_to_fix{false};   // Is wi/wh already converted to int16/int8
+  std::vector<float> __xpu__wi_max;  // Abs max in wi
+  std::vector<float> __xpu__wh_max;  // Abs max in wh
+#endif
 };
 
 struct SplitLodTensorParam : ParamBase {
@@ -1561,6 +1585,106 @@ struct XPUFcParam : ParamBase {
   float w_max{0.0f};
   bool transpose_w{true};
   std::string activation_type{""};
+};
+
+struct XPUResNetCbamParam : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> filter;
+  std::vector<lite::Tensor*> bias;
+  std::vector<lite::Tensor*> max_filter;
+  lite::Tensor* output{};
+
+  float pool_p{1.0f};
+};
+
+struct XPUMmdnnSearchAttentionParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* W{};
+  lite::Tensor* b{};
+  lite::Tensor* Out{};
+
+  float W_max{0.0f};
+  int pad_id{0};
+  float alpha0{1.0f};
+  float alpha1{1.0f};
+  float mask{1.0f};
+};
+
+struct XPUMmdnnBidEmbGrnnAttParam : ParamBase {
+  lite::Tensor* id0{};
+  lite::Tensor* id1{};
+  lite::Tensor* emb_tbl{};
+  lite::Tensor* grnn_fw_wh{};
+  lite::Tensor* grnn_fw_wi{};
+  lite::Tensor* grnn_rv_wh{};
+  lite::Tensor* grnn_rv_wi{};
+  lite::Tensor* att_fc_w{};
+  lite::Tensor* att_fc_b{};
+
+  std::vector<float> grnn_fw_wh_maxs;
+  std::vector<float> grnn_fw_wi_maxs;
+  std::vector<float> grnn_rv_wh_maxs;
+  std::vector<float> grnn_rv_wi_maxs;
+  float att_fc_w_max{0.0f};
+
+  lite::Tensor* grnn_fw_pool_out{};  // 1
+  lite::Tensor* grnn_rv_pool_out{};  // 2
+  lite::Tensor* att_pool_out{};      // 3
+  lite::Tensor* concat_3in1_out{};   // 4
+  lite::Tensor* emb_fw_out{};        // 5
+};
+
+struct XPUMmdnnBidEmbAttParam : ParamBase {
+  lite::Tensor* id0{};
+  lite::Tensor* id1{};
+  lite::Tensor* emb_tbl{};
+  lite::Tensor* att_fc_w{};
+  lite::Tensor* att_fc_b{};
+
+  float att_fc_w_max{0.0f};
+
+  lite::Tensor* att_pool_out{};  // 1
+  lite::Tensor* emb_fw_out{};    // 2
+};
+
+struct XPUMmdnnMatchConvTopkParam : ParamBase {
+  lite::Tensor* input_x{};
+  lite::Tensor* input_y{};
+  lite::Tensor* input_w{};
+  lite::Tensor* conv_w{};
+
+  float input_w_max{0.0f};
+  float conv_w_max{0.0f};
+  std::vector<int> topks;
+  int channel_num{0};
+  int dim_t{0};
+
+  lite::Tensor* topk_out{};
+};
+
+struct XPUMmdnnMergeAllParam : ParamBase {
+  std::vector<lite::Tensor*> concat_7in1_x;
+  std::vector<lite::Tensor*> concat_2in1_x;
+  lite::Tensor* grnn_fw_wh{};
+  lite::Tensor* grnn_fw_wi{};
+  lite::Tensor* grnn_rv_wh{};
+  lite::Tensor* grnn_rv_wi{};
+  lite::Tensor* fc0_w{};
+  lite::Tensor* fc0_b{};
+  lite::Tensor* fc1_w{};
+  lite::Tensor* fc1_b{};
+  lite::Tensor* fc2_w{};
+  lite::Tensor* fc2_b{};
+
+  std::vector<float> grnn_fw_wh_maxs;
+  std::vector<float> grnn_fw_wi_maxs;
+  std::vector<float> grnn_rv_wh_maxs;
+  std::vector<float> grnn_rv_wi_maxs;
+  float fc0_w_max{0.0f};
+  float fc1_w_max{0.0f};
+  float fc2_w_max{0.0f};
+
+  lite::Tensor* out{};
 };
 
 // For DeformableConvolution op

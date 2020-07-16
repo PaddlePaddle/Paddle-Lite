@@ -152,6 +152,7 @@ function main {
         esac
     done
     make_ios $ARCH
+    exit 0
 }
 
 main $@

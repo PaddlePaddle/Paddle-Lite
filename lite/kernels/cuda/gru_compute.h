@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,34 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
+#include <memory>
+
+#include "lite/backends/cuda/math/gemm.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace cuda {
 
-class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class GRUCompute : public KernelLite<TARGET(kCUDA), PType> {
  public:
-  using param_t = operators::ActivationGradParam;
+  using param_t = operators::GRUParam;
+
+  void PrepareForRun() override;
 
   void Run() override;
 
-  virtual ~SquareGradCompute() = default;
+  virtual ~GRUCompute() = default;
+
+ private:
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  lite::Tensor ordered_h0_;
 };
 
-}  // namespace arm
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

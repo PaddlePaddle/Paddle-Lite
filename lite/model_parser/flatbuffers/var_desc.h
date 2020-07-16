@@ -27,7 +27,7 @@ namespace fbs {
 
 class VarDesc : public VarDescAPI {
  public:
-  explicit VarDesc(proto::VarDesc* desc) : desc_(desc) {}
+  explicit VarDesc(proto::VarDesc const* desc) : desc_(desc) {}
 
   std::string Name() const override { return desc_->name()->str(); }
 
@@ -48,10 +48,14 @@ class VarDesc : public VarDescAPI {
     return dims_vec;
   }
 
-  VarDesc() = delete;
+  VarDescAPI::Type GetDataType() const {
+    CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
+    return static_cast<VarDescAPI::Type>(
+        desc_->type()->lod_tensor()->tensor()->data_type());
+  }
 
  private:
-  proto::VarDesc* desc_;
+  proto::VarDesc const* desc_;
 
   // To reduce overhead, we expect to use namespace aliasing to make cpp::Desc
   // and flatbuffers::Desc replace each other. However, there is no direct
@@ -62,10 +66,7 @@ class VarDesc : public VarDescAPI {
   // caused by different building options.
 
  public:
-  VarDescAPI::Type GetDataType() const {
-    NotImplemented();
-    return data_type_;
-  }
+  VarDesc() { NotImplemented(); }
   void SetDataType(Type data_type) { NotImplemented(); }
   void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
 
@@ -74,7 +75,6 @@ class VarDesc : public VarDescAPI {
     LOG(FATAL) << "The additional interfaces of VarDesc is temporarily "
                   "unavailable in read-only mode.";
   }
-  Type data_type_;
   std::vector<int64_t> shape_;
 };
 

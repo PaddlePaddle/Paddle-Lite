@@ -52,6 +52,15 @@ bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("fuse_relu")) {
     param_.fuse_relu = opdesc.GetAttr<bool>("fuse_relu");
   }
+#ifdef LITE_WITH_XPU
+  if (opdesc.HasAttr("__xpu__float_to_fix")) {
+    param_.__xpu__float_to_fix = opdesc.GetAttr<bool>("__xpu__float_to_fix");
+  }
+  if (opdesc.HasAttr("__xpu__w_max")) {
+    param_.__xpu__w_max = opdesc.GetAttr<float>("__xpu__w_max");
+  }
+#endif
+
   return true;
 }
 
