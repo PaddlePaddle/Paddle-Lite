@@ -54,10 +54,16 @@ class BlockDescWriteAPI {
   virtual void SetForwardBlockIdx(int32_t idx) { NotImplemented(); }
 
   template <typename T>
-  T* AddVar();
+  T* AddVar() {
+    NotImplemented();
+    return nullptr;
+  }
 
   template <typename T>
-  T* AddOp();
+  T* AddOp() {
+    NotImplemented();
+    return nullptr;
+  }
 
   virtual ~BlockDescWriteAPI() = default;
 

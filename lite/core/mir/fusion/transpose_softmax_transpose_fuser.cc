@@ -84,11 +84,12 @@ cpp::OpDesc TransposeSoftmaxTransposeFuser::GenOpDesc(
   op_desc.SetInput("X", {matched.at("x1")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("out")->arg()->name});
   op_desc.SetAttr("axis",
-                  matched.at("transpose1")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<int>>("axis")
-                      .back());
+                  *(matched.at("transpose1")
+                        ->stmt()
+                        ->op_info()
+                        ->GetAttr<std::vector<int>>("axis")
+                        .end() -
+                    1));
 
   return op_desc;
 }

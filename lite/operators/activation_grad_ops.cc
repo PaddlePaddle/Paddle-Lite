@@ -41,15 +41,11 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
   if (opdesc.HasInput("X")) {
     auto X_name = opdesc.Input("X").front();
     param_.X = GetVar<lite::Tensor>(scope, X_name);
-  } else {
-    param_.X = param_.X_grad;
   }
 
   if (opdesc.HasInput("Out")) {
     auto Out_name = opdesc.Input("Out").front();
     param_.Out = GetVar<lite::Tensor>(scope, Out_name);
-  } else {
-    param_.Out = param_.Out_grad;
   }
 
   return true;
@@ -60,3 +56,5 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
+REGISTER_LITE_OP(relu_grad, paddle::lite::operators::ActivationGradOp);
+REGISTER_LITE_OP(tanh_grad, paddle::lite::operators::ActivationGradOp);

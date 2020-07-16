@@ -97,7 +97,7 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
     OUTPUT ${GEN_HEADER}
     COMMAND "${FLATBUFFERS_FLATC_EXECUTABLE}"
             --cpp --gen-mutable --gen-object-api --reflect-names
-            --cpp-ptr-type flatbuffers::unique_ptr # Used to test with C++98 STLs
+            --force-empty --force-empty-vectors
             ${OPT}
             -I "${CMAKE_CURRENT_SOURCE_DIR}/tests/include_test"
             -o "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR}"
