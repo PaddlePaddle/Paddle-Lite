@@ -54,10 +54,11 @@ class SubgraphEngine : public subgraph::Engine {
     VLOG(4) << "[MLU] PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL is "
             << GetBoolFromEnv("PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL");
     VLOG(4) << "[MLU] PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE is "
-            << GetBoolFromEnv("PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE");
+            << GetBoolFromEnv("PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE",
+                              true);
     VLOG(4) << "[MLU] LITE_DISABLE_MLU_CAST is "
             << GetBoolFromEnv("LITE_DISABLE_MLU_CAST");
-    if (GetBoolFromEnv("PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE")) {
+    if (GetBoolFromEnv("PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE", true)) {
       disable_batch_size_changeable_ = true;
     }
   }
