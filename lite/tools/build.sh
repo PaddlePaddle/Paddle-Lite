@@ -39,8 +39,8 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 readonly workspace=$PWD
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
