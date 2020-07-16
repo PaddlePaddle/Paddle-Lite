@@ -44,7 +44,6 @@ void RowwiseAdd<T>::operator()(const T* input,
 }
 
 template struct RowwiseAdd<float>;
-template struct RowwiseAdd<half>;
 
 }  // namespace math
 }  // namespace cuda
