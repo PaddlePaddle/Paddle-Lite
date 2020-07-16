@@ -383,10 +383,10 @@ class XPUSingleEncoderFuser : public FuseBase {
     op_desc.SetAttr<std::string>("act_type", act_type_);
 
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
-    // XXX: memleak?
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
-        ->SetSubBlock(sub_block_desc);
+        ->SetProgramDesc(sub_program_desc);
     auto* single_encoder_stmt = matched.at("q_mul")->stmt();
     fake_subgraph_op->Attach(op_desc, single_encoder_stmt->op()->scope());
     fake_subgraph_op->SetValidPlaces(single_encoder_stmt->op()->valid_places());

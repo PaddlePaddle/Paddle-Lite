@@ -46,6 +46,7 @@ class LITE_API LightPredictor {
   LightPredictor(const std::string& lite_model_file,
                  bool model_from_memory = false) {
     scope_ = std::make_shared<Scope>();
+    program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(lite_model_file, model_from_memory);
   }
 
@@ -57,6 +58,7 @@ class LITE_API LightPredictor {
                  lite_api::LiteModelType model_type =
                      lite_api::LiteModelType::kNaiveBuffer) {
     scope_ = std::make_shared<Scope>();
+    program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
   }
 
@@ -91,14 +93,15 @@ class LITE_API LightPredictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool model_from_memory = false);
 
-  void BuildRuntimeProgram(const cpp::ProgramDesc& prog);
+  void BuildRuntimeProgram(
+      const std::shared_ptr<cpp::ProgramDesc>& program_desc);
 
   void DequantizeWeight();
 
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
-  cpp::ProgramDesc cpp_program_desc_;
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
 };

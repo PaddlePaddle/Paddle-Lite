@@ -41,23 +41,27 @@ static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 // - scope: which contains all the weights
 struct Program {
  public:
-  explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
-  Program(const cpp::ProgramDesc& desc,
-          const std::shared_ptr<Scope>& root,
+  explicit Program(const std::shared_ptr<Scope>& root_scope) {
+    scope_ = root_scope;
+  }
+  Program(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
+          const std::shared_ptr<Scope>& root_scope,
           const std::vector<Place>& valid_places,
-          const std::vector<std::string>& var_names = {})
-      : scope_(root), valid_places_(valid_places), desc_(desc) {
+          const std::vector<std::string>& vars_to_copy = {})
+      : scope_(root_scope),
+        valid_places_(valid_places),
+        program_desc_(program_desc) {
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
-    PrepareWorkspace(desc, var_names);
+    PrepareWorkspace(program_desc_, vars_to_copy);
     VLOG(4) << "build desc";
-    Build(desc);
+    Build(program_desc_);
     VLOG(4) << "build desc finished";
   }
 
   std::unique_ptr<Program> Clone() const {
-    std::unique_ptr<Program> res(new Program(desc_, scope_, valid_places_));
-    return res;
+    return std::unique_ptr<Program>(
+        new Program(program_desc_, scope_, valid_places_));
   }
 
   const std::list<std::string>& weights() const { return weights_; }
@@ -65,13 +69,23 @@ struct Program {
   std::list<std::string>* mutable_weights() { return &weights_; }
   std::list<std::string>* mutable_tmp_vars() { return &tmp_vars_; }
 
-  const std::list<std::shared_ptr<OpLite>>& ops() const { return ops_; }
-  std::list<std::shared_ptr<OpLite>>* mutable_ops() { return &ops_; }
+  const std::list<std::shared_ptr<OpLite>>& ops(int block_idx) const {
+    return ops_[block_idx];
+  }
+  std::list<std::shared_ptr<OpLite>>* mutable_ops(int block_idx) {
+    return &ops_[block_idx];
+  }
+  const std::vector<std::list<std::shared_ptr<OpLite>>>& ops() const {
+    return ops_;
+  }
+  std::vector<std::list<std::shared_ptr<OpLite>>>* mutable_ops() {
+    return &ops_;
+  }
 
   lite::Scope* exec_scope() { return exec_scope_; }
   lite::Scope* scope() { return scope_.get(); }
 
-  cpp::ProgramDesc* program_desc() { return &desc_; }
+  cpp::ProgramDesc* program_desc() { return program_desc_.get(); }
 
   const std::map<std::string, PrecisionType>& var_data_type() const {
     return var_data_type_;
@@ -79,22 +93,22 @@ struct Program {
 
  private:
   // Build from a program and scope.
-  void Build(const cpp::ProgramDesc& program);
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program,
-                        const std::vector<std::string>& var_names = {});
+  void PrepareWorkspace(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
+                        const std::vector<std::string>& vars_to_copy = {});
 
  private:
   std::map<std::string, PrecisionType> var_data_type_;
   std::list<std::string> tmp_vars_;
   std::list<std::string> weights_;
-  std::list<std::shared_ptr<OpLite>> ops_;
+  std::vector<std::list<std::shared_ptr<OpLite>>> ops_;
   // the scope to run the kernels, NOTE this is the execution scope.
   std::shared_ptr<lite::Scope> scope_;
   std::vector<Place> valid_places_;
   // Runtime scope.
-  lite::Scope* exec_scope_{};
-  cpp::ProgramDesc desc_;
+  Scope* exec_scope_{};
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
 };
 
 struct Instruction {
@@ -174,6 +188,19 @@ class LITE_API RuntimeProgram {
  public:
   explicit RuntimeProgram(std::vector<Instruction>&& insts)
       : instructions_(std::move(insts)) {
+    Init();
+  }
+  explicit RuntimeProgram(int block_idx,
+                          std::shared_ptr<cpp::ProgramDesc> program_desc,
+                          Scope* exec_scope);
+  ~RuntimeProgram() {
+#ifdef LITE_WITH_PROFILE
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
+#endif  // LITE_WITH_PROFILE
+  }
+
+  void Init() {
     if (instructions_.empty()) {
       LOG(FATAL) << "no instructions";
     }
@@ -190,17 +217,11 @@ class LITE_API RuntimeProgram {
     register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
   }
-  ~RuntimeProgram() {
-#ifdef LITE_WITH_PROFILE
-    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
-    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
-#endif  // LITE_WITH_PROFILE
-  }
 
   void Run();
 
   void set_exec_scope(lite::Scope* x) { exec_scope_ = x; }
-  lite::Scope* exec_scope() { return exec_scope_; }
+  Scope* exec_scope() { return exec_scope_; }
 
   size_t num_instructions() const { return instructions_.size(); }
 
@@ -208,17 +229,17 @@ class LITE_API RuntimeProgram {
 
   // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
   // in ProgramDesc.
-  void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
+  void SaveOpInfosToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
 
   // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
   // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
   // be added in vars_.
-  void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
+  void UpdateVarsOfProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<Instruction> instructions_;
-  lite::Scope* exec_scope_{};
+  Scope* exec_scope_{};
 
 #ifdef LITE_WITH_PROFILE
   profile::Profiler profiler_;

@@ -25,11 +25,14 @@ namespace subgraph {
 
 Engine::Engine(KernelContext *ctx,
                int block_idx,
-               cpp::BlockDesc *block_desc,
+               std::shared_ptr<cpp::ProgramDesc> program_desc,
+               Scope *exec_scope,
                const std::vector<std::string> &input_names,
-               const std::vector<std::string> &output_names,
-               lite::Scope *scope)
-    : ctx_(ctx), block_idx_(block_idx), block_desc_(block_desc), scope_(scope) {
+               const std::vector<std::string> &output_names)
+    : ctx_(ctx),
+      block_idx_(block_idx),
+      program_desc_(program_desc),
+      exec_scope_(exec_scope) {
   input_names_ = input_names;
   output_names_ = output_names;
   // Sort the name of input and output tensors, it's convenient for us to get
@@ -55,12 +58,12 @@ bool Engine::PrepareWorkspaceForOriginProgram() {
   origin_idims_.resize(input_names_.size());
   origin_itensors_.resize(input_names_.size());
   for (int i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(input_names_[i]);
+    origin_itensors_[i] = exec_scope_->FindMutableTensor(input_names_[i]);
     CHECK(origin_itensors_[i]);
   }
   origin_otensors_.resize(output_names_.size());
   for (int i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = scope_->FindMutableTensor(output_names_[i]);
+    origin_otensors_[i] = exec_scope_->FindMutableTensor(output_names_[i]);
     CHECK(origin_otensors_[i]);
   }
   return true;
@@ -69,70 +72,20 @@ bool Engine::PrepareWorkspaceForOriginProgram() {
 bool Engine::BuildOriginProgram() {
   // TODO(hong19860320) The block_desc need to be divided into subgraphs during
   // the exection time. But only see them as a subgraph now.
-  origin_program_.clear();
-  for (size_t op_idx = 0; op_idx < block_desc_->OpsSize(); op_idx++) {
-    auto op_desc = block_desc_->GetOp<cpp::OpDesc>(op_idx);
-    CHECK(op_desc);
-    std::string op_type = op_desc->Type();
-    // Create op and pick up the best kernel
-    auto op = LiteOpRegistry::Global().Create(op_desc->Type());
-    CHECK(op) << "no Op found for " << op_type;
-    op->Attach(*op_desc, scope_);
-    std::unique_ptr<KernelBase> picked_kernel;
-    if (op_desc->HasAttr(kKernelTypeAttr)) {
-      // Create op and pick up the best kernel according to the
-      // kKernelTypeAttr attribute
-      auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
-      std::string alias;
-      Place place;
-      KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-      VLOG(3) << "Found the attr '" << kKernelTypeAttr << "': " << kernel_type
-              << " for " << op_type;
-      auto kernels = op->CreateKernels({place});
-      CHECK_GT(kernels.size(), 0u) << "No kernels found for " << op_type;
-      auto it = std::find_if(
-          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase> &it) {
-            return it->alias() == alias;
-          });
-      CHECK(it != kernels.end());
-      picked_kernel = std::move(*it);
-    } else {
-      // TODO(hong19860320) add kernel picking according to the type of input
-      // and output tensors
-      VLOG(3) << "The attr '" << kKernelTypeAttr
-              << "' not found, pick the first kernel for " << op_type;
-      std::vector<std::unique_ptr<KernelBase>> kernels;
-#if defined(LITE_WITH_ARM)
-      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
-#elif defined(LITE_WITH_X86)
-      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
-#endif
-      if (kernels.size() > 0) {
-        picked_kernel = std::move(kernels.front());
-      } else {
-        LOG(WARNING) << "No kernels found for " << op_type;
-      }
-    }
-    if (picked_kernel != nullptr) {
-      picked_kernel->SetContext(
-          ContextScheduler::Global().NewContext(picked_kernel->target()));
-    }
-    origin_program_.emplace_back(std::move(op), std::move(picked_kernel));
+  if (!origin_program_) {
+    origin_program_.reset(
+        new RuntimeProgram(block_idx_, program_desc_, exec_scope_));
   }
-  CHECK(!origin_program_.empty()) << "no instructions";
   return true;
 }
 
 bool Engine::LaunchOriginProgram() {
-  if (origin_program_.empty()) {
+  if (!origin_program_) {
     BuildOriginProgram();
   }
-  if (!origin_program_.empty()) {
-    for (auto &inst : origin_program_) {
-      auto op_type = inst.op()->op_info()->Type();
-      if (op_type == "feed" || op_type == "fetch") continue;
-      inst.Run();
-    }
+  if (origin_program_) {
+    VLOG(3) << "Roll back to run the origin program.";
+    origin_program_->Run();
     return true;
   }
   return false;

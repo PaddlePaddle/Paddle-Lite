@@ -37,8 +37,8 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveOpInfosToProgram(program_desc_.get());
-  program_->UpdateVarsOfProgram(program_desc_.get());
+  program_->SaveOpInfosToProgram(program_desc_);
+  program_->UpdateVarsOfProgram(program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
@@ -296,10 +296,10 @@ void Predictor::Build(const std::string &model_path,
   Build(program_desc_, valid_places, passes);
 }
 
-void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &desc,
+void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
-  program_desc_ = desc;
+  program_desc_ = program_desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   for (auto &valid_place : valid_places) {
@@ -336,7 +336,7 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &desc,
                         Place{TARGET(kARM), PRECISION(kInt8)});
   }
 
-  Program program(*desc.get(), scope_, inner_places);
+  Program program(program_desc_, scope_, inner_places);
   valid_places_ = inner_places;
 
   core::KernelPickFactor factor;

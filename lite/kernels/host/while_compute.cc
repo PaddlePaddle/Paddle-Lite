@@ -12,44 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/while_compute.h"
-#include <memory>
-#include <string>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/core/tensor.h"
-#include "lite/core/type_system.h"
+#include "lite/kernels/host/while_compute.h"
+#include <unordered_map>
+#include <utility>
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void WhileCompute::PrepareForRun() {
-  auto &param = Param<operators::WhileParam>();
-  auto cur_scope = param.scope;
-
-  executor_ =
-      std::make_shared<StepExecutor>(param.sub_block, cur_scope, place());
+  auto &param = this->Param<param_t>();
+  program_.reset(new RuntimeProgram(
+      param.block_idx, param.program_desc, param.exec_scope));
 }
 void WhileCompute::Run() {
-  auto &param = Param<operators::WhileParam>();
+  auto &param = this->Param<param_t>();
   while (param.cond->data<bool>()[0]) {
-    executor_->Run();
+    program_->Run();
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    while, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::WhileCompute, def)
-    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
+    while, kHost, kAny, kAny, paddle::lite::kernels::host::WhileCompute, def)
+    .BindInput("X",
+               {LiteType::GetTensorListTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("Condition",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
     .BindOutput("Out",
-                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("StepScopes", {LiteType::GetTensorTy(TARGET(kARM))})
+                {LiteType::GetTensorListTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("StepScopes",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();

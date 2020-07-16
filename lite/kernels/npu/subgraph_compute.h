@@ -41,7 +41,7 @@ class DeviceProgram {
                          const std::vector<std::vector<int64_t>>& origin_idims,
                          const std::string& model_cache_dir);
   bool BuildGraphAndCacheToFile(
-      const std::vector<Instruction>& origin_program,
+      RuntimeProgram* origin_program,
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
       const std::vector<std::vector<int64_t>>& origin_idims,
@@ -71,12 +71,16 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::BlockDesc* block_desc,
+                 std::shared_ptr<cpp::ProgramDesc> program_desc,
+                 Scope* exec_scope,
                  const std::vector<std::string>& input_names,
-                 const std::vector<std::string>& output_names,
-                 Scope* scope)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {}
+                 const std::vector<std::string>& output_names)
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         program_desc,
+                         exec_scope,
+                         input_names,
+                         output_names) {}
 
  protected:
   bool PrepareWorkspaceForDeviceProgram() override;

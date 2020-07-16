@@ -284,13 +284,18 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
                 head_node->AsArg().name,
                 cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto* sub_block_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
-                             inst_node->AsStmt().op().get())
-                             ->GetSubBlock();
-  for (size_t i = 0; i < sub_block_desc->OpsSize(); ++i) {
-    auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
-    UpdateInputTo(
-        sub_block_op_desc, head_node->AsArg().name, cur_node->AsArg().name);
+  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+                              inst_node->AsStmt().op().get())
+                              ->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx =
+      inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       ++sub_op_idx) {
+    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    UpdateInputTo(sub_op_desc, head_node->AsArg().name, cur_node->AsArg().name);
   }
 
   // recreate the op
@@ -444,21 +449,26 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
                  tail_node->AsArg().name,
                  cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto* sub_block_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
-                             inst_node->AsStmt().op().get())
-                             ->GetSubBlock();
-  for (size_t i = 0; i < sub_block_desc->OpsSize(); ++i) {
-    auto* sub_block_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(i);
+  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+                              inst_node->AsStmt().op().get())
+                              ->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx =
+      inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       ++sub_op_idx) {
+    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
     UpdateOutputTo(
-        sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
+        sub_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
     /* graph like this
      *        subgraph_op_0
      *          /       \
      *         /         \
      * subgraph_op_1   host_op
      */
-    UpdateInputTo(
-        sub_block_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
+    UpdateInputTo(sub_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
   }
 
   // recreate the op
@@ -482,15 +492,22 @@ void MLUPostprocessPass::RecreateOp(Node* inst_node, SSAGraph* graph) {
   }
 }
 
-bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node, Node* inst) {
-  auto* block_desc =
-      static_cast<operators::SubgraphOp*>(inst->AsStmt().op().get())
-          ->GetSubBlock();
-  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
-    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
-    CHECK(op_desc);
-    if (op_desc->Type() == "conv2d") {
-      for (auto& names : op_desc->inputs()) {
+bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node,
+                                               Node* inst_node) {
+  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+                              inst_node->AsStmt().op().get())
+                              ->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx =
+      inst_node->AsStmt().op()->op_info()->GetAttr<int32_t>("sub_block");
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       sub_op_idx++) {
+    auto sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    CHECK(sub_op_desc);
+    if (sub_op_desc->Type() == "conv2d") {
+      for (auto& names : sub_op_desc->inputs()) {
         if (std::find(names.second.begin(),
                       names.second.end(),
                       arg_node->AsArg().name) != names.second.end()) {
@@ -746,19 +763,23 @@ std::pair<bool, std::string> CheckOutputAndInsert(
 // insert cast op on mlu, to avoid cast on cpu
 void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
                                         const Type* subgraph_type) {
-  auto subgraph_op = subgraph_node->AsStmt().op();
-  CHECK_EQ(subgraph_op->Type(), "subgraph");
-  auto op = dynamic_cast<operators::SubgraphOp*>(subgraph_op.get());
-  CHECK(op);
-  auto block_desc = op->GetSubBlock();
+  CHECK_EQ(subgraph_node->AsStmt().op()->Type(), "subgraph");
+  auto subgraph_op =
+      dynamic_cast<operators::SubgraphOp*>(subgraph_node->AsStmt().op().get());
+  CHECK(subgraph_op);
+  auto sub_program_desc = subgraph_op->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx = subgraph_op->op_info()->GetAttr<int32_t>("sub_block");
+  auto* sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
 
   // create a new block desc to keep op sequence correct
-  cpp::BlockDesc* new_block_desc = new cpp::BlockDesc();
-  new_block_desc->ClearOps();
-  new_block_desc->ClearVars();
-  new_block_desc->SetIdx(block_desc->Idx());
-  new_block_desc->SetParentIdx(block_desc->ParentIdx());
-  new_block_desc->SetForwardBlockIdx(block_desc->ForwardBlockIdx());
+  cpp::BlockDesc new_block_desc;
+  new_block_desc.ClearOps();
+  new_block_desc.ClearVars();
+  new_block_desc.SetIdx(sub_block_desc->Idx());
+  new_block_desc.SetParentIdx(sub_block_desc->ParentIdx());
+  new_block_desc.SetForwardBlockIdx(sub_block_desc->ForwardBlockIdx());
 
   // find all IO that is not weight or persist
   std::list<std::string> i_names, o_names;
@@ -769,8 +790,8 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
     auto input_name = input->AsArg().name;
     if (!(input->AsArg().is_weight || input->AsArg().is_persist)) {
       i_names.emplace_back(input_name);
-      auto ret = CheckInputAndInsert(op->scope(),
-                                     new_block_desc,
+      auto ret = CheckInputAndInsert(subgraph_op->scope(),
+                                     &new_block_desc,
                                      input_name,
                                      input->AsArg().type,
                                      subgraph_type);
@@ -783,8 +804,8 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
     auto output_name = output->AsArg().name;
     if (!(output->AsArg().is_weight || output->AsArg().is_persist)) {
       o_names.emplace_back(output_name);
-      auto ret = CheckOutputAndInsert(op->scope(),
-                                      block_desc,
+      auto ret = CheckOutputAndInsert(subgraph_op->scope(),
+                                      sub_block_desc,
                                       output_name,
                                       output->AsArg().type,
                                       subgraph_type);
@@ -795,46 +816,48 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
   }
 
   // update input and output
-  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); ++op_idx) {
-    auto desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
-    auto new_desc = new_block_desc->AddOp<cpp::OpDesc>();
-    *new_desc = *desc;
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       ++sub_op_idx) {
+    auto sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    auto new_op_desc = new_block_desc.AddOp<cpp::OpDesc>();
+    *new_op_desc = *sub_op_desc;
 
-    if (desc->Type() != "layout" && desc->Type() != "cast") {
-      auto op_input_args = new_desc->InputArgumentNames();
+    if (sub_op_desc->Type() != "layout" && sub_op_desc->Type() != "cast") {
+      auto op_input_args = new_op_desc->InputArgumentNames();
       for (auto& input_arg : op_input_args) {
-        auto op_input = new_desc->Input(input_arg);
+        auto op_input = new_op_desc->Input(input_arg);
         for (auto& it : i_names) {
           auto index = std::find(op_input.begin(), op_input.end(), it);
           if (index != op_input.end() &&
               node_replace.find(it) != node_replace.end()) {
             index = op_input.erase(index);
             op_input.emplace(index, node_replace.at(it));
-            VLOG(4) << new_desc->Type() << "] change input from " << it
+            VLOG(4) << new_op_desc->Type() << "] change input from " << it
                     << " to " << node_replace.at(it);
           }
         }
-        new_desc->SetInput(input_arg, op_input);
+        new_op_desc->SetInput(input_arg, op_input);
       }
 
-      auto op_output_args = new_desc->OutputArgumentNames();
+      auto op_output_args = new_op_desc->OutputArgumentNames();
       for (auto& output_arg : op_output_args) {
-        auto op_output = new_desc->Output(output_arg);
+        auto op_output = new_op_desc->Output(output_arg);
         for (auto& it : o_names) {
           auto index = std::find(op_output.begin(), op_output.end(), it);
           if (index != op_output.end() &&
               node_replace.find(it) != node_replace.end()) {
             index = op_output.erase(index);
             op_output.emplace(index, node_replace.at(it));
-            VLOG(4) << new_desc->Type() << "] change output from " << it
+            VLOG(4) << new_op_desc->Type() << "] change output from " << it
                     << " to " << node_replace.at(it);
           }
         }
-        new_desc->SetOutput(output_arg, op_output);
+        new_op_desc->SetOutput(output_arg, op_output);
       }
     }
   }
-  op->SetSubBlock(new_block_desc);
+
+  *sub_block_desc = new_block_desc;
 }
 
 void ModifyValidPlaces(SSAGraph* graph, bool use_mlu_cast) {

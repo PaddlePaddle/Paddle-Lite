@@ -35,9 +35,12 @@ class GraphBase {};
 
 class SSAGraph : GraphBase {
  public:
-  // @param program: the op program
+  // @param block_idx: the block index in the target program
+  // @param program: the target program with vars and ops
   // @param valid_places: the valid places user set for the system.
-  void Build(const Program &program, const std::vector<Place> &valid_places);
+  void Build(int block_idx,
+             const Program &program,
+             const std::vector<Place> &valid_places);
   void RemoveNode(const mir::Node *node);
 
   std::vector<mir::Node *> StmtTopologicalOrder();

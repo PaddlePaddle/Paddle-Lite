@@ -152,7 +152,8 @@ Node *SSAGraph::GraphCreateInstructNode(
   return &node_storage_.back();
 }
 
-void SSAGraph::Build(const Program &program,
+void SSAGraph::Build(int block_idx,
+                     const Program &program,
                      const std::vector<Place> &valid_places) {
   CHECK(node_storage_.empty());
 
@@ -166,7 +167,7 @@ void SSAGraph::Build(const Program &program,
   std::map<std::string, PrecisionType> var_types = program.var_data_type();
 
   std::map<std::string, mir::Node *> arg_update_node_map_;
-  for (auto &op : program.ops()) {
+  for (auto &op : program.ops(block_idx)) {
     VLOG(3) << op->op_info()->Type();
     auto *op_node = GraphCreateInstructNode(op, valid_places);
     for (const std::string &name : op->op_info()->input_names()) {

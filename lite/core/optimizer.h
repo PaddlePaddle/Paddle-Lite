@@ -60,11 +60,16 @@ class Optimizer {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
-    CHECK(!graph_) << "duplicate optimize found";
+    CHECK(graphs_.empty()) << "duplicate optimize found";
 
-    graph_.reset(new mir::SSAGraph);
-    graph_->Build(program, valid_places);
-    graph_->SetValidPlaces(valid_places);
+    auto block_size = program.ops().size();
+    for (size_t block_idx = 0; block_idx < block_size; block_idx++) {
+      std::unique_ptr<mir::SSAGraph> graph;
+      graph.reset(new mir::SSAGraph);
+      graph->Build(block_idx, program, valid_places);
+      graph->SetValidPlaces(valid_places);
+      graphs_.emplace_back(std::move(graph));
+    }
 
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
@@ -230,7 +235,7 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
-    pass->Apply(graph_);
+    pass->Apply(graphs_[0]);
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
@@ -249,17 +254,19 @@ class Optimizer {
   // Generate C++ code which combines the inference program, model and weights.
   void GenCode(const std::string& code_dir);
 
-  const mir::SSAGraph& ssa_graph() const {
-    CHECK(graph_);
-    return *graph_;
+  const mir::SSAGraph& ssa_graph(int block_idx) const {
+    CHECK(!graphs_.empty());
+    CHECK(graphs_[block_idx]);
+    return *graphs_[block_idx];
   }
 
-  mir::SSAGraph* mutable_ssa_graph() {
-    CHECK(graph_);
-    return graph_.get();
+  mir::SSAGraph* mutable_ssa_graph(int block_idx) {
+    CHECK(!graphs_.empty());
+    CHECK(graphs_[block_idx]);
+    return graphs_[block_idx].get();
   }
 
-  lite::Scope* exec_scope() { return exec_scope_; }
+  Scope* exec_scope() { return exec_scope_; }
 
  protected:
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
@@ -284,16 +291,18 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        pass->Apply(graph_);
+        for (size_t block_idx = 0; block_idx < graphs_.size(); block_idx++) {
+          pass->Apply(graphs_[block_idx]);
+        }
         LOG(INFO) << "== Finished running: " << x;
       }
     }
   }
 
  private:
-  std::unique_ptr<mir::SSAGraph> graph_;
+  std::vector<std::unique_ptr<mir::SSAGraph>> graphs_;
   std::vector<Place> valid_places_;
-  lite::Scope* exec_scope_{};
+  Scope* exec_scope_{};
   Program* program_{};
 };
 

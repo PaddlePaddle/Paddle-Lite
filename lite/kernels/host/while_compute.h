@@ -13,43 +13,34 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/program.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace host {
 
-class WhileOp : public OpLite {
+class WhileCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  WhileOp() {}
-  explicit WhileOp(const std::string &op_type) : OpLite(op_type) {}
+  using param_t = operators::WhileParam;
 
-  bool CheckShape() const override;
+  void Run() override;
+  void PrepareForRun() override;
 
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "while"; }
-
-  void SetProgramDesc(std::shared_ptr<cpp::ProgramDesc> program_desc) {
-    param_.program_desc = program_desc;
-  }
-  std::shared_ptr<cpp::ProgramDesc> GetProgramDesc() {
-    return param_.program_desc;
-  }
+  virtual ~WhileCompute() = default;
 
  private:
-  mutable WhileParam param_;
+  std::unique_ptr<RuntimeProgram> program_;
 };
 
-}  // namespace operators
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
