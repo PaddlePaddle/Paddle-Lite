@@ -284,18 +284,17 @@ void GRUCompute<T, PType>::Run() {
   if (param.bias) {
     bias = const_cast<lite::Tensor*>(param.bias);
   }
-  auto* weight = param.weight;
-  auto* weight_data = const_cast<T*>(weight->template data<T>());
-  auto* batch_gate = param.batch_gate;
-  auto* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
-  auto* batch_hidden = param.batch_hidden;
-  auto* hidden = param.hidden;
-  auto* batch_reset_hidden_prev_data =
+  const lite::Tensor* weight = param.weight;
+  T* weight_data = const_cast<T*>(weight->template data<T>());
+  lite::Tensor* batch_gate = param.batch_gate;
+  lite::Tensor* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
+  lite::Tensor* batch_hidden = param.batch_hidden;
+  lite::Tensor* hidden = param.hidden;
+  T* batch_reset_hidden_prev_data =
       batch_reset_hidden_prev->template mutable_data<T>(TARGET(kCUDA));
   hidden->template mutable_data<T>(TARGET(kCUDA));
-  auto* batch_gate_data = batch_gate->template mutable_data<T>(TARGET(kCUDA));
-  auto* batch_hidden_data =
-      batch_hidden->template mutable_data<T>(TARGET(kCUDA));
+  T* batch_gate_data = batch_gate->template mutable_data<T>(TARGET(kCUDA));
+  T* batch_hidden_data = batch_hidden->template mutable_data<T>(TARGET(kCUDA));
   bool is_reverse = param.is_reverse;
   auto active_node = lite::cuda::math::GetActiveType(param.activation);
   auto active_gate = lite::cuda::math::GetActiveType(param.gate_activation);
