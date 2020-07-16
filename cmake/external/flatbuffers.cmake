@@ -94,12 +94,10 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
   message(STATUS "SRC_FBS_DIR: ${SRC_FBS_DIR}")
   string(REGEX REPLACE "\\.fbs$" "_generated.h" GEN_HEADER ${SRC_FBS})
   add_custom_command(
-    OUTPUT ${GEN_HEADER}
+    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/${GEN_HEADER}"
     COMMAND "${FLATBUFFERS_FLATC_EXECUTABLE}"
             --cpp --gen-mutable --gen-object-api --reflect-names
-            --force-empty --force-empty-vectors
             ${OPT}
-            -I "${CMAKE_CURRENT_SOURCE_DIR}/tests/include_test"
             -o "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS}"
     DEPENDS flatbuffers
