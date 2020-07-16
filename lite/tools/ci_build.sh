@@ -19,8 +19,8 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 USE_ADB_EMULATOR=ON
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
