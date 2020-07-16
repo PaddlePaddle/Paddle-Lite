@@ -32,16 +32,6 @@ __global__ void RowwiseAddKernel(
   }
 }
 
-template <>
-__global__ void RowwiseAddKernel(
-    const half* a, const half* b, half* c, int width, int num) {
-  CUDA_KERNEL_LOOP(i, num) {
-    int h = i / width;
-    int w = i - h * width;
-    c[i] = __hadd(a[i], b[w]);
-  }
-}
-
 template <typename T>
 void RowwiseAdd<T>::operator()(const T* input,
                                const T* bias,

@@ -77,13 +77,10 @@ void CopyMatrixRowsFunctor<T>::operator()(
 }
 
 template class CopyMatrixRowsFunctor<float>;
-template class CopyMatrixRowsFunctor<half>;
 
 template class LoDTensor2BatchFunctor<float>;
-template class LoDTensor2BatchFunctor<half>;
 
 template class Batch2LoDTensorFunctor<float>;
-template class Batch2LoDTensorFunctor<half>;
 
 }  // namespace math
 }  // namespace cuda

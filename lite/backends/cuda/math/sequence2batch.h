@@ -32,9 +32,6 @@ namespace math {
 template <typename T>
 class CopyMatrixRowsFunctor {
  public:
-  // If is_src_index is true, copy the indexed rows of input src to the output
-  // dst. If is_src_index is false, copy the input src to the indexed of output
-  // dst. The indexes rows are based on the input index.
   void operator()(const lite::Tensor& src,
                   lite::Tensor* dst,
                   const std::vector<uint64_t>& index_lod,
@@ -47,11 +44,6 @@ class CopyMatrixRowsFunctor {
 
 template <typename T>
 class LoDTensor2BatchFunctor {
-  // Calculate the length of each sequence and
-  // sort sequence index by the length.
-  // example:  sequences = {s0, s1, s2}
-  //            s0: 0 0 0 0, s1: 1 1 1 1 1, s2: 2 2 2
-  //            seq_info[3] = {(4, 5, 1), (0, 4, 0), (9, 3, 2)}
   struct SeqInfo {
     SeqInfo(size_t start, size_t length, size_t seq_idx)
         : start_(start), length_(length), seq_idx_(seq_idx) {}
@@ -79,38 +71,14 @@ class LoDTensor2BatchFunctor {
       return a.length_ > b.length_;
     });
 
-    // Calculate the start position of each batch.
-    // example:  sequences = {s0, s1, s2}
-    //           s0: 0 0 0 0, s1: 1 1 1 1 1, s2: 2 2 2
-    //           max_seqlen = 5,
-    //           batchIndex = {b0, b1, b2, b3, b4}
-    //           b0: 1 0 2, b1: 1 0 2, b2: 1 0 2, b3: 1 0, b4: 1
-    //           batch_start_positions[6] = {0, 3, 6, 9, 11, 12}
-    //              batch_start_positions[0] = 0
-    //              batch_start_positions[1] = len(b0)
-    //              batch_start_positions[2] = len(b0) + len(b1)
-    //              ...
-    //           seq2batch_idx[12] = {4, 0, 9,
-    //                                5, 1, 10,
-    //                                6, 2, 11,
-    //                                7, 3,
-    //                                8}
-    //           seq_order = {1, 0, 2}, the sort order.
-    //               where 1 is the second sequence,
-    //                     0 is the first sequence,
-    //                     2 is the third sequence.
-
     LoD batch_lods;
     batch_lods.emplace_back(std::vector<uint64_t>{0});
     batch_lods.emplace_back(std::vector<uint64_t>{0});
     batch_lods.emplace_back(std::vector<uint64_t>{0});
 
-    // batch_lods[0] is the start positions for batch LoDTensor
     size_t max_seqlen = seq_info[0].length_;
     batch_lods[0].resize(max_seqlen + 1);
-    // batch_lods[1] is the raw index in the input LoDTensor
     batch_lods[1].resize(static_cast<size_t>(lod_tensor.dims()[0]));
-    // batch_lods[2] is the sort order for the input LoDTensor.
     batch_lods[2].resize(seq_info.size());
 
     auto* batch_starts = batch_lods[0].data();

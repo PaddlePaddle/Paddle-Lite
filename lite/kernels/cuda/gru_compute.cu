@@ -48,69 +48,10 @@ struct GRUUnitFunctor {
                       CUDAContext* context) {
     dim3 threads, grids;
     if (batch_size == 1) {
-      if (lite::TargetWrapperCuda::GetComputeCapability() >= 70) {
-        if (frame_size < 16) {
-          constexpr int tiled_size = 8;
-          int frame_blocks = (frame_size * 2 + tiled_size - 1) / tiled_size;
-          threads = dim3(tiled_size, 1);
-          grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruGate<
-              T,
-              tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
-              value.gate_value,
-              value.prev_out_value,
-              value.gate_weight,
-              value.reset_output_value,
-              frame_size,
-              active_gate);
-          frame_blocks = (frame_size + tiled_size - 1) / tiled_size;
-          grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruOut<
-              T,
-              tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
-              value.state_weight,
-              value.prev_out_value,
-              value.output_value,
-              value.gate_value,
-              value.reset_output_value,
-              frame_size,
-              active_node,
-              origin_mode);
-        } else {
-          constexpr int tiled_size = 16;
-          int frame_blocks = (frame_size * 2 + tiled_size - 1) / tiled_size;
-          threads = dim3(tiled_size, 1);
-          grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruGate<
-              T,
-              tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
-              value.gate_value,
-              value.prev_out_value,
-              value.gate_weight,
-              value.reset_output_value,
-              frame_size,
-              active_gate);
-          frame_blocks = (frame_size + tiled_size - 1) / tiled_size;
-          grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruOut<
-              T,
-              tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
-              value.state_weight,
-              value.prev_out_value,
-              value.output_value,
-              value.gate_value,
-              value.reset_output_value,
-              frame_size,
-              active_node,
-              origin_mode);
-        }
-        return;
-      } else {
-        int frame_per_block = frame_size <= 1024 ? frame_size : 1024;
-        int frame_blocks = (frame_size + 1024 - 1) / 1024;
-        threads = dim3(frame_per_block, 1);
-        grids = dim3(frame_blocks, 1);
-      }
+      int frame_per_block = frame_size <= 1024 ? frame_size : 1024;
+      int frame_blocks = (frame_size + 1024 - 1) / 1024;
+      threads = dim3(frame_per_block, 1);
+      grids = dim3(frame_blocks, 1);
     } else {
       threads = dim3(32, 32);
       grids = dim3((frame_size + 32 - 1) / 32, (batch_size + 32 - 1) / 32);
