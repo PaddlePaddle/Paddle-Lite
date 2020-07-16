@@ -31,7 +31,6 @@ __global__ void RowwiseAddKernel(
     c[i] = a[i] + b[w];
   }
 }
-
 template <typename T>
 void RowwiseAdd<T>::operator()(const T* input,
                                const T* bias,

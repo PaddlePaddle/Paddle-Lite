@@ -77,9 +77,7 @@ void CopyMatrixRowsFunctor<T>::operator()(
 }
 
 template class CopyMatrixRowsFunctor<float>;
-
 template class LoDTensor2BatchFunctor<float>;
-
 template class Batch2LoDTensorFunctor<float>;
 
 }  // namespace math

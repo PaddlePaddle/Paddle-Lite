@@ -34,12 +34,10 @@ template <typename Dtype>
 inline __device__ Dtype Sigmoid(const Dtype a) {
   return static_cast<Dtype>(1.0) / (static_cast<Dtype>(1.0) + expf(-a));
 }
-
 template <typename Dtype>
 inline __device__ Dtype ReLU(const Dtype a) {
   return a > static_cast<Dtype>(0.f) ? a : static_cast<Dtype>(0.f);
 }
-
 template <typename Dtype>
 inline __device__ Dtype Tanh(const Dtype a) {
   Dtype tmp = static_cast<Dtype>(-2.0) * a;
@@ -56,7 +54,6 @@ __global__ void GruForwardResetOutput(
     int batch_size,
     lite::cuda::math::ActivationType active_gate,
     bool is_batch);
-
 template <typename T>
 __global__ void GruForwardFinalOutput(
     T* gate_value,

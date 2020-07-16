@@ -60,22 +60,18 @@ class LoDTensor2BatchFunctor {
     auto lods = lod_tensor.lod();
     CHECK_EQ(lods.size(), 1UL) << "Only support one level sequence now.";
     const auto& lod = lods[0];
-
     std::vector<SeqInfo> seq_info;
     for (int seq_id = 0; seq_id < static_cast<int>(lod.size()) - 1; ++seq_id) {
       size_t length = lod[seq_id + 1] - lod[seq_id];
       seq_info.emplace_back(lod[seq_id], length, seq_id);
     }
-
     std::sort(seq_info.begin(), seq_info.end(), [](SeqInfo a, SeqInfo b) {
       return a.length_ > b.length_;
     });
-
     LoD batch_lods;
     batch_lods.emplace_back(std::vector<uint64_t>{0});
     batch_lods.emplace_back(std::vector<uint64_t>{0});
     batch_lods.emplace_back(std::vector<uint64_t>{0});
-
     size_t max_seqlen = seq_info[0].length_;
     batch_lods[0].resize(max_seqlen + 1);
     batch_lods[1].resize(static_cast<size_t>(lod_tensor.dims()[0]));
@@ -105,7 +101,6 @@ class LoDTensor2BatchFunctor {
     }
 
     batch_tensor->set_lod(batch_lods);
-
     lite::cuda::math::CopyMatrixRowsFunctor<T> to_batch;
     to_batch(lod_tensor, batch_tensor, batch_lods[1], true, stream);
     CUDA_POST_KERNEL_CHECK;
