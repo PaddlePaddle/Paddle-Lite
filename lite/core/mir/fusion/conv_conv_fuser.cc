@@ -48,19 +48,19 @@ void ConvConvFuser::BuildPattern() {
       VarNode("conv_out1")->assert_is_op_output(conv_type1_, "Output")->AsOutput();
 
   // get  convlution info
-  auto weight0 = conv_weight0->GetMutable<lite::Tensor>();
-  auto weight1 = conv_weight1->GetMutable<lite::Tensor>();
-  auto wei_dim0 = weight0->dims();
-  auto wei_dim1 = weight1->dims();
+  // auto weight0 = conv_weight0->GetMutable<lite::Tensor>();
+  // auto weight1 = conv_weight1->GetMutable<lite::Tensor>();
+  // auto wei_dim0 = weight0->dims();
+  // auto wei_dim1 = weight1->dims();
 
-  bool size = (wei_dim0.size() == 4) && (wei_dim0.size() == wei_dim1.size());
-  bool ksize_eq = (wei_dim0[2] == wei_dim0[3]) && (wei_dim1[2] == wei_dim1[3]);
-  bool ksize1 = (wei_dim0[2] = 1  || wei_dim0[2]==3);
-  bool ksize2 = wei_dim1[2] == 1;
-  //  only support 1x1/3x3 + 1x1
-  if (!(size && ksize_eq && ksize1 && ksize2)){
-      return;
-  }
+  // bool size = (wei_dim0.size() == 4) && (wei_dim0.size() == wei_dim1.size());
+  // bool ksize_eq = (wei_dim0[2] == wei_dim0[3]) && (wei_dim1[2] == wei_dim1[3]);
+  // bool ksize1 = (wei_dim0[2] = 1  || wei_dim0[2]==3);
+  // bool ksize2 = wei_dim1[2] == 1;
+  // //  only support 1x1/3x3 + 1x1
+  // if (!(size && ksize_eq && ksize1 && ksize2)){
+  //     return;
+  // }
 
   if (conv_has_bias0_) {
     if (conv_has_bias1_) {
@@ -102,17 +102,15 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   // conv0
   auto weight0_t = scope->FindVar(matched.at("conv_weight0")->arg()->name)
                         ->GetMutable<lite::Tensor>();
-  auto weight0_d = weight0_t->mutable_data<float>();
 
   // conv1
   auto weight1_t = scope->FindVar(matched.at("conv_weight1")->arg()->name)
                         ->GetMutable<lite::Tensor>();
-  auto weight1_d = weight1_t->mutable_data<float>();
-  auto groups0 = conv_op_desc->GetAttr<int>("groups");
+  // auto groups0 = conv_op_desc->GetAttr<int>("groups");
   auto groups1 = conv_op_desc1->GetAttr<int>("groups");
   auto strides1 = conv_op_desc1->GetAttr<std::vector<int>>("strides");
   auto paddings1 = conv_op_desc1->GetAttr<std::vector<int>>("paddings");
-  auto dilations1 = conv_op_desc1.GetAttr<std::vector<int>>("dilations");
+  auto dilations1 = conv_op_desc1->GetAttr<std::vector<int>>("dilations");
 
   bool enable0_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
   bool enable1_int8 = conv_op_desc1->HasAttr("enable_int8") ? true : false;
@@ -163,7 +161,6 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       conv_op_desc->Input("Bias").size() > 0) {
     auto bias_t0 = scope->FindVar(matched.at("conv_bias0")->arg()->name)
                            ->GetMutable<lite::Tensor>();
-    auto bias_d0 = bias_t0->data<float>();
     if (conv_has_bias1_ && conv_op_desc1->HasInput("Bias") &&
       conv_op_desc1->Input("Bias").size() > 0) {
       auto bias_t1 = scope->FindVar(matched.at("conv_bias1")->arg()->name)
@@ -171,7 +168,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       auto bias_d1 = bias_t1->data<float>();
       Tensor bias;
       ComputeNewBias(&bias, bias_t0, weight1_t, bias_t1);
-      auto bias_d = bias->data<float>();
+      auto bias_d = bias.data<float>();
       for (int i = 0; i < bias_t1->data_size(); i++) {
         bias_d1[i] = bias_d[i];
       }
@@ -181,8 +178,8 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     } else {
       Tensor bias;
       ComputeNewBias(&bias, bias_t0, weight1_t, nullptr);
-      bias_t0.Resize(bias.dims());
-      auto bias_d = bias->data<float>();
+      bias_t0->Resize(bias.dims());
+      auto bias_d = bias.data<float>();
       auto bias_ptr = bias_t0->mutable_data<float>();
       for (int i = 0; i < bias.data_size(); i++) {
         bias_ptr[i] = bias_d[i];
@@ -199,7 +196,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     }
   }
 
-  conv_op_desc->SetType(conv_type_);
+  conv_op_desc->SetType(conv_type0_);
   conv_op_desc->SetInput("Input", {matched.at("conv_input0")->arg()->name});
   conv_op_desc->SetInput("Filter", {matched.at("conv_weight0")->arg()->name});
   conv_op_desc->SetOutput("Output", {matched.at("conv_out1")->arg()->name});

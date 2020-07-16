@@ -42,8 +42,8 @@ class ConvConvFuser : public FuseBase {
   void ComputeNewWeight(Tensor* weight_tensor, Tensor* weight0_tensor, Tensor* weight1_tensor) {
     // input conv_weight0_t weights conv_weight1_t
     // output weight_tensor
-    int in_dims = weight0_tensor->dims();
-    int weight_dims = weight1_tensor->dims();
+    auto in_dims = weight0_tensor->dims();
+    auto weight_dims = weight1_tensor->dims();
     const float* din = weight0_tensor->data<float>();
     const float* weights = weight1_tensor->data<float>();
     int num = in_dims[0];
@@ -82,11 +82,11 @@ class ConvConvFuser : public FuseBase {
     }
   }
 
-void ComputeNewBias(Tensor* bias_tensor, Tensoe* bias0_tensor, Tensor* weight_tensor, Tensor* bias1_tensor) {
+void ComputeNewBias(Tensor* bias_tensor, Tensor* bias0_tensor, Tensor* weight_tensor, Tensor* bias1_tensor) {
     // input bias0_tensor weight_tensor bias1_tensor
     // output bias_tensor
-    int in_dims = bias0_tensor->dims();
-    int weight_dims = weight_tensor->dims();
+    auto in_dims = bias0_tensor->dims();
+    auto weight_dims = weight_tensor->dims();
     const float* din = bias0_tensor->data<float>();
     const float* weights = weight_tensor->data<float>();
     float* dout = bias_tensor->mutable_data<float>();
