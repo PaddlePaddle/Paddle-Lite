@@ -70,6 +70,10 @@ class ConvPE : public PE {
         param_.input->shape().channel() >= 2048) {
       use_cpu_ = true;
     }
+    if (param_.filter->shape().width() == 1 &&
+        param_.filter->shape().num() % 16 != 0) {
+      use_cpu_ = true;
+    }
     if (!use_cpu_) {
       // param_.filter->releaseData();
     }
@@ -93,34 +97,38 @@ class ConvPE : public PE {
 
     float* filter_data = param_.filter->data<float>();
     float* mi = new float[in_channel];
+
+    int wh = input->shape().width() * input->shape().height();
+    float max = 0;
     for (int i = 0; i < out_channel; i++) {
-      float* image = image_addr;
       float* filter_ptr = filter_data + i * in_channel;
-      float* out_ptr = mi;
-#pragma omp parallel for
-      for (int j = 0; j < in_channel; j++) {
-        // float32x4_t x0 = vld1q_f32(image);
-        // float32x4_t x1 = vld1q_f32(filter_ptr);
+      // #pragma omp parallel for
 
-        // float32x4_t r = vmulq_f32(x0, x1);
+      for (int k = 0; k < wh; k++) {
+        float* image = image_addr;
+        float* out_ptr = mi;
 
-        // vst1q_f32(out_ptr, r);
-        // image += 4;
-        // filter_ptr += 4;
-        // out_ptr += 4;
-        float value = image_addr[j] * filter_ptr[j];
-        mi[j] = value;
+        for (int j = 0; j < in_channel; j++) {
+          float value = image_addr[k * in_channel + j] * filter_ptr[j];
+          mi[j] = value;
+        }
+
+        float sum = 0;
+        for (int j = 0; j < in_channel; j++) {
+          sum += mi[j];
+        }
+        sum *= param_.scale()->data<float>()[i];
+        sum += param_.bias()->data<float>()[i];
+        out[i * wh + k] = sum;
+        max = std::max(max, std::abs(sum));
       }
-
-      float sum = 0;
-      for (int j = 0; j < in_channel; j++) {
-        sum += mi[j];
-      }
-      out[i] = sum;
     }
     delete[] mi;
     float_output.flush();
     output->copyFrom(&float_output);
+    output->scale()[0] = max / 127.0;
+    output->scale()[1] = 127.0 / max;
+    // output->saveToFile("cpu", true);
   }
 
   bool dispatch() {
@@ -206,7 +214,6 @@ class ConvPE : public PE {
       // std::cout << "\n ================== EW ================== \n";
       // }
     }
-
     return ret == 0;
   }
 

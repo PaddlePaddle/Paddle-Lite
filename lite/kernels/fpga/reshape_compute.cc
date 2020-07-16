@@ -23,7 +23,6 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-
 void FlattenCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
   auto x = param.x;
@@ -45,11 +44,9 @@ void FlattenCompute::Run() {
   output->Resize(output_dims);
 
 #ifdef FPGA_PRINT_TENSOR
-  Debugger::get_instance().registerOutput("flatten",
-                                          output->ZynqTensor());
+  Debugger::get_instance().registerOutput("flatten", output->ZynqTensor());
 #endif
 }
-
 
 void ReshapeCompute::Run() {
   auto& param = Param<operators::ReshapeParam>();
@@ -69,17 +66,14 @@ void ReshapeCompute::Run() {
   } else {
     // output->CopyDataFrom(*x);
   }
-  
-  
 
   output->ZynqTensor()->copyFrom(x->ZynqTensor());
   // output->ZynqTensor()->saveToFile("ro", true);
   output->ZynqTensor()->flush();
   output->ZynqTensor()->setAligned(x->ZynqTensor()->aligned());
-  
+
 #ifdef FPGA_PRINT_TENSOR
-  Debugger::get_instance().registerOutput("reshape",
-                                          output->ZynqTensor());
+  Debugger::get_instance().registerOutput("reshape", output->ZynqTensor());
 #endif
 }
 
@@ -163,7 +157,7 @@ REGISTER_LITE_KERNEL(flatten2,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("Shape",
-                {LiteType::GetTensorTy(TARGET(kHost),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",

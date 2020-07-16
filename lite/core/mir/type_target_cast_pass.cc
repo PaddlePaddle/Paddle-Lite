@@ -53,7 +53,6 @@ void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       ComplementInputs(graph.get(), node, in, &copied_nodes);
     }
   }
-
 }
 
 void TypeTargetTransformPass::ComplementInputs(
@@ -74,6 +73,7 @@ void TypeTargetTransformPass::ComplementInputs(
   auto in_arg_name = in->AsArg().name;
   std::string tmp;
   CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
+  VLOG(4) << "in_arg_name: " << in_arg_name << " tmp:" << tmp;
   auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {

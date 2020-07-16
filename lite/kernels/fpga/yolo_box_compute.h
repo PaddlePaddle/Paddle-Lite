@@ -13,38 +13,35 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/backends/fpga/KD/pes/resize_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
+#include "lite/backends/fpga/KD/pes/yolobox_pe.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-class BilinearInterpCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  void Run() override;
+using float16 = zynqmp::float16;
 
-  virtual ~BilinearInterpCompute() = default;
-};
-
-class NearestInterpCompute
+class YoloBoxCompute 
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   void PrepareForRun() override;
-
   void Run() override;
 
-  virtual ~NearestInterpCompute() = default;
+  virtual ~YoloBoxCompute() {
+
+  };
 
  private:
-  zynqmp::ResizePE pe_;
+  zynqmp::YoloBoxPE pe_;
 };
 
-} /* namespace fpga */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace fpga
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

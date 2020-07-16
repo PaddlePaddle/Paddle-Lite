@@ -134,7 +134,6 @@ class Optimizer {
 
            "mlu_postprocess_pass"}};
 
-
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of
         // runtime_context_assign_pass

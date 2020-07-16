@@ -20,7 +20,7 @@ namespace paddle {
 namespace zynqmp {
 
 class TransactionManager {
-public:
+ public:
   static TransactionManager& get_instance() {
     static TransactionManager s_instance;
     return s_instance;
@@ -34,14 +34,11 @@ public:
     return currentTransaction_;
   };
 
-  void endTransaction() {
-    currentTransaction_ = nullptr;
-  }
+  void endTransaction() { currentTransaction_ = nullptr; }
 
-private:
+ private:
   Transaction* currentTransaction_ = nullptr;
   std::vector<Transaction*> transactions_;
 }
-
 }
 }

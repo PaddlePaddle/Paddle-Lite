@@ -15,8 +15,5 @@ limitations under the License. */
 #include "io.hpp"
 
 namespace paddle {
-namespace zynqmp {
-
-
-}  // namespace zynqmp
+namespace zynqmp {}  // namespace zynqmp
 }  // namespace paddle

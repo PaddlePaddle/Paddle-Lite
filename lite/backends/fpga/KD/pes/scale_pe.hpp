@@ -158,8 +158,9 @@ class ScalePE : public PE {
         int index = i * input->shape().channel() + c;
         float x = image_addr[index];
         float y = half_to_float(scale_data[c]);
-        float value =  x * y;
-        // std::cout << " x = " << std::to_string(x) << " y = " << std::to_string(y) << " v = " << std::to_string(value) << std::endl;
+        float value = x * y;
+        // std::cout << " x = " << std::to_string(x) << " y = " <<
+        // std::to_string(y) << " v = " << std::to_string(value) << std::endl;
         // float value = half_to_float(in_data[index]) * 19.3598f;
         data_out[index] = float_to_half(value);
 
@@ -188,9 +189,9 @@ class ScalePE : public PE {
     //   dw_param.quantizedFilter()->flush();
     // }
     // param_.input->syncToDevice();
-    // return dw_pe_.dispatch();
+    return dw_pe_.dispatch();
 
-    cpu_compute();
+    // cpu_compute();
     return true;
   }
 

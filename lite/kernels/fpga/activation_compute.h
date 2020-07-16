@@ -49,6 +49,16 @@ class ReluCompute
   zynqmp::Tensor output_;
 };
 
+class SigmoidCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SigmoidCompute() = default;
+};
+
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite

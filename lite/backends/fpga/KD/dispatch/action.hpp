@@ -18,19 +18,14 @@ namespace paddle {
 namespace zynqmp {
 
 class Action {
-public:
-  void readScale(float* scale) {
+ public:
+  void readScale(float* scale) {}
 
-  }
+  void writeScale(float* scale) {}
 
-  void writeScale(float* scale) {
-
-  }
-
-private:
+ private:
   int id_ = -1;
   int scaleIndex_ = -1;
 }
-
 }
 }

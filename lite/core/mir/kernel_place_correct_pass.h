@@ -84,13 +84,13 @@ class KernelPlaceCorrectPass : public DebugPass {
 
       std::string node_name = out->AsArg().name;
       std::string arg_name = get_argname(node_name, inst.op_info()->outputs());
-      
+
       auto op_type = inst.op_type();
 
       if (op_type == "reshape" || op_type == "reshape2") {
         for (auto* x_in : x->inlinks) {
-          
-          std::string in_name = get_argname(x_in->AsArg().name, inst.op_info()->inputs());
+          std::string in_name =
+              get_argname(x_in->AsArg().name, inst.op_info()->inputs());
           // std::cout << "name: " << x_in->AsArg().name  << std::endl;
           // std::cout << "in_name: " << in_name  << std::endl;
           if (in_name == "X") {
@@ -101,9 +101,11 @@ class KernelPlaceCorrectPass : public DebugPass {
         }
 
         p = in->AsArg().type->precision();
-        if ( p != PrecisionType::kFP16) {
-          // std::cout << "found an arm ............... : " << inst.kernels().size() << std::endl;
-          // std::cout << "tt:" <<  TargetRepr(inst.kernels()[0]->target()) << std::endl;
+        if (p != PrecisionType::kFP16) {
+          // std::cout << "found an arm ............... : " <<
+          // inst.kernels().size() << std::endl;
+          // std::cout << "tt:" <<  TargetRepr(inst.kernels()[0]->target()) <<
+          // std::endl;
           UpdateTarget(inst, TargetType::kHost);
           UpdateTensor(inst, in, out, TargetType::kHost);
         }
@@ -113,8 +115,9 @@ class KernelPlaceCorrectPass : public DebugPass {
         UpdateTarget(inst, TargetType::kFPGA);
       }
 
-      if (inst.op_type() == "split" || inst.op_type() == "transpose") {
-        if ( p != PrecisionType::kFP16) {
+      if (inst.op_type() == "split" || inst.op_type() == "transpose" ||
+          inst.op_type() == "transpose2") {
+        if (p != PrecisionType::kFP16) {
           UpdateTarget(inst, TargetType::kARM);
           for (auto* x_out : x->outlinks) {
             UpdateTensor(inst, in, x_out, TargetType::kARM);
@@ -123,9 +126,12 @@ class KernelPlaceCorrectPass : public DebugPass {
       }
 
       if (inst.op_type() == "concat") {
-        std::cout << "concat target:" << TargetRepr(inst.kernels()[0]->target()) << std::endl;
-        std::cout << "concat p:" << PrecisionToStr(inst.kernels()[0]->precision()) << std::endl;
-        if ( p != PrecisionType::kFP16) {
+        std::cout << "concat target:" << TargetRepr(inst.kernels()[0]->target())
+                  << std::endl;
+        std::cout << "concat p:"
+                  << PrecisionToStr(inst.kernels()[0]->precision())
+                  << std::endl;
+        if (p != PrecisionType::kFP16) {
           UpdateTarget(inst, TargetType::kARM);
           UpdateTensor(inst, in, out, TargetType::kARM);
         }
@@ -134,8 +140,9 @@ class KernelPlaceCorrectPass : public DebugPass {
       // if (inst.op_type() == "elementwise_mul") {
 
       //   for (auto* x_in : x->inlinks) {
-          
-      //     std::string in_name = get_argname(x_in->AsArg().name, inst.op_info()->inputs());
+
+      //     std::string in_name = get_argname(x_in->AsArg().name,
+      //     inst.op_info()->inputs());
       //     std::cout << "name: " << x_in->AsArg().name  << std::endl;
       //     std::cout << "in_name: " << in_name  << std::endl;
       //     if (in_name == "Y") {
@@ -150,7 +157,6 @@ class KernelPlaceCorrectPass : public DebugPass {
       //     UpdateTensor(inst, in, out, TargetType::kARM);
       //   }
       // }
-      
 
       std::vector<TargetType> in_types;
       std::vector<TargetType> out_types;
@@ -164,11 +170,13 @@ class KernelPlaceCorrectPass : public DebugPass {
 
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
 
-        // std::cout << arg_name <<" is weight:: " << std::to_string(x_in->AsArg().is_weight) 
-        //     << "     is persist: " << std::to_string(x_in->AsArg().is_persist) << std::endl;
+        // std::cout << arg_name <<" is weight:: " <<
+        // std::to_string(x_in->AsArg().is_weight)
+        //     << "     is persist: " <<
+        //     std::to_string(x_in->AsArg().is_persist) << std::endl;
 
         // std::cout << " type: "<< inst.op_type() << std::endl;
- 
+
         if (!x_in->AsArg().is_weight) {
           auto p = x_in->AsArg().type->precision();
           auto t = x_in->AsArg().type->target();
@@ -224,10 +232,10 @@ class KernelPlaceCorrectPass : public DebugPass {
     }
   }
 
-
   // Update me's kUnk fields by other's fields.
   void UpdateTarget(mir::Node::Stmt& inst, TargetType new_target) {  // NOLINT
-    // std::cout << "1 kernels: " << std::to_string(inst.kernels().size()) << std::endl;
+    // std::cout << "1 kernels: " << std::to_string(inst.kernels().size()) <<
+    // std::endl;
     auto new_place = inst.place();
 
     new_place.target = new_target;
@@ -244,25 +252,30 @@ class KernelPlaceCorrectPass : public DebugPass {
     std::vector<Place> places;
     places.push_back(new_place);
     inst.ResetKernels(places);
-    // std::cout << "2 kernels: " << std::to_string(inst.kernels().size()) << std::endl;
+    // std::cout << "2 kernels: " << std::to_string(inst.kernels().size()) <<
+    // std::endl;
   }
 
-  void UpdateTensor(mir::Node::Stmt& inst, Node* in, Node* out, TargetType new_target = TargetType::kUnk) {
-
+  void UpdateTensor(mir::Node::Stmt& inst,
+                    Node* in,
+                    Node* out,
+                    TargetType new_target = TargetType::kUnk) {
     auto get_argname = [&](
-    const std::string& node_name,
-    const std::map<std::string, std::vector<std::string>>& argname_map)
-    -> std::string {
-      for (auto& ele : argname_map) {
-        auto it =
-            std::find(ele.second.begin(), ele.second.end(), node_name);
-        if (it != ele.second.end()) return ele.first;
-      }
-      return "";
-    };
+        const std::string& node_name,
+        const std::map<std::string, std::vector<std::string>>& argname_map)
+        -> std::string {
+          for (auto& ele : argname_map) {
+            auto it =
+                std::find(ele.second.begin(), ele.second.end(), node_name);
+            if (it != ele.second.end()) return ele.first;
+          }
+          return "";
+        };
 
-    std::string arg_name = get_argname(out->AsArg().name, inst.op_info()->outputs());
-    std::string in_name = get_argname(in->AsArg().name, inst.op_info()->inputs());
+    std::string arg_name =
+        get_argname(out->AsArg().name, inst.op_info()->outputs());
+    std::string in_name =
+        get_argname(in->AsArg().name, inst.op_info()->inputs());
 
     auto type = inst.picked_kernel().GetInputDeclType(in_name);
     auto tmp_ptype = in->AsArg().type->precision();
@@ -281,7 +294,8 @@ class KernelPlaceCorrectPass : public DebugPass {
       tmp_layout = DataLayoutType::kNCHW;
     }
 
-    out->AsArg().type = LiteType::GetTensorTy(tmp_target, tmp_ptype, tmp_layout);
+    out->AsArg().type =
+        LiteType::GetTensorTy(tmp_target, tmp_ptype, tmp_layout);
   }
 };
 

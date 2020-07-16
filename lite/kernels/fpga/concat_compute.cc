@@ -45,11 +45,11 @@ void ConcatCompute::PrepareForRun() {
 
 void ConcatCompute::Run() {
   pe_.dispatch();
-#ifdef FPGA_PRINT_TENSOR
+  // #ifdef FPGA_PRINT_TENSOR
   zynqmp::ConcatParam& concat_param = pe_.param();
   concat_param.output->flush();
-  // Debugger::get_instance().registerOutput("concat", concat_param.output);
-#endif
+  Debugger::get_instance().registerOutput("concat", concat_param.output);
+  // #endif
 }
 
 }  // namespace fpga

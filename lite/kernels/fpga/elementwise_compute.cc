@@ -96,11 +96,12 @@ void ElementwiseMulCompute::PrepareForRun() {
     scale_value = param.Y->data<zynqmp::float16>()[0];
     // std::cout << "FP16 \n";
   }
-  
+
   // std::cout << "channel:" << channel << std::endl;
   // std::cout << "production:" << param.Y->dims().production() << std::endl;
 
-  // std::cout << "scale_value:" << std::to_string(zynqmp::half_to_float(scale_value)) << std::endl;
+  // std::cout << "scale_value:" <<
+  // std::to_string(zynqmp::half_to_float(scale_value)) << std::endl;
   // exit(-1);
 
   for (int i = 0; i < channel; i++) {
@@ -112,7 +113,8 @@ void ElementwiseMulCompute::PrepareForRun() {
         scale_value = param.Y->data<zynqmp::float16>()[i];
       }
     }
-    // std::cout << "scale_value:" << std::to_string(zynqmp::half_to_float(scale_value)) << std::endl;
+    // std::cout << "scale_value:" <<
+    // std::to_string(zynqmp::half_to_float(scale_value)) << std::endl;
     // exit(-1);
     scale_data[i] = scale_value;
     bias_data[i] = zero_;
@@ -128,13 +130,13 @@ void ElementwiseMulCompute::Run() {
   if (!param.Y->persistable()) {
     // TODO
     scale_.copyFrom(param.Y->ZynqTensor());
-    scale_.flush();//TODO
+    scale_.flush();  // TODO
   }
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::ScaleParam& scale_param = pe_.param();
-  // Debugger::get_instance().registerOutput("ew_mul_in", scale_param.input);
-  // Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
+// Debugger::get_instance().registerOutput("ew_mul_in", scale_param.input);
+// Debugger::get_instance().registerOutput("ew_mul", scale_param.output);
 #endif
 }
 
@@ -214,8 +216,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

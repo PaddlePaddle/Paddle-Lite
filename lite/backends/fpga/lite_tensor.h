@@ -166,6 +166,9 @@ class TensorLite {
 
   void clear() {
     // zynq_tensor_->releaseData();
+    if (zynq_tensor_) {
+      memset(zynq_tensor_->data<void>(), 0, zynq_tensor_->memorySize());
+    }
   }
 
   template <typename T>

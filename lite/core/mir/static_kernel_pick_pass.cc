@@ -80,6 +80,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::sort(scored.begin(), scored.end(), KernelScoreCmp);
     instruct.kernels().clear();
 
+    VLOG(2) << "picking kernel " << scored.front().second->name() << "\n\n";
+
     if (!instruct.op_info()->HasAttr("enable_int8")) {
       // Move kernel back
       // Just keep a single best kernel.

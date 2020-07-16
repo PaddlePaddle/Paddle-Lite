@@ -53,7 +53,8 @@ void ConvCompute::PrepareForRun() {
 
     if (param.activation_param.Leaky_relu_alpha > 0.001) {
       conv_param.activeParam.type = zynqmp::TYPE_LEAKY_RELU;
-      conv_param.activeParam.leaky_relu_factor = param.activation_param.Leaky_relu_alpha;
+      conv_param.activeParam.leaky_relu_factor =
+          param.activation_param.Leaky_relu_alpha;
     }
 
     dw_conv_pe_.init();
@@ -79,13 +80,15 @@ void ConvCompute::PrepareForRun() {
 
     if (param.activation_param.Leaky_relu_alpha > 0.001) {
       conv_param.activeParam.type = zynqmp::TYPE_LEAKY_RELU;
-      conv_param.activeParam.leaky_relu_factor = param.activation_param.Leaky_relu_alpha;
+      conv_param.activeParam.leaky_relu_factor =
+          param.activation_param.Leaky_relu_alpha;
     }
 
     conv_pe_.init();
     conv_pe_.apply();
   }
-  // std::cout << "Leaky_relu_alpha:" << param.activation_param.Leaky_relu_alpha << std::endl;
+  // std::cout << "Leaky_relu_alpha:" << param.activation_param.Leaky_relu_alpha
+  // << std::endl;
 }
 
 void ConvCompute::Run() {

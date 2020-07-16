@@ -105,7 +105,6 @@ class ChannelWiseDequantOpFuser : public FuseBase {
 */
 class DeleteQuantDequantOpFuser : public FuseBase {
  public:
-
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 

@@ -28,7 +28,14 @@ void FeedCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   Tensor& x = param.feed_list->at(param.col);
   param.out->Resize(x.dims());
-  param.out->mutable_data<float16>();
+
+  auto in_type = x.ZynqTensor()->dataType();
+  if (in_type == zynqmp::FP32 || in_type == zynqmp::FP16) {
+    param.out->mutable_data<float16>();
+  }
+  if (in_type == zynqmp::INT32) {
+    param.out->mutable_data<int32_t>();
+  }
   // ====================================================
   zynqmp::InputParam& feed_param = pe_.param();
   feed_param.input = x.ZynqTensor();
@@ -68,12 +75,18 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
-// REGISTER_LITE_KERNEL(feed,
-//                      kFPGA,
-//                      kFP16,
-//                      kNHWC,
-//                      paddle::lite::kernels::fpga::FeedCompute,
-//                      def_host)
-//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .Finalize();
+REGISTER_LITE_KERNEL(feed,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::FeedCompute,
+                     feed_int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();

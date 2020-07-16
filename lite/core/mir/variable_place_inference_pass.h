@@ -141,6 +141,7 @@ class VariablePlaceInferencePass : public DebugPass {
             x_in->AsArg().type = type;
           } else {
             PrecisionType tmp_ptype = x_in->AsArg().type->precision();
+            VLOG(4) << "tmp_ptype:" << PrecisionToStr(tmp_ptype);
             x_in->AsArg().type = LiteType::GetTensorTy(
                 type->target(), tmp_ptype, type->layout());
           }
@@ -172,6 +173,9 @@ class VariablePlaceInferencePass : public DebugPass {
             x_out->AsArg().type = type;
           } else {
             PrecisionType tmp_ptype = x_out->AsArg().type->precision();
+            tmp_ptype = type->precision();
+            // inst.picked_kernel().precision();
+            VLOG(4) << "tmp_ptype:" << PrecisionToStr(tmp_ptype);
             x_out->AsArg().type = LiteType::GetTensorTy(
                 type->target(), tmp_ptype, type->layout());
           }

@@ -49,7 +49,7 @@ void CalibComputeFloat2Int::Run() {
   const auto* din = param.input->data<float>();
   auto* dout = param.output->mutable_data<int>();
   // param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
-  //TODO
+  // TODO
   auto out_lod = param.output->mutable_lod();
   *out_lod = param.input->lod();
   return;

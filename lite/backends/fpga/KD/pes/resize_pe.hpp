@@ -84,28 +84,26 @@ class ResizePE : public PE {
 
     param_.input->syncToCPU();
 
-        for (int h = 0; h < in_height; h++) {
-            for (int w = 0; w < in_width; w++) {
-                int src_index = in_width * channel * h + w * channel;
-                float16* src = param_.input->data<float16>() + src_index;
-                // std::cout << "src_index:" << src_index << std::endl;
-                for (int v = 0; v < factor; v++) {
-                    for (int i =0; i < factor; i++) {
-                        int dst_index = out_width * channel * h * factor +
-                            out_width * channel * v +
-                            w * channel * factor +
+    for (int h = 0; h < in_height; h++) {
+      for (int w = 0; w < in_width; w++) {
+        int src_index = in_width * channel * h + w * channel;
+        float16* src = param_.input->data<float16>() + src_index;
+        // std::cout << "src_index:" << src_index << std::endl;
+        for (int v = 0; v < factor; v++) {
+          for (int i = 0; i < factor; i++) {
+            int dst_index = out_width * channel * h * factor +
+                            out_width * channel * v + w * channel * factor +
                             channel * i;
-                        float16* dst = param_.output->data<float16>() + dst_index;
-                        memcpy(dst, src, channel * sizeof(float16));
-                        // std::cout << "dst_index:" << dst_index << std::endl;
-                    }
-                }
-            }
+            float16* dst = param_.output->data<float16>() + dst_index;
+            memcpy(dst, src, channel * sizeof(float16));
+            // std::cout << "dst_index:" << dst_index << std::endl;
+          }
         }
-        param_.output->flush();
-        param_.output->copyScaleFrom(param_.input);
+      }
     }
-
+    param_.output->flush();
+    param_.output->copyScaleFrom(param_.input);
+  }
 
   bool dispatch() {
     cpu_compute();

@@ -132,4 +132,3 @@ REGISTER_LITE_KERNEL(prior_box,
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-

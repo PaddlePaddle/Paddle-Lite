@@ -157,7 +157,21 @@ class StaticKernelPickPass : public mir::StmtPass {
         }
       }
       if (in_match) {
-        final_score = 5000;
+        final_score += 1000;
+      }
+      bool out_match = true;
+      for (size_t i = 0; i < out_names.size(); ++i) {
+        std::string tmp;
+        CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+        if (out_types.count(out_names[i]) &&
+            out_types.at(out_names[i]) !=
+                kernel.GetOutputDeclType(tmp)->precision()) {
+          out_match = false;
+        }
+      }
+
+      if (out_match) {
+        final_score += 1000;
       }
     }
 

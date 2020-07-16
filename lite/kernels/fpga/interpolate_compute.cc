@@ -49,7 +49,6 @@ void BilinearInterpCompute::Run() {
   //                              interp_method);
 }
 
-
 void nearest_interp(const float16* src,
                     int w_in,
                     int h_in,
@@ -85,7 +84,7 @@ void nearest_interp(const float16* src,
       int near_y = static_cast<int>(scale_h_new * h);
       for (int w = 0; w < w_out; ++w) {
         int near_x = static_cast<int>(scale_w_new * w);
-        
+
         const float16* src_n = src + (near_y * w_in + near_x) * c;
         memcpy(dst_p, src_n, c * sizeof(float16));
         dst_p += c;
@@ -132,8 +131,6 @@ inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
       std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
   return vec_new_data;
 }
-
-
 
 void interpolate(lite::Tensor* X,
                  lite::Tensor* OutSize,
@@ -188,19 +185,18 @@ void interpolate(lite::Tensor* X,
   int spatial_in = in_h * in_w;
   int spatial_out = out_h * out_w;
 
-
   for (int i = 0; i < count; ++i) {
-      nearest_interp(din + spatial_in * i,
-                     in_w,
-                     in_h,
-                     out_c,
-                     dout + spatial_out * i,
-                     out_w,
-                     out_h,
-                     1.f / width_scale,
-                     1.f / height_scale,
-                     with_align);
-    }
+    nearest_interp(din + spatial_in * i,
+                   in_w,
+                   in_h,
+                   out_c,
+                   dout + spatial_out * i,
+                   out_w,
+                   out_h,
+                   1.f / width_scale,
+                   1.f / height_scale,
+                   with_align);
+  }
 }
 
 void NearestInterpCompute::Run() {
@@ -215,27 +211,24 @@ void NearestInterpCompute::Run() {
   int out_h = param.out_h;
   bool align_corners = param.align_corners;
 
-
   std::string interp_method = "";
 
-  X->ZynqTensor()->invalidate();//TODO
+  X->ZynqTensor()->invalidate();  // TODO
   X->ZynqTensor()->saveToFile("n_in", true);
   interpolate(X,
-                               OutSize,
-                               SizeTensor,
-                               Scale,
-                               Out,
-                               out_h,
-                               out_w,
-                               scale,
-                               align_corners,
-                               interp_method);
+              OutSize,
+              SizeTensor,
+              Scale,
+              Out,
+              out_h,
+              out_w,
+              scale,
+              align_corners,
+              interp_method);
 
-  
   Out->ZynqTensor()->flush();
   Out->ZynqTensor()->copyScaleFrom(X->ZynqTensor());
   Out->ZynqTensor()->saveToFile("n_out", true);
-
 }
 
 } /* namespace fpga */
@@ -249,15 +242,17 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                      kNHWC,
                      paddle::lite::kernels::fpga::BilinearInterpCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNHWC))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("SizeTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA),
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();
@@ -268,15 +263,17 @@ REGISTER_LITE_KERNEL(nearest_interp,
                      kNHWC,
                      paddle::lite::kernels::fpga::NearestInterpCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNHWC))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("SizeTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kFPGA),
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
     .Finalize();

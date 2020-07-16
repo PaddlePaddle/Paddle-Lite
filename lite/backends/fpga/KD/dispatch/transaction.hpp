@@ -21,20 +21,16 @@ namespace paddle {
 namespace zynqmp {
 
 class Transaction {
+ public:
+  void appendAction(Action* action) { actions_.push_back(action); };
 
-public:
-  void appendAction(Action* action) {
-    actions_.push_back(action);
+  void startTraction(){
+
   };
 
-  void startTraction() {
-    
-  };
-
-private:
+ private:
   std::std::vector<Action*> actions_;
   int id_ = -1;
 }
-
 }
 }
