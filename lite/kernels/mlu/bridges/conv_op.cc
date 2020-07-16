@@ -107,8 +107,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                             CNML_FILTER,
                                             CNML_NCHW,
                                             graph->FPType());
-  const auto weight_scale =
-      op_info->GetAttr<std::vector<float>>("weight_scale");
+  const auto weight_scale = op_info->GetInputScale(filter_var_name);
 
   if (filter->precision() == PrecisionType::kUnk ||
       filter->precision() == PrecisionType::kInt8) {
@@ -162,7 +161,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     graph->BindConstData(bias_var_name, bias);
   }
 
-  const auto input_scale = op_info->GetAttr<float>("input_scale");
+  const auto input_scale = op_info->GetInputScale(input_var_name)[0];
 
   bool use_first_conv = false;
   if (lite::TargetWrapperMlu::UseFirstConv() && input_dims[1] == 3) {

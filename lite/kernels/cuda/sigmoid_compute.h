@@ -12,30 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/general/program_desc.h"
+#pragma once
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace general {
+namespace kernels {
+namespace cuda {
 
-template <>
-BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
-}
+template <typename T, PrecisionType Ptype>
+class SigmoidCompute : public KernelLite<TARGET(kCUDA), Ptype> {
+ public:
+  using param_t = operators::ActivationParam;
 
-template <>
-BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
-}
+  void Run() override;
+  virtual ~SigmoidCompute() = default;
+};
 
-template <>
-BlockDesc* ProgramDesc::AddBlock<BlockDesc>() {
-  blocks_.emplace_back();
-  return &blocks_.back();
-}
-
-}  // namespace general
+}  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

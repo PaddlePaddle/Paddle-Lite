@@ -12,30 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/general/program_desc.h"
+#pragma once
+#include <cuda.h>
+#include <cuda_runtime.h>
+
+#include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {
 namespace lite {
-namespace general {
+namespace cuda {
+namespace math {
 
-template <>
-BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
-}
+template <typename T>
+struct RowwiseAdd {
+  void operator()(const T* input,
+                  const T* bias,
+                  T* output,
+                  const int width,
+                  const int count,
+                  const cudaStream_t& stream);
+};
 
-template <>
-BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
-}
-
-template <>
-BlockDesc* ProgramDesc::AddBlock<BlockDesc>() {
-  blocks_.emplace_back();
-  return &blocks_.back();
-}
-
-}  // namespace general
+}  // namespace math
+}  // namespace cuda
 }  // namespace lite
 }  // namespace paddle

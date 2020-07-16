@@ -40,7 +40,10 @@ class ProgramDescWriteAPI {
   virtual void SetVersion(int64_t version) { NotImplemented(); }
 
   template <typename T>
-  T* AddBlock();
+  T* AddBlock() {
+    NotImplemented();
+    return nullptr;
+  }
 
   virtual ~ProgramDescWriteAPI() = default;
 

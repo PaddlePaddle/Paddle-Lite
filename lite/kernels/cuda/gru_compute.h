@@ -12,25 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/program_desc.h"
+#pragma once
+#include <memory>
+
+#include "lite/backends/cuda/math/gemm.h"
+#include "lite/core/kernel.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
-namespace fbs {
+namespace kernels {
+namespace cuda {
 
-template <>
-proto::BlockDesc const* ProgramDesc::GetBlock<proto::BlockDesc>(
-    int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return desc_->blocks()->Get(idx);
-}
+template <typename T, PrecisionType PType>
+class GRUCompute : public KernelLite<TARGET(kCUDA), PType> {
+ public:
+  using param_t = operators::GRUParam;
 
-template <>
-BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
-}
+  void PrepareForRun() override;
 
-}  // namespace fbs
+  void Run() override;
+
+  virtual ~GRUCompute() = default;
+
+ private:
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  lite::Tensor ordered_h0_;
+};
+
+}  // namespace cuda
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

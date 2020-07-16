@@ -17,6 +17,7 @@ limitations under the License. */
 #include <cstddef>
 #include <string>
 #include <vector>
+#include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/core/op_registry.h"
