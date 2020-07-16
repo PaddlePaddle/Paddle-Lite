@@ -45,10 +45,13 @@ class GRUTest : public ::testing::Test {
     x_ref_.Resize(lite::DDim(x_shape_));
     x_gpu_.Resize(lite::DDim(x_shape_));
     x_ref_.set_lod(lod_);
+
     w_ref_.Resize(lite::DDim(w_shape_));
     w_gpu_.Resize(lite::DDim(w_shape_));
+
     auto x_ref_data = x_ref_.mutable_data<float>();
     auto w_ref_data = w_ref_.mutable_data<float>();
+
     for (int64_t i = 0; i < x_ref_.numel(); i++) {
       x_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
@@ -63,6 +66,7 @@ class GRUTest : public ::testing::Test {
     batch_hidden_gpu_.Resize(lite::DDim(out_shape_));
     batch_reset_hidden_gpu_.Resize(lite::DDim(out_shape_));
     RunBaseLine();
+
     InitParamAndContext();
   }
 
@@ -89,6 +93,22 @@ class GRUTest : public ::testing::Test {
     x_gpu_.set_lod(x_ref_.lod());
     w_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(w_ref_.data<float>(),
                                                     w_gpu_.dims());
+  }
+
+  void InitHalfInput() {
+    x_half_.Resize(lite::DDim(x_shape_));
+    auto x_half_data = x_half_.mutable_data<half>();
+    for (int64_t i = 0; i < x_half_.numel(); i++) {
+      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+    }
+    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.set_lod(x_ref_.lod());
+    w_half_.Resize(w_ref_.dims());
+    auto w_half_data = w_half_.mutable_data<half>();
+    for (int64_t i = 0; i < w_half_.numel(); i++) {
+      w_half_data[i] = half(lite::float16(w_ref_.data<float>()[i]));
+    }
+    w_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, w_gpu_.dims());
   }
 
   void RunBaseLine() {}
@@ -130,6 +150,29 @@ TEST_F(GRUTest, TestFP32) {
   cudaDeviceSynchronize();
   auto duration = (GetCurrentUS() - start) / 1000.0;
   LOG(INFO) << "fp32, warmup: " << FLAGS_warmup
+            << ", repeats: " << FLAGS_repeats << ", spend "
+            << duration / FLAGS_repeats << " ms in average.";
+}
+
+TEST_F(GRUTest, TestFP16) {
+  InitHalfInput();
+  GRUCompute<half, PRECISION(kFP16)> kernel;
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    kernel.Launch();
+    cudaDeviceSynchronize();
+  }
+
+  auto start = GetCurrentUS();
+  kernel.PrepareForRun();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    kernel.Run();
+  }
+  cudaDeviceSynchronize();
+  auto duration = (GetCurrentUS() - start) / 1000.0;
+  LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
 }
