@@ -162,49 +162,6 @@ TEST_F(SigmoidTest, TestFP16) {
   }
 }
 
-// float SigmoidBaseLine(float x) { return 1.f / (1.f + expf(-x)); }
-
-// TEST(sigmoid, fp32) {
-//   SigmoidCompute<float, PRECISION(kFloat)> kernel;
-//   std::unique_ptr<KernelContext> ctx(new KernelContext);
-//   auto& context = ctx->As<CUDAContext>();
-
-//   operators::ActivationParam param;
-
-//   Tensor x, y, x_cpu, y_cpu;
-//   int h = 3, w = 3;
-//   y.Resize({h, w});
-//   x_cpu.Resize({h, w});
-//   y_cpu.Resize({h, w});
-
-//   auto* y_data = y.mutable_data<float>(TARGET(kCUDA));
-//   float* x_cpu_data = x_cpu.mutable_data<float>();
-//   float* y_cpu_data = y_cpu.mutable_data<float>();
-
-//   for (int i = 0; i < x_cpu.numel(); i++) {
-//     x_cpu_data[i] = i - 1.5;
-//   }
-
-//   x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-
-//   param.X = &x;
-//   param.Out = &y;
-//   kernel.SetParam(param);
-
-//   cudaStream_t stream;
-//   cudaStreamCreate(&stream);
-//   context.SetExecStream(stream);
-//   kernel.SetContext(std::move(ctx));
-//   kernel.Launch();
-//   cudaDeviceSynchronize();
-
-//   CopySync<TARGET(kCUDA)>(
-//       y_cpu_data, y_data, sizeof(float) * y.numel(), IoDirection::DtoH);
-//   for (int i = 0; i < y.numel(); i++) {
-//     EXPECT_NEAR(y_cpu_data[i], SigmoidBaseLine(x_cpu_data[i]), 1e-5);
-//   }
-// }
-
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
