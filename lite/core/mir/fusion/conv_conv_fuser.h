@@ -39,42 +39,23 @@ class ConvConvFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  void ComputeNewWeight(Tensor* weight_tensor, Tensor* weight0_tensor, Tensor* weight1_tensor) {
+  void ComputeNewWeight(float* dout, const float* din, const float* weights,
+                        int num, int ic, int ih, int iw, int oc) {
     // input conv_weight0_t weights conv_weight1_t
     // output weight_tensor
-    auto in_dims = weight0_tensor->dims();
-    auto weight_dims = weight1_tensor->dims();
-    const float* din = weight0_tensor->data<float>();
-    const float* weights = weight1_tensor->data<float>();
-    int num = in_dims[0];
-    int ic = in_dims[1];
-    int ih = in_dims[2];
-    int iw = in_dims[3];
-    int oc = weight_dims[0];
-    int kh = weight_dims[2];
-    int kw = weight_dims[3];
-    int oh = ih;
-    int ow = iw;
-    // ksize = 1
-    int ksize = kw * kh;
     int in_size = ih * iw;
-    int out_size = oh * ow;
-    // std::vector<int> dims({oc, num, oh, ow});
-    weight_tensor->Resize({oc, num, oh, ow});
     int in_channel_size = ic * in_size;
-    int out_channel_size = ic * out_size;
-    float* dout = weight_tensor->mutable_data<float>();
     // out = w1[j, i, ih, iw] * w2[k, j, kw, kh]
     for (int k = 0; k < oc; k ++) {
-      const float* weights_ptr = weights + k * num * ksize;
-      float* out_ptr = dout + k * out_channel_size;
+      const float* weights_ptr = weights + k * num;
+      float* out_ptr = dout + k * in_channel_size;
       for (int c = 0; c < ic; c++) {
-        float* out_ptr_channel = out_ptr + c * out_size;
+        float* out_ptr_channel = out_ptr + c * in_size;
         const float* din_ptr = din + c * in_size;
-        for (int i = 0; i < out_size; i++) {
+        for (int i = 0; i < in_size; i++) {
           float sum = 0.f;
           for (int j = 0; j < num; j++) {
-            sum += din_ptr[j * in_channel_size] * weights_ptr[j * ksize];
+            sum += din_ptr[j * in_channel_size] * weights_ptr[j];
           }
           *out_ptr_channel++ = sum;
         }

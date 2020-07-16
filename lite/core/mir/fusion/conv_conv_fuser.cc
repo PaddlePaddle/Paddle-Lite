@@ -27,7 +27,7 @@ void ConvConvFuser::BuildPattern() {
       VarNode("conv_input0")->assert_is_op_input(conv_type0_, "Input")->AsInput();
   auto* conv_weight0 = VarNode("conv_weight0")
                           ->assert_is_op_input(conv_type0_, "Filter")
-                          ->AsInput();
+                          ->AsIntermediate();
   auto* conv0 = OpNode("conv2d0", conv_type0_)
                     ->assert_is_op(conv_type0_);
                     // ->assert_op_attr<int>("groups", 1);
@@ -42,6 +42,9 @@ void ConvConvFuser::BuildPattern() {
   auto* conv1 = OpNode("conv2d1", conv_type1_)
                     ->assert_is_op(conv_type1_)
                     ->assert_op_attr<int>("groups", 1)
+                    ->assert_op_attr<std::vector<int>>("strides", std::vector<int>({1,1}))
+                    ->assert_op_attr<std::vector<int>>("paddings", std::vector<int>({0,0}))
+                    ->assert_op_attr<std::vector<int>>("dilations", std::vector<int>({0,0}))
                     ->AsIntermediate();
 
   auto* conv_out1 =
@@ -57,7 +60,7 @@ void ConvConvFuser::BuildPattern() {
   // bool ksize_eq = (wei_dim0[2] == wei_dim0[3]) && (wei_dim1[2] == wei_dim1[3]);
   // bool ksize1 = (wei_dim0[2] = 1  || wei_dim0[2]==3);
   // bool ksize2 = wei_dim1[2] == 1;
-  // //  only support 1x1/3x3 + 1x1
+  // //  only support conv + 1x1s1p0
   // if (!(size && ksize_eq && ksize1 && ksize2)){
   //     return;
   // }
@@ -75,7 +78,7 @@ void ConvConvFuser::BuildPattern() {
     } else {
         auto* conv_bias0 = VarNode("conv_bias0")
                               ->assert_is_op_input(conv_type0_, "Bias")
-                              ->AsInput();
+                              ->AsIntermediate();
         conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
         conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
     }
@@ -114,6 +117,11 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
   bool enable0_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
   bool enable1_int8 = conv_op_desc1->HasAttr("enable_int8") ? true : false;
+  int kw = weight1_t->dims()[2];
+  int kh = weight1_t->dims()[3];
+  if (!(kw == 1 && kh == 1)){
+    return;
+  }
   CHECK_EQ(enable0_int8, enable1_int8) << "The Conv compute type must be same";
   CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
   CHECK_EQ(weight0_t->dims()[0], weight1_t->dims()[1]) << "weight0_dims[0] == weight1_dim[1]";
@@ -147,15 +155,22 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   } else {
     // compute new conv_weight
     Tensor weight_tensor;
-    ComputeNewWeight(&weight_tensor, weight0_t, weight1_t);
-    weight0_t->Resize(weight_tensor.dims());
-    auto new_weight_d = weight_tensor.data<float>();
-    auto weight_d = weight0_t->mutable_data<float>();
-    for (int i = 0; i < weight_tensor.data_size(); i++){
-      weight_d[i] = new_weight_d[i];
-    }
+    auto in_dims = weight0_t->dims();
+    auto weight_dims = weight1_t->dims();
+    const float* din = weight0_t->data<float>();
+    const float* weights = weight1_t->data<float>();
+    int num = in_dims[0];
+    int ic = in_dims[1];
+    int ih = in_dims[2];
+    int iw = in_dims[3];
+    int oc = weight_dims[0];
+    weight_tensor.Resize({oc, num, ih, iw});
+    float* dout = weight_tensor->mutable_data<float>();
+    ComputeNewWeight(dout, din, weights, num, ic, ih, iw, oc);
+    weight0_t->CopyDataFrom(weight_tensor);
+    LOG(INFO) << "end";
   }
-
+  LOG(INFO) << "bias";
   // compute new conv_bias
   if (conv_has_bias0_ && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
@@ -165,7 +180,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       conv_op_desc1->Input("Bias").size() > 0) {
       auto bias_t1 = scope->FindVar(matched.at("conv_bias1")->arg()->name)
                               ->GetMutable<lite::Tensor>();
-      auto bias_d1 = bias_t1->data<float>();
+      auto bias_d1 = bias_t1->mutable_data<float>();
       Tensor bias;
       ComputeNewBias(&bias, bias_t0, weight1_t, bias_t1);
       auto bias_d = bias.data<float>();
