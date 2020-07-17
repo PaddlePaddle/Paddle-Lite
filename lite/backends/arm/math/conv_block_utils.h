@@ -143,42 +143,22 @@ static bool conv_trans_weights_numc(const dtype* din,
 // din = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9 , 10 ,11], [12, 13, 14, 15]]
 // dout = [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]]
 /*
-  m = 4 n = 4: 0 1 2 3      0 4 8 12
-               4 5 6 7      1 5 9 13
-               8 9 10 11    2 6 10 14
-               12 13 14 15  3 7 11 15
-  m = 8 n = 4: 0 1 2 3 4 5 6 7          0 4 8 12 16 20 24 28 
-               8 9 10 11 12 13 14 15    1 5 9 13 17 21 25 29 
-               16 17 18 19 20 21 22 23  2 6 10 14 18 22 26 30 
-               24 25 26 27 28 29 30 31  3 7 11 15 19 23 27 31
-  m = 4 n = 8: 0 1 2 3      0 8 16 24  
-               4 5 6 7      1 9 17 25
-               8 9 10 11    2 10 18 26
-               12 13 14 15  3 11 19 27
-               16 17 18 19  4 12 20 28
-               ...
-  m = 8 n = 8: 0 1 2 3 4 5 6 7           0 8 16 24 32 40 48 56 
-               8 9 10 11 12 13 14 15     1 9 17 25 33 41 49 57
+  m = 8 n = 8: 0 1 2 3 4 5 6 7           0 8 16 24 32 40 48 56
                16 17 18 19 20 21 22 23   2 10 18 26 34 42 50 58
                24 25 26 27 28 29 30 31   3 11 19 27 35 43 51 59
-               32 33 34 35 36 37 38 39   4 12 20 28 36 44 52 60
-               ...
-  int k = 0;
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < m; ++j) {
-      dout[k++] = din[j * n + i];
+               32 33 34 35 36 37 38 39   4 12 20 28 36 44 52 60           ...
     }
   }
 */
 template <typename Dtype>
-void local_transpose(onst Dtype* din, Dtype* dout, int m, int n) {
+void local_transpose(const Dtype* din, Dtype* dout, int m, int n) {
   // n % 4 == 0 m % 4 == 0
   // n * m ==> n * m data trans
   int offset_m = m << 2;
   const Dtype* din_ptr = din;
   Dtype* dout_ptr = dout;
   for (int i = 0; i < n; i += 4) {
-    Dtype* out_ptr0 =dout_ptr;
+    Dtype* out_ptr0 = dout_ptr;
     Dtype* out_ptr1 = dout_ptr + m;
     Dtype* out_ptr2 = out_ptr1 + m;
     Dtype* out_ptr3 = out_ptr2 + m;
