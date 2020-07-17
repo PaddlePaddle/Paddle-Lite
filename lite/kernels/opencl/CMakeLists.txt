@@ -34,6 +34,9 @@ add_kernel(instance_norm_opencl OPENCL basic SRCS instance_norm_image_compute.cc
 add_kernel(dropout_opencl OPENCL basic SRCS dropout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(pad2d_opencl OPENCL basic SRCS pad2d_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(box_coder_opencl OPENCL basic SRCS box_coder_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(pixel_shuffle_opencl OPENCL basic SRCS pixel_shuffle_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(expand_opencl OPENCL basic SRCS expand_image_compute.cc DEPS ${cl_kernel_deps})
+
 # extra
 # wait to add ...
 
@@ -72,6 +75,12 @@ lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
 
 lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
              DEPS layout_opencl op_registry program context)
+
+lite_cc_test(test_pixel_shuffle_image_opencl SRCS pixel_shuffle_image_compute_test.cc
+             DEPS pixel_shuffle_opencl op_registry program context)
+
+lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
+             DEPS expand_opencl op_registry program context)
 
 lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
              DEPS elementwise_add_opencl fusion_elementwise_add_activation_opencl op_registry program context)

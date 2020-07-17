@@ -62,6 +62,18 @@ class KernelBase {
     profiler_ = profiler;
     profile_id_ = id;
   }
+
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = std::string("NotImpl");
+#ifdef LITE_WITH_ARM
+    ch->cl_event = event_;
+#endif
+  }
+
+  virtual void SetIsKernelTest(bool is_kernel_test) {
+    is_kernel_test_ = is_kernel_test;
+  }
 #endif
 
   void Launch() {
@@ -86,14 +98,24 @@ class KernelBase {
 #if defined(LITE_WITH_MLU)
     WorkSpace::Global_MLU().AllocReset();
 #endif
+
 #ifdef LITE_WITH_PROFILE
-    profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
-    profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+    if (!is_kernel_test_) {
+      profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
+      profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+    }
+
     Run();
-#ifdef LITE_WITH_OPENCL
-    CLRuntime::Global()->command_queue().finish();
-#endif
-    profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+
+    if (is_first_epoch_for_profiler_ && (!is_kernel_test_)) {
+      SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
+      is_first_epoch_for_profiler_ = false;
+    }
+
+    if (!is_kernel_test_) {
+      profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
+    }
+
 #else
     Run();
 #endif
@@ -185,6 +207,11 @@ class KernelBase {
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
+  bool is_first_epoch_for_profiler_{true};
+  bool is_kernel_test_{true};
+#ifdef LITE_WITH_OPENCL
+  cl::Event event_;
+#endif
 #endif
 };
 

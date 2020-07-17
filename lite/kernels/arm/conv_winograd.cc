@@ -93,6 +93,14 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
 }
 
+#ifdef LITE_WITH_PROFILE
+template <>
+void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
+
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
@@ -129,6 +137,9 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                           b_data,
                                           param,
                                           &ctx);
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_compute_6x6_3x3";
+#endif
   } else {
     int tile_block = 8;
     int block_count =
@@ -147,6 +158,9 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                             b_data,
                                             param,
                                             &ctx);
+#ifdef LITE_WITH_PROFILE
+      kernel_func_name_ = "conv_compute_2x2_3x3";
+#endif
     } else {
       lite::arm::math::conv_compute_2x2_3x3_small(i_data,
                                                   o_data,
@@ -161,6 +175,9 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                   b_data,
                                                   param,
                                                   &ctx);
+#ifdef LITE_WITH_PROFILE
+      kernel_func_name_ = "conv_compute_2x2_3x3_small";
+#endif
     }
   }
 }
