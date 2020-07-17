@@ -144,7 +144,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 }
 
 #ifdef LITE_WITH_CUDA
-void RuntimeProgram::UpdateContext(cudaStream_t* exec, cudaStream_t* io) {
+void RuntimeProgram::UpdateContext(cudaStream_t exec, cudaStream_t io) {
   for (auto& inst : instructions_) {
     inst.UpdateContext(exec, io);
   }

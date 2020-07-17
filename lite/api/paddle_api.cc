@@ -41,10 +41,10 @@ Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 Tensor::Tensor(const void *raw) { raw_tensor_ = const_cast<void *>(raw); }
 
 #ifdef LITE_WITH_CUDA
-Tensor::Tensor(void *raw, cudaStream_t *stream)
-    : raw_tensor_(raw), io_stream_(stream) {}
+Tensor::Tensor(void *raw, cudaStream_t stream)
+    : raw_tensor_(raw), cuda_io_stream_(stream) {}
 
-Tensor::Tensor(const void *raw, cudaStream_t *stream) : io_stream_(stream) {
+Tensor::Tensor(const void *raw, cudaStream_t stream) : cuda_io_stream_(stream) {
   raw_tensor_ = const_cast<void *>(raw);
 }
 #endif
@@ -112,8 +112,11 @@ void Tensor::CopyFromCpu(const T *src_data) {
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
   } else if (type == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpyAsync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD, *io_stream_);
+    lite::TargetWrapperCuda::MemcpyAsync(data,
+                                         src_data,
+                                         num * sizeof(T),
+                                         lite::IoDirection::HtoD,
+                                         cuda_io_stream_);
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
@@ -139,9 +142,12 @@ void Tensor::CopyToCpu(T *data) const {
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
   } else if (type == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpyAsync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH, *io_stream_);
-    lite::TargetWrapperCuda::StreamSync(*io_stream_);
+    lite::TargetWrapperCuda::MemcpyAsync(data,
+                                         src_data,
+                                         num * sizeof(T),
+                                         lite::IoDirection::DtoH,
+                                         cuda_io_stream_);
+    lite::TargetWrapperCuda::StreamSync(cuda_io_stream_);
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif

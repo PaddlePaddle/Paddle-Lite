@@ -29,6 +29,7 @@
 
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/cuda_utils.h"
+#include "lite/backends/cuda/stream_wrapper.h"
 #endif
 
 namespace paddle {
@@ -154,22 +155,15 @@ class LITE_API Predictor {
       bool record_info = false);
   void SaveOpKernelInfo(const std::string& model_dir);
 
-// #ifdef LITE_WITH_TRAIN
-//   void Run(const std::vector<framework::Tensor>& tensors) {
-//     FeedVars(tensors);
-//     program_->Run();
-//   }
-
-//   void FeedVars(const std::vector<framework::Tensor>& tensors);
-// #endif
-
 #ifdef LITE_WITH_CUDA
-  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
-  bool multi_stream() { return multi_stream_; }
-  void set_exec_stream(cudaStream_t* stream) { exec_stream_ = stream; }
-  void set_io_stream(cudaStream_t* stream) { io_stream_ = stream; }
-  const cudaStream_t& exec_stream() { return *exec_stream_; }
-  const cudaStream_t& io_stream() { return *io_stream_; }
+  void set_cuda_use_multi_stream(bool multi_stream) {
+    cuda_use_multi_stream_ = multi_stream;
+  }
+  bool cuda_use_multi_stream() { return cuda_use_multi_stream_; }
+  void set_cuda_exec_stream(cudaStream_t stream) { cuda_exec_stream_ = stream; }
+  void set_cuda_io_stream(cudaStream_t stream) { cuda_io_stream_ = stream; }
+  cudaStream_t cuda_exec_stream() { return cuda_exec_stream_; }
+  cudaStream_t cuda_io_stream() { return cuda_io_stream_; }
 #endif
 
  private:
@@ -182,10 +176,11 @@ class LITE_API Predictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
+
 #ifdef LITE_WITH_CUDA
-  bool multi_stream_{false};
-  cudaStream_t* io_stream_{nullptr};
-  cudaStream_t* exec_stream_{nullptr};
+  bool cuda_use_multi_stream_{false};
+  cudaStream_t cuda_io_stream_;
+  cudaStream_t cuda_exec_stream_;
 #endif
 };
 
@@ -247,8 +242,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   void InitCudaEnv(std::vector<std::string>* passes);
   // Due to the asynchronous nature of cuda kernel execution, synchronization is
   // required before setting input and getting output.
-  void SyncInputs();
-  void SyncOutputs();
+  void SyncCudaInputs();
+  void SyncCudaOutputs();
 #endif
 
  private:
@@ -256,76 +251,17 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   lite_api::CxxConfig config_;
   std::mutex mutex_;
   bool status_is_cloned_;
+
 #ifdef LITE_WITH_CUDA
-  bool multi_stream_{false};
-  std::shared_ptr<cudaStream_t> io_stream_;
-  std::shared_ptr<cudaStream_t> exec_stream_;
-  cudaEvent_t input_event_;
-  std::vector<cudaEvent_t> output_events_;
-  // only for multi exec stream mode.
-  std::vector<cudaStream_t*> exec_streams_;
+  bool cuda_use_multi_stream_{false};
+  std::unique_ptr<lite::StreamWrapper> cuda_io_stream_;
+  std::unique_ptr<lite::StreamWrapper> cuda_exec_stream_;
+  cudaEvent_t cuda_input_event_;
+  std::vector<cudaEvent_t> cuda_output_events_;
+  // only used for multi exec stream mode.
+  std::vector<lite::StreamWrapper> cuda_exec_streams_;
 #endif
 };
-
-/*
- * An executor for training.
- *
- * Usage:
- *
- * CXXTrainer trainer(...);
- * trainer.RunStartupProgram(...);
- * auto exe = BuildMainProgramExecutor(...);
- *
- * for (auto& epoch : epoches) {
- *   auto* tensor0 = exe.GetInput(...);
- *   // fill data for tensor0
- *   exe.Run();
- * }
-#ifdef LITE_WITH_X86
-class LITE_API CXXTrainer {
- public:
-  CXXTrainer(const std::shared_ptr<lite::Scope>& root_scope,
-             const std::vector<Place>& valid_places)
-      : scope_(root_scope),
-        valid_places_(valid_places),
-        main_program_executor_(Predictor(scope_)) {}
-
-  // Build the RuntimeProgram cache for the main program. The cache will run
-  // multiple times for the epoches.
-  // NOTE Just support to execute the 0-th block currently.
-  Predictor& BuildMainProgramExecutor(const framework::proto::ProgramDesc& desc,
-                                      int block_id = 0) {
-    main_program_executor_.Build(desc, valid_places_);
-    return main_program_executor_;
-  }
-
-#ifdef LITE_WITH_TRAIN
-  Predictor& BuildMainProgramExecutor(framework::ProgramDesc& desc) {  // NOLINT
-    return BuildMainProgramExecutor(*desc.Proto());
-  }
-
-  void RunStartupProgram(framework::ProgramDesc& desc) {  // NOLINT
-    RunStartupProgram(*desc.Proto());
-  }
-#endif
-
-  // Run the startup program. It just executes once, no cache needed.
-  void RunStartupProgram(const framework::proto::ProgramDesc& desc,
-                         int block_id = 0) {
-    Predictor exe(scope_);
-    exe.Build(desc,  valid_places_);
-    exe.Run();
-  }
-
- private:
-  std::shared_ptr<lite::Scope> scope_;
-  std::vector<Place> valid_places_;
-
-  // The training program.
-  Predictor main_program_executor_;
-};
-#endif
-*/
 
 }  // namespace lite
 }  // namespace paddle

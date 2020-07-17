@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "paddle_place.h"  // NOLINT
 
 #ifdef LITE_WITH_CUDA
@@ -67,14 +68,14 @@ struct LITE_API Tensor {
   void SetLoD(const lod_t& lod);
 
 #ifdef LITE_WITH_CUDA
-  explicit Tensor(void* raw, cudaStream_t* stream);
-  explicit Tensor(const void* raw, cudaStream_t* stream);
+  explicit Tensor(void* raw, cudaStream_t stream);
+  explicit Tensor(const void* raw, cudaStream_t stream);
 #endif
 
  private:
   void* raw_tensor_;
 #ifdef LITE_WITH_CUDA
-  cudaStream_t* io_stream_{nullptr};
+  cudaStream_t cuda_io_stream_;
 #endif
 };
 
@@ -166,11 +167,13 @@ class LITE_API CxxConfig : public ConfigBase {
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
+
 #ifdef LITE_WITH_CUDA
-  bool multi_stream_{false};
-  std::shared_ptr<cudaStream_t> exec_stream_;
-  std::shared_ptr<cudaStream_t> io_stream_;
+  bool cuda_use_multi_stream_{false};
+  cudaStream_t* cuda_exec_stream_{nullptr};
+  cudaStream_t* cuda_io_stream_{nullptr};
 #endif
+
 #ifdef LITE_WITH_MLU
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
@@ -205,6 +208,19 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
   bool model_from_memory() const { return model_from_memory_; }
+  bool check_valid() const {
+#ifdef LITE_WITH_CUDA
+    if (cuda_use_multi_stream_ && (cuda_exec_stream_ || cuda_io_stream_)) {
+      LOG(FATAL) << "Can not set cuda_use_multi_stream and cuda_exec/io_stream "
+                    "simultaneously. cuda_use_multi_stream is only valid in "
+                    "single thread, it is designed to started multiple streams "
+                    "within a model. cuda_exec/io_stream is to set an exec/io "
+                    "stream for each thread, that is, each thread has its own "
+                    "exec/io stream";
+    }
+#endif
+    return true;
+  }
 
 #ifdef LITE_WITH_X86
   void set_x86_math_library_num_threads(int threads) {
@@ -214,17 +230,23 @@ class LITE_API CxxConfig : public ConfigBase {
     return x86_math_library_math_threads_;
   }
 #endif
+
 #ifdef LITE_WITH_CUDA
-  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
-  bool multi_stream() const { return multi_stream_; }
-  void set_exec_stream(std::shared_ptr<cudaStream_t> exec_stream) {
-    exec_stream_ = exec_stream;
+  void set_cuda_use_multi_stream(bool use_multi_stream) {
+    cuda_use_multi_stream_ = use_multi_stream;
   }
-  void set_io_stream(std::shared_ptr<cudaStream_t> io_stream) {
-    io_stream_ = io_stream;
+  bool cuda_use_multi_stream() const { return cuda_use_multi_stream_; }
+  void set_cuda_stream(cudaStream_t* exec_stream = nullptr,
+                       cudaStream_t* io_stream = nullptr) {
+    if (exec_stream) {
+      cuda_exec_stream_ = exec_stream;
+    }
+    if (io_stream) {
+      cuda_io_stream_ = io_stream;
+    }
   }
-  std::shared_ptr<cudaStream_t> exec_stream() { return exec_stream_; }
-  std::shared_ptr<cudaStream_t> io_stream() { return io_stream_; }
+  cudaStream_t* cuda_exec_stream() { return cuda_exec_stream_; }
+  cudaStream_t* cuda_io_stream() { return cuda_io_stream_; }
 #endif
 
 #ifdef LITE_WITH_MLU

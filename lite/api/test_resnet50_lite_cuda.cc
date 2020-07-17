@@ -95,20 +95,9 @@ TEST(Resnet50, config_exec_stream) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kCUDA), PRECISION(kFloat)}});
-  std::shared_ptr<cudaStream_t> exec_stream = std::make_shared<cudaStream_t>();
-  lite::TargetWrapperCuda::CreateStream(exec_stream.get());
-  config.set_exec_stream(exec_stream);
-
-  RunModel(config);
-}
-
-TEST(Resnet50, config_io_stream) {
-  lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places({lite_api::Place{TARGET(kCUDA), PRECISION(kFloat)}});
-  std::shared_ptr<cudaStream_t> io_stream = std::make_shared<cudaStream_t>();
-  lite::TargetWrapperCuda::CreateStream(io_stream.get());
-  config.set_io_stream(io_stream);
+  cudaStream_t stream;
+  lite::TargetWrapperCuda::CreateStream(&stream);
+  config.set_cuda_stream(&stream);
 
   RunModel(config);
 }
@@ -117,12 +106,11 @@ TEST(Resnet50, config_all_stream) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kCUDA), PRECISION(kFloat)}});
-  std::shared_ptr<cudaStream_t> exec_stream = std::make_shared<cudaStream_t>();
-  lite::TargetWrapperCuda::CreateStream(exec_stream.get());
-  config.set_exec_stream(exec_stream);
-  std::shared_ptr<cudaStream_t> io_stream = std::make_shared<cudaStream_t>();
-  lite::TargetWrapperCuda::CreateStream(io_stream.get());
-  config.set_io_stream(io_stream);
+  cudaStream_t exec_stream;
+  lite::TargetWrapperCuda::CreateStream(&exec_stream);
+  cudaStream_t io_stream;
+  lite::TargetWrapperCuda::CreateStream(&io_stream);
+  config.set_cuda_stream(&exec_stream, &io_stream);
 
   RunModel(config);
 }
@@ -131,9 +119,21 @@ TEST(Resnet50, config_multi_exec_stream) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kCUDA), PRECISION(kFloat)}});
-  config.set_multi_stream(true);
+  config.set_cuda_use_multi_stream(true);
 
   RunModel(config);
+}
+
+TEST(Resnet50, config_error) {
+  lite_api::CxxConfig config;
+  config.set_model_dir(FLAGS_model_dir);
+  config.set_valid_places({lite_api::Place{TARGET(kCUDA), PRECISION(kFloat)}});
+  config.set_cuda_use_multi_stream(true);
+  cudaStream_t exec_stream;
+  lite::TargetWrapperCuda::CreateStream(&exec_stream);
+  config.set_cuda_stream(&exec_stream);
+
+  ASSERT_DEATH(RunModel(config), "");
 }
 
 }  // namespace lite

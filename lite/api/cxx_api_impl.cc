@@ -36,6 +36,7 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
+  config_.check_valid();
   auto places = config.valid_places();
   std::vector<std::string> passes = config.get_passes_internal();
 #ifdef LITE_WITH_CUDA
@@ -94,65 +95,69 @@ void CxxPaddleApiImpl::InitCudaEnv(std::vector<std::string> *passes) {
   Env<TARGET(kCUDA)>::Init();
 
   // init two streams for each predictor.
-  if (config_.exec_stream()) {
-    exec_stream_ = config_.exec_stream();
+  if (config_.cuda_exec_stream()) {
+    cuda_exec_stream_.reset(
+        new lite::StreamWrapper(*config_.cuda_exec_stream()));
   } else {
-    exec_stream_ = std::make_shared<cudaStream_t>();
-    TargetWrapperCuda::CreateStream(exec_stream_.get());
+    cuda_exec_stream_.reset(new lite::StreamWrapper());
   }
-  if (config_.io_stream()) {
-    io_stream_ = config_.io_stream();
+  if (config_.cuda_io_stream()) {
+    cuda_io_stream_.reset(new lite::StreamWrapper(*config_.cuda_io_stream()));
   } else {
-    io_stream_ = std::make_shared<cudaStream_t>();
-    TargetWrapperCuda::CreateStream(io_stream_.get());
+    cuda_io_stream_.reset(new lite::StreamWrapper());
   }
 
-  raw_predictor_->set_exec_stream(exec_stream_.get());
-  raw_predictor_->set_io_stream(io_stream_.get());
+  raw_predictor_->set_cuda_exec_stream(cuda_exec_stream_->stream());
+  raw_predictor_->set_cuda_io_stream(cuda_io_stream_->stream());
 
   // init sync events.
-  if (config_.multi_stream()) {
-    multi_stream_ = true;
-    raw_predictor_->set_multi_stream(multi_stream_);
+  if (config_.cuda_use_multi_stream()) {
+    cuda_use_multi_stream_ = true;
+    raw_predictor_->set_cuda_use_multi_stream(cuda_use_multi_stream_);
     passes->push_back("multi_stream_analysis_pass");
     VLOG(3) << "add pass: " << (*passes)[0];
     Env<TargetType::kCUDA>::Devs &devs = Env<TargetType::kCUDA>::Global();
     int dev_id = TargetWrapperCuda::GetCurDevice();
     for (size_t i = 0; i < lite::kMaxStream; ++i) {
-      exec_streams_.push_back(
-          const_cast<cudaStream_t *>(&devs[dev_id].exec_streams()[i]));
+      cuda_exec_streams_.emplace_back(devs[dev_id].exec_streams()[i]);
       cudaEvent_t out_event;
       TargetWrapperCuda::CreateEventWithFlags(&out_event);
-      output_events_.push_back(out_event);
+      cuda_output_events_.push_back(out_event);
     }
   } else {
     cudaEvent_t out_event;
     TargetWrapperCuda::CreateEventWithFlags(&out_event);
-    output_events_.push_back(out_event);
+    cuda_output_events_.push_back(out_event);
   }
-  TargetWrapperCuda::CreateEventWithFlags(&input_event_);
+  TargetWrapperCuda::CreateEventWithFlags(&cuda_input_event_);
 }
 
-void CxxPaddleApiImpl::SyncInputs() {
-  TargetWrapperCuda::RecordEvent(input_event_, *io_stream_);
-  if (multi_stream_) {
+void CxxPaddleApiImpl::SyncCudaInputs() {
+  TargetWrapperCuda::RecordEvent(cuda_input_event_, cuda_io_stream_->stream());
+  if (cuda_use_multi_stream_) {
     for (int i = 0; i < lite::kMaxStream; ++i) {
-      TargetWrapperCuda::StreamSync(*exec_streams_[i], input_event_);
+      TargetWrapperCuda::StreamSync(cuda_exec_streams_[i].stream(),
+                                    cuda_input_event_);
     }
   } else {
-    TargetWrapperCuda::StreamSync(*exec_stream_, input_event_);
+    TargetWrapperCuda::StreamSync(cuda_exec_stream_->stream(),
+                                  cuda_input_event_);
   }
 }
 
-void CxxPaddleApiImpl::SyncOutputs() {
-  if (multi_stream_) {
-    for (size_t i = 0; i < output_events_.size(); ++i) {
-      TargetWrapperCuda::RecordEvent(output_events_[i], *exec_streams_[i]);
-      TargetWrapperCuda::StreamSync(*io_stream_, output_events_[i]);
+void CxxPaddleApiImpl::SyncCudaOutputs() {
+  if (cuda_use_multi_stream_) {
+    for (size_t i = 0; i < cuda_output_events_.size(); ++i) {
+      TargetWrapperCuda::RecordEvent(cuda_output_events_[i],
+                                     cuda_exec_streams_[i].stream());
+      TargetWrapperCuda::StreamSync(cuda_io_stream_->stream(),
+                                    cuda_output_events_[i]);
     }
   } else {
-    TargetWrapperCuda::RecordEvent(output_events_[0], *exec_stream_);
-    TargetWrapperCuda::StreamSync(*io_stream_, output_events_[0]);
+    TargetWrapperCuda::RecordEvent(cuda_output_events_[0],
+                                   cuda_exec_stream_->stream());
+    TargetWrapperCuda::StreamSync(cuda_io_stream_->stream(),
+                                  cuda_output_events_[0]);
   }
 }
 #endif
@@ -161,7 +166,7 @@ std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
 #ifdef LITE_WITH_CUDA
   return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(x, io_stream_.get()));
+      new lite_api::Tensor(x, cuda_io_stream_->stream()));
 #else
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 #endif
@@ -172,7 +177,7 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
   const auto *x = raw_predictor_->GetOutput(i);
 #ifdef LITE_WITH_CUDA
   return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(x, io_stream_.get()));
+      new lite_api::Tensor(x, cuda_io_stream_->stream()));
 #else
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 #endif
@@ -195,13 +200,13 @@ void CxxPaddleApiImpl::Run() {
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
 #ifdef LITE_WITH_CUDA
-  SyncInputs();
+  SyncCudaInputs();
 #endif
 
   raw_predictor_->Run();
 
 #ifdef LITE_WITH_CUDA
-  SyncOutputs();
+  SyncCudaOutputs();
 #endif
 }
 
@@ -250,9 +255,9 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
 
 CxxPaddleApiImpl::~CxxPaddleApiImpl() {
 #ifdef LITE_WITH_CUDA
-  TargetWrapperCuda::DestroyEvent(input_event_);
-  for (size_t i = 0; i < output_events_.size(); ++i) {
-    TargetWrapperCuda::DestroyEvent(output_events_[i]);
+  TargetWrapperCuda::DestroyEvent(cuda_input_event_);
+  for (size_t i = 0; i < cuda_output_events_.size(); ++i) {
+    TargetWrapperCuda::DestroyEvent(cuda_output_events_[i]);
   }
 #endif
 }
