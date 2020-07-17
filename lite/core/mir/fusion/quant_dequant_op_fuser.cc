@@ -175,7 +175,11 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
-  op_desc.SetAttr("enable_int8", true);
+
+  // Arm CPU does not support conv2d_transpose
+  if (quantized_op_type_ != "conv2d_transpose") {
+    op_desc.SetAttr("enable_int8", true);
+  }
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -280,6 +284,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
+  // Arm CPU does not support conv2d_transpose
   if (quantized_op_type_ != "conv2d_transpose") {
     op_desc.SetAttr("enable_int8", true);
   }
