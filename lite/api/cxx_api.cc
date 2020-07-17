@@ -57,16 +57,16 @@ void Predictor::SaveModel(const std::string &dir,
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   std::set<std::string> ops_info;
   std::set<std::string> kernels_info;
-  const auto &instructions_ = program_->instructions();
-  for (auto &node : instructions_) {
+  const auto &insts = program_->instructions();
+  for (auto &inst : insts) {
     // parse op type infomation
-    auto op = node.op()->op_info();
+    auto op = inst.op()->op_info();
     ops_info.insert(op->Type());
     // parse kernel type information
     std::string kernel_type_str =
-        node.kernel()->op_type() + "," + TargetRepr(node.kernel()->target()) +
-        "," + PrecisionRepr(node.kernel()->precision()) + "," +
-        DataLayoutRepr(node.kernel()->layout()) + "," + node.kernel()->alias();
+        inst.kernel()->op_type() + "," + TargetRepr(inst.kernel()->target()) +
+        "," + PrecisionRepr(inst.kernel()->precision()) + "," +
+        DataLayoutRepr(inst.kernel()->layout()) + "," + inst.kernel()->alias();
     kernels_info.insert(kernel_type_str);
   }
 
@@ -170,8 +170,8 @@ void Predictor::PrepareFeedFetch() {
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
   const auto &insts = program_->instructions();
-  for (size_t i = 0; i < program_->num_instructions(); i++) {
-    const auto &op = insts[i].op()->op_info();
+  for (auto &inst : insts) {
+    const auto &op = inst.op()->op_info();
     if (op->Type() == "feed") {
       feeds.push_back(op);
     } else if (op->Type() == "fetch") {

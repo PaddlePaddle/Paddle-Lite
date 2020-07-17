@@ -132,6 +132,8 @@ void RuntimeProgram::SaveToProgram(
         // program_desc
         subgraph_op->Attach(*op_desc, scope);
         subgraph_op->AttachKernel(kernel);
+        // Update the pointer of block desc after a new subblock desc is added
+        block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
       }
     }
   }

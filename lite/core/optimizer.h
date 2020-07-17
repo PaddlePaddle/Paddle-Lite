@@ -62,7 +62,7 @@ class Optimizer {
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
     CHECK(graphs_.empty()) << "duplicate optimize found";
 
-    auto block_size = program.ops().size();
+    auto block_size = program.block_size();
     for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
       std::unique_ptr<mir::SSAGraph> graph;
       graph.reset(new mir::SSAGraph);

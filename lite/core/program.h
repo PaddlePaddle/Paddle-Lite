@@ -69,21 +69,19 @@ struct Program {
   std::list<std::string>* mutable_weights() { return &weights_; }
   std::list<std::string>* mutable_tmp_vars() { return &tmp_vars_; }
 
-  const std::list<std::shared_ptr<OpLite>>& ops(int block_idx) const {
+  const std::list<std::shared_ptr<OpLite>>& ops(
+      int block_idx = kRootBlockIndex) const {
     return ops_[block_idx];
   }
-  std::list<std::shared_ptr<OpLite>>* mutable_ops(int block_idx) {
+  std::list<std::shared_ptr<OpLite>>* mutable_ops(
+      int block_idx = kRootBlockIndex) {
     return &ops_[block_idx];
   }
-  const std::vector<std::list<std::shared_ptr<OpLite>>>& ops() const {
-    return ops_;
-  }
-  std::vector<std::list<std::shared_ptr<OpLite>>>* mutable_ops() {
-    return &ops_;
-  }
 
-  lite::Scope* exec_scope() { return exec_scope_; }
-  lite::Scope* scope() { return scope_.get(); }
+  size_t block_size() { return ops_.size(); }
+
+  Scope* exec_scope() { return exec_scope_; }
+  Scope* scope() { return scope_.get(); }
 
   cpp::ProgramDesc* program_desc() { return program_desc_.get(); }
 
@@ -104,7 +102,7 @@ struct Program {
   std::list<std::string> weights_;
   std::vector<std::list<std::shared_ptr<OpLite>>> ops_;
   // the scope to run the kernels, NOTE this is the execution scope.
-  std::shared_ptr<lite::Scope> scope_;
+  std::shared_ptr<Scope> scope_;
   std::vector<Place> valid_places_;
   // Runtime scope.
   Scope* exec_scope_{};
@@ -220,17 +218,20 @@ class LITE_API RuntimeProgram {
 
   void Run();
 
-  void set_exec_scope(lite::Scope* x) { exec_scope_ = x; }
+  void set_exec_scope(Scope* x) { exec_scope_ = x; }
   Scope* exec_scope() { return exec_scope_; }
-
-  size_t num_instructions(int block_idx = kRootBlockIndex) const {
-    return instructions_[block_idx].size();
-  }
 
   const std::vector<Instruction>& instructions(
       int block_idx = kRootBlockIndex) const {
     return instructions_[block_idx];
   }
+
+  std::vector<Instruction>* mutable_instructions(
+      int block_idx = kRootBlockIndex) {
+    return &instructions_[block_idx];
+  }
+
+  size_t block_size() { return instructions_.size(); }
 
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
