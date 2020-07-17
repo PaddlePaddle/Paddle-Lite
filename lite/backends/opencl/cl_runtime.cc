@@ -38,17 +38,20 @@ CLRuntime::~CLRuntime() {
 }
 
 bool CLRuntime::Init() {
-  if (initialized_) {
+  if (is_cl_runtime_initialized_) {
     return true;
   }
   bool is_platform_init = InitializePlatform();
   bool is_device_init = InitializeDevice();
-  is_init_success_ = is_platform_init && is_device_init;
-  initialized_ = true;
-
-  context_ = CreateContext();
-  command_queue_ = CreateCommandQueue(context());
-  return initialized_;
+  LOG(INFO) << "is_platform_init:" << is_platform_init;
+  LOG(INFO) << "is_device_init:" << is_device_init;
+  if ((is_platform_init == true) && (is_device_init == true)) {
+    is_platform_device_init_success_ = true;
+    context_ = CreateContext();
+    command_queue_ = CreateCommandQueue(context());
+    is_cl_runtime_initialized_ = true;
+  }
+  return is_cl_runtime_initialized_;
 }
 
 cl::Platform& CLRuntime::platform() {
@@ -64,7 +67,9 @@ cl::Context& CLRuntime::context() {
 }
 
 cl::Device& CLRuntime::device() {
-  CHECK(device_ != nullptr) << "device_ is not initialized!";
+  if (device_ == nullptr) {
+    LOG(ERROR) << "device_ is not initialized!";
+  }
   return *device_;
 }
 
@@ -150,6 +155,14 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
 }
 
 bool CLRuntime::InitializeDevice() {
+  VLOG(3) << "device_info_.size():" << device_info_.size();
+  for (auto i : device_info_) {
+    VLOG(3) << ">>> " << i.first << " " << i.second;
+  }
+  if (device_info_.size() > 0 && device_info_.size() <= 2) {
+    return false;
+  }
+  device_info_["PLACEHOLDER"] = 1;
   // ===================== BASIC =====================
   // CL_DEVICE_TYPE_GPU
   // CL_DEVICE_NAME
@@ -160,7 +173,7 @@ bool CLRuntime::InitializeDevice() {
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
   CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(FATAL) << "No OpenCL GPU device found!";
+    LOG(ERROR) << "No available OpenCL GPU device found!";
     return false;
   }
   device_ = std::make_shared<cl::Device>();
@@ -313,9 +326,6 @@ bool CLRuntime::InitializeDevice() {
 }
 
 std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
-  if (0 != device_info_.size()) {
-    return device_info_;
-  }
   InitializeDevice();
   return device_info_;
 }

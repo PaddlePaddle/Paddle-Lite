@@ -178,9 +178,10 @@ void test_lrn(float alpha,
   opdesc.SetAttr("k", k);
   opdesc.SetAttr("n", local_size);
   opdesc.SetAttr("norm_region", norm_region);
-  opdesc.SetAttr<float>("input_scale", (*dmax - *dmin) / 255.f);
+  OpInfo op_info(opdesc);
+  op_info.SetInputScale(x_var_name, {(*dmax - *dmin) / 255.f});
 
-  auto op = CreateOp<operators::LrnOpLite>(opdesc, &scope);
+  auto op = CreateOp<operators::LrnOpLite>(op_info, &scope);
 
   // baseline
   lrn_compute_ref(op);
@@ -213,7 +214,7 @@ void test_lrn(float alpha,
   auto output_data = output_trans.mutable_data<float>();
   auto* output_ref_data = out_ref->mutable_data<float>();
   for (size_t i = 0; i < out->data_size(); i++) {
-    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-4);
+    EXPECT_NEAR(output_data[i], output_ref_data[i], 5e-4);
   }
 }
 
