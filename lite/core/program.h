@@ -190,9 +190,9 @@ class LITE_API RuntimeProgram {
       : instructions_(std::move(insts)) {
     Init();
   }
-  explicit RuntimeProgram(int block_idx,
-                          std::shared_ptr<cpp::ProgramDesc> program_desc,
-                          Scope* exec_scope);
+  explicit RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
+                          Scope* exec_scope,
+                          int block_idx = 0);
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);

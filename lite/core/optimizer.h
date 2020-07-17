@@ -66,7 +66,7 @@ class Optimizer {
     for (size_t block_idx = 0; block_idx < block_size; block_idx++) {
       std::unique_ptr<mir::SSAGraph> graph;
       graph.reset(new mir::SSAGraph);
-      graph->Build(block_idx, program, valid_places);
+      graph->Build(program, valid_places, block_idx);
       graph->SetValidPlaces(valid_places);
       graphs_.emplace_back(std::move(graph));
     }

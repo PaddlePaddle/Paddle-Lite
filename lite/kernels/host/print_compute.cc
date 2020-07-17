@@ -14,6 +14,7 @@
 
 #include "lite/kernels/host/print_compute.h"
 
+#include <mutex>  // NOLINT
 #include <string>
 #include <vector>
 

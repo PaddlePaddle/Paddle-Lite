@@ -24,7 +24,7 @@ namespace host {
 void WhileCompute::PrepareForRun() {
   auto &param = this->Param<param_t>();
   program_.reset(new RuntimeProgram(
-      param.block_idx, param.program_desc, param.exec_scope));
+      param.program_desc, param.exec_scope, param.block_idx));
 }
 void WhileCompute::Run() {
   auto &param = this->Param<param_t>();

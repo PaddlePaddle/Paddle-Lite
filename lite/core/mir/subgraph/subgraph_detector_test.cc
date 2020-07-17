@@ -141,12 +141,12 @@ std::vector<std::string> AddFetchDesc(
 }
 
 TEST(Subgraph, detect_simple_model) {
-  cpp::ProgramDesc program_desc;
+  auto program_desc = std::shared_ptr<cpp::ProgramDesc>();
   std::vector<Place> valid_places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
   // Build a simple network
-  program_desc.ClearBlocks();
-  auto* block_desc = program_desc.AddBlock<cpp::BlockDesc>();
+  program_desc->BlocksSize();
+  auto* block_desc = program_desc->AddBlock<cpp::BlockDesc>();
   block_desc->ClearOps();
   block_desc->ClearVars();
   auto* var_desc = block_desc->AddVar<cpp::VarDesc>();
@@ -181,13 +181,13 @@ TEST(Subgraph, detect_custom_model) {
                  "the path of model files.";
     return;
   }
-  cpp::ProgramDesc program_desc;
+  auto program_desc = std::shared_ptr<cpp::ProgramDesc>();
   auto scope = std::make_shared<Scope>();
   LoadModelPb(FLAGS_model_dir,
               FLAGS_model_file,
               FLAGS_params_file,
               scope.get(),
-              &program_desc,
+              program_desc.get(),
               !FLAGS_model_file.empty() && !FLAGS_params_file.empty(),
               false);
   std::vector<Place> valid_places({

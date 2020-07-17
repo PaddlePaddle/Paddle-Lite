@@ -152,9 +152,9 @@ Node *SSAGraph::GraphCreateInstructNode(
   return &node_storage_.back();
 }
 
-void SSAGraph::Build(int block_idx,
-                     const Program &program,
-                     const std::vector<Place> &valid_places) {
+void SSAGraph::Build(const Program &program,
+                     const std::vector<Place> &valid_places,
+                     int block_idx) {
   CHECK(node_storage_.empty());
 
   auto weights_name = program.weights();

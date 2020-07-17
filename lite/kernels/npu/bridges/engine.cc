@@ -74,7 +74,7 @@ bool Engine::BuildOriginProgram() {
   // the exection time. But only see them as a subgraph now.
   if (!origin_program_) {
     origin_program_.reset(
-        new RuntimeProgram(block_idx_, program_desc_, exec_scope_));
+        new RuntimeProgram(program_desc_, exec_scope_, block_idx_));
   }
   return true;
 }

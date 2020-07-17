@@ -147,9 +147,9 @@ void RuntimeProgram::UpdateVarsOfProgram(
 
 // Create runtime program from sub_block desc according to block_idx and
 // program_desc, which is used for while/conditional_block/subgraph op.
-RuntimeProgram::RuntimeProgram(int block_idx,
-                               std::shared_ptr<cpp::ProgramDesc> program_desc,
-                               Scope* exec_scope)
+RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
+                               Scope* exec_scope,
+                               int block_idx)
     : exec_scope_(exec_scope) {
 #ifdef LITE_WITH_OPENCL
   using OpenCLContext = Context<TargetType::kOpenCL>;
