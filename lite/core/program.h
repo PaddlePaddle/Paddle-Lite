@@ -47,13 +47,13 @@ struct Program {
   Program(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
           const std::shared_ptr<Scope>& root_scope,
           const std::vector<Place>& valid_places,
-          const std::vector<std::string>& vars_to_copy = {})
+          const std::vector<std::string>& vars_to_clone = {})
       : scope_(root_scope),
         valid_places_(valid_places),
         program_desc_(program_desc) {
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
-    PrepareWorkspace(program_desc_, vars_to_copy);
+    PrepareWorkspace(program_desc_, vars_to_clone);
     VLOG(4) << "build desc";
     Build(program_desc_);
     VLOG(4) << "build desc finished";
@@ -94,7 +94,7 @@ struct Program {
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc);
   // Create temporary variables.
   void PrepareWorkspace(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
-                        const std::vector<std::string>& vars_to_copy = {});
+                        const std::vector<std::string>& vars_to_clone = {});
 
  private:
   std::map<std::string, PrecisionType> var_data_type_;

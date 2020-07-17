@@ -55,9 +55,9 @@ class LITE_API Predictor {
   Predictor(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
             const std::shared_ptr<Scope>& root_scope,
             const std::vector<Place>& valid_places,
-            const std::vector<std::string>& vars_to_copy = {})
+            const std::vector<std::string>& vars_to_clone = {})
       : program_desc_(program_desc), scope_(root_scope) {
-    Program program(program_desc_, scope_, valid_places, vars_to_copy);
+    Program program(program_desc_, scope_, valid_places, vars_to_clone);
     optimizer_ = Optimizer(std::move(program), valid_places);
     exec_scope_ = optimizer_.exec_scope();
     valid_places_ = valid_places;
@@ -88,15 +88,15 @@ class LITE_API Predictor {
   }
 
   std::shared_ptr<Predictor> Clone(
-      const std::vector<std::string>& vars_to_copy) const {
+      const std::vector<std::string>& vars_to_clone) const {
     CHECK(program_desc_) << "Both program and scope of current predicotr "
                             "should be not be nullptr in Clone mode.";
     CHECK(scope_) << "Both program and scope of current predicotr should be "
                      "not be nullptr in Clone mode.";
     auto predictor = std::make_shared<Predictor>(
-        program_desc_, scope_, valid_places_, vars_to_copy);
+        program_desc_, scope_, valid_places_, vars_to_clone);
 
-    for (auto var_name : vars_to_copy) {
+    for (auto var_name : vars_to_clone) {
       predictor->exec_scope_->LocalVar(var_name);
       auto* tensor = predictor->scope_->Var(var_name)->GetMutable<Tensor>();
       auto* sub_tensor =

@@ -133,7 +133,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
       << "[NPU] No instructions found in the origin program!";
   subgraph::npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program->instructions()) {
+  const auto& insts = origin_program->instructions();
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();

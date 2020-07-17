@@ -110,11 +110,11 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
-  auto current_block = program_desc_->GetBlock<cpp::BlockDesc>(0);
+  auto main_block = program_desc_->GetBlock<cpp::BlockDesc>(kRootBlockIndex);
   std::vector<cpp::OpDesc*> feeds;
   std::vector<cpp::OpDesc*> fetchs;
-  for (size_t i = 0; i < current_block->OpsSize(); i++) {
-    auto op = current_block->GetOp<cpp::OpDesc>(i);
+  for (size_t i = 0; i < main_block->OpsSize(); i++) {
+    auto op = main_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
       feeds.push_back(op);
     } else if (op->Type() == "fetch") {
@@ -139,12 +139,14 @@ void LightPredictor::BuildRuntimeProgram(
   // Prepare workspace
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
   scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
-  CHECK(program_desc->BlocksSize());
-  for (size_t block_idx = 0; block_idx < program_desc->BlocksSize();
-       block_idx++) {
+  CHECK(program_desc);
+  auto block_size = program_desc->BlocksSize();
+  CHECK(block_size);
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-    for (size_t op_idx = 0; op_idx < block_desc->VarsSize(); op_idx++) {
-      auto var_desc = block_desc->GetVar<cpp::VarDesc>(op_idx);
+    auto var_size = block_desc->VarsSize();
+    for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
+      auto var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
       if (!var_desc->Persistable()) {
         exe_scope->Var(var_desc->Name());
       } else {
