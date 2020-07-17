@@ -92,9 +92,10 @@ void ComputeNewBias(float* dout, Tensor* bias0_tensor, Tensor* weight_tensor, Te
     const float* weights = weight_tensor->data<float>();
     int ic = in_dims[0];
     int oc = weight_dims[0];
-    LOG(INFO) << "in_dims size: " << in_dims.size();
+    LOG(INFO) << "in_dims size: " << in_dims.size() << ", " << in_dims[0];
     LOG(INFO) << "weight_dims: " << weight_dims[0] << ", " << weight_dims[1] << ", " << weight_dims[2] << ". " << weight_dims[3];
     float* tmp = dout;
+    auto tmp1 = din;
     // out_k = b0[num, j, 1, 1] * w2[k, j, 1, 1]
     if (bias1_tensor) {
       const float* din2 = bias1_tensor->data<float>();
@@ -102,7 +103,7 @@ void ComputeNewBias(float* dout, Tensor* bias0_tensor, Tensor* weight_tensor, Te
         const float* weights_ptr = weights + k * ic;
         float sum = 0.f;
         for (int j = 0; j < ic; j++) {
-          sum += *din++ * *weights_ptr++;
+          sum += din[j] * weights_ptr[j];
         }
         *dout++ = sum + *din2;
         din2++;
@@ -112,14 +113,14 @@ void ComputeNewBias(float* dout, Tensor* bias0_tensor, Tensor* weight_tensor, Te
         const float* weights_ptr = weights + k * ic;
         float sum = 0.f;
         for (int j = 0; j < ic; j++) {
-          sum += *din++ * *weights_ptr++;
+          sum += din[j] * weights_ptr[j];
         }
         *dout++ = sum;
       }
     }
     LOG(INFO) << "din: ";
     for (int i = 0; i < ic; i++){
-      printf("%f  ", din[i]);
+      printf("%f  ", tmp1[i]);
     }
     printf("\n");
     LOG(INFO) << "weights: ";
