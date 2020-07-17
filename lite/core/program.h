@@ -186,13 +186,13 @@ struct Instruction {
  */
 class LITE_API RuntimeProgram {
  public:
-  explicit RuntimeProgram(std::vector<Instruction>&& insts)
+  explicit RuntimeProgram(std::vector<std::vector<Instruction>>&& insts)
       : instructions_(std::move(insts)) {
     Init();
   }
   explicit RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
                           Scope* exec_scope,
-                          int block_idx = 0);
+                          int block_idx = kRootBlockIndex);
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
@@ -209,7 +209,7 @@ class LITE_API RuntimeProgram {
 #endif
 #ifdef LITE_WITH_NVTX
     const NVTXAnnotator& annotator = NVTXAnnotator::Global();
-    for (auto& inst : instructions_) {
+    for (auto& inst : instructions_[kRootBlockIdx]) {
       NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
       register_layer_names_.push_back(annotator.RegisterString(
           const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
@@ -223,29 +223,29 @@ class LITE_API RuntimeProgram {
   void set_exec_scope(lite::Scope* x) { exec_scope_ = x; }
   Scope* exec_scope() { return exec_scope_; }
 
-  size_t num_instructions() const { return instructions_.size(); }
+  size_t num_instructions(int block_idx = kRootBlockIndex) const {
+    return instructions_[block_idx].size();
+  }
 
-  const std::vector<Instruction>& instructions() const { return instructions_; }
+  const std::vector<Instruction>& instructions(
+      int block_idx = kRootBlockIndex) const {
+    return instructions_[block_idx];
+  }
 
-  // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
-  // in ProgramDesc.
-  void SaveOpInfosToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
-
-  // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
-  // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
-  // be added in vars_.
-  void UpdateVarsOfProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
+  // Update the ops and vars of all of blocks to the given program_desc
+  // according to the instructions
+  void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
-  std::vector<Instruction> instructions_;
+  std::vector<std::vector<Instruction>> instructions_;
   Scope* exec_scope_{};
 
 #ifdef LITE_WITH_PROFILE
   profile::Profiler profiler_;
   void set_profiler() {
-    for (auto i = instructions_.begin(); i != instructions_.end(); ++i) {
-      i->set_profiler(&profiler_);
+    for (auto& inst : instructions_[kRootBlockIdx]) {
+      inst.set_profiler(&profiler_);
     }
   }
 #endif

@@ -37,8 +37,7 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveOpInfosToProgram(program_desc_);
-  program_->UpdateVarsOfProgram(program_desc_);
+  program_->SaveToProgram(program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);

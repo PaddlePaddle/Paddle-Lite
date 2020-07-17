@@ -26,120 +26,112 @@
 namespace paddle {
 namespace lite {
 
-void RuntimeProgram::SaveOpInfosToProgram(
+void RuntimeProgram::SaveToProgram(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {
   CHECK(program_desc);
-  // NOTE: RuntimeProgram do not has all meta info, so save model just update
-  // upon origin model
-  CHECK(program_desc->BlocksSize());
-  auto main_block = program_desc->GetBlock<cpp::BlockDesc>(0);
-  main_block->ClearOps();
-  for (auto& inst : instructions_) {
-    auto op_info = *inst.op()->op_info();
-    auto op_type = op_info.Type();
-    if (op_type == "subgraph" && !op_info.GetAttr<int32_t>("sub_block")) {
-      // It's a new subgraph op when its sub_block_idx = 0, Now we add its
-      // subblock desc to the program desc, Then update its sub_block_idx to
-      // the index of block desc of the program desc.
-      auto subgraph_op = const_cast<operators::SubgraphOp*>(
-          static_cast<const operators::SubgraphOp*>(inst.op()));
-      auto sub_program_desc = subgraph_op->GetProgramDesc();
-      CHECK(sub_program_desc);
-      auto sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
-      *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
-      subgraph_op->SetProgramDesc(program_desc);
-      op_info.SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
-      auto* scope = subgraph_op->scope();
-      // Attach op and kernel again to update the new block_idx and
-      // program_desc
-      subgraph_op->Attach(op_info, scope);
-      subgraph_op->AttachKernel(inst.mutable_kernel());
-      // Update main block desc after a new subblock desc is added
-      main_block = program_desc->GetBlock<cpp::BlockDesc>(0);
+  auto block_size = program_desc->BlocksSize();
+  CHECK_GT(block_size, 0) << "No block found!";
+  // TODD(hong19860320) Only support updating the block desc which already
+  // exists in the origin program desc
+  CHECK_LE(block_size, instructions_.size())
+      << "Invalid block size, expected [0," << instructions_.size()
+      << "] but got " << block_size;
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+    // Record all of the origin vars in the origin block
+    std::map<std::string, cpp::VarDesc> origin_var_maps;
+    auto var_size = block_desc->VarsSize();
+    for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
+      auto v = block_desc->GetVar<cpp::VarDesc>(var_idx);
+      origin_var_maps.emplace(v->Name(), *v);
     }
-    auto op_desc = main_block->AddOp<cpp::OpDesc>();
-    *op_desc = op_info;
-    op_desc->SetAttr(kKernelTypeAttr, inst.kernel()->SerializedKernelType());
-  }
-}
-
-// `UpdateVarsOfProgram` will remove unused var_descs and add new created
-// vars' descs in the block 0. Now, the type of a new created var can only
-// be LOD_TENSOR.
-void RuntimeProgram::UpdateVarsOfProgram(
-    std::shared_ptr<cpp::ProgramDesc> program_desc) {
-  CHECK(program_desc);
-  CHECK(program_desc->BlocksSize());
-  std::map<std::string, cpp::VarDesc> origin_var_maps;
-  auto main_block = program_desc->GetBlock<cpp::BlockDesc>(0);
-  auto var_size = main_block->VarsSize();
-  for (int i = 0; i < var_size; i++) {
-    auto v = main_block->GetVar<cpp::VarDesc>(i);
-    auto name = v->Name();
-    origin_var_maps.emplace(name, *v);
-  }
-
-  main_block->ClearVars();
-  for (auto& inst : instructions_) {
-    auto* op = const_cast<OpLite*>(inst.op());
-    auto* kernel = inst.kernel();
-    auto* scope = op->scope();
-    auto in_names = op->op_info()->input_names();
-    auto out_names = op->op_info()->output_names();
-    in_names.insert(in_names.end(), out_names.begin(), out_names.end());
-    std::stable_sort(in_names.begin(), in_names.end());
-    in_names.erase(std::unique(in_names.begin(), in_names.end()),
-                   in_names.end());
-    for (auto& in_name : in_names) {
-      auto it = origin_var_maps.find(in_name);
-      if (it != origin_var_maps.end()) {
-        auto* v = main_block->AddVar<cpp::VarDesc>();
-        v->SetName((it->second).Name());
-        v->SetType((it->second).GetType());
-        v->SetPersistable((it->second).Persistable());
-        if ((it->second).Name() != "feed" && (it->second).Name() != "fetch") {
-          v->SetShape((it->second).GetShape());
-          v->SetDataType((it->second).GetDataType());
-        }
-      } else {
-        // New created vars must be LOD_TENSOR
-        auto* v = main_block->AddVar<cpp::VarDesc>();
-        v->SetName(in_name);
-        v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
-        std::string in_arg_name;
-        const Type* type;
-        if (op->op_info()->GetInputArgname(in_name, &in_arg_name)) {
-          type = kernel->GetInputDeclType(in_arg_name);
+    // Update the ops and vars for each block according to the instructions
+    block_desc->ClearVars();
+    block_desc->ClearOps();
+    for (auto& inst : instructions_[block_idx]) {
+      auto* op = const_cast<OpLite*>(inst.op());
+      auto* op_info = op->op_info();
+      auto op_type = op_info->Type();
+      auto* kernel = inst.mutable_kernel();
+      auto* scope = op->scope();
+      // Update the origin vars which are referred by the instructions
+      // Add the new vars which are created in the passes and referred by the
+      // instructions
+      auto var_names = op_info->input_names();
+      auto out_names = op_info->output_names();
+      // Combine input and output vars and delete the duplicates
+      var_names.insert(var_names.end(), out_names.begin(), out_names.end());
+      std::stable_sort(var_names.begin(), var_names.end());
+      var_names.erase(std::unique(var_names.begin(), var_names.end()),
+                      var_names.end());
+      for (auto& var_name : var_names) {
+        auto* v = block_desc->AddVar<cpp::VarDesc>();
+        v->SetName(var_name);
+        auto it = origin_var_maps.find(var_name);
+        if (it != origin_var_maps.end()) {
+          v->SetType(it->second.GetType());
+          v->SetPersistable(it->second.Persistable());
+          if (var_name != "feed" && var_name != "fetch") {
+            v->SetShape(it->second.GetShape());
+            v->SetDataType(it->second.GetDataType());
+          }
         } else {
-          op->op_info()->GetOutputArgname(in_name, &in_arg_name);
-          type = kernel->GetOutputDeclType(in_arg_name);
-        }
-        if (type->IsTensor()) {
-          auto tensor = scope->FindVar(in_name)->GetMutable<Tensor>();
-          v->SetPersistable(tensor->persistable());
-          if (in_name != "feed" && in_name != "fetch") {
-            v->SetShape(tensor->dims().data());
-            switch (tensor->precision()) {
+          v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
+          std::string arg_name;
+          const Type* type;
+          if (op_info->GetInputArgname(var_name, &arg_name)) {
+            type = kernel->GetInputDeclType(arg_name);
+          } else {
+            op_info->GetOutputArgname(var_name, &arg_name);
+            type = kernel->GetOutputDeclType(arg_name);
+          }
+          if (type->IsTensor()) {
+            auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
+            v->SetPersistable(tensor->persistable());
+            if (var_name != "feed" && var_name != "fetch") {
+              v->SetShape(tensor->dims().data());
+              switch (tensor->precision()) {
 #define SET_DATATYPE(precision__, data_type)                    \
   case PrecisionType::precision__:                              \
     v->SetDataType(data_type);                                  \
     LOG(INFO) << "update var" << (it->second).Name() << "done"; \
     break
-              SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
-              SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
-              SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
-              SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
-              SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
-              SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
-              SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
+                SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
+                SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
+                SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
+                SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
+                SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
+                SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
+                SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
 #undef SET_DATATYPE
-              default:
-                VLOG(4) << "warning! unknown precision type";
+                default:
+                  VLOG(4) << "warning! unknown precision type";
+              }
             }
+          } else {
+            CHECK(false) << "unsupported var type";
           }
-        } else {
-          CHECK(false) << "unsupported var type";
         }
+      }
+      // Replace all of origin ops with the instructions
+      auto op_desc = block_desc->AddOp<cpp::OpDesc>();
+      *op_desc = *op_info;
+      op_desc->SetAttr(kKernelTypeAttr, kernel->SerializedKernelType());
+      if (op_type == "subgraph" && !op_info->GetAttr<int32_t>("sub_block")) {
+        // It's a new subgraph op when its sub_block_idx = 0, Now we add its
+        // subblock desc to the program desc, Then update its sub_block_idx to
+        // the index of block desc of the program desc.
+        auto subgraph_op = static_cast<operators::SubgraphOp*>(op);
+        auto sub_program_desc = subgraph_op->GetProgramDesc();
+        CHECK(sub_program_desc);
+        auto sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
+        *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
+        subgraph_op->SetProgramDesc(program_desc);
+        op_desc->SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
+        // Attach op and kernel again to update the new block_idx and
+        // program_desc
+        subgraph_op->Attach(*op_desc, scope);
+        subgraph_op->AttachKernel(kernel);
       }
     }
   }
@@ -156,10 +148,17 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
   std::unique_ptr<KernelContext> local_ctx(new KernelContext());
   local_ctx->As<OpenCLContext>().InitOnce();
 #endif
-  CHECK(block_idx >= 0 && block_idx < program_desc->BlocksSize());
-  auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-  for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
-    auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+  CHECK(program_desc);
+  auto block_size = program_desc->BlocksSize();
+  CHECK(block_size) << "No block found!";
+  CHECK(block_idx >= 0 && block_idx < block_size)
+      << "Invalid block index, expected [0," << (block_size - 1) << "] but got "
+      << block_idx;
+  auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+  instructions_.resize(kRootBlockIndex + 1);
+  auto op_size = block_desc->OpsSize();
+  for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
+    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
     // if (op_type == "feed" || op_type == "fetch") continue;
@@ -176,7 +175,7 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
           program_desc);
     }
     op->Attach(*op_desc, exec_scope_);
-    std::unique_ptr<KernelBase> picked_kernel;
+    std::unique_ptr<KernelBase> kernel;
     if (op_desc->HasAttr(kKernelTypeAttr)) {
       // Create op and pick up the best kernel according to the
       // kKernelTypeAttr attribute
@@ -193,7 +192,7 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
             return it->alias() == alias;
           });
       CHECK(it != kernels.end());
-      picked_kernel = std::move(*it);
+      kernel = std::move(*it);
     } else {
       // TODO(hong19860320) add kernel picking according to the type of input
       // and output tensors
@@ -206,25 +205,25 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
       kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
 #endif
       if (kernels.size() > 0) {
-        picked_kernel = std::move(kernels.front());
+        kernel = std::move(kernels.front());
       } else {
         LOG(WARNING) << "No kernels found for " << op_type;
       }
     }
 #ifdef LITE_WITH_OPENCL
-    if (picked_kernel->target() == TARGET(kOpenCL)) {
+    if (kernel->target() == TARGET(kOpenCL)) {
       std::unique_ptr<KernelContext> ctx(new KernelContext());
       (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
-      picked_kernel->SetContext(std::move(ctx));
+      kernel->SetContext(std::move(ctx));
     } else {
       (*it)->SetContext(
-          ContextScheduler::Global().NewContext(picked_kernel->target()));
+          ContextScheduler::Global().NewContext(kernel->target()));
     }
 #else
-    picked_kernel->SetContext(
-        ContextScheduler::Global().NewContext(picked_kernel->target()));
+    kernel->SetContext(ContextScheduler::Global().NewContext(kernel->target()));
 #endif
-    instructions_.emplace_back(std::move(op), std::move(picked_kernel));
+    instructions_[kRootBlockIndex].emplace_back(std::move(op),
+                                                std::move(kernel));
   }
   Init();
 }
@@ -245,7 +244,7 @@ void RuntimeProgram::Run() {
   }
 #endif
   int idx = -1;
-  for (auto& inst : instructions_) {
+  for (auto& inst : instructions_[kRootBlockIndex]) {
     ++idx;
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
@@ -287,7 +286,8 @@ void Program::Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
   ops_.resize(block_size);
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-    for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); ++op_idx) {
+    auto op_size = block_desc->OpsSize();
+    for (size_t op_idx = 0; op_idx < op_size; ++op_idx) {
       auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
       auto op_type = op_desc->Type();
       // if (op_type == "feed" || op_type == "fetch") continue;
@@ -321,7 +321,7 @@ void Program::PrepareWorkspace(
   tmp_vars_.push_back("feed");
   tmp_vars_.push_back("fetch");
 
-  auto VarPrecision2KernlPrecision =
+  auto VarDescType2Precision =
       [](const lite::VarDescAPI::Type& type) -> PrecisionType {
     switch (type) {
       case lite::VarDescAPI::Type::FP32:
@@ -346,14 +346,14 @@ void Program::PrepareWorkspace(
   CHECK(block_size);
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-    for (size_t var_idx = 0; var_idx < block_desc->VarsSize(); ++var_idx) {
+    auto var_size = block_desc->VarsSize();
+    for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
       auto* var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
       if (!var_desc->Persistable()) {
         if (var_desc->GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
-            VarPrecision2KernlPrecision(var_desc->GetDataType()) !=
-                PRECISION(kUnk)) {
+            VarDescType2Precision(var_desc->GetDataType()) != PRECISION(kUnk)) {
           var_data_type_[var_desc->Name()] =
-              VarPrecision2KernlPrecision(var_desc->GetDataType());
+              VarDescType2Precision(var_desc->GetDataType());
         }
         tmp_vars_.push_back(var_desc->Name());
         VLOG(4) << "block idx: " << block_idx

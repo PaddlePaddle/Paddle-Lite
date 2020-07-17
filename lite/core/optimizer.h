@@ -63,7 +63,7 @@ class Optimizer {
     CHECK(graphs_.empty()) << "duplicate optimize found";
 
     auto block_size = program.ops().size();
-    for (size_t block_idx = 0; block_idx < block_size; block_idx++) {
+    for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
       std::unique_ptr<mir::SSAGraph> graph;
       graph.reset(new mir::SSAGraph);
       graph->Build(program, valid_places, block_idx);
@@ -180,7 +180,7 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 
-  const lite::Scope* exec_scope() const { return exec_scope_; }
+  const Scope* exec_scope() const { return exec_scope_; }
 
   // Set shape(dims) infos of var descs to scope var.
   //  developer can write pass using input / output tensor dims of op.
@@ -235,7 +235,9 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
-    pass->Apply(graphs_[0]);
+    for (auto& graph : graphs_) {
+      pass->Apply(graph);
+    }
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
@@ -254,13 +256,13 @@ class Optimizer {
   // Generate C++ code which combines the inference program, model and weights.
   void GenCode(const std::string& code_dir);
 
-  const mir::SSAGraph& ssa_graph(int block_idx) const {
+  const mir::SSAGraph& ssa_graph(int block_idx = kRootBlockIndex) const {
     CHECK(!graphs_.empty());
     CHECK(graphs_[block_idx]);
     return *graphs_[block_idx];
   }
 
-  mir::SSAGraph* mutable_ssa_graph(int block_idx) {
+  mir::SSAGraph* mutable_ssa_graph(int block_idx = kRootBlockIndex) {
     CHECK(!graphs_.empty());
     CHECK(graphs_[block_idx]);
     return graphs_[block_idx].get();
@@ -291,8 +293,8 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        for (size_t block_idx = 0; block_idx < graphs_.size(); block_idx++) {
-          pass->Apply(graphs_[block_idx]);
+        for (auto& graph : graphs_) {
+          pass->Apply(graph);
         }
         LOG(INFO) << "== Finished running: " << x;
       }
