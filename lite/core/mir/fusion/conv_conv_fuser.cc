@@ -27,7 +27,7 @@ void ConvConvFuser::BuildPattern() {
       VarNode("conv_input0")->assert_is_op_input(conv_type0_, "Input")->AsInput();
   auto* conv_weight0 = VarNode("conv_weight0")
                           ->assert_is_op_input(conv_type0_, "Filter")
-                          ->AsIntermediate();
+                          ->AsInput();
   auto* conv0 = OpNode("conv2d0", conv_type0_)
                     ->assert_is_op(conv_type0_);
                     // ->assert_op_attr<int>("groups", 1);
@@ -42,9 +42,9 @@ void ConvConvFuser::BuildPattern() {
   auto* conv1 = OpNode("conv2d1", conv_type1_)
                     ->assert_is_op(conv_type1_)
                     ->assert_op_attr<int>("groups", 1)
-                    ->assert_op_attr<std::vector<int>>("strides", std::vector<int>({1,1}))
-                    ->assert_op_attr<std::vector<int>>("paddings", std::vector<int>({0,0}))
-                    ->assert_op_attr<std::vector<int>>("dilations", std::vector<int>({0,0}))
+//                    ->assert_op_attr<std::vector<int>>("strides", std::vector<int>({1,1}))
+//                    ->assert_op_attr<std::vector<int>>("paddings", std::vector<int>({0,0}))
+//                    ->assert_op_attr<std::vector<int>>("dilations", std::vector<int>({0,0}))
                     ->AsIntermediate();
 
   auto* conv_out1 =
@@ -159,16 +159,16 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     auto weight_dims = weight1_t->dims();
     const float* din = weight0_t->data<float>();
     const float* weights = weight1_t->data<float>();
-    int num = in_dims[0];
+    int oc0 = in_dims[0];
     int ic = in_dims[1];
     int ih = in_dims[2];
     int iw = in_dims[3];
     int oc = weight_dims[0];
-    weight_tensor.Resize({oc, num, ih, iw});
-    float* dout = weight_tensor->mutable_data<float>();
-    ComputeNewWeight(dout, din, weights, num, ic, ih, iw, oc);
+    weight_tensor.Resize({oc, ic, ih, iw});
+    float* dout = weight_tensor.mutable_data<float>();
+    ComputeNewWeight(dout, din, weights, oc0, ic, ih, iw, oc);
     weight0_t->CopyDataFrom(weight_tensor);
-    LOG(INFO) << "end";
+   auto new_dim = weight0_t->dims();
   }
   LOG(INFO) << "bias";
   // compute new conv_bias
@@ -180,25 +180,35 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       conv_op_desc1->Input("Bias").size() > 0) {
       auto bias_t1 = scope->FindVar(matched.at("conv_bias1")->arg()->name)
                               ->GetMutable<lite::Tensor>();
-      auto bias_d1 = bias_t1->mutable_data<float>();
+      // auto bias_d1 = bias_t1->mutable_data<float>();
       Tensor bias;
-      ComputeNewBias(&bias, bias_t0, weight1_t, bias_t1);
-      auto bias_d = bias.data<float>();
+      bias.CopyDataFrom(*bias_t1);
+      auto bias_data = bias.mutable_data<float>();
+      LOG(INFO) << "compute";
+      ComputeNewBias(bias_data, bias_t0, weight1_t, bias_t1);
+      bias_t1->CopyDataFrom(bias);
+      LOG(INFO) << "end";
+      /*auto bias_d = bias.data<float>();
       for (int i = 0; i < bias_t1->data_size(); i++) {
         bias_d1[i] = bias_d[i];
-      }
+      }*/
       conv_op_desc->SetInput("Bias",
                          {matched.at("conv_bias1")->arg()->name});  // conv_bias
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
+      LOG(INFO)<<"setting";
     } else {
       Tensor bias;
-      ComputeNewBias(&bias, bias_t0, weight1_t, nullptr);
-      bias_t0->Resize(bias.dims());
+      auto weight_dims = weight1_t->dims();
+      bias.Resize({weight_dims[0]});
+      auto bias_d = bias.mutable_data<float>();
+      ComputeNewBias(bias_d, bias_t0, weight1_t, nullptr);
+      bias_t0->CopyDataFrom(bias);
+      /*bias_t0->Resize(bias.dims());
       auto bias_d = bias.data<float>();
       auto bias_ptr = bias_t0->mutable_data<float>();
       for (int i = 0; i < bias.data_size(); i++) {
         bias_ptr[i] = bias_d[i];
-      }
+      }*/
       conv_op_desc->SetInput("Bias",
                          {matched.at("conv_bias0")->arg()->name});  // conv_bias
     }
@@ -210,7 +220,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
     }
   }
-
+  LOG(INFO) << "update stucture";
   conv_op_desc->SetType(conv_type0_);
   conv_op_desc->SetInput("Input", {matched.at("conv_input0")->arg()->name});
   conv_op_desc->SetInput("Filter", {matched.at("conv_weight0")->arg()->name});

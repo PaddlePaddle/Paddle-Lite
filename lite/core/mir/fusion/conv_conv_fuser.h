@@ -40,36 +40,22 @@ class ConvConvFuser : public FuseBase {
 
  private:
   void ComputeNewWeight(float* dout, const float* din, const float* weights,
-                        int num, int ic, int ih, int iw, int oc) {
+                        int oc0, int ic, int ih, int iw, int oc1) {
     // input conv_weight0_t weights conv_weight1_t
     // output weight_tensor
-    auto in_dims = weight0_tensor->dims();
-    auto weight_dims = weight1_tensor->dims();
-    const float* din = weight0_tensor->data<float>();
-    const float* weights = weight1_tensor->data<float>();
-    int num = in_dims[0];
-    int ic = in_dims[1];
-    int ih = in_dims[2];
-    int iw = in_dims[3];
-    int oc = weight_dims[0];
-    int kh = weight_dims[2];
-    int kw = weight_dims[3];
-    int oh = ih;
-    int ow = iw;
     // ksize = 1
-    int ksize = kw * kh;
     int in_size = ih * iw;
     int in_channel_size = ic * in_size;
     // out = w1[j, i, ih, iw] * w2[k, j, kw, kh]
-    for (int k = 0; k < oc; k ++) {
-      const float* weights_ptr = weights + k * num;
+    for (int k = 0; k < oc1; k ++) {
+      const float* weights_ptr = weights + k * oc0;
       float* out_ptr = dout + k * in_channel_size;
       for (int c = 0; c < ic; c++) {
         float* out_ptr_channel = out_ptr + c * in_size;
         const float* din_ptr = din + c * in_size;
         for (int i = 0; i < in_size; i++) {
           float sum = 0.f;
-          for (int j = 0; j < num; j++) {
+          for (int j = 0; j < oc0; j++) {
             sum += din_ptr[j * in_channel_size] * weights_ptr[j];
           }
           *out_ptr_channel++ = sum;
@@ -78,24 +64,22 @@ class ConvConvFuser : public FuseBase {
     }
   }
 
-void ComputeNewBias(Tensor* bias_tensor, Tensor* bias0_tensor, Tensor* weight_tensor, Tensor* bias1_tensor) {
+void ComputeNewBias(float* dout, Tensor* bias0_tensor, Tensor* weight_tensor, Tensor* bias1_tensor) {
     // input bias0_tensor weight_tensor bias1_tensor
     // output bias_tensor
     auto in_dims = bias0_tensor->dims();
     auto weight_dims = weight_tensor->dims();
     const float* din = bias0_tensor->data<float>();
     const float* weights = weight_tensor->data<float>();
-    float* dout = bias_tensor->mutable_data<float>();
-    int num = in_dims[0];
-    int ic = in_dims[1];
+    int ic = in_dims[0];
     int oc = weight_dims[0];
-    int kh = weight_dims[2];
-    int kw = weight_dims[3];
-    bias_tensor->Resize({num, oc, 1, 1});
+    LOG(INFO) << "in_dims size: " << in_dims.size();
+    LOG(INFO) << "in_dims: " << in_dims[0] << ", " << in_dims[1] << ", " << in_dims[2] << ", " << in_dims[3]; 
+    LOG(INFO) << "weight_dims: " << weight_dims[0] << ", " << weight_dims[1] << ", " << weight_dims[2] << ". " << weight_dims[3];
     // out_k = b0[num, j, 1, 1] * w2[k, j, 1, 1]
     if (bias1_tensor) {
       const float* din2 = bias1_tensor->data<float>();
-      for (int n = 0; n < num; n++) {
+      for (int n = 0; n < 1; n++) {
         const float* din_ptr = din + n * ic;
         float* out_ptr = dout + n * oc;
         const float* din_ptr2 = din2 + n * oc;
@@ -110,7 +94,7 @@ void ComputeNewBias(Tensor* bias_tensor, Tensor* bias0_tensor, Tensor* weight_te
         }
       }
     } else {
-      for (int n = 0; n < num; n++) {
+      for (int n = 0; n < 1; n++) {
         const float* din_ptr = din + n * ic;
         float* out_ptr = dout + n * oc;
         for (int k = 0; k < oc; k++) {
