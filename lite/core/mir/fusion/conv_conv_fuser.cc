@@ -168,7 +168,14 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     float* dout = weight_tensor.mutable_data<float>();
     ComputeNewWeight(dout, din, weights, oc0, ic, ih, iw, oc);
     weight0_t->CopyDataFrom(weight_tensor);
-   auto new_dim = weight0_t->dims();
+    auto new_dim = weight0_t->dims();
+    LOG(INFO) << "new_dim: " << new_dim[0] << ", " << new_dim[1] << ", " << new_dim[2] << ", " << new_dim[3];
+    auto data = weight0_t->data<float>();
+    for (int i = 0; i < weight0_t->data_size(); i++) {
+      if ((i + 1) % oc == 0) printf("\n");
+      printf("%f  ", data[i]);
+    }
+    printf("\n");
   }
   LOG(INFO) << "bias";
   // compute new conv_bias
@@ -187,15 +194,17 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       LOG(INFO) << "compute";
       ComputeNewBias(bias_data, bias_t0, weight1_t, bias_t1);
       bias_t1->CopyDataFrom(bias);
-      LOG(INFO) << "end";
-      /*auto bias_d = bias.data<float>();
-      for (int i = 0; i < bias_t1->data_size(); i++) {
-        bias_d1[i] = bias_d[i];
-      }*/
       conv_op_desc->SetInput("Bias",
                          {matched.at("conv_bias1")->arg()->name});  // conv_bias
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
       LOG(INFO)<<"setting";
+      auto new_dim = bias_t1->dims();
+      LOG(INFO) << "new_dim: " << new_dim[0] << ", " << new_dim[1] << ", " << new_dim[2] << ", " << new_dim[3];
+      auto data = bias_t1->data<float>();
+      for (int i = 0; i < bias_t1->data_size(); i++) {
+        printf("%f  ", data[i]);
+      }
+      printf("\n");
     } else {
       Tensor bias;
       auto weight_dims = weight1_t->dims();
@@ -203,12 +212,6 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       auto bias_d = bias.mutable_data<float>();
       ComputeNewBias(bias_d, bias_t0, weight1_t, nullptr);
       bias_t0->CopyDataFrom(bias);
-      /*bias_t0->Resize(bias.dims());
-      auto bias_d = bias.data<float>();
-      auto bias_ptr = bias_t0->mutable_data<float>();
-      for (int i = 0; i < bias.data_size(); i++) {
-        bias_ptr[i] = bias_d[i];
-      }*/
       conv_op_desc->SetInput("Bias",
                          {matched.at("conv_bias0")->arg()->name});  // conv_bias
     }

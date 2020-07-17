@@ -47,6 +47,7 @@ class ConvConvFuser : public FuseBase {
     int in_size = ih * iw;
     int in_channel_size = ic * in_size;
     // out = w1[j, i, ih, iw] * w2[k, j, kw, kh]
+    // out_dim = [oc1, ic, kh, kw], din_dim = [oc0, ic, kh, kw], weight_dim = [oc1, oc0, kh, kw]
     for (int k = 0; k < oc1; k ++) {
       const float* weights_ptr = weights + k * oc0;
       float* out_ptr = dout + k * in_channel_size;
@@ -62,6 +63,24 @@ class ConvConvFuser : public FuseBase {
         }
       }
     }
+    LOG(INFO) << "din: ";
+    for (int i = 0; i < oc0 * in_channel_size; i++){
+      if ((i + 1) % oc0 == 0) printf("\n");
+      printf("%f  ", din[i]);
+    }
+    printf("\n");
+    LOG(INFO) << "weights: ";
+    for (int i = 0; i < oc1 * oc0 * in_size; i++){
+      if ((i + 1) % oc1 == 0) printf("\n");
+      printf("%f  ", weights[i]);
+    }
+    printf("\n");
+    LOG(INFO) << "out: ";
+    for (int i = 0; i < oc1 * in_channel_size; i++){
+      if ((i + 1) % oc1 == 0) printf("\n");
+      printf("%f  ", dout[i]);
+    }
+    printf("\n");
   }
 
 void ComputeNewBias(float* dout, Tensor* bias0_tensor, Tensor* weight_tensor, Tensor* bias1_tensor) {
@@ -74,39 +93,54 @@ void ComputeNewBias(float* dout, Tensor* bias0_tensor, Tensor* weight_tensor, Te
     int ic = in_dims[0];
     int oc = weight_dims[0];
     LOG(INFO) << "in_dims size: " << in_dims.size();
-    LOG(INFO) << "in_dims: " << in_dims[0] << ", " << in_dims[1] << ", " << in_dims[2] << ", " << in_dims[3]; 
     LOG(INFO) << "weight_dims: " << weight_dims[0] << ", " << weight_dims[1] << ", " << weight_dims[2] << ". " << weight_dims[3];
+    float* tmp = dout;
     // out_k = b0[num, j, 1, 1] * w2[k, j, 1, 1]
     if (bias1_tensor) {
       const float* din2 = bias1_tensor->data<float>();
-      for (int n = 0; n < 1; n++) {
-        const float* din_ptr = din + n * ic;
-        float* out_ptr = dout + n * oc;
-        const float* din_ptr2 = din2 + n * oc;
-        for (int k = 0; k < oc; k++) {
-          const float* weights_ptr = weights + k * ic;
-          float sum = 0.f;
-          for (int j = 0; j < ic; j++) {
-            sum += *din_ptr++ * *weights_ptr++;
-          }
-          *out_ptr++ = sum + *din_ptr2;
-          din_ptr2++;
+      for (int k = 0; k < oc; k++) {
+        const float* weights_ptr = weights + k * ic;
+        float sum = 0.f;
+        for (int j = 0; j < ic; j++) {
+          sum += *din++ * *weights_ptr++;
         }
+        *dout++ = sum + *din2;
+        din2++;
       }
     } else {
-      for (int n = 0; n < 1; n++) {
-        const float* din_ptr = din + n * ic;
-        float* out_ptr = dout + n * oc;
-        for (int k = 0; k < oc; k++) {
-          const float* weights_ptr = weights + k * ic;
-          float sum = 0.f;
-          for (int j = 0; j < ic; j++) {
-            sum += *din_ptr++ * *weights_ptr++;
-          }
-          *out_ptr++ = sum;
+      for (int k = 0; k < oc; k++) {
+        const float* weights_ptr = weights + k * ic;
+        float sum = 0.f;
+        for (int j = 0; j < ic; j++) {
+          sum += *din++ * *weights_ptr++;
         }
+        *dout++ = sum;
       }
     }
+    LOG(INFO) << "din: ";
+    for (int i = 0; i < ic; i++){
+      printf("%f  ", din[i]);
+    }
+    printf("\n");
+    LOG(INFO) << "weights: ";
+    for (int i = 0; i < oc * ic; i++){
+      if ((i + 1) % oc == 0) printf("\n");
+      printf("%f  ", weights[i]);
+    }
+    printf("\n");
+    if (bias1_tensor) {
+      const float* din2 = bias1_tensor->data<float>();
+      LOG(INFO) << "din2: ";
+      for (int i = 0; i < oc; i++){
+        printf("%f  ", din2[i]);
+      }
+      printf("\n");
+    }
+    LOG(INFO) << "out: ";
+    for (int i = 0; i < oc; i++){
+      printf("%f  ", tmp[i]);
+    }
+    printf("\n");
   }
 
  private:
