@@ -153,7 +153,9 @@ void LightPredictor::BuildRuntimeProgram(
       }
     }
   }
-  program_.reset(new RuntimeProgram(0, program_desc, exe_scope));
+  // Only extracting the ops and generate the runtime program from the main
+  // block desc
+  program_.reset(new RuntimeProgram(program_desc, exe_scope, 0));
 }
 
 void LightPredictor::DequantizeWeight() {
