@@ -47,7 +47,7 @@ struct Program {
           const std::vector<Place>& valid_places,
           const std::vector<std::string>& var_names = {})
       : scope_(root), valid_places_(valid_places) {
-    desc_.CopyFrom(desc);
+    desc_->CopyFrom(*desc);
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
     PrepareWorkspace(desc, var_names);
