@@ -1062,10 +1062,12 @@ class XPUMmdnnBidEmbGrnnAttFuser2 : public FuseBase {
     auto* emb0 = OpNode("emb0", "lookup_table");
     auto* emb0_out = VarNode("emb0_out")
                          ->assert_is_op_output("lookup_table", "Out")
+                         ->assert_is_op_input("search_seq_arithmetic", "X")
                          ->AsOutput();
     auto* emb1 = OpNode("emb1", "lookup_table")->AsIntermediate();
     auto* emb1_out = VarNode("emb1_out")
                          ->assert_is_op_output("lookup_table", "Out")
+                         ->assert_is_op_input("search_seq_arithmetic", "Y")
                          ->AsIntermediate();
     auto* eltwise01 =
         OpNode("eltwise01", "search_seq_arithmetic")->AsIntermediate();

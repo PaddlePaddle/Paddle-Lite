@@ -1118,14 +1118,12 @@ class XPUMmdnnBidEmbGrnnAttCompute
  private:
   MMDNNIdInfo id_;
   MMDNNBidEmbGrnnAtt compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
                  param.grnn_fw_wh,
                  param.grnn_fw_wh_maxs,
@@ -1138,8 +1136,8 @@ void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
                  param.att_fc_w,
                  param.att_fc_w_max,
                  param.att_fc_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnBidEmbGrnnAttCompute::Run() {
@@ -1176,14 +1174,12 @@ class XPUMmdnnBidEmbGrnnAttCompute2
  private:
   MMDNNIdInfo id_;
   MMDNNBidEmbGrnnAtt compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnBidEmbGrnnAttCompute2::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
                  param.grnn_fw_wh,
                  param.grnn_fw_wh_maxs,
@@ -1196,8 +1192,8 @@ void XPUMmdnnBidEmbGrnnAttCompute2::PrepareForRun() {
                  param.att_fc_w,
                  param.att_fc_w_max,
                  param.att_fc_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnBidEmbGrnnAttCompute2::Run() {
@@ -1248,20 +1244,18 @@ class XPUMmdnnBidEmbAttCompute
  private:
   MMDNNIdInfo id_;
   MMDNNEmbAtt compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnBidEmbAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
                  param.att_fc_w,
                  param.att_fc_w_max,
                  param.att_fc_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnBidEmbAttCompute::Run() {
@@ -1294,8 +1288,6 @@ class XPUMmdnnMatchConvTopkCompute
 
  private:
   MMDNNMatchConvTopk compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
@@ -1308,8 +1300,8 @@ void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
                  param.dim_t,
                  param.input_w->dims()[0],
                  param.output_channel,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_,
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN,
                  param.topks);
 }
 
@@ -1341,14 +1333,12 @@ class XPUMmdnnMergeAllCompute
  private:
   MMDNNIdInfo id_;
   MMDNNMergeAll compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnMergeAllCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.grnn_fw_wh,
                  param.grnn_fw_wh_maxs,
                  param.grnn_fw_wi,
@@ -1366,8 +1356,8 @@ void XPUMmdnnMergeAllCompute::PrepareForRun() {
                  param.fc2_w,
                  param.fc2_w_max,
                  param.fc2_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnMergeAllCompute::Run() {

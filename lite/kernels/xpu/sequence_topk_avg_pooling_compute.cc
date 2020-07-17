@@ -23,10 +23,11 @@ namespace kernels {
 namespace xpu {
 
 void SequenceTopkAvgPoolingCompute::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(256 * sizeof(int));
-  in_lod_cpu.reset(new int[64]);
-  row_lod_cpu.reset(new int[64]);
-  col_lod_cpu.reset(new int[64]);
+  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      4 * XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  in_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  row_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  col_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 void SequenceTopkAvgPoolingCompute::Run() {

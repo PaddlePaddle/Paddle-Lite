@@ -23,7 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void SearchFcCompute::PrepareForRun() {
-  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(float));
+  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(float), false /* use_l3 */);
 }
 
 void SearchFcCompute::Run() {

@@ -21,6 +21,11 @@
 namespace paddle {
 namespace lite {
 
+// MAX(lod.size()) = 64
+const int XPU_MAX_LOD_SIZE = 64;
+// MAX(lod[i + 1] - lod[i]) = 512
+const int XPU_MAX_LOD_SEQ_LEN = 512;
+
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
 struct XPUScratchPad {
@@ -55,7 +60,7 @@ class TargetWrapper<TARGET(kXPU)> {
                          size_t size,
                          IoDirection dir);
 
-  static XPUScratchPadGuard MallocScratchPad(size_t size, bool use_l3 = true);
+  static XPUScratchPadGuard MallocScratchPad(size_t size, bool use_l3 = false);
 
   static xdnn::Context* GetRawContext() {
     if (tls_raw_ctx_ == nullptr) {

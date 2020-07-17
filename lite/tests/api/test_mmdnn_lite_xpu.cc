@@ -28,6 +28,7 @@ DEFINE_bool(perf, false, "perf?");
 DEFINE_string(perf_input, "perf_input", "perf_input");
 DEFINE_int32(perf_batch_size, 40, "perf_batch_size");
 DEFINE_bool(use_xpu, true, "use_xpu?");
+DEFINE_int32(perf_dev, 0, "perf_dev");
 
 namespace paddle {
 namespace lite {
@@ -203,6 +204,7 @@ TEST(MMDNN, test_mmdnn_lite_xpu) {
   // config.set_model_dir(FLAGS_model_dir);
   config.set_model_file(FLAGS_model_dir + "/__model__");
   config.set_param_file(FLAGS_model_dir + "/__param__");
+  config.set_xpu_dev_per_thread(FLAGS_perf_dev);
   if (FLAGS_use_xpu) {
     config.set_valid_places(
         {lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
