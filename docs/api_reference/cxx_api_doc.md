@@ -278,7 +278,7 @@ predictor = create_paddle_predictor(config)
 
 ### `set_cuda_stream(exec, io)`
 
-指定模型运行的exec流和io流，默认值均为nullptr，此时使用内部创建的流。多线程情况下不应该设置该值，此时则每个线程均使用自己的流。
+指定模型运行的exec流和io流，默认值均为nullptr，此时使用内部创建的流。多线程情况下不应该设置该值，此时则每个线程均使用自己的流。注意：该选项不与`set_cuda_use_multi_stream(true)`混用，否则config检查会报错
 
 参数：
 
