@@ -252,6 +252,67 @@ predictor = create_paddle_predictor(config)
 
 返回类型：`int`
 
+### `set_cuda_use_multi_stream(flag)`
+
+设置是否打开exec多流，exec多流指在单个模型内以多流模式运行，在有并行结构的模型上有一定的性能收益，仅在cuda下有效，默认值为false。注意：该选项不能与`set_cuda_stream`混用，否则config检查会报错。
+
+参数：
+
+- `flag(bool)` - 是否打开exec多流标志。
+
+返回： `None`
+
+返回类型： `None`
+
+### `cuda_use_multi_stream()`
+
+返回是否打开exec多流的bool值。仅在cuda下有效。
+
+参数：
+
+- `None`
+
+返回：是否打开exec多流。
+
+返回类型：`bool`
+
+### `set_cuda_stream(exec*, io*)`
+
+指定模型运行的exec流和io流，默认值均为nullptr，此时使用内部创建的流。多线程情况下不应该设置该值，此时则每个线程均使用自己的流。
+
+参数：
+
+- `exec(cudaStream_t*)` - exec流指针
+- `io(cudaStream_t*)` - io流指针
+
+返回： `None`
+
+返回类型：`None`
+
+### `cuda_exec_stream()`
+
+返回用户设置的exec流指针，如用户未设置，则返回nullptr
+
+参数：
+
+- `None`
+
+返回：用户设置的exec流指针用户未设置，则返回nullptr
+
+返回类型：`cudaStream_t*`
+
+### `cuda_io_stream()`
+
+返回用户设置的io流指针，如用户未设置，则返回nullptr
+
+参数：
+
+- `None`
+
+返回：用户设置的io流指针用户未设置，则返回nullptr
+
+返回类型：`cudaStream_t*`
+
 ## MobileConfig
 
 ```c++
