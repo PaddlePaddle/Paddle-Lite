@@ -291,25 +291,25 @@ predictor = create_paddle_predictor(config)
 
 ### `cuda_exec_stream()`
 
-返回用户设置的exec流指针，如用户未设置，则返回nullptr。仅在cuda下有效。
+返回用户设置的exec流指针，如果用户未设置，则返回nullptr。仅在cuda下有效。
 
 参数：
 
 - `None`
 
-返回：用户设置的exec流指针用户未设置，则返回nullptr。
+返回：用户设置的exec流指针，如果用户未设置，则返回nullptr。
 
 返回类型：`cudaStream_t*`
 
 ### `cuda_io_stream()`
 
-返回用户设置的io流指针，如用户未设置，则返回nullptr。仅在cuda下有效。
+返回用户设置的io流指针，如果用户未设置，则返回nullptr。仅在cuda下有效。
 
 参数：
 
 - `None`
 
-返回：用户设置的io流指针用户未设置，则返回nullptr。
+返回：用户设置的io流指针，如果用户未设置，则返回nullptr。
 
 返回类型：`cudaStream_t*`
 
