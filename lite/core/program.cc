@@ -34,7 +34,7 @@ void RuntimeProgram::SaveToProgram(
   // TODD(hong19860320) Only support updating the block desc which already
   // exists in the origin program desc
   CHECK_LE(block_size, instructions_.size())
-      << "Invalid block size, expected [0," << instructions_.size()
+      << "Invalid block size, expected (0," << instructions_.size()
       << "] but got " << block_size;
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
@@ -314,7 +314,7 @@ void Program::Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
 
 void Program::PrepareWorkspace(
     const std::shared_ptr<cpp::ProgramDesc>& program_desc,
-    const std::vector<std::string>& vars_to_copy) {
+    const std::vector<std::string>& vars_to_clone) {
   CHECK(!exec_scope_) << "Duplicate PrepareWorkspace found";
   exec_scope_ = &scope_->NewScope();
   // Create Feed and Fetch var.
@@ -371,7 +371,7 @@ void Program::PrepareWorkspace(
     }
   }
 
-  for (auto var_name : vars_to_copy) {
+  for (auto var_name : vars_to_clone) {
     exec_scope_->LocalVar(var_name);
     auto* tensor = scope_->Var(var_name)->GetMutable<Tensor>();
     auto* sub_tensor = exec_scope_->Var(var_name)->GetMutable<Tensor>();

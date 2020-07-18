@@ -141,7 +141,7 @@ std::vector<std::string> AddFetchDesc(
 }
 
 TEST(Subgraph, detect_simple_model) {
-  auto program_desc = std::shared_ptr<cpp::ProgramDesc>();
+  auto program_desc = std::make_shared<cpp::ProgramDesc>();
   std::vector<Place> valid_places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
   // Build a simple network
