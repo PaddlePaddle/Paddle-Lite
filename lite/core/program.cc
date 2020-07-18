@@ -245,7 +245,7 @@ void RuntimeProgram::Run() {
   }
 #endif
   int idx = -1;
-  const auto& insts = instructions_[kRootBlockIdx];
+  auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
 #ifndef LITE_WITH_FPGA
