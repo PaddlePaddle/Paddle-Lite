@@ -18,9 +18,9 @@ namespace paddle {
 namespace lite {
 
 // The Index of first Block in Program. also called root block.
-constexpr int kRootBlockIndex = 0;
+constexpr int kRootBlockIdx = 0;
 // The Parent Index of root Block, this block does not exist.
-constexpr int kNoneBlockIndex = -1;
+constexpr int kNoneBlockIdx = -1;
 
 }  // namespace lite
 }  // namespace paddle

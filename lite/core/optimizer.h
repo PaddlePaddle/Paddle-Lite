@@ -256,13 +256,13 @@ class Optimizer {
   // Generate C++ code which combines the inference program, model and weights.
   void GenCode(const std::string& code_dir);
 
-  const mir::SSAGraph& ssa_graph(int block_idx = kRootBlockIndex) const {
+  const mir::SSAGraph& ssa_graph(int block_idx = kRootBlockIdx) const {
     CHECK(!graphs_.empty());
     CHECK(graphs_[block_idx]);
     return *graphs_[block_idx];
   }
 
-  mir::SSAGraph* mutable_ssa_graph(int block_idx = kRootBlockIndex) {
+  mir::SSAGraph* mutable_ssa_graph(int block_idx = kRootBlockIdx) {
     CHECK(!graphs_.empty());
     CHECK(graphs_[block_idx]);
     return graphs_[block_idx].get();

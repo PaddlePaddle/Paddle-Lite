@@ -128,12 +128,12 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of ops and their input vars and weights to HiAI IR nodes,
   // then added them into the HiAI IR graph
   int status = 0;
-  CHECK(origin_program) << "[NPU] The origin program is not initialized!";
-  CHECK_GT(origin_program->instructions().size(), 0)
-      << "[NPU] No instructions found in the origin program!";
   subgraph::npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  const auto& insts = origin_program->instructions();
+  CHECK(origin_program) << "[NPU] The origin program is not initialized!";
+  CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
+      << "[NPU] No instructions found in the origin program!";
+  const auto& insts = origin_program->instructions(kRootBlockIdx);
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);

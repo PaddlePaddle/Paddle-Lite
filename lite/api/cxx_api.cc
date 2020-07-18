@@ -57,17 +57,21 @@ void Predictor::SaveModel(const std::string &dir,
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   std::set<std::string> ops_info;
   std::set<std::string> kernels_info;
-  const auto &insts = program_->instructions();
-  for (auto &inst : insts) {
-    // parse op type infomation
-    auto op = inst.op()->op_info();
-    ops_info.insert(op->Type());
-    // parse kernel type information
-    std::string kernel_type_str =
-        inst.kernel()->op_type() + "," + TargetRepr(inst.kernel()->target()) +
-        "," + PrecisionRepr(inst.kernel()->precision()) + "," +
-        DataLayoutRepr(inst.kernel()->layout()) + "," + inst.kernel()->alias();
-    kernels_info.insert(kernel_type_str);
+  auto block_size = program_->block_size();
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    const auto &insts = program_->instructions(block_idx);
+    for (auto &inst : insts) {
+      // parse op type infomation
+      auto op = inst.op()->op_info();
+      ops_info.insert(op->Type());
+      // parse kernel type information
+      std::string kernel_type_str =
+          inst.kernel()->op_type() + "," + TargetRepr(inst.kernel()->target()) +
+          "," + PrecisionRepr(inst.kernel()->precision()) + "," +
+          DataLayoutRepr(inst.kernel()->layout()) + "," +
+          inst.kernel()->alias();
+      kernels_info.insert(kernel_type_str);
+    }
   }
 
   // get souce_file name from op type and kernel type
@@ -169,7 +173,7 @@ void Predictor::PrepareFeedFetch() {
 
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
-  const auto &insts = program_->instructions();
+  const auto &insts = program_->instructions(kRootBlockIdx);
   for (auto &inst : insts) {
     const auto &op = inst.op()->op_info();
     if (op->Type() == "feed") {

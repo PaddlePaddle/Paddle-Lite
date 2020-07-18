@@ -110,15 +110,16 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
-  auto main_block = program_desc_->GetBlock<cpp::BlockDesc>(kRootBlockIndex);
   std::vector<cpp::OpDesc*> feeds;
   std::vector<cpp::OpDesc*> fetchs;
-  for (size_t i = 0; i < main_block->OpsSize(); i++) {
-    auto op = main_block->GetOp<cpp::OpDesc>(i);
-    if (op->Type() == "feed") {
-      feeds.push_back(op);
-    } else if (op->Type() == "fetch") {
-      fetchs.push_back(op);
+  auto main_block = program_desc_->GetBlock<cpp::BlockDesc>(kRootBlockIdx);
+  auto op_size = main_block->OpsSize();
+  for (size_t op_idx = 0; op_idx < op_size; ++op_idx) {
+    auto op_desc = main_block->GetOp<cpp::OpDesc>(op_idx);
+    if (op_desc->Type() == "feed") {
+      feeds.push_back(op_desc);
+    } else if (op_desc->Type() == "fetch") {
+      fetchs.push_back(op_desc);
     }
   }
   input_names_.resize(feeds.size());
@@ -157,7 +158,7 @@ void LightPredictor::BuildRuntimeProgram(
   }
   // Only extracting the ops and generate the runtime program from the main
   // block desc
-  program_.reset(new RuntimeProgram(program_desc, exe_scope, kRootBlockIndex));
+  program_.reset(new RuntimeProgram(program_desc, exe_scope, kRootBlockIdx));
 }
 
 void LightPredictor::DequantizeWeight() {

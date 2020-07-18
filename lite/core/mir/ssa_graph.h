@@ -41,7 +41,7 @@ class SSAGraph : GraphBase {
   // block)
   void Build(const Program &program,
              const std::vector<Place> &valid_places,
-             int block_idx = kRootBlockIndex);
+             int block_idx = kRootBlockIdx);
   void RemoveNode(const mir::Node *node);
 
   std::vector<mir::Node *> StmtTopologicalOrder();

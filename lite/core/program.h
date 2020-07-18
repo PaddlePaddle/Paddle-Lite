@@ -70,11 +70,11 @@ struct Program {
   std::list<std::string>* mutable_tmp_vars() { return &tmp_vars_; }
 
   const std::list<std::shared_ptr<OpLite>>& ops(
-      int block_idx = kRootBlockIndex) const {
+      int block_idx = kRootBlockIdx) const {
     return ops_[block_idx];
   }
   std::list<std::shared_ptr<OpLite>>* mutable_ops(
-      int block_idx = kRootBlockIndex) {
+      int block_idx = kRootBlockIdx) {
     return &ops_[block_idx];
   }
 
@@ -190,7 +190,7 @@ class LITE_API RuntimeProgram {
   }
   explicit RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
                           Scope* exec_scope,
-                          int block_idx = kRootBlockIndex);
+                          int block_idx = kRootBlockIdx);
   ~RuntimeProgram() {
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
@@ -222,12 +222,12 @@ class LITE_API RuntimeProgram {
   Scope* exec_scope() { return exec_scope_; }
 
   const std::vector<Instruction>& instructions(
-      int block_idx = kRootBlockIndex) const {
+      int block_idx = kRootBlockIdx) const {
     return instructions_[block_idx];
   }
 
   std::vector<Instruction>* mutable_instructions(
-      int block_idx = kRootBlockIndex) {
+      int block_idx = kRootBlockIdx) {
     return &instructions_[block_idx];
   }
 

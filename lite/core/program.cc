@@ -157,7 +157,7 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
       << "Invalid block index, expected [0," << (block_size - 1) << "] but got "
       << block_idx;
   auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-  instructions_.resize(kRootBlockIndex + 1);
+  instructions_.resize(kRootBlockIdx + 1);
   auto op_size = block_desc->OpsSize();
   for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
     auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
@@ -224,8 +224,7 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
 #else
     kernel->SetContext(ContextScheduler::Global().NewContext(kernel->target()));
 #endif
-    instructions_[kRootBlockIndex].emplace_back(std::move(op),
-                                                std::move(kernel));
+    instructions_[kRootBlockIdx].emplace_back(std::move(op), std::move(kernel));
   }
   Init();
 }
@@ -246,7 +245,8 @@ void RuntimeProgram::Run() {
   }
 #endif
   int idx = -1;
-  for (auto& inst : instructions_[kRootBlockIndex]) {
+  const auto& insts = instructions_[kRootBlockIdx];
+  for (auto& inst : insts) {
     ++idx;
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
@@ -306,8 +306,8 @@ void Program::Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
         static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
             program_desc);
       }
+      op->Attach(*op_desc, exec_scope_);
       ops_[block_idx].emplace_back(std::move(op));
-      ops_[block_idx].back()->Attach(*op_desc, exec_scope_);
     }
   }
 }
