@@ -37,7 +37,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   subgraph::apu::Graph graph;
   int neuron_errCode = NeuronModel_create(&model_);
   if (NEURON_NO_ERROR != neuron_errCode) {
-    LOG(WARNING) << "Fail to create model";
+    LOG(WARNING) << "[APU] Failed to create the neuron model!";
     return false;
   }
   graph.set_model(model_);
@@ -71,55 +71,38 @@ bool SubgraphEngine::BuildDeviceProgram() {
     }
   }
 
-  // Get input tensor
-  std::vector<uint32_t> ins;
-  origin_itensors_.resize(input_names_.size());
-  origin_idims_.resize(input_names_.size());
+  // Get the index of input tensors
+  std::vector<uint32_t> input_indices;
   for (int i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = exec_scope_->FindMutableTensor(input_names_[i]);
-    CHECK(origin_itensors_[i]);
-    origin_idims_[i] = origin_itensors_[i]->dims();
-    VLOG(3) << "subgraph input name: " << i << ", " << input_names_[i] << ":"
-            << origin_idims_[i].production();
-    // Get input index
-    int idx;
-    if (graph.Has(input_names_[i])) {
-      ins.push_back(graph.Get(input_names_[i])->index());
-      VLOG(3) << "input idx: " << graph.Get(input_names_[i])->index();
-    } else {
-      LOG(WARNING) << "Fail to find input: " << input_names_[i];
-      return false;
-    }
+    CHECK(graph.Has(input_names_[i])) << "[APU] Failed to find input node "
+                                      << input_names_[i];
+    auto index = graph.Get(input_names_[i])->index();
+    input_indices.push_back(index);
+    VLOG(3) << "[APU] Input[" << i << "] name " << input_names_[i] << " dims "
+            << origin_itensors_[i]->dims() << " index " << index;
   }
 
-  // Get output tensor
-  std::vector<uint32_t> outs;
-  origin_otensors_.resize(output_names_.size());
-  origin_odims_.resize(output_names_.size());
+  // Get the index of output tensors
+  std::vector<uint32_t> output_indices;
   for (int i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = exec_scope_->FindMutableTensor(output_names_[i]);
-    CHECK(origin_otensors_[i]);
-    origin_odims_[i] = origin_otensors_[i]->dims();
-    VLOG(3) << "subgraph output name: " << i << ", " << output_names_[i] << ":"
-            << origin_odims_[i].production();
+    CHECK(graph.Has(output_names_[i])) << "[APU] Failed to find output node "
+                                       << output_names_[i];
     origin_otensors_[i]->mutable_data<int8_t>();
-    // Get input index
-    if (graph.Has(output_names_[i])) {
-      outs.push_back(graph.Get(output_names_[i])->index());
-      VLOG(3) << "output idx: " << graph.Get(output_names_[i])->index();
-    } else {
-      LOG(WARNING) << "Fail to find output: " << output_names_[i];
-      return false;
-    }
+    auto index = graph.Get(output_names_[i])->index();
+    output_indices.push_back(index);
+    VLOG(3) << "[APU] Output[" << i << "] name " << output_names_[i] << " dims "
+            << origin_otensors_[i]->dims() << " index " << index;
   }
 
-  VLOG(3) << "ins size: " << ins.size() << " outs size:" << outs.size();
-  // Set subgraph input/output
-  NeuronModel_identifyInputsAndOutputs(
-      model_, ins.size(), &ins[0], outs.size(), &outs[0]);
+  // Indentify the input and output tensors of the neuron model
+  NeuronModel_identifyInputsAndOutputs(model_,
+                                       input_indices.size(),
+                                       &input_indices[0],
+                                       output_indices.size(),
+                                       &output_indices[0]);
   neuron_errCode = NeuronModel_finish(model_);
   if (NEURON_NO_ERROR != neuron_errCode) {
-    LOG(WARNING) << "Fail to create NIR model:" << neuron_errCode;
+    LOG(WARNING) << "[APU] Fail to create NIR model:" << neuron_errCode;
     return false;
   }
   VLOG(3) << "[APU] APU NIR model created!";
