@@ -22,8 +22,21 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
 
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_runtime.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
+
+bool IsOpenCLBackendValid() {
+  bool opencl_valid = false;
+#ifdef LITE_WITH_OPENCL
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
+#endif
+  LOG(INFO) << "opencl_valid:" << opencl_valid;
+  return opencl_valid;
+}
 
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 

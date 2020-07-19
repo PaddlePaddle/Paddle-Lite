@@ -32,6 +32,9 @@ using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 
+// return true if current device supports OpenCL model
+LITE_API bool IsOpenCLBackendValid();
+
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
