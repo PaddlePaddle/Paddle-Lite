@@ -374,7 +374,7 @@ class XPUResNetCbamBlock0Fuser : public FuseBase {
     // block0_stmt->ResetOp(op_desc, graph->valid_places());
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
-    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, block0_stmt->op()->scope());
@@ -694,7 +694,7 @@ class XPUResNetCbamBlock1Fuser : public FuseBase {
     auto block1_stmt = matched.at("right_conv1")->stmt();
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
-    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, block1_stmt->op()->scope());
@@ -933,7 +933,7 @@ class XPUResNetCbamBlock2Fuser : public FuseBase {
 
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
-    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, scope);

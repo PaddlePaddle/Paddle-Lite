@@ -384,7 +384,7 @@ class XPUSingleEncoderFuser : public FuseBase {
 
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
-    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
         ->SetProgramDesc(sub_program_desc);
     auto* single_encoder_stmt = matched.at("q_mul")->stmt();

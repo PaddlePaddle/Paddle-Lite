@@ -226,7 +226,7 @@ RuntimeProgram::RuntimeProgram(std::shared_ptr<cpp::ProgramDesc> program_desc,
       (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
       kernel->SetContext(std::move(ctx));
     } else {
-      (*it)->SetContext(
+      kernel->SetContext(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
 #else
