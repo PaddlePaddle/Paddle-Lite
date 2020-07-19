@@ -54,10 +54,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
-  if (origin_program_.empty()) {
+  if (!origin_program_) {
     BuildOriginProgram();
   }
-  for (auto& inst : origin_program_) {
+  const auto& insts = origin_program_->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -97,7 +98,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
   origin_itensors_.resize(input_names_.size());
   device_inputs_.resize(input_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(net_info_->input_names[i]);
+    origin_itensors_[i] =
+        exec_scope_->FindMutableTensor(net_info_->input_names[i]);
     CHECK(origin_itensors_[i]);
     origin_idims_[i] = origin_itensors_[i]->dims();
     bm_device_mem_t* p_mem =
@@ -121,7 +123,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
 
   for (int i = 0; i < net_info_->output_num; i++) {
-    Tensor* t_cur = scope_->FindMutableTensor(net_info_->output_names[i]);
+    Tensor* t_cur = exec_scope_->FindMutableTensor(net_info_->output_names[i]);
     CHECK(t_cur != nullptr);
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
@@ -173,11 +175,11 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
 }
 

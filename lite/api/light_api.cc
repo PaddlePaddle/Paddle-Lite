@@ -152,7 +152,7 @@ void LightPredictor::BuildRuntimeProgram(
         exe_scope->Var(var_desc->Name());
       } else {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") continue;
-        if (var_desc->Persistable()) scope_->Var(var_desc->Name());
+        scope_->Var(var_desc->Name());
       }
     }
   }
