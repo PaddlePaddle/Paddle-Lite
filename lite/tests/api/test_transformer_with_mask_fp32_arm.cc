@@ -14,9 +14,7 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-
 #include <vector>
-
 #include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -225,7 +223,46 @@ TEST(TransformerWithMask, test_transformer_with_mask_fp32) {
              -4.26457f,
              -5.82675f,
              -8.70994f,
-             -8.8053f}}}};
+             -8.8053f}}},
+          {{16, 16, 16, 10, 1},
+           {{0, 6, 53, 11, 1, 0, 6, 53, 56, 4, 1},
+            {0.0f,
+             -2.36122f,
+             -4.1678f,
+             -6.19764f,
+             -7.69256f,
+             0.0f,
+             -2.36122f,
+             -4.1678f,
+             -6.20145f,
+             -7.66355f,
+             -8.63024f}}},
+          {{126, 4, 33, 1},
+           {{0, 68, 5, 17, 1, 0, 68, 5, 13, 14, 1},
+            {0.0f,
+             -0.829941f,
+             -1.20217f,
+             -2.23938f,
+             -2.98262f,
+             0.0f,
+             -0.829941f,
+             -1.20217f,
+             -2.25051f,
+             -3.07555f,
+             -3.57711f}}},
+          {{126, 4, 33, 99, 1},
+           {{0, 14, 242, 17, 1, 0, 93, 38, 27, 68, 1},
+            {0.f,
+             -1.8504f,
+             -2.66679f,
+             -3.09469f,
+             -3.63227f,
+             0.0f,
+             -1.33829f,
+             -1.41656f,
+             -3.1333f,
+             -3.27901f,
+             -3.88582f}}}};
   for (auto &test_case : test_cases) {
     PrepareInputData(predictor, test_case.first);
     predictor->Run();
