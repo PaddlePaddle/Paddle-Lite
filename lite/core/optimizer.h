@@ -293,8 +293,16 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        for (auto& graph : graphs_) {
-          pass->Apply(graph);
+        // TODO(hong1986032) Support the following passes in the subblocks
+        static const std::set<std::string> subblock_unsupported_passes(
+            {"memory_optimize_pass"});
+        if (subblock_unsupported_passes.find(x) !=
+            subblock_unsupported_passes.end()) {
+          pass->Apply(graphs_[kRootBlockIdx]);
+        } else {
+          for (auto& graph : graphs_) {
+            pass->Apply(graph);
+          }
         }
         LOG(INFO) << "== Finished running: " << x;
       }

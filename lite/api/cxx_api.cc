@@ -258,7 +258,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   } else {
     LOG(INFO) << "Load model from file.";
   }
-
   Build(model_path,
         model_file,
         param_file,

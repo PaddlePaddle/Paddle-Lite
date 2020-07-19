@@ -76,25 +76,26 @@ void RuntimeProgram::SaveToProgram(
             v->SetDataType(it->second.GetDataType());
           }
         } else {
-          v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
           std::string arg_name;
-          const Type* type;
+          const Type* decl_type;
           if (op_info->GetInputArgname(var_name, &arg_name)) {
-            type = kernel->GetInputDeclType(arg_name);
+            decl_type = kernel->GetInputDeclType(arg_name);
           } else {
             op_info->GetOutputArgname(var_name, &arg_name);
-            type = kernel->GetOutputDeclType(arg_name);
+            decl_type = kernel->GetOutputDeclType(arg_name);
           }
-          if (type->IsTensor()) {
+          if (decl_type->IsTensor()) {
+            v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
             auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
             v->SetPersistable(tensor->persistable());
             if (var_name != "feed" && var_name != "fetch") {
               v->SetShape(tensor->dims().data());
-              switch (tensor->precision()) {
-#define SET_DATATYPE(precision__, data_type)                    \
-  case PrecisionType::precision__:                              \
-    v->SetDataType(data_type);                                  \
-    LOG(INFO) << "update var" << (it->second).Name() << "done"; \
+              auto precision = tensor->precision();
+              switch (precision) {
+#define SET_DATATYPE(precision__, data_type)           \
+  case PrecisionType::precision__:                     \
+    v->SetDataType(data_type);                         \
+    LOG(INFO) << "Update var " << var_name << " done"; \
     break
                 SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
                 SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
@@ -105,11 +106,18 @@ void RuntimeProgram::SaveToProgram(
                 SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
 #undef SET_DATATYPE
                 default:
-                  VLOG(4) << "warning! unknown precision type";
+                  LOG(WARNING) << "Unknown precision type "
+                               << PrecisionToStr(precision) << " for var "
+                               << var_name << " in op " << op_type;
               }
             }
+          } else if (decl_type->IsTensorList()) {
+            // Set persistable=false for tensor array
+            v->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
+            v->SetPersistable(false);
           } else {
-            CHECK(false) << "unsupported var type";
+            CHECK(false) << "Unsupported decl type " << *decl_type
+                         << " for var " << var_name << " in op " << op_type;
           }
         }
       }
@@ -320,10 +328,10 @@ void Program::PrepareWorkspace(
   // Create Feed and Fetch var.
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
   scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
-  tmp_vars_.push_back("feed");
-  tmp_vars_.push_back("fetch");
+  vars_.push_back("feed");
+  vars_.push_back("fetch");
 
-  auto VarDescType2Precision =
+  auto VarDescType2PrecisionType =
       [](const lite::VarDescAPI::Type& type) -> PrecisionType {
     switch (type) {
       case lite::VarDescAPI::Type::FP32:
@@ -351,22 +359,30 @@ void Program::PrepareWorkspace(
     auto var_size = block_desc->VarsSize();
     for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
       auto* var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
+      const auto& var_name = var_desc->Name();
+      const auto& var_type = var_desc->GetType();
       if (!var_desc->Persistable()) {
-        if (var_desc->GetType() == lite::VarDescAPI::Type::LOD_TENSOR &&
-            VarDescType2Precision(var_desc->GetDataType()) != PRECISION(kUnk)) {
-          var_data_type_[var_desc->Name()] =
-              VarDescType2Precision(var_desc->GetDataType());
+        const auto& var_data_type = var_desc->GetDataType();
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          var_type_map_[var_name] =
+              LiteType::GetTensorTy(TARGET(kUnk),
+                                    VarDescType2PrecisionType(var_data_type),
+                                    DATALAYOUT(kUnk));
+        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+          var_type_map_[var_name] = LiteType::GetTensorListTy(
+              TARGET(kUnk),
+              VarDescType2PrecisionType(var_data_type),
+              DATALAYOUT(kUnk));
         }
-        tmp_vars_.push_back(var_desc->Name());
-        VLOG(4) << "block idx: " << block_idx
-                << " var name: " << var_desc->Name() << " type is "
-                << static_cast<int>(var_desc->GetType()) << " data type is "
-                << static_cast<int>(var_desc->GetDataType());
-        exec_scope_->Var(var_desc->Name());
+        vars_.push_back(var_name);
+        VLOG(4) << "Var " << var_name << " in block " << block_idx
+                << " type: " << static_cast<int>(var_type)
+                << " data type: " << static_cast<int>(var_data_type);
+        exec_scope_->Var(var_name);
       } else {
-        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") continue;
-        weights_.push_back(var_desc->Name());
-        if (var_desc->Persistable()) scope_->Var(var_desc->Name());
+        if (var_name == "feed" || var_name == "fetch") continue;
+        weights_.push_back(var_name);
+        scope_->Var(var_name);
       }
     }
   }

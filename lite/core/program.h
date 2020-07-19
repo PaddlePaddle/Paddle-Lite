@@ -65,9 +65,9 @@ struct Program {
   }
 
   const std::list<std::string>& weights() const { return weights_; }
-  const std::list<std::string>& tmp_vars() const { return tmp_vars_; }
+  const std::list<std::string>& vars() const { return vars_; }
   std::list<std::string>* mutable_weights() { return &weights_; }
-  std::list<std::string>* mutable_tmp_vars() { return &tmp_vars_; }
+  std::list<std::string>* mutable_vars() { return &vars_; }
 
   const std::list<std::shared_ptr<OpLite>>& ops(
       int block_idx = kRootBlockIdx) const {
@@ -85,8 +85,8 @@ struct Program {
 
   cpp::ProgramDesc* program_desc() { return program_desc_.get(); }
 
-  const std::map<std::string, PrecisionType>& var_data_type() const {
-    return var_data_type_;
+  const std::map<std::string, const Type*>& var_type_map() const {
+    return var_type_map_;
   }
 
  private:
@@ -97,8 +97,8 @@ struct Program {
                         const std::vector<std::string>& vars_to_clone = {});
 
  private:
-  std::map<std::string, PrecisionType> var_data_type_;
-  std::list<std::string> tmp_vars_;
+  std::map<std::string, const Type*> var_type_map_;
+  std::list<std::string> vars_;
   std::list<std::string> weights_;
   std::vector<std::list<std::shared_ptr<OpLite>>> ops_;
   // the scope to run the kernels, NOTE this is the execution scope.
