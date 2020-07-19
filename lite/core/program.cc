@@ -381,7 +381,7 @@ void Program::PrepareWorkspace(
           auto* tensor = var->GetMutable<lite::Tensor>();
           if (tensor->dims().empty() && !var_shape.empty()) {
             tensor->Resize(var_shape);
-            VLOG(4) << " - dims " << tensor->dims();
+            VLOG(4) << " - dims " << tensor->dims().repr();
           }
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(

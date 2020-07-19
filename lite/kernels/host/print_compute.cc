@@ -66,7 +66,7 @@ class TensorFormatter {
                << std::endl;  // TODO(hong19860320) always kHost
 
     if (print_tensor_shape_) {
-      log_stream << "  - shape: " << print_tensor.dims() << std::endl;
+      log_stream << "  - shape: " << print_tensor.dims().repr() << std::endl;
     }
 
     if (print_tensor_layout_) {
