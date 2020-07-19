@@ -362,23 +362,31 @@ void Program::PrepareWorkspace(
       const auto& var_name = var_desc->Name();
       const auto& var_type = var_desc->GetType();
       if (!var_desc->Persistable()) {
-        const auto& var_data_type = var_desc->GetDataType();
+        vars_.push_back(var_name);
+        auto* var = exec_scope_->Var(var_name);
+        VLOG(4) << "Var " << var_name << " in block " << block_idx;
+        VLOG(4) << " - type " << static_cast<int>(var_type);
         if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type = var_desc->GetDataType();
           var_type_map_[var_name] =
               LiteType::GetTensorTy(TARGET(kUnk),
                                     VarDescType2PrecisionType(var_data_type),
                                     DATALAYOUT(kUnk));
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+          // Create the tensor with the shape from var desc, it's convenient to
+          // the graph analysis in the passes, but you should resize the tensor
+          // with the real shape before accessing its data, because the
+          // var_shape may be [-1,3,224,224]
+          const auto& var_shape = var_desc->GetShape();
+          auto* tensor = var->GetMutable<lite::Tensor>();
+          if (tensor->dims().empty() && !var_shape.empty()) {
+            tensor->Resize(var_shape);
+            VLOG(4) << " - dims " << tensor->dims();
+          }
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
-              TARGET(kUnk),
-              VarDescType2PrecisionType(var_data_type),
-              DATALAYOUT(kUnk));
+              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         }
-        vars_.push_back(var_name);
-        VLOG(4) << "Var " << var_name << " in block " << block_idx
-                << " type: " << static_cast<int>(var_type)
-                << " data type: " << static_cast<int>(var_data_type);
-        exec_scope_->Var(var_name);
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;
         weights_.push_back(var_name);
