@@ -121,7 +121,9 @@ bool test_gemm_int8(bool tra,
   auto dc_basic_int8 = tc_basic_int8.mutable_data<int8_t>();
   auto dc_basic_fp32 = tc_basic_fp32.mutable_data<float>();
   // set intial input to be 0
-  memset((char*)dc_basic_fp32, 0, tc_basic_fp32.numel() * sizeof(float));
+  memset(reinterpret_cast<char*>(dc_basic_fp32),
+         0,
+         tc_basic_fp32.numel() * sizeof(float));
   auto dbias = tbias.mutable_data<float>();
 
   if (FLAGS_check_result) {
