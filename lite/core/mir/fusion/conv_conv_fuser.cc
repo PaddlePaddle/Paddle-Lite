@@ -23,74 +23,57 @@ namespace mir {
 namespace fusion {
 
 void ConvConvFuser::BuildPattern() {
-  auto* conv_input0 =
-      VarNode("conv_input0")->assert_is_op_input(conv_type0_, "Input")->AsInput();
-  auto* conv_weight0 = VarNode("conv_weight0")
-                          ->assert_is_op_input(conv_type0_, "Filter")
+  auto* conv_input0 = VarNode("conv_input0")
+                          ->assert_is_op_input(conv_type0_, "Input")
                           ->AsInput();
-  auto* conv0 = OpNode("conv2d0", conv_type0_)
-                    ->assert_is_op(conv_type0_);
-                    // ->assert_op_attr<int>("groups", 1);
+  auto* conv_weight0 = VarNode("conv_weight0")
+                           ->assert_is_op_input(conv_type0_, "Filter")
+                           ->AsInput();
+  auto* conv0 = OpNode("conv2d0", conv_type0_)->assert_is_op(conv_type0_);
   auto* conv_out0 = VarNode("conv_out0")
-                       ->assert_is_op_output(conv_type0_, "Output")
-                       ->assert_is_op_input(conv_type1_, "Input")
-                       ->AsIntermediate();
+                        ->assert_is_op_output(conv_type0_, "Output")
+                        ->assert_is_op_input(conv_type1_, "Input")
+                        ->AsIntermediate();
 
   auto* conv_weight1 = VarNode("conv_weight1")
-                          ->assert_is_op_input(conv_type1_, "Filter")
-                          ->AsIntermediate();
-  auto* conv1 = OpNode("conv2d1", conv_type1_)
-                    ->assert_is_op(conv_type1_)
-                    ->assert_op_attr<int>("groups", 1)
-//                    ->assert_op_attr<std::vector<int>>("strides", std::vector<int>({1,1}))
-//                    ->assert_op_attr<std::vector<int>>("paddings", std::vector<int>({0,0}))
-//                    ->assert_op_attr<std::vector<int>>("dilations", std::vector<int>({0,0}))
-                    ->AsIntermediate();
+                           ->assert_is_op_input(conv_type1_, "Filter")
+                           ->AsIntermediate();
+  auto* conv1 =
+      OpNode("conv2d1", conv_type1_)
+          ->assert_is_op(conv_type1_)
+          ->assert_op_attr<int>("groups", 1)
+          ->AsIntermediate();
 
-  auto* conv_out1 =
-      VarNode("conv_out1")->assert_is_op_output(conv_type1_, "Output")->AsOutput();
-
-  // get  convlution info
-  // auto weight0 = conv_weight0->GetMutable<lite::Tensor>();
-  // auto weight1 = conv_weight1->GetMutable<lite::Tensor>();
-  // auto wei_dim0 = weight0->dims();
-  // auto wei_dim1 = weight1->dims();
-
-  // bool size = (wei_dim0.size() == 4) && (wei_dim0.size() == wei_dim1.size());
-  // bool ksize_eq = (wei_dim0[2] == wei_dim0[3]) && (wei_dim1[2] == wei_dim1[3]);
-  // bool ksize1 = (wei_dim0[2] = 1  || wei_dim0[2]==3);
-  // bool ksize2 = wei_dim1[2] == 1;
-  // //  only support 1x1/3x3 + 1x1
-  // if (!(size && ksize_eq && ksize1 && ksize2)){
-  //     return;
-  // }
+  auto* conv_out1 = VarNode("conv_out1")
+                        ->assert_is_op_output(conv_type1_, "Output")
+                        ->AsOutput();
 
   if (conv_has_bias0_) {
     if (conv_has_bias1_) {
-        auto* conv_bias0 = VarNode("conv_bias0")
-                              ->assert_is_op_input(conv_type0_, "Bias")
-                              ->AsIntermediate();
-        auto* conv_bias1 = VarNode("conv_bias1")
-                              ->assert_is_op_input(conv_type1_, "Bias")
-                              ->AsInput();
-        conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
-        conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1}).LinksTo({conv_out1});
+      auto* conv_bias0 = VarNode("conv_bias0")
+                             ->assert_is_op_input(conv_type0_, "Bias")
+                             ->AsIntermediate();
+      auto* conv_bias1 = VarNode("conv_bias1")
+                             ->assert_is_op_input(conv_type1_, "Bias")
+                             ->AsInput();
+      conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
+      conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1}).LinksTo({conv_out1});
     } else {
-        auto* conv_bias0 = VarNode("conv_bias0")
-                              ->assert_is_op_input(conv_type0_, "Bias")
-                              ->AsIntermediate();
-        conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
-        conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
+      auto* conv_bias0 = VarNode("conv_bias0")
+                             ->assert_is_op_input(conv_type0_, "Bias")
+                             ->AsIntermediate();
+      conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
+      conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
     }
   } else {
     conv0->LinksFrom({conv_input0, conv_weight0}).LinksTo({conv_out0});
     if (conv_has_bias1_) {
-        auto* conv_bias1 = VarNode("conv_bias1")
-                              ->assert_is_op_input(conv_type1_, "Bias")
-                              ->AsInput();
-        conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1}).LinksTo({conv_out1});
+      auto* conv_bias1 = VarNode("conv_bias1")
+                             ->assert_is_op_input(conv_type1_, "Bias")
+                             ->AsInput();
+      conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1}).LinksTo({conv_out1});
     } else {
-        conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
+      conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
     }
   }
 }
@@ -104,11 +87,11 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
   // conv0
   auto weight0_t = scope->FindVar(matched.at("conv_weight0")->arg()->name)
-                        ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite::Tensor>();
 
   // conv1
   auto weight1_t = scope->FindVar(matched.at("conv_weight1")->arg()->name)
-                        ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite::Tensor>();
   // auto groups0 = conv_op_desc->GetAttr<int>("groups");
   auto groups1 = conv_op_desc1->GetAttr<int>("groups");
   auto strides1 = conv_op_desc1->GetAttr<std::vector<int>>("strides");
@@ -119,20 +102,24 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   bool enable1_int8 = conv_op_desc1->HasAttr("enable_int8") ? true : false;
   int kw = weight1_t->dims()[2];
   int kh = weight1_t->dims()[3];
-  if (!(kw == 1 && kh == 1)){
+  if (!(kw == 1 && kh == 1)) {
     return;
   }
   CHECK_EQ(enable0_int8, enable1_int8) << "The Conv compute type must be same";
   CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
-  CHECK_EQ(weight0_t->dims()[0], weight1_t->dims()[1]) << "weight0_dims[0] == weight1_dim[1]";
+  CHECK_EQ(weight0_t->dims()[0], weight1_t->dims()[1])
+      << "weight0_dims[0] == weight1_dim[1]";
   for (int i = 0; i < strides1.size(); i++) {
-    CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i] << " must be 1";
+    CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
+                             << " must be 1";
   }
   for (int i = 0; i < paddings1.size(); i++) {
-    CHECK_EQ(paddings1[i], 0) << "paddings1[" << i << "]: " << paddings1[i] << " must be 0";
+    CHECK_EQ(paddings1[i], 0) << "paddings1[" << i << "]: " << paddings1[i]
+                              << " must be 0";
   }
   for (int i = 0; i < dilations1.size(); i++) {
-    CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i] << " must be 1";
+    CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i]
+                               << " must be 1";
   }
   // comupte new_wight and new bias
   ///////////////////////////////////////////////////////////////////////////////
@@ -173,18 +160,18 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   if (conv_has_bias0_ && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
     auto bias_t0 = scope->FindVar(matched.at("conv_bias0")->arg()->name)
-                           ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite::Tensor>();
     if (conv_has_bias1_ && conv_op_desc1->HasInput("Bias") &&
-      conv_op_desc1->Input("Bias").size() > 0) {
+        conv_op_desc1->Input("Bias").size() > 0) {
       auto bias_t1 = scope->FindVar(matched.at("conv_bias1")->arg()->name)
-                              ->GetMutable<lite::Tensor>();
+                         ->GetMutable<lite::Tensor>();
       Tensor bias;
       bias.CopyDataFrom(*bias_t1);
       auto bias_data = bias.mutable_data<float>();
       ComputeNewBias(bias_data, bias_t0, weight1_t, bias_t1);
       bias_t1->CopyDataFrom(bias);
-      conv_op_desc->SetInput("Bias",
-                         {matched.at("conv_bias1")->arg()->name});  // conv_bias
+      conv_op_desc->SetInput(
+          "Bias", {matched.at("conv_bias1")->arg()->name});  // conv_bias
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
     } else {
       Tensor bias;
@@ -193,14 +180,14 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       auto bias_d = bias.mutable_data<float>();
       ComputeNewBias(bias_d, bias_t0, weight1_t, nullptr);
       bias_t0->CopyDataFrom(bias);
-      conv_op_desc->SetInput("Bias",
-                         {matched.at("conv_bias0")->arg()->name});  // conv_bias
+      conv_op_desc->SetInput(
+          "Bias", {matched.at("conv_bias0")->arg()->name});  // conv_bias
     }
   } else {
     if (conv_has_bias1_ && conv_op_desc1->HasInput("Bias") &&
-      conv_op_desc1->Input("Bias").size() > 0) {
-      conv_op_desc->SetInput("Bias",
-                         {matched.at("conv_bias1")->arg()->name});  // conv_bias
+        conv_op_desc1->Input("Bias").size() > 0) {
+        conv_op_desc->SetInput(
+            "Bias", {matched.at("conv_bias1")->arg()->name});  // conv_bias
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
     }
   }
