@@ -63,6 +63,8 @@ class OpLite : public Registry {
     valid_places_ = places;
   }
   const std::vector<Place> &valid_places() const { return valid_places_; }
+  // delete op_info
+  void DeleteOpInfo() { op_info_.reset(); }
   // Check the shape.
   virtual bool CheckShape() const { return true; }
   // Inference the outputs' shape.
