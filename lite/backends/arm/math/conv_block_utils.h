@@ -139,6 +139,71 @@ static bool conv_trans_weights_numc(const dtype* din,
   }
   return true;
 }
+// for example: m = 4, n = 4
+// din = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9 , 10 ,11], [12, 13, 14, 15]]
+// dout = [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]]
+/*
+  m = 8 n = 8: 0 1 2 3 4 5 6 7           0 8 16 24 32 40 48 56
+               16 17 18 19 20 21 22 23   2 10 18 26 34 42 50 58
+               24 25 26 27 28 29 30 31   3 11 19 27 35 43 51 59
+               32 33 34 35 36 37 38 39   4 12 20 28 36 44 52 60           ...
+    }
+  }
+*/
+template <typename Dtype>
+void local_transpose(const Dtype* din, Dtype* dout, int m, int n) {
+  // n % 4 == 0 m % 4 == 0
+  // n * m ==> n * m data trans
+  int offset_m = m << 2;
+  const Dtype* din_ptr = din;
+  Dtype* dout_ptr = dout;
+  for (int i = 0; i < n; i += 4) {
+    Dtype* out_ptr0 = dout_ptr;
+    Dtype* out_ptr1 = dout_ptr + m;
+    Dtype* out_ptr2 = out_ptr1 + m;
+    Dtype* out_ptr3 = out_ptr2 + m;
+    const Dtype* in_ptr0 = din_ptr;
+    const Dtype* in_ptr1 = din_ptr + m;
+    const Dtype* in_ptr2 = in_ptr1 + m;
+    const Dtype* in_ptr3 = in_ptr2 + m;
+    for (int j = 0; j < m; j += 4) {
+      float32x4_t vin0 = vld1q_f32(in_ptr0);
+      float32x4_t vin1 = vld1q_f32(in_ptr1);
+      float32x4_t vin2 = vld1q_f32(in_ptr2);
+      float32x4_t vin3 = vld1q_f32(in_ptr3);
+      // a00 b00 a02 b02 a01 b01 a03 b03
+      float32x4x2_t tmp0 = vtrnq_f32(vin0, vin1);
+      // c00 d00 c02 d02 c01 d01 c03 d03
+      float32x4x2_t tmp2 = vtrnq_f32(vin2, vin3);
+      in_ptr0 = in_ptr3 + m;
+      in_ptr1 = in_ptr3 + 2 * m;
+      float tmp_val1 = tmp0.val[0][2];
+      float tmp_val2 = tmp0.val[0][3];
+      tmp0.val[0][2] = tmp2.val[0][0];
+      tmp0.val[0][3] = tmp2.val[0][1];
+      float tmp_val3 = tmp0.val[1][2];
+      float tmp_val4 = tmp0.val[1][3];
+      tmp2.val[0][0] = tmp_val1;
+      tmp2.val[0][1] = tmp_val2;
+      tmp0.val[1][2] = tmp2.val[1][0];
+      tmp0.val[1][3] = tmp2.val[1][1];
+      tmp2.val[1][0] = tmp_val3;
+      tmp2.val[1][1] = tmp_val4;
+      in_ptr2 = in_ptr1 + m;
+      in_ptr3 = in_ptr1 + 2 * m;
+      vst1q_f32(out_ptr0, tmp0.val[0]);
+      vst1q_f32(out_ptr1, tmp0.val[1]);
+      out_ptr0 += 4;
+      out_ptr1 += 4;
+      vst1q_f32(out_ptr2, tmp2.val[0]);
+      vst1q_f32(out_ptr3, tmp2.val[1]);
+      out_ptr2 += 4;
+      out_ptr3 += 4;
+    }
+    dout_ptr += offset_m;
+    din_ptr += 4;
+  }
+}
 template <typename Dtype>
 void transpose(const Dtype* din, Dtype* dout, int m, int n) {
   // nxm == mxn
