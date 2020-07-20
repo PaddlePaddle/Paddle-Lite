@@ -29,16 +29,25 @@ namespace fbs {
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
-  explicit ProgramDesc(std::unique_ptr<const char[]> buf) {
-    Init(std::move(buf));
+  explicit ProgramDesc(const std::vector<char>& buf) { Init(buf); }
+  explicit ProgramDesc(std::vector<char>&& buf) {
+    Init(std::forward<std::vector<char>>(buf));
   }
 
-  size_t BlocksSize() const override { return desc_->blocks()->size(); }
+  void Init(const std::vector<char>& buf) {
+    CHECK(buf.data() != nullptr);
+    buf_ = buf;
+    InitProgramDesc();
+  }
 
-  void Init(std::unique_ptr<const char[]> buf) {
-    CHECK(buf.get() != nullptr);
+  void Init(std::vector<char>&& buf) {
+    CHECK(buf.data() != nullptr);
     buf_ = std::move(buf);
-    desc_ = proto::GetProgramDesc(buf_.get());
+    InitProgramDesc();
+  }
+
+  void InitProgramDesc() {
+    desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.reserve(BlocksSize());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
       blocks_.push_back(BlockDesc(desc_->blocks()->Get(idx)));
@@ -46,11 +55,11 @@ class ProgramDesc : public ProgramDescAPI {
   }
 
   void CopyFrom(const ProgramDesc& other) {
-    size_t length = strlen(static_cast<const char*>(other.raw_buf()));
-    std::unique_ptr<char[]> buf(new char[length]);
-    memcpy(buf.get(), other.raw_buf(), length);
-    Init(std::move(buf));
+    buf_ = other.buf();
+    Init(buf_);
   }
+
+  size_t BlocksSize() const override { return desc_->blocks()->size(); }
 
   template <typename T>
   T const* GetBlock(int32_t idx) const;
@@ -72,11 +81,11 @@ class ProgramDesc : public ProgramDescAPI {
 
   proto::ProgramDesc const* raw_desc() const { return desc_; }
 
-  const void* raw_buf() const { return buf_.get(); }
+  const std::vector<char>& buf() const { return buf_; }
 
  private:
   proto::ProgramDesc const* desc_;
-  std::unique_ptr<const char[]> buf_;
+  std::vector<char> buf_;
   std::vector<BlockDesc> blocks_;
 
  private:
