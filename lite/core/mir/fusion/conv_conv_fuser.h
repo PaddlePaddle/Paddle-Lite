@@ -32,9 +32,9 @@ class ConvConvFuser : public FuseBase {
                          const bool conv_has_bias0,
                          const bool conv_has_bias1)
       : conv_type0_(conv_type0),
-      conv_type1_(conv_type1),
-      conv_has_bias0_(conv_has_bias0),
-      conv_has_bias1_(conv_has_bias1){}
+        conv_type1_(conv_type1),
+        conv_has_bias0_(conv_has_bias0),
+        conv_has_bias1_(conv_has_bias1){}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -55,7 +55,7 @@ class ConvConvFuser : public FuseBase {
     // out = w1[j, i, ih, iw] * w2[k, j, kw, kh]
     // out_dim = [oc1, ic, kh, kw], din_dim = [oc0, ic, kh, kw]
     // weight_dim = [oc1, oc0, kh, kw]
-    for (int k = 0; k < oc1; k ++) {
+    for (int k = 0; k < oc1; k++) {
       const float* weights_ptr = weights + k * oc0;
       float* out_ptr = dout + k * in_channel_size;
       for (int c = 0; c < ic; c++) {
@@ -72,10 +72,10 @@ class ConvConvFuser : public FuseBase {
     }
   }
 
-void ComputeNewBias(float* dout,
-                    Tensor* bias0_tensor,
-                    Tensor* weight_tensor,
-                    Tensor* bias1_tensor) {
+  void ComputeNewBias(float* dout,
+                      Tensor* bias0_tensor,
+                      Tensor* weight_tensor,
+                      Tensor* bias1_tensor) {
     // input bias0_tensor weight_tensor bias1_tensor
     // output bias_tensor
     auto in_dims = bias0_tensor->dims();

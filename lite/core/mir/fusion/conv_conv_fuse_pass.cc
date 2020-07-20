@@ -46,7 +46,8 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                   << " conv_type0:" << conv_type0;
           VLOG(4) << "conv_has_bias1:" << conv_has_bias1
                   << " conv_type1:" << conv_type1;
-          fusion::ConvConvFuser fuser(conv_type0, conv_type1, conv_has_bias0, conv_has_bias1);
+          fusion::ConvConvFuser fuser(
+              conv_type0, conv_type1, conv_has_bias0, conv_has_bias1);
           fuser(graph.get());
         }
       }

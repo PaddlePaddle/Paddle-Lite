@@ -38,11 +38,10 @@ void ConvConvFuser::BuildPattern() {
   auto* conv_weight1 = VarNode("conv_weight1")
                            ->assert_is_op_input(conv_type1_, "Filter")
                            ->AsIntermediate();
-  auto* conv1 =
-      OpNode("conv2d1", conv_type1_)
-          ->assert_is_op(conv_type1_)
-          ->assert_op_attr<int>("groups", 1)
-          ->AsIntermediate();
+  auto* conv1 = OpNode("conv2d1", conv_type1_)
+                    ->assert_is_op(conv_type1_)
+                    >assert_op_attr<int>("groups", 1)
+                    ->AsIntermediate();
 
   auto* conv_out1 = VarNode("conv_out1")
                         ->assert_is_op_output(conv_type1_, "Output")
@@ -56,13 +55,16 @@ void ConvConvFuser::BuildPattern() {
       auto* conv_bias1 = VarNode("conv_bias1")
                              ->assert_is_op_input(conv_type1_, "Bias")
                              ->AsInput();
-      conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
-      conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1}).LinksTo({conv_out1});
+      conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0})
+          .LinksTo({conv_out0});
+      conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1})
+          .LinksTo({conv_out1});
     } else {
       auto* conv_bias0 = VarNode("conv_bias0")
                              ->assert_is_op_input(conv_type0_, "Bias")
                              ->AsIntermediate();
-      conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0}).LinksTo({conv_out0});
+      conv0->LinksFrom({conv_input0, conv_weight0, conv_bias0})
+          .LinksTo({conv_out0});
       conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
     }
   } else {
@@ -71,7 +73,8 @@ void ConvConvFuser::BuildPattern() {
       auto* conv_bias1 = VarNode("conv_bias1")
                              ->assert_is_op_input(conv_type1_, "Bias")
                              ->AsInput();
-      conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1}).LinksTo({conv_out1});
+      conv1->LinksFrom({conv_out0, conv_weight1, conv_bias1})
+          .LinksTo({conv_out1});
     } else {
       conv1->LinksFrom({conv_out0, conv_weight1}).LinksTo({conv_out1});
     }
@@ -186,8 +189,8 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   } else {
     if (conv_has_bias1_ && conv_op_desc1->HasInput("Bias") &&
         conv_op_desc1->Input("Bias").size() > 0) {
-        conv_op_desc->SetInput(
-            "Bias", {matched.at("conv_bias1")->arg()->name});  // conv_bias
+      conv_op_desc->SetInput(
+          "Bias", {matched.at("conv_bias1")->arg()->name});  // conv_bias
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
     }
   }
