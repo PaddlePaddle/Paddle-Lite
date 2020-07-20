@@ -168,16 +168,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     float* dout = weight_tensor.mutable_data<float>();
     ComputeNewWeight(dout, din, weights, oc0, ic, ih, iw, oc);
     weight0_t->CopyDataFrom(weight_tensor);
-    auto new_dim = weight0_t->dims();
-    LOG(INFO) << "new_dim: " << new_dim[0] << ", " << new_dim[1] << ", " << new_dim[2] << ", " << new_dim[3];
-    auto data = weight0_t->data<float>();
-    for (int i = 0; i < weight0_t->data_size(); i++) {
-      if ((i + 1) % oc == 0) printf("\n");
-      printf("%f  ", data[i]);
-    }
-    printf("\n");
   }
-  LOG(INFO) << "bias";
   // compute new conv_bias
   if (conv_has_bias0_ && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
@@ -187,24 +178,14 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       conv_op_desc1->Input("Bias").size() > 0) {
       auto bias_t1 = scope->FindVar(matched.at("conv_bias1")->arg()->name)
                               ->GetMutable<lite::Tensor>();
-      // auto bias_d1 = bias_t1->mutable_data<float>();
       Tensor bias;
       bias.CopyDataFrom(*bias_t1);
       auto bias_data = bias.mutable_data<float>();
-      LOG(INFO) << "compute";
       ComputeNewBias(bias_data, bias_t0, weight1_t, bias_t1);
       bias_t1->CopyDataFrom(bias);
       conv_op_desc->SetInput("Bias",
                          {matched.at("conv_bias1")->arg()->name});  // conv_bias
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
-      LOG(INFO)<<"setting";
-      auto new_dim = bias_t1->dims();
-      LOG(INFO) << "new_dim: " << new_dim[0] << ", " << new_dim[1] << ", " << new_dim[2] << ", " << new_dim[3];
-      auto data = bias_t1->data<float>();
-      for (int i = 0; i < bias_t1->data_size(); i++) {
-        printf("%f  ", data[i]);
-      }
-      printf("\n");
     } else {
       Tensor bias;
       auto weight_dims = weight1_t->dims();
@@ -223,7 +204,6 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       IR_NODE_LINK_TO(matched.at("conv_bias1"), matched.at("conv2d0"));
     }
   }
-  LOG(INFO) << "update stucture";
   conv_op_desc->SetType(conv_type0_);
   conv_op_desc->SetInput("Input", {matched.at("conv_input0")->arg()->name});
   conv_op_desc->SetInput("Filter", {matched.at("conv_weight0")->arg()->name});
