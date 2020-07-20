@@ -38,8 +38,10 @@ void ConvConvFuser::BuildPattern() {
   auto* conv_weight1 = VarNode("conv_weight1")
                            ->assert_is_op_input(conv_type1_, "Filter")
                            ->AsIntermediate();
-  auto* conv1 = OpNode("conv2d1", conv_type1_)->assert_is_op(conv_type1_)
-                    ->assert_op_attr<int>("groups", 1)->AsIntermediate();
+  auto* conv1 = OpNode("conv2d1", conv_type1_)
+                    ->assert_is_op(conv_type1_)
+                    ->assert_op_attr<int>("groups", 1)
+                    ->AsIntermediate();
 
   auto* conv_out1 = VarNode("conv_out1")
                         ->assert_is_op_output(conv_type1_, "Output")
