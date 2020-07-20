@@ -21,8 +21,8 @@ USE_ADB_EMULATOR=ON
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
