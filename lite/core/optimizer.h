@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/core/mir/elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.h"
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
@@ -73,6 +74,7 @@ class Optimizer {
 
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
+    InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
 
     if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
@@ -116,6 +118,7 @@ class Optimizer {
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
            "mlu_subgraph_pass",
+           "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
            "static_kernel_pick_pass",  // pick original kernel from graph
 
            "remove_tf_redundant_ops_pass",
@@ -202,6 +205,16 @@ class Optimizer {
     CHECK(pass);
     CHECK(!valid_places_.empty());
     pass->SetValidPlaces(valid_places_);
+  }
+
+  void InitControlFlowOpUnusedInputsAndOutputsEliminatePass() {
+    auto* pass =
+        mir::PassManager::Global()
+            .LookUp<mir::ControlFlowOpUnusedInputsAndOutputsEliminatePass>(
+                "control_flow_op_unused_inputs_and_outputs_eliminate_pass");
+    CHECK(pass);
+    CHECK(!graphs_.empty());
+    pass->SetAllGraphs(&graphs_);
   }
 
   // Generate C++ code which combines the inference program, model and weights.

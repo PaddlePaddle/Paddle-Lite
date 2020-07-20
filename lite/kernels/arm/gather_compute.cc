@@ -76,7 +76,7 @@ REGISTER_LITE_KERNEL(gather,
                      kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::GatherCompute<int32_t>,
-                     def_int32_idx)
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
