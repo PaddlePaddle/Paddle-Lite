@@ -16,7 +16,14 @@
 
 #include <memory>                                 // std::unique_ptr
 #include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
-#include "lite/core/target_wrapper.h"
+#include "lite/core/target_wrapper.h"             // TargetWrapper
+#include "lite/utils/cp_logging.h"                // CHECK_EQ
+
+#define XPU_CALL(func)                                        \
+  {                                                           \
+    auto e = (func);                                          \
+    CHECK_EQ(e, 0) << "XPU: (" << #func << ") returns " << e; \
+  }
 
 namespace paddle {
 namespace lite {
@@ -38,7 +45,7 @@ struct XPUScratchPad {
 struct XPUScratchPadDeleter {
   void operator()(XPUScratchPad* sp) const {
     if (!sp->is_l3_) {
-      xpu_free(sp->addr_);
+      XPU_CALL(xpu_free(sp->addr_));
     }
     delete sp;
   }
@@ -82,11 +89,10 @@ class TargetWrapper<TARGET(kXPU)> {
   static void SetDev(int dev_no = 0) {
     const char* dev_env = getenv("LITE_XPU_DEV");
     if (dev_env) {
-      xpu_set_device(atoi(dev_env));
-      return;
+      dev_no = atoi(dev_env);
     }
 
-    xpu_set_device(dev_no);
+    XPU_CALL(xpu_set_device(dev_no));
   }
 
   static std::string multi_encoder_precision;  // NOLINT

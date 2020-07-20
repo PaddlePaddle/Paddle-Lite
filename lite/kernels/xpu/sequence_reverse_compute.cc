@@ -59,10 +59,10 @@ void SequenceReverseCompute<T, PType>::Run() {
     lod_cpu[i] = lod[i];
   }
   int* lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
-  xpu_memcpy(lod_xpu,
-             lod_cpu.get(),
-             lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(lod_xpu,
+                      lod_cpu.get(),
+                      lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::sequence_reverse(ctx.GetRawContext(),
                                  batch_size,

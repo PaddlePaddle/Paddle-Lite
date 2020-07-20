@@ -79,25 +79,25 @@ void MatchMatrixTensorCompute::Run() {
   int* offset_r_xpu = reinterpret_cast<int*>(offset_r_xpu_guard_->addr_);
 
   int r = xdnn::gemm_int16_tmp_api<float, int16_t, float>(
-      ctx.GetRawContext(), /* ctx */
-      false,
-      false, /* trans_a, trans_b */
-      x->dims()[0],
-      dim_t * dim_in,
-      dim_in, /* m, n, k */
-      1.0f,
-      bottom_l_data,
-      dim_in, /* alpha, data_a, lda */
-      w_data,
-      dim_t * dim_in,
-      0.0f, /* data_b, ldb, beta */
-      bottom_l_trans_data,
-      dim_t * dim_in, /* data_c, ldc */
-      nullptr,        /* bias */
-      xdnn::Activation_t::LINEAR,
-      0.0f,
-      w_max,
-      wx_max /* max_a, max_b, max_c */);
+      ctx.GetRawContext(),        /* ctx */
+      false,                      /* trans_a */
+      false,                      /* trans_b */
+      x->dims()[0],               /* m */
+      dim_t * dim_in,             /* n */
+      dim_in,                     /* k */
+      1.0f,                       /* alpha */
+      bottom_l_data,              /* data_a */
+      dim_in,                     /* lda */
+      w_data,                     /* data_b */
+      dim_t * dim_in,             /* ldb */
+      0.0f,                       /* beta */
+      bottom_l_trans_data,        /* data_c */
+      dim_t * dim_in,             /* ldc */
+      nullptr,                    /* bias */
+      xdnn::Activation_t::LINEAR, /* act */
+      0.0f,                       /* max_a */
+      w_max,                      /* max_b */
+      wx_max /* max_c */);
   CHECK_EQ(r, 0);
 
   int max_width = 0;
@@ -113,14 +113,14 @@ void MatchMatrixTensorCompute::Run() {
       max_width = offset_r_cpu[i] - offset_r_cpu[i - 1];
     }
   }
-  xpu_memcpy(offset_l_xpu,
-             offset_l_cpu.get(),
-             offset_l.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(offset_r_xpu,
-             offset_r_cpu.get(),
-             offset_r.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(offset_l_xpu,
+                      offset_l_cpu.get(),
+                      offset_l.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(offset_r_xpu,
+                      offset_r_cpu.get(),
+                      offset_r.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   r = xdnn::match_matrix_tensor(ctx.GetRawContext(),
                                 batch_size,

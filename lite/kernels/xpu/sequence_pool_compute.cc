@@ -56,10 +56,10 @@ void XPUSequencePoolCompute::Run() {
     lod_cpu[i] = in_lod[i];
   }
   int* lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
-  xpu_memcpy(lod_xpu,
-             lod_cpu.get(),
-             in_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(lod_xpu,
+                      lod_cpu.get(),
+                      in_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r =
       xdnn::sequence_pooling_forward(ctx.GetRawContext(),

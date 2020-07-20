@@ -96,14 +96,14 @@ void VarConv2DCompute::Run() {
     offset_x_cpu[i] = offset_x[i];
     offset_y_cpu[i] = offset_y[i];
   }
-  xpu_memcpy(offset_x_xpu,
-             offset_x_cpu.get(),
-             (batch + 1) * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(offset_y_xpu,
-             offset_y_cpu.get(),
-             (batch + 1) * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(offset_x_xpu,
+                      offset_x_cpu.get(),
+                      (batch + 1) * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(offset_y_xpu,
+                      offset_y_cpu.get(),
+                      (batch + 1) * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::search_varconv<float, int16_t>(ctx.GetRawContext(),
                                                batch,

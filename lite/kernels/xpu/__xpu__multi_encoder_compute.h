@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"

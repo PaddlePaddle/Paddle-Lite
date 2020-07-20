@@ -82,22 +82,22 @@ void SequenceTopkAvgPoolingCompute::Run() {
   for (int i = 0; i < col_lod.size(); ++i) {
     col_lod_cpu[i] = col_lod[i];
   }
-  xpu_memcpy(in_lod_xpu,
-             in_lod_cpu.get(),
-             in_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(row_lod_xpu,
-             row_lod_cpu.get(),
-             row_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(col_lod_xpu,
-             col_lod_cpu.get(),
-             col_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(topks_xpu,
-             topks.data(),
-             topks.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(in_lod_xpu,
+                      in_lod_cpu.get(),
+                      in_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(row_lod_xpu,
+                      row_lod_cpu.get(),
+                      row_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(col_lod_xpu,
+                      col_lod_cpu.get(),
+                      col_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(topks_xpu,
+                      topks.data(),
+                      topks.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::sequence_topk_avg_pooling(ctx.GetRawContext(),
                                           in_data,

@@ -108,14 +108,14 @@ void SequenceConcatCompute::Run() {
   for (int i = 0; i < lod1.size(); ++i) {
     lod1_cpu[i] = lod1[i];
   }
-  xpu_memcpy(lod0_xpu,
-             lod0_cpu.get(),
-             lod0.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(lod1_xpu,
-             lod1_cpu.get(),
-             lod1.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(lod0_xpu,
+                      lod0_cpu.get(),
+                      lod0.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(lod1_xpu,
+                      lod1_cpu.get(),
+                      lod1.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::sequence_concat(ctx.GetRawContext(),
                                 xs[0]->data<float>(),
