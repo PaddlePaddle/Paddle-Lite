@@ -34,7 +34,7 @@ class ConvConvFuser : public FuseBase {
       : conv_type0_(conv_type0),
         conv_type1_(conv_type1),
         conv_has_bias0_(conv_has_bias0),
-        conv_has_bias1_(conv_has_bias1){}
+        conv_has_bias1_(conv_has_bias1) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
