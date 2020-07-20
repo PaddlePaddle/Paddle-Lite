@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/cuda/gru_compute.h"
+#include "lite/kernels/cuda/sigmoid_compute.h"
 
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "lite/api/test_helper.h"
+#include "lite/backends/cuda/target_wrapper.h"
 #include "lite/utils/float16.h"
 
 namespace paddle {
@@ -29,42 +30,21 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class GRUTest : public ::testing::Test {
+class SigmoidTest : public ::testing::Test {
  protected:
-  GRUTest()
-      : batch_(12),
-        frame_size_(128),
-        activation_("tanh"),
-        gate_activation_("sigmoid"),
-        is_reverse_(false),
-        origin_mode_(false),
-        x_shape_({batch_, frame_size_ * 3}),
-        w_shape_({frame_size_, frame_size_ * 3}),
-        out_shape_({batch_, frame_size_}),
-        lod_({{0, 4, 9, 12}}) {
-    x_ref_.Resize(lite::DDim(x_shape_));
-    x_gpu_.Resize(lite::DDim(x_shape_));
-    x_ref_.set_lod(lod_);
-
-    w_ref_.Resize(lite::DDim(w_shape_));
-    w_gpu_.Resize(lite::DDim(w_shape_));
+  SigmoidTest() : m_(8), n_(64), shape_({m_, n_}) {
+    x_ref_.Resize(lite::DDim(shape_));
+    x_gpu_.Resize(lite::DDim(shape_));
 
     auto x_ref_data = x_ref_.mutable_data<float>();
-    auto w_ref_data = w_ref_.mutable_data<float>();
 
     for (int64_t i = 0; i < x_ref_.numel(); i++) {
       x_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
-    for (int64_t i = 0; i < w_ref_.numel(); i++) {
-      w_ref_data[i] = static_cast<float>(i % 10 * 0.2);
-    }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite::DDim(shape_));
     out_cpu_.Resize(out_ref_.dims());
     out_gpu_.Resize(out_ref_.dims());
-    batch_gate_gpu_.Resize(lite::DDim(x_shape_));
-    batch_hidden_gpu_.Resize(lite::DDim(out_shape_));
-    batch_reset_hidden_gpu_.Resize(lite::DDim(out_shape_));
     RunBaseLine();
 
     InitParamAndContext();
@@ -75,65 +55,46 @@ class GRUTest : public ::testing::Test {
     cudaStreamCreate(&stream_);
     auto& context = ctx_->As<CUDAContext>();
     context.SetExecStream(stream_);
-    param_.input = &x_gpu_;
-    param_.weight = &w_gpu_;
-    param_.gate_activation = gate_activation_;
-    param_.activation = activation_;
-    param_.is_reverse = is_reverse_;
-    param_.origin_mode = origin_mode_;
-    param_.hidden = &out_gpu_;
-    param_.batch_gate = &batch_gate_gpu_;
-    param_.batch_reset_hidden_prev = &batch_reset_hidden_gpu_;
-    param_.batch_hidden = &batch_hidden_gpu_;
+    param_.X = &x_gpu_;
+    param_.Out = &out_gpu_;
   }
 
   void InitFloatInput() {
     x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
-    x_gpu_.set_lod(x_ref_.lod());
-    w_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(w_ref_.data<float>(),
-                                                    w_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_half_.Resize(lite::DDim(x_shape_));
+    x_half_.Resize(lite::DDim(shape_));
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
       x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
     }
     x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
-    x_gpu_.set_lod(x_ref_.lod());
-    w_half_.Resize(w_ref_.dims());
-    auto w_half_data = w_half_.mutable_data<half>();
-    for (int64_t i = 0; i < w_half_.numel(); i++) {
-      w_half_data[i] = half(lite::float16(w_ref_.data<float>()[i]));
-    }
-    w_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, w_gpu_.dims());
   }
 
-  void RunBaseLine() {}
+  void RunBaseLine() {
+    for (int64_t i = 0; i < x_ref_.numel(); ++i) {
+      out_ref_.mutable_data<float>()[i] =
+          1.f / (1.f + expf(-1 * x_ref_.data<float>()[i]));
+    }
+  }
 
-  int batch_, frame_size_;
-  std::string activation_, gate_activation_;
-  bool is_reverse_, origin_mode_;
-  std::vector<int64_t> x_shape_, w_shape_, out_shape_;
-  LoD lod_;
-  lite::Tensor x_ref_, w_ref_, out_ref_;
-  lite::Tensor x_gpu_, w_gpu_;
-  lite::Tensor x_half_, w_half_;
-  lite::Tensor batch_gate_gpu_;
-  lite::Tensor batch_hidden_gpu_;
-  lite::Tensor batch_reset_hidden_gpu_;
+  int m_, n_;
+  std::vector<int64_t> shape_;
+  lite::Tensor x_ref_, out_ref_;
+  lite::Tensor x_gpu_;
+  lite::Tensor x_half_;
   lite::Tensor out_cpu_, out_gpu_;
 
-  operators::GRUParam param_;
+  operators::ActivationParam param_;
   std::unique_ptr<KernelContext> ctx_;
   cudaStream_t stream_;
 };
 
-TEST_F(GRUTest, TestFP32) {
+TEST_F(SigmoidTest, TestFP32) {
   InitFloatInput();
-  GRUCompute<float, PRECISION(kFloat)> kernel;
+  SigmoidCompute<float, PRECISION(kFloat)> kernel;
   kernel.SetParam(param_);
   kernel.SetContext(std::move(ctx_));
 
@@ -152,11 +113,22 @@ TEST_F(GRUTest, TestFP32) {
   LOG(INFO) << "fp32, warmup: " << FLAGS_warmup
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
+
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = out_cpu_.data<float>()[i];
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / ref, 0.f, 1e-5);
+  }
 }
 
-TEST_F(GRUTest, TestFP16) {
+TEST_F(SigmoidTest, TestFP16) {
   InitHalfInput();
-  GRUCompute<half, PRECISION(kFP16)> kernel;
+  SigmoidCompute<half, PRECISION(kFP16)> kernel;
   kernel.SetParam(param_);
   kernel.SetContext(std::move(ctx_));
 
@@ -175,6 +147,19 @@ TEST_F(GRUTest, TestFP16) {
   LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
             << ", repeats: " << FLAGS_repeats << ", spend "
             << duration / FLAGS_repeats << " ms in average.";
+
+  const half* out_gpu_data = out_gpu_.data<half>();
+  half* out_cpu_data = out_cpu_.mutable_data<half>();
+  CopySync<TARGET(kCUDA)>(out_cpu_data,
+                          out_gpu_data,
+                          sizeof(half) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 2e-2);
+  }
 }
 
 }  // namespace cuda
