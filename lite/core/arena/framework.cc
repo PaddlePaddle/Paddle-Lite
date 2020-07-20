@@ -62,7 +62,7 @@ void TestCase::CreateInstruction() {
   // filter out the target kernel
   CHECK(!kernels.empty()) << "No kernel found for place "
                           << place_.DebugString();
-  auto it = std::remove_if(
+  auto it = std::find_if(
       kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& k) {
         return k->alias() == alias_;
       });
