@@ -15,6 +15,7 @@
 #include "lite/core/program.h"
 #include <algorithm>
 #include <map>
+#include <set>
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
@@ -48,6 +49,7 @@ void RuntimeProgram::SaveToProgram(
     // Update the ops and vars for each block according to the instructions
     block_desc->ClearVars();
     block_desc->ClearOps();
+    std::set<std::string> already_added_vars;
     for (auto& inst : instructions_[block_idx]) {
       auto* op = const_cast<OpLite*>(inst.op());
       auto* op_info = op->op_info();
@@ -65,6 +67,7 @@ void RuntimeProgram::SaveToProgram(
       var_names.erase(std::unique(var_names.begin(), var_names.end()),
                       var_names.end());
       for (auto& var_name : var_names) {
+        if (already_added_vars.count(var_name)) continue;
         auto* v = block_desc->AddVar<cpp::VarDesc>();
         v->SetName(var_name);
         auto it = origin_var_maps.find(var_name);
@@ -120,6 +123,7 @@ void RuntimeProgram::SaveToProgram(
                          << " for var " << var_name << " in op " << op_type;
           }
         }
+        already_added_vars.insert(var_name);
       }
       // Replace all of origin ops with the instructions
       auto op_desc = block_desc->AddOp<cpp::OpDesc>();
@@ -347,7 +351,8 @@ void Program::PrepareWorkspace(
       case lite::VarDescAPI::Type::INT64:
         return PRECISION(kInt64);
       default:
-        // LOG(FATAL) << "not supported type: " << static_cast<int>(type);
+        LOG(WARNING) << "Unable to convert var desc type("
+                     << static_cast<int>(type) << ") to precision type!";
         return PRECISION(kUnk);
     }
   };
@@ -367,11 +372,12 @@ void Program::PrepareWorkspace(
         VLOG(4) << "Var " << var_name << " in block " << block_idx;
         VLOG(4) << " - type " << static_cast<int>(var_type);
         if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-          const auto& var_data_type = var_desc->GetDataType();
-          var_type_map_[var_name] =
-              LiteType::GetTensorTy(TARGET(kUnk),
-                                    VarDescType2PrecisionType(var_data_type),
-                                    DATALAYOUT(kUnk));
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
           VLOG(4) << " - data type " << static_cast<int>(var_data_type);
           // Create the tensor with the shape from var desc, it's convenient to
           // the graph analysis in the passes, but you should resize the tensor

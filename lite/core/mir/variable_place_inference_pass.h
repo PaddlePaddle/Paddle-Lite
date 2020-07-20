@@ -122,28 +122,26 @@ class VariablePlaceInferencePass : public DebugPass {
       const auto* op_info = inst.op_info();
       const auto& op_type = op_info->Type();
       auto& kernel = inst.picked_kernel();
+
       // The IoCopyOp is a tool operator, it won't support the type inference.
       // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
-      // for
-      // tool operator
+      // for tool operator
       if ((!with_targets["kFPGA"]) && (!with_targets["kOpenCL"])) {
-        VLOG(3) << "op_type == 'io_copy', continue";
+        VLOG(3) << "skip 'io_copy' if target is FPGA and OpenCL";
         if (op_type == "io_copy") continue;
       }
-      // deal with inputs
-      VLOG(4) << "Infering the input vars of op " << op_info->Repr();
-      // TODO(zhaolong): Add check if the node's name in op's arguments.
 
+      // Infering the input and output variable's place according to the
+      // declaration of I/O arguments of the picked kernel of the op
+      VLOG(4) << "Op " << op_info->Repr();
       for (auto* in_node : node->inlinks) {
         auto& var = in_node->AsArg();
         const auto& var_name = var.name;
         auto& var_type = var.type;
         std::string arg_name;
         CHECK(op_info->GetInputArgname(var_name, &arg_name))
-            << "Can not find the input argument of op " << op_type
-            << " for var " << var_name;
-        VLOG(4) << "-- input arg_name:" << arg_name << " "
-                << "-- var name:" << var_name;
+            << "Can not find the input argument for var " << var_name;
+        VLOG(4) << " - input arg name:" << arg_name << " var name:" << var_name;
         const auto* decl_type = kernel.GetInputDeclType(arg_name);
         if (!var_type) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
@@ -152,8 +150,7 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             var_type = decl_type;
           }
-        } else if (var_type->target() == TARGET(kUnk) &&
-                   var_type->layout() == DATALAYOUT(kUnk)) {
+        } else if (!var_type->place().is_valid()) {
           // If is quantization, infer the Int8 type.
           if (decl_type->precision() == PRECISION(kInt8)) {
             var_type = decl_type;
@@ -162,18 +159,15 @@ class VariablePlaceInferencePass : public DebugPass {
           }
         }
       }
-
-      VLOG(4) << "Infer the output vars of op " << inst.op_info()->Repr();
       for (auto* out_node : node->outlinks) {
         auto& var = out_node->AsArg();
         const auto& var_name = var.name;
         auto& var_type = var.type;
         std::string arg_name;
         CHECK(op_info->GetOutputArgname(var_name, &arg_name))
-            << "Can not find the output argument of op " << op_type
-            << " for var " << var_name;
-        VLOG(4) << "-- output arg_name:" << arg_name << " "
-                << "-- var name:" << var_name;
+            << "Can not find the output argument for var " << var_name;
+        VLOG(4) << " - output arg name:" << arg_name
+                << " var name:" << var_name;
         const auto* decl_type = kernel.GetOutputDeclType(arg_name);
         if (!var_type) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
@@ -182,8 +176,7 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             var_type = decl_type;
           }
-        } else if (var_type->target() == TARGET(kUnk) &&
-                   var_type->layout() == DATALAYOUT(kUnk)) {
+        } else if (!var_type->place().is_valid()) {
           // If is quantization, infer the Int8 type.
           if (decl_type->precision() == PRECISION(kInt8) ||
               (decl_type->precision() == PRECISION(kFP16) &&
