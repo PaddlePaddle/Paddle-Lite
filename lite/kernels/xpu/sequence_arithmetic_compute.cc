@@ -37,44 +37,54 @@ void SequenceArithmeticCompute::Run() {
   const auto* bottom_data1 = bottom1->data<float>();
   auto* top_data = top->mutable_data<float>(TARGET(kXPU));
 
+  int r = 0;
   switch (op_type) {
     case 1:  // addition: top[0] = bottom[0] + bottom[1]
       if (len1 > len2) {
-        xdnn::elementwise_add(
+        r = xdnn::elementwise_add(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
-        xdnn::memcpy_device(ctx.GetRawContext(),
-                            &top_data[len2],
-                            &bottom_data0[len2],
-                            (len1 - len2) * sizeof(float));
+        CHECK_EQ(r, 0);
+        r = xdnn::memcpy_device(ctx.GetRawContext(),
+                                &top_data[len2],
+                                &bottom_data0[len2],
+                                (len1 - len2) * sizeof(float));
+        CHECK_EQ(r, 0);
       } else {
-        xdnn::elementwise_add(
+        r = xdnn::elementwise_add(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len1);
+        CHECK_EQ(r, 0);
       }
       break;
     case 2:  // substraction: top[0] = bottom[0] - bottom[1]
       if (len1 > len2) {
-        xdnn::elementwise_sub(
+        r = xdnn::elementwise_sub(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
-        xdnn::memcpy_device(ctx.GetRawContext(),
-                            &top_data[len2],
-                            &bottom_data0[len2],
-                            (len1 - len2) * sizeof(float));
+        CHECK_EQ(r, 0);
+        r = xdnn::memcpy_device(ctx.GetRawContext(),
+                                &top_data[len2],
+                                &bottom_data0[len2],
+                                (len1 - len2) * sizeof(float));
+        CHECK_EQ(r, 0);
       } else {
-        xdnn::elementwise_sub(
+        r = xdnn::elementwise_sub(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len1);
+        CHECK_EQ(r, 0);
       }
       break;
     case 3:  // multiplication: top[0] = bottom[0] * bottom[1]
       if (len1 > len2) {
-        xdnn::elementwise_mul(
+        r = xdnn::elementwise_mul(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
-        xdnn::memcpy_device(ctx.GetRawContext(),
-                            &top_data[len2],
-                            &bottom_data0[len2],
-                            (len1 - len2) * sizeof(float));
+        CHECK_EQ(r, 0);
+        r = xdnn::memcpy_device(ctx.GetRawContext(),
+                                &top_data[len2],
+                                &bottom_data0[len2],
+                                (len1 - len2) * sizeof(float));
+        CHECK_EQ(r, 0);
       } else {
-        xdnn::elementwise_mul(
+        r = xdnn::elementwise_mul(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len1);
+        CHECK_EQ(r, 0);
       }
       break;
     default:

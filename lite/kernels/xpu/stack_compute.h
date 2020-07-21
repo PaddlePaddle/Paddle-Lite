@@ -14,10 +14,9 @@
 
 #pragma once
 
-#include <memory>
 #include <vector>
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
-#include "lite/kernels/xpu/utils.h"  // XPUFreeDeleter
 
 namespace paddle {
 namespace lite {
@@ -35,7 +34,7 @@ class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~StackCompute() = default;
 
  private:
-  std::unique_ptr<void, XPUFreeDeleter> x_ptr_guard_;
+  XPUScratchPadGuard x_ptr_guard_;
   std::vector<const float*> x_ptr_cpu_;
 };
 

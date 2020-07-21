@@ -22,16 +22,19 @@ namespace kernels {
 namespace xpu {
 
 void XPUMmdnnSearchAttentionCompute::PrepareForRun() {
-  offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  pad_begin_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  w_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
+  offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  pad_begin_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  w_max_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(8 * sizeof(float), false /* use_l3 */);
   buffer_at_l3_guard_ = TargetWrapperXPU::MallocScratchPad(
       5 * L3_SLOT_SIZE * sizeof(float), false /* use_l3 */);
   buffer_at_gm_guard_ = TargetWrapperXPU::MallocScratchPad(
       5 * GM_SLOT_SIZE * sizeof(float), false /* use_l3 */);
 
-  offset_cpu.reset(new int[64]);
-  pad_begin_cpu.reset(new int[64]);
+  offset_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  pad_begin_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 void XPUMmdnnSearchAttentionCompute::Run() {
@@ -72,18 +75,18 @@ void XPUMmdnnSearchAttentionCompute::Run() {
   }
   offset_cpu[batch] = offset[batch];
 
-  xpu_memcpy(offset_xpu_guard_->addr_,
-             offset_cpu.get(),
-             offset.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(pad_begin_xpu_guard_->addr_,
-             pad_begin_cpu.get(),
-             batch * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(w_max_xpu_guard_->addr_,
-             maxs_cpu,
-             8 * sizeof(float),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(offset_xpu_guard_->addr_,
+                      offset_cpu.get(),
+                      offset.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(pad_begin_xpu_guard_->addr_,
+                      pad_begin_cpu.get(),
+                      batch * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(w_max_xpu_guard_->addr_,
+                      maxs_cpu,
+                      8 * sizeof(float),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int* offset_xpu = reinterpret_cast<int*>(offset_xpu_guard_->addr_);
   int* pad_begin_xpu = reinterpret_cast<int*>(pad_begin_xpu_guard_->addr_);
@@ -115,90 +118,99 @@ void XPUMmdnnSearchAttentionCompute::Run() {
   }
 
   const auto* bottom_data = X->data<float>();
-  xdnn::search_sequence_pad_depad(ctx.GetRawContext(),
-                                  const_cast<float*>(bottom_data),
-                                  group_padding_output,
-                                  offset_xpu,
-                                  max_seq,
-                                  batch,
-                                  dim1,
-                                  0);  // is_depad = 0
+  int r = 0;
+  r = xdnn::search_sequence_pad_depad(ctx.GetRawContext(),
+                                      const_cast<float*>(bottom_data),
+                                      group_padding_output,
+                                      offset_xpu,
+                                      max_seq,
+                                      batch,
+                                      dim1,
+                                      0);  // is_depad = 0
+  CHECK_EQ(r, 0);
   // do-findmax
-  xdnn::findmax<float>(ctx.GetRawContext(),
-                       group_padding_output,
-                       batch * max_seq * dim1,
-                       maxs_xpu);
-  xdnn::gemm_int16_maxptr<float, int16_t, float>(
-      ctx.GetRawContext(),
-      false,
-      true,  // trans_a, trans_b
-      batch * max_seq,
-      dim1,
-      dim1,  // m, n, k
-      1.0f,
-      group_padding_output,
-      dim1,  // alpha, data_a, lda
-      w_data,
-      dim1,
-      0.0f,  // data_b, ldb, beta
-      seq_fc_output,
-      dim1,
-      b_data,  // data_c, ldc, bias
-      xdnn::Activation_t::LINEAR,
-      maxs_xpu,
-      maxs_xpu + 4,
-      nullptr);  // max_a, max_b, max_c
-  xdnn::search_aligned_mat_mul(ctx.GetRawContext(),
-                               0,
-                               1,
-                               batch,
-                               max_seq,
-                               max_seq,
-                               dim1,
-                               alpha0,
-                               group_padding_output,
-                               dim1,
-                               seq_fc_output,
-                               dim1,
-                               batchgemm0_output,
-                               max_seq);
-  xdnn::search_pad_mask(ctx.GetRawContext(),
-                        batchgemm0_output,
-                        attention_output,
-                        pad_begin_xpu,
-                        batch,
-                        max_seq,
-                        max_seq,
-                        batch,
-                        mask);
-  xdnn::softmax2d_forward(ctx.GetRawContext(),
-                          attention_output,
-                          seq_softmax_output,
-                          batch * max_seq,
-                          max_seq,
-                          true);
-  xdnn::search_aligned_mat_mul(ctx.GetRawContext(),
-                               0,
-                               0,
-                               batch,
-                               max_seq,
-                               dim1,
-                               max_seq,
-                               alpha1,
-                               seq_softmax_output,
-                               max_seq,
-                               group_padding_output,
-                               dim1,
-                               batchgemm1_output,
-                               dim1);
-  xdnn::search_sequence_pad_depad(ctx.GetRawContext(),
-                                  top_data,
-                                  batchgemm1_output,
-                                  offset_xpu,
-                                  max_seq,
-                                  batch,
-                                  dim1,
-                                  1);  // is_depad = 1
+  r = xdnn::findmax<float>(ctx.GetRawContext(),
+                           group_padding_output,
+                           batch * max_seq * dim1,
+                           maxs_xpu);
+  CHECK_EQ(r, 0);
+  r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
+      ctx.GetRawContext(),        /* ctx */
+      false,                      /* trans_a */
+      true,                       /* trans_b */
+      batch * max_seq,            /* m */
+      dim1,                       /* n */
+      dim1,                       /* k */
+      1.0f,                       /* alpha */
+      group_padding_output,       /* data_a */
+      dim1,                       /* lda */
+      w_data,                     /* data_b */
+      dim1,                       /* ldb */
+      0.0f,                       /* beta */
+      seq_fc_output,              /* data_c */
+      dim1,                       /* ldc */
+      b_data,                     /* bias */
+      xdnn::Activation_t::LINEAR, /* act */
+      maxs_xpu,                   /* max_a */
+      maxs_xpu + 4,               /* max_b */
+      nullptr /* max_c */);
+  CHECK_EQ(r, 0);
+  r = xdnn::search_aligned_mat_mul(ctx.GetRawContext(),
+                                   0,
+                                   1,
+                                   batch,
+                                   max_seq,
+                                   max_seq,
+                                   dim1,
+                                   alpha0,
+                                   group_padding_output,
+                                   dim1,
+                                   seq_fc_output,
+                                   dim1,
+                                   batchgemm0_output,
+                                   max_seq);
+  CHECK_EQ(r, 0);
+  r = xdnn::search_pad_mask(ctx.GetRawContext(),
+                            batchgemm0_output,
+                            attention_output,
+                            pad_begin_xpu,
+                            batch,
+                            max_seq,
+                            max_seq,
+                            batch,
+                            mask);
+  CHECK_EQ(r, 0);
+  r = xdnn::softmax2d_forward(ctx.GetRawContext(),
+                              attention_output,
+                              seq_softmax_output,
+                              batch * max_seq,
+                              max_seq,
+                              true);
+  CHECK_EQ(r, 0);
+  r = xdnn::search_aligned_mat_mul(ctx.GetRawContext(),
+                                   0,
+                                   0,
+                                   batch,
+                                   max_seq,
+                                   dim1,
+                                   max_seq,
+                                   alpha1,
+                                   seq_softmax_output,
+                                   max_seq,
+                                   group_padding_output,
+                                   dim1,
+                                   batchgemm1_output,
+                                   dim1);
+  CHECK_EQ(r, 0);
+  r = xdnn::search_sequence_pad_depad(ctx.GetRawContext(),
+                                      top_data,
+                                      batchgemm1_output,
+                                      offset_xpu,
+                                      max_seq,
+                                      batch,
+                                      dim1,
+                                      1);  // is_depad = 1
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
