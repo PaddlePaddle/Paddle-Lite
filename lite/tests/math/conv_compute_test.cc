@@ -403,12 +403,12 @@ TEST(TestConv5x5DW, test_conv5x5_depthwise) {
 #if 1  /// conv1x1s1
 TEST(TestConv1x1s1, test_conv1x1s1) {
   if (FLAGS_basic_test_1x1) {
-    //for (auto& cin : {1, 3, 8, 11, 32}) {
-    for (auto& cin : { 11, 32}) {
-      //for (auto& cout : {1, 5, 16, 37}) {
-      for (auto& cout : {5, 8,16}) {
-        //for (auto& g : {1, 2}) {
-        for (auto& g : { 2}) {
+    // for (auto& cin : {1, 3, 8, 11, 32}) {
+    for (auto& cin : {11, 32}) {
+      // for (auto& cout : {1, 5, 16, 37}) {
+      for (auto& cout : {5, 8, 16}) {
+        // for (auto& g : {1, 2}) {
+        for (auto& g : {2}) {
           for (auto& flag_bias : {false}) {
             for (auto& flag_act : {0}) {
               std::vector<DDim> dims;
@@ -417,7 +417,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
               }
               DDim weights_dim({cout, cin / g, 1, 1});
               for (auto& batch : {2}) {
-                for (auto& h : { 8, 32}) {
+                for (auto& h : {8, 32}) {
                   dims.push_back(DDim({batch, cin, h, h}));
                 }
               }

@@ -216,7 +216,7 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
           arch_type = kA72;
           break;
         case 0x0C0D:
-	  //RK3288
+          // RK3288
           arch_type = kA19;
           break;
         default:

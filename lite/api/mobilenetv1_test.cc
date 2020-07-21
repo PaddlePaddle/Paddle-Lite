@@ -37,8 +37,14 @@ void TestModel(const std::vector<Place>& valid_places,
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
-  predictor.Build( model_dir,"", "", valid_places,{}, lite_api::LiteModelType::kNaiveBuffer);
-  // predictor.Build("", model_dir, "", valid_places,{}, lite_api::LiteModelType::kNaiveBuffer);
+  predictor.Build(model_dir,
+                  "",
+                  "",
+                  valid_places,
+                  {},
+                  lite_api::LiteModelType::kNaiveBuffer);
+  // predictor.Build("", model_dir, "", valid_places,{},
+  // lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(
@@ -54,21 +60,21 @@ void TestModel(const std::vector<Place>& valid_places,
     flag_in = false;
   }
 
-      FILE* fp_r = nullptr;
+  FILE* fp_r = nullptr;
+  if (flag_in) {
+    fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+  }
+  for (int i = 0; i < item_size; ++i) {
     if (flag_in) {
-      fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+      fscanf(fp_r, "%f\n", &data[i]);
+      // LOG(INFO)<<data[i];
+    } else {
+      data[i] = 1.f;
     }
-    for (int i = 0; i < item_size; ++i) {
-      if (flag_in) {
-        fscanf(fp_r, "%f\n", &data[i]);
-        //LOG(INFO)<<data[i];
-      } else {
-        data[i] = 1.f;
-      }
-    }
-    if (flag_in) {
-      fclose(fp_r);
-    }
+  }
+  if (flag_in) {
+    fclose(fp_r);
+  }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
@@ -105,8 +111,8 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* out = predictor.GetOutput(0);
   const auto* pdata = out->data<float>();
   int step = 50;
-  for(int i = 0; i < out->numel(); i++) {
-    LOG(INFO)<<pdata[i];
+  for (int i = 0; i < out->numel(); i++) {
+    LOG(INFO) << pdata[i];
   }
   // Get target and check result
   VLOG(1) << "valid_places.size():" << valid_places.size();
@@ -130,7 +136,7 @@ void TestModel(const std::vector<Place>& valid_places,
   } else {
     ASSERT_EQ(out->dims().size(), 2);
     ASSERT_EQ(out->dims()[0], 1);
-    //ASSERT_EQ(out->dims()[1], 1000);
+    // ASSERT_EQ(out->dims()[1], 1000);
     double eps = 1e-6;
     for (int i = 0; i < ref.size(); ++i) {
       for (int j = 0; j < ref[i].size(); ++j) {

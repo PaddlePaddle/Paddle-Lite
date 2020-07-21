@@ -31,8 +31,8 @@ inline double GetCurrentUS() {
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
-static float all_time_gemmlike=0;
-static float all_time_gemmlike_v=0;
+static float all_time_gemmlike = 0;
+static float all_time_gemmlike_v = 0;
 static int cnt_gemmlike = 0;
 int loop = 1;
 int PoolOutputSize(int input_size,
@@ -244,17 +244,17 @@ TEST(pool_arm, compute) {
 #if 1
   // speedup for ci
   for (auto pooling_type : {"max"}) {
-    for (auto ceil_mode : { false}) {
-      for (auto global_pooling : { false}) {
+    for (auto ceil_mode : {false}) {
+      for (auto global_pooling : {false}) {
         for (auto exclusive : {true}) {
-          for (auto ksize : { 3}) {
+          for (auto ksize : {3}) {
             for (auto stride : {2}) {
-              for (auto pad_left : { 1}) {
-                for (auto pad_right : { 1}) {
-                  for (auto pad_top : { 1}) {
-                    for (auto pad_bottom : { 1}) {
+              for (auto pad_left : {1}) {
+                for (auto pad_right : {1}) {
+                  for (auto pad_top : {1}) {
+                    for (auto pad_bottom : {1}) {
                       for (auto n : {1}) {
-                        for (auto c : { 24}) {
+                        for (auto c : {24}) {
 #if 0
                             for (auto pooling_type : {"max", "avg"}) {
     for (auto ceil_mode : {true, false}) {
@@ -268,7 +268,7 @@ TEST(pool_arm, compute) {
                     for (auto pad_bottom : {0, 1}) {
                       for (auto n : {1, 2}) {
                         for (auto c : {1, 3}) {
-#endif 
+#endif
 #if 1
                           for (auto h : {80}) {
                             for (auto w : {80}) {
@@ -297,7 +297,7 @@ TEST(pool_arm, compute) {
                                 x_data[i] = sign * (i % 128);
                                 x_data[i] = i;
                               }
-              
+
                               // fill param
                               param.x = &x;
                               param.output = &output;
@@ -341,28 +341,29 @@ TEST(pool_arm, compute) {
                               // cnt_gemmlike
                               auto start = GetCurrentUS();
 
-
-                              for(int i = 0; i < loop; i++) {
+                              for (int i = 0; i < loop; i++) {
                                 pool.Run();
                               }
 
-                               duration = (GetCurrentUS() - start);
+                              duration = (GetCurrentUS() - start);
                               // cnt_gemmlike++;
-                              LOG(INFO) << "cnt_gemmlike:" <<loop << " all time:" << duration<< " ms";
-
-
+                              LOG(INFO) << "cnt_gemmlike:" << loop
+                                        << " all time:" << duration << " ms";
 
                               // compute ref
                               param.output = &output_ref;
                               pool_compute_ref(param);
-                              for (int i = 0; i < 100; i+=1) {
-                                LOG(INFO)<<"o: " << output_data[i]<<"  o_ref:"<<output_ref_data[i]<<"  diff:"<<output_data[i] - output_ref_data[i];
+                              for (int i = 0; i < 100; i += 1) {
+                                LOG(INFO)
+                                    << "o: " << output_data[i]
+                                    << "  o_ref:" << output_ref_data[i]
+                                    << "  diff:"
+                                    << output_data[i] - output_ref_data[i];
                               }
 
                               // compare
                               for (int i = 0; i < output.dims().production();
                                    i++) {
-                                     
                                 EXPECT_NEAR(
                                     output_data[i], output_ref_data[i], 1e-4);
                               }
