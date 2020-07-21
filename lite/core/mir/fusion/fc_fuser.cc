@@ -15,11 +15,60 @@
 #include "lite/core/mir/fusion/fc_fuser.h"
 #include <memory>
 #include <vector>
+#include "lite/kernels/arm/fc_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+
+///////////////////////////////////////////////////////////////////////////////
+// Function: TransFcWeights
+// Usage: Judge if GEMM is used. If GEMM is used in FC, corresponding weight
+// data will be transposed.
+///////////////////////////////////////////////////////////////////////////////
+void TransFcWeights(Tensor* weight,
+                    Tensor* input,
+                    Tensor* output,
+                    Tensor* bias,
+                    int m_,
+                    const std::vector<float>& scale) {
+  auto bias_flag = bias->mutable_data<bool>();
+  auto x_dims = input->dims();
+
+#define CHECK_FC_USE_GEMM(input_type__, output_type__)                       \
+  flag_gemm_ = paddle::lite::kernels::arm::check_fc_use_gemm<input_type__,   \
+                                                             output_type__>( \
+      m_, scale, bias_flag);
+
+  bool flag_gemm_;
+  switch (input->precision()) {
+    case PRECISION(kFloat):
+      flag_gemm_ = CHECK_FC_USE_GEMM(PRECISION(kFloat), PRECISION(kFloat));
+      break;
+    case PRECISION(kInt8):
+      switch (output->precision()) {
+        case PRECISION(kFloat):
+          flag_gemm_ = CHECK_FC_USE_GEMM(PRECISION(kInt8), PRECISION(kFloat));
+          break;
+        case PRECISION(kInt8):
+          flag_gemm_ = CHECK_FC_USE_GEMM(PRECISION(kInt8), PRECISION(kInt8));
+          break;
+        default:
+          LOG(FATAL) << "Unsupported output precision type";
+      }
+      break;
+    default:
+      LOG(FATAL) << "Unsupported input precision type";
+  }
+
+  if (!flag_gemm_) {
+    Tensor tmp_tensor;
+    paddle::lite::kernels::arm::fc_trans_weights<PRECISION(kInt8)>(*weight,
+                                                                   &tmp_tensor);
+    weight->CopyDataFrom(tmp_tensor);
+  }
+}
 
 void FcFuser::BuildPattern() {
   // create nodes.
@@ -104,6 +153,27 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetInputScale(matched.at("x")->arg()->name, x_scale_vct);
     op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct);
   }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Judge if GEMM is used in FC.
+  ///////////////////////////////////////////////////////////////////////////////
+  auto* scope = matched.at("W")->stmt()->op()->scope();
+  auto* weight =
+      scope->FindVar(matched.at("W")->arg()->name)->GetMutable<lite::Tensor>();
+  auto* input = scope->FindVar(matched.at("Input")->arg()->name)
+                    ->GetMutable<lite::Tensor>();
+  auto* output = scope->FindVar(matched.at("Out")->arg()->name)
+                     ->GetMutable<lite::Tensor>();
+  auto* bias =
+      scope->FindVar(matched.at("b")->arg()->name)->GetMutable<lite::Tensor>();
+  auto x_dims = input->dims();
+  auto m_ = x_dims
+                .Slice(0,
+                       matched.at("mul")->stmt()->op_info()->GetAttr<int>(
+                           "x_num_col_dims"))
+                .production();
+  auto weight_scale = op_desc.GetInputScale(matched.at("W")->arg()->name);
+  TransFcWeights(weight, input, output, bias, m_, weight_scale);
 
   return op_desc;
 }
