@@ -155,7 +155,7 @@ TEST(nearest_interp_image2d, compute) {
               auto *x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
               auto *y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
               auto *y_data_ref = y_ref.mutable_data<float>(TARGET(kARM));
-              memset(reinterpret_cast<char*>(y_data_ref), y_ref.numel(), 0);
+              memset(reinterpret_cast<char *>(y_data_ref), y_ref.numel(), 0);
               auto *mapped_x = static_cast<float *>(TargetWrapperCL::Map(
                   x_data, 0, sizeof(float) * x_dim.production()));
               auto *mapped_y = static_cast<float *>(TargetWrapperCL::Map(
