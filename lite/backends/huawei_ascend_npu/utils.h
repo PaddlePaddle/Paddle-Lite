@@ -23,7 +23,7 @@
 #include "lite/utils/cp_logging.h"
 
 /*
- * This file contains some MLU specific uitls.
+ * This file contains some Huawei Ascend NPU specific uitls.
  */
 
 #define ACL_CALL(msg)                                       \
