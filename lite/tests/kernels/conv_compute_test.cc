@@ -413,6 +413,9 @@ TEST(Conv2d, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 5e-2;  // Using fp16 in NPU
 #else
   return;
 #endif

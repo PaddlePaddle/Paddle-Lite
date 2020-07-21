@@ -61,6 +61,7 @@ using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
+using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -93,6 +94,37 @@ class Context<TargetType::kNPU> {
 
  private:
   static std::string subgraph_model_cache_dir_;
+};
+#endif
+
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+template <>
+class Context<TargetType::kHuaweiAscendNPU> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(HuaweiAscendNPUContext* ctx) {}
+
+  HuaweiAscendNPUContext& operator=(const HuaweiAscendNPUContext& ctx) {
+    return *this;
+  }
+  std::string name() const { return "HuaweiAscendNPUContext"; }
+
+  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir() {
+    return subgraph_model_cache_dir_;
+  }
+
+  static void SetHuaweiAscendDeviceID(int huawei_ascend_device_id) {
+    huawei_ascend_device_id_ = huawei_ascend_device_id;
+  }
+  static int HuaweiAscendDeviceID() { return huawei_ascend_device_id_; }
+
+ private:
+  static thread_local std::string subgraph_model_cache_dir_;
+  static thread_local int huawei_ascend_device_id_;
 };
 #endif
 
@@ -385,6 +417,13 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+      case TARGET(kHuaweiAscendNPU):
+        kernel_contexts_[TargetType::kHuaweiAscendNPU]
+            .As<HuaweiAscendNPUContext>()
+            .CopySharedTo(&ctx->As<HuaweiAscendNPUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_APU
       case TARGET(kAPU):
         kernel_contexts_[TargetType::kAPU].As<APUContext>().CopySharedTo(
@@ -465,6 +504,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+    InitContext<TargetType::kHuaweiAscendNPU, HuaweiAscendNPUContext>();
 #endif
 #ifdef LITE_WITH_APU
     InitContext<TargetType::kAPU, APUContext>();

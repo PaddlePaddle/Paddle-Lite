@@ -24,7 +24,7 @@ namespace arena {
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
   static const std::set<TargetType> subgraph_op_supported_targets(
-      {TARGET(kNPU), TARGET(kXPU)});
+      {TARGET(kNPU), TARGET(kXPU), TARGET(kHuaweiAscendNPU)});
   bool enable_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
                             subgraph_op_supported_targets.end();
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
@@ -47,7 +47,15 @@ void TestCase::CreateInstruction() {
     auto out_names = sub_block_op_desc->output_vars();
     op_desc_->SetInput("Inputs", in_names);
     op_desc_->SetOutput("Outputs", out_names);
-    op_desc_->SetAttr<std::vector<std::string>>("input_data_names", in_names);
+    // filter only data op (not const op by persisiable)
+    std::vector<std::string> in_data_names;
+    for (auto name : in_names) {
+      if (!(inst_scope_->FindTensor(name)->persistable())) {
+        in_data_names.push_back(name);
+      }
+    }
+    op_desc_->SetAttr<std::vector<std::string>>("input_data_names",
+                                                in_data_names);
     op_desc_->SetAttr<std::vector<std::string>>("output_data_names", out_names);
     op = LiteOpRegistry::Global().Create(op_desc().Type());
     static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(sub_block_desc);
