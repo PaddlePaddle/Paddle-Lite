@@ -20,7 +20,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
-
+#ifdef LITE_WITH_ARM
 template <typename Dtype>
 void naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
   int k = 0;
@@ -131,6 +131,7 @@ void TransFcWeights(Tensor* weight,
     weight->CopyDataFrom(tmp_tensor);
   }
 }
+#endif
 
 void FcFuser::BuildPattern() {
   // create nodes.
@@ -216,6 +217,7 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct);
   }
 
+#ifdef LITE_WITH_ARM
   ///////////////////////////////////////////////////////////////////////////////
   // Judge if GEMM is used in FC.
   ///////////////////////////////////////////////////////////////////////////////
@@ -236,7 +238,7 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
                 .production();
   auto weight_scale = op_desc.GetInputScale(matched.at("W")->arg()->name);
   TransFcWeights(weight, input, output, bias, m_, weight_scale);
-
+#endif
   return op_desc;
 }
 
