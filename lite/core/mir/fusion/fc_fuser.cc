@@ -15,7 +15,6 @@
 #include "lite/core/mir/fusion/fc_fuser.h"
 #include <memory>
 #include <vector>
-//#include "lite/kernels/arm/fc_compute.h"
 
 namespace paddle {
 namespace lite {
