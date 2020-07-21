@@ -1091,7 +1091,7 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
                                  kernel_,
                                  cl::NullRange,
                                  global_work_size_,
-                                 local_work_size_,
+                                 cl::NullRange,
                                  nullptr,
                                  event_);
   CL_CHECK_FATAL(status_);
