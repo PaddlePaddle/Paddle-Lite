@@ -304,7 +304,6 @@ void Program::Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
     for (size_t op_idx = 0; op_idx < op_size; ++op_idx) {
       auto* op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
       auto op_type = op_desc->Type();
-      // if (op_type == "feed" || op_type == "fetch") continue;
       VLOG(4) << "create Op [" << op_type << "]";
       auto op = LiteOpRegistry::Global().Create(op_type);
       CHECK(op) << "no Op found for " << op_type;

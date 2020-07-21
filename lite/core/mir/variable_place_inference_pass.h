@@ -79,10 +79,10 @@ class VariablePlaceInferencePass : public DebugPass {
   }
 
   // Update a's kUnk fields from b's fields.
-  void UpdateTypeFrom(const Type*& a, const Type* b) {  // NOLINT
-    auto target = a->target();
-    auto precision = a->precision();
-    auto layout = a->layout();
+  void UpdateTypeFrom(const Type** a, const Type* b) {
+    auto target = (*a)->target();
+    auto precision = (*a)->precision();
+    auto layout = (*a)->layout();
     if (target == TARGET(kUnk)) {
       target = b->target();
     }
@@ -92,10 +92,10 @@ class VariablePlaceInferencePass : public DebugPass {
     if (layout == DATALAYOUT(kUnk)) {
       layout = b->layout();
     }
-    if (a->IsTensor() && b->IsTensor()) {
-      a = LiteType::GetTensorTy(target, precision, layout);
-    } else if (a->IsTensorList() && b->IsTensorList()) {
-      a = LiteType::GetTensorListTy(target, precision, layout);
+    if ((*a)->IsTensor() && b->IsTensor()) {
+      *a = LiteType::GetTensorTy(target, precision, layout);
+    } else if ((*a)->IsTensorList() && b->IsTensorList()) {
+      *a = LiteType::GetTensorListTy(target, precision, layout);
     }
   }
 
@@ -137,23 +137,23 @@ class VariablePlaceInferencePass : public DebugPass {
       for (auto* in_node : node->inlinks) {
         auto& var = in_node->AsArg();
         const auto& var_name = var.name;
-        auto& var_type = var.type;
+        auto* var_type = &var.type;
         std::string arg_name;
         CHECK(op_info->GetInputArgname(var_name, &arg_name))
             << "Can not find the input argument for var " << var_name;
         VLOG(4) << " - input arg name:" << arg_name << " var name:" << var_name;
         const auto* decl_type = kernel.GetInputDeclType(arg_name);
-        if (!var_type) {
+        if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           if (var.is_weight) {
             SetWeightType(in_node, *decl_type, with_targets);
           } else {
-            var_type = decl_type;
+            *var_type = decl_type;
           }
-        } else if (!var_type->place().is_valid()) {
+        } else if (!(*var_type)->place().is_valid()) {
           // If is quantization, infer the Int8 type.
           if (decl_type->precision() == PRECISION(kInt8)) {
-            var_type = decl_type;
+            *var_type = decl_type;
           } else {
             UpdateTypeFrom(var_type, decl_type);
           }
@@ -162,26 +162,26 @@ class VariablePlaceInferencePass : public DebugPass {
       for (auto* out_node : node->outlinks) {
         auto& var = out_node->AsArg();
         const auto& var_name = var.name;
-        auto& var_type = var.type;
+        auto* var_type = &var.type;
         std::string arg_name;
         CHECK(op_info->GetOutputArgname(var_name, &arg_name))
             << "Can not find the output argument for var " << var_name;
         VLOG(4) << " - output arg name:" << arg_name
                 << " var name:" << var_name;
         const auto* decl_type = kernel.GetOutputDeclType(arg_name);
-        if (!var_type) {
+        if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           if (var.is_weight) {
             SetWeightType(out_node, *decl_type, with_targets);
           } else {
-            var_type = decl_type;
+            *var_type = decl_type;
           }
-        } else if (!var_type->place().is_valid()) {
+        } else if (!(*var_type)->place().is_valid()) {
           // If is quantization, infer the Int8 type.
           if (decl_type->precision() == PRECISION(kInt8) ||
               (decl_type->precision() == PRECISION(kFP16) &&
                decl_type->target() != TARGET(kOpenCL))) {
-            var_type = decl_type;
+            *var_type = decl_type;
           } else {
             UpdateTypeFrom(var_type, decl_type);
           }

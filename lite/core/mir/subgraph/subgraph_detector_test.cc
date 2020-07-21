@@ -145,7 +145,6 @@ TEST(Subgraph, detect_simple_model) {
   std::vector<Place> valid_places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
   // Build a simple network
-  program_desc->BlocksSize();
   auto* block_desc = program_desc->AddBlock<cpp::BlockDesc>();
   block_desc->ClearOps();
   block_desc->ClearVars();

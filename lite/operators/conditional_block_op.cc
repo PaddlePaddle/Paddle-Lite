@@ -29,16 +29,20 @@ bool ConditionalBlockOp::CheckShape() const {
 
 bool ConditionalBlockOp::InferShapeImpl() const { return true; }
 
-bool ConditionalBlockOp::AttachImpl(const cpp::OpDesc &op_desc, Scope *scope) {
+bool ConditionalBlockOp::AttachImpl(const cpp::OpDesc& op_desc, Scope* scope) {
   auto condition = op_desc.Input("Cond").front();
   param_.cond = scope->FindVar(condition)->GetMutable<lite::Tensor>();
   auto inputs = op_desc.Input("Input");
-  for (auto var : inputs) {
-    param_.inputs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  for (const auto& input : inputs) {
+    auto* var = scope->FindVar(input);
+    CHECK(var);
+    param_.inputs.push_back(var->GetMutable<lite::Tensor>());
   }
   auto outs = op_desc.Output("Out");
-  for (auto var : outs) {
-    param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  for (const auto& out : outs) {
+    auto* var = scope->FindVar(out);
+    CHECK(var);
+    param_.outs.push_back(var->GetMutable<lite::Tensor>());
   }
   param_.is_scalar_condition = op_desc.GetAttr<bool>("is_scalar_condition");
   // obtain sub_block in core program.cc

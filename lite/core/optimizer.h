@@ -37,6 +37,9 @@ namespace lite {
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
  * program and export an optimized program.
  */
+// TODO(hong1986032) Support the following passes for the subblocks
+const std::set<std::string> kSubblockUnsupportedPasses(
+    {"memory_optimize_pass"});
 class Optimizer {
  public:
   Optimizer() {}
@@ -256,11 +259,8 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        // TODO(hong1986032) Support the following passes in the subblocks
-        static const std::set<std::string> subblock_unsupported_passes(
-            {"memory_optimize_pass"});
-        if (subblock_unsupported_passes.find(x) !=
-            subblock_unsupported_passes.end()) {
+        // Check the pass whether it is supported for processing subblocks
+        if (kSubblockUnsupportedPasses.count(x)) {
           pass->Apply(graphs_[kRootBlockIdx]);
         } else {
           for (auto& graph : graphs_) {

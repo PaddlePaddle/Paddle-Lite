@@ -28,26 +28,6 @@ namespace lite {
 namespace kernels {
 namespace bm {
 
-bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
-  // Obtain the origin input tensors, and create the origin output
-  // tensors(Don't try to access them before launch the device program or the
-  // origin program)
-  PrepareWorkspaceForOriginProgram();
-  // Create the device input and output tensors, but don't initialize them
-  // with the dimensions
-  device_inputs_.resize(input_names_.size());
-  for (int i = 0; i < input_names_.size(); i++) {
-    device_inputs_[i].reset(new hiai::AiTensor);
-    CHECK(device_inputs_[i]);
-  }
-  device_outputs_.resize(output_names_.size());
-  for (int i = 0; i < output_names_.size(); i++) {
-    device_outputs_[i].reset(new hiai::AiTensor);
-    CHECK(device_outputs_[i]);
-  }
-  return true;
-}
-
 bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   subgraph::bm::Graph graph;
@@ -94,14 +74,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
   net_info_ = bmrt_get_network_info(bmrt_hd_, net_names_[0]);
   auto& stage = net_info_->stages[0];
   // input
-  origin_idims_.resize(input_names_.size());
-  origin_itensors_.resize(input_names_.size());
   device_inputs_.resize(input_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
     origin_itensors_[i] =
         exec_scope_->FindMutableTensor(net_info_->input_names[i]);
     CHECK(origin_itensors_[i]);
-    origin_idims_[i] = origin_itensors_[i]->dims();
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
@@ -114,8 +91,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
                             stage.input_shapes[i]);
   }
   // output
-  origin_odims_.resize(output_names_.size());
-  origin_otensors_.resize(output_names_.size());
   device_outputs_.resize(net_info_->output_num);
   int out_index = 0;
   for (int i = 0; i < output_names_.size(); i++) {
@@ -130,7 +105,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
     CHECK(p_mem != nullptr);
     if (outname_map_.find(net_info_->output_names[i]) != outname_map_.end()) {
       origin_otensors_[out_index] = t_cur;
-      origin_odims_[out_index] = origin_otensors_[out_index]->dims();
       origin_otensors_[out_index]->mutable_data<float>();
       out_index += 1;
     }

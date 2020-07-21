@@ -21,15 +21,15 @@ namespace lite {
 namespace operators {
 
 bool AssignOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.X != nullptr || param_.X_array != nullptr);
-  CHECK_OR_FALSE(param_.Out != nullptr || param_.Out_array != nullptr);
+  CHECK_OR_FALSE(param_.X || param_.X_array);
+  CHECK_OR_FALSE(param_.Out || param_.Out_array);
   return true;
 }
 
 bool AssignOpLite::InferShapeImpl() const {
-  if (param_.X != nullptr) {
+  if (param_.X) {
     param_.Out->Resize(param_.X->dims());
-  } else if (param_.X_array != nullptr) {
+  } else if (param_.X_array) {
     param_.Out_array->resize(param_.Out_array->size());
   } else {
     LOG(FATAL) << "x or x_array must be set.";
