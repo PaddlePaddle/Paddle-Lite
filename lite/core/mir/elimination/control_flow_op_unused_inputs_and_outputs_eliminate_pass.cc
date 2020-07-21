@@ -38,10 +38,10 @@ namespace mir {
 //             in_f      |   in_z(unused node)
 //                  \    |    /
 //                   \   |   /
-//        in_w ------- while ------- in_n(unused_node)
-//                    /  |  \
-//                   /   |   \
-// (unused node)out_y    |  out_z(unused node)
+//        in_w ------- while ------- in_y(unused_node)
+//                    /  |
+//                   /   |
+// (unused node)out_y    |
 //                     out_x
 //
 // graph[1]: sub block
