@@ -29,12 +29,13 @@ void LookupTableCompute::Run() {
   int embed_dim = param.W->dims()[1];
 
   int r = xdnn::embedding<float, int64_t>(
-      ctx.GetRawContext(),        /* context */
-      num,                        /* num */
-      param.Ids->data<int64_t>(), /* indices */
-      embed_dim,                  /* embed_dim */
-      param.W->data<float>(),     /* table */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* top */);
+      ctx.GetRawContext(),                          /* context */
+      num,                                          /* num */
+      param.Ids->data<int64_t>(),                   /* indices */
+      embed_dim,                                    /* embed_dim */
+      param.W->data<float>(),                       /* table */
+      param.Out->mutable_data<float>(TARGET(kXPU)), /* top */
+      param.padding_idx /* padding_idx */);
   CHECK_EQ(r, 0);
 }
 

@@ -41,6 +41,29 @@ class XPUMmdnnBidEmbGrnnAttOp : public OpLite {
   mutable XPUMmdnnBidEmbGrnnAttParam param_;
 };
 
+class XPUMmdnnBidEmbGrnnAttOp2 : public OpLite {
+ public:
+  XPUMmdnnBidEmbGrnnAttOp2() {}
+
+  explicit XPUMmdnnBidEmbGrnnAttOp2(const std::string &op_type)
+      : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override {
+    return "XPUMmdnnBidEmbGrnnAttOp2";
+  }
+
+ private:
+  mutable XPUMmdnnBidEmbGrnnAttParam2 param_;
+};
+
 class XPUMmdnnBidEmbAttOp : public OpLite {
  public:
   XPUMmdnnBidEmbAttOp() {}
