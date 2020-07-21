@@ -113,11 +113,22 @@ void TransFcWeights(Tensor* weight,
       break;
     default:
       LOG(FATAL) << "Unsupported input precision type";
+      break;
   }
 
   if (!flag_gemm_) {
     Tensor tmp_tensor;
-    fc_trans_weights<PRECISION(kInt8)>(*weight, &tmp_tensor);
+    switch (input->precision()) {
+      case PRECISION(kFloat):
+        fc_trans_weights<PRECISION(kFloat)>(*weight, &tmp_tensor);
+        break;
+      case PRECISION(kInt8):
+        fc_trans_weights<PRECISION(kInt8)>(*weight, &tmp_tensor);
+        break;
+      default:
+        LOG(FATAL) << "Unsupported input precision type";
+        break;
+    }
     weight->CopyDataFrom(tmp_tensor);
   }
 }
