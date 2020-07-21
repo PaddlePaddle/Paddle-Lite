@@ -35,13 +35,13 @@ class ProgramDesc : public ProgramDescAPI {
   }
 
   void Init(const std::vector<char>& buf) {
-    CHECK(buf.data() != nullptr);
+    CHECK(buf.data());
     buf_ = buf;
     InitProgramDesc();
   }
 
   void Init(std::vector<char>&& buf) {
-    CHECK(buf.data() != nullptr);
+    CHECK(buf.data());
     buf_ = std::move(buf);
     InitProgramDesc();
   }

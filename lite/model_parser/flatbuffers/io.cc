@@ -22,7 +22,7 @@ namespace lite {
 namespace fbs {
 
 void LoadModel(const std::string& path, ProgramDesc* prog) {
-  CHECK(prog != nullptr);
+  CHECK(prog);
   FILE* file = fopen(path.c_str(), "rb");
   fseek(file, 0, SEEK_END);
   int64_t length = ftell(file);

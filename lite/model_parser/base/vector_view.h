@@ -63,19 +63,19 @@ class VectorView {
     return cvec_->operator[](i);
   }
   typename Traits::const_iterator begin() const {
-    if (cvec_ == nullptr) {
+    if (!cvec_) {
       return typename Traits::const_iterator();
     }
     return cvec_->begin();
   }
   typename Traits::const_iterator end() const {
-    if (cvec_ == nullptr) {
+    if (!cvec_) {
       return typename Traits::const_iterator();
     }
     return cvec_->end();
   }
   size_t size() const {
-    if (cvec_ == nullptr) {
+    if (!cvec_) {
       return 0;
     }
     return cvec_->size();

@@ -107,19 +107,19 @@ class VectorView<std::string, Flatbuffers> {
   }
   std::string operator[](size_t i) const { return cvec_->operator[](i)->str(); }
   vector_view::FBSStrIterator begin() const {
-    if (cvec_ == nullptr) {
+    if (!cvec_) {
       return vector_view::FBSStrIterator();
     }
     return vector_view::FBSStrIterator(cvec_->begin());
   }
   vector_view::FBSStrIterator end() const {
-    if (cvec_ == nullptr) {
+    if (!cvec_) {
       return vector_view::FBSStrIterator();
     }
     return vector_view::FBSStrIterator(cvec_->end());
   }
   size_t size() const {
-    if (cvec_ == nullptr) {
+    if (!cvec_) {
       return 0;
     }
     return cvec_->size();
