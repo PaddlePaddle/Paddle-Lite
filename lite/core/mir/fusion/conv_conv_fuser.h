@@ -84,8 +84,6 @@ class ConvConvFuser : public FuseBase {
     const float* weights = weight_tensor->data<float>();
     int ic = in_dims[0];
     int oc = weight_dims[0];
-    float* tmp = dout;
-    auto tmp1 = din;
     // out_k = b0[num, j, 1, 1] * w2[k, j, 1, 1]
     if (bias1_tensor) {
       const float* din2 = bias1_tensor->data<float>();
