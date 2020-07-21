@@ -23,14 +23,13 @@ namespace fbs {
 
 void LoadModel(const std::string& path, ProgramDesc* prog) {
   CHECK(prog != nullptr);
-  std::ifstream infile;
-  infile.open(path, std::ios::binary | std::ios::in);
-  infile.seekg(0, std::ios::end);
-  int length = infile.tellg();
-  infile.seekg(0, std::ios::beg);
+  FILE* file = fopen(path.c_str(), "rb");
+  fseek(file, 0, SEEK_END);
+  int64_t length = ftell(file);
+  rewind(file);
   std::vector<char> buf(length);
-  infile.read(buf.data(), length);
-  infile.close();
+  CHECK(fread(buf.data(), 1, length, file));
+  fclose(file);
   prog->Init(std::move(buf));
 }
 
