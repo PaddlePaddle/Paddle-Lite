@@ -180,7 +180,7 @@ TEST(Subgraph, detect_custom_model) {
                  "the path of model files.";
     return;
   }
-  auto program_desc = std::shared_ptr<cpp::ProgramDesc>();
+  auto program_desc = std::make_shared<cpp::ProgramDesc>();
   auto scope = std::make_shared<Scope>();
   LoadModelPb(FLAGS_model_dir,
               FLAGS_model_file,
