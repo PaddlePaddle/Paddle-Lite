@@ -34,6 +34,9 @@ int SubgraphEngine::BuildDeviceProgram() {
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
+  for (size_t i = 0; i < input_names_.size(); i++) {
+    graph.AddNode(input_names_[i]);
+  }
   for (auto& inst : origin_program_) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
