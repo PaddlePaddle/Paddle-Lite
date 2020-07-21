@@ -80,6 +80,7 @@ class LITE_API LightPredictor {
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
   void PrepareFeedFetch();
+  Scope* scope() { return scope_.get(); }
 
  private:
   void Build(const std::string& lite_model_file,

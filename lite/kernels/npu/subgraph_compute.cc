@@ -345,7 +345,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
   if (!device_programs_.count(origin_idims_)) {
     auto device_program = std::make_shared<DeviceProgram>();
     // Obtain the model cache dir from the NPU Context of the subgraph op
-    auto model_cache_dir = ctx_->As<NPUContext>().SubgraphModelCacheDir();
+    auto model_cache_dir =
+        ctx_->As<NPUContext>().SubgraphModelCacheDir(exec_scope_);
     VLOG(3) << "[NPU] Getting subgraph_model_cache_dir: " << model_cache_dir;
     // Check and load if the cached model and configuration file exists
     if (model_cache_dir.empty() ||

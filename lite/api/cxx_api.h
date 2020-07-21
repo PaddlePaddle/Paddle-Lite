@@ -138,6 +138,7 @@ class LITE_API Predictor {
   // get a const tensor according to its name
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
+  Scope* scope() { return scope_.get(); }
 
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
