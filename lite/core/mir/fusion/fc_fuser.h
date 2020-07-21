@@ -17,7 +17,6 @@
 #include <memory>
 #include <string>
 #include "lite/core/mir/pattern_matcher_high_api.h"
-
 namespace paddle {
 namespace lite {
 namespace mir {

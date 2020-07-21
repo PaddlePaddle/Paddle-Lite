@@ -24,41 +24,6 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename Dtype>
-void naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
-  int k = 0;
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < m; ++j) {
-      dout[k++] = din[j * n + i];
-    }
-  }
-}
-
-template <PrecisionType PType>
-void fc_trans_weights(const Tensor& tin, Tensor* tout);
-
-template <>
-void fc_trans_weights<PRECISION(kFloat)>(const Tensor& tin, Tensor* tout) {
-  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
-  int m = tin.dims()[0];
-  int n = tin.dims()[1];
-  tout->Resize({n, m});
-  auto ptr_in = tin.data<float>();
-  auto ptr_out = tout->mutable_data<float>();
-  naive_transpose(ptr_in, ptr_out, m, n);
-}
-
-template <>
-void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
-  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
-  int m = tin.dims()[0];
-  int n = tin.dims()[1];
-  tout->Resize({n, m});
-  auto ptr_in = tin.data<int8_t>();
-  auto ptr_out = tout->mutable_data<int8_t>();
-  naive_transpose(ptr_in, ptr_out, m, n);
-}
-
 template <PrecisionType PType, PrecisionType OutType>
 bool check_fc_use_gemm(int m, const std::vector<float>& scale, bool has_bias) {
   return m > 1;

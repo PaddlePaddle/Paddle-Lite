@@ -15,12 +15,66 @@
 #include "lite/core/mir/fusion/fc_fuser.h"
 #include <memory>
 #include <vector>
-#include "lite/kernels/arm/fc_compute.h"
+//#include "lite/kernels/arm/fc_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+
+template <typename Dtype>
+void naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
+  int k = 0;
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < m; ++j) {
+      dout[k++] = din[j * n + i];
+    }
+  }
+}
+
+template <PrecisionType PType>
+void fc_trans_weights(const Tensor& tin, Tensor* tout);
+
+template <>
+void fc_trans_weights<PRECISION(kFloat)>(const Tensor& tin, Tensor* tout) {
+  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
+  int m = tin.dims()[0];
+  int n = tin.dims()[1];
+  tout->Resize({n, m});
+  auto ptr_in = tin.data<float>();
+  auto ptr_out = tout->mutable_data<float>();
+  naive_transpose(ptr_in, ptr_out, m, n);
+}
+
+template <>
+void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
+  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
+  int m = tin.dims()[0];
+  int n = tin.dims()[1];
+  tout->Resize({n, m});
+  auto ptr_in = tin.data<int8_t>();
+  auto ptr_out = tout->mutable_data<int8_t>();
+  naive_transpose(ptr_in, ptr_out, m, n);
+}
+
+template <PrecisionType PType, PrecisionType OutType>
+bool check_fc_use_gemm(int m, const std::vector<float>& scale, bool has_bias) {
+  return m > 1;
+}
+
+template <>
+bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kFloat)>(
+    int m, const std::vector<float>& scale, bool has_bias) {
+  CHECK(scale.size() > 0) << "Int8 FC param must has weight_scale";
+  return m > 1 && scale.size() == 1;
+}
+
+template <>
+bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kInt8)>(
+    int m, const std::vector<float>& scale, bool has_bias) {
+  CHECK(scale.size() > 0) << "Int8 FC param must has weight_scale";
+  return m > 1 && scale.size() == 1 && !has_bias;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Function: TransFcWeights
@@ -36,10 +90,9 @@ void TransFcWeights(Tensor* weight,
   auto bias_flag = bias->mutable_data<bool>();
   auto x_dims = input->dims();
 
-#define CHECK_FC_USE_GEMM(input_type__, output_type__)                       \
-  flag_gemm_ = paddle::lite::kernels::arm::check_fc_use_gemm<input_type__,   \
-                                                             output_type__>( \
-      m_, scale, bias_flag);
+#define CHECK_FC_USE_GEMM(input_type__, output_type__) \
+  flag_gemm_ =                                         \
+      check_fc_use_gemm<input_type__, output_type__>(m_, scale, bias_flag);
 
   bool flag_gemm_;
   switch (input->precision()) {
@@ -64,8 +117,7 @@ void TransFcWeights(Tensor* weight,
 
   if (!flag_gemm_) {
     Tensor tmp_tensor;
-    paddle::lite::kernels::arm::fc_trans_weights<PRECISION(kInt8)>(*weight,
-                                                                   &tmp_tensor);
+    fc_trans_weights<PRECISION(kInt8)>(*weight, &tmp_tensor);
     weight->CopyDataFrom(tmp_tensor);
   }
 }
