@@ -30,6 +30,7 @@ namespace lite {
 
 typedef enum {
   kAPPLE = 0,
+  kA19 = 19,
   kA53 = 53,
   kA55 = 55,
   kA57 = 57,

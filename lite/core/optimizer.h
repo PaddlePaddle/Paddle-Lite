@@ -180,8 +180,10 @@ class Optimizer {
         "generate_program_pass");
     pass->Apply(graph_);
     auto program = pass->GenProgram();
+    LOG(INFO)<<"GenProgram";
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
+    LOG(INFO)<<"GenProgram end";
     return program;
   }
 

@@ -215,7 +215,7 @@ function make_full_publish_so {
   cmake $root_dir \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
-      -DWITH_TESTING=OFF \
+      -DWITH_TESTING=ON \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \

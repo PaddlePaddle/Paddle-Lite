@@ -117,7 +117,6 @@ TEST(transpose_arm, compute_shape_nchw) {
   for (int i = 0;
        i < input_shape[0] * input_shape[1] * input_shape[2] * input_shape[3];
        i += 4) {
-
     EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
   }
 }
@@ -188,7 +187,6 @@ TEST(transpose2_arm, compute_shape_nchw) {
        i < input_shape[0] * input_shape[1] * input_shape[2] * input_shape[3];
        i += 1) {
     EXPECT_NEAR(output_data[i], output_ref_data[i], 0);
-
   }
 }
 

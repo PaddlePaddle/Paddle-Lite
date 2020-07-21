@@ -26,6 +26,15 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+inline double GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
+static float all_time_gemmlike=0;
+static float all_time_gemmlike_v=0;
+static int cnt_gemmlike = 0;
+int loop = 1;
 int PoolOutputSize(int input_size,
                    int filter_size,
                    int pad_left,
@@ -232,9 +241,22 @@ TEST(pool_arm, compute) {
   lite::Tensor x;
   lite::Tensor output;
   lite::Tensor output_ref;
-#if 0
+#if 1
   // speedup for ci
-  for (auto pooling_type : {"max", "avg"}) {
+  for (auto pooling_type : {"max"}) {
+    for (auto ceil_mode : { false}) {
+      for (auto global_pooling : { false}) {
+        for (auto exclusive : {true}) {
+          for (auto ksize : { 3}) {
+            for (auto stride : {2}) {
+              for (auto pad_left : { 1}) {
+                for (auto pad_right : { 1}) {
+                  for (auto pad_top : { 1}) {
+                    for (auto pad_bottom : { 1}) {
+                      for (auto n : {1}) {
+                        for (auto c : { 24}) {
+#if 0
+                            for (auto pooling_type : {"max", "avg"}) {
     for (auto ceil_mode : {true, false}) {
       for (auto global_pooling : {true, false}) {
         for (auto exclusive : {true, false}) {
@@ -246,9 +268,10 @@ TEST(pool_arm, compute) {
                     for (auto pad_bottom : {0, 1}) {
                       for (auto n : {1, 2}) {
                         for (auto c : {1, 3}) {
+#endif 
 #if 1
-                          for (auto h : {2, 3, 4, 11}) {
-                            for (auto w : {2, 3, 4, 11}) {
+                          for (auto h : {80}) {
+                            for (auto w : {80}) {
 #else
                           for (int h = 2; h < 25; h++) {
                             for (int w = 2; w < 25; w++) {
@@ -272,8 +295,9 @@ TEST(pool_arm, compute) {
                               for (int i = 0; i < x.dims().production(); ++i) {
                                 float sign = i % 3 == 0 ? -0.03 : 0.05f;
                                 x_data[i] = sign * (i % 128);
+                                x_data[i] = i;
                               }
-
+              
                               // fill param
                               param.x = &x;
                               param.output = &output;
@@ -310,15 +334,35 @@ TEST(pool_arm, compute) {
 
                               // compute
                               pool.SetParam(param);
-                              pool.Run();
+                              // pool.Run();
+                              double start_v = 0;
+                              double end_v = 0;
+                              double duration = 0;
+                              // cnt_gemmlike
+                              auto start = GetCurrentUS();
+
+
+                              for(int i = 0; i < loop; i++) {
+                                pool.Run();
+                              }
+
+                               duration = (GetCurrentUS() - start);
+                              // cnt_gemmlike++;
+                              LOG(INFO) << "cnt_gemmlike:" <<loop << " all time:" << duration<< " ms";
+
+
 
                               // compute ref
                               param.output = &output_ref;
                               pool_compute_ref(param);
+                              for (int i = 0; i < 100; i+=1) {
+                                LOG(INFO)<<"o: " << output_data[i]<<"  o_ref:"<<output_ref_data[i]<<"  diff:"<<output_data[i] - output_ref_data[i];
+                              }
 
                               // compare
                               for (int i = 0; i < output.dims().production();
                                    i++) {
+                                     
                                 EXPECT_NEAR(
                                     output_data[i], output_ref_data[i], 1e-4);
                               }

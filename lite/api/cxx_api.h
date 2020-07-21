@@ -113,7 +113,9 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
+LOG(INFO)<<"RUN";
     program_->Run();
+LOG(INFO)<<"RUNEND";
   }
 
   // Get offset-th col of feed inputs.

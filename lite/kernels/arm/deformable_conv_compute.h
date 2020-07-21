@@ -56,7 +56,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
-    impl_->SetProfileRuntimeKernelInfo(ch);
+//    impl_->SetProfileRuntimeKernelInfo(ch);
   }
 #endif
 

@@ -390,10 +390,17 @@ void pooling_basic(const float* din,
   "st1  {v11.4s}, [%[dr_out]], #16\n"   /* store 4 out, dr_out */ \
   "bne       1b\n"                      /* bne s3_max_loop_mid */
 
+//old
 #define P3x3S2_INIT                                                \
   "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/ \
   "ld2  {v2.4s, v3.4s}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-7*/ \
   "ld2  {v4.4s, v5.4s}, [%[dr2]], #32\n" /* load q4-q5, dr2, 0-7*/
+
+// //ld1
+// #define P3x3S2_INIT                                                \
+//   "ld1  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q2, dr0, 0-7*/           \
+//   "ld1  {v3.4s, v4.4s}, [%[dr1]], #32\n" /* load q3-q5, dr1, 0-7*/           \
+//   "ld1  {v6.4s, v7.4s}, [%[dr2]], #32\n" /* load q6-q8, dr2, 0-7*/           
 
 #define P3x3S2P0_INIT                                              \
   "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/ \
@@ -403,7 +410,8 @@ void pooling_basic(const float* din,
   "ld1  {v7.2s}, [%[dr1]]\n"             /* load d7, dr1, 8,9 */   \
   "ld1  {v8.2s}, [%[dr2]]\n"             /* load d8, dr2, 8,9 */
 
-#define P3x3S2P1_MAX                                               \
+//old
+#define P3x3S2P1_MAX                                                \
   "fmax v6.4s, v0.4s, v1.4s\n"                                     \
   "fmax v7.4s, v2.4s, v3.4s\n"                                     \
   "fmax v8.4s, v4.4s, v5.4s\n"                                     \
@@ -432,6 +440,65 @@ void pooling_basic(const float* din,
   "st1  {v10.4s}, [%[dr_out]], #16\n" /* store 4 out, dr_out */    \
   "ble       2f\n"                    /* jump to end */
 
+// #define P3x3S2P1_MAX                                              \
+//   "fmax v6.4s, v0.4s, v1.4s\n"                                     \
+//   "fmax v7.4s, v2.4s, v3.4s\n"                                     \
+//   "fmax v8.4s, v4.4s, v5.4s\n"                                     \
+//                                                                    \
+//   "subs %[dr0], %[dr0], #4\n"                                      \
+//   "subs %[dr1], %[dr1], #4\n"                                      \
+//   "subs %[dr2], %[dr2], #4\n"                                      \
+//                                                                    \
+//   "ext   v0.16b, %[vmin].16b, v1.16b, #12\n" /* ext 0, 1, 3, 5 */  \
+//   "ext   v2.16b, %[vmin].16b, v3.16b, #12\n" /* ext 0, 1, 3, 5 */  \
+//   "ext   v4.16b, %[vmin].16b, v5.16b, #12\n" /* ext 0, 1, 3, 5 */  \
+//   "fmax v1.4s, v6.4s, v0.4s\n"                                     \
+//   "fmax v3.4s, v7.4s, v2.4s\n"                                     \
+//   "fmax v9.4s, v1.4s, v3.4s\n"           /* reduce */              \
+//   "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/ \
+//   "ld2  {v2.4s, v3.4s}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-7*/ \
+//   "fmax v11.4s, v8.4s, v4.4s\n"                                    \
+//   "ld2  {v4.4s, v5.4s}, [%[dr2]], #32\n" /* load q4-q5, dr2, 0-7*/ \
+//                                                                    \
+//                                                                    \
+//   "fmax v10.4s, v9.4s, v11.4s\n"        /* reduce */               \
+//   "subs %w[cnt_num], %w[cnt_num], #1\n" /* subs cnt_num, #1*/      \
+//   "ld1  {v6.2s}, [%[dr0]]\n"            /* load d6, dr0, 8,9 */    \
+//   "ld1  {v7.2s}, [%[dr1]]\n"            /* load d7, dr1, 8,9 */    \
+//   "ld1  {v8.2s}, [%[dr2]]\n"            /* load d8, dr2, 8,9 */    \
+//                                                                    \
+//   "st1  {v10.4s}, [%[dr_out]], #16\n" /* store 4 out, dr_out */    \
+//   "ble       2f\n"                    /* jump to end */
+
+
+// #define P3x3S2P0_MAX                                                         \
+//   "1: \n"                               /* load bias to q2, q3*/             \
+//   "fmax   v9.4s, v0.4s, v1.4s\n"        /*  add 0, 2, 4, 6 and 1, 3, 5, 7 */ \
+//   "fmax   v10.4s, v2.4s, v3.4s\n"       /*  add 0, 2, 4, 6 and 1, 3, 5, 7 */ \
+//   "fmax   v11.4s, v4.4s, v5.4s\n"       /*  add 0, 2, 4, 6 and 1, 3, 5, 7 */ \
+//   "ext    v1.16b, v0.16b, v6.16b, #4\n" /* ext 2, 4, 6, 8, r0 */             \
+//   "ext    v3.16b, v2.16b, v7.16b, #4\n" /* ext 2, 4, 6, 8, r1 */             \
+//   "ext    v5.16b, v4.16b, v8.16b, #4\n" /* ext 2, 4, 6, 8, r2 */             \
+//                                                                              \
+//   "fmax  v6.4s, v9.4s, v1.4s\n"  /* max */                                   \
+//   "ld2  {v0.4s, v1.4s}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-7*/           \
+//   "fmax  v7.4s, v10.4s, v3.4s\n" /* max */                                   \
+//   "ld2  {v2.4s, v3.4s}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-7*/           \
+//   "fmax  v8.4s, v11.4s, v5.4s\n" /* max */                                   \
+//   "ld2  {v4.4s, v5.4s}, [%[dr2]], #32\n" /* load q4-q5, dr2, 0-7*/           \
+//                                                                              \
+//   "fmax  v9.4s, v6.4s, v7.4s\n"          /* max reduce */                    \
+//   "ld1  {v6.2s}, [%[dr0]]\n"            /* load d6, dr0, 8,9 */              \
+//   "ld1  {v7.2s}, [%[dr1]]\n"            /* load d7, dr1, 8,9 */              \
+//                                                                              \
+//   "fmax  v10.4s, v8.4s, v9.4s\n"        /* max reduce */                     \
+//   "subs %w[cnt_num], %w[cnt_num], #1\n" /* subs cnt_num, #1*/                \
+//   "ld1  {v8.2s}, [%[dr2]]\n"            /* load d8, dr2, 8,9 */              \
+//                                                                              \
+//   "st1  {v10.4s}, [%[dr_out]], #16\n" /* store 4 out, dr_out */              \
+//   "bne       1b\n"                    /* bne s3_max_loop_mid */
+
+
 #define P3x3S2P0_MAX                                                         \
   "1: \n"                               /* load bias to q2, q3*/             \
   "fmax   v9.4s, v0.4s, v1.4s\n"        /*  add 0, 2, 4, 6 and 1, 3, 5, 7 */ \
@@ -458,6 +525,53 @@ void pooling_basic(const float* din,
                                                                              \
   "st1  {v10.4s}, [%[dr_out]], #16\n" /* store 4 out, dr_out */              \
   "bne       1b\n"                    /* bne s3_max_loop_mid */
+
+
+// //ld1
+// #define P3x3S2P1_MAX                                              \
+//   "fmax v9.4s, v0.4s, v3.4s                 \n"                                     \
+//   "fmax v10.4s, v1.4s, v4.4s                \n"                                    \
+//   "fmax v11.4s, v2.4s, v5.4s                \n"                                    \
+//   "ld1  {v0.4s, v1.4s, v2.4s}, [%[dr0]], #48\n" /* load q0-q2, dr0, 0-7*/           \
+//   "ld1  {v3.4s, v4.4s, v5.4s}, [%[dr1]], #48\n" /* load q3-q5, dr1, 0-7*/           \
+//   "ld1  {v6.4s, v7.4s, v8.4s}, [%[dr2]], #48\n" /* load q6-q8, dr2, 0-7*/           \
+//   "fmax v12.4s, v9.4s, v6.4s                \n"                                    \
+//   "fmax v13.4s, v10.4s, v7.4s                \n"                                    \
+//   "fmax v14.4s, v11.4s, v8.4s                \n"                                    \
+//   "ext v9.16b, %[vmin].16b, v12.16b, #12           \n"                                     \
+//   "ext v10.16b, v12.16b, v13.16b, #12           \n"                                     \
+//   "fmaxp v11.4s, v9.4s, v10.4s                \n"                                     \
+//   "subs %[dr0], %[dr0], #4\n"                                      \
+//   "subs %[dr1], %[dr1], #4\n"                                      \
+//   "subs %[dr2], %[dr2], #4\n"                                      \
+//   "subs %w[cnt_num], %w[cnt_num], #1        \n" /* subs cnt_num, #1*/                \
+//   "fmaxp v14.4s, v12.4s, v13.4s                \n"                                     \
+//   "fmax v15.4s, v11.4s, v14.4s                \n"                                     \
+//   "st1  {v15.4s}, [%[dr_out]], #16            \n" /* store 4 out, dr_out */            \
+//   "ble       2f\n"                    /* jump to end */
+
+
+  //ld1
+// #define P3x3S2P0_MAX                                                         \
+//   "1: \n"                               /* load bias to q2, q3*/             \
+//   "fmax v9.4s, v0.4s, v3.4s                 \n"                                     \
+//   "fmax v10.4s, v1.4s, v4.4s                \n"                                    \
+//   "fmax v11.4s, v2.4s, v5.4s                \n"                                    \
+//   "ld1  {v0.4s, v1.4s, v2.4s}, [%[dr0]], #48\n" /* load q0-q2, dr0, 0-7*/           \
+//   "ld1  {v3.4s, v4.4s, v5.4s}, [%[dr1]], #48\n" /* load q3-q5, dr1, 0-7*/           \
+//   "ld1  {v6.4s, v7.4s, v8.4s}, [%[dr2]], #48\n" /* load q6-q8, dr2, 0-7*/           \
+//   "fmax v12.4s, v9.4s, v6.4s                \n"                                    \
+//   "fmax v13.4s, v10.4s, v7.4s                \n"                                    \
+//   "fmax v14.4s, v11.4s, v8.4s                \n"                                    \
+//   "ext v9.16b, v12.16b, v13.16b, #4           \n"                                     \
+//   "ext v10.16b, v13.16b, v14.16b, #4           \n"                                     \
+//   "fmaxp v11.4s, v9.4s, v10.4s                \n"                                     \
+//   "subs %w[cnt_num], %w[cnt_num], #1        \n" /* subs cnt_num, #1*/                \
+//   "fmaxp v14.4s, v12.4s, v13.4s                \n"                                     \
+//   "fmax v15.4s, v11.4s, v14.4s                \n"                                     \
+//   "st1  {v15.4s}, [%[dr_out]], #16            \n" /* store 4 out, dr_out */            \
+//   "bne       1b\n"                    /* bne s3_max_loop_mid */
+
 
 #define P3x3S2P1_AVG                                               \
   "fadd v6.4s, v0.4s, v1.4s\n"                                     \
@@ -2167,6 +2281,511 @@ void pooling3x3s1p0_avg(const float* din,
   TargetFree(TARGET(kARM), zero_ptr);
 }
 
+//intric                         
+void pooling3x3s2p1_max__(const float* din, float* dout, \
+                          int num, int chout, int hout, int wout, \
+                          int chin, int hin, int win, \
+                          /* PoolingType type, bool global, int kernel_w, int kernel_h,  int stride_w, int stride_h, */
+                         int pad_bottom, int pad_right) {
+
+    int kernel_w = 3;
+    int kernel_h =3;
+    int stride_w = 2;
+    int stride_h = 2;
+    int size_channel_out = wout * hout;
+    int size_channel_in = win * hin;
+    int pad_w = 1;
+    int pad_h =1;
+    float* data_out = static_cast<float*>(dout);
+    const float* data_in = static_cast<const float*>(din);
+    
+    // int pad_top = pad_h;
+    // int pad_left = pad_w;
+    int w_needed = wout * 2 + 1;
+    int h_needed = hout * 2 + 1;
+    // int pad_right = w_needed - win - pad_left;
+    // int pad_bottom = h_needed - hin - pad_top;
+    
+    int w_even = (win >> 1) << 1;
+    //int w_remains = w_in - w_even; // should be 0 or 1
+    int h_even = (hin >> 1) << 1;
+    //int h_remains = h_in - h_even; // should be 0 or 1
+    //int w_unroll_size = (w_even >> 3) << 3;
+    //int w_unroll_remian = w_even - w_unroll_size;
+    int w_in_2 = win << 1;
+    float minval = std::numeric_limits<float>::lowest();
+    float32x4_t vzero = vdupq_n_f32(minval); //zero pad
+    //printf("minval: %.2f\n", minval);
+    int cnt_col = (win - 1) / 8;
+    //remain
+    int remain = ((win - 1) % 8) / 2;
+
+    for (int n = 0; n < num; ++n) {
+
+        float* data_out_batch = data_out + n * chout * size_channel_out;
+        const float* data_in_batch = data_in + n * chin * size_channel_in;
+#pragma omp parallel for
+        for (int c = 0; c < chout; c++) {
+            float* data_out_channel = data_out_batch + c * size_channel_out;
+            const float* data_in_channel = data_in_batch + c * size_channel_in;
+            const float* r0 = data_in_channel;
+            const float* r1 = r0 + win;
+            const float* r2 = r1 + win;
+            float* dr_out = data_out_channel;
+            const float* dr0 = r0;
+            const float* dr1 = r1;
+            const float* dr2 = r2;
+            int w = 1;
+            int cnt = 1;
+            int cnt_num = cnt_col;
+            int cnt_num1 = remain;
+            data_out_channel[0] = std::max(std::max(r0[0], r0[1]), std::max(r1[0], r1[1]));
+            // first row with zero pad
+#ifdef __aarch64__
+            for (; w < win - 8; w += 8) {
+                float32x4_t vr0_1234 = vld1q_f32(&r0[w]);
+                float32x4_t vr0_5678 = vld1q_f32(&r0[w + 4]);
+                float32x4_t vr0_9101112 = vld1q_f32(&r0[w + 8]);
+                float32x4_t vr1_1234 = vld1q_f32(&r1[w]);
+                float32x4_t vr1_5678 = vld1q_f32(&r1[w + 4]);
+                float32x4_t vr1_9101112 = vld1q_f32(&r1[w + 8]);
+                float32x4_t vmax_1234 = vmaxq_f32(vr0_1234, vr1_1234);
+                float32x4_t vmax_5678 = vmaxq_f32(vr0_5678, vr1_5678);
+                float32x4_t vmax_9101112 = vmaxq_f32(vr0_9101112, vr1_9101112);
+                float32x4_t vmax_2345 = vextq_f32(vmax_1234, vmax_5678,1);
+                float32x4_t vmax_6789 = vextq_f32(vmax_5678, vmax_9101112,1);
+                float32x2_t vmax_12_34 = vpmax_f32(vget_low_f32(vmax_1234), vget_high_f32(vmax_1234));
+                float32x2_t vmax_23_45 = vpmax_f32(vget_low_f32(vmax_2345), vget_high_f32(vmax_2345));
+                float32x2_t vmax_56_78 = vpmax_f32(vget_low_f32(vmax_5678), vget_high_f32(vmax_5678));
+                float32x2_t vmax_67_89 = vpmax_f32(vget_low_f32(vmax_6789), vget_high_f32(vmax_6789));
+                float32x2_t vmax_123_345 = vmax_f32(vmax_12_34, vmax_23_45);
+                float32x2_t vmax_567_789 = vmax_f32(vmax_56_78, vmax_67_89);
+                vst1_f32(&data_out_channel[cnt],vmax_123_345);
+                vst1_f32(&data_out_channel[cnt + 2],vmax_567_789);
+                cnt += 4;
+            }
+            for(; w < w_even - 1; w += 2){
+                float32x4_t vr0= vld1q_f32(&r0[w]);
+                float32x4_t vr1= vld1q_f32(&r1[w]);
+                vr0 = vsetq_lane_f32(minval, vr0, 3);
+                vr1 = vsetq_lane_f32(minval, vr1, 3);
+                float32x4_t vmax1 = vmaxq_f32(vr0, vr1);
+                float32x2_t vmax2 = vpmax_f32(vget_low_f32(vmax1), vget_high_f32(vmax1));
+                vmax2 = vpmax_f32(vmax2, vmax2);
+                data_out_channel[cnt] = vget_lane_f32(vmax2, 0);
+                cnt ++;
+            }
+#else
+            dr0 = dr0 + 1;
+            dr1 = dr1 + 1;
+            dr_out = dr_out + 1;
+            if (cnt_num > 0 || cnt_num1 > 0){
+                asm volatile(
+                "cmp       %[cnt_num], #0                        @cmp cnt_num, 0\n"
+                        "ble       3f                                  @ble exit\n"
+                        "1:                                    @main loop\n"
+                        "vld1.f32  {d0-d3}, [%[dr0]]!                     @load d0-d5, dr0\n"
+                        "vld1.f32  {d6-d9}, [%[dr1]]!                    @load d4-d7, dr1\n"
+                        "vld1.f32  {d4-d5}, [%[dr0]]!                     @load d0-d5, dr0\n"
+                        "vld1.f32  {d10-d11}, [%[dr1]]!                    @load d4-d7, dr1\n"
+                        "vmax.f32  q6, q0, q3                            @max r0_1234,r1_1234\n"
+                        "vmax.f32  q7, q1, q4                            @max r0_5678,r1_5678\n"
+                        "vmax.f32  q8, q2, q5                            @max r0_9101112,r1_9101112\n"
+                        //"vmov.f32  s7,s6                                 @mov s7, s6\n"
+                        "vext.f32  q0, q6, q7, #1                        @vext max_2345\n"
+                        "vext.f32  q1, q7, q8, #1                        @vext max_6789\n"
+                        "vpmax.f32 d4, d12, d13                          @pmax d4, vmax_1234, vmax_1234\n"
+                        "vpmax.f32 d6, d14, d15                          @pmax d6, vmax_5678, vmax_5678\n"
+                        "vpmax.f32 d5, d0, d1                            @pmax d5, vmax_2345, vmax_2345\n"
+                        "vpmax.f32 d7, d2, d3                            @pmax d7, vmax_6789, vmax_6789\n"
+                        "vmax.f32 d8, d4, d5                             @max d2, vmax_12_34, vmax_23_45\n"
+                        "vmax.f32 d9, d6, d7                             @max d2, vmax_56_78, vmax_67_89\n"
+                        "sub       %[dr0], #16                           @add w, 8\n"
+                        "sub       %[dr1], #16                           @add w, 8\n"
+                        "vst1.f32  d8, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                        "vst1.f32  d9, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                        "subs      %[cnt_num], #1                            @subs cnt_num, #1\n"
+                        "bne       1b                                   @bne s3_max_loop\n"
+                        "3:                                           @loop \n"
+                        "cmp       %[cnt_num1], #0                           @cmp cnt_num, 0\n"
+                        "ble       4f                                  @ble exit\n"
+                        "2:                                             @main loop\n"
+                        "vld1.f32  {d0-d1}, [%[dr0]]!                     @load d0-d1, dr0\n"
+                        "vld1.f32  {d2-d3}, [%[dr1]]!                     @load d2-d3, dr1\n"
+                        "vmov.f32  s3,s2                                 @movs3, s2\n"
+                        "vmov.f32  s7,s6                                 @movs7, s6\n"
+                        "vmax.f32  q0, q0, q1                            @max q0, q0, q1\n"
+                        "vpmax.f32 d0, d0, d1                            @pmax d0, d0,d1\n"
+                        "vpmax.f32 d0, d0, d0                            @pmax d0, d0, d0\n"
+                        "vst1.f32  d0[0], [%[dr_out]]!                   @vst  d0[0], dr_out\n"
+                        "sub       %[dr0], #8                            @add w, 6\n"
+                        "sub       %[dr1], #8                            @add w, 6\n"
+                        "subs      %[cnt_num1], #1                           @subs cnt_num, #1\n"
+                        "bne       2b                                   @bne s3_max_loop_1\n"
+                        "4:                                           @exit\n"
+                :[dr0] "+r" (dr0), [dr1] "+r" (dr1), [dr_out] "+r" (dr_out), [cnt_num] "+r" (cnt_num), [cnt_num1] "+r" (cnt_num1)
+                :"r" (dr0), "r" (dr1), "r" (dr_out), "r"(cnt_num), "r" (cnt_num1)
+                :"q0", "q1", "q2", "q3", "q4", "q5", "q6","q7", "q8", "q9"
+                );
+            }
+            // printf("cnt_num: %d, cnt_num1: %d \n",cnt_num, cnt_num1);
+#endif
+            //int w = w_even - 1;
+            if (pad_right){
+                // deal with right pad
+                int wstart = (w_even >> 1) * stride_w - pad_w;
+                int wend = std::min(std::min(wstart + kernel_w, win + pad_w), win);
+                float tmp = r0[wstart];//std::numeric_limits<float>::min();
+                for(int i = wstart; i < wend; i++){//only run 1 or 2 times
+                    tmp = std::max(tmp,std::max(r0[i],r1[i]));
+                }
+                data_out_channel[w_even >> 1] = tmp;
+                //cnt ++;
+            }
+
+            r0 = r1;
+            r1 = r0 + win;
+            r2 = r1 + win;
+            data_out_channel += wout;
+            int h = 2;
+            for (; h < h_even; h += 2) {
+                // deal with left pad
+                float maxr0 = std::max(r0[0], r0[1]);
+                float maxr1 = std::max(r1[0], r1[1]);
+                float maxr2 = std::max(r2[0], r2[1]);
+                data_out_channel[0] = std::max(std::max(maxr0, maxr1), maxr2);
+#ifdef __aarch64__
+                w = 1;
+                cnt = 1;
+                for (; w < win - 8; w += 8) {
+                    float32x4_t vr0_1234 = vld1q_f32(&r0[w]);
+                    float32x4_t vr0_5678 = vld1q_f32(&r0[w + 4]);
+                    float32x4_t vr0_9101112 = vld1q_f32(&r0[w + 8]);
+                    float32x4_t vr1_1234 = vld1q_f32(&r1[w]);
+                    float32x4_t vr1_5678 = vld1q_f32(&r1[w + 4]);
+                    float32x4_t vr1_9101112 = vld1q_f32(&r1[w + 8]);
+                    float32x4_t vr2_1234 = vld1q_f32(&r2[w]);
+                    float32x4_t vr2_5678 = vld1q_f32(&r2[w + 4]);
+                    float32x4_t vr2_9101112 = vld1q_f32(&r2[w + 8]);
+                    float32x4_t vmax_1234 = vmaxq_f32(vr0_1234, vr1_1234);
+                    vmax_1234 = vmaxq_f32(vmax_1234, vr2_1234);
+                    float32x4_t vmax_5678 = vmaxq_f32(vr0_5678, vr1_5678);
+                    vmax_5678 = vmaxq_f32(vmax_5678, vr2_5678);
+                    float32x4_t vmax_9101112 = vmaxq_f32(vr0_9101112, vr1_9101112);
+                    vmax_9101112 = vmaxq_f32(vmax_9101112, vr2_9101112);
+                    float32x4_t vmax_2345 = vextq_f32(vmax_1234, vmax_5678,1);
+                    float32x4_t vmax_6789 = vextq_f32(vmax_5678, vmax_9101112,1);
+                    float32x2_t vmax_12_34 = vpmax_f32(vget_low_f32(vmax_1234), vget_high_f32(vmax_1234));
+                    float32x2_t vmax_23_45 = vpmax_f32(vget_low_f32(vmax_2345), vget_high_f32(vmax_2345));
+                    float32x2_t vmax_56_78 = vpmax_f32(vget_low_f32(vmax_5678), vget_high_f32(vmax_5678));
+                    float32x2_t vmax_67_89 = vpmax_f32(vget_low_f32(vmax_6789), vget_high_f32(vmax_6789));
+                    float32x2_t vmax_123_345 = vmax_f32(vmax_12_34, vmax_23_45);
+                    float32x2_t vmax_567_789 = vmax_f32(vmax_56_78, vmax_67_89);
+                    vst1_f32(&data_out_channel[cnt],vmax_123_345);
+                    vst1_f32(&data_out_channel[cnt + 2],vmax_567_789);
+                    cnt += 4;
+                }
+                for (; w < w_even - 1; w += 2) {
+                    float32x4_t vr0 = vld1q_f32(&r0[w]);
+                    float32x4_t vr1 = vld1q_f32(&r1[w]);
+                    float32x4_t vr2 = vld1q_f32(&r2[w]);
+                    vr0 = vsetq_lane_f32(minval, vr0, 3);
+                    vr1 = vsetq_lane_f32(minval, vr1, 3);
+                    vr2 = vsetq_lane_f32(minval, vr2, 3);
+                    float32x4_t vmax1 = vmaxq_f32(vr0, vr1);
+                    vmax1 = vmaxq_f32(vmax1, vr2);
+                    float32x2_t vmax2 = vpmax_f32(vget_low_f32(vmax1), vget_high_f32(vmax1));
+                    float32x2_t vmax = vpmax_f32(vmax2, vmax2);
+                    data_out_channel[cnt] = vget_lane_f32(vmax, 0);
+                    cnt ++;
+                }
+#else
+                dr_out = data_out_channel + 1;
+                dr0 = (r0 + 1);
+                dr1 = (r1 + 1);
+                dr2 = (r2 + 1);
+                cnt_num = cnt_col;
+                cnt_num1 = remain;
+                if (cnt_num > 0 || cnt_num1 > 0){
+                    asm volatile(
+                    "cmp       %[cnt_num], #0                        @cmp cnt_num, 0\n"
+                            "ble       3f                                  @ble exit\n"
+                            "1:                                @main loop\n"
+                            "vld1.f32  {d0-d3}, [%[dr0]]!                     @load d0-d5, dr0\n"
+                            "vld1.f32  {d6-d9}, [%[dr1]]!                    @load d4-d7, dr1\n"
+                            "vld1.f32  {d12-d15}, [%[dr2]]!                   @load d4-d7, dr1\n"
+                            "vld1.f32  {d4-d5}, [%[dr0]]!                     @load d0-d5, dr0\n"
+                            "vld1.f32  {d10-d11}, [%[dr1]]!                    @load d4-d7, dr1\n"
+                            "vld1.f32  {d16-d17}, [%[dr2]]!                   @load d4-d7, dr1\n"
+                            "vmax.f32  q9, q0, q3                            @max q0,q0,q2\n"
+                            "vmax.f32  q10, q1, q4                           @max q1,q1,q3\n"
+                            "vmax.f32  q11, q2, q5                           @max q1,q1,q3\n"
+                            "vmax.f32  q0, q9, q6                            @max q0,q0,q2 1234\n"
+                            "vmax.f32  q3, q10, q7                           @max q1,q1,q3 5678\n"
+                            "vmax.f32  q1, q11, q8                           @max q1,q1,q3 9101112\n"
+                            //"vmov.f32  s7,s6                               @mov s7, s6\n"
+                            "vext.f32  q4, q0, q3, #1                        @vext 2345\n"
+                            "vext.f32  q2, q3, q1, #1                        @vext 6789\n"
+                            "vpmax.f32 d10, d0, d1                           @pmax d10, vmax_1234, vmax_1234\n"
+                            "vpmax.f32 d12, d6, d7                           @pmax d12, vmax_5678, vmax_5678\n"
+                            "vpmax.f32 d11, d8, d9                           @pmax d11, vmax_2345, vmax_2345\n"
+                            "vpmax.f32 d13, d4, d5                           @pmax d13, vmax_6789, vmax_6789\n"
+                            "vmax.f32 d0, d10, d11                          @pmax d0, vmax_12_34, vmax_23_45\n"
+                            "vmax.f32 d1, d12, d13                          @pmax d1, vmax_56_78, vmax_67_89\n"
+                            "sub       %[dr0], #16                           @add w, 8\n"
+                            "sub       %[dr1], #16                           @add w, 8\n"
+                            "sub       %[dr2], #16                           @add w, 8\n"
+                            "vst1.f32  d0, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                            "vst1.f32  d1, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                            "subs      %[cnt_num], #1                            @subs cnt_num, #1\n"
+                            "bne       1b                                   @bne s3_max_loop_mid\n"
+                            "3:                                       @loop \n"
+                            "cmp       %[cnt_num1], #0                           @cmp cnt_num, 0\n"
+                            "ble       4f                                 @ble exit1\n"
+                            "2:                              @mid loop\n"
+                            "vld1.f32  {d0-d1}, [%[dr0]]!                     @load d0-d1, dr0\n"
+                            "vld1.f32  {d2-d3}, [%[dr1]]!                    @load d2-d3, dr1\n"
+                            "vld1.f32  {d4-d5}, [%[dr2]]!                     @load d2-d3, dr1\n"
+                            "vmov.f32  s3,s2                                 @movs3, s2\n"
+                            "vmov.f32  s7,s6                                 @movs7, s6\n"
+                            "vmov.f32  s11,s10                               @movs11, s10\n"
+                            "vmax.f32  q0, q0, q1                            @max q0, q0, q1\n"
+                            "vmax.f32  q0, q0, q2                            @max q0, q0, q2\n"
+                            "vpmax.f32 d0, d0, d1                            @pmax d0, d0,d1\n"
+                            "vpmax.f32 d0, d0, d0                            @pmax d0, d0, d0\n"
+                            "vst1.f32  d0[0], [%[dr_out]]!                   @vst  d0[0], dr_out\n"
+                            "sub       %[dr0], #8                            @add w, 6\n"
+                            "sub       %[dr1], #8                            @add w, 6\n"
+                            "sub       %[dr2], #8                            @add w, 6\n"
+                            "subs      %[cnt_num1], #1                       @subs cnt_num, #1\n"
+                            "bne       2b                                    @bne s3_max_loop_mid_1\n"
+                            "4:                                           @exit\n"
+                    :[dr0] "+r" (dr0), [dr1] "+r" (dr1), [dr2] "+r" (dr2), [dr_out] "+r" (dr_out), \
+                     [cnt_num] "+r" (cnt_num), [cnt_num1] "+r" (cnt_num1)
+                    :"r" (dr0), "r" (dr1), "r" (dr2), "r" (dr_out), "r"(cnt_num), "r" (cnt_num1)
+                    :"q0", "q1", "q2", "q3", "q4", "q5", "q6","q7", "q8", "q9", "q10", "q11", "q12"
+                    );
+                }
+#endif
+                if (pad_right){
+                    // deal with right pad
+                    int wstart = (w_even >> 1) * stride_w - pad_w;
+                    int wend = std::min(std::min(wstart + kernel_w, win + pad_w), win);
+                    float tmp = r0[wstart];//std::numeric_limits<float>::min();
+                    for(int i = wstart; i < wend; i++){
+                        tmp = std::max(tmp,std::max(r0[i],r1[i]));
+                        tmp = std::max(tmp,r2[i]);
+                    }
+                    data_out_channel[w_even >> 1] = tmp;
+                    //cnt ++;
+                }
+                r0 = r2;
+                r1 = r0 + win;
+                r2 = r1 + win;
+                data_out_channel += wout;
+            }
+
+            if (pad_bottom) {
+                //deal with bottom pad
+                // first row with zero pad
+                int hstart = (h >> 1) * stride_h - pad_h;
+                int hend = std::min(std::min(hstart + kernel_h, hin + pad_h), hin);
+
+                if(hstart == hend - 1){//only one lline
+                    data_out_channel[0] = std::max(r0[0], r0[1]);
+#ifdef __aarch64__
+                    w = 1;
+                    cnt = 1;
+                    for (; w < win - 8; w += 8) {
+                        float32x4_t vmax_1234 = vld1q_f32(&r0[w]);
+                        float32x4_t vmax_5678 = vld1q_f32(&r0[w + 4]);
+                        float32x4_t vmax_9101112 = vld1q_f32(&r0[w + 8]);
+                        float32x4_t vmax_2345 = vextq_f32(vmax_1234, vmax_5678,1);
+                        float32x4_t vmax_6789 = vextq_f32(vmax_5678, vmax_9101112,1);
+                        float32x2_t vmax_12_34 = vpmax_f32(vget_low_f32(vmax_1234), vget_high_f32(vmax_1234));
+                        float32x2_t vmax_23_45 = vpmax_f32(vget_low_f32(vmax_2345), vget_high_f32(vmax_2345));
+                        float32x2_t vmax_56_78 = vpmax_f32(vget_low_f32(vmax_5678), vget_high_f32(vmax_5678));
+                        float32x2_t vmax_67_89 = vpmax_f32(vget_low_f32(vmax_6789), vget_high_f32(vmax_6789));
+                        float32x2_t vmax_123_345 = vmax_f32(vmax_12_34, vmax_23_45);
+                        float32x2_t vmax_567_789 = vmax_f32(vmax_56_78, vmax_67_89);
+                        vst1_f32(&data_out_channel[cnt],vmax_123_345);
+                        vst1_f32(&data_out_channel[cnt + 2],vmax_567_789);
+                        cnt += 4;
+                    }
+                    for(; w < w_even - 1; w += 2){
+                        float32x4_t vr0= vld1q_f32(&r0[w]);
+                        vr0 = vsetq_lane_f32(minval, vr0, 3);
+                        float32x2_t vmax = vpmax_f32(vget_low_f32(vr0), vget_high_f32(vr0));
+                        vmax = vpmax_f32(vmax, vmax);
+                        data_out_channel[cnt] = vget_lane_f32(vmax, 0);
+                        cnt ++;
+                    }
+#else
+                    dr_out = data_out_channel + 1;
+                    dr0 = (r0 + 1);
+                    cnt_num = cnt_col;
+                    cnt_num1 = remain;
+                    if (cnt_num > 0 || cnt_num1 > 0){
+                        asm volatile(
+                        "cmp       %[cnt_num], #0                        @cmp cnt_num, 0\n"
+                                "ble       3f                                  @ble exit\n"
+                                "1:                                @main loop\n"
+                                "vld1.f32  {d0-d3}, [%[dr0]]!                     @load d0-d3, dr0\n"
+                                "vld1.f32  {d4-d5}, [%[dr0]]!                     @load d0-d3, dr0\n"
+                                "vext.f32  q4, q0, q1, #1                        @vext q4, q0, q1, 1 2345\n"
+                                "vext.f32  q5, q1, q2, #1                        @vext q5, q0, q1, 1 6789\n"
+                                "vpmax.f32 d12, d0, d1                           @pmax d12, vmax_1234, vmax_1234\n"
+                                "vpmax.f32 d14, d2, d3                           @pmax d14, vmax_5678, vmax_5678\n"
+                                "vpmax.f32 d13, d8, d9                           @pmax d13, vmax_2345, vmax_2345\n"
+                                "vpmax.f32 d15, d10, d11                         @pmax d15, vmax_6789, vmax_6789\n"
+                                "vmax.f32  d0, d12, d13                          @max d0, vmax_12_34,vmax_23_45\n"
+                                "vmax.f32  d1, d14, d15                          @pmax d2, vmax_56_78, vmax_67_89\n"
+                                "sub       %[dr0], #16                           @add w, 6\n"
+                                "vst1.f32  d0, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                                "vst1.f32  d1, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                                "subs      %[cnt_num], #1                            @subs cnt_num, #1\n"
+                                "bne       1b                                   @bne s3_max_loop_bot\n"
+                                "3:                                             @loop \n"
+                                "cmp       %[cnt_num1], #0                           @cmp cnt_num, 0\n"
+                                "ble       4f                                 @ble exit\n"
+                                "2:                                             @bot loop\n"
+                                "vld1.f32  {d0-d1}, [%[dr0]]!                     @load d0-d1, dr0\n"
+                                "vmov.f32  s3,s2                                 @movs3, s2\n"
+                                "vpmax.f32 d0, d0, d1                            @pmax d0, d0,d1\n"
+                                "vpmax.f32 d0, d0, d0                            @pmax d0, d0, d0\n"
+                                "vst1.f32  d0[0], [%[dr_out]]!                   @vst  d0[0], dr_out\n"
+                                "sub       %[dr0], #8                            @add w, 2\n"
+                                "subs      %[cnt_num1], #1                           @subs cnt_num, #1\n"
+                                "bne       2b                                   @bne s3_max_loop_bot_1\n"
+                                "4:                                          @exit\n"
+                        :[dr0] "+r" (dr0), [dr1] "+r" (dr1), [dr_out] "+r" (dr_out), [cnt_num] "+r" (cnt_num), [cnt_num1] "+r" (cnt_num1)
+                        :"r" (dr0), "r" (dr1), "r" (dr_out), "r"(cnt_num), "r" (cnt_num1)
+                        :"q0", "q1", "q2", "q3", "q4", "q5", "q6","q7", "q8"
+                        );
+                    }
+#endif
+                    if (pad_right){
+                        // deal with right pad
+                        int wstart = (w_even >> 1) * stride_w - pad_w;
+                        int wend = std::min(std::min(wstart + kernel_w, win + pad_w), win);
+                        float tmp = r0[wstart];//std::numeric_limits<float>::min();
+                        for(int i = wstart; i < wend; i++){
+                            tmp = std::max(tmp,r0[i]);
+                        }
+                        data_out_channel[w_even >> 1] = tmp;
+                    }
+                }else{//two lines
+                    data_out_channel[0] = std::max(std::max(r0[0], r0[1]), std::max(r1[0], r1[1]));
+#ifdef __aarch64__
+                    w = 1;
+                    cnt = 1;
+                    for (; w < win - 8; w += 8) {
+                        float32x4_t vr0_1234 = vld1q_f32(&r0[w]);
+                        float32x4_t vr0_5678 = vld1q_f32(&r0[w + 4]);
+                        float32x4_t vr0_9101112 = vld1q_f32(&r0[w + 8]);
+                        float32x4_t vr1_1234 = vld1q_f32(&r1[w]);
+                        float32x4_t vr1_5678 = vld1q_f32(&r1[w + 4]);
+                        float32x4_t vr1_9101112 = vld1q_f32(&r1[w + 8]);
+                        float32x4_t vmax_1234 = vmaxq_f32(vr0_1234, vr1_1234);
+                        float32x4_t vmax_5678 = vmaxq_f32(vr0_5678, vr1_5678);
+                        float32x4_t vmax_9101112 = vmaxq_f32(vr0_9101112, vr1_9101112);
+                        float32x4_t vmax_2345 = vextq_f32(vmax_1234, vmax_5678,1);
+                        float32x4_t vmax_6789 = vextq_f32(vmax_5678, vmax_9101112,1);
+                        float32x2_t vmax_12_34 = vpmax_f32(vget_low_f32(vmax_1234), vget_high_f32(vmax_1234));
+                        float32x2_t vmax_23_45 = vpmax_f32(vget_low_f32(vmax_2345), vget_high_f32(vmax_2345));
+                        float32x2_t vmax_56_78 = vpmax_f32(vget_low_f32(vmax_5678), vget_high_f32(vmax_5678));
+                        float32x2_t vmax_67_89 = vpmax_f32(vget_low_f32(vmax_6789), vget_high_f32(vmax_6789));
+                        float32x2_t vmax_123_345 = vmax_f32(vmax_12_34, vmax_23_45);
+                        float32x2_t vmax_567_789 = vmax_f32(vmax_56_78, vmax_67_89);
+                        vst1_f32(&data_out_channel[cnt],vmax_123_345);
+                        vst1_f32(&data_out_channel[cnt + 2],vmax_567_789);
+                        cnt += 4;
+                    }
+                for(; w < w_even - 1; w += 2){
+                    float32x4_t vr0= vld1q_f32(&r0[w]);
+                    float32x4_t vr1= vld1q_f32(&r1[w]);
+                    vr0 = vsetq_lane_f32(minval, vr0, 3);
+                    vr1 = vsetq_lane_f32(minval, vr1, 3);
+                    float32x4_t vmax1 = vmaxq_f32(vr0, vr1);
+                    float32x2_t vmax2 = vpmax_f32(vget_low_f32(vmax1), vget_high_f32(vmax1));
+                    vmax2 = vpmax_f32(vmax2, vmax2);
+                    data_out_channel[cnt] = vget_lane_f32(vmax2, 0);
+                    cnt ++;
+                }
+#else
+                    dr_out = data_out_channel + 1;
+                    dr0 = (r0 + 1);
+                    dr1 = (r1 + 1);
+                    cnt_num = cnt_col;
+                    cnt_num1 = remain;
+                    if (cnt_num > 0 || cnt_num1 > 0){
+                        asm volatile(
+                        "cmp       %[cnt_num], #0                        @cmp cnt_num, 0\n"
+                                "ble       3f                                  @ble exit\n"
+                                "1:                               @main loop\n"
+                                "vld1.f32  {d0-d3}, [%[dr0]]!                     @load d0-d5, dr0\n"
+                                "vld1.f32  {d6-d9}, [%[dr1]]!                    @load d4-d7, dr1\n"
+                                "vld1.f32  {d4-d5}, [%[dr0]]!                     @load d0-d3, dr0\n"
+                                "vld1.f32  {d10-d11}, [%[dr1]]!                  @load d4-d7, dr1\n"
+                                "vmax.f32  q6, q0, q3                            @max q0,q0,q2 1234\n"
+                                "vmax.f32  q7, q1, q4                            @max q1,q1,q3 5678\n"
+                                "vmax.f32  q8, q2, q5                            @max q1,q1,q3 9101112\n"
+                                //"vmov.f32  s7,s6                                 @mov s7, s6\n"
+                                "vext.f32  q0, q6, q7, #1                        @vext q0, 2345\n"
+                                "vext.f32  q1, q7, q8, #1                        @vext q1, 6789\n"
+                                "vpmax.f32 d4, d12, d13                          @pmax d4, vmax_1234, vmax_1234\n"
+                                "vpmax.f32 d6, d14, d15                          @pmax d6, vmax_5678, vmax_5678\n"
+                                "vpmax.f32 d5, d0, d1                            @pmax d5, vmax_2345, vmax_2345\n"
+                                "vpmax.f32 d7, d2, d3                            @pmax d7, vmax_6789, vmax_6789\n"
+                                "vmax.f32 d8, d4, d5                             @max d2, vmax_12_34, vmax_23_45\n"
+                                "vmax.f32 d9, d6, d7                             @max d2, vmax_56_78, vmax_67_89\n"
+                                "sub       %[dr0], #16                           @add w, 8\n"
+                                "sub       %[dr1], #16                           @add w, 8\n"
+                                "vst1.f32  d8, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                                "vst1.f32  d9, [%[dr_out]]!                      @vst1 d0, dr_out\n"
+                                "subs      %[cnt_num], #1                            @subs cnt_num, #1\n"
+                                "bne       1b                                   @bne s3_max_loop_bot\n"
+                                "3:                                      @loop \n"
+                                "cmp       %[cnt_num1], #0                           @cmp cnt_num, 0\n"
+                                "ble       4f                                 @ble exit\n"
+                                "2:                                             @bot loop\n"
+                                "vld1.f32  {d0-d1}, [%[dr0]]!                     @load d0-d1, dr0\n"
+                                "vld1.f32  {d2-d3}, [%[dr1]]!                     @load d2-d3, dr1\n"
+                                "vmov.f32  s3,s2                                 @movs3, s2\n"
+                                "vmov.f32  s7,s6                                 @movs7, s6\n"
+                                "vmax.f32  q0, q0, q1                            @max q0, q0, q1\n"
+                                "vpmax.f32 d0, d0, d1                            @pmax d0, d0,d1\n"
+                                "vpmax.f32 d0, d0, d0                            @pmax d0, d0, d0\n"
+                                "vst1.f32  d0[0], [%[dr_out]]!                   @vst  d0[0], dr_out\n"
+                                "sub       %[dr0], #8                            @add w, 6\n"
+                                "sub       %[dr1], #8                            @add w, 6\n"
+                                "subs      %[cnt_num1], #1                           @subs cnt_num, #1\n"
+                                "bne       2b                                   @bne s3_max_loop_bot_1\n"
+                                "4:                                          @exit\n"
+                        :[dr0] "+r" (dr0), [dr1] "+r" (dr1), [dr_out] "+r" (dr_out), [cnt_num] "+r" (cnt_num), [cnt_num1] "+r" (cnt_num1)
+                        :"r" (dr0), "r" (dr1), "r" (dr_out), "r"(cnt_num), "r" (cnt_num1)
+                        :"q0", "q1", "q2", "q3", "q4", "q5", "q6","q7", "q8", "q9"
+                        );
+                    }
+#endif
+                    if (pad_right){
+                        // deal with right pad
+                        int wstart = (w_even >> 1) * stride_w - pad_w;
+                        int wend = std::min(std::min(wstart + kernel_w, win + pad_w), win);
+                        float tmp = r0[wstart];//std::numeric_limits<float>::min();
+                        for(int i = wstart; i < wend; i++){//only run 1 or 2 times
+                            tmp = std::max(tmp,std::max(r0[i],r1[i]));
+                        }
+                        data_out_channel[w_even >> 1] = tmp;
+                    }
+                }
+            }
+
+        }
+    }
+}
+
+//asm define
 void pooling3x3s2p1_max(const float* din,
                         float* dout,
                         int num,
@@ -2198,7 +2817,7 @@ void pooling3x3s2p1_max(const float* din,
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
     const float* data_in_batch = data_in + n * chin * size_channel_in;
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int c = 0; c < chout; c++) {
       float* data_out_channel = data_out_batch + c * size_channel_out;
       const float* data_in_channel = data_in_batch + c * size_channel_in;
@@ -2235,6 +2854,7 @@ void pooling3x3s2p1_max(const float* din,
         int cnt_num = w_unroll_size;
         if (w_unroll_size > 0) {
 #ifdef __aarch64__
+#if 0
           asm volatile(
               /* preocess left */
               P3x3S2_INIT P3x3S2P1_MAX P3x3S2P0_MAX "2: \n" /* end */
@@ -2259,6 +2879,84 @@ void pooling3x3s2p1_max(const float* din,
                 "v10",
                 "v11",
                 "v31");
+#else 1 
+          
+                    // float32x4_t vr0_1234 = vld1q_f32(&dr0[w]);
+                    // float32x4_t vr0_5678 = vld1q_f32(&dr0[w + 4]);
+                    // float32x4_t vr0_9101112 = vld1q_f32(&dr0[w + 8]);
+                    // float32x4_t vr1_1234 = vld1q_f32(&dr1[w]);
+                    // float32x4_t vr1_5678 = vld1q_f32(&dr1[w + 4]);
+                    // float32x4_t vr1_9101112 = vld1q_f32(&dr1[w + 8]);
+                    // float32x4_t vr2_1234 = vld1q_f32(&dr2[w]);
+                    // float32x4_t vr2_5678 = vld1q_f32(&dr2[w + 4]);
+                    // float32x4_t vr2_9101112 = vld1q_f32(&dr2[w + 8]);
+                    float32x4_t vr0_1234 = vld1q_f32(dr0);
+                    float32x4_t vr0_5678 = vld1q_f32(dr0+=4);
+                    float32x4_t vr0_9101112 = vld1q_f32(dr0+=4);
+                    float32x4_t vr1_1234 = vld1q_f32(dr1);
+                    float32x4_t vr1_5678 = vld1q_f32(dr1+=4);
+                    float32x4_t vr1_9101112 = vld1q_f32(dr1+=4);
+                    float32x4_t vr2_1234 = vld1q_f32(dr2);
+                    float32x4_t vr2_5678 = vld1q_f32(dr2+=4);
+                    float32x4_t vr2_9101112 = vld1q_f32(dr2+=4);
+
+                    float32x4_t vmax_1234 = vmaxq_f32(vr0_1234, vr1_1234);
+                    vmax_1234 = vmaxq_f32(vmax_1234, vr2_1234);
+                    float32x4_t vmax_5678 = vmaxq_f32(vr0_5678, vr1_5678);
+                    vmax_5678 = vmaxq_f32(vmax_5678, vr2_5678);
+                    float32x4_t vmax_9101112 = vmaxq_f32(vr0_9101112, vr1_9101112);
+                    vmax_9101112 = vmaxq_f32(vmax_9101112, vr2_9101112);
+                    float32x4_t vmax_0123 = vextq_f32(vmin, vmax_1234,1);
+                    float32x4_t vmax_4567 = vextq_f32(vmax_1234, vmax_5678,1);
+                    float32x2_t vmax_12_34 = vpmax_f32(vget_low_f32(vmax_1234), vget_high_f32(vmax_1234));
+                    float32x2_t vmax_01_23 = vpmax_f32(vget_low_f32(vmax_0123), vget_high_f32(vmax_0123));
+                    float32x2_t vmax_56_78 = vpmax_f32(vget_low_f32(vmax_5678), vget_high_f32(vmax_5678));
+                    float32x2_t vmax_45_67 = vpmax_f32(vget_low_f32(vmax_4567), vget_high_f32(vmax_4567));
+                    float32x2_t vmax_012_234 = vmax_f32(vmax_12_34, vmax_01_23);
+                    float32x2_t vmax_456_678 = vmax_f32(vmax_56_78, vmax_45_67);
+                    vst1_f32(dr_out,vmax_012_234);
+                    dr_out+=2;
+                    vst1_f32(dr_out,vmax_456_678);
+                    dr_out+=2;
+                    cnt_num--;
+                      dr0--;
+                      dr1--;
+                      dr2--;
+                    while(cnt_num--){
+
+                      float32x4_t vr0_1234 = vld1q_f32(dr0);
+                      float32x4_t vr0_5678 = vld1q_f32(dr0+=4);
+                      float32x4_t vr0_9101112 = vld1q_f32(dr0+=4);
+                      float32x4_t vr1_1234 = vld1q_f32(dr1);
+                      float32x4_t vr1_5678 = vld1q_f32(dr1+=4);
+                      float32x4_t vr1_9101112 = vld1q_f32(dr1+=4);
+                      float32x4_t vr2_1234 = vld1q_f32(dr2);
+                      float32x4_t vr2_5678 = vld1q_f32(dr2+=4);
+                      float32x4_t vr2_9101112 = vld1q_f32(dr2+=4);
+                      float32x4_t vmax_1234 = vmaxq_f32(vr0_1234, vr1_1234);
+                      vmax_1234 = vmaxq_f32(vmax_1234, vr2_1234);
+                      float32x4_t vmax_5678 = vmaxq_f32(vr0_5678, vr1_5678);
+                      vmax_5678 = vmaxq_f32(vmax_5678, vr2_5678);
+                      float32x4_t vmax_9101112 = vmaxq_f32(vr0_9101112, vr1_9101112);
+                      vmax_9101112 = vmaxq_f32(vmax_9101112, vr2_9101112);
+                      float32x4_t vmax_2345 = vextq_f32(vmax_1234, vmax_5678,1);
+                      float32x4_t vmax_6789 = vextq_f32(vmax_5678, vmax_9101112,1);
+                      float32x2_t vmax_12_34 = vpmax_f32(vget_low_f32(vmax_1234), vget_high_f32(vmax_1234));
+                      float32x2_t vmax_23_45 = vpmax_f32(vget_low_f32(vmax_2345), vget_high_f32(vmax_2345));
+                      float32x2_t vmax_56_78 = vpmax_f32(vget_low_f32(vmax_5678), vget_high_f32(vmax_5678));
+                      float32x2_t vmax_67_89 = vpmax_f32(vget_low_f32(vmax_6789), vget_high_f32(vmax_6789));
+                      float32x2_t vmax_123_345 = vmax_f32(vmax_12_34, vmax_23_45);
+                      float32x2_t vmax_567_789 = vmax_f32(vmax_56_78, vmax_67_89);
+                      vst1_f32(dr_out,vmax_123_345);
+                      dr_out+=2;
+                      vst1_f32(dr_out,vmax_567_789);
+                      dr_out+=2;
+
+                    }
+                    dr0+=8;
+                    dr1+=8;
+                    dr2+=8;
+#endif
 #else
           asm volatile(
               /* preocess left */

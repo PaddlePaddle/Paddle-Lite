@@ -161,7 +161,7 @@ void Predictor::PrepareFeedFetch() {
   if (!program_) {
     GenRuntimeProgram();
   }
-
+  LOG(INFO)<<"PrepareFeedFetch";
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
   const auto &insts = program_->instructions();
